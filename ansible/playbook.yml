@@ -34,7 +34,9 @@
     - name: Install Girder plugins
       pip:
         name:
-          - girder-homepage
+          - girder-oauth
+          - girder-sentry
+          - girder-hashsum-download
         virtualenv: "{{ girder_virtualenv }}"
         state: latest
       notify:
