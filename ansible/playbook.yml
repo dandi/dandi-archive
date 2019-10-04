@@ -1,0 +1,44 @@
+---
+- name: Deploy https://girder.dandiarchive.org/
+  hosts: all
+  vars:
+    ansible_python_interpreter: auto
+
+  roles:
+    - role: girder.mongodb
+      vars:
+        mongodb_data_path: /var/lib/mongodb
+    - role: girder.girder
+    - role: girder.nginx
+      vars:
+        nginx_hostname: "girder.dandiarchive.org"
+        nginx_registration_email: "michael.grauer@kitware.com"
+
+  tasks:
+    - name: Install awscli
+      apt:
+        name: awscli
+        update_cache: true
+      become: true
+
+    - name: Create .aws directory
+      file:
+        path: "{{ ansible_env.HOME }}/.aws"
+        state: directory
+
+    - name: Copy aws config file required for public S3 bucket in separate aws account
+      copy:
+        src: files/config
+        dest: "{{ ansible_env.HOME }}/.aws/config"
+
+    - name: Install Girder plugins
+      pip:
+        name:
+          - girder-oauth
+          - girder-sentry
+          - girder-hashsum-download
+        virtualenv: "{{ girder_virtualenv }}"
+        state: latest
+      notify:
+        - Build Girder web client
+        - Restart Girder
