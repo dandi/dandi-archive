@@ -1,0 +1,42 @@
+version: 2
+jobs:
+  provision:
+    docker:
+      - image: circleci/python:3.7.2
+    environment:
+      ANSIBLE_PRIVATE_KEY_FILE: "$HOME/girder-dandi-server.pem"
+    steps:
+      - checkout
+      - run:
+          name: Create a virtualenv for deployment
+          command: |
+            python3 -m venv deployment_env
+            . deployment_env/bin/activate
+      - run:
+          name: Activate virtual environment
+          command: echo ". $CIRCLE_WORKING_DIRECTORY/deployment_env/bin/activate" >> $BASH_ENV
+      - run:
+          name: Upgrade pip
+          command: pip install -U pip
+      - run:
+          name: Install ansible
+          command: pip  install ansible
+      - run:
+          name: Echo key to a file
+          command: echo -e "$DEPLOYKEY" > "$HOME/girder-dandi-server.pem"
+      - run:
+          name: Change key permission
+          command: chmod 600 "$HOME/girder-dandi-server.pem"
+      - run:
+          name: Run ansible playbook
+          working_directory: ./ansible
+          command: . ./provision.sh
+
+workflows:
+  version: 2
+  deploy:
+    jobs:
+      - provision:
+          filters:
+            branches:
+              only: master
