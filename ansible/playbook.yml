@@ -37,6 +37,7 @@
           - girder-oauth
           - girder-sentry
           - girder-hashsum-download
+          - girder-download-statistics
         virtualenv: "{{ girder_virtualenv }}"
         state: latest
       notify:
