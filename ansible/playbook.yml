@@ -31,6 +31,12 @@
         src: files/config
         dest: "{{ ansible_env.HOME }}/.aws/config"
 
+    - name: Copy dandi plugin
+      copy:
+        src: girder-dandi.tar.gz
+        dest: /tmp/girder-dandi.tar.gz
+        force: true
+
     - name: Install Girder plugins
       pip:
         name:
@@ -38,6 +44,7 @@
           - girder-sentry
           - girder-hashsum-download
           - girder-download-statistics
+          - /tmp/girder-dandi.tar.gz
         virtualenv: "{{ girder_virtualenv }}"
         state: latest
       notify:
