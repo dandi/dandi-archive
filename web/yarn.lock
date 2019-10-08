@@ -669,10 +669,9 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@girder/components@^2.0.1":
+"@girder/components@girder/girder_web_components#feature/details":
   version "2.0.1"
-  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.0.1.tgz#d65e5de4ab73760fe95b7f79b1ebdb6cd0dbac2f"
-  integrity sha512-SQG7HyBxXoQI24O/D7vKf+xtwHi8nNLdf9seLDubjwXBG7R1KdzpZCjLDQ5jK6+4+eNdOrByRqP4wRPNE9NGQw==
+  resolved "https://codeload.github.com/girder/girder_web_components/tar.gz/88298f6fb9cc046429f97b7bdeaf0875242b13da"
   dependencies:
     "@mdi/font" "^3.5.95"
     axios "^0.18.1"

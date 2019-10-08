@@ -5,7 +5,7 @@
     </v-toolbar-title>
     <v-spacer/>
     <girder-search dark @select="selectSearchResult" />
-    <v-btn v-if="loggedIn" text icon @click="logout">
+    <v-btn v-if="loggedIn" icon @click="logout">
       <v-icon>$vuetify.icons.logout</v-icon>
     </v-btn>
   </v-app-bar>

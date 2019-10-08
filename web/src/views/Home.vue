@@ -1,31 +1,32 @@
 <template>
-  <v-row>
-    <v-col v-if="!loggedIn" lg=4 md=5 sm=12>
-      <girder-auth
-          :force-otp="false"
-          :show-forgot-password="false"
-          :oauth="true"
-      />
-    </v-col>
-    <v-col>
-      <girder-file-manager
-          :selectable="true"
-          :location.sync="location"
-          :upload-enabled="false"
-          @selection-changed="selectionChanged" />
-    </v-col>
-  </v-row>
+  <v-container>
+    <v-row v-if="!loggedIn">
+      <v-col cols="12">
+        <girder-auth :force-otp="false"  :show-forgot-password="false"  :oauth="true" />
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col :cols="selected.length ? 8 : 12">
+        <girder-file-manager
+            :selectable="true"
+            :location.sync="location"
+            :upload-enabled="false"
+            @selection-changed="setSelected" />
+      </v-col>
+      <v-col cols="4" v-if="selected.length">
+        <girder-data-details :value="selected"/>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
-import {
-  mapActions, mapGetters, mapMutations, mapState,
-} from 'vuex';
-import { Authentication as GirderAuth } from '@girder/components/src/components';
+import { mapGetters, mapMutations, mapState } from 'vuex';
+import { Authentication as GirderAuth, DataDetails as GirderDataDetails } from '@girder/components/src/components';
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
 
 export default {
-  components: { GirderAuth, GirderFileManager },
+  components: { GirderAuth, GirderDataDetails, GirderFileManager },
   computed: {
     location: {
       get() {
@@ -35,15 +36,11 @@ export default {
         this.setBrowseLocation(value);
       },
     },
-    ...mapState(['browseLocation']),
+    // TODO selected should actually be passed down into the data browser, see
+    // https://github.com/girder/girder_web_components/pull/181
+    ...mapState(['browseLocation', 'selected']),
     ...mapGetters(['loggedIn']),
   },
-  methods: {
-    selectionChanged(event) {
-      this.setSelected(event);
-    },
-    ...mapActions(['setSelected']),
-    ...mapMutations(['setBrowseLocation']),
-  },
+  methods: mapMutations(['setBrowseLocation', 'setSelected']),
 };
 </script>

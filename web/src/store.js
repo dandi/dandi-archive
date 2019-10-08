@@ -7,6 +7,7 @@ export default new Vuex.Store({
   state: {
     girderRest: null,
     browseLocation: null,
+    selected: [],
   },
   getters: {
     loggedIn: state => !!state.girderRest.user,
@@ -18,10 +19,21 @@ export default new Vuex.Store({
     setGirderRest(state, gr) {
       state.girderRest = gr;
     },
+    setSelected(state, selected) {
+      state.selected = selected;
+    },
   },
   actions: {
-    selectSearchResult(r) {
-      console.log(r);
+    async selectSearchResult({ state, commit }, result) {
+      commit('setSelected', []);
+
+      if (result._modelType === 'item') {
+        const resp = await state.girderRest.get(`folder/${result.folderId}`);
+        commit('setBrowseLocation', resp.data);
+        commit('setSelected', [result]);
+      } else {
+        commit('setBrowseLocation', result);
+      }
     },
     async logout({ state }) {
       await state.girderRest.logout();
