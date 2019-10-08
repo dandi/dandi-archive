@@ -28,6 +28,13 @@ jobs:
           name: Change key permission
           command: chmod 600 "$HOME/girder-dandi-server.pem"
       - run:
+          name: Create sdist for dandi plugin
+          working_directory: ./girder-dandi-archive
+          command: python setup.py sdist
+      - run:
+          name: Move contents of sdist to a known location
+          command: mv -v girder-dandi-archive/dist/* ansible/girder-dandi.tar.gz
+      - run:
           name: Run ansible playbook
           working_directory: ./ansible
           command: . ./provision.sh
