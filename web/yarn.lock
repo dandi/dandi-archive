@@ -669,10 +669,9 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@girder/components@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.0.0.tgz#a3db61e3fd353fc6dbafe78c3c15f2ae6846b6e1"
-  integrity sha512-U+uy2/sX7W/nLQ3lmVtzf7y9y/BiXDV5icGo/rlIqMVVLoA2TMbQ1bfYbAk54hC7Gc0XFfoclxXWYZr1leVeDQ==
+"@girder/components@girder/girder_web_components#feature/details":
+  version "2.0.1"
+  resolved "https://codeload.github.com/girder/girder_web_components/tar.gz/88298f6fb9cc046429f97b7bdeaf0875242b13da"
   dependencies:
     "@mdi/font" "^3.5.95"
     axios "^0.18.1"
@@ -8682,6 +8681,11 @@ vuetify@^2.0.19, vuetify@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.1.1.tgz#1578167f9adc0046d6c63f04d5e2d0fee1bfc5c2"
   integrity sha512-NVpJeJxm9cEY2L3xptxwMGihtBju2RhZjbGluDQ9epjzqIJATGXeVjjGHUhx4cWXwGGVvusVVacGFWcWWRHAxQ==
+
+vuex-router-sync@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/vuex-router-sync/-/vuex-router-sync-5.0.0.tgz#1a225c17a1dd9e2f74af0a1b2c62072e9492b305"
+  integrity sha512-Mry2sO4kiAG64714X1CFpTA/shUH1DmkZ26DFDtwoM/yyx6OtMrc+MxrU+7vvbNLO9LSpgwkiJ8W+rlmRtsM+w==
 
 vuex@^3.1.1:
   version "3.1.1"
