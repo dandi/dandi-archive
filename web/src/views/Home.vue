@@ -14,7 +14,7 @@
             @selection-changed="setSelected" />
       </v-col>
       <v-col cols="4" v-if="selected.length">
-        <girder-data-details :value="selected"/>
+        <girder-data-details :value="selected" :action-keys="actions" />
       </v-col>
     </v-row>
   </v-container>
@@ -23,11 +23,28 @@
 <script>
 import { mapGetters, mapMutations, mapState } from 'vuex';
 import { Authentication as GirderAuth, DataDetails as GirderDataDetails } from '@girder/components/src/components';
+import { DefaultActionKeys } from '@girder/components/src/components/DataDetails.vue';
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
+
+const JUPYTER_ROOT = process.env.JUPYTER_ROOT || '/jupyter/some_notebook'; // TODO url
+const actionKeys = [
+  {
+    for: ['item'],
+    name: 'Open in Jupyter',
+    icon: 'mdi-language-python',
+    color: 'primary',
+    handler() {
+      const { value: items } = this;
+      window.open(`${JUPYTER_ROOT}?item=${items[0]._id}`, '_blank');
+    },
+  },
+  ...DefaultActionKeys,
+];
 
 export default {
   components: { GirderAuth, GirderDataDetails, GirderFileManager },
   computed: {
+    actions: () => actionKeys,
     location: {
       get() {
         return this.browseLocation;
