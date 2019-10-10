@@ -11,7 +11,8 @@
             :selectable="true"
             :location.sync="location"
             :upload-enabled="false"
-            @selection-changed="setSelected" />
+            :value="selected"
+            @input="setSelected" />
       </v-col>
       <v-col cols="4" v-if="selected.length">
         <girder-data-details :value="selected" :action-keys="actions" />
@@ -53,8 +54,6 @@ export default {
         this.setBrowseLocation(value);
       },
     },
-    // TODO selected should actually be passed down into the data browser, see
-    // https://github.com/girder/girder_web_components/pull/181
     ...mapState(['browseLocation', 'selected']),
     ...mapGetters(['loggedIn']),
   },
