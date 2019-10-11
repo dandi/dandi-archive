@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@girder/components": "^2.0.2",
+    "@sentry/browser": "^5.7.0",
+    "@sentry/integrations": "^5.7.0",
     "core-js": "^2.6.5",
     "vue": "^2.6.10",
     "vue-router": "^3.0.3",
