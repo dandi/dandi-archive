@@ -1,9 +1,9 @@
 from girder import plugin
+from girder.utility import search
 
 
 class GirderPlugin(plugin.GirderPlugin):
     DISPLAY_NAME = 'DANDI Archive'
 
     def load(self, info):
-        # add plugin loading logic here
-        pass
+        search.addSearchMode('dandi', search.getSearchModeHandler('text'))
