@@ -36,20 +36,11 @@
         name:
           - girder-oauth
           - girder-sentry
+          - girder-hashsum-download
           - girder-download-statistics
           - "git+https://github.com/dandi/dandiarchive@{{ lookup('env', 'CIRCLE_SHA1') }}#subdirectory=girder-dandi-archive"
         virtualenv: "{{ girder_virtualenv }}"
         state: latest
-      notify:
-        - Build Girder web client
-        - Restart Girder
-
-    - name: Remove Girder plugins
-      pip:
-        name:
-          - girder-hashsum-download
-        virtualenv: "{{ girder_virtualenv }}"
-        state: absent
       notify:
         - Build Girder web client
         - Restart Girder
