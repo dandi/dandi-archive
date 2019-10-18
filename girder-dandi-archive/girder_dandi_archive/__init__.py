@@ -31,6 +31,8 @@ def dandiSearchHandler(query, types, user=None, level=None, limit=0, offset=0):
 def tokenize_search_string(search_string):
     search_string = search_string.lower()
     tokens = search_string.split()
+    # use '+' as a space inside a token, e.g. nuo+li => 'nuo li'
+    tokens = [token.replace('+', ' ') for token in tokens]
     return tokens
 
 
