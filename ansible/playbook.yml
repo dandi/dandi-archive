@@ -41,6 +41,9 @@
           - "git+https://github.com/dandi/dandiarchive@{{ lookup('env', 'CIRCLE_SHA1') }}#subdirectory=girder-dandi-archive"
         virtualenv: "{{ girder_virtualenv }}"
         state: latest
+
+    - name: Make sure handlers are called
+      command: /bin/true
       notify:
         - Build Girder web client
         - Restart Girder
