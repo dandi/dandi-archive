@@ -21,6 +21,16 @@
         update_cache: true
       become: true
 
+    - name: Install mongo-tools
+      apt:
+        name: mongodb-org-tools
+      become: true
+
+    - name: Create backups directory
+      file:
+        path: "{{ ansible_env.HOME }}/backups"
+        state: directory
+
     - name: Create .aws directory
       file:
         path: "{{ ansible_env.HOME }}/.aws"
@@ -44,3 +54,21 @@
       notify:
         - Build Girder web client
         - Restart Girder
+
+  post_tasks:
+    - name: Copy backup-mongo script
+      copy:
+        src: backup-mongo
+        dest: /usr/local/bin
+        mode: 0775
+      become: true
+      become_user: root
+
+    - name: Install backup-mongo cron job
+      cron:
+        name: mongodump
+        job: "/usr/local/bin/backup-mongo"
+        special_time: daily
+      become: true
+      become_user: root
+
