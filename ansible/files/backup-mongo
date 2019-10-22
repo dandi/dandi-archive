@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+# backup all databases
+/usr/bin/mongodump --gzip --out "$HOME/backups/mongo-backup-$(date +%Y%m%dT%H%M%S)"
+
+# upload backup to s3
+/usr/bin/aws s3 cp ~/backups s3://dandiarchive/mongo-backup/ --exclude "*" --include "mongo-backup-*" --recursive
+
+# remove backups locally
+rm -rf ~/backups/*
