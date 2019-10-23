@@ -181,34 +181,3 @@ def convert_search_to_mongo_query(search_string):
     validate_search_key_values(search_keys)
     query = build_query_from_query_terms(search_keys)
     return query
-
-
-# valid_search_strings = {
-#    "more_units_than:3": {'meta.number_of_units': {'$gt': 3}},
-#    "more_units_than:3 fewer_units_than:20": {'meta.number_of_units': {'$gt': 3, '$lt': 20}},
-#    "doi:10.1101/354340": {'meta.related_publications': '10.1101/354340'},
-#    "keyword:mouse": {'meta.keywords': 'mouse'},
-#    "keyword:mouse keyword:burgle": {'meta.keywords': {'$all': ['mouse', 'burgle']}}
-# }
-#
-# invalid_search_strings = {
-#    ":": SyntaxError("Malformed key value pair"),
-#    "key:": ["Malformed key value pair"]: SyntaxError('Malformed key value pair'),
-#    "key:key:value": ["Malformed key value pair"]: SyntaxError('Malformed key value pair'),
-#    ":value": ["Malformed key value pair"]: SyntaxError('Malformed key value pair'),
-#    "number_of_shrews:3": ['Invalid key']: ValueError: Invalid key number_of_shrews,
-#    "doi:doi.org/10.1101/354340": ['Invalid DOI specifier']:
-#        ValueError: Invalid value doi.org/10.1101/354340 for key doi
-# }
-
-# for ss,expected_result in valid_search_strings.items():
-#    # TODO turn this into a unit test
-#    result = convert_search_to_mongo_query(ss)
-#    print(result)
-#    print(expected_result)
-#
-# for ss,expected_result in invalid_search_strings.items():
-# TODO turn this into a unit test
-# result = convert_search_to_mongo_query(ss)
-# print(result)
-# print(expected_result)
