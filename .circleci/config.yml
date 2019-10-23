@@ -3,6 +3,8 @@ jobs:
   test:
     docker:
       - image: circleci/python:3.7.2
+      - image: circleci/mongo:4.1
+        port: 27017:27017
     steps:
       - checkout
       - run:
