@@ -46,7 +46,6 @@
         name:
           - girder-oauth
           - girder-sentry
-          - girder-hashsum-download
           - girder-download-statistics
           - "git+https://github.com/dandi/dandiarchive@{{ lookup('env', 'CIRCLE_SHA1') }}#subdirectory=girder-dandi-archive"
         virtualenv: "{{ girder_virtualenv }}"
