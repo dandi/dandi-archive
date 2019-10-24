@@ -1,5 +1,31 @@
 version: 2
 jobs:
+  test:
+    docker:
+      - image: circleci/python:3.7.2
+      - image: circleci/mongo:4.1
+        port: 27017:27017
+    steps:
+      - checkout
+      - run:
+          name: Create a virtualenv for testing
+          command: |
+            python3 -m venv deployment_env
+            . deployment_env/bin/activate
+      - run:
+          name: Activate virtual environment
+          command: echo ". $CIRCLE_WORKING_DIRECTORY/deployment_env/bin/activate" >> $BASH_ENV
+      - run:
+          name: Upgrade pip
+          command: pip install -U pip
+      - run:
+          name: Install tox
+          command: pip install tox
+      - run:
+          name: Run tests
+          command: tox
+          working_directory: girder-dandi-archive
+
   provision:
     docker:
       - image: circleci/python:3.7.2
@@ -20,7 +46,7 @@ jobs:
           command: pip install -U pip
       - run:
           name: Install ansible
-          command: pip  install ansible
+          command: pip install ansible
       - run:
           name: Echo key to a file
           command: echo -e "$DEPLOYKEY" > "$HOME/girder-dandi-server.pem"
@@ -34,9 +60,12 @@ jobs:
 
 workflows:
   version: 2
-  deploy:
+  test_and_deploy:
     jobs:
+      - test
       - provision:
+          requires:
+            - test
           filters:
             branches:
               only: master
