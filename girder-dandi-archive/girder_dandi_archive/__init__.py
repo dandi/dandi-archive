@@ -10,16 +10,21 @@ class GirderPlugin(GirderPlugin):
     DISPLAY_NAME = 'DANDI Archive'
 
     def load(self, info):
-        search.addSearchMode('dandi', dandiSearchHandler)
+        search.addSearchMode('dandi', dandi_search_handler)
 
 
-def dandiSearchHandler(query, types, user=None, level=None, limit=0, offset=0):
+def dandi_search_handler(query, types, user=None, level=None, limit=0, offset=0):
     # TODO currently swallowing errors and returning empty list
     try:
         query = convert_search_to_mongo_query(query)
-        items = list(Item().findWithPermissions(query=query, types=types, user=user))
-        for item in items:
-            item['_modelType'] = 'item'  # TODO why is this necessary to provide?
+        if not query:
+            # Don't pass along an empty query, as that is the result of not
+            # specifying the query using the search DSL.
+            items = []
+        else:
+            items = list(Item().findWithPermissions(query=query, types=types, user=user))
+            for item in items:
+                item['_modelType'] = 'item'  # TODO why is this necessary to provide?
     except SyntaxError:
         items = []
     except ValueError:

@@ -1,5 +1,5 @@
 import pytest
-from girder_dandi_archive import convert_search_to_mongo_query
+from girder_dandi_archive import convert_search_to_mongo_query, dandi_search_handler
 
 
 @pytest.mark.plugin('dandi_archive')
@@ -28,3 +28,12 @@ def test_valid_search_strings(string, expected):
 def test_invalid_search_strings(string, error, message):
     with pytest.raises(error, match=message):
         convert_search_to_mongo_query(string)
+
+
+@pytest.mark.plugin('dandi_archive')
+@pytest.mark.parametrize(
+    ['query_string', 'expected'],
+    [('abracadabra', {'item': []})]
+)
+def test_dandi_search_handler_with_random_string(query_string, expected):
+    assert dandi_search_handler(query_string, ['item']) == expected
