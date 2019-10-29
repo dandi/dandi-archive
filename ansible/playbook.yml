@@ -44,10 +44,6 @@
     - name: Install Girder plugins
       pip:
         name:
-          - girder-download-statistics
-          - girder-homepage
-          - girder-oauth
-          - girder-sentry
           - "git+https://github.com/dandi/dandiarchive@{{ lookup('env', 'CIRCLE_SHA1') }}#subdirectory=girder-dandi-archive"
         virtualenv: "{{ girder_virtualenv }}"
         state: latest
