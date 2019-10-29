@@ -1,4 +1,4 @@
-# dandiarchive
+# dandiarchive [![CircleCI](https://circleci.com/gh/dandi/dandiarchive/tree/master.svg?style=svg)](https://circleci.com/gh/dandi/dandiarchive/tree/master)
 Infrastructure and code for the dandiarchive
 
 Folders in this repo:
