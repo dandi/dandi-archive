@@ -82,3 +82,33 @@ Currently there are only server side tests. In order to run the tests:
     pip install -r requirements-dev.txt
     tox
 ```
+
+## Docker
+
+Currently there is a docker-compose file which gets the necessary infrastructure up and running for dandiarchive.
+
+In order to get up and running:
+
+```
+cd docker
+docker-compose build
+docker-compose up
+```
+
+This will spin up 4 containers:
+
+1) MongoDB
+2) Girder
+3) Vue Web Client
+4) Provision
+
+Provision container creates a Girder admin user, creates a filesystem assetstore and set necessary CORS settings.
+Credentials are username: admin, password: letmein.
+
+When the provision container finishes, it will exit. The other three containers will remain running.
+
+After docker-compose up succeeds and the provision container finishes, you should have:
+
+1) Girder up and running on port 8091
+2) Web client up and running on port 8092
+3) MongoDB container up and running, and only visible to the other docker containers
