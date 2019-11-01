@@ -16,7 +16,7 @@ def setGirderSetting(key, value, gc):
 
 
 def createInitialUser(apiUrl):
-    # no try required here, just get a 400 on failure
+    # no try/except required here, just get a 400 on failure
     requests.post(
         '{}/user'.format(apiUrl),
         data={"login": ADMIN_USER, "email": "admin@admin.com",
@@ -39,7 +39,7 @@ def check_admin_login(apiUrl):
     try:
         gc.authenticate(ADMIN_USER, ADMIN_PASS)
     except girder_client.AuthenticationError:
-        print('Cannot login admin, it probably does not exist')
+        print('Cannot login as "admin", that user probably does not exist')
         return False
     return True
 
