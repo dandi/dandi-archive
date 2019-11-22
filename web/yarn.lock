@@ -669,10 +669,9 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@girder/components@^2.0.2":
+"@girder/components@git+https://github.com/girder/girder_web_components.git#0a9995406b088c04d9b0225b504f402f2a642c1b":
   version "2.0.2"
-  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.0.2.tgz#d35cd748f2d9a5f73554b8c9bb5e65dc0b99c0e8"
-  integrity sha512-FNd7z791Ys2nGxkKbHlRrLQ7EW3j7sdYHsHvdOPDcwgtDoPVzvBVhMEtBFs7ld9gGiB1dA31GNfQ1/ZmsJOn0w==
+  resolved "git+https://github.com/girder/girder_web_components.git#0a9995406b088c04d9b0225b504f402f2a642c1b"
   dependencies:
     "@mdi/font" "^3.5.95"
     axios "^0.18.1"
@@ -682,7 +681,21 @@
     qs "^6.5.2"
     vue "^2.6.10"
     vue-async-computed "^3.4.1"
-    vuetify "^2.0.19"
+    vuetify "^2.1.10"
+
+"@girder/components@git+https://github.com/girder/girder_web_components.git#393a48e9dc94a7d5350e711f1fb68a3bf3898ff9":
+  version "2.0.2"
+  resolved "git+https://github.com/girder/girder_web_components.git#393a48e9dc94a7d5350e711f1fb68a3bf3898ff9"
+  dependencies:
+    "@mdi/font" "^3.5.95"
+    axios "^0.18.1"
+    js-cookie "^2.2.0"
+    markdown-it "^8.4.2"
+    moment "^2.24.0"
+    qs "^6.5.2"
+    vue "^2.6.10"
+    vue-async-computed "^3.4.1"
+    vuetify "^2.1.10"
 
 "@hapi/address@2.x.x":
   version "2.1.2"
@@ -8739,10 +8752,15 @@ vuetify-loader@^1.3.0:
   dependencies:
     loader-utils "^1.2.0"
 
-vuetify@^2.0.19, vuetify@^2.1.1:
+vuetify@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.1.1.tgz#1578167f9adc0046d6c63f04d5e2d0fee1bfc5c2"
   integrity sha512-NVpJeJxm9cEY2L3xptxwMGihtBju2RhZjbGluDQ9epjzqIJATGXeVjjGHUhx4cWXwGGVvusVVacGFWcWWRHAxQ==
+
+vuetify@^2.1.10:
+  version "2.1.11"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.1.11.tgz#cd9b6ce90763e69017932153aab39bc6861c7226"
+  integrity sha512-WkHtAeCQldbESC/wsUCXdBt3i+Wph56IWVvWNJO35tB4tFqqRLmbbCO/c5m+pdm5Byg36rs48+R+96Herxs+gA==
 
 vuex-router-sync@^5.0.0:
   version "5.0.0"

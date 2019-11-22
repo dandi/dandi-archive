@@ -22,6 +22,19 @@
           </v-list-item-subtitle>
         </v-list-item-content>
       </template>
+      <template v-slot:noresult="{ searchText }">
+        <v-list-item-action>
+          <v-icon>$vuetify.icons.alert</v-icon>
+        </v-list-item-action>
+        <v-list-item-content>
+          <v-list-item-title>
+            No results found for query '{{ searchText }}'
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            Please use our search grammar.
+          </v-list-item-subtitle>
+        </v-list-item-content>
+      </template>
     </girder-search>
     <v-btn v-if="loggedIn" icon dark @click="logout">
       <v-icon>$vuetify.icons.logout</v-icon>
