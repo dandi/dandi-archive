@@ -12,7 +12,9 @@
             :location.sync="location"
             :upload-enabled="false"
             :value="selected"
-            @input="setSelected" />
+            @input="setSelected"
+            :initial-items-per-page="25"
+            :items-per-page-options="[10,25,50,100,-1]" />
       </v-col>
       <v-col cols="4" v-if="selected.length">
         <girder-data-details :value="selected" :action-keys="actions" />
