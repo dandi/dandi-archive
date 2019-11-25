@@ -11,6 +11,7 @@ export default new Vuex.Store({
   },
   getters: {
     loggedIn: state => !!state.girderRest.user,
+    user: state => state.girderRest.user,
   },
   mutations: {
     setBrowseLocation(state, location) {
