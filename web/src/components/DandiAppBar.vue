@@ -1,12 +1,7 @@
 <template>
   <v-app-bar app color="primary">
     <v-toolbar-title>
-      <v-tooltip open-delay="1000" bottom>
-        <template #activator="{ on }">
-          <img v-on="on" class="logo" alt="DANDI logo" height="48px" src="../assets/logo.svg" />
-        </template>
-        <span>{{ version }}</span>
-      </v-tooltip>
+      <img class="logo" alt="DANDI logo" height="48px" src="../assets/logo.svg" />
     </v-toolbar-title>
     <v-spacer/>
     <girder-search @select="selectSearchResult" search-mode="dandi"
@@ -48,12 +43,7 @@ import { Search as GirderSearch } from '@girder/components/src/components';
 
 export default {
   components: { GirderSearch },
-  computed: {
-    ...mapGetters(['loggedIn']),
-    version() {
-      return process.env.VUE_APP_VERSION;
-    },
-  },
+  computed: mapGetters(['loggedIn']),
   methods: mapActions(['logout', 'selectSearchResult']),
 };
 </script>
