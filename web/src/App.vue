@@ -2,18 +2,18 @@
   <v-app class="dandi-app">
     <dandi-app-bar />
     <v-content>
-      <v-container>
-        <router-view/>
-      </v-container>
+      <router-view />
+      <DandiFooter />
     </v-content>
   </v-app>
 </template>
 
 <script>
 import DandiAppBar from './components/DandiAppBar.vue';
+import DandiFooter from './components/DandiFooter.vue';
 
 export default {
-  components: { DandiAppBar },
+  components: { DandiAppBar, DandiFooter },
 };
 </script>
 

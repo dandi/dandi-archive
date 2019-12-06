@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container style="height: 100%;">
     <v-row v-if="!loggedIn">
       <v-col cols="12">
         <girder-auth :force-otp="false"  :show-forgot-password="false"  :oauth="true" />

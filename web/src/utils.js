@@ -25,6 +25,29 @@ function getPathFromSelected(selected) {
   return `/selected/${selected.map(model => `${model._modelType}+${model._id}`).join('/')}`;
 }
 
+// https://stackoverflow.com/a/33928558/1643850 with slight modification
+function copyToClipboard(text) {
+  if (window.clipboardData && window.clipboardData.setData) {
+    // Internet Explorer-specific code path to prevent textarea being shown while dialog is visible.
+    return window.clipboardData.setData('Text', text);
+  } if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
+    const textarea = document.createElement('textarea');
+    textarea.textContent = text;
+    textarea.style.position = 'fixed'; // Prevent scrolling to bottom of page in Microsoft Edge.
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      return document.execCommand('copy'); // Security exception may be thrown by some browsers.
+    } catch (ex) {
+      return false;
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+  return false;
+}
+
 export {
-  getLocationFromRoute, getPathFromLocation, getSelectedFromRoute, getPathFromSelected,
+  getLocationFromRoute, getPathFromLocation, getSelectedFromRoute,
+  getPathFromSelected, copyToClipboard,
 };
