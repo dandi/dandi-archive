@@ -31,9 +31,25 @@
         </v-list-item-content>
       </template>
     </girder-search>
-    <v-btn v-if="loggedIn" icon dark @click="logout">
-      <v-icon>$vuetify.icons.logout</v-icon>
-    </v-btn>
+    <v-menu offset-y v-if="loggedIn">
+      <template v-slot:activator="{ on }">
+        <v-btn v-on="on" class="ml-2" icon dark>
+          <v-avatar color="primary darken-1">
+            {{ initials }}
+          </v-avatar>
+        </v-btn>
+      </template>
+      <v-list dense>
+        <v-list-item
+          @click="logout"
+        >
+          <v-list-item-icon class="mr-2">
+            <v-icon>$vuetify.icons.logout</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>Logout</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
   </v-app-bar>
 </template>
 
@@ -43,7 +59,25 @@ import { Search as GirderSearch } from '@girder/components/src/components';
 
 export default {
   components: { GirderSearch },
-  computed: mapGetters(['loggedIn']),
+  computed: {
+    ...mapGetters(['loggedIn', 'user']),
+    version() {
+      return process.env.VUE_APP_VERSION;
+    },
+    initials() {
+      const first = this.user.firstName;
+      const last = this.user.lastName;
+      if (first && last) {
+        return (
+          first.charAt(0).toLocaleUpperCase() + last.charAt(0).toLocaleUpperCase()
+        );
+      }
+      if (this.user.login) {
+        return this.user.login.slice(0, 2);
+      }
+      return 'NA';
+    },
+  },
   methods: mapActions(['logout', 'selectSearchResult']),
 };
 </script>
