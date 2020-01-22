@@ -54,7 +54,25 @@ const actionKeys = [
 export default {
   components: { GirderAuth, GirderDataDetails, GirderFileManager },
   computed: {
-    actions: () => actionKeys,
+    actions() {
+      let actions = actionKeys;
+      if (this.selected.length === 1 && this.selected[0].meta && this.selected[0].meta.dandiset) {
+        actions = [
+          {
+            for: ['folder'],
+            name: 'Edit DANDI Metadata',
+            icon: 'mdi-pencil',
+            color: 'primary',
+            handler() {
+              // TODO: dd redirect to new page here
+            },
+          },
+          ...actionKeys,
+        ];
+      }
+
+      return actions;
+    },
     location: {
       get() {
         return this.browseLocation;
