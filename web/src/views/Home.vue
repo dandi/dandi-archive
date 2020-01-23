@@ -57,6 +57,8 @@ export default {
     actions() {
       let actions = actionKeys;
       if (this.selected.length === 1 && this.selected[0].meta && this.selected[0].meta.dandiset) {
+        const id = this.selected[0]._id;
+
         actions = [
           {
             for: ['folder'],
@@ -64,7 +66,11 @@ export default {
             icon: 'mdi-pencil',
             color: 'primary',
             handler() {
-              // TODO: dd redirect to new page here
+              // eslint-disable-next-line
+              this.$router.push({
+                name: 'dandiset-metadata-viewer',
+                params: { id },
+              });
             },
           },
           ...actionKeys,
