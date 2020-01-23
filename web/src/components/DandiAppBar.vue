@@ -3,6 +3,17 @@
     <v-toolbar-title>
       <img class="logo" alt="DANDI logo" height="48px" src="../assets/logo.svg" />
     </v-toolbar-title>
+    <v-tooltip right>
+      <template v-slot:activator="{ on }">
+        <v-chip class="ml-2" color="secondary" v-on="on">
+          <v-icon left color="amber">$vuetify.icons.alert</v-icon>Early Access
+        </v-chip>
+      </template>
+      <span>
+        DANDI is currently running in limited access mode.
+        Public release isn't until March 2020.
+      </span>
+    </v-tooltip>
     <v-spacer/>
     <girder-search @select="selectSearchResult" search-mode="dandi"
         :search-types="['item']" :hide-options-menu="true" placeholder="Type search query" >
