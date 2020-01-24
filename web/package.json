@@ -16,7 +16,8 @@
     "vue-router": "^3.0.3",
     "vuetify": "^2.1.1",
     "vuex": "^3.1.1",
-    "vuex-router-sync": "^5.0.0"
+    "vuex-router-sync": "^5.0.0",
+    "lodash": "^4.17.15"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.11.0",
