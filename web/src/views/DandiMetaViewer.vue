@@ -32,12 +32,14 @@
 <script>
 import { mapState } from 'vuex';
 import { debounce } from 'lodash';
+import SCHEMA from '@/assets/json_schema.json';
 
 export default {
   props: ['id'],
   components: {},
   data() {
     return {
+      schema: SCHEMA,
       meta: {},
       errors: {},
     };

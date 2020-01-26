@@ -669,20 +669,6 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@girder/components@git+https://github.com/girder/girder_web_components.git#393a48e9dc94a7d5350e711f1fb68a3bf3898ff9":
-  version "2.0.2"
-  resolved "git+https://github.com/girder/girder_web_components.git#393a48e9dc94a7d5350e711f1fb68a3bf3898ff9"
-  dependencies:
-    "@mdi/font" "^3.5.95"
-    axios "^0.18.1"
-    js-cookie "^2.2.0"
-    markdown-it "^8.4.2"
-    moment "^2.24.0"
-    qs "^6.5.2"
-    vue "^2.6.10"
-    vue-async-computed "^3.4.1"
-    vuetify "^2.1.10"
-
 "@girder/components@git+https://github.com/girder/girder_web_components.git#791b9f2714089a15173e541d20622ea2e66a3cf8":
   version "2.0.2"
   resolved "git+https://github.com/girder/girder_web_components.git#791b9f2714089a15173e541d20622ea2e66a3cf8"
