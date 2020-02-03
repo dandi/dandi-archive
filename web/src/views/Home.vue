@@ -62,7 +62,7 @@ export default {
         actions = [
           {
             for: ['folder'],
-            name: 'Edit DANDI Metadata',
+            name: 'View DANDI Metadata',
             icon: 'mdi-pencil',
             color: 'primary',
             handler() {
