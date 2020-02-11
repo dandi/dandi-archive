@@ -8,7 +8,7 @@
       "properties": {
         "name": {
           "type": "string",
-          "title": "The Name Schema",
+          "title": "Name",
           "default": "",
           "examples": [
             "John Doe"
@@ -17,7 +17,7 @@
         },
         "identifier": {
           "type": "string",
-          "title": "The Identifier Schema",
+          "title": "Identifier",
           "default": "",
           "examples": [
             "0000-0002-1825-0097"
@@ -26,7 +26,7 @@
         },
         "email": {
           "type": "string",
-          "title": "The Email Schema",
+          "title": "Email",
           "default": "",
           "examples": [
             "johndoe@email.com"
@@ -35,7 +35,7 @@
         },
         "affiliation": {
           "type": "string",
-          "title": "The Affiliation Schema",
+          "title": "Affiliation",
           "default": "",
           "examples": [
             ""
@@ -44,7 +44,7 @@
         },
         "address": {
           "type": "string",
-          "title": "The Address Schema",
+          "title": "Address",
           "default": "",
           "examples": [
             ""
@@ -53,7 +53,7 @@
         },
         "webpage": {
           "type": "string",
-          "title": "The Webpage Schema",
+          "title": "Webpage",
           "default": "",
           "examples": [
             "example@example.com"
@@ -75,6 +75,7 @@
     "contributor",
     "director",
     "creator",
+    "dataDownload",
     "contactPoint",
     "sameAs",
     "license",
@@ -115,19 +116,23 @@
     },
     "author": {
       "$id": "#/properties/author",
-      "$ref": "#/definitions/contributor"
+      "$ref": "#/definitions/contributor",
+      "title": "Author"
     },
     "contributor": {
       "$id": "#/properties/contributor",
-      "$ref": "#/definitions/contributor"
+      "$ref": "#/definitions/contributor",
+      "title": "Contributor"
     },
     "director": {
       "$id": "#/properties/director",
-      "$ref": "#/definitions/contributor"
+      "$ref": "#/definitions/contributor",
+      "title": "Director"
     },
     "creator": {
       "$id": "#/properties/creator",
-      "$ref": "#/definitions/contributor"
+      "$ref": "#/definitions/contributor",
+      "title": "Creator"
     },
     "contactPoint": {
       "$id": "#/properties/contactPoint",
@@ -188,7 +193,7 @@
         "contentURL": {
           "$id": "#/properties/dataDownload/properties/contentURL",
           "type": "string",
-          "title": "The Contenturl Schema",
+          "title": "Content URL",
           "default": "",
           "examples": [
             "www.example.com"
@@ -198,7 +203,7 @@
         "name": {
           "$id": "#/properties/dataDownload/properties/name",
           "type": "string",
-          "title": "The Name Schema",
+          "title": "Name",
           "default": "",
           "examples": [
             "Data Name"
@@ -208,7 +213,7 @@
         "contentSize": {
           "$id": "#/properties/dataDownload/properties/contentSize",
           "type": "string",
-          "title": "The Contentsize Schema",
+          "title": "Content Size",
           "default": "",
           "examples": [
             "5GB"
@@ -218,7 +223,7 @@
         "datePublished": {
           "$id": "#/properties/dataDownload/properties/datePublished",
           "type": "string",
-          "title": "The Datepublished Schema",
+          "title": "Date Published",
           "default": "",
           "examples": [
             "2020-01-01"
@@ -228,7 +233,7 @@
         "dateModified": {
           "$id": "#/properties/dataDownload/properties/dateModified",
           "type": "string",
-          "title": "The Datemodified Schema",
+          "title": "Date Modified",
           "default": "",
           "examples": [
             "2020-23-01"
@@ -238,7 +243,7 @@
         "measurementType": {
           "$id": "#/properties/dataDownload/properties/measurementType",
           "type": "string",
-          "title": "The Measurementtype Schema",
+          "title": "Measurement Type",
           "default": "",
           "examples": [
             "?"
@@ -280,7 +285,7 @@
         "identifier": {
           "$id": "#/properties/creativeWork/properties/identifier",
           "type": "string",
-          "title": "The Identifier Schema",
+          "title": "Identifier",
           "default": "",
           "examples": [
             "?"
