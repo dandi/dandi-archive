@@ -1,91 +1,89 @@
 <template>
   <div>
-    <h1>DANDI Metadata</h1>
-    <v-container>
-      <v-row>
-        <v-col sm="6">
-          <v-card>
-            <json-editor
-              ref="JsonEditor"
-              :schema="schema"
-              v-model="model"
-              class="pa-2"
-              @input="test"
-            />
-          </v-card>
-        </v-col>
-        <v-col sm="6">
-          <v-card>
-            <v-card-title>Schema Adherent Data</v-card-title>
-            <v-divider />
-            <vue-json-pretty class="ma-2" :data="model" highlightMouseoverNode />
-            <v-card-actions>
-              <v-switch label="Yaml" v-model="yamlOutput"/>
-              <v-btn icon color="primary">
-                <v-icon>mdi-download</v-icon>
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+    <meta-editor v-if="edit && Object.entries(meta).length" :schema="schema" :model="meta" />
+    <template v-else>
+      <v-container>
+        <v-row>
+          <v-col sm="6">
+            <v-card>
+              <v-card-title>
+                {{meta.name}}
+                <v-chip
+                  v-if="!published"
+                  class="yellow lighten-2 ml-2"
+                  round
+                >
+                  This dataset has not been published!
+                </v-chip>
+              </v-card-title>
+              <v-divider />
+              <v-list dense>
+                <v-list-item>
+                  <v-list-item-content>
+                    Uploaded by {{uploader}}
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item>
+                  <v-list-item-content>
+                    Last modified {{last_modified}}
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item v-if="details">
+                  <v-list-item-content>
+                    Size: {{computedSize}}, Files: {{details.nItems}}, Folders: {{details.nFolders}}
+                  </v-list-item-content>
+                </v-list-item>
+                <v-divider />
+                <template v-if="meta.contributors">
+                  <v-subheader>Contributors</v-subheader>
+                  <v-list-item v-for="(item, i) in meta.contributors" :key="i">
+                    <v-list-item-content>{{item}}</v-list-item-content>
+                  </v-list-item>
+                </template>
+              </v-list>
+              <v-card-actions>
+                <v-btn @click="edit=true">
+                  edit
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </template>
   </div>
 </template>
+
 <script>
+import filesize from 'filesize';
 import { mapState } from 'vuex';
 import { debounce } from 'lodash';
-import JsonEditor from 'vue-json-ui-editor';
-import VueJsonPretty from 'vue-json-pretty';
-import jsYaml from 'js-yaml';
-import {
-  VForm,
-  VTextField,
-  VTextarea,
-  VSelect,
-  VInput,
-  VRadio,
-  VCheckbox,
-  VRating,
-  VSwitch,
-} from 'vuetify/lib';
 
-// import SCHEMA from '@/assets/subscription_schema.json';
-import SCHEMA from '@/assets/json_schema.json';
-
-const commonProps = { solo: true };
-
-JsonEditor.setComponent('form', VForm);
-JsonEditor.setComponent('text', VTextField, commonProps);
-JsonEditor.setComponent('textarea', VTextarea, commonProps);
-JsonEditor.setComponent('select', VSelect, commonProps);
-JsonEditor.setComponent('number', VTextField, { ...commonProps, number: true });
-JsonEditor.setComponent('input', VInput, commonProps);
-JsonEditor.setComponent('radio', VRadio);
-JsonEditor.setComponent('checkbox', VCheckbox);
-JsonEditor.setComponent('rate', VRating);
-JsonEditor.setComponent('email', VInput, commonProps);
-JsonEditor.setComponent('url', VInput, commonProps);
-JsonEditor.setComponent('switch', VSwitch);
+import MetaEditor from '@/components/MetaEditor.vue';
+import SCHEMA from '@/assets/base_schema.json';
 
 export default {
+  name: 'DandisetLandingPage',
   props: ['id'],
   components: {
-    JsonEditor,
-    VueJsonPretty,
+    MetaEditor,
   },
   data() {
     return {
       valid: false,
       schema: SCHEMA,
-      yamlOutput: false,
       meta: {},
-      errors: {},
-      model: {},
+      edit: false,
+      published: false,
+      uploader: '',
+      last_modified: null,
+      details: null,
     };
   },
   computed: {
-    yaml() {
-      return jsYaml.dump(this.model);
+    computedSize() {
+      if (!this.selected || !this.selected.size) return null;
+      return filesize(this.selected.size);
     },
     ...mapState({
       selected: state => (state.selected.length === 1 ? state.selected[0] : undefined),
@@ -93,11 +91,24 @@ export default {
     }),
   },
   watch: {
-    selected(val) {
+    async selected(val) {
       if (!val || !val.meta || !val.meta.dandiset) {
         this.meta = {};
       } else {
         this.meta = { ...val.meta.dandiset };
+      }
+
+      this.last_modified = new Date(val.updated).toString();
+
+      let res = await this.girderRest.get(`/user/${val.creatorId}`);
+      if (res.status === 200) {
+        const { data: { firstName, lastName } } = res;
+        this.uploader = `${firstName} ${lastName}`;
+      }
+
+      res = await this.girderRest.get(`/folder/${val._id}/details`);
+      if (res.status === 200) {
+        this.details = res.data;
       }
     },
     valid: debounce(function debouncedValid(valid) {
