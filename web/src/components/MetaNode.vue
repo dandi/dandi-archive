@@ -1,47 +1,79 @@
 <template>
 <div>
-  <template v-for="(item, i) in requiredProperties">
-    <v-card :key="i" v-if="fieldType(item) === 'object'">
-      <v-card-title>{{item.title}}</v-card-title>
-      <meta-node
-        :item="item"
-        :initial="initial[i]"
-        :level="level+1"
-        @input="handleInput"
-      />
-    </v-card>
-    <v-list
-      v-else-if="fieldType(item) === 'array'"
-      :key="i"
-      :class="`ml-${level*2}`"
-    >
-      <v-subheader>{{item.title}}</v-subheader>
-    </v-list>
+  <template v-if="leaf">
     <v-text-field
-      v-else-if="fieldType(item) === 'number'"
-      :key="i"
+      v-if="fieldType(item) === 'number'"
       :label="item.title"
       type="number"
-      v-model.number="value[i]"
+      v-model="value"
+      @input="bubbleInput"
       :class="`ml-${level*2}`"
+      dense
     />
     <v-text-field
       v-else
-      :key="i"
       :label="item.title"
       :type="fieldType(item)"
-      v-model="value[i]"
+      v-model="value"
+      @input="bubbleInput"
       :class="`ml-${level*2}`"
+      dense
     />
   </template>
+  <template v-else v-for="(prop, k) in requiredProperties">
+    <v-card :key="k" class="mb-2" flat>
+      <v-card-title v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
+      <meta-node
+        v-if="prop.type === 'object'"
+        :item="prop"
+        :initial="value[k]"
+        :level="level+1"
+        v-model="value[k]"
+        @input="bubbleInput"
+      />
+      <template v-else>
+        <meta-node
+          :item="prop"
+          :initial="value[k]"
+          :level="level+1"
+          v-model="value[k]"
+          @input="bubbleInput"
+        />
+      </template>
+    </v-card>
+  </template>
+  <!-- <v-card :key="k" class="mb-2" flat>
+    <template v-if="fieldType(item) === 'object'" v-for="(prop, k) in requiredProperties">
+      <v-card-title :key="k" v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
+      <meta-node
+        :key="k"
+        :item="prop"
+        :initial="value[k]"
+        :level="level+1"
+        v-model="value[k]"
+        @input="bubbleInput"
+      />
+    </template>
+    <template v-else>
+      <meta-node
+        :item="prop"
+        :initial="value[k]"
+        :level="level+1"
+        v-model="value[k]"
+        @input="bubbleInput"
+      />
+    </template>
+  </v-card> -->
   <!-- <v-select :items="Object.keys(optionalProperties)" multiple /> -->
-  <v-menu offset-y>
+  <v-menu offset-y v-if="Object.keys(optionalProperties).length">
     <template v-slot:activator="{ on }">
       <v-btn
         color="primary"
         dark
+        rounded
         v-on="on"
       >
+        <v-icon left>mdi-plus</v-icon>
         Add Property
       </v-btn>
     </template>
@@ -67,9 +99,7 @@ export default {
       required: true,
     },
     initial: {
-      type: Object,
       required: false,
-      default: () => ({}),
     },
     level: {
       type: Number,
@@ -79,28 +109,58 @@ export default {
   },
   data() {
     return {
-      value: this.initial,
+      value: this.initial || this.defaultInitial(),
       additionalKeys: [],
     };
   },
   computed: {
+    leaf() {
+      return this.isLeaf(this.item);
+    },
     requiredProperties() {
-      return Object.entries(this.item.properties)
-        .filter(([key]) => this.item.required.includes(key))
+      if (this.leaf) {
+        return {};
+      }
+
+      const props = this.item.properties || this.item.items.properties;
+      const required = this.item.required || this.item.items.required;
+
+      if (!(props && required)) {
+        return {};
+      }
+
+      return Object.entries(props)
+        .filter(([key]) => required.includes(key))
         .reduce((acc, [key, val]) => ({ ...acc, [key]: val }), {});
     },
     optionalProperties() {
+      if (this.leaf) {
+        return {};
+      }
+      const props = this.item.properties || this.item.items.properties;
+      if (!props) {
+        return {};
+      }
+
       const requiredKeys = Object.keys(this.requiredProperties);
-      const optionalKeys = Object.keys(this.item.properties).filter(x => !requiredKeys.includes(x));
-      return optionalKeys.reduce((obj, key) => ({ ...obj, [key]: this.item.properties[key] }), {});
+      const optionalKeys = Object.keys(props).filter(x => !requiredKeys.includes(x));
+      return optionalKeys.reduce((obj, key) => ({ ...obj, [key]: props[key] }), {});
     },
   },
   methods: {
+    defaultInitial() {
+      if (this.item.type === 'object') return {};
+      if (this.item.type === 'array') return {};
+      return null;
+    },
+    isLeaf(obj) {
+      return !['object', 'array'].includes(obj.type);
+    },
     addProperty(key) {
       this.additionalKeys.push(key);
     },
-    handleInput(v) {
-      this.$emit('input', v);
+    bubbleInput() {
+      this.$emit('input', this.value);
     },
     fieldType(item) {
       if (item.type === 'number' || item.type === 'integer') {

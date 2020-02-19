@@ -3,42 +3,6 @@
     <v-row>
       <v-col sm="6">
         <v-form>
-          <!-- <v-card>
-            <json-editor
-              ref="JsonEditor"
-              :schema="schema"
-              v-model="model"
-              class="pa-2"
-            />
-          </v-card> -->
-          <!-- <template v-for="(item, i) in fields">
-            <v-textarea
-              v-if="fieldType(item) === 'object'"
-              :key="i"
-              :label="item.title"
-              v-model="meta[i]"
-            />
-            <v-list
-              v-else-if="fieldType(item) === 'array'"
-              :key="i"
-            >
-              <v-subheader>{{item.title}}</v-subheader>
-            </v-list>
-            <v-text-field
-              v-else-if="fieldType(item) === 'number'"
-              :key="i"
-              :label="item.title"
-              type="number"
-              v-model.number="meta[i]"
-            />
-            <v-text-field
-              v-else
-              :key="i"
-              :label="item.title"
-              :type="fieldType(item)"
-              v-model="meta[i]"
-            />
-          </template> -->
           <v-card class="pa-2">
             <meta-node :item="schema" :initial="meta" />
           </v-card>
