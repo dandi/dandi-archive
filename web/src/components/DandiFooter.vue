@@ -42,7 +42,7 @@ export default {
         </v-col>
         <v-col>
           Support:<br />
-          - <a target="_blank" href="https://dandiarchive.org/">Dandi home</a><br />
+          - <a target="_blank" href="https://www.dandiarchive.org/">Dandi Project Homepage</a><br />
           - <a target="_blank" href="https://github.com/dandi/dandiarchive">Project Github</a> / <a target="_blank" href="https://github.com/dandi/dandiarchive/issues">Issues</a>
         </v-col>
       </v-row>
