@@ -4,7 +4,7 @@
       <v-col sm="6">
         <v-form>
           <v-card class="pa-2">
-            <meta-node :item="schema" :initial="meta" />
+            <meta-node :schema="schema" :initial="meta" />
           </v-card>
         </v-form>
       </v-col>

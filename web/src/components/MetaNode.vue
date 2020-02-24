@@ -2,8 +2,8 @@
 <div>
   <template v-if="leaf">
     <v-text-field
-      :label="item.title"
-      :type="fieldType(item)"
+      :label="schema.title"
+      :type="fieldType(schema)"
       v-model="value"
       @input="bubbleInput"
       :class="`ml-${level*2}`"
@@ -14,7 +14,7 @@
     <template v-for="(el, i) in value">
       <meta-node
         :key="i"
-        :item="item.items"
+        :schema="schema.items"
         :initial="el"
         :level="level+1"
         v-model="value[i]"
@@ -36,7 +36,7 @@
     <v-card :key="k" class="mb-2" flat>
       <v-card-title v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
       <meta-node
-        :item="prop"
+        :schema="prop"
         :initial="value[k]"
         :level="level+1"
         v-model="value[k]"
@@ -73,7 +73,7 @@
 export default {
   name: 'MetaNode',
   props: {
-    item: {
+    schema: {
       type: Object,
       required: true,
     },
@@ -94,18 +94,18 @@ export default {
   },
   computed: {
     leaf() {
-      return this.isLeaf(this.item);
+      return this.isLeaf(this.schema);
     },
     array() {
-      return this.item.type === 'array';
+      return this.schema.type === 'array';
     },
     requiredProperties() {
       if (this.leaf) {
         return {};
       }
 
-      const props = this.item.properties || this.item.items.properties;
-      const required = this.item.required || this.item.items.required;
+      const props = this.schema.properties || this.schema.items.properties;
+      const required = this.schema.required || this.schema.items.required;
 
       if (!(props && required)) {
         return {};
@@ -119,7 +119,8 @@ export default {
       if (this.leaf) {
         return {};
       }
-      const props = this.item.properties || this.item.items.properties;
+
+      const props = this.schema.properties || this.schema.items.properties;
       if (!props) {
         return {};
       }
@@ -151,13 +152,13 @@ export default {
       }
     },
     defaultInitial() {
-      return this.emptyItem(this.item.type);
+      return this.emptyItem(this.schema.type);
     },
     isLeaf(obj) {
       return !['object', 'array'].includes(obj.type);
     },
     addArrayItem() {
-      this.value.push(this.emptyItem(this.item.items.type));
+      this.value.push(this.emptyItem(this.schema.items.type));
     },
     addProperty(key) {
       this.$set(this.additionalProps, key, this.optionalProperties[key]);
@@ -165,11 +166,11 @@ export default {
     bubbleInput() {
       this.$emit('input', this.value);
     },
-    fieldType(item) {
-      if (item.type === 'number' || item.type === 'integer') {
+    fieldType(schema) {
+      if (schema.type === 'number' || schema.type === 'integer') {
         return 'number';
       }
-      return item.type;
+      return schema.type;
     },
   },
 };
