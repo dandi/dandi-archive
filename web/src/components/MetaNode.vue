@@ -2,16 +2,6 @@
 <div>
   <template v-if="leaf">
     <v-text-field
-      v-if="fieldType(item) === 'number'"
-      :label="item.title"
-      type="number"
-      v-model="value"
-      @input="bubbleInput"
-      :class="`ml-${level*2}`"
-      dense
-    />
-    <v-text-field
-      v-else
       :label="item.title"
       :type="fieldType(item)"
       v-model="value"
@@ -20,51 +10,40 @@
       dense
     />
   </template>
+  <template v-else-if="array">
+    <template v-for="(el, i) in value">
+      <meta-node
+        :key="i"
+        :item="item.items"
+        :initial="el"
+        :level="level+1"
+        v-model="value[i]"
+        @input="bubbleInput"
+      />
+    </template>
+    <v-btn
+      color="primary"
+      dark
+      rounded
+      :class="`ml-${level*2}`"
+      @click="addArrayItem"
+    >
+      <v-icon left>mdi-plus</v-icon>
+      Add Item
+    </v-btn>
+  </template>
   <template v-else v-for="(prop, k) in totalProperties">
     <v-card :key="k" class="mb-2" flat>
       <v-card-title v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
       <meta-node
-        v-if="prop.type === 'object'"
         :item="prop"
         :initial="value[k]"
         :level="level+1"
         v-model="value[k]"
         @input="bubbleInput"
       />
-      <template v-else>
-        <meta-node
-          :item="prop"
-          :initial="value[k]"
-          :level="level+1"
-          v-model="value[k]"
-          @input="bubbleInput"
-        />
-      </template>
     </v-card>
   </template>
-  <!-- <v-card :key="k" class="mb-2" flat>
-    <template v-if="fieldType(item) === 'object'" v-for="(prop, k) in requiredProperties">
-      <v-card-title :key="k" v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
-      <meta-node
-        :key="k"
-        :item="prop"
-        :initial="value[k]"
-        :level="level+1"
-        v-model="value[k]"
-        @input="bubbleInput"
-      />
-    </template>
-    <template v-else>
-      <meta-node
-        :item="prop"
-        :initial="value[k]"
-        :level="level+1"
-        v-model="value[k]"
-        @input="bubbleInput"
-      />
-    </template>
-  </v-card> -->
-  <!-- <v-select :items="Object.keys(optionalProperties)" multiple /> -->
   <v-menu offset-y v-if="Object.keys(optionalProperties).length">
     <template v-slot:activator="{ on }">
       <v-btn
@@ -117,6 +96,9 @@ export default {
     leaf() {
       return this.isLeaf(this.item);
     },
+    array() {
+      return this.item.type === 'array';
+    },
     requiredProperties() {
       if (this.leaf) {
         return {};
@@ -154,13 +136,28 @@ export default {
     },
   },
   methods: {
+    emptyItem(type) {
+      switch (type) {
+        case 'object':
+          return {};
+        case 'array':
+          return [];
+        case 'string':
+          return '';
+        case 'number':
+          return 0;
+        default:
+          return null;
+      }
+    },
     defaultInitial() {
-      if (this.item.type === 'object') return {};
-      if (this.item.type === 'array') return {};
-      return null;
+      return this.emptyItem(this.item.type);
     },
     isLeaf(obj) {
       return !['object', 'array'].includes(obj.type);
+    },
+    addArrayItem() {
+      this.value.push(this.emptyItem(this.item.items.type));
     },
     addProperty(key) {
       this.$set(this.additionalProps, key, this.optionalProperties[key]);
