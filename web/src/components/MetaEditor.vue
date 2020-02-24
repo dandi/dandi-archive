@@ -36,7 +36,6 @@ import MetaNode from '@/components/MetaNode.vue';
 export default {
   props: ['schema', 'model'],
   components: {
-    // JsonEditor,
     VueJsonPretty,
     MetaNode,
   },
@@ -47,8 +46,11 @@ export default {
     };
   },
   computed: {
-    yaml() {
-      return jsYaml.dump(this.meta);
+    contentType() {
+      return this.yamlOutput ? 'text/yaml' : 'application/json';
+    },
+    output() {
+      return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
   },
   methods: {
@@ -61,7 +63,18 @@ export default {
     saveDandiMeta() {
       this.girderRest.put(`/folder/${this.id}/metadata`, { dandiset: this.meta }, { params: { allowNull: false } });
     },
-    download() {},
+    download() {
+      const blob = new Blob([this.output], { type: this.contentType });
+
+      const extension = this.contentType.split('/')[1];
+      const filename = `dandidata.${extension}`;
+      const link = document.createElement('a');
+
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    },
   },
 };
 </script>
