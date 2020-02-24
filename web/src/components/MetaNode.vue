@@ -20,7 +20,7 @@
       dense
     />
   </template>
-  <template v-else v-for="(prop, k) in requiredProperties">
+  <template v-else v-for="(prop, k) in totalProperties">
     <v-card :key="k" class="mb-2" flat>
       <v-card-title v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
       <meta-node
@@ -110,7 +110,7 @@ export default {
   data() {
     return {
       value: this.initial || this.defaultInitial(),
-      additionalKeys: [],
+      additionalProps: {},
     };
   },
   computed: {
@@ -143,8 +143,14 @@ export default {
       }
 
       const requiredKeys = Object.keys(this.requiredProperties);
-      const optionalKeys = Object.keys(props).filter(x => !requiredKeys.includes(x));
+      const addedKeys = Object.keys(this.additionalProps);
+      const optionalKeys = Object.keys(props)
+        .filter(x => !requiredKeys.includes(x) && !addedKeys.includes(x));
+
       return optionalKeys.reduce((obj, key) => ({ ...obj, [key]: props[key] }), {});
+    },
+    totalProperties() {
+      return { ...this.requiredProperties, ...this.additionalProps };
     },
   },
   methods: {
@@ -157,7 +163,7 @@ export default {
       return !['object', 'array'].includes(obj.type);
     },
     addProperty(key) {
-      this.additionalKeys.push(key);
+      this.$set(this.additionalProps, key, this.optionalProperties[key]);
     },
     bubbleInput() {
       this.$emit('input', this.value);
