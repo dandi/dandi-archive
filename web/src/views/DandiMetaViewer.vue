@@ -30,7 +30,6 @@
                 <v-spacer />
                 <v-btn
                   @click="edit = true"
-                  rounded
                   icon
                   color="primary"
                 >

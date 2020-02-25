@@ -5,17 +5,21 @@
         <v-card class="my-2">
           <v-card-title>
             {{model.name}}
-            <v-btn @click="closeEditor" icon color="error" class="ml-2">
-              <v-icon>
-                mdi-close-circle
-              </v-icon>
-            </v-btn>
+            <v-spacer />
             <v-btn @click="save" icon color="primary">
               <v-icon>
                 mdi-content-save
               </v-icon>
             </v-btn>
+            <v-btn @click="closeEditor" icon color="error">
+              <v-icon>
+                mdi-close-circle
+              </v-icon>
+            </v-btn>
           </v-card-title>
+          <!-- <v-card-actions>
+            <v-chip></v-chip>
+          </v-card-actions> -->
         </v-card>
         <v-form>
           <v-card class="pa-2">
