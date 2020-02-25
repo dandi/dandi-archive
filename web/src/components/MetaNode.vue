@@ -202,10 +202,16 @@ export default {
     removeArrayItem(index) {
       this.value.splice(index, 1);
     },
-    // removeObjectItem(key) {
-    //   console.log("ASDSDSDS", key, this.value);
-    //   delete this.value[key];
-    // },
+    removeObjectItem(key) {
+      const newValue = { ...this.value };
+      const newAdditionalProps = { ...this.additionalProps };
+
+      delete newValue[key];
+      delete newAdditionalProps[key];
+
+      this.value = newValue;
+      this.additionalProps = newAdditionalProps;
+    },
     addProperty(key) {
       this.$set(this.additionalProps, key, this.optionalProperties[key]);
     },
