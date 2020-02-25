@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
       <v-col sm="6">
-        <v-card class="my-2">
+        <v-card class="mb-2">
           <v-card-title>{{model.name}}</v-card-title>
           <v-card-text class="pb-0">
             <template v-if="!errors || !errors.length">
