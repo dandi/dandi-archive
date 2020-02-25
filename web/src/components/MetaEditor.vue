@@ -18,7 +18,7 @@
                 type="error"
                 text-color="white"
               >
-                {{error.dataPath.split('.').slice(-1)[0]}} {{error.message}}
+                {{errorMessage(error)}}
               </v-alert>
             </template>
           </v-card-text>
@@ -129,6 +129,16 @@ export default {
       }
 
       this.closeEditor();
+    },
+    errorMessage(error) {
+      const pathEnd = error.dataPath.split('.').slice(-1)[0];
+      let message = `${pathEnd} ${error.message}`;
+
+      if (error.keyword === 'const') {
+        message += `: ${error.params.allowedValue}`;
+      }
+
+      return message;
     },
     copyValue(val) {
       if (val instanceof Object && !Array.isArray(val)) {
