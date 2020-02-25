@@ -22,20 +22,26 @@
                 </v-chip>
                 <v-chip
                   v-if="!published"
-                  class="yellow lighten-2 ml-2"
+                  class="orange ml-2"
                   round
                 >
                   This dataset has not been published!
                 </v-chip>
-                <v-spacer />
+              </v-card-title>
+              <v-card-actions>
+                <v-btn
+                  icon
+                  @click="$router.push(`/collection/${selected.parentId}`)"
+                >
+                  <v-icon>mdi-arrow-left</v-icon>
+                </v-btn>
                 <v-btn
                   @click="edit = true"
                   icon
-                  color="primary"
                 >
                   <v-icon>mdi-pencil</v-icon>
                 </v-btn>
-              </v-card-title>
+              </v-card-actions>
               <v-divider />
               <v-list dense>
                 <v-list-item>
@@ -50,10 +56,19 @@
                 </v-list-item>
                 <v-list-item v-if="details">
                   <v-list-item-content>
-                    Size: {{computedSize}}, Files: {{details.nItems}}, Folders: {{details.nFolders}}
+                    <!-- Size: {{computedSize}}, Files: {{details.nItems}}, Folders: {{details.nFolders}} -->
+                    Files: {{details.nItems}}, Folders: {{details.nFolders}}
                   </v-list-item-content>
                 </v-list-item>
                 <v-divider />
+                <template v-if="meta.description">
+                  <v-subheader>Description</v-subheader>
+                  <v-list-item>
+                    <v-list-item-content>
+                      {{meta.description}}
+                    </v-list-item-content>
+                  </v-list-item>
+                </template>
                 <template v-if="meta.contributors">
                   <v-subheader>Contributors</v-subheader>
                   <v-list-item v-for="(item, i) in meta.contributors" :key="i">
@@ -65,7 +80,7 @@
           </v-col>
           <v-col sm="6">
             <v-card>
-              <v-expansion-panels>
+              <v-expansion-panels multiple>
                 <v-expansion-panel v-for="(field, k) in extraFields" :key="k">
                   <v-expansion-panel-header>
                     {{schema.properties[k].title || k}}
@@ -116,6 +131,7 @@ export default {
         'name',
         'version',
         'contributors',
+        'description',
       ],
     };
   },
@@ -138,10 +154,10 @@ export default {
     async selected(val) {
       if (!val || !val.meta || !val.meta.dandiset) {
         this.meta = {};
-      } else {
-        this.meta = { ...val.meta.dandiset };
+        return;
       }
 
+      this.meta = { ...val.meta.dandiset };
       this.last_modified = new Date(val.updated).toString();
 
       let res = await this.girderRest.get(`/user/${val.creatorId}`);
