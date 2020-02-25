@@ -5,10 +5,10 @@
       :label="schema.title"
       :type="fieldType(schema)"
       v-model="value"
-      :class="`ml-${level*2}`"
+      class="ml-2 pr-3 pt-1"
       dense
     >
-      <template v-slot:prepend>
+      <template v-if="!required" v-slot:prepend>
         <v-icon color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
       </template>
     </v-text-field>
@@ -24,12 +24,13 @@
         arrayItem
         @remove="removeArrayItem(i)"
       />
+      <!-- <v-divider v-if="i !== value.length - 1" :key="i"/> -->
     </template>
     <v-btn
       color="success"
       dark
       rounded
-      :class="`ml-${level*2}`"
+      class="ml-2"
       @click="addArrayItem"
       icon
     >
@@ -37,14 +38,15 @@
     </v-btn>
   </template>
   <template v-else v-for="(prop, k) in totalProperties">
-    <v-card :key="k" class="mb-2" flat>
-      <v-card-title v-if="!isLeaf(prop)">{{prop.title}}</v-card-title>
+    <v-card :key="k" class="ml-4 mb-2 py-2" :flat="isLeaf(prop)">
+      <v-card-title v-if="!isLeaf(prop)" class="pt-0">{{prop.title}}</v-card-title>
       <meta-node
         :schema="prop"
         :initial="value[k]"
         :level="level+1"
         v-model="value[k]"
         @remove="removeObjectItem(k)"
+        :required="k in requiredProperties"
       />
     </v-card>
   </template>
@@ -55,7 +57,7 @@
         dark
         rounded
         v-on="on"
-        :class="`ml-${level*2}`"
+        class="ml-2"
       >
         <v-icon left>mdi-plus</v-icon>
         Add Property
@@ -81,6 +83,11 @@ export default {
     arrayItem: {
       type: Boolean,
       required: false,
+    },
+    required: {
+      type: Boolean,
+      required: false,
+      default: () => false,
     },
     schema: {
       type: Object,
