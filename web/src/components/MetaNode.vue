@@ -88,7 +88,7 @@ export default {
   },
   data() {
     return {
-      value: this.copyValue(this.initial),
+      value: this.copyValue(this.initial) || this.defaultInitial(),
       additionalProps: {},
     };
   },
