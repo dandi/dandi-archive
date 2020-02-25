@@ -1,6 +1,11 @@
 <template>
   <div>
-    <meta-editor v-if="edit && Object.entries(meta).length" :schema="schema" :model="meta" />
+    <meta-editor
+      v-if="edit && Object.entries(meta).length"
+      @close="edit = false"
+      :schema="schema"
+      :model="meta"
+    />
     <template v-else>
       <v-container>
         <v-row>
@@ -9,12 +14,28 @@
               <v-card-title>
                 {{meta.name}}
                 <v-chip
+                  v-if="meta.version"
+                  class="primary ml-2"
+                  round
+                >
+                  Version: {{meta.version}}
+                </v-chip>
+                <v-chip
                   v-if="!published"
                   class="yellow lighten-2 ml-2"
                   round
                 >
                   This dataset has not been published!
                 </v-chip>
+                <v-spacer />
+                <v-btn
+                  @click="edit = true"
+                  rounded
+                  icon
+                  color="primary"
+                >
+                  <v-icon>mdi-pencil</v-icon>
+                </v-btn>
               </v-card-title>
               <v-divider />
               <v-list dense>
@@ -41,11 +62,23 @@
                   </v-list-item>
                 </template>
               </v-list>
-              <v-card-actions>
-                <v-btn @click="edit=true">
-                  edit
-                </v-btn>
-              </v-card-actions>
+            </v-card>
+          </v-col>
+          <v-col sm="6">
+            <v-card>
+              <v-expansion-panels>
+                <v-expansion-panel v-for="(field, k) in extraFields" :key="k">
+                  <v-expansion-panel-header>
+                    {{schema.properties[k].title || k}}
+                  </v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <template v-if="['object', 'array'].includes(schema.properties[k].type)">
+                      <vue-json-pretty :data="field" highlightMouseoverNode />
+                    </template>
+                    <template v-else>{{field}}</template>
+                  </v-expansion-panel-content>
+                </v-expansion-panel>
+              </v-expansion-panels>
             </v-card>
           </v-col>
         </v-row>
@@ -58,6 +91,7 @@
 import filesize from 'filesize';
 import { mapState } from 'vuex';
 import { debounce } from 'lodash';
+import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
 import SCHEMA from '@/assets/base_schema.json';
@@ -67,6 +101,7 @@ export default {
   props: ['id'],
   components: {
     MetaEditor,
+    VueJsonPretty,
   },
   data() {
     return {
@@ -78,9 +113,19 @@ export default {
       uploader: '',
       last_modified: null,
       details: null,
+      mainFields: [
+        'name',
+        'version',
+        'contributors',
+      ],
     };
   },
   computed: {
+    extraFields() {
+      const { meta, mainFields } = this;
+      const extra = Object.keys(meta).filter(x => !mainFields.includes(x));
+      return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
+    },
     computedSize() {
       if (!this.selected || !this.selected.size) return null;
       return filesize(this.selected.size);

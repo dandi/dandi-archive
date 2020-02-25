@@ -2,9 +2,24 @@
   <v-container>
     <v-row>
       <v-col sm="6">
+        <v-card class="my-2">
+          <v-card-title>
+            {{model.name}}
+            <v-btn @click="closeEditor" icon color="error" class="ml-2">
+              <v-icon>
+                mdi-close-circle
+              </v-icon>
+            </v-btn>
+            <v-btn @click="save" icon color="primary">
+              <v-icon>
+                mdi-content-save
+              </v-icon>
+            </v-btn>
+          </v-card-title>
+        </v-card>
         <v-form>
           <v-card class="pa-2">
-            <meta-node :schema="schema" :initial="meta" v-model="meta"/>
+            <meta-node class="pt-3" :schema="schema" :initial="meta" v-model="meta"/>
           </v-card>
         </v-form>
       </v-col>
@@ -54,6 +69,13 @@ export default {
     },
   },
   methods: {
+    closeEditor() {
+      this.$emit('close');
+    },
+    save() {
+      // Make rest requests
+      this.closeEditor();
+    },
     copyValue(val) {
       if (val instanceof Object && !Array.isArray(val)) {
         return { ...val };
