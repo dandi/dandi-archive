@@ -5,11 +5,10 @@
       :label="schema.title"
       :type="fieldType(schema)"
       v-model="value"
-      @input="bubbleInput"
       :class="`ml-${level*2}`"
       dense
     >
-      <template v-if="arrayItem" v-slot:prepend>
+      <template v-slot:prepend>
         <v-icon color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
       </template>
     </v-text-field>
@@ -22,7 +21,6 @@
         :initial="el"
         :level="level+1"
         v-model="value[i]"
-        @input="bubbleInput"
         arrayItem
         @remove="removeArrayItem(i)"
       />
@@ -46,7 +44,7 @@
         :initial="value[k]"
         :level="level+1"
         v-model="value[k]"
-        @input="bubbleInput"
+        @remove="removeObjectItem(k)"
       />
     </v-card>
   </template>
@@ -57,6 +55,7 @@
         dark
         rounded
         v-on="on"
+        :class="`ml-${level*2}`"
       >
         <v-icon left>mdi-plus</v-icon>
         Add Property
@@ -147,10 +146,12 @@ export default {
     },
   },
   watch: {
-    // value() {
-    //   console.log('VALUE', this.value);
-    //   this.$emit('input', this.value);
-    // },
+    value: {
+      handler() {
+        this.$emit('input', this.value);
+      },
+      deep: true,
+    },
   },
   methods: {
     copyValue(val) {
@@ -187,11 +188,12 @@ export default {
     removeArrayItem(index) {
       this.value.splice(index, 1);
     },
+    // removeObjectItem(key) {
+    //   console.log("ASDSDSDS", key, this.value);
+    //   delete this.value[key];
+    // },
     addProperty(key) {
       this.$set(this.additionalProps, key, this.optionalProperties[key]);
-    },
-    bubbleInput() {
-      this.$emit('input', this.value);
     },
     fieldType(schema) {
       if (schema.type === 'number' || schema.type === 'integer') {
