@@ -108,6 +108,13 @@ export default {
       additionalProps: {},
     };
   },
+  created() {
+    if (this.schema.type === 'object') {
+      const { addProperty } = this;
+      const extra = Object.keys(this.value).filter(key => !(key in this.requiredProperties));
+      extra.forEach((key) => { addProperty(key); });
+    }
+  },
   computed: {
     leaf() {
       return this.isLeaf(this.schema);
