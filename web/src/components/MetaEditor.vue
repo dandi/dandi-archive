@@ -28,7 +28,12 @@
                 mdi-close-circle
               </v-icon>
             </v-btn>
-            <v-btn @click="save" icon color="primary">
+            <v-btn
+              @click="save"
+              icon
+              color="primary"
+              :disabled="!!errors"
+            >
               <v-icon>
                 mdi-content-save
               </v-icon>
@@ -62,6 +67,7 @@
 </template>
 
 <script>
+import { mapState, mapMutations } from 'vuex';
 import VueJsonPretty from 'vue-json-pretty';
 import jsYaml from 'js-yaml';
 import Ajv from 'ajv';
@@ -93,6 +99,10 @@ export default {
     output() {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
+    ...mapState({
+      girderRest: 'girderRest',
+      id: state => state.selected[0]._id,
+    }),
   },
   created() {
     this.validate(this.meta);
@@ -111,8 +121,13 @@ export default {
     closeEditor() {
       this.$emit('close');
     },
-    save() {
-      // Make rest requests
+    async save() {
+      const { status, data } = await this.girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
+
+      if (status === 200) {
+        this.setSelected([data]);
+      }
+
       this.closeEditor();
     },
     copyValue(val) {
@@ -142,6 +157,7 @@ export default {
       link.click();
       URL.revokeObjectURL(link.href);
     },
+    ...mapMutations(['setSelected']),
   },
 };
 </script>
