@@ -8,7 +8,11 @@
       @input="bubbleInput"
       :class="`ml-${level*2}`"
       dense
-    />
+    >
+      <template v-if="arrayItem" v-slot:prepend>
+        <v-icon color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+      </template>
+    </v-text-field>
   </template>
   <template v-else-if="array">
     <template v-for="(el, i) in value">
@@ -19,17 +23,19 @@
         :level="level+1"
         v-model="value[i]"
         @input="bubbleInput"
+        arrayItem
+        @remove="removeArrayItem(i)"
       />
     </template>
     <v-btn
-      color="primary"
+      color="success"
       dark
       rounded
       :class="`ml-${level*2}`"
       @click="addArrayItem"
+      icon
     >
       <v-icon left>mdi-plus</v-icon>
-      Add Item
     </v-btn>
   </template>
   <template v-else v-for="(prop, k) in totalProperties">
@@ -73,6 +79,10 @@
 export default {
   name: 'MetaNode',
   props: {
+    arrayItem: {
+      type: Boolean,
+      required: false,
+    },
     schema: {
       type: Object,
       required: true,
@@ -173,6 +183,9 @@ export default {
     },
     addArrayItem() {
       this.value.push(this.emptyItem(this.schema.items.type));
+    },
+    removeArrayItem(index) {
+      this.value.splice(index, 1);
     },
     addProperty(key) {
       this.$set(this.additionalProps, key, this.optionalProperties[key]);
