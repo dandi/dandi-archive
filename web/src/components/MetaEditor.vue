@@ -4,7 +4,7 @@
       <v-col sm="6">
         <v-form>
           <v-card class="pa-2">
-            <meta-node :schema="schema" :initial="meta" />
+            <meta-node :schema="schema" :initial="meta" v-model="meta"/>
           </v-card>
         </v-form>
       </v-col>
@@ -42,7 +42,7 @@ export default {
   data() {
     return {
       yamlOutput: true,
-      meta: this.model,
+      meta: this.copyValue(this.model),
     };
   },
   computed: {
@@ -54,6 +54,12 @@ export default {
     },
   },
   methods: {
+    copyValue(val) {
+      if (val instanceof Object && !Array.isArray(val)) {
+        return { ...val };
+      }
+      return val.valueOf();
+    },
     fieldType(item) {
       if (item.type === 'number' || item.type === 'integer') {
         return 'number';

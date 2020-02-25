@@ -88,7 +88,7 @@ export default {
   },
   data() {
     return {
-      value: this.initial || this.defaultInitial(),
+      value: this.copyValue(this.initial),
       additionalProps: {},
     };
   },
@@ -136,7 +136,21 @@ export default {
       return { ...this.requiredProperties, ...this.additionalProps };
     },
   },
+  watch: {
+    // value() {
+    //   console.log('VALUE', this.value);
+    //   this.$emit('input', this.value);
+    // },
+  },
   methods: {
+    copyValue(val) {
+      if (val === undefined) return val;
+
+      if (val instanceof Object && !Array.isArray(val)) {
+        return { ...val };
+      }
+      return val.valueOf();
+    },
     emptyItem(type) {
       switch (type) {
         case 'object':
