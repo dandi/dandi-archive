@@ -19,7 +19,7 @@
     "vue": "^2.6.10",
     "vue-json-pretty": "^1.6.3",
     "vue-router": "^3.0.3",
-    "vuetify": "^2.1.1",
+    "vuetify": "2.1.5",
     "vuex": "^3.1.1",
     "vuex-router-sync": "^5.0.0"
   },
