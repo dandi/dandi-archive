@@ -3,23 +3,37 @@
     <v-row>
       <v-col sm="6">
         <v-card class="my-2">
-          <v-card-title>
-            {{model.name}}
-            <v-spacer />
-            <v-btn @click="save" icon color="primary">
-              <v-icon>
-                mdi-content-save
-              </v-icon>
-            </v-btn>
+          <v-card-title>{{model.name}}</v-card-title>
+          <v-card-text class="pb-0">
+            <template v-if="!errors || !errors.length">
+              <v-alert dense type="success">
+                No errors
+              </v-alert>
+            </template>
+            <template v-else>
+              <v-alert
+                v-for="(error, i) in errors"
+                :key="i"
+                dense
+                type="error"
+                text-color="white"
+              >
+                {{error.dataPath.split('.').slice(-1)[0]}} {{error.message}}
+              </v-alert>
+            </template>
+          </v-card-text>
+          <v-card-actions class="pt-0">
             <v-btn @click="closeEditor" icon color="error">
               <v-icon>
                 mdi-close-circle
               </v-icon>
             </v-btn>
-          </v-card-title>
-          <!-- <v-card-actions>
-            <v-chip></v-chip>
-          </v-card-actions> -->
+            <v-btn @click="save" icon color="primary">
+              <v-icon>
+                mdi-content-save
+              </v-icon>
+            </v-btn>
+          </v-card-actions>
         </v-card>
         <v-form>
           <v-card class="pa-2">
@@ -50,7 +64,11 @@
 <script>
 import VueJsonPretty from 'vue-json-pretty';
 import jsYaml from 'js-yaml';
+import Ajv from 'ajv';
+
 import MetaNode from '@/components/MetaNode.vue';
+
+const ajv = new Ajv({ allErrors: true });
 
 export default {
   props: ['schema', 'model'],
@@ -61,15 +79,32 @@ export default {
   data() {
     return {
       yamlOutput: true,
+      errors: [],
       meta: this.copyValue(this.model),
     };
   },
   computed: {
+    validate() {
+      return ajv.compile(this.schema);
+    },
     contentType() {
       return this.yamlOutput ? 'text/yaml' : 'application/json';
     },
     output() {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
+    },
+  },
+  created() {
+    this.validate(this.meta);
+    this.errors = this.validate.errors;
+  },
+  watch: {
+    meta: {
+      handler(val) {
+        this.validate(val);
+        this.errors = this.validate.errors;
+      },
+      deep: true,
     },
   },
   methods: {

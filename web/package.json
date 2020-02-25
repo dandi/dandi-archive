@@ -11,6 +11,7 @@
     "@girder/components": "git+https://github.com/girder/girder_web_components.git#791b9f2714089a15173e541d20622ea2e66a3cf8",
     "@sentry/browser": "^5.7.0",
     "@sentry/integrations": "^5.7.0",
+    "ajv": "^6.12.0",
     "core-js": "^2.6.5",
     "filesize": "^6.0.1",
     "js-yaml": "^3.13.1",

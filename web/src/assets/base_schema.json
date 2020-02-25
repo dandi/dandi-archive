@@ -24,7 +24,8 @@
     "description": {
       "$id": "#/properties/description",
       "type": "string",
-      "title": "Description"
+      "title": "Description",
+      "minLength": 1
     },
     "contributors": {
       "$id": "#/properties/contributors",
