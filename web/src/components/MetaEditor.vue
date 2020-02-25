@@ -48,10 +48,9 @@
       </v-col>
       <v-col sm="6">
         <v-card>
-          <v-card-title>Schema Adherent Data</v-card-title>
+          <v-card-title>Dandiset Metadata</v-card-title>
           <v-divider />
-          <vue-json-pretty class="ma-2" :data="meta" highlightMouseoverNode />
-          <v-card-actions>
+          <v-card-actions class="py-0">
             <v-btn icon color="primary" class="mr-2" @click="download">
               <v-icon>mdi-download</v-icon>
             </v-btn>
@@ -60,6 +59,7 @@
               <v-radio label="JSON" :value="false" />
             </v-radio-group>
           </v-card-actions>
+          <vue-json-pretty class="ma-2" :data="meta" highlightMouseoverNode />
         </v-card>
       </v-col>
     </v-row>
