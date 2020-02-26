@@ -8,8 +8,9 @@
       class="ml-2 pr-3 pt-1"
       dense
     >
-      <template v-if="!required" v-slot:prepend>
-        <v-icon color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+      <template v-slot:prepend>
+        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
     </v-text-field>
   </template>
@@ -24,7 +25,7 @@
         arrayItem
         @remove="removeArrayItem(i)"
       />
-      <!-- <v-divider v-if="i !== value.length - 1" :key="i"/> -->
+      <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
     </template>
     <v-btn
       color="success"
@@ -39,7 +40,17 @@
   </template>
   <template v-else v-for="(prop, k) in totalProperties">
     <v-card :key="k" class="ml-4 mb-2 py-2" :flat="isLeaf(prop)">
-      <v-card-title v-if="!isLeaf(prop)" class="pt-0">{{prop.title}}</v-card-title>
+      <v-card-title v-if="!isLeaf(prop)" class="pt-0">
+        <v-icon
+          v-if="!(k in requiredProperties)"
+          class="mr-2"
+          color="error"
+          @click="removeObjectItem(k)"
+        >
+          mdi-minus-circle
+        </v-icon>
+        {{prop.title}}
+      </v-card-title>
       <meta-node
         :schema="prop"
         :initial="value[k]"
