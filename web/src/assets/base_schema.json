@@ -128,13 +128,18 @@
     },
     "license": {
       "$id": "#/properties/license",
-      "type": "string",
+      "type": "object",
       "title": "License",
-      "default": "",
-      "examples": [
+      "required": [
         "url"
       ],
-      "pattern": "^(.*)$"
+      "properties": {
+        "url": {
+          "$id": "#/properties/license/properties/url",
+          "type": "string",
+          "title": "Url"
+        }
+      }
     },
     "keywords": {
       "$id": "#/properties/keywords",
@@ -143,19 +148,13 @@
       "items": {
         "$id": "#/properties/keywords/items",
         "type": "string",
-        "title": "Items",
-        "default": "",
-        "examples": [
-          "a",
-          "b"
-        ],
-        "pattern": "^(.*)$"
+        "title": "Items"
       }
     },
     "project": {
       "$id": "#/properties/project",
       "type": "object",
-      "title": "Project",
+      "title": "Project/Consortium",
       "required": [
         "name",
         "identifier"
@@ -164,22 +163,12 @@
         "name": {
           "$id": "#/properties/project/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "dsd"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "identifier": {
           "$id": "#/properties/project/properties/identifier",
           "type": "string",
-          "title": "Identifier",
-          "default": "",
-          "examples": [
-            "sds"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Identifier"
         }
       }
     },
@@ -195,22 +184,12 @@
         "name": {
           "$id": "#/properties/associated_disease/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "identifier": {
           "$id": "#/properties/associated_disease/properties/identifier",
           "type": "string",
-          "title": "Identifier",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Identifier"
         }
       }
     },
@@ -226,22 +205,12 @@
         "name": {
           "$id": "#/properties/associated_anatomy/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "dsd"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "identifier": {
           "$id": "#/properties/associated_anatomy/properties/identifier",
           "type": "string",
-          "title": "Identifier",
-          "default": "",
-          "examples": [
-            "dsds"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Identifier"
         }
       }
     },
@@ -257,22 +226,12 @@
         "name": {
           "$id": "#/properties/protocols/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "identifier": {
           "$id": "#/properties/protocols/properties/identifier",
           "type": "string",
-          "title": "Identifier",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Identifier"
         }
       }
     },
@@ -289,31 +248,17 @@
         "name": {
           "$id": "#/properties/ethics_approvals/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "country": {
           "$id": "#/properties/ethics_approvals/properties/country",
           "type": "string",
-          "title": "Country",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Country"
         },
         "identifier": {
           "$id": "#/properties/ethics_approvals/properties/identifier",
-          "type": "integer",
-          "title": "Identifier",
-          "default": 0,
-          "examples": [
-            1
-          ]
+          "type": "string",
+          "title": "Identifier"
         }
       }
     },
