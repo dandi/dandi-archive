@@ -121,9 +121,10 @@ export default {
   },
   created() {
     if (this.schema.type === 'object') {
-      const { addProperty } = this;
-      const extra = Object.keys(this.value).filter(key => !(key in this.requiredProperties));
-      extra.forEach((key) => { addProperty(key); });
+      const extra = Object.keys(this.value).filter(
+        key => !(key in this.requiredProperties) && key in this.optionalProperties,
+      );
+      extra.forEach((key) => { this.addProperty(key); });
     }
   },
   computed: {
