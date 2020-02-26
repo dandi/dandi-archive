@@ -109,10 +109,21 @@ import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
 import SCHEMA from '@/assets/schema/base.json';
+import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
 
 export default {
   name: 'DandisetLandingPage',
-  props: ['id'],
+  props: {
+    id: {
+      type: String,
+      required: true,
+    },
+    new: {
+      type: Boolean,
+      required: false,
+      default: () => false,
+    },
+  },
   components: {
     MetaEditor,
     VueJsonPretty,
@@ -120,7 +131,7 @@ export default {
   data() {
     return {
       valid: false,
-      schema: SCHEMA,
+      schema: this.new ? NEW_SCHEMA : SCHEMA,
       meta: {},
       edit: false,
       published: false,
