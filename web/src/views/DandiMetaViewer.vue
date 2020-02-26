@@ -108,7 +108,7 @@ import { debounce } from 'lodash';
 import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
-import SCHEMA from '@/assets/base_schema.json';
+import SCHEMA from '@/assets/schema/base.json';
 
 export default {
   name: 'DandisetLandingPage',
