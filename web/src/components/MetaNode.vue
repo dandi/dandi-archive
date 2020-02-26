@@ -38,7 +38,7 @@
       <v-icon left>mdi-plus</v-icon>
     </v-btn>
   </template>
-  <template v-else v-for="(prop, k) in totalProperties">
+  <template v-else v-for="(prop, k) in activeProperties">
     <v-card :key="k" class="ml-4 mb-2 py-2" :flat="isLeaf(prop)">
       <v-card-title v-if="!isLeaf(prop)" class="pt-0">
         <v-icon
@@ -116,7 +116,7 @@ export default {
   data() {
     return {
       value: this.copyValue(this.initial) || this.defaultInitial(),
-      additionalProps: {},
+      addedProperties: {},
     };
   },
   created() {
@@ -161,14 +161,14 @@ export default {
       }
 
       const requiredKeys = Object.keys(this.requiredProperties);
-      const addedKeys = Object.keys(this.additionalProps);
+      const addedKeys = Object.keys(this.addedProperties);
       const optionalKeys = Object.keys(props)
         .filter(x => !requiredKeys.includes(x) && !addedKeys.includes(x));
 
       return optionalKeys.reduce((obj, key) => ({ ...obj, [key]: props[key] }), {});
     },
-    totalProperties() {
-      return { ...this.requiredProperties, ...this.additionalProps };
+    activeProperties() {
+      return { ...this.requiredProperties, ...this.addedProperties };
     },
   },
   watch: {
@@ -215,17 +215,11 @@ export default {
       this.value.splice(index, 1);
     },
     removeObjectItem(key) {
-      const newValue = { ...this.value };
-      const newAdditionalProps = { ...this.additionalProps };
-
-      delete newValue[key];
-      delete newAdditionalProps[key];
-
-      this.value = newValue;
-      this.additionalProps = newAdditionalProps;
+      this.$delete(this.value, key);
+      this.$delete(this.addedProperties, key);
     },
     addProperty(key) {
-      this.$set(this.additionalProps, key, this.optionalProperties[key]);
+      this.$set(this.addedProperties, key, this.optionalProperties[key]);
     },
     fieldType(schema) {
       if (schema.type === 'number' || schema.type === 'integer') {
