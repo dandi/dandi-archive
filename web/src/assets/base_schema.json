@@ -57,7 +57,31 @@
             }
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "author"
+                }
+              }
+            }
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "roles": {
+                "contains": {
+                  "const": "contact"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "contact": {
       "$id": "#/properties/contact",
