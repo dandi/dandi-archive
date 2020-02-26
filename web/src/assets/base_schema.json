@@ -14,12 +14,14 @@
     "identifier": {
       "$id": "#/properties/identifier",
       "type": "string",
-      "title": "Identifier"
+      "title": "Identifier",
+      "minLength": 1
     },
     "name": {
       "$id": "#/properties/name",
       "type": "string",
-      "title": "Name"
+      "title": "Name",
+      "minLength": 1
     },
     "description": {
       "$id": "#/properties/description",
@@ -70,32 +72,17 @@
         "email": {
           "$id": "#/properties/contact/properties/email",
           "type": "string",
-          "title": "Email",
-          "default": "",
-          "examples": [
-            "dsd"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Email"
         },
         "name": {
           "$id": "#/properties/contact/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "dsds"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "affiliations": {
           "$id": "#/properties/contact/properties/affiliations",
           "type": "string",
-          "title": "Affiliations",
-          "default": "",
-          "examples": [
-            "dsds"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Affiliations"
         }
       }
     },
@@ -104,9 +91,7 @@
       "type": "object",
       "title": "Sponsors",
       "required": [
-        "identifier",
-        "name",
-        "url"
+        "name"
       ],
       "properties": {
         "identifier": {
