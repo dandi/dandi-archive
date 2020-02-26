@@ -131,8 +131,8 @@ export default {
       this.closeEditor();
     },
     errorMessage(error) {
-      const pathEnd = error.dataPath.split('.').slice(-1)[0];
-      let message = `${pathEnd} ${error.message}`;
+      const path = error.dataPath.substring(1);
+      let message = `${path} ${error.message}`;
 
       if (error.keyword === 'const') {
         message += `: ${error.params.allowedValue}`;
