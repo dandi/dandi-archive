@@ -50,15 +50,23 @@
         </v-list-item>
       </v-list>
     </v-menu>
+    <v-dialog v-else max-width="600">
+      <template v-slot:activator="{ on }">
+        <v-btn v-on="on" class="ml-4">
+          Login
+        </v-btn>
+      </template>
+      <girder-auth :force-otp="false" :show-forgot-password="false" :oauth="true" />
+    </v-dialog>
   </v-app-bar>
 </template>
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
-import { Search as GirderSearch } from '@girder/components/src/components';
+import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/components/src/components';
 
 export default {
-  components: { GirderSearch },
+  components: { GirderSearch, GirderAuth },
   computed: {
     ...mapGetters(['loggedIn', 'user']),
     version() {

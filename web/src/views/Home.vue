@@ -1,10 +1,5 @@
 <template>
   <v-container style="height: 100%;">
-    <v-row v-if="!loggedIn">
-      <v-col cols="12">
-        <girder-auth :force-otp="false"  :show-forgot-password="false"  :oauth="true" />
-      </v-col>
-    </v-row>
     <v-row>
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
@@ -25,7 +20,7 @@
 
 <script>
 import { mapGetters, mapMutations, mapState } from 'vuex';
-import { Authentication as GirderAuth, DataDetails as GirderDataDetails } from '@girder/components/src/components';
+import { DataDetails as GirderDataDetails } from '@girder/components/src/components';
 import { DefaultActionKeys } from '@girder/components/src/components/DataDetails.vue';
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
 
@@ -52,7 +47,7 @@ const actionKeys = [
 ];
 
 export default {
-  components: { GirderAuth, GirderDataDetails, GirderFileManager },
+  components: { GirderDataDetails, GirderFileManager },
   computed: {
     actions() {
       let actions = actionKeys;
