@@ -5,7 +5,7 @@
       @close="edit = false"
       :schema="schema"
       :model="meta"
-      :new="create"
+      :create="create"
     />
     <template v-else>
       <v-container>

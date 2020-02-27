@@ -178,9 +178,6 @@ export default {
       },
       deep: true,
     },
-    initial() {
-      this.value = this.initial;
-    },
   },
   methods: {
     copyValue(val) {

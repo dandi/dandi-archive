@@ -3,7 +3,7 @@
     <v-row>
       <v-col sm="6">
         <v-card class="mb-2">
-          <v-card-title>{{model.name}}</v-card-title>
+          <v-card-title>{{meta.name}}</v-card-title>
           <v-card-text class="pb-0">
             <template v-if="!errors || !errors.length">
               <v-alert dense type="success">
@@ -193,15 +193,6 @@ export default {
         return { ...val };
       }
       return val.valueOf();
-    },
-    fieldType(item) {
-      if (item.type === 'number' || item.type === 'integer') {
-        return 'number';
-      }
-      return item.type;
-    },
-    saveDandiMeta() {
-      this.girderRest.put(`/folder/${this.id}/metadata`, { dandiset: this.meta }, { params: { allowNull: false } });
     },
     download() {
       const blob = new Blob([this.output], { type: this.contentType });
