@@ -23,20 +23,44 @@
             </template>
           </v-card-text>
           <v-card-actions class="pt-0">
-            <v-btn @click="closeEditor" icon color="error">
-              <v-icon>
-                mdi-close-circle
-              </v-icon>
-            </v-btn>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on }">
+                <v-btn v-on="on" @click="closeEditor" icon color="error">
+                  <v-icon>
+                    mdi-close-circle
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Cancel</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on }">
+                <v-btn
+                  v-on="on"
+                  @click="save"
+                  icon
+                  color="primary"
+                  :disabled="saveDisabled"
+                >
+                  <v-icon>
+                    mdi-content-save
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Save</span>
+            </v-tooltip>
+
+            <v-spacer />
             <v-btn
-              @click="save"
-              icon
-              color="primary"
-              :disabled="!!errors"
+              @click="publish"
+              color="success"
+              class="mr-2"
+              :disabled="publishedDisabled"
             >
-              <v-icon>
-                mdi-content-save
+              <v-icon left>
+                mdi-cloud-upload
               </v-icon>
+              Publish
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -77,7 +101,21 @@ import MetaNode from '@/components/MetaNode.vue';
 const ajv = new Ajv({ allErrors: true });
 
 export default {
-  props: ['schema', 'model'],
+  props: {
+    schema: {
+      type: Object,
+      required: true,
+    },
+    model: {
+      type: Object,
+      required: true,
+    },
+    create: {
+      type: Boolean,
+      required: false,
+      default: () => false,
+    },
+  },
   components: {
     VueJsonPretty,
     MetaNode,
@@ -90,6 +128,12 @@ export default {
     };
   },
   computed: {
+    saveDisabled() {
+      return this.create && !!this.errors;
+    },
+    publishedDisabled() {
+      return this.create || !!this.errors;
+    },
     validate() {
       return ajv.compile(this.schema);
     },
@@ -129,6 +173,10 @@ export default {
       }
 
       this.closeEditor();
+    },
+    publish() {
+      // Call this.save()
+      // Probably call publish endpoint on the backend
     },
     errorMessage(error) {
       const path = error.dataPath.substring(1);

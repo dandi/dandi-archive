@@ -5,6 +5,7 @@
       @close="edit = false"
       :schema="schema"
       :model="meta"
+      :new="create"
     />
     <template v-else>
       <v-container>
@@ -117,7 +118,7 @@ export default {
       type: String,
       required: true,
     },
-    new: {
+    create: {
       type: Boolean,
       required: false,
       default: () => false,
@@ -129,7 +130,7 @@ export default {
   },
   data() {
     return {
-      schema: this.new ? NEW_SCHEMA : SCHEMA,
+      schema: this.create ? NEW_SCHEMA : SCHEMA,
       meta: {},
       edit: false,
       published: false,
