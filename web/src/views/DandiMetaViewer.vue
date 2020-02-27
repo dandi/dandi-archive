@@ -147,7 +147,9 @@ export default {
   computed: {
     extraFields() {
       const { meta, mainFields } = this;
-      const extra = Object.keys(meta).filter(x => !mainFields.includes(x));
+      const extra = Object.keys(meta).filter(
+        x => !mainFields.includes(x) && x in this.schema.properties,
+      );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
     computedSize() {
