@@ -5,7 +5,12 @@ from girder.models.setting import Setting
 from girder.models.folder import Folder
 from girder.exceptions import RestException
 
-from .util import DANDI_ID_COUNTER, staging_collection, pad_dandi_id, validate_dandi_id
+from .util import (
+    DANDISET_ID_COUNTER,
+    staging_collection,
+    pad_dandiset_id,
+    validate_dandiset_id,
+)
 
 
 @access.user
@@ -21,13 +26,13 @@ def create_dandiset(params):
     if exists:
         raise RestException("Dandiset already exists", code=409)
 
-    current = Setting().get(DANDI_ID_COUNTER)
+    current = Setting().get(DANDISET_ID_COUNTER)
     if current is None:
-        new_id_count = Setting().set(DANDI_ID_COUNTER, 0)
+        new_id_count = Setting().set(DANDISET_ID_COUNTER, 0)
     else:
-        new_id_count = Setting().set(DANDI_ID_COUNTER, current + 1)
+        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)
 
-    padded_id = pad_dandi_id(new_id_count["value"])
+    padded_id = pad_dandiset_id(new_id_count["value"])
     meta = {"name": name, "description": description, "id": padded_id}
 
     staging = staging_collection()
@@ -41,7 +46,7 @@ def create_dandiset(params):
 @access.public
 @describeRoute(Description("Get Dandiset").param("id", "Dandiset ID"))
 def get_dandiset(params):
-    if not validate_dandi_id(params["id"]):
+    if not validate_dandiset_id(params["id"]):
         raise RestException("Invalid Dandiset ID")
 
     doc = Folder().findOne({"meta.dandiset.id": params["id"]})
