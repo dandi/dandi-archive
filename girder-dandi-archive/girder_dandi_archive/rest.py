@@ -13,50 +13,52 @@ from .util import (
 )
 
 
-@access.user
-@describeRoute(
-    Description("Create Dandiset")
-    .param("name", "Name of the Dandiset.")
-    .param("description", "Description of the Dandiset.")
-)
-def create_dandiset(params):
-    name, description = params["name"], params["description"]
-    exists = Folder().findOne({"name": name})
-
-    if exists:
-        raise RestException("Dandiset already exists", code=409)
-
-    current = Setting().get(DANDISET_ID_COUNTER)
-    if current is None:
-        new_id_count = Setting().set(DANDISET_ID_COUNTER, 0)
-    else:
-        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)
-
-    padded_id = pad_dandiset_id(new_id_count["value"])
-    meta = {"name": name, "description": description, "id": padded_id}
-
-    staging = staging_collection()
-    folder = Folder().createFolder(
-        staging, name, parentType="collection", public=False,
-    )
-    folder = Folder().setMetadata(folder, {"dandiset": meta})
-    return folder
-
-
-@access.public
-@describeRoute(Description("Get Dandiset").param("id", "Dandiset ID"))
-def get_dandiset(params):
-    if not validate_dandiset_id(params["id"]):
-        raise RestException("Invalid Dandiset ID")
-
-    doc = Folder().findOne({"meta.dandiset.id": params["id"]})
-    return doc
-
-
 class DandiResource(Resource):
     def __init__(self):
         super(DandiResource, self).__init__()
 
         self.resourceName = "dandi"
-        self.route("GET", (), get_dandiset)
-        self.route("POST", (), create_dandiset)
+        self.route("GET", (), self.get_dandiset)
+        self.route("POST", (), self.create_dandiset)
+
+    @access.user
+    @describeRoute(
+        Description("Create Dandiset")
+        .param("name", "Name of the Dandiset.")
+        .param("description", "Description of the Dandiset.")
+    )
+    def create_dandiset(self, params):
+        name, description = params["name"], params["description"]
+        exists = Folder().findOne({"name": name})
+
+        if exists:
+            raise RestException("Dandiset already exists", code=409)
+
+        current = Setting().get(DANDISET_ID_COUNTER)
+        if current is None:
+            new_id_count = Setting().set(DANDISET_ID_COUNTER, 0)
+        else:
+            new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)
+
+        padded_id = pad_dandiset_id(new_id_count["value"])
+        meta = {"name": name, "description": description, "id": padded_id}
+
+        staging = staging_collection()
+        folder = Folder().createFolder(
+            staging,
+            name,
+            parentType="collection",
+            creator=self.getCurrentUser(),
+            public=False,
+        )
+        folder = Folder().setMetadata(folder, {"dandiset": meta})
+        return folder
+
+    @access.public
+    @describeRoute(Description("Get Dandiset").param("id", "Dandiset ID"))
+    def get_dandiset(self, params):
+        if not validate_dandiset_id(params["id"]):
+            raise RestException("Invalid Dandiset ID")
+
+        doc = Folder().findOne({"meta.dandiset.id": params["id"]})
+        return doc
