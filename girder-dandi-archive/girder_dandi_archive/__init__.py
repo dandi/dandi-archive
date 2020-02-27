@@ -5,12 +5,15 @@ from girder.plugin import GirderPlugin
 from girder.models.item import Item
 from girder.utility import search
 
+from .rest import DandiResource
+
 
 class GirderPlugin(GirderPlugin):
     DISPLAY_NAME = "DANDI Archive"
 
     def load(self, info):
         search.addSearchMode("dandi", dandi_search_handler)
+        info["apiRoot"].dandi = DandiResource()
 
 
 def dandi_search_handler(query, types, user=None, level=None, limit=0, offset=0):
