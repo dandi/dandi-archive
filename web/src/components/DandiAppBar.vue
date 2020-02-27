@@ -1,7 +1,7 @@
 <template>
   <v-app-bar app color="primary">
     <v-toolbar-title>
-      <img class="logo" alt="DANDI logo" height="48px" src="../assets/logo.svg" />
+      <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
     </v-toolbar-title>
     <v-spacer/>
     <girder-search @select="selectSearchResult" search-mode="dandi"
@@ -89,9 +89,3 @@ export default {
   methods: mapActions(['logout', 'selectSearchResult']),
 };
 </script>
-
-<style scoped>
-.logo {
-  vertical-align: middle;
-}
-</style>
