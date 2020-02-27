@@ -104,7 +104,6 @@
 <script>
 import filesize from 'filesize';
 import { mapState } from 'vuex';
-import { debounce } from 'lodash';
 import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
@@ -130,7 +129,6 @@ export default {
   },
   data() {
     return {
-      valid: false,
       schema: this.new ? NEW_SCHEMA : SCHEMA,
       meta: {},
       edit: false,
@@ -180,24 +178,6 @@ export default {
       res = await this.girderRest.get(`/folder/${val._id}/details`);
       if (res.status === 200) {
         this.details = res.data;
-      }
-    },
-    valid: debounce(function debouncedValid(valid) {
-      if (valid) {
-        this.saveDandiMeta();
-      }
-    }, 1000),
-  },
-  methods: {
-    saveDandiMeta() {
-      this.girderRest.put(`/folder/${this.id}/metadata`, { dandiset: this.meta }, { params: { allowNull: false } });
-    },
-    setMetaObject(val, index) {
-      try {
-        this.$set(this.meta, index, JSON.parse(val));
-        this.$delete(this.errors, index);
-      } catch (err) {
-        this.$set(this.errors, index, err.message);
       }
     },
   },
