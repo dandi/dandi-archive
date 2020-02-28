@@ -28,7 +28,14 @@ class DandiResource(Resource):
         .param("description", "Description of the Dandiset.")
     )
     def create_dandiset(self, params):
+        if "name" not in params or "description" not in params:
+            raise RestException("Name and description required.")
+
         name, description = params["name"], params["description"]
+
+        if not name or not description:
+            raise RestException("Name and description must not be empty.")
+
         exists = Folder().findOne({"name": name})
 
         if exists:
