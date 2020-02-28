@@ -36,9 +36,9 @@ class DandiResource(Resource):
 
         current = Setting().get(DANDISET_ID_COUNTER)
         if current is None:
-            new_id_count = Setting().set(DANDISET_ID_COUNTER, 0)
-        else:
-            new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)
+            current = -1
+
+        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)
 
         padded_id = pad_dandiset_id(new_id_count["value"])
         meta = {"name": name, "description": description, "id": padded_id}
