@@ -22,9 +22,6 @@ def validate_dandiset_id(dandiset_id):
 
 
 def staging_collection():
-    doc = Collection().findOne({"name": DANDI_STAGING_COLLECTION_NAME})
-
-    if doc is None:
-        doc = Collection().createCollection(DANDI_STAGING_COLLECTION_NAME, public=False)
-
-    return doc
+    return Collection().createCollection(
+        DANDI_STAGING_COLLECTION_NAME, reuseExisting=True,
+    )
