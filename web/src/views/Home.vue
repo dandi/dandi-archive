@@ -1,10 +1,5 @@
 <template>
   <v-container style="height: 100%;">
-    <v-row v-if="!loggedIn">
-      <v-col cols="12">
-        <girder-auth :force-otp="false"  :show-forgot-password="false"  :oauth="true" />
-      </v-col>
-    </v-row>
     <v-row>
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
@@ -25,7 +20,7 @@
 
 <script>
 import { mapGetters, mapMutations, mapState } from 'vuex';
-import { Authentication as GirderAuth, DataDetails as GirderDataDetails } from '@girder/components/src/components';
+import { DataDetails as GirderDataDetails } from '@girder/components/src/components';
 import { DefaultActionKeys } from '@girder/components/src/components/DataDetails.vue';
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
 
@@ -52,9 +47,33 @@ const actionKeys = [
 ];
 
 export default {
-  components: { GirderAuth, GirderDataDetails, GirderFileManager },
+  components: { GirderDataDetails, GirderFileManager },
   computed: {
-    actions: () => actionKeys,
+    actions() {
+      let actions = actionKeys;
+      if (this.selected.length === 1 && this.selected[0].meta && this.selected[0].meta.dandiset) {
+        const id = this.selected[0]._id;
+
+        actions = [
+          {
+            for: ['folder'],
+            name: 'View DANDI Metadata',
+            icon: 'mdi-pencil',
+            color: 'primary',
+            handler() {
+              // eslint-disable-next-line
+              this.$router.push({
+                name: 'dandiset-metadata-viewer',
+                params: { id },
+              });
+            },
+          },
+          ...actionKeys,
+        ];
+      }
+
+      return actions;
+    },
     location: {
       get() {
         return this.browseLocation;

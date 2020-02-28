@@ -1,0 +1,463 @@
+{
+  "definitions": {
+    "contributor": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name",
+          "default": "",
+          "examples": [
+            "John Doe"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "identifier": {
+          "type": "string",
+          "title": "Identifier",
+          "default": "",
+          "examples": [
+            "0000-0002-1825-0097"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "email": {
+          "type": "string",
+          "title": "Email",
+          "default": "",
+          "examples": [
+            "johndoe@email.com"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "affiliation": {
+          "type": "string",
+          "title": "Affiliation",
+          "default": "",
+          "examples": [
+            ""
+          ],
+          "pattern": "^(.*)$"
+        },
+        "address": {
+          "type": "string",
+          "title": "Address",
+          "default": "",
+          "examples": [
+            ""
+          ],
+          "pattern": "^(.*)$"
+        },
+        "webpage": {
+          "type": "string",
+          "title": "Webpage",
+          "default": "",
+          "examples": [
+            "example@example.com"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "Generic Dataset Metadata",
+  "required": [
+    "name",
+    "description",
+    "version",
+    "author",
+    "contributor",
+    "director",
+    "creator",
+    "dataDownload",
+    "contactPoint",
+    "sameAs",
+    "license",
+    "url"
+  ],
+  "properties": {
+    "name": {
+      "$id": "#/properties/name",
+      "type": "string",
+      "title": "Title of the Data Set",
+      "description": "A descriptive title for the data set equivalent to the title of a scientific paper.",
+      "default": "",
+      "examples": [
+        "John Doe"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "description": {
+      "$id": "#/properties/description",
+      "type": "string",
+      "description": "Free text describing the content of the data set and any other relevant information. Equivalent to the abstract in a scientific paper.",
+      "title": "Data Set Description",
+      "default": "",
+      "examples": [
+        "Experiment regarding ..."
+      ],
+      "pattern": "^(.*)$"
+    },
+    "version": {
+      "$id": "#/properties/version",
+      "type": "integer",
+      "description": "The version of the data set.",
+      "title": "Version",
+      "default": 0,
+      "examples": [
+        1
+      ]
+    },
+    "author": {
+      "$id": "#/properties/author",
+      "$ref": "#/definitions/contributor",
+      "title": "Author"
+    },
+    "contributor": {
+      "$id": "#/properties/contributor",
+      "$ref": "#/definitions/contributor",
+      "title": "Contributor"
+    },
+    "director": {
+      "$id": "#/properties/director",
+      "$ref": "#/definitions/contributor",
+      "title": "Director"
+    },
+    "creator": {
+      "$id": "#/properties/creator",
+      "$ref": "#/definitions/contributor",
+      "title": "Creator"
+    },
+    "contactPoint": {
+      "$id": "#/properties/contactPoint",
+      "type": "string",
+      "title": "Contact",
+      "description": "Specific contact for first stage assistance with the dataset which maybe different than a contact author.  For example, the help line for the hosting data reepository.",
+      "default": "",
+      "examples": [
+        "1-800-HELP-ME"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "sameAs": {
+      "$id": "#/properties/sameAs",
+      "type": "string",
+      "title": "Dataset DOI or other Primary URI",
+      "description": "Primary PID for the data set.",
+      "default": "",
+      "examples": [
+        "doi:10.1038/nphys1170"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "publisher": {
+      "$id": "#/properties/publisher",
+      "type": "string",
+      "title": "Data repository",
+      "description": "Name of repository where data was deposited, publisher of the data, i.e., the data repository that is hosting the data.",
+      "default": "",
+      "examples": [
+        "archive.org"
+      ],
+      "pattern": "^(.*)$"
+    },
+    "identifier": {
+      "$id": "#/properties/identifier",
+      "type": "integer",
+      "title": "Data set ID",
+      "description": "Database accession number and other alternated identifiers. *This handles additional identifiers (e.g. accession numbers) and is handled by identifier propertyTypes. Other identifiers that may have been assigned to the data set, e.g., a DOI may be assigned after a data set is published.",
+      "default": 0,
+      "examples": [
+        10
+      ]
+    },
+    "dataDownload": {
+      "$id": "#/properties/dataDownload",
+      "type": "object",
+      "title": "Distributions",
+      "required": [
+        "contentURL",
+        "name",
+        "contentSize",
+        "datePublished",
+        "dateModified",
+        "measurementType"
+      ],
+      "properties": {
+        "contentURL": {
+          "$id": "#/properties/dataDownload/properties/contentURL",
+          "type": "string",
+          "title": "Content URL",
+          "default": "",
+          "examples": [
+            "www.example.com"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "name": {
+          "$id": "#/properties/dataDownload/properties/name",
+          "type": "string",
+          "title": "Name",
+          "default": "",
+          "examples": [
+            "Data Name"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "contentSize": {
+          "$id": "#/properties/dataDownload/properties/contentSize",
+          "type": "string",
+          "title": "Content Size",
+          "default": "",
+          "examples": [
+            "5GB"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "datePublished": {
+          "$id": "#/properties/dataDownload/properties/datePublished",
+          "type": "string",
+          "title": "Date Published",
+          "default": "",
+          "examples": [
+            "2020-01-01"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "dateModified": {
+          "$id": "#/properties/dataDownload/properties/dateModified",
+          "type": "string",
+          "title": "Date Modified",
+          "default": "",
+          "examples": [
+            "2020-23-01"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "measurementType": {
+          "$id": "#/properties/dataDownload/properties/measurementType",
+          "type": "string",
+          "title": "Measurement Type",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    },
+    "creativeWork": {
+      "$id": "#/properties/creativeWork",
+      "type": "object",
+      "title": "Associated Publications",
+      "description": "Data Publication: A publication whose primary purpose is to describe the data set; Study Publication: A publication that describes the the study that created the data.",
+      "required": [
+        "sameAs",
+        "role"
+      ],
+      "properties": {
+        "sameAs": {
+          "$id": "#/properties/creativeWork/properties/sameAs",
+          "type": "string",
+          "title": "DOI/ISBN",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "role": {
+          "$id": "#/properties/creativeWork/properties/role",
+          "type": "string",
+          "title": "Publication Type",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "identifier": {
+          "$id": "#/properties/creativeWork/properties/identifier",
+          "type": "string",
+          "title": "Identifier",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "publicationInfo": {
+          "$id": "#/properties/creativeWork/properties/publicationInfo",
+          "type": "string",
+          "title": "Basic Publication Info",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    },
+    "grant": {
+      "$id": "#/properties/grant",
+      "type": "object",
+      "title": "Funding Acknowledgement",
+      "description": "Any funding sources that were used to create the data.",
+      "required": [
+        "sponsor"
+      ],
+      "properties": {
+        "sponsor": {
+          "$id": "#/properties/grant/properties/sponsor",
+          "type": "object",
+          "title": "Sponsor",
+          "description": "Oranization/Person",
+          "required": [
+            "name",
+            "identifier",
+            "email",
+            "address"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/grant/properties/sponsor/properties/name",
+              "type": "string",
+              "title": "Name",
+              "default": "",
+              "examples": [
+                "Example Organization"
+              ],
+              "pattern": "^(.*)$"
+            },
+            "identifier": {
+              "$id": "#/properties/grant/properties/sponsor/properties/identifier",
+              "type": "string",
+              "title": "Identifier",
+              "default": "",
+              "examples": [
+                "?"
+              ],
+              "pattern": "^(.*)$"
+            },
+            "email": {
+              "$id": "#/properties/grant/properties/sponsor/properties/email",
+              "type": "string",
+              "title": "Email",
+              "default": "",
+              "examples": [
+                "example@example.com"
+              ],
+              "pattern": "^(.*)$"
+            },
+            "address": {
+              "$id": "#/properties/grant/properties/sponsor/properties/address",
+              "type": "string",
+              "title": "Address",
+              "default": "",
+              "examples": [
+                "?"
+              ],
+              "pattern": "^(.*)$"
+            }
+          }
+        },
+        "identifier": {
+          "$id": "#/properties/grant/properties/identifier",
+          "type": "string",
+          "title": "Identifier",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "name": {
+          "$id": "#/properties/grant/properties/name",
+          "type": "string",
+          "title": "Name",
+          "default": "",
+          "examples": [
+            "Example Grant"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    },
+    "license": {
+      "$id": "#/properties/license",
+      "type": "object",
+      "title": "Data License",
+      "description": "The license under which the dataset is released.",
+      "required": [
+        "name",
+        "URL"
+      ],
+      "properties": {
+        "name": {
+          "$id": "#/properties/license/properties/name",
+          "type": "string",
+          "title": "Name",
+          "default": "",
+          "examples": [
+            "Apache 2"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "text": {
+          "$id": "#/properties/license/properties/text",
+          "type": "string",
+          "title": "Text",
+          "default": "",
+          "examples": [
+            "?"
+          ],
+          "pattern": "^(.*)$"
+        },
+        "URL": {
+          "$id": "#/properties/license/properties/URL",
+          "type": "string",
+          "title": "URL",
+          "default": "",
+          "examples": [
+            "www.example.com"
+          ],
+          "pattern": "^(.*)$"
+        }
+      }
+    },
+    "keywords": {
+      "$id": "#/properties/keywords",
+      "type": "array",
+      "title": "Keywords",
+      "description": "A list of key words that describe the data.",
+      "items": {
+        "$id": "#/properties/keywords/items",
+        "type": "string",
+        "title": "Items",
+        "description": "The keywords themselves.",
+        "default": "",
+        "examples": [
+          "foo",
+          "bar"
+        ],
+        "pattern": "^(.*)$"
+      }
+    },
+    "url": {
+      "$id": "#/properties/url",
+      "type": "string",
+      "title": "URL",
+      "default": "",
+      "examples": [
+        "example.com"
+      ],
+      "pattern": "^(.*)$"
+    }
+  }
+}
