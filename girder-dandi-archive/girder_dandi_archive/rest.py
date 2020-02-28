@@ -7,8 +7,8 @@ from girder.exceptions import RestException
 
 from .util import (
     DANDISET_ID_COUNTER,
+    DANDISET_ID_LENGTH,
     staging_collection,
-    pad_dandiset_id,
     validate_dandiset_id,
 )
 
@@ -45,9 +45,8 @@ class DandiResource(Resource):
         if current is None:
             current = -1
 
-        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)
-
-        padded_id = pad_dandiset_id(new_id_count["value"])
+        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)["value"]
+        padded_id = f"{new_id_count:0{DANDISET_ID_LENGTH}d}"
         meta = {"name": name, "description": description, "id": padded_id}
 
         staging = staging_collection()

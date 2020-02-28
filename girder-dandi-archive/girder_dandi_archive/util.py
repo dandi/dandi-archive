@@ -21,14 +21,6 @@ def validate_dandiset_id(dandiset_id):
     return bool(re.match(dandiset_id_pattern, dandiset_id))
 
 
-def pad_dandiset_id(dandiset_id):
-    id_str = str(dandiset_id)
-    length = len(str(id_str))
-    remaining = DANDISET_ID_LENGTH - length
-
-    return "%s%s" % (remaining * "0", id_str)
-
-
 def staging_collection():
     doc = Collection().findOne({"name": DANDI_STAGING_COLLECTION_NAME})
 
