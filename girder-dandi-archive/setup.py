@@ -34,7 +34,7 @@ setup(
     keywords="girder-plugin, dandi_archive",
     name="girder_dandi_archive",
     packages=find_packages(exclude=["test", "test.*"]),
-    url="	https://github.com/dandi/dandiarchive",
+    url="https://github.com/dandi/dandiarchive",
     version="0.1.0",
     zip_safe=False,
     entry_points={
