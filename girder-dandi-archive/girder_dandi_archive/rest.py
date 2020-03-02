@@ -51,7 +51,7 @@ class DandiResource(Resource):
 
         staging = staging_collection()
         folder = Folder().createFolder(
-            staging, name, parentType="collection", creator=self.getCurrentUser(),
+            staging, padded_id, parentType="collection", creator=self.getCurrentUser(),
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder
