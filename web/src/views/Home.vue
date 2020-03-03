@@ -31,20 +31,8 @@ import {
   getPathFromSelected,
 } from '@/utils';
 
-const JUPYTER_ROOT = process.env.JUPYTER_ROOT || '/jupyter/some_notebook'; // TODO url
-const actionKeys = [
-  {
-    for: ['item'],
-    name: 'Open in Jupyter',
-    icon: 'mdi-language-python',
-    color: 'primary',
-    handler() {
-      const { value: items } = this;
-      window.open(`${JUPYTER_ROOT}?item=${items[0]._id}`, '_blank');
-    },
-  },
-  ...DefaultActionKeys,
-];
+// removed "view item" icons
+const actionKeys = DefaultActionKeys.slice(1);
 
 export default {
   components: { GirderDataDetails, GirderFileManager },
