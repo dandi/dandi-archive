@@ -31,8 +31,25 @@ import {
   getPathFromSelected,
 } from '@/utils';
 
+// redirect to "Open JupyterLab"
+const JUPYTER_ROOT = process.env.JUPYTER_ROOT || 'http://hub.dandiarchive.org ';
+
 // removed "view item" icons
-const actionKeys = DefaultActionKeys.slice(1);
+let keys = DefaultActionKeys.slice(1);
+
+const actionKeys = [
+   {
+    for: ['item'],
+    name: 'Open JupyterLab',
+    icon: 'mdi-language-python',
+    color: 'primary',
+    handler() {
+      const { value: items } = this;
+      window.open(`${JUPYTER_ROOT}`, '_blank');
+    },
+   },
+  ...keys,
+];
 
 export default {
   components: { GirderDataDetails, GirderFileManager },
