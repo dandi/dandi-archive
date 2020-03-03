@@ -31,19 +31,9 @@ import {
   getPathFromSelected,
 } from '@/utils';
 
-const JUPYTER_ROOT = process.env.JUPYTER_ROOT || '/jupyter/some_notebook'; // TODO url
 const actionKeys = [
-  {
-    for: ['item'],
-    name: 'Open in Jupyter',
-    icon: 'mdi-language-python',
-    color: 'primary',
-    handler() {
-      const { value: items } = this;
-      window.open(`${JUPYTER_ROOT}?item=${items[0]._id}`, '_blank');
-    },
-  },
-  ...DefaultActionKeys,
+// removed "view item" and "open in jupyter" icons
+  DefaultActionKeys[1], DefaultActionKeys[2], DefaultActionKeys[3],
 ];
 
 export default {
