@@ -32,7 +32,7 @@ import {
 } from '@/utils';
 
 const actionKeys = [
-// removed "view item" and "open in jupyter" icons
+  // removed "view item" and "open in jupyter" icons
   DefaultActionKeys[1], DefaultActionKeys[2], DefaultActionKeys[3],
 ];
 
