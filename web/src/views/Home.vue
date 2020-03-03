@@ -31,10 +31,8 @@ import {
   getPathFromSelected,
 } from '@/utils';
 
-const actionKeys = [
-  // removed "view item" and "open in jupyter" icons
-  DefaultActionKeys[1], DefaultActionKeys[2], DefaultActionKeys[3],
-];
+// removed "view item" icons
+const actionKeys = DefaultActionKeys.slice(1);
 
 export default {
   components: { GirderDataDetails, GirderFileManager },
