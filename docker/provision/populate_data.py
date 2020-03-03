@@ -21,7 +21,12 @@ def ensure_collection(collection_name):
 
     return gc.createCollection(collection_name)
 
-staging_collection = ensure_collection("staging")
+
+for c in ("drafts", "releases"):
+    ensure_collection(c)
+
+# labs is primarily for practicing metadata search etc, to be gone later on
+# and will not be in the deployed instance
 labs_collection = ensure_collection("labs")
 
 
