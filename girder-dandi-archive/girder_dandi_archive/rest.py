@@ -8,7 +8,7 @@ from girder.exceptions import RestException
 from .util import (
     DANDISET_ID_COUNTER,
     DANDISET_ID_LENGTH,
-    staging_collection,
+    drafts_collection,
     validate_dandiset_id,
 )
 
@@ -49,9 +49,9 @@ class DandiResource(Resource):
         padded_id = f"{new_id_count:0{DANDISET_ID_LENGTH}d}"
         meta = {"name": name, "description": description, "id": padded_id}
 
-        staging = staging_collection()
+        drafts = drafts_collection()
         folder = Folder().createFolder(
-            staging, padded_id, parentType="collection", creator=self.getCurrentUser(),
+            drafts, padded_id, parentType="collection", creator=self.getCurrentUser(),
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder
