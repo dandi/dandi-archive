@@ -31,19 +31,20 @@ import {
   getPathFromSelected,
 } from '@/utils';
 
-const JUPYTER_ROOT = process.env.JUPYTER_ROOT || '/jupyter/some_notebook'; // TODO url
+// redirect to "Open JupyterLab"
+const JUPYTER_ROOT = 'https://hub.dandiarchive.org';
+
 const actionKeys = [
-  {
+   {
     for: ['item'],
-    name: 'Open in Jupyter',
+    name: 'Open JupyterLab',
     icon: 'mdi-language-python',
     color: 'primary',
     handler() {
-      const { value: items } = this;
-      window.open(`${JUPYTER_ROOT}?item=${items[0]._id}`, '_blank');
+      window.open(`${JUPYTER_ROOT}`, '_blank');
     },
-  },
-  ...DefaultActionKeys,
+   },
+  ...DefaultActionKeys.slice(1),
 ];
 
 export default {

@@ -8,8 +8,8 @@ from girder.exceptions import RestException
 from .util import (
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
-    create_staging_collection,
-    validate_dandiset_identifier,
+    create_drafts_collection,
+    validate_dandiset_identifier
 )
 
 
@@ -53,9 +53,9 @@ class DandiResource(Resource):
             "version": "draft",
         }
 
-        staging = create_staging_collection()
+        drafts = drafts_collection()
         folder = Folder().createFolder(
-            staging,
+            drafts,
             padded_identifier,
             parentType="collection",
             creator=self.getCurrentUser(),
