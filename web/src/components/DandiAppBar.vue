@@ -28,6 +28,7 @@
                               hint="Provide a title for this dataset"
                               persistent-hint
                               :counter="120"
+                              v-model="name"
                               required></v-text-field>
               </v-col>
               <v-col cols="12">
@@ -35,6 +36,7 @@
                               hint="Provide a description for this dataset"
                               :counter="3000"
                               persistent-hint
+                              v-model="description"
                               required></v-textarea>
               </v-col>
             </v-row>
@@ -43,7 +45,9 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn type="submit" color="primary" @click="call_api">
+          <v-btn type="submit" color="primary"
+                 :disabled="saveDisabled"
+                 @click="register_dandiset">
             Register dataset
             <template v-slot:loader>
               <span>Registering...</span>
@@ -122,13 +126,24 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
+import { stringify } from 'qs';
+import { mapActions, mapGetters, mapState } from 'vuex';
 import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/components/src/components';
 
 export default {
+   data: () => ({
+    name: '',
+    description: '',
+  }),
   components: { GirderSearch, GirderAuth },
   computed: {
+    saveDisabled() {
+      return this.name === "" || this.description === "";
+    },
     ...mapGetters(['loggedIn', 'user']),
+    ...mapState({
+      girderRest: 'girderRest',
+    }),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -146,6 +161,21 @@ export default {
       return 'NA';
     },
   },
-  methods: mapActions(['logout', 'selectSearchResult']),
+  methods: {
+    async register_dandiset() {
+      const { name, description } = this;
+      const { status, data } = await this.girderRest.post(`dandi`,
+          stringify({ name: name, description: description}));
+
+      if (status === 200) {
+        this.name = '';
+        this.description = '';
+        this.$router.push({
+            name: 'dandiset-metadata-viewer',
+            params: { id: data['_id'] } });
+      }
+    },
+      ...mapActions(['logout', 'selectSearchResult'])
+  },
 };
 </script>
