@@ -6,10 +6,10 @@ from girder.models.folder import Folder
 from girder.exceptions import RestException
 
 from .util import (
-    DANDISET_ID_COUNTER,
-    DANDISET_ID_LENGTH,
-    staging_collection,
-    validate_dandiset_id,
+    DANDISET_IDENTIFIER_COUNTER,
+    DANDISET_IDENTIFIER_LENGTH,
+    create_staging_collection,
+    validate_dandiset_identifier,
 )
 
 
@@ -36,31 +36,66 @@ class DandiResource(Resource):
         if not name or not description:
             raise RestException("Name and description must not be empty.")
 
-        exists = Folder().findOne({"name": name})
-
-        if exists:
-            raise RestException("Dandiset already exists", code=409)
-
-        current = Setting().get(DANDISET_ID_COUNTER)
+        # TODO look into atomic update
+        # TODO break into submethod
+        current = Setting().get(DANDISET_IDENTIFIER_COUNTER)
         if current is None:
             current = -1
+        new_identifier_count = Setting().set(DANDISET_IDENTIFIER_COUNTER, current + 1)[
+            "value"
+        ]
+        padded_identifier = f"{new_identifier_count:0{DANDISET_IDENTIFIER_LENGTH}d}"
 
-        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)["value"]
-        padded_id = f"{new_id_count:0{DANDISET_ID_LENGTH}d}"
-        meta = {"name": name, "description": description, "id": padded_id}
+        meta = {
+            "name": name,
+            "description": description,
+            "identifier": padded_identifier,
+            "version": "draft",
+        }
 
-        staging = staging_collection()
+        staging = create_staging_collection()
         folder = Folder().createFolder(
-            staging, name, parentType="collection", creator=self.getCurrentUser(),
+            staging,
+            padded_identifier,
+            parentType="collection",
+            creator=self.getCurrentUser(),
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder
 
     @access.public
-    @describeRoute(Description("Get Dandiset").param("id", "Dandiset ID"))
+    @describeRoute(
+        Description("Get Dandiset")
+        .param("identifier", "Dandiset Identifier")
+        .param(
+            "version", 'Version of the Dandiset, currently only "draft" is supported.'
+        )
+    )
     def get_dandiset(self, params):
-        if not validate_dandiset_id(params["id"]):
-            raise RestException("Invalid Dandiset ID")
+        if "identifier" not in params or "version" not in params:
+            raise RestException("identifier and version required.")
 
-        doc = Folder().findOne({"meta.dandiset.id": params["id"]})
+        identifier, version = params["identifier"], params["version"]
+
+        if not identifier or not version:
+            raise RestException("identifier and version must not be empty.")
+
+        if not validate_dandiset_identifier(identifier):
+            raise RestException("Invalid Dandiset Identifier")
+        if not version in ["draft"]:
+            raise RestException('Invalid Dandiset Version, must be one of ["draft"]')
+
+        # Ensure we are only looking for staging collection child folders.
+        staging = create_staging_collection()
+        doc = Folder().findOne(
+            {
+                "baseParentType": "collection",
+                "baseParentId": staging["_id"],
+                "parentId": staging["_id"],
+                "meta.dandiset.identifier": identifier,
+                "meta.dandiset.version": version,
+            }
+        )
+        if not doc:
+            doc = {}
         return doc
