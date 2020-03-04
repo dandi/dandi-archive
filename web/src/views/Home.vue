@@ -32,10 +32,7 @@ import {
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
-const JUPYTER_ROOT = process.env.JUPYTER_ROOT || 'http://hub.dandiarchive.org ';
-
-// removed "view item" icons
-let keys = DefaultActionKeys.slice(1);
+const JUPYTER_ROOT = 'https://hub.dandiarchive.org ';
 
 const actionKeys = [
    {
@@ -44,11 +41,10 @@ const actionKeys = [
     icon: 'mdi-language-python',
     color: 'primary',
     handler() {
-      const { value: items } = this;
       window.open(`${JUPYTER_ROOT}`, '_blank');
     },
    },
-  ...keys,
+  ...DefaultActionKeys.slice(1),
 ];
 
 export default {
