@@ -11,6 +11,47 @@
       <span>You are currently viewing the data portal.
       Click this button to learn more about the DANDI project.</span>
     </v-tooltip>
+    <v-dialog max-width="600px">
+      <template v-slot:activator="{ on }">
+        <v-btn text :disabled="!loggedIn"
+               class="ml-2 white--text" dark v-on="on">Register</v-btn>
+      </template>
+      <v-card>
+        <v-card-title>
+          <span class="headline">Register a new dataset</span>
+        </v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-text-field label="Name*"
+                              hint="Provide a title for this dataset"
+                              persistent-hint
+                              :counter="120"
+                              required></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <v-textarea label="Description*"
+                              hint="Provide a description for this dataset"
+                              :counter="3000"
+                              persistent-hint
+                              required></v-textarea>
+              </v-col>
+            </v-row>
+          </v-container>
+          <small>*indicates required field</small>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn type="submit" color="primary" @click="call_api">
+            Register dataset
+            <template v-slot:loader>
+              <span>Registering...</span>
+            </template>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
         <v-chip class="ml-2" color="secondary" v-on="on">
