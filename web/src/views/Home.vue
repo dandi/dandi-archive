@@ -32,7 +32,7 @@ import {
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
-const JUPYTER_ROOT = 'https://hub.dandiarchive.org ';
+const JUPYTER_ROOT = 'https://hub.dandiarchive.org';
 
 const actionKeys = [
    {
