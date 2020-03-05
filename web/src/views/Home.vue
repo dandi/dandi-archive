@@ -157,8 +157,8 @@ export default {
   },
 };
 </script>
-<style scoped>
-/* .girder-data-browser-snippet .spacer {
+<style>
+.girder-file-browser .secondary .row .spacer {
   display: none;
-} */
+}
 </style>
