@@ -36,14 +36,11 @@ class DandiResource(Resource):
         if not name or not description:
             raise RestException("Name and description must not be empty.")
 
-        # TODO look into atomic update
-        # TODO break into submethod
-        current = Setting().get(DANDISET_IDENTIFIER_COUNTER)
-        if current is None:
-            current = -1
-        new_identifier_count = Setting().set(DANDISET_IDENTIFIER_COUNTER, current + 1)[
-            "value"
-        ]
+        new_identifier_count = Setting().collection.find_one_and_update(
+            {"key": DANDISET_IDENTIFIER_COUNTER},
+            {"$inc": {"value": 1}},
+            projection={"value": True},
+        )["value"]
         padded_identifier = f"{new_identifier_count:0{DANDISET_IDENTIFIER_LENGTH}d}"
 
         meta = {
