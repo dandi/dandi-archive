@@ -3,13 +3,14 @@
     <v-row>
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
-            :selectable="true"
-            :location.sync="location"
-            :upload-enabled="false"
-            :value="selected"
-            @input="setSelected"
-            :initial-items-per-page="25"
-            :items-per-page-options="[10,25,50,100,-1]" />
+          :selectable="true"
+          :location.sync="location"
+          :upload-enabled="false"
+          :value="selected"
+          @input="setSelected"
+          :initial-items-per-page="25"
+          :items-per-page-options="[10,25,50,100,-1]"
+        />
       </v-col>
       <v-col cols="4" v-if="selected.length">
         <girder-data-details :value="selected" :action-keys="actions" />
@@ -35,7 +36,7 @@ import {
 const JUPYTER_ROOT = 'https://hub.dandiarchive.org';
 
 const actionKeys = [
-   {
+  {
     for: ['item'],
     name: 'Open JupyterLab',
     icon: 'mdi-language-python',
@@ -43,7 +44,7 @@ const actionKeys = [
     handler() {
       window.open(`${JUPYTER_ROOT}`, '_blank');
     },
-   },
+  },
   ...DefaultActionKeys.slice(1),
 ];
 
@@ -52,7 +53,11 @@ export default {
   computed: {
     actions() {
       let actions = actionKeys;
-      if (this.selected.length === 1 && this.selected[0].meta && this.selected[0].meta.dandiset) {
+      if (
+        this.selected.length === 1
+        && this.selected[0].meta
+        && this.selected[0].meta.dandiset
+      ) {
         const id = this.selected[0]._id;
 
         actions = [
@@ -107,8 +112,9 @@ export default {
       }
       if (
         selected.length !== this.selected.length
-        || selected
-          .find((model, i) => model._id !== (this.selected[i] ? this.selected[i]._id : null))
+        || selected.find((model, i) => (
+          model._id !== (this.selected[i] ? this.selected[i]._id : null)
+        ))
       ) {
         // Same reason as what it says in store.js
         this.$nextTick(() => {
