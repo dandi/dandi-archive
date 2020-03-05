@@ -1,11 +1,24 @@
 <template>
 <div>
   <template v-if="leaf">
+    <v-select
+      v-if="schema.enum"
+      dense
+      :class="leafClasses"
+      :items="schema.enum"
+      v-model="value"
+    >
+      <template v-slot:prepend>
+        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <v-icon v-else>mdi-circle-medium</v-icon>
+      </template>
+    </v-select>
     <v-text-field
+      v-else
       :label="schema.title"
       :type="fieldType(schema)"
       v-model="value"
-      class="ml-2 pr-3 pt-1"
+      :class="leafClasses"
       dense
     >
       <template v-slot:prepend>
@@ -117,6 +130,7 @@ export default {
     return {
       value: this.copyValue(this.initial) || this.defaultInitial(),
       addedProperties: {},
+      leafClasses: 'ml-2 pr-3 pt-1',
     };
   },
   created() {
