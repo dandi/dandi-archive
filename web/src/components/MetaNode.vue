@@ -28,8 +28,19 @@
     </v-text-field>
   </template>
   <template v-else-if="array">
-    <template v-for="(el, i) in value">
+    <template v-if="schema.items.enum">
+      <v-select
+        dense
+        multiple
+        :label="schema.title"
+        :class="leafClasses"
+        :items="schema.items.enum"
+        v-model="value"
+      />
+    </template>
+    <template v-else>
       <meta-node
+        v-for="(el, i) in value"
         :key="i"
         :schema="schema.items"
         :initial="el"
@@ -39,17 +50,17 @@
         @remove="removeArrayItem(i)"
       />
       <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
+      <v-btn
+        color="success"
+        dark
+        rounded
+        class="ml-2"
+        @click="addArrayItem"
+        icon
+      >
+        <v-icon left>mdi-plus</v-icon>
+      </v-btn>
     </template>
-    <v-btn
-      color="success"
-      dark
-      rounded
-      class="ml-2"
-      @click="addArrayItem"
-      icon
-    >
-      <v-icon left>mdi-plus</v-icon>
-    </v-btn>
   </template>
   <template v-else v-for="(prop, k) in activeProperties">
     <v-card :key="k" class="ml-4 mb-2 py-2" :flat="isLeaf(prop)">
