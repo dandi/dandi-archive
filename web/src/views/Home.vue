@@ -10,7 +10,13 @@
           @input="setSelected"
           :initial-items-per-page="25"
           :items-per-page-options="[10,25,50,100,-1]"
-        />
+        >
+          <template v-slot:headerwidget v-if="isDandiset">
+            <v-btn icon color="primary" @click="viewDandiset">
+              <v-icon>mdi-eye</v-icon>
+            </v-btn>
+          </template>
+        </girder-file-manager>
       </v-col>
       <v-col cols="4" v-if="selected.length">
         <girder-data-details :value="selected" :action-keys="actions" />
@@ -20,7 +26,12 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations, mapState } from 'vuex';
+import {
+  mapGetters,
+  mapMutations,
+  mapState,
+  mapActions,
+} from 'vuex';
 import { DataDetails as GirderDataDetails } from '@girder/components/src/components';
 import { DefaultActionKeys } from '@girder/components/src/components/DataDetails.vue';
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
@@ -51,6 +62,13 @@ const actionKeys = [
 export default {
   components: { GirderDataDetails, GirderFileManager },
   computed: {
+    isDandiset() {
+      return (
+        !!this.location
+        && !!this.location.meta
+        && !!this.location.meta.dandiset
+      );
+    },
     actions() {
       let actions = actionKeys;
       if (
@@ -127,8 +145,20 @@ export default {
     const location = getLocationFromRoute(this.$route);
     const selected = getSelectedFromRoute(this.$route);
     this.setBrowseLocation(location);
+    this.fetchFullLocation(location);
     this.setSelected(selected);
   },
-  methods: mapMutations(['setBrowseLocation', 'setSelected']),
+  methods: {
+    viewDandiset() {
+      this.$router.push(`/dandiset-meta/${this.location._id}`);
+    },
+    ...mapMutations(['setBrowseLocation', 'setSelected']),
+    ...mapActions(['fetchFullLocation']),
+  },
 };
 </script>
+<style scoped>
+/* .girder-data-browser-snippet .spacer {
+  display: none;
+} */
+</style>

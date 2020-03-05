@@ -62,6 +62,12 @@
                 >
                   <v-icon>mdi-pencil</v-icon>
                 </v-btn>
+                <v-btn
+                  @click="viewContents"
+                  icon
+                >
+                  <v-icon>mdi-file-tree</v-icon>
+                </v-btn>
               </v-card-actions>
               <v-list dense>
                 <v-divider />
@@ -206,6 +212,11 @@ export default {
       const resp = await this.girderRest.get(`folder/${this.id}`);
       this.$store.commit('setSelected', [resp.data]);
     }
+  },
+  methods: {
+    viewContents() {
+      this.$router.push(`/folder/${this.id}`);
+    },
   },
 };
 </script>
