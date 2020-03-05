@@ -52,7 +52,32 @@
             "type": "array",
             "title": "Roles",
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "Author",
+                "Conceptualization",
+                "ContactPerson",
+                "Data Collector",
+                "DataCurator",
+                "DataManager",
+                "Formal Analysis",
+                "Funding acquisition",
+                "Investigation",
+                "Maintainer",
+                "Methodology",
+                "Producer",
+                "ProjectLeader",
+                "ProjectManager",
+                "ProjectMember",
+                "Project administration",
+                "Researcher",
+                "Resources",
+                "Software",
+                "Supervision",
+                "Validation",
+                "Visualization",
+                "Other"
+              ]
             }
           }
         }
@@ -63,7 +88,7 @@
             "properties": {
               "roles": {
                 "contains": {
-                  "const": "author"
+                  "const": "Author"
                 }
               }
             }
@@ -74,7 +99,7 @@
             "properties": {
               "roles": {
                 "contains": {
-                  "const": "contact"
+                  "const": "ContactPerson"
                 }
               }
             }
