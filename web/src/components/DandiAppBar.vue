@@ -173,6 +173,7 @@ export default {
         this.$router.push({
             name: 'dandiset-metadata-viewer',
             params: { id: data['_id'] } });
+        // TODO: close the dialog
       }
     },
       ...mapActions(['logout', 'selectSearchResult'])
