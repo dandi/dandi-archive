@@ -3,10 +3,11 @@
   <template v-if="leaf">
     <v-select
       v-if="schema.enum"
+      v-model="value"
       dense
       :class="leafClasses"
       :items="schema.enum"
-      v-model="value"
+      :readonly="schema.readOnly"
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
@@ -15,11 +16,12 @@
     </v-select>
     <v-text-field
       v-else
+      v-model="value"
+      dense
       :label="schema.title"
       :type="fieldType(schema)"
-      v-model="value"
       :class="leafClasses"
-      dense
+      :readonly="schema.readOnly"
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
