@@ -183,12 +183,15 @@ export default {
         this.details = res.data;
       }
     },
-  },
-  async created() {
-    if (!this.selected || !this.meta.length) {
-      const resp = await this.girderRest.get(`folder/${this.id}`);
-      this.$store.commit('setSelected', [resp.data]);
-    }
+    id: {
+      immediate: true,
+      async handler(value) {
+        if (!this.selected || !this.meta.length) {
+          const resp = await this.girderRest.get(`folder/${value}`);
+          this.$store.commit('setSelected', [resp.data]);
+        }
+      },
+    },
   },
 };
 </script>
