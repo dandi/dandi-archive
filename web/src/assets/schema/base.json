@@ -14,7 +14,8 @@
       "$id": "#/properties/identifier",
       "type": "string",
       "title": "Identifier",
-      "minLength": 1
+      "minLength": 1,
+      "readOnly": true
     },
     "name": {
       "$id": "#/properties/name",
