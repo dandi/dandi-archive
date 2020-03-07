@@ -6,7 +6,7 @@ from girder.exceptions import ValidationException
 
 DANDISET_ID_COUNTER = "dandi.id_counter"
 DANDISET_ID_LENGTH = 6
-DANDI_STAGING_COLLECTION_NAME = "Dandiset Staging"
+DANDI_DRAFTS_COLLECTION_NAME = "drafts"
 
 dandiset_id_pattern = r"^\d{6}$"
 
@@ -21,7 +21,7 @@ def validate_dandiset_id(dandiset_id):
     return bool(re.match(dandiset_id_pattern, dandiset_id))
 
 
-def staging_collection():
+def drafts_collection():
     return Collection().createCollection(
-        DANDI_STAGING_COLLECTION_NAME, reuseExisting=True,
+        DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True,
     )
