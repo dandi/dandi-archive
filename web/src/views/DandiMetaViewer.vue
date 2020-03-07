@@ -115,7 +115,7 @@
                   <v-list-item :key="k">
                     <v-list-item-content>
                       <template v-if="['object', 'array'].includes(schema.properties[k].type)">
-                        <vue-json-pretty :data="item" highlightMouseoverNode />
+                        <vue-json-pretty :data="item" highlight-mouseover-node />
                       </template>
                       <template v-else>
                         {{ item }}
