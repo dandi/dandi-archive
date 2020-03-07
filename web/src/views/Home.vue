@@ -63,11 +63,7 @@ export default {
   components: { GirderDataDetails, GirderFileManager },
   computed: {
     isDandiset() {
-      return (
-        !!this.location
-        && !!this.location.meta
-        && !!this.location.meta.dandiset
-      );
+      return !!(this.location && this.location.meta && this.location.meta.dandiset);
     },
     actions() {
       let actions = actionKeys;
