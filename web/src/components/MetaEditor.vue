@@ -49,8 +49,7 @@
               </template>
               <span>Save</span>
             </v-tooltip>
-
-            <v-spacer />
+            <!-- <v-spacer />
             <v-btn
               @click="publish"
               color="success"
@@ -61,7 +60,7 @@
                 mdi-cloud-upload
               </v-icon>
               Publish
-            </v-btn>
+            </v-btn> -->
           </v-card-actions>
         </v-card>
         <v-form>

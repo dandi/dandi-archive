@@ -56,12 +56,20 @@
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
-                <v-btn
-                  @click="edit = true"
-                  icon
-                >
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
+                <v-tooltip right :disabled="loggedIn">
+                  <template v-slot:activator="{ on }">
+                    <div v-on="on">
+                      <v-btn
+                        @click="edit = true"
+                        icon
+                        :disabled="!loggedIn"
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                    </div>
+                  </template>
+                  You must be logged in to edit.
+                </v-tooltip>
                 <v-btn
                   @click="viewContents"
                   icon
@@ -126,7 +134,7 @@
 
 <script>
 import filesize from 'filesize';
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
@@ -184,6 +192,7 @@ export default {
       selected: state => (state.selected.length === 1 ? state.selected[0] : undefined),
       girderRest: 'girderRest',
     }),
+    ...mapGetters(['loggedIn']),
   },
   watch: {
     async selected(val) {
