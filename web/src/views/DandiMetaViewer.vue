@@ -71,7 +71,7 @@
                   You must be logged in to edit.
                 </v-tooltip>
                 <v-btn
-                  @click="viewContents"
+                  :to="`/folder/${id}`"
                   icon
                 >
                   <v-icon>mdi-file-tree</v-icon>
@@ -221,11 +221,6 @@ export default {
       const resp = await this.girderRest.get(`folder/${this.id}`);
       this.$store.commit('setSelected', [resp.data]);
     }
-  },
-  methods: {
-    viewContents() {
-      this.$router.push(`/folder/${this.id}`);
-    },
   },
 };
 </script>

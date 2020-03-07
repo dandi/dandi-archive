@@ -12,7 +12,7 @@
           :items-per-page-options="[10,25,50,100,-1]"
         >
           <template v-slot:headerwidget v-if="isDandiset">
-            <v-btn icon color="primary" @click="viewDandiset">
+            <v-btn icon color="primary" :to="`/dandiset-meta/${location._id}`">
               <v-icon>mdi-eye</v-icon>
             </v-btn>
           </template>
@@ -145,9 +145,6 @@ export default {
     this.setSelected(selected);
   },
   methods: {
-    viewDandiset() {
-      this.$router.push(`/dandiset-meta/${this.location._id}`);
-    },
     ...mapMutations(['setBrowseLocation', 'setSelected']),
     ...mapActions(['fetchFullLocation']),
   },
