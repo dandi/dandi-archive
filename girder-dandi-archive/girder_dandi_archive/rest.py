@@ -92,5 +92,5 @@ class DandiResource(Resource):
             }
         )
         if not doc:
-             raise RestException('No such dandiset found.')
+            raise RestException("No such dandiset found.")
         return doc
