@@ -43,8 +43,8 @@
                 </v-list-item>
                 <v-list-item>
                   <v-list-item-content>
-                    <a :href="`https://dandiarchive.org/dandiset/${meta.identifier}/draft`">
-                      {{ `https://dandiarchive.org/dandiset/${meta.identifier}/draft` }}
+                    <a :href="permalink">
+                      {{ permalink }}
                     </a>
                   </v-list-item-content>
                 </v-list-item>
@@ -140,6 +140,7 @@ import VueJsonPretty from 'vue-json-pretty';
 import MetaEditor from '@/components/MetaEditor.vue';
 import SCHEMA from '@/assets/schema/base.json';
 import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
+import { rootDandiUrl } from '@/utils';
 
 export default {
   name: 'DandisetLandingPage',
@@ -160,6 +161,7 @@ export default {
   },
   data() {
     return {
+      rootDandiUrl,
       schema: this.create ? NEW_SCHEMA : SCHEMA,
       meta: {},
       edit: false,
@@ -177,6 +179,9 @@ export default {
     };
   },
   computed: {
+    permalink() {
+      return `https://${this.rootDandiUrl}/dandiset/${this.meta.identifier}/draft`;
+    },
     extraFields() {
       const { meta, mainFields } = this;
       const extra = Object.keys(meta).filter(

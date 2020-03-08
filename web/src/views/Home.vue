@@ -41,10 +41,11 @@ import {
   getLocationFromRoute,
   getSelectedFromRoute,
   getPathFromSelected,
+  rootDandiUrl,
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
-const JUPYTER_ROOT = 'https://hub.dandiarchive.org';
+const JUPYTER_ROOT = `https://hub.${rootDandiUrl}`;
 
 const actionKeys = [
   {
