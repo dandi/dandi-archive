@@ -21,7 +21,7 @@ def validate_dandiset_identifier(dandiset_identifier):
     return bool(re.match(dandiset_identifier_pattern, dandiset_identifier))
 
 
-def create_drafts_collection():
+def get_or_create_drafts_collection():
     return Collection().createCollection(
         DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True
     )

@@ -8,7 +8,7 @@ from girder.exceptions import RestException
 from .util import (
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
-    create_drafts_collection,
+    get_or_create_drafts_collection,
     validate_dandiset_identifier,
 )
 
@@ -50,7 +50,7 @@ class DandiResource(Resource):
             "version": "draft",
         }
 
-        drafts = create_drafts_collection()
+        drafts = get_or_create_drafts_collection()
         folder = Folder().createFolder(
             drafts,
             padded_identifier,
@@ -79,20 +79,18 @@ class DandiResource(Resource):
 
         if not validate_dandiset_identifier(identifier):
             raise RestException("Invalid Dandiset Identifier")
-        if not version in ["draft"]:
+        if version not in ["draft"]:
             raise RestException('Invalid Dandiset Version, must be one of ["draft"]')
 
         # Ensure we are only looking for drafts collection child folders.
-        drafts = create_drafts_collection()
+        drafts = get_or_create_drafts_collection()
         doc = Folder().findOne(
             {
-                "baseParentType": "collection",
-                "baseParentId": drafts["_id"],
                 "parentId": drafts["_id"],
                 "meta.dandiset.identifier": identifier,
                 "meta.dandiset.version": version,
             }
         )
         if not doc:
-            doc = {}
+             raise RestException('No such dandiset found.')
         return doc

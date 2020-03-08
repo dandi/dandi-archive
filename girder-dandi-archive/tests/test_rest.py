@@ -1,6 +1,6 @@
 import pytest
 
-from girder_dandi_archive.util import create_drafts_collection
+from girder_dandi_archive.util import get_or_create_drafts_collection
 
 from girder.models.collection import Collection
 from girder.models.folder import Folder
@@ -8,6 +8,9 @@ from girder.models.folder import Folder
 from pytest_girder.assertions import assertStatus, assertStatusOk
 
 
+# TODO: This fixture and these tests are not well structured and hard to maintain.
+# They currently work correctly in terms of the application code that they test,
+# but they should be rewritten and not followed as an example.
 @pytest.fixture
 def draftsFolders(db):
     red_herring_collection = Collection().createCollection(
@@ -33,7 +36,7 @@ def draftsFolders(db):
         "red_herring_collection": red_herring_collection,
         "red_herring_folder": red_herring_dandiset_000000_folder,
     }
-    return_dict["drafts_collection"] = create_drafts_collection()
+    return_dict["drafts_collection"] = get_or_create_drafts_collection()
     yield return_dict
 
 
@@ -93,8 +96,7 @@ def testGetDandiset(server, draftsFolders, user, capsys):
         user=user,
         params={"identifier": "000000", "version": "draft"},
     )
-    assertStatusOk(resp)
-    assert resp.json == {}
+    assertStatus(resp, 400)
 
     # Create a Dandiset.
     resp = server.request(
