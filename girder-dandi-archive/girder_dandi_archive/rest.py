@@ -47,7 +47,6 @@ class DandiResource(Resource):
             "name": name,
             "description": description,
             "identifier": padded_identifier,
-            "version": "draft",
         }
 
         drafts = get_or_create_drafts_collection()
@@ -62,34 +61,24 @@ class DandiResource(Resource):
 
     @access.public
     @describeRoute(
-        Description("Get Dandiset")
-        .param("identifier", "Dandiset Identifier")
-        .param(
-            "version", 'Version of the Dandiset, currently only "draft" is supported.'
-        )
+        Description("Get Dandiset").param("identifier", "Dandiset Identifier")
     )
     def get_dandiset(self, params):
-        if "identifier" not in params or "version" not in params:
-            raise RestException("identifier and version required.")
+        if "identifier" not in params:
+            raise RestException("identifier required.")
 
-        identifier, version = params["identifier"], params["version"]
+        identifier = params["identifier"]
 
-        if not identifier or not version:
-            raise RestException("identifier and version must not be empty.")
+        if not identifier:
+            raise RestException("identifier must not be empty.")
 
         if not validate_dandiset_identifier(identifier):
             raise RestException("Invalid Dandiset Identifier")
-        if version not in ["draft"]:
-            raise RestException('Invalid Dandiset Version, must be one of ["draft"]')
 
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
         doc = Folder().findOne(
-            {
-                "parentId": drafts["_id"],
-                "meta.dandiset.identifier": identifier,
-                "meta.dandiset.version": version,
-            }
+            {"parentId": drafts["_id"], "meta.dandiset.identifier": identifier}
         )
         if not doc:
             raise RestException("No such dandiset found.")

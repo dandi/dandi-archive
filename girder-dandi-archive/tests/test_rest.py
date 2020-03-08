@@ -24,12 +24,7 @@ def draftsFolders(db):
         public=True,
     )
     meta = {
-        "dandiset": {
-            "name": "red",
-            "description": "herring",
-            "identifier": "000000",
-            "version": "draft",
-        }
+        "dandiset": {"name": "red", "description": "herring", "identifier": "000000"}
     }
     Folder().setMetadata(red_herring_dandiset_000000_folder, meta)
     return_dict = {
@@ -62,7 +57,6 @@ def testCreateDandiset(server, draftsFolders, user):
     assert "000000" == test_dandiset_0_folder_meta["identifier"]
     assert "test dandiset 0 name" == test_dandiset_0_folder_meta["name"]
     assert "test dandiset 0 description" == test_dandiset_0_folder_meta["description"]
-    assert "draft" == test_dandiset_0_folder_meta["version"]
 
     resp = server.request(
         path="/dandi",
@@ -82,7 +76,6 @@ def testCreateDandiset(server, draftsFolders, user):
     assert "000001" == test_dandiset_1_folder_meta["identifier"]
     assert "test dandiset 1 name" == test_dandiset_1_folder_meta["name"]
     assert "test dandiset 1 description" == test_dandiset_1_folder_meta["description"]
-    assert "draft" == test_dandiset_1_folder_meta["version"]
 
 
 @pytest.mark.plugin("dandi_archive")
@@ -91,10 +84,7 @@ def testGetDandiset(server, draftsFolders, user, capsys):
 
     # Ensure we don't find any before creation, in the wrong parent.
     resp = server.request(
-        path="/dandi",
-        method="GET",
-        user=user,
-        params={"identifier": "000000", "version": "draft"},
+        path="/dandi", method="GET", user=user, params={"identifier": "000000"}
     )
     assertStatus(resp, 400)
 
@@ -113,10 +103,7 @@ def testGetDandiset(server, draftsFolders, user, capsys):
 
     # Ensure we can retrieve the Dandiset.
     resp = server.request(
-        path="/dandi",
-        method="GET",
-        user=user,
-        params={"identifier": "000000", "version": "draft"},
+        path="/dandi", method="GET", user=user, params={"identifier": "000000"}
     )
     assertStatusOk(resp)
     test_dandiset_0_folder = resp.json
@@ -126,4 +113,3 @@ def testGetDandiset(server, draftsFolders, user, capsys):
     assert "000000" == test_dandiset_0_folder_meta["identifier"]
     assert "test dandiset 0 name" == test_dandiset_0_folder_meta["name"]
     assert "test dandiset 0 description" == test_dandiset_0_folder_meta["description"]
-    assert "draft" == test_dandiset_0_folder_meta["version"]
