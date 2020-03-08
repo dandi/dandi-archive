@@ -11,7 +11,7 @@
       <span>You are currently viewing the data portal.
       Click this button to learn more about the DANDI project.</span>
     </v-tooltip>
-    <v-dialog max-width="600px">
+    <v-dialog max-width="600px" v-model="regdialog">
       <template v-slot:activator="{ on }">
         <v-btn text :disabled="!loggedIn"
                class="ml-2 white--text" dark v-on="on">Register</v-btn>
@@ -134,6 +134,7 @@ export default {
    data: () => ({
     name: '',
     description: '',
+    regdialog: false,
   }),
   components: { GirderSearch, GirderAuth },
   computed: {
@@ -173,7 +174,7 @@ export default {
         this.$router.push({
             name: 'dandiset-metadata-viewer',
             params: { id: data['_id'] } });
-        // TODO: close the dialog
+        this.regdialog = false;
       }
     },
       ...mapActions(['logout', 'selectSearchResult'])
