@@ -1,8 +1,9 @@
 FROM node
 
 COPY web/package.json /client/package.json
+COPY web/yarn.lock /client/yarn.lock
 WORKDIR /client
-RUN npm install
+RUN yarn install --frozen-lockfile
 COPY web /client
 RUN yarn run build --mode docker
 
