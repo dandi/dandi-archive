@@ -13,41 +13,47 @@
     </v-tooltip>
     <v-dialog max-width="600px" v-model="regdialog">
       <template v-slot:activator="{ on }">
-        <v-btn text :disabled="!loggedIn"
-               class="ml-2 white--text" dark v-on="on">Register</v-btn>
+        <v-btn
+          text
+          :disabled="!loggedIn"
+          class="ml-2 white--text"
+          dark
+          v-on="on"
+        >
+          Register
+        </v-btn>
       </template>
       <v-card>
         <v-card-title>
           <span class="headline">Register a new dataset</span>
         </v-card-title>
         <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-text-field label="Name*"
-                              hint="Provide a title for this dataset"
-                              persistent-hint
-                              :counter="120"
-                              v-model="name"
-                              required></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-textarea label="Description*"
-                              hint="Provide a description for this dataset"
-                              :counter="3000"
-                              persistent-hint
-                              v-model="description"
-                              required></v-textarea>
-              </v-col>
-            </v-row>
-          </v-container>
+          <v-text-field
+            label="Name*"
+            hint="Provide a title for this dataset"
+            persistent-hint
+            :counter="120"
+            v-model="name"
+            required
+          />
+          <v-textarea
+            label="Description*"
+            hint="Provide a description for this dataset"
+            :counter="3000"
+            persistent-hint
+            v-model="description"
+            required
+          />
           <small>*indicates required field</small>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn type="submit" color="primary"
-                 :disabled="saveDisabled"
-                 @click="register_dandiset">
+          <v-btn
+            type="submit"
+            color="primary"
+            :disabled="saveDisabled"
+            @click="register_dandiset"
+          >
             Register dataset
             <template v-slot:loader>
               <span>Registering...</span>
@@ -126,12 +132,11 @@
 </template>
 
 <script>
-import { stringify } from 'qs';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/components/src/components';
 
 export default {
-   data: () => ({
+  data: () => ({
     name: '',
     description: '',
     regdialog: false,
@@ -139,12 +144,10 @@ export default {
   components: { GirderSearch, GirderAuth },
   computed: {
     saveDisabled() {
-      return this.name === "" || this.description === "";
+      return !(this.name && this.description);
     },
     ...mapGetters(['loggedIn', 'user']),
-    ...mapState({
-      girderRest: 'girderRest',
-    }),
+    ...mapState(['girderRest']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -165,19 +168,19 @@ export default {
   methods: {
     async register_dandiset() {
       const { name, description } = this;
-      const { status, data } = await this.girderRest.post(`dandi`,
-          stringify({ name: name, description: description}));
+      const { status, data } = await this.girderRest.post('dandi', null, { params: { name, description } });
 
       if (status === 200) {
         this.name = '';
         this.description = '';
         this.$router.push({
-            name: 'dandiset-metadata-viewer',
-            params: { id: data['_id'] } });
+          name: 'dandiset-metadata-viewer',
+          params: { id: data._id },
+        });
         this.regdialog = false;
       }
     },
-      ...mapActions(['logout', 'selectSearchResult'])
+    ...mapActions(['logout', 'selectSearchResult']),
   },
 };
 </script>

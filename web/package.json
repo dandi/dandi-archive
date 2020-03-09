@@ -16,7 +16,6 @@
     "filesize": "^6.0.1",
     "js-yaml": "^3.13.1",
     "lodash": "^4.17.15",
-    "qs": "^6.5.2",
     "vue": "^2.6.10",
     "vue-json-pretty": "^1.6.3",
     "vue-router": "^3.0.3",
