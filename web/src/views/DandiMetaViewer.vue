@@ -52,7 +52,7 @@
               <v-card-actions class="py-0">
                 <v-btn
                   icon
-                  @click="$router.push(`/collection/${selected.parentId}`)"
+                  :to="`/collection/${selected.parentId}`"
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
