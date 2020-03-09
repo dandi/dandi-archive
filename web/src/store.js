@@ -25,6 +25,16 @@ export default new Vuex.Store({
     },
   },
   actions: {
+    async fetchFullLocation({ state, commit }, location) {
+      if (location._id && location._modelType) {
+        const { _id: id, _modelType: modelType } = location;
+        const resp = await state.girderRest.get(`${modelType}/${id}`);
+
+        if (resp.status === 200) {
+          commit('setBrowseLocation', resp.data);
+        }
+      }
+    },
     async selectSearchResult({ state, commit }, result) {
       commit('setSelected', []);
 

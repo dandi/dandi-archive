@@ -82,7 +82,7 @@
               <v-radio label="JSON" :value="false" />
             </v-radio-group>
           </v-card-actions>
-          <vue-json-pretty class="ma-2" :data="meta" highlightMouseoverNode />
+          <vue-json-pretty class="ma-2" :data="meta" highlight-mouseover-node />
         </v-card>
       </v-col>
     </v-row>

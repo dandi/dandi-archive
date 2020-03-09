@@ -29,10 +29,30 @@
                   This dataset has not been published!
                 </v-chip>
               </v-card-title>
-              <v-card-actions>
+              <v-list dense v-if="meta.identifier" class="py-0">
+                <v-list-item>
+                  <v-list-item-content>
+                    Identifier: {{ meta.identifier }}
+                  </v-list-item-content>
+                  <!-- <v-list-item-action class="ma-0 mr-1">
+                    <v-btn icon>
+                      <v-icon>mdi-content-copy</v-icon>
+                    </v-btn>
+                  </v-list-item-action>
+                  <v-spacer /> -->
+                </v-list-item>
+                <v-list-item>
+                  <v-list-item-content>
+                    <a :href="permalink">
+                      {{ permalink }}
+                    </a>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+              <v-card-actions class="py-0">
                 <v-btn
                   icon
-                  @click="$router.push(`/collection/${selected.parentId}`)"
+                  :to="`/collection/${selected.parentId}`"
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
@@ -50,9 +70,15 @@
                   </template>
                   You must be logged in to edit.
                 </v-tooltip>
+                <v-btn
+                  :to="`/folder/${id}`"
+                  icon
+                >
+                  <v-icon>mdi-file-tree</v-icon>
+                </v-btn>
               </v-card-actions>
-              <v-divider />
               <v-list dense>
+                <v-divider />
                 <v-list-item>
                   <v-list-item-content>
                     Uploaded by {{uploader}}
@@ -84,24 +110,20 @@
                     <v-list-item-content>{{item}}</v-list-item-content>
                   </v-list-item>
                 </template>
+                <template v-for="(item, k) in extraFields">
+                  <v-subheader :key="k">{{ k }}</v-subheader>
+                  <v-list-item :key="k">
+                    <v-list-item-content>
+                      <template v-if="['object', 'array'].includes(schema.properties[k].type)">
+                        <vue-json-pretty :data="item" highlight-mouseover-node />
+                      </template>
+                      <template v-else>
+                        {{ item }}
+                      </template>
+                    </v-list-item-content>
+                  </v-list-item>
+                </template>
               </v-list>
-            </v-card>
-          </v-col>
-          <v-col sm="6">
-            <v-card>
-              <v-expansion-panels multiple>
-                <v-expansion-panel v-for="(field, k) in extraFields" :key="k">
-                  <v-expansion-panel-header>
-                    {{schema.properties[k].title || k}}
-                  </v-expansion-panel-header>
-                  <v-expansion-panel-content>
-                    <template v-if="['object', 'array'].includes(schema.properties[k].type)">
-                      <vue-json-pretty :data="field" highlightMouseoverNode />
-                    </template>
-                    <template v-else>{{field}}</template>
-                  </v-expansion-panel-content>
-                </v-expansion-panel>
-              </v-expansion-panels>
             </v-card>
           </v-col>
         </v-row>
@@ -118,6 +140,7 @@ import VueJsonPretty from 'vue-json-pretty';
 import MetaEditor from '@/components/MetaEditor.vue';
 import SCHEMA from '@/assets/schema/base.json';
 import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
+import { dandiUrl } from '@/utils';
 
 export default {
   name: 'DandisetLandingPage',
@@ -138,6 +161,7 @@ export default {
   },
   data() {
     return {
+      dandiUrl,
       schema: this.create ? NEW_SCHEMA : SCHEMA,
       meta: {},
       edit: false,
@@ -150,10 +174,14 @@ export default {
         'version',
         'contributors',
         'description',
+        'identifier',
       ],
     };
   },
   computed: {
+    permalink() {
+      return `${this.dandiUrl}/dandiset/${this.meta.identifier}/draft`;
+    },
     extraFields() {
       const { meta, mainFields } = this;
       const extra = Object.keys(meta).filter(

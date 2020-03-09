@@ -5,7 +5,7 @@
     </v-toolbar-title>
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
-        <v-btn text href="//www.dandiarchive.org"
+        <v-btn text :href="dandiUrl"
         class="ml-2 white--text" dark v-on="on">About</v-btn>
       </template>
       <span>You are currently viewing the data portal.
@@ -135,8 +135,11 @@
 import { mapActions, mapGetters, mapState } from 'vuex';
 import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/components/src/components';
 
+import { dandiUrl } from '@/utils';
+
 export default {
   data: () => ({
+    dandiUrl,
     name: '',
     description: '',
     regdialog: false,
