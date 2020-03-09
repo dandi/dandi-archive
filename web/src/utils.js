@@ -1,5 +1,4 @@
-const rootDandiUrl = 'dandiarchive.org';
-const dandiUrl = `https://${rootDandiUrl}`;
+const dandiUrl = 'https://dandiarchive.org';
 
 function getLocationFromRoute(route) {
   const { _modelType, _id } = route.params;
@@ -51,7 +50,6 @@ function copyToClipboard(text) {
 }
 
 export {
-  rootDandiUrl,
   dandiUrl,
   getLocationFromRoute,
   getPathFromLocation,
