@@ -1,8 +1,10 @@
 <template>
   <v-app-bar app color="primary">
-    <v-toolbar-title>
-      <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
-    </v-toolbar-title>
+    <router-link to="/">
+      <v-toolbar-title>
+        <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
+      </v-toolbar-title>
+    </router-link>
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
         <v-btn text :href="dandiUrl"
