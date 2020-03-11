@@ -3,15 +3,22 @@ import re
 
 from girder.plugin import GirderPlugin
 from girder.models.item import Item
+from girder.models.setting import Setting
 from girder.utility import search
 
 from .rest import DandiResource
+from .util import DANDISET_IDENTIFIER_COUNTER
 
 
 class GirderPlugin(GirderPlugin):
     DISPLAY_NAME = "DANDI Archive"
 
     def load(self, info):
+        Setting().collection.update(
+            {"key": DANDISET_IDENTIFIER_COUNTER},
+            {"$setOnInsert": {"value": 0}},
+            upsert=True,
+        )
         search.addSearchMode("dandi", dandi_search_handler)
         info["apiRoot"].dandi = DandiResource()
 
