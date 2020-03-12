@@ -5,6 +5,7 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
+    apiKey: null,
     girderRest: null,
     browseLocation: null,
     selected: [],
@@ -14,6 +15,9 @@ export default new Vuex.Store({
     user: state => state.girderRest.user,
   },
   mutations: {
+    setApiKey(state, apiKey) {
+      state.apiKey = apiKey;
+    },
     setBrowseLocation(state, location) {
       state.browseLocation = location;
     },
@@ -25,6 +29,61 @@ export default new Vuex.Store({
     },
   },
   actions: {
+    async reloadApiKey({ state, commit, getters }) {
+      const { user } = getters;
+      const { status, data } = await state.girderRest.get(
+        'api_key', {
+          params: {
+            userId: user._id,
+            limit: 50,
+            sort: 'name',
+            sortdir: 1,
+          },
+        },
+      );
+
+      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      if (status === 200 && dandiKey) {
+        // send the key id to "PUT" endpoint for updating
+        const { data: { key } } = await state.girderRest.put(`api_key/${dandiKey._id}`);
+        commit('setApiKey', key);
+      }
+    },
+    async fetchApiKey({ state, commit, getters }) {
+      const { user } = getters;
+      const { status, data } = await state.girderRest.get(
+        'api_key', {
+          params: {
+            userId: user._id,
+            limit: 50,
+            sort: 'name',
+            sortdir: 1,
+          },
+        },
+      );
+
+      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      if (status === 200 && dandiKey) {
+        // if there is an existing api key
+
+        // set the user key
+        commit('setApiKey', dandiKey.key);
+      } else {
+        // create a key using "POST" endpoint
+        const { status: createStatus, data: { key } } = await state.girderRest.post('api_key', null, {
+          params: {
+            name: 'dandicli',
+            scope: JSON.stringify(['core.data.read', 'core.data.write']),
+            tokenDuration: 30,
+            active: true,
+          },
+        });
+
+        if (createStatus === 200) {
+          commit('setApiKey', key);
+        }
+      }
+    },
     async selectSearchResult({ state, commit }, result) {
       commit('setSelected', []);
 

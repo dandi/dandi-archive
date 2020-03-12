@@ -60,7 +60,7 @@
       </template>
       <v-list dense>
         <v-list-item
-          @click="reloadAPIKey"
+          @click="reloadApiKey"
         >
           <v-list-item-action class="mr-2">
             <v-btn icon>
@@ -98,33 +98,9 @@ import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/co
 
 export default {
   components: { GirderSearch, GirderAuth },
-  asyncComputed: {
-    async apiKey() {
-      const { status, data } = await this.girderRest.get(
-        `api_key?userId=${this.user._id}&limit=50&sort=name&sortdir=1`,
-      );
-      if (status === 200 && data[0]) {
-        // if there is an existing api key
-        if (data[0]._modelType === 'api_key') {
-          // set the user key
-          this.user.key = data[0].key;
-          return this.user.key;
-        }
-      } else {
-        // create a key using "POST" endpoint
-        const { status2, data2 } = await this.girderRest.post(
-          '/api_key?name=dandicli&scope=%20%5B%22core.data.read%22%2C%20%20%22core.data.write%22%5D&tokenDuration=30&active=true',
-        );
-        if (status2 === 200) {
-          this.user.key = data2.key;
-          return this.user.key;
-        }
-      }
-    },
-  },
   computed: {
     ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['girderRest']),
+    ...mapState(['apiKey']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -142,20 +118,11 @@ export default {
       return 'NA';
     },
   },
+  created() {
+    this.fetchApiKey();
+  },
   methods: {
-    async reloadAPIKey() {
-      const { status, data } = await this.girderRest.get(
-        `/api_key?userId=${this.user._id}&limit=50&sort=name&sortdir=1`,
-      );
-      if (status === 200 && data[0]) {
-        // send the key id to "PUT" endpoint for updating
-        this.user.keyId = data[0]._id;
-        const updated = await this.girderRest.put(`api_key/${this.user.keyId}`);
-        this.user.key = updated.data.key;
-        return this.user.key;
-      }
-    },
-    ...mapActions(['logout', 'selectSearchResult']),
+    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
   },
 };
 </script>
