@@ -103,7 +103,7 @@
         </v-list-item-content>
       </template>
     </girder-search>
-    <v-menu offset-y v-if="loggedIn">
+    <v-menu offset-y v-if="loggedIn" :close-on-content-click="false">
       <template v-slot:activator="{ on }">
         <v-btn v-on="on" class="ml-2" icon dark>
           <v-avatar color="primary darken-1">
