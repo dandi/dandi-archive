@@ -113,11 +113,23 @@
       </template>
       <v-list dense>
         <v-list-item
+          @click="reloadApiKey"
+        >
+          <v-list-item-action class="mr-2">
+            <v-btn icon>
+              <v-icon>mdi-reload</v-icon>
+            </v-btn>
+          </v-list-item-action>
+          <v-list-item-title>{{ apiKey }}</v-list-item-title>
+        </v-list-item>
+        <v-list-item
           @click="logout"
         >
-          <v-list-item-icon class="mr-2">
-            <v-icon>$vuetify.icons.logout</v-icon>
-          </v-list-item-icon>
+          <v-list-item-action class="mr-2">
+            <v-btn icon>
+              <v-icon>$vuetify.icons.logout</v-icon>
+            </v-btn>
+          </v-list-item-action>
           <v-list-item-title>Logout</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -152,7 +164,7 @@ export default {
       return !(this.name && this.description);
     },
     ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['girderRest']),
+    ...mapState(['apiKey', 'girderRest']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -170,6 +182,9 @@ export default {
       return 'NA';
     },
   },
+  created() {
+    this.fetchApiKey();
+  },
   methods: {
     async register_dandiset() {
       const { name, description } = this;
@@ -185,7 +200,7 @@ export default {
         this.regdialog = false;
       }
     },
-    ...mapActions(['logout', 'selectSearchResult']),
+    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
   },
 };
 </script>
