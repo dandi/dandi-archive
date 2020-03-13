@@ -1,6 +1,6 @@
 <template>
   <v-app-bar app color="primary">
-    <router-link to="/#/root">
+    <router-link to="/root">
       <v-toolbar-title>
         <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
       </v-toolbar-title>
