@@ -103,7 +103,7 @@
         </v-list-item-content>
       </template>
     </girder-search>
-    <v-menu offset-y v-if="loggedIn">
+    <v-menu offset-y v-if="loggedIn" :close-on-content-click="false">
       <template v-slot:activator="{ on }">
         <v-btn v-on="on" class="ml-2" icon dark>
           <v-avatar color="primary darken-1">
@@ -112,15 +112,22 @@
         </v-btn>
       </template>
       <v-list dense>
-        <v-list-item
-          @click="reloadApiKey"
-        >
+        <v-list-item>
           <v-list-item-action class="mr-2">
-            <v-btn icon>
+            <v-btn icon @click="reloadApiKey">
               <v-icon>mdi-reload</v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-title>{{ apiKey }}</v-list-item-title>
+          <v-list-item-content>
+            <v-text-field
+              ref="apiKey"
+              label="Api Key"
+              :readonly="true"
+              append-outer-icon="mdi-content-copy"
+              v-model="apiKey"
+              @click:append-outer="copyApiKey"
+            />
+          </v-list-item-content>
         </v-list-item>
         <v-list-item
           @click="logout"
@@ -186,6 +193,13 @@ export default {
     this.fetchApiKey();
   },
   methods: {
+    copyApiKey() {
+      const { input: value } = this.$refs.apiKey.$refs;
+      value.focus();
+      document.execCommand('selectAll');
+      value.select();
+      document.execCommand('copy');
+    },
     async register_dandiset() {
       const { name, description } = this;
       const { status, data } = await this.girderRest.post('dandi', null, { params: { name, description } });
