@@ -112,18 +112,22 @@
         </v-btn>
       </template>
       <v-list dense>
-        <v-list-item
-          @click="reloadApiKey"
-        >
+        <v-list-item>
           <v-list-item-action class="mr-2">
-            <v-btn icon>
+            <v-btn icon @click="reloadApiKey">
               <v-icon>mdi-reload</v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-title ref="copyKey">{{ apiKey }}</v-list-item-title>
-          <v-btn @click="copyApiKey">
-            <v-icon>mdi-content-copy</v-icon>
-          </v-btn>
+          <v-list-item-content>
+            <v-text-field
+              ref="apiKey"
+              label="Api Key"
+              :readonly="true"
+              append-outer-icon="mdi-content-copy"
+              v-model="apiKey"
+              @click:append-outer="copyApiKey"
+            />
+          </v-list-item-content>
         </v-list-item>
         <v-list-item
           @click="logout"
@@ -190,15 +194,11 @@ export default {
   },
   methods: {
     copyApiKey() {
-      const { copyKey } = this.$refs;
-      // this.$refs.text.select();
-      // input.focus();
-      // document.execCommand('selectAll');
-      // this.copied = document.execCommand('copyApiKey');
-      // console.log(this.copied);
-      // let copyKey = this.$refs.copyKey.$el.querySelector('input');
-      copyKey.select();
-      document.execCommand('copyApiKey');
+      const { input: value } = this.$refs.apiKey.$refs;
+      value.focus();
+      document.execCommand('selectAll');
+      value.select();
+      document.execCommand('copy');
     },
     async register_dandiset() {
       const { name, description } = this;
