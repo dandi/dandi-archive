@@ -197,7 +197,7 @@ export default {
       const blob = new Blob([this.output], { type: this.contentType });
 
       const extension = this.contentType.split('/')[1];
-      const filename = `dandidata.${extension}`;
+      const filename = `dandiset.${extension}`;
       const link = document.createElement('a');
 
       link.href = URL.createObjectURL(blob);
