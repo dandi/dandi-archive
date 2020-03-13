@@ -120,7 +120,10 @@
               <v-icon>mdi-reload</v-icon>
             </v-btn>
           </v-list-item-action>
-          <v-list-item-title>{{ apiKey }}</v-list-item-title>
+          <v-list-item-title ref="copyKey">{{ apiKey }}</v-list-item-title>
+          <v-btn @click="copyApiKey">
+            <v-icon>mdi-content-copy</v-icon>
+          </v-btn>
         </v-list-item>
         <v-list-item
           @click="logout"
@@ -186,6 +189,17 @@ export default {
     this.fetchApiKey();
   },
   methods: {
+    copyApiKey() {
+      const { copyKey } = this.$refs;
+      // this.$refs.text.select();
+      // input.focus();
+      // document.execCommand('selectAll');
+      // this.copied = document.execCommand('copyApiKey');
+      // console.log(this.copied);
+      // let copyKey = this.$refs.copyKey.$el.querySelector('input');
+      copyKey.select();
+      document.execCommand('copyApiKey');
+    },
     async register_dandiset() {
       const { name, description } = this;
       const { status, data } = await this.girderRest.post('dandi', null, { params: { name, description } });
