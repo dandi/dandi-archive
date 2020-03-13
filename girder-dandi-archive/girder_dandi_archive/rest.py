@@ -6,10 +6,10 @@ from girder.models.folder import Folder
 from girder.exceptions import RestException
 
 from .util import (
-    DANDISET_ID_COUNTER,
-    DANDISET_ID_LENGTH,
-    staging_collection,
-    validate_dandiset_id,
+    DANDISET_IDENTIFIER_COUNTER,
+    DANDISET_IDENTIFIER_LENGTH,
+    get_or_create_drafts_collection,
+    validate_dandiset_identifier,
 )
 
 
@@ -36,31 +36,50 @@ class DandiResource(Resource):
         if not name or not description:
             raise RestException("Name and description must not be empty.")
 
-        exists = Folder().findOne({"name": name})
+        new_identifier_count = Setting().collection.find_one_and_update(
+            {"key": DANDISET_IDENTIFIER_COUNTER},
+            {"$inc": {"value": 1}},
+            projection={"value": True},
+        )["value"]
+        padded_identifier = f"{new_identifier_count:0{DANDISET_IDENTIFIER_LENGTH}d}"
 
-        if exists:
-            raise RestException("Dandiset already exists", code=409)
+        meta = {
+            "name": name,
+            "description": description,
+            "identifier": padded_identifier,
+        }
 
-        current = Setting().get(DANDISET_ID_COUNTER)
-        if current is None:
-            current = -1
-
-        new_id_count = Setting().set(DANDISET_ID_COUNTER, current + 1)["value"]
-        padded_id = f"{new_id_count:0{DANDISET_ID_LENGTH}d}"
-        meta = {"name": name, "description": description, "id": padded_id}
-
-        staging = staging_collection()
+        drafts = get_or_create_drafts_collection()
         folder = Folder().createFolder(
-            staging, name, parentType="collection", creator=self.getCurrentUser(),
+            drafts,
+            padded_identifier,
+            parentType="collection",
+            creator=self.getCurrentUser(),
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder
 
     @access.public
-    @describeRoute(Description("Get Dandiset").param("id", "Dandiset ID"))
+    @describeRoute(
+        Description("Get Dandiset").param("identifier", "Dandiset Identifier")
+    )
     def get_dandiset(self, params):
-        if not validate_dandiset_id(params["id"]):
-            raise RestException("Invalid Dandiset ID")
+        if "identifier" not in params:
+            raise RestException("identifier required.")
 
-        doc = Folder().findOne({"meta.dandiset.id": params["id"]})
+        identifier = params["identifier"]
+
+        if not identifier:
+            raise RestException("identifier must not be empty.")
+
+        if not validate_dandiset_identifier(identifier):
+            raise RestException("Invalid Dandiset Identifier")
+
+        # Ensure we are only looking for drafts collection child folders.
+        drafts = get_or_create_drafts_collection()
+        doc = Folder().findOne(
+            {"parentId": drafts["_id"], "meta.dandiset.identifier": identifier}
+        )
+        if not doc:
+            raise RestException("No such dandiset found.")
         return doc

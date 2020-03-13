@@ -1,12 +1,27 @@
 <template>
 <div>
   <template v-if="leaf">
+    <v-select
+      v-if="schema.enum"
+      v-model="value"
+      dense
+      :class="leafClasses"
+      :items="schema.enum"
+      :readonly="schema.readOnly"
+    >
+      <template v-slot:prepend>
+        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <v-icon v-else>mdi-circle-medium</v-icon>
+      </template>
+    </v-select>
     <v-text-field
+      v-else
+      v-model="value"
+      dense
       :label="schema.title"
       :type="fieldType(schema)"
-      v-model="value"
-      class="ml-2 pr-3 pt-1"
-      dense
+      :class="leafClasses"
+      :readonly="schema.readOnly"
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
@@ -15,8 +30,19 @@
     </v-text-field>
   </template>
   <template v-else-if="array">
-    <template v-for="(el, i) in value">
+    <template v-if="schema.items.enum">
+      <v-select
+        dense
+        multiple
+        :label="schema.title"
+        :class="leafClasses"
+        :items="schema.items.enum"
+        v-model="value"
+      />
+    </template>
+    <template v-else>
       <meta-node
+        v-for="(el, i) in value"
         :key="i"
         :schema="schema.items"
         :initial="el"
@@ -26,17 +52,17 @@
         @remove="removeArrayItem(i)"
       />
       <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
+      <v-btn
+        color="success"
+        dark
+        rounded
+        class="ml-2"
+        @click="addArrayItem"
+        icon
+      >
+        <v-icon left>mdi-plus</v-icon>
+      </v-btn>
     </template>
-    <v-btn
-      color="success"
-      dark
-      rounded
-      class="ml-2"
-      @click="addArrayItem"
-      icon
-    >
-      <v-icon left>mdi-plus</v-icon>
-    </v-btn>
   </template>
   <template v-else v-for="(prop, k) in activeProperties">
     <v-card :key="k" class="ml-4 mb-2 py-2" :flat="isLeaf(prop)">
@@ -117,6 +143,7 @@ export default {
     return {
       value: this.copyValue(this.initial) || this.defaultInitial(),
       addedProperties: {},
+      leafClasses: 'ml-2 pr-3 pt-1',
     };
   },
   created() {

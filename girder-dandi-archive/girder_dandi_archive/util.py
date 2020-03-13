@@ -4,24 +4,24 @@ from girder.models.collection import Collection
 from girder.utility import setting_utilities
 from girder.exceptions import ValidationException
 
-DANDISET_ID_COUNTER = "dandi.id_counter"
-DANDISET_ID_LENGTH = 6
-DANDI_STAGING_COLLECTION_NAME = "Dandiset Staging"
+DANDISET_IDENTIFIER_COUNTER = "dandi.identifier_counter"
+DANDISET_IDENTIFIER_LENGTH = 6
+DANDI_DRAFTS_COLLECTION_NAME = "drafts"
 
-dandiset_id_pattern = r"^\d{6}$"
+dandiset_identifier_pattern = r"^\d{6}$"
 
 
-@setting_utilities.validator(DANDISET_ID_COUNTER)
+@setting_utilities.validator(DANDISET_IDENTIFIER_COUNTER)
 def _validate(doc):
-    if len(str(doc["value"])) > DANDISET_ID_LENGTH:
-        raise ValidationException("Dandiset ID limit exceeded", "value")
+    if len(str(doc["value"])) > DANDISET_IDENTIFIER_LENGTH:
+        raise ValidationException("Dandiset IDENTIFIER limit exceeded", "value")
 
 
-def validate_dandiset_id(dandiset_id):
-    return bool(re.match(dandiset_id_pattern, dandiset_id))
+def validate_dandiset_identifier(dandiset_identifier):
+    return bool(re.match(dandiset_identifier_pattern, dandiset_identifier))
 
 
-def staging_collection():
+def get_or_create_drafts_collection():
     return Collection().createCollection(
-        DANDI_STAGING_COLLECTION_NAME, reuseExisting=True,
+        DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True
     )

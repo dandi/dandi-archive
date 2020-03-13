@@ -14,14 +14,22 @@ girder_url = "http://{host}:{port}/api/v1".format(
 gc = girder_client.GirderClient(apiUrl=girder_url)
 gc.authenticate(ADMIN_USER, ADMIN_PASS)
 
-collection_name = "labs"
-labs_collection = None
-for col in gc.listCollection():
-    if col["name"] == collection_name:
-        labs_collection = col
 
-if not labs_collection:
-    labs_collection = gc.createCollection(collection_name)
+# All sample collections by default are public to access
+def ensure_collection(collection_name, public=True):
+    for col in gc.listCollection():
+        if col["name"] == collection_name:
+            return col
+
+    return gc.createCollection(collection_name, public=public)
+
+
+for c in ("drafts", "releases"):
+    ensure_collection(c)
+
+# labs is primarily for practicing metadata search etc, to be gone later on
+# and will not be in the deployed instance
+labs_collection = ensure_collection("labs")
 
 
 # caching to avoid additional HTTP round trips
