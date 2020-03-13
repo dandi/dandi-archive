@@ -13,7 +13,7 @@ Vue.use(Girder);
 if (process.env.VUE_APP_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.VUE_APP_SENTRY_DSN,
-    integrations: [new Integrations.Vue({ Vue })],
+    integrations: [new Integrations.Vue({ Vue, logErrors: true })],
   });
 }
 
