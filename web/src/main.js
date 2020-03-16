@@ -12,13 +12,7 @@ Vue.use(Girder);
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
-  integrations: [
-    new Integrations.Vue({ 
-      Vue, 
-      attachProps: true,
-      logErrors: true 
-    }),
-  ],
+  integrations: [new Integrations.Vue({ Vue, logErrors: true })],
 });
 
 const apiRoot = process.env.VUE_APP_API_ROOT || 'http://localhost:8080/api/v1';
