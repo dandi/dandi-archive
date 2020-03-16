@@ -7,7 +7,8 @@
     "identifier",
     "name",
     "description",
-    "contributors"
+    "contributors",
+    "keywords"
   ],
   "properties": {
     "identifier": {
@@ -80,6 +81,24 @@
                 "Other"
               ]
             }
+          },
+          "email": {
+            "$id": "#/properties/contributors/items/properties/email",
+            "type": "string",
+            "title": "Email"
+          },
+          "name": {
+            "$id": "#/properties/contributors/items/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "affiliations": {
+            "$id": "#/properties/contributors/items/properties/affiliations",
+            "type": "array",
+            "title": "Affiliations",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -146,54 +165,36 @@
         "identifier": {
           "$id": "#/properties/sponsors/properties/identifier",
           "type": "string",
-          "title": "Identifier",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Identifier"
         },
         "name": {
           "$id": "#/properties/sponsors/properties/name",
           "type": "string",
-          "title": "Name",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "url": {
           "$id": "#/properties/sponsors/properties/url",
-          "type": "string",
-          "title": "Url",
-          "default": "",
-          "examples": [
-            "yee"
-          ],
-          "pattern": "^(.*)$"
-        }
-      }
-    },
-    "license": {
-      "$id": "#/properties/license",
-      "type": "object",
-      "title": "License",
-      "required": [
-        "url"
-      ],
-      "properties": {
-        "url": {
-          "$id": "#/properties/license/properties/url",
           "type": "string",
           "title": "Url"
         }
       }
     },
+    "license": {
+      "$id": "#/properties/license",
+      "type": "string",
+      "title": "License",
+      "enum": [
+        "CC0-1.0",
+        "CC-BY-4.0",
+        "CC-BY-NC-4.0",
+        "PDDL-1.0"
+      ]
+    },
     "keywords": {
       "$id": "#/properties/keywords",
       "type": "array",
       "title": "Keywords",
+      "minItems": 1,
       "items": {
         "$id": "#/properties/keywords/items",
         "type": "string",
@@ -376,6 +377,69 @@
       "$id": "#/properties/language",
       "type": "string",
       "title": "Language"
+    },
+    "associatedData": {
+      "$id": "#/properties/associatedData",
+      "type": "object",
+      "title": "Associated Data",
+      "required": [
+        "name",
+        "identifier",
+        "repository",
+        "url"
+      ],
+      "properties": {
+        "name": {
+          "$id": "#/properties/associatedData/properties/name",
+          "type": "string",
+          "title": "Name"
+        },
+        "identifier": {
+          "$id": "#/properties/associatedData/properties/identifier",
+          "type": "string",
+          "title": "Identifier"
+        },
+        "repository": {
+          "$id": "#/properties/associatedData/properties/repository",
+          "type": "string",
+          "title": "Repository"
+        },
+        "url": {
+          "$id": "#/properties/associatedData/properties/url",
+          "type": "string",
+          "title": "Url"
+        }
+      }
+    },
+    "publications": {
+      "$id": "#/properties/publications",
+      "type": "array",
+      "title": "Publications",
+      "items": {
+        "$id": "#/properties/publications/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "$id": "#/properties/associatedData/properties/url",
+            "type": "string",
+            "title": "Url"
+          },
+          "identifier": {
+            "$id": "#/properties/associatedData/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          },
+          "relation": {
+            "$id": "#/properties/associatedData/properties/relation",
+            "type": "string",
+            "title": "Relation"
+          }
+        }
+      }
     }
   }
 }
