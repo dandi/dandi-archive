@@ -10,13 +10,13 @@ from .rest import DandiResource
 from .util import DANDISET_IDENTIFIER_COUNTER
 
 
-class GirderPlugin(GirderPlugin):
+class DandiArchivePlugin(GirderPlugin):
     DISPLAY_NAME = "DANDI Archive"
 
     def load(self, info):
         Setting().collection.update(
             {"key": DANDISET_IDENTIFIER_COUNTER},
-            {"$setOnInsert": {"value": 0}},
+            {"$setOnInsert": {"value": 1}},
             upsert=True,
         )
         search.addSearchMode("dandi", dandi_search_handler)
