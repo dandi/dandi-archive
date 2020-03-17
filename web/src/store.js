@@ -85,7 +85,7 @@ export default new Vuex.Store({
       }
     },
     async fetchFullLocation({ state, commit }, location) {
-      if (location._id && location._modelType) {
+      if (location && location._id && location._modelType) {
         const { _id: id, _modelType: modelType } = location;
         const resp = await state.girderRest.get(`${modelType}/${id}`);
 
