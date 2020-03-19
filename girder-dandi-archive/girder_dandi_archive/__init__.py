@@ -2,9 +2,12 @@
 import re
 
 from girder.plugin import GirderPlugin
+from girder.settings import SettingKey
 from girder.models.item import Item
 from girder.models.setting import Setting
 from girder.utility import search
+
+from girder_user_quota.settings import PluginSettings as UserQuotaPluginSettings
 
 from .rest import DandiResource
 from .util import DANDISET_IDENTIFIER_COUNTER
@@ -19,6 +22,10 @@ class GirderPlugin(GirderPlugin):
             {"$setOnInsert": {"value": 0}},
             upsert=True,
         )
+        # Allow the client and netlify to access the girder server
+        Setting().set(SettingKey.CORS_ALLOW_ORIGIN, "*")
+        Setting().set(SettingKey.USER_DEFAULT_FOLDERS, "none")
+        Setting().set(UserQuotaPluginSettings.DEFAULT_USER_QUOTA, 0)
         search.addSearchMode("dandi", dandi_search_handler)
         info["apiRoot"].dandi = DandiResource()
 

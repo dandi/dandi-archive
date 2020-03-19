@@ -9,6 +9,7 @@ requirements = [
     "girder-homepage",
     "girder-oauth",
     "girder-sentry",
+    "girder-user-quota>=3.0.12",
 ]
 
 setup(
