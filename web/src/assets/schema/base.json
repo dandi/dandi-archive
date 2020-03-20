@@ -131,24 +131,29 @@
       "$id": "#/properties/sponsors",
       "type": "object",
       "title": "Sponsors",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "identifier": {
-          "$id": "#/properties/sponsors/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
-        },
-        "name": {
-          "$id": "#/properties/sponsors/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "url": {
-          "$id": "#/properties/sponsors/properties/url",
-          "type": "string",
-          "title": "Url"
+      "items": {
+        "$id": "#/properties/sponsors/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "identifier": {
+            "$id": "#/properties/sponsors/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          },
+          "name": {
+            "$id": "#/properties/sponsors/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "$id": "#/properties/sponsors/properties/url",
+            "type": "string",
+            "title": "Url"
+          }
         }
       }
     },
@@ -176,112 +181,137 @@
     },
     "project": {
       "$id": "#/properties/project",
-      "type": "object",
+      "type": "array",
       "title": "Project/Consortium",
-      "required": [
-        "name",
-        "identifier"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/project/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "identifier": {
-          "$id": "#/properties/project/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
+      "items": {
+        "$id": "#/properties/project/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "name",
+          "identifier"
+        ],
+        "properties": {
+          "name": {
+            "$id": "#/properties/project/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "identifier": {
+            "$id": "#/properties/project/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          }
         }
       }
     },
     "associated_disease": {
       "$id": "#/properties/associated_disease",
-      "type": "object",
+      "type": "array",
       "title": "Associated Disease",
-      "required": [
-        "name",
-        "identifier"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/associated_disease/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "identifier": {
-          "$id": "#/properties/associated_disease/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
+      "items": {
+        "$id": "#/properties/associated_disease/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "name",
+          "identifier"
+        ],
+        "properties": {
+          "name": {
+            "$id": "#/properties/associated_disease/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "identifier": {
+            "$id": "#/properties/associated_disease/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          }
         }
       }
     },
     "associated_anatomy": {
       "$id": "#/properties/associated_anatomy",
-      "type": "object",
+      "type": "array",
       "title": "Associated Anatomy",
-      "required": [
-        "name",
-        "identifier"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/associated_anatomy/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "identifier": {
-          "$id": "#/properties/associated_anatomy/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
+      "items": {
+        "$id": "#/properties/associated_anatomy/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "name",
+          "identifier"
+        ],
+        "properties": {
+          "name": {
+            "$id": "#/properties/associated_anatomy/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "identifier": {
+            "$id": "#/properties/associated_anatomy/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          }
         }
       }
     },
     "protocols": {
       "$id": "#/properties/protocols",
-      "type": "object",
+      "type": "array",
       "title": "Protocols",
-      "required": [
-        "name",
-        "identifier"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/protocols/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "identifier": {
-          "$id": "#/properties/protocols/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
+      "items": {
+        "$id": "#/properties/protocols/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "name",
+          "identifier"
+        ],
+        "properties": {
+          "name": {
+            "$id": "#/properties/protocols/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "identifier": {
+            "$id": "#/properties/protocols/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          }
         }
       }
     },
     "ethicsApprovals": {
-      "$id": "#/properties/ethics_approvals",
-      "type": "object",
+      "$id": "#/properties/ethicsApprovals",
+      "type": "array",
       "title": "Ethics Approvals",
-      "required": [
-        "name",
-        "country",
-        "identifier"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/ethics_approvals/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "country": {
-          "$id": "#/properties/ethics_approvals/properties/country",
-          "type": "string",
-          "title": "Country"
-        },
-        "identifier": {
-          "$id": "#/properties/ethics_approvals/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
+      "items": {
+        "$id": "#/properties/ethicsApprovals/items",
+        "type": "array",
+        "title": "Items",
+        "required": [
+          "name",
+          "country",
+          "identifier"
+        ],
+        "properties": {
+          "name": {
+            "$id": "#/properties/ethics_approvals/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "country": {
+            "$id": "#/properties/ethics_approvals/properties/country",
+            "type": "string",
+            "title": "Country"
+          },
+          "identifier": {
+            "$id": "#/properties/ethics_approvals/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          }
         }
       }
     },
@@ -353,34 +383,39 @@
     },
     "associatedData": {
       "$id": "#/properties/associatedData",
-      "type": "object",
+      "type": "array",
       "title": "Associated Data",
-      "required": [
-        "name",
-        "identifier",
-        "repository",
-        "url"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/associatedData/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "identifier": {
-          "$id": "#/properties/associatedData/properties/identifier",
-          "type": "string",
-          "title": "Identifier"
-        },
-        "repository": {
-          "$id": "#/properties/associatedData/properties/repository",
-          "type": "string",
-          "title": "Repository"
-        },
-        "url": {
-          "$id": "#/properties/associatedData/properties/url",
-          "type": "string",
-          "title": "Url"
+      "items": {
+        "$id": "#/properties/associatedData/items",
+        "type": "object",
+        "title": "Items",
+        "required": [
+          "name",
+          "identifier",
+          "repository",
+          "url"
+        ],
+        "properties": {
+          "name": {
+            "$id": "#/properties/associatedData/properties/name",
+            "type": "string",
+            "title": "Name"
+          },
+          "identifier": {
+            "$id": "#/properties/associatedData/properties/identifier",
+            "type": "string",
+            "title": "Identifier"
+          },
+          "repository": {
+            "$id": "#/properties/associatedData/properties/repository",
+            "type": "string",
+            "title": "Repository"
+          },
+          "url": {
+            "$id": "#/properties/associatedData/properties/url",
+            "type": "string",
+            "title": "Url"
+          }
         }
       }
     },

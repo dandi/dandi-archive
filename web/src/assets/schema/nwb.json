@@ -52,8 +52,13 @@
     },
     "sex": {
       "$id": "#/properties/sex",
-      "type": "string",
-      "title": "Sex"
+      "type": "array",
+      "title": "Sex",
+      "items": {
+        "$id": "#/properties/sex/items",
+        "type": "string",
+        "title": "Items"
+      }
     },
     "organism": {
       "$id": "#/properties/organism",
