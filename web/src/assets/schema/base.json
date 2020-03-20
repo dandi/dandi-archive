@@ -210,12 +210,12 @@
         }
       }
     },
-    "associated_disease": {
-      "$id": "#/properties/associated_disease",
+    "conditions_studied": {
+      "$id": "#/properties/conditions_studied",
       "type": "array",
-      "title": "Associated Disease",
+      "title": "Conditions Studied",
       "items": {
-        "$id": "#/properties/associated_disease/items",
+        "$id": "#/properties/conditions_studied/items",
         "type": "object",
         "title": "Items",
         "required": [
@@ -224,12 +224,12 @@
         ],
         "properties": {
           "name": {
-            "$id": "#/properties/associated_disease/properties/name",
+            "$id": "#/properties/conditions_studied/properties/name",
             "type": "string",
             "title": "Name"
           },
           "identifier": {
-            "$id": "#/properties/associated_disease/properties/identifier",
+            "$id": "#/properties/conditions_studied/properties/identifier",
             "type": "string",
             "title": "Identifier"
           }
