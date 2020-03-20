@@ -10,7 +10,7 @@
     <template v-else>
       <v-container>
         <v-row>
-          <v-col sm="6">
+          <v-col xs="12" lg="9" xl="6">
             <v-card>
               <v-card-title>
                 {{meta.name}}
@@ -34,12 +34,6 @@
                   <v-list-item-content>
                     Identifier: {{ meta.identifier }}
                   </v-list-item-content>
-                  <!-- <v-list-item-action class="ma-0 mr-1">
-                    <v-btn icon>
-                      <v-icon>mdi-content-copy</v-icon>
-                    </v-btn>
-                  </v-list-item-action>
-                  <v-spacer /> -->
                 </v-list-item>
                 <v-list-item>
                   <v-list-item-content>
@@ -91,7 +85,6 @@
                 </v-list-item>
                 <v-list-item v-if="details">
                   <v-list-item-content>
-                    <!-- Size: {{computedSize}}, Files: {{details.nItems}}, Folders: {{details.nFolders}} -->
                     Files: {{details.nItems}}, Folders: {{details.nFolders}}
                   </v-list-item-content>
                 </v-list-item>
