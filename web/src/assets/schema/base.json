@@ -129,7 +129,7 @@
     },
     "sponsors": {
       "$id": "#/properties/sponsors",
-      "type": "object",
+      "type": "array",
       "title": "Sponsors",
       "items": {
         "$id": "#/properties/sponsors/items",
@@ -153,6 +153,11 @@
             "$id": "#/properties/sponsors/properties/url",
             "type": "string",
             "title": "Url"
+          },
+          "awardNumber": {
+            "$id": "#/properties/sponsors/properties/awardNumber",
+            "type": "string",
+            "title": "Award Number"
           }
         }
       }
