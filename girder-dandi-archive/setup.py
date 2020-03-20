@@ -38,6 +38,6 @@ setup(
     version="0.1.0",
     zip_safe=False,
     entry_points={
-        "girder.plugin": ["dandi_archive = girder_dandi_archive:GirderPlugin"]
+        "girder.plugin": ["dandi_archive = girder_dandi_archive:DandiArchivePlugin"]
     },
 )

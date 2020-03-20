@@ -1,8 +1,10 @@
 <template>
   <v-app-bar app color="primary">
-    <v-toolbar-title>
-      <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
-    </v-toolbar-title>
+    <router-link to="/root">
+      <v-toolbar-title>
+        <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
+      </v-toolbar-title>
+    </router-link>
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
         <v-btn text :href="dandiUrl"
@@ -101,7 +103,7 @@
         </v-list-item-content>
       </template>
     </girder-search>
-    <v-menu offset-y v-if="loggedIn">
+    <v-menu offset-y v-if="loggedIn" :close-on-content-click="false">
       <template v-slot:activator="{ on }">
         <v-btn v-on="on" class="ml-2" icon dark>
           <v-avatar color="primary darken-1">
@@ -110,12 +112,31 @@
         </v-btn>
       </template>
       <v-list dense>
+        <v-list-item>
+          <v-list-item-action class="mr-2">
+            <v-btn icon @click="reloadApiKey">
+              <v-icon>mdi-reload</v-icon>
+            </v-btn>
+          </v-list-item-action>
+          <v-list-item-content>
+            <v-text-field
+              ref="apiKey"
+              label="Api Key"
+              :readonly="true"
+              append-outer-icon="mdi-content-copy"
+              v-model="apiKey"
+              @click:append-outer="copyApiKey"
+            />
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item
           @click="logout"
         >
-          <v-list-item-icon class="mr-2">
-            <v-icon>$vuetify.icons.logout</v-icon>
-          </v-list-item-icon>
+          <v-list-item-action class="mr-2">
+            <v-btn icon>
+              <v-icon>$vuetify.icons.logout</v-icon>
+            </v-btn>
+          </v-list-item-action>
           <v-list-item-title>Logout</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -150,7 +171,7 @@ export default {
       return !(this.name && this.description);
     },
     ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['girderRest']),
+    ...mapState(['apiKey', 'girderRest']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -168,7 +189,17 @@ export default {
       return 'NA';
     },
   },
+  created() {
+    this.fetchApiKey();
+  },
   methods: {
+    copyApiKey() {
+      const { input: value } = this.$refs.apiKey.$refs;
+      value.focus();
+      document.execCommand('selectAll');
+      value.select();
+      document.execCommand('copy');
+    },
     async register_dandiset() {
       const { name, description } = this;
       const { status, data } = await this.girderRest.post('dandi', null, { params: { name, description } });
@@ -183,7 +214,7 @@ export default {
         this.regdialog = false;
       }
     },
-    ...mapActions(['logout', 'selectSearchResult']),
+    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
   },
 };
 </script>

@@ -43,7 +43,7 @@
                   </v-list-item-content>
                 </v-list-item>
               </v-list>
-              <v-card-actions class="py-0">
+              <v-card-actions v-if="selected" class="py-0">
                 <v-btn
                   icon
                   :to="`/collection/${selected.parentId}`"
