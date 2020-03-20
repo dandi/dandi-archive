@@ -127,33 +127,6 @@
         }
       ]
     },
-    "contact": {
-      "$id": "#/properties/contact",
-      "type": "object",
-      "title": "Contact",
-      "required": [
-        "email",
-        "name",
-        "affiliations"
-      ],
-      "properties": {
-        "email": {
-          "$id": "#/properties/contact/properties/email",
-          "type": "string",
-          "title": "Email"
-        },
-        "name": {
-          "$id": "#/properties/contact/properties/name",
-          "type": "string",
-          "title": "Name"
-        },
-        "affiliations": {
-          "$id": "#/properties/contact/properties/affiliations",
-          "type": "string",
-          "title": "Affiliations"
-        }
-      }
-    },
     "sponsors": {
       "$id": "#/properties/sponsors",
       "type": "object",
@@ -285,7 +258,7 @@
         }
       }
     },
-    "ethics_approvals": {
+    "ethicsApprovals": {
       "$id": "#/properties/ethics_approvals",
       "type": "object",
       "title": "Ethics Approvals",
