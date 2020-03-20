@@ -5,13 +5,10 @@
   "title": "The Publication Schema",
   "required": [
     "version",
-    "associatedData",
-    "publications",
+    "releaseDate",
     "doi",
     "url",
-    "repository",
-    "distribution",
-    "altid"
+    "repository"
   ],
   "properties": {
     "version": {
@@ -19,130 +16,25 @@
       "type": "string",
       "title": "Version"
     },
-    "associatedData": {
-      "$id": "#/properties/associatedData",
-      "type": "object",
-      "title": "The Associateddata Schema",
-      "required": [
-        "name",
-        "identifier",
-        "repository",
-        "url"
-      ],
-      "properties": {
-        "name": {
-          "$id": "#/properties/associatedData/properties/name",
-          "type": "string",
-          "title": "The Name Schema",
-          "default": "",
-          "examples": [
-            "asd"
-          ],
-          "pattern": "^(.*)$"
-        },
-        "identifier": {
-          "$id": "#/properties/associatedData/properties/identifier",
-          "type": "string",
-          "title": "The Identifier Schema",
-          "default": "",
-          "examples": [
-            "asd"
-          ],
-          "pattern": "^(.*)$"
-        },
-        "repository": {
-          "$id": "#/properties/associatedData/properties/repository",
-          "type": "string",
-          "title": "The Repository Schema",
-          "default": "",
-          "examples": [
-            "sda"
-          ],
-          "pattern": "^(.*)$"
-        },
-        "url": {
-          "$id": "#/properties/associatedData/properties/url",
-          "type": "string",
-          "title": "The Url Schema",
-          "default": "",
-          "examples": [
-            "asd"
-          ],
-          "pattern": "^(.*)$"
-        }
-      }
-    },
-    "publications": {
-      "$id": "#/properties/publications",
-      "type": "array",
-      "title": "The Publications Schema",
-      "items": {
-        "$id": "#/properties/publications/items",
-        "type": "object",
-        "title": "The Items Schema",
-        "required": [
-          "url",
-          "identifiers",
-          "relation"
-        ],
-        "properties": {
-          "url": {
-            "$id": "#/properties/publications/items/properties/url",
-            "type": "string",
-            "title": "The Url Schema",
-            "default": "",
-            "examples": [
-              "asd"
-            ],
-            "pattern": "^(.*)$"
-          },
-          "identifiers": {
-            "$id": "#/properties/publications/items/properties/identifiers",
-            "type": "string",
-            "title": "The Identifiers Schema",
-            "default": "",
-            "examples": [
-              "asd"
-            ],
-            "pattern": "^(.*)$"
-          },
-          "relation": {
-            "$id": "#/properties/publications/items/properties/relation",
-            "type": "string",
-            "title": "The Relation Schema",
-            "default": "",
-            "examples": [
-              "asd"
-            ],
-            "pattern": "^(.*)$"
-          }
-        }
-      }
+    "releaseDate": {
+      "$id": "#/properties/releaseDate",
+      "type": "string",
+      "title": "Release Date"
     },
     "doi": {
       "$id": "#/properties/doi",
       "type": "string",
-      "title": "The Doi Schema",
-      "default": "",
-      "examples": [
-        "asd"
-      ],
-      "pattern": "^(.*)$"
+      "title": "DOI"
     },
     "url": {
       "$id": "#/properties/url",
       "type": "string",
-      "title": "The Url Schema",
-      "default": "",
-      "examples": [
-        "asd"
-      ],
-      "pattern": "^(.*)$"
+      "title": "URL"
     },
     "repository": {
       "$id": "#/properties/repository",
       "type": "object",
-      "title": "The Repository Schema",
+      "title": "Repository",
       "required": [
         "name",
         "identifier"
@@ -151,124 +43,68 @@
         "name": {
           "$id": "#/properties/repository/properties/name",
           "type": "string",
-          "title": "The Name Schema",
-          "default": "",
-          "examples": [
-            "asd"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Name"
         },
         "identifier": {
           "$id": "#/properties/repository/properties/identifier",
           "type": "string",
-          "title": "The Identifier Schema",
-          "default": "",
-          "examples": [
-            "asd"
-          ],
-          "pattern": "^(.*)$"
+          "title": "Identifier"
         }
       }
     },
     "distribution": {
       "$id": "#/properties/distribution",
-      "type": "object",
-      "title": "The Distribution Schema",
-      "required": [
-        "dataDownload"
-      ],
-      "properties": {
-        "dataDownload": {
-          "$id": "#/properties/distribution/properties/dataDownload",
-          "type": "object",
-          "title": "The Datadownload Schema",
-          "required": [
-            "contentURL",
-            "name",
-            "contentSize",
-            "datePublished",
-            "dateModified",
-            "measurementType"
-          ],
-          "properties": {
-            "contentURL": {
-              "$id": "#/properties/distribution/properties/dataDownload/properties/contentURL",
-              "type": "string",
-              "title": "The Contenturl Schema",
-              "default": "",
-              "examples": [
-                "asd"
+      "type": "array",
+      "title": "Distribution",
+      "items": {
+        "$id": "#/properties/distribution/items",
+        "type": "object",
+        "required": [
+          "dataDownload"
+        ],
+        "properties": {
+          "dataDownload": {
+            "$id": "#/properties/distribution/items/properties/dataDownload",
+            "type": "array",
+            "title": "Data Download",
+            "items": {
+              "required": [
+                "contentURL",
+                "name",
+                "contentSize",
+                "datePublished",
+                "dateModified"
               ],
-              "pattern": "^(.*)$"
-            },
-            "name": {
-              "$id": "#/properties/distribution/properties/dataDownload/properties/name",
-              "type": "string",
-              "title": "The Name Schema",
-              "default": "",
-              "examples": [
-                "asd"
-              ],
-              "pattern": "^(.*)$"
-            },
-            "contentSize": {
-              "$id": "#/properties/distribution/properties/dataDownload/properties/contentSize",
-              "type": "string",
-              "title": "The Contentsize Schema",
-              "default": "",
-              "examples": [
-                "asd"
-              ],
-              "pattern": "^(.*)$"
-            },
-            "datePublished": {
-              "$id": "#/properties/distribution/properties/dataDownload/properties/datePublished",
-              "type": "string",
-              "title": "The Datepublished Schema",
-              "default": "",
-              "examples": [
-                "asd"
-              ],
-              "pattern": "^(.*)$"
-            },
-            "dateModified": {
-              "$id": "#/properties/distribution/properties/dataDownload/properties/dateModified",
-              "type": "string",
-              "title": "The Datemodified Schema",
-              "default": "",
-              "examples": [
-                "asd"
-              ],
-              "pattern": "^(.*)$"
-            },
-            "measurementType": {
-              "$id": "#/properties/distribution/properties/dataDownload/properties/measurementType",
-              "type": "string",
-              "title": "The Measurementtype Schema",
-              "default": "",
-              "examples": [
-                "asd"
-              ],
-              "pattern": "^(.*)$"
+              "properties": {
+                "contentURL": {
+                  "$id": "#/properties/distribution/items/properties/dataDownload/items/properties/contentURL",
+                  "type": "string",
+                  "title": "Content URL"
+                },
+                "name": {
+                  "$id": "#/properties/distribution/items/properties/dataDownload/items/properties/name",
+                  "type": "string",
+                  "title": "Name"
+                },
+                "contentSize": {
+                  "$id": "#/properties/distribution/items/properties/dataDownload/items/properties/contentSize",
+                  "type": "string",
+                  "title": "Content Size"
+                },
+                "datePublished": {
+                  "$id": "#/properties/distribution/items/properties/dataDownload/items/properties/datePublished",
+                  "type": "string",
+                  "title": "Date Published"
+                },
+                "dateModified": {
+                  "$id": "#/properties/distribution/items/properties/dataDownload/items/properties/dateModified",
+                  "type": "string",
+                  "title": "Date Modified"
+                }
+              }
             }
           }
         }
-      }
-    },
-    "altid": {
-      "$id": "#/properties/altid",
-      "type": "array",
-      "title": "The Altid Schema",
-      "items": {
-        "$id": "#/properties/altid/items",
-        "type": "string",
-        "title": "The Items Schema",
-        "default": "",
-        "examples": [
-          "a",
-          "b"
-        ],
-        "pattern": "^(.*)$"
       }
     }
   }
