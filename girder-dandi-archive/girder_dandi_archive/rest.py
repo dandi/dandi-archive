@@ -1,6 +1,6 @@
 from girder.api import access
 from girder.api.rest import Resource
-from girder.api.describe import describeRoute, Description
+from girder.api.describe import autoDescribeRoute, describeRoute, Description
 from girder.constants import TokenScope
 from girder.models.setting import Setting
 from girder.models.folder import Folder
@@ -20,13 +20,14 @@ class DandiResource(Resource):
 
         self.resourceName = "dandi"
         self.route("GET", (), self.get_dandiset)
+        self.route("GET", ("list",), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
 
     @access.user(scope=TokenScope.DATA_WRITE)
     @describeRoute(
         Description("Create Dandiset")
-        .param("name", "Name of the Dandiset.")
-        .param("description", "Description of the Dandiset.")
+        .param("name", "Name of the Dandiset")
+        .param("description", "Description of the Dandiset")
     )
     def create_dandiset(self, params):
         if "name" not in params or "description" not in params:
@@ -84,3 +85,16 @@ class DandiResource(Resource):
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
+
+    @access.public
+    @autoDescribeRoute(
+        Description("List Dandisets").pagingParams(
+            defaultSort="meta.dandiset.identifier"
+        )
+    )
+    def list_dandisets(self, limit, offset, sort):
+        # Ensure we are only looking for drafts collection child folders.
+        drafts = get_or_create_drafts_collection()
+        return Folder().find(
+            {"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort
+        )
