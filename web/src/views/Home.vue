@@ -56,7 +56,7 @@ const actionKeys = [
       window.open(`${JUPYTER_ROOT}`, '_blank');
     },
   },
-  ...DefaultActionKeys.slice(1),
+  ...DefaultActionKeys.slice(1, 3),
 ];
 
 export default {
@@ -67,6 +67,7 @@ export default {
     },
     actions() {
       let actions = actionKeys;
+      console.log(actions);
       if (
         this.selected.length === 1
         && this.selected[0].meta
