@@ -10,9 +10,9 @@ from pytest_girder.assertions import assertStatus, assertStatusOk
 pytestmark = pytest.mark.plugin("dandi_archive")
 
 NAME_1 = "test dandiset 1 name"
-DESCRIPTION_1 = "Zzzz!"
+DESCRIPTION_1 = "Zzzz! This sorts last."
 NAME_2 = "test dandiset 2 name"
-DESCRIPTION_2 = "Aaaa!"
+DESCRIPTION_2 = "Aaaa! This sorts first."
 
 
 @pytest.fixture
@@ -236,7 +236,6 @@ def test_get_dandiset_invalid_identifier(server, drafts_folders, user, dandiset_
 
 
 def test_list_dandisets(server, user, dandiset_1, dandiset_2):
-
     resp = server.request(path="/dandi/list", method="GET", user=user)
     assertStatusOk(resp)
     assert len(resp.json) == 2
@@ -245,7 +244,6 @@ def test_list_dandisets(server, user, dandiset_1, dandiset_2):
 
 
 def test_list_dandisets_sort(server, user, dandiset_1, dandiset_2):
-
     resp = server.request(
         path="/dandi/list",
         method="GET",
@@ -259,7 +257,6 @@ def test_list_dandisets_sort(server, user, dandiset_1, dandiset_2):
 
 
 def test_list_dandisets_limit(server, user, dandiset_1, dandiset_2):
-
     resp = server.request(
         path="/dandi/list", method="GET", user=user, params={"limit": 1},
     )
@@ -269,7 +266,6 @@ def test_list_dandisets_limit(server, user, dandiset_1, dandiset_2):
 
 
 def test_list_dandisets_offset(server, user, dandiset_1, dandiset_2):
-
     resp = server.request(
         path="/dandi/list", method="GET", user=user, params={"limit": 1, "offset": 1},
     )

@@ -92,7 +92,6 @@ class DandiResource(Resource):
         )
     )
     def list_dandisets(self, limit, offset, sort):
-
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
         return Folder().find(
