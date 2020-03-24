@@ -23,7 +23,7 @@ class DandiArchivePlugin(GirderPlugin):
         # meta.dandiset.identifier is specified first so that it is available as an
         # index for other queries that might need it.
         Folder().ensureIndex(([("meta.dandiset.identifier", 1), ("parentId", 1)], {}))
-        
+
         Setting().collection.update(
             {"key": DANDISET_IDENTIFIER_COUNTER},
             {"$setOnInsert": {"value": 1}},

@@ -10,9 +10,9 @@ from pytest_girder.assertions import assertStatus, assertStatusOk
 pytestmark = pytest.mark.plugin("dandi_archive")
 
 NAME_1 = "test dandiset 1 name"
-DESCRIPTION_1 = "test dandiset 1 description"
+DESCRIPTION_1 = "Zzzz! This sorts last."
 NAME_2 = "test dandiset 2 name"
-DESCRIPTION_2 = "test dandiset 2 description"
+DESCRIPTION_2 = "Aaaa! This sorts first."
 
 
 @pytest.fixture
@@ -59,6 +59,23 @@ def dandiset_2(server, drafts_collection, user):
     return resp.json
 
 
+def assert_dandisets_are_equal(expected, actual):
+    assert expected["access"] == actual["access"]
+    assert expected["baseParentId"] == actual["baseParentId"]
+    assert expected["baseParentType"] == actual["baseParentType"]
+    # TODO created datetime
+    assert expected["creatorId"] == actual["creatorId"]
+    assert expected["description"] == actual["description"]
+    assert expected["lowerName"] == actual["lowerName"]
+    assert expected["meta"] == actual["meta"]
+    assert expected["name"] == actual["name"]
+    assert expected["parentCollection"] == actual["parentCollection"]
+    assert expected["parentId"] == actual["parentId"]
+    assert expected["public"] == actual["public"]
+    assert expected["size"] == actual["size"]
+    # TODO updated datetime
+
+
 def test_create_dandiset(server, drafts_collection, user):
     drafts_collection_id = str(drafts_collection["_id"])
     user_id = str(user["_id"])
@@ -71,27 +88,34 @@ def test_create_dandiset(server, drafts_collection, user):
     )
     assertStatusOk(resp)
 
-    assert resp.json["access"] == {
-        "groups": [],
-        "users": [{"flags": [], "id": user_id, "level": 2}],
-    }
-    assert resp.json["baseParentId"] == drafts_collection_id
-    assert resp.json["baseParentType"] == "collection"
-    assert resp.json["creatorId"] == user_id
-    assert resp.json["description"] == ""
-    assert resp.json["lowerName"] == "000001"
-    assert resp.json["meta"] == {
-        "dandiset": {
-            "identifier": "000001",
-            "name": NAME_1,
-            "description": DESCRIPTION_1,
-        }
-    }
-    assert resp.json["name"] == "000001"
-    assert resp.json["parentCollection"] == "collection"
-    assert resp.json["parentId"] == drafts_collection_id
-    assert resp.json["public"] is True
-    assert resp.json["size"] == 0
+    assert_dandisets_are_equal(
+        {
+            "access": {
+                "groups": [],
+                "users": [{"flags": [], "id": user_id, "level": 2}],
+            },
+            "baseParentId": drafts_collection_id,
+            "baseParentType": "collection",
+            # TODO created datetime
+            "creatorId": user_id,
+            "description": "",
+            "lowerName": "000001",
+            "meta": {
+                "dandiset": {
+                    "identifier": "000001",
+                    "name": NAME_1,
+                    "description": DESCRIPTION_1,
+                }
+            },
+            "name": "000001",
+            "parentCollection": "collection",
+            "parentId": drafts_collection_id,
+            "public": True,
+            "size": 0,
+            # TODO updated datetime
+        },
+        resp.json,
+    )
 
 
 def test_create_two_dandisets(server, drafts_collection, user, dandiset_1):
@@ -106,27 +130,34 @@ def test_create_two_dandisets(server, drafts_collection, user, dandiset_1):
     )
     assertStatusOk(resp)
 
-    assert resp.json["access"] == {
-        "groups": [],
-        "users": [{"flags": [], "id": user_id, "level": 2}],
-    }
-    assert resp.json["baseParentId"] == drafts_collection_id
-    assert resp.json["baseParentType"] == "collection"
-    assert resp.json["creatorId"] == user_id
-    assert resp.json["description"] == ""
-    assert resp.json["lowerName"] == "000002"
-    assert resp.json["meta"] == {
-        "dandiset": {
-            "identifier": "000002",
-            "name": NAME_2,
-            "description": DESCRIPTION_2,
-        }
-    }
-    assert resp.json["name"] == "000002"
-    assert resp.json["parentCollection"] == "collection"
-    assert resp.json["parentId"] == drafts_collection_id
-    assert resp.json["public"] is True
-    assert resp.json["size"] == 0
+    assert_dandisets_are_equal(
+        {
+            "access": {
+                "groups": [],
+                "users": [{"flags": [], "id": user_id, "level": 2}],
+            },
+            "baseParentId": drafts_collection_id,
+            "baseParentType": "collection",
+            # TODO created datetime
+            "creatorId": user_id,
+            "description": "",
+            "lowerName": "000002",
+            "meta": {
+                "dandiset": {
+                    "identifier": "000002",
+                    "name": NAME_2,
+                    "description": DESCRIPTION_2,
+                }
+            },
+            "name": "000002",
+            "parentCollection": "collection",
+            "parentId": drafts_collection_id,
+            "public": True,
+            "size": 0,
+            # TODO updated datetime
+        },
+        resp.json,
+    )
 
 
 def test_create_dandiset_no_name(server, drafts_collection, user):
@@ -165,36 +196,13 @@ def test_create_dandiset_empty_description(server, drafts_collection, user):
 
 def test_get_dandiset(server, drafts_collection, user, dandiset_1):
     identifier = dandiset_1["name"]
-    drafts_collection_id = str(drafts_collection["_id"])
-    user_id = str(user["_id"])
 
-    # Ensure we can retrieve the Dandiset.
     resp = server.request(
         path="/dandi", method="GET", user=user, params={"identifier": identifier}
     )
     assertStatusOk(resp)
 
-    assert resp.json["access"] == {
-        "groups": [],
-        "users": [{"flags": [], "id": user_id, "level": 2}],
-    }
-    assert resp.json["baseParentId"] == drafts_collection_id
-    assert resp.json["baseParentType"] == "collection"
-    assert resp.json["creatorId"] == user_id
-    assert resp.json["description"] == ""
-    assert resp.json["lowerName"] == "000001"
-    assert resp.json["meta"] == {
-        "dandiset": {
-            "identifier": "000001",
-            "name": NAME_1,
-            "description": DESCRIPTION_1,
-        }
-    }
-    assert resp.json["name"] == "000001"
-    assert resp.json["parentCollection"] == "collection"
-    assert resp.json["parentId"] == drafts_collection_id
-    assert resp.json["public"] is True
-    assert resp.json["size"] == 0
+    assert_dandisets_are_equal(dandiset_1, resp.json)
 
 
 def test_get_dandiset_does_not_exist(server, drafts_collection, user):
@@ -221,3 +229,42 @@ def test_get_dandiset_invalid_identifier(server, drafts_collection, user, dandis
         path="/dandi", method="GET", user=user, params={"identifier": "1"}
     )
     assertStatus(resp, 400)
+
+
+def test_list_dandisets(server, user, dandiset_1, dandiset_2):
+    resp = server.request(path="/dandi/list", method="GET", user=user)
+    assertStatusOk(resp)
+    assert len(resp.json) == 2
+    assert_dandisets_are_equal(dandiset_1, resp.json[0])
+    assert_dandisets_are_equal(dandiset_2, resp.json[1])
+
+
+def test_list_dandisets_sort(server, user, dandiset_1, dandiset_2):
+    resp = server.request(
+        path="/dandi/list",
+        method="GET",
+        user=user,
+        params={"sort": "meta.dandiset.description"},
+    )
+    assertStatusOk(resp)
+    assert len(resp.json) == 2
+    assert_dandisets_are_equal(dandiset_2, resp.json[0])
+    assert_dandisets_are_equal(dandiset_1, resp.json[1])
+
+
+def test_list_dandisets_limit(server, user, dandiset_1, dandiset_2):
+    resp = server.request(
+        path="/dandi/list", method="GET", user=user, params={"limit": 1},
+    )
+    assertStatusOk(resp)
+    assert len(resp.json) == 1
+    assert_dandisets_are_equal(dandiset_1, resp.json[0])
+
+
+def test_list_dandisets_offset(server, user, dandiset_1, dandiset_2):
+    resp = server.request(
+        path="/dandi/list", method="GET", user=user, params={"limit": 1, "offset": 1},
+    )
+    assertStatusOk(resp)
+    assert len(resp.json) == 1
+    assert_dandisets_are_equal(dandiset_2, resp.json[0])
