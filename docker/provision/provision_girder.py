@@ -7,14 +7,6 @@ ADMIN_USER = 'admin'
 ADMIN_PASS = 'letmein'
 
 
-def setGirderSetting(key, value, gc):
-    return gc.put("/system/setting",
-                  parameters={
-                      "key": key,
-                      "value": value
-                  })
-
-
 def createInitialUser(apiUrl):
     # no try/except required here, just get a 400 on failure
     requests.post(
@@ -48,7 +40,6 @@ def run_girder_init(apiUrl):
     createInitialUser(apiUrl)
     gc = girder_client.GirderClient(apiUrl=apiUrl)
     gc.authenticate("admin", "letmein")
-    setGirderSetting("core.cors.allow_origin", "*", gc)
     createAssetstore(gc)
 
 

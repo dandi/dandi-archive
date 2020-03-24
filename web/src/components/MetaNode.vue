@@ -8,6 +8,7 @@
       :class="leafClasses"
       :items="schema.enum"
       :readonly="schema.readOnly"
+      :label="schema.title"
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
