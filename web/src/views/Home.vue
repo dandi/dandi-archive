@@ -67,7 +67,6 @@ export default {
     },
     actions() {
       let actions = actionKeys;
-      console.log(actions);
       if (
         this.selected.length === 1
         && this.selected[0].meta
