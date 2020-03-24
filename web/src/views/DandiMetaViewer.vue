@@ -10,7 +10,7 @@
     <template v-else>
       <v-container>
         <v-row>
-          <v-col sm="6">
+          <v-col xs="12" lg="9" xl="6">
             <v-card>
               <v-card-title>
                 {{meta.name}}
@@ -34,12 +34,6 @@
                   <v-list-item-content>
                     Identifier: {{ meta.identifier }}
                   </v-list-item-content>
-                  <!-- <v-list-item-action class="ma-0 mr-1">
-                    <v-btn icon>
-                      <v-icon>mdi-content-copy</v-icon>
-                    </v-btn>
-                  </v-list-item-action>
-                  <v-spacer /> -->
                 </v-list-item>
                 <v-list-item>
                   <v-list-item-content>
@@ -91,7 +85,6 @@
                 </v-list-item>
                 <v-list-item v-if="details">
                   <v-list-item-content>
-                    <!-- Size: {{computedSize}}, Files: {{details.nItems}}, Folders: {{details.nFolders}} -->
                     Files: {{details.nItems}}, Folders: {{details.nFolders}}
                   </v-list-item-content>
                 </v-list-item>
@@ -138,9 +131,11 @@ import { mapState, mapGetters } from 'vuex';
 import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
+import { dandiUrl } from '@/utils';
+
 import SCHEMA from '@/assets/schema/base.json';
 import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
-import { dandiUrl } from '@/utils';
+import NWB_SCHEMA from '@/assets/schema/nwb.json';
 
 export default {
   name: 'DandisetLandingPage',
@@ -162,7 +157,6 @@ export default {
   data() {
     return {
       dandiUrl,
-      schema: this.create ? NEW_SCHEMA : SCHEMA,
       meta: {},
       edit: false,
       published: false,
@@ -179,6 +173,20 @@ export default {
     };
   },
   computed: {
+    schema() {
+      if (this.create) {
+        return NEW_SCHEMA;
+      }
+
+      if (this.edit) {
+        return SCHEMA;
+      }
+
+      const properties = { ...SCHEMA.properties, ...NWB_SCHEMA.properties };
+      const required = [...SCHEMA.required, ...NWB_SCHEMA.required];
+
+      return { properties, required };
+    },
     permalink() {
       return `${this.dandiUrl}/dandiset/${this.meta.identifier}/draft`;
     },

@@ -16,7 +16,7 @@ DESCRIPTION_2 = "Aaaa! This sorts first."
 
 
 @pytest.fixture
-def drafts_folders(db):
+def drafts_collection(db):
     red_herring_collection = Collection().createCollection(
         "red_herring_collection", reuseExisting=True
     )
@@ -31,16 +31,12 @@ def drafts_folders(db):
         "dandiset": {"name": "red", "description": "herring", "identifier": "000001"}
     }
     Folder().setMetadata(red_herring_dandiset_000001_folder, meta)
-    return_dict = {
-        "red_herring_collection": red_herring_collection,
-        "red_herring_folder": red_herring_dandiset_000001_folder,
-    }
-    return_dict["drafts_collection"] = get_or_create_drafts_collection()
-    yield return_dict
+
+    return get_or_create_drafts_collection()
 
 
 @pytest.fixture
-def dandiset_1(server, drafts_folders, user):
+def dandiset_1(server, drafts_collection, user):
     resp = server.request(
         path="/dandi",
         method="POST",
@@ -48,11 +44,11 @@ def dandiset_1(server, drafts_folders, user):
         params={"name": NAME_1, "description": DESCRIPTION_1},
     )
     assertStatusOk(resp)
-    yield resp.json
+    return resp.json
 
 
 @pytest.fixture
-def dandiset_2(server, drafts_folders, user):
+def dandiset_2(server, drafts_collection, user):
     resp = server.request(
         path="/dandi",
         method="POST",
@@ -60,7 +56,7 @@ def dandiset_2(server, drafts_folders, user):
         params={"name": NAME_2, "description": DESCRIPTION_2},
     )
     assertStatusOk(resp)
-    yield resp.json
+    return resp.json
 
 
 def assert_dandisets_are_equal(expected, actual):
@@ -80,8 +76,8 @@ def assert_dandisets_are_equal(expected, actual):
     # TODO updated datetime
 
 
-def test_create_dandiset(server, drafts_folders, user):
-    drafts_collection_id = str(drafts_folders["drafts_collection"]["_id"])
+def test_create_dandiset(server, drafts_collection, user):
+    drafts_collection_id = str(drafts_collection["_id"])
     user_id = str(user["_id"])
 
     resp = server.request(
@@ -122,8 +118,8 @@ def test_create_dandiset(server, drafts_folders, user):
     )
 
 
-def test_create_two_dandisets(server, drafts_folders, user, dandiset_1):
-    drafts_collection_id = str(drafts_folders["drafts_collection"]["_id"])
+def test_create_two_dandisets(server, drafts_collection, user, dandiset_1):
+    drafts_collection_id = str(drafts_collection["_id"])
     user_id = str(user["_id"])
 
     resp = server.request(
@@ -164,21 +160,21 @@ def test_create_two_dandisets(server, drafts_folders, user, dandiset_1):
     )
 
 
-def test_create_dandiset_no_name(server, drafts_folders, user):
+def test_create_dandiset_no_name(server, drafts_collection, user):
     resp = server.request(
         path="/dandi", method="POST", user=user, params={"description": DESCRIPTION_1},
     )
     assertStatus(resp, 400)
 
 
-def test_create_dandiset_no_description(server, drafts_folders, user):
+def test_create_dandiset_no_description(server, drafts_collection, user):
     resp = server.request(
         path="/dandi", method="POST", user=user, params={"name": NAME_1},
     )
     assertStatus(resp, 400)
 
 
-def test_create_dandiset_empty_name(server, drafts_folders, user):
+def test_create_dandiset_empty_name(server, drafts_collection, user):
     resp = server.request(
         path="/dandi",
         method="POST",
@@ -188,7 +184,7 @@ def test_create_dandiset_empty_name(server, drafts_folders, user):
     assertStatus(resp, 400)
 
 
-def test_create_dandiset_empty_description(server, drafts_folders, user):
+def test_create_dandiset_empty_description(server, drafts_collection, user):
     resp = server.request(
         path="/dandi",
         method="POST",
@@ -198,7 +194,7 @@ def test_create_dandiset_empty_description(server, drafts_folders, user):
     assertStatus(resp, 400)
 
 
-def test_get_dandiset(server, drafts_folders, user, dandiset_1):
+def test_get_dandiset(server, drafts_collection, user, dandiset_1):
     identifier = dandiset_1["name"]
 
     resp = server.request(
@@ -209,26 +205,26 @@ def test_get_dandiset(server, drafts_folders, user, dandiset_1):
     assert_dandisets_are_equal(dandiset_1, resp.json)
 
 
-def test_get_dandiset_does_not_exist(server, drafts_folders, user):
+def test_get_dandiset_does_not_exist(server, drafts_collection, user):
     resp = server.request(
         path="/dandi", method="GET", user=user, params={"identifier": "000001"}
     )
     assertStatus(resp, 400)
 
 
-def test_get_dandiset_no_identifier(server, drafts_folders, user, dandiset_1):
+def test_get_dandiset_no_identifier(server, drafts_collection, user, dandiset_1):
     resp = server.request(path="/dandi", method="GET", user=user, params={})
     assertStatus(resp, 400)
 
 
-def test_get_dandiset_empty_identifier(server, drafts_folders, user, dandiset_1):
+def test_get_dandiset_empty_identifier(server, drafts_collection, user, dandiset_1):
     resp = server.request(
         path="/dandi", method="GET", user=user, params={"identifier": ""}
     )
     assertStatus(resp, 400)
 
 
-def test_get_dandiset_invalid_identifier(server, drafts_folders, user, dandiset_1):
+def test_get_dandiset_invalid_identifier(server, drafts_collection, user, dandiset_1):
     resp = server.request(
         path="/dandi", method="GET", user=user, params={"identifier": "1"}
     )
