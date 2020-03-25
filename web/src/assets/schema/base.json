@@ -22,13 +22,15 @@
       "$id": "#/properties/name",
       "type": "string",
       "title": "Name",
-      "minLength": 1
+      "minLength": 1,
+      "long": true
     },
     "description": {
       "$id": "#/properties/description",
       "type": "string",
       "title": "Description",
-      "minLength": 1
+      "minLength": 1,
+      "long": true
     },
     "contributors": {
       "$id": "#/properties/contributors",

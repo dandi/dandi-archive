@@ -15,6 +15,23 @@
         <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
     </v-select>
+    <!-- changed v-text-field to v-textarea for name and description-->
+    <!-- should I add auto-grow -->
+    <v-textarea
+      v-else-if="schema.long"
+      v-model="value"
+      dense
+      :label="schema.title"
+      :type="fieldType(schema)"
+      :class="leafClasses"
+      :readonly="schema.readOnly"
+    >
+      <template v-slot:prepend>
+        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <!--issue 154 the icon for identifier/name/description -->
+        <v-icon v-else>mdi-circle-medium</v-icon>
+      </template>
+    </v-textarea>
     <v-text-field
       v-else
       v-model="value"
@@ -26,6 +43,7 @@
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <!--issue 154 the icon for identifier/name/description -->
         <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
     </v-text-field>
