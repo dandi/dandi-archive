@@ -173,7 +173,7 @@ export default {
     output() {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
-    ...mapState({
+    ...mapState('girder', {
       girderRest: 'girderRest',
       id: (state) => state.selected[0]._id,
     }),
@@ -236,7 +236,7 @@ export default {
       link.click();
       URL.revokeObjectURL(link.href);
     },
-    ...mapMutations(['setSelected']),
+    ...mapMutations('girder', ['setSelected']),
   },
 };
 </script>

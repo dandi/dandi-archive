@@ -4,9 +4,9 @@ import Girder, { RestClient, vuetify } from '@girder/components/src';
 import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
 
-import App from './App.vue';
-import router from './router';
-import store from './store';
+import App from '@/App.vue';
+import router from '@/router';
+import store from '@/store';
 
 Vue.use(Girder);
 

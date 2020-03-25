@@ -223,11 +223,11 @@ export default {
       if (!this.selected || !this.selected.size) return null;
       return filesize(this.selected.size);
     },
-    ...mapState({
+    ...mapState('girder', {
       selected: (state) => (state.selected.length === 1 ? state.selected[0] : undefined),
       girderRest: 'girderRest',
     }),
-    ...mapGetters(['loggedIn']),
+    ...mapGetters('girder', ['loggedIn']),
   },
   watch: {
     async selected(val) {

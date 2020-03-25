@@ -1,9 +1,7 @@
 import Vue from 'vue';
-import Vuex from 'vuex';
 
-Vue.use(Vuex);
-
-export default new Vuex.Store({
+export default {
+  namespaced: true,
   state: {
     apiKey: null,
     girderRest: null,
@@ -17,9 +15,6 @@ export default new Vuex.Store({
   mutations: {
     setApiKey(state, apiKey) {
       state.apiKey = apiKey;
-    },
-    setBrowseLocation(state, location) {
-      state.browseLocation = location;
     },
     setGirderRest(state, gr) {
       state.girderRest = gr;
@@ -84,16 +79,6 @@ export default new Vuex.Store({
         }
       }
     },
-    async fetchFullLocation({ state, commit }, location) {
-      if (location && location._id && location._modelType) {
-        const { _id: id, _modelType: modelType } = location;
-        const resp = await state.girderRest.get(`${modelType}/${id}`);
-
-        if (resp.status === 200) {
-          commit('setBrowseLocation', resp.data);
-        }
-      }
-    },
     async selectSearchResult({ state, commit }, result) {
       commit('setSelected', []);
 
@@ -114,4 +99,4 @@ export default new Vuex.Store({
       await state.girderRest.logout();
     },
   },
-});
+};

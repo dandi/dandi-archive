@@ -224,8 +224,8 @@ export default {
     saveDisabled() {
       return !(this.name && this.description);
     },
-    ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['apiKey', 'girderRest']),
+    ...mapGetters('girder', ['loggedIn', 'user']),
+    ...mapState('girder', ['apiKey', 'girderRest']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -268,7 +268,7 @@ export default {
         this.regdialog = false;
       }
     },
-    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
+    ...mapActions('girder', ['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
   },
 };
 </script>
