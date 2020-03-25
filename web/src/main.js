@@ -24,7 +24,7 @@ girderRest.fetchUser().then(() => {
   new Vue({
     provide: { girderRest },
     router,
-    render: h => h(App),
+    render: (h) => h(App),
     store,
     vuetify,
   }).$mount('#app');

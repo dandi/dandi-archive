@@ -3,10 +3,13 @@
     <v-row>
       <v-col sm="6">
         <v-card class="mb-2">
-          <v-card-title>{{meta.name}}</v-card-title>
+          <v-card-title>{{ meta.name }}</v-card-title>
           <v-card-text class="pb-0">
             <template v-if="!errors || !errors.length">
-              <v-alert dense type="success">
+              <v-alert
+                dense
+                type="success"
+              >
                 No errors
               </v-alert>
             </template>
@@ -18,14 +21,19 @@
                 type="error"
                 text-color="white"
               >
-                {{errorMessage(error)}}
+                {{ errorMessage(error) }}
               </v-alert>
             </template>
           </v-card-text>
           <v-card-actions class="pt-0">
             <v-tooltip bottom>
               <template v-slot:activator="{ on }">
-                <v-btn v-on="on" @click="closeEditor" icon color="error">
+                <v-btn
+                  icon
+                  color="error"
+                  v-on="on"
+                  @click="closeEditor"
+                >
                   <v-icon>
                     mdi-close-circle
                   </v-icon>
@@ -36,11 +44,11 @@
             <v-tooltip bottom>
               <template v-slot:activator="{ on }">
                 <v-btn
-                  v-on="on"
-                  @click="save"
                   icon
                   color="primary"
                   :disabled="saveDisabled"
+                  v-on="on"
+                  @click="save"
                 >
                   <v-icon>
                     mdi-content-save
@@ -65,7 +73,12 @@
         </v-card>
         <v-form>
           <v-card class="pa-2">
-            <meta-node class="pt-3" :schema="schema" :initial="meta" v-model="meta"/>
+            <meta-node
+              v-model="meta"
+              class="pt-3"
+              :schema="schema"
+              :initial="meta"
+            />
           </v-card>
         </v-form>
       </v-col>
@@ -74,15 +87,33 @@
           <v-card-title>Dandiset Metadata</v-card-title>
           <v-divider />
           <v-card-actions class="py-0">
-            <v-btn icon color="primary" class="mr-2" @click="download">
+            <v-btn
+              icon
+              color="primary"
+              class="mr-2"
+              @click="download"
+            >
               <v-icon>mdi-download</v-icon>
             </v-btn>
-            <v-radio-group v-model="yamlOutput" row>
-              <v-radio label="YAML" :value="true" />
-              <v-radio label="JSON" :value="false" />
+            <v-radio-group
+              v-model="yamlOutput"
+              row
+            >
+              <v-radio
+                label="YAML"
+                :value="true"
+              />
+              <v-radio
+                label="JSON"
+                :value="false"
+              />
             </v-radio-group>
           </v-card-actions>
-          <vue-json-pretty class="ma-2" :data="meta" highlight-mouseover-node />
+          <vue-json-pretty
+            class="ma-2"
+            :data="meta"
+            highlight-mouseover-node
+          />
         </v-card>
       </v-col>
     </v-row>
@@ -100,6 +131,10 @@ import MetaNode from '@/components/MetaNode.vue';
 const ajv = new Ajv({ allErrors: true });
 
 export default {
+  components: {
+    VueJsonPretty,
+    MetaNode,
+  },
   props: {
     schema: {
       type: Object,
@@ -114,10 +149,6 @@ export default {
       required: false,
       default: () => false,
     },
-  },
-  components: {
-    VueJsonPretty,
-    MetaNode,
   },
   data() {
     return {
@@ -144,12 +175,8 @@ export default {
     },
     ...mapState({
       girderRest: 'girderRest',
-      id: state => state.selected[0]._id,
+      id: (state) => state.selected[0]._id,
     }),
-  },
-  created() {
-    this.validate(this.meta);
-    this.errors = this.validate.errors;
   },
   watch: {
     meta: {
@@ -159,6 +186,10 @@ export default {
       },
       deep: true,
     },
+  },
+  created() {
+    this.validate(this.meta);
+    this.errors = this.validate.errors;
   },
   methods: {
     closeEditor() {

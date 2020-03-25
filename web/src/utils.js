@@ -17,14 +17,14 @@ function getPathFromLocation(location) {
 
 function getSelectedFromRoute(route) {
   const { ids } = route.params;
-  return ids ? ids.split('/').map(item => item.split('+')).map(([type, id]) => ({ _id: id, _modelType: type })) : [];
+  return ids ? ids.split('/').map((item) => item.split('+')).map(([type, id]) => ({ _id: id, _modelType: type })) : [];
 }
 
 function getPathFromSelected(selected) {
   if (!selected.length) {
     return '';
   }
-  return `/selected/${selected.map(model => `${model._modelType}+${model._id}`).join('/')}`;
+  return `/selected/${selected.map((model) => `${model._modelType}+${model._id}`).join('/')}`;
 }
 
 // https://stackoverflow.com/a/33928558/1643850 with slight modification

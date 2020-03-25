@@ -11,8 +11,8 @@ export default new Vuex.Store({
     selected: [],
   },
   getters: {
-    loggedIn: state => !!state.girderRest.user,
-    user: state => state.girderRest.user,
+    loggedIn: (state) => !!state.girderRest.user,
+    user: (state) => state.girderRest.user,
   },
   mutations: {
     setApiKey(state, apiKey) {
@@ -42,7 +42,7 @@ export default new Vuex.Store({
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // send the key id to "PUT" endpoint for updating
         const { data: { key } } = await state.girderRest.put(`api_key/${dandiKey._id}`);
@@ -62,7 +62,7 @@ export default new Vuex.Store({
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // if there is an existing api key
 

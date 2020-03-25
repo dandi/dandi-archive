@@ -2,24 +2,28 @@
   <div>
     <meta-editor
       v-if="edit && Object.entries(meta).length"
-      @close="edit = false"
       :schema="schema"
       :model="meta"
       :create="create"
+      @close="edit = false"
     />
     <template v-else>
       <v-container>
         <v-row>
-          <v-col xs="12" lg="9" xl="6">
+          <v-col
+            xs="12"
+            lg="9"
+            xl="6"
+          >
             <v-card>
               <v-card-title>
-                {{meta.name}}
+                {{ meta.name }}
                 <v-chip
                   v-if="meta.version"
                   class="primary ml-2"
                   round
                 >
-                  Version: {{meta.version}}
+                  Version: {{ meta.version }}
                 </v-chip>
                 <v-chip
                   v-if="!published"
@@ -29,7 +33,11 @@
                   This dataset has not been published!
                 </v-chip>
               </v-card-title>
-              <v-list dense v-if="meta.identifier" class="py-0">
+              <v-list
+                v-if="meta.identifier"
+                dense
+                class="py-0"
+              >
                 <v-list-item>
                   <v-list-item-content>
                     Identifier: {{ meta.identifier }}
@@ -43,20 +51,26 @@
                   </v-list-item-content>
                 </v-list-item>
               </v-list>
-              <v-card-actions v-if="selected" class="py-0">
+              <v-card-actions
+                v-if="selected"
+                class="py-0"
+              >
                 <v-btn
                   icon
                   :to="`/collection/${selected.parentId}`"
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
-                <v-tooltip right :disabled="loggedIn">
+                <v-tooltip
+                  right
+                  :disabled="loggedIn"
+                >
                   <template v-slot:activator="{ on }">
                     <div v-on="on">
                       <v-btn
-                        @click="edit = true"
                         icon
                         :disabled="!loggedIn"
+                        @click="edit = true"
                       >
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
@@ -75,17 +89,17 @@
                 <v-divider />
                 <v-list-item>
                   <v-list-item-content>
-                    Uploaded by {{uploader}}
+                    Uploaded by {{ uploader }}
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item>
                   <v-list-item-content>
-                    Last modified {{last_modified}}
+                    Last modified {{ last_modified }}
                   </v-list-item-content>
                 </v-list-item>
                 <v-list-item v-if="details">
                   <v-list-item-content>
-                    Files: {{details.nItems}}, Folders: {{details.nFolders}}
+                    Files: {{ details.nItems }}, Folders: {{ details.nFolders }}
                   </v-list-item-content>
                 </v-list-item>
                 <v-divider />
@@ -93,22 +107,30 @@
                   <v-subheader>Description</v-subheader>
                   <v-list-item>
                     <v-list-item-content>
-                      {{meta.description}}
+                      {{ meta.description }}
                     </v-list-item-content>
                   </v-list-item>
                 </template>
                 <template v-if="meta.contributors">
                   <v-subheader>Contributors</v-subheader>
-                  <v-list-item v-for="(item, i) in meta.contributors" :key="i">
-                    <v-list-item-content>{{item}}</v-list-item-content>
+                  <v-list-item
+                    v-for="(item, i) in meta.contributors"
+                    :key="i"
+                  >
+                    <v-list-item-content>{{ item }}</v-list-item-content>
                   </v-list-item>
                 </template>
                 <template v-for="(item, k) in extraFields">
-                  <v-subheader :key="k">{{ k }}</v-subheader>
+                  <v-subheader :key="k">
+                    {{ k }}
+                  </v-subheader>
                   <v-list-item :key="k">
                     <v-list-item-content>
                       <template v-if="['object', 'array'].includes(schema.properties[k].type)">
-                        <vue-json-pretty :data="item" highlight-mouseover-node />
+                        <vue-json-pretty
+                          :data="item"
+                          highlight-mouseover-node
+                        />
                       </template>
                       <template v-else>
                         {{ item }}
@@ -139,6 +161,10 @@ import NWB_SCHEMA from '@/assets/schema/nwb.json';
 
 export default {
   name: 'DandisetLandingPage',
+  components: {
+    MetaEditor,
+    VueJsonPretty,
+  },
   props: {
     id: {
       type: String,
@@ -149,10 +175,6 @@ export default {
       required: false,
       default: () => false,
     },
-  },
-  components: {
-    MetaEditor,
-    VueJsonPretty,
   },
   data() {
     return {
@@ -193,7 +215,7 @@ export default {
     extraFields() {
       const { meta, mainFields } = this;
       const extra = Object.keys(meta).filter(
-        x => !mainFields.includes(x) && x in this.schema.properties,
+        (x) => !mainFields.includes(x) && x in this.schema.properties,
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
@@ -202,7 +224,7 @@ export default {
       return filesize(this.selected.size);
     },
     ...mapState({
-      selected: state => (state.selected.length === 1 ? state.selected[0] : undefined),
+      selected: (state) => (state.selected.length === 1 ? state.selected[0] : undefined),
       girderRest: 'girderRest',
     }),
     ...mapGetters(['loggedIn']),
