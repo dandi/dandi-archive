@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import Home from './views/Home.vue';
-import DandiMetaViewer from '@/views/DandiMetaViewer.vue';
+import HomeView from '@/views/HomeView/HomeView.vue';
+import DandiMetaViewer from '@/views/DandiMetaViewer/DandiMetaViewer.vue';
 
 Vue.use(Router);
 
@@ -14,14 +14,9 @@ export default new Router({
       component: DandiMetaViewer,
     },
     {
-      path: '/:_modelType?/:_id?',
+      path: '/',
       name: 'home',
-      component: Home,
-    },
-    {
-      path: '/:_modelType?/:_id/selected/:ids+',
-      name: 'home2',
-      component: Home,
+      component: HomeView,
     },
   ],
 });
