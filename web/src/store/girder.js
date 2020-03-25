@@ -1,9 +1,7 @@
 import Vue from 'vue';
-import Vuex from 'vuex';
 
-Vue.use(Vuex);
-
-export default new Vuex.Store({
+export default {
+  namespaced: true,
   state: {
     apiKey: null,
     girderRest: null,
@@ -11,15 +9,12 @@ export default new Vuex.Store({
     selected: [],
   },
   getters: {
-    loggedIn: state => !!state.girderRest.user,
-    user: state => state.girderRest.user,
+    loggedIn: (state) => !!state.girderRest.user,
+    user: (state) => state.girderRest.user,
   },
   mutations: {
     setApiKey(state, apiKey) {
       state.apiKey = apiKey;
-    },
-    setBrowseLocation(state, location) {
-      state.browseLocation = location;
     },
     setGirderRest(state, gr) {
       state.girderRest = gr;
@@ -42,7 +37,7 @@ export default new Vuex.Store({
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // send the key id to "PUT" endpoint for updating
         const { data: { key } } = await state.girderRest.put(`api_key/${dandiKey._id}`);
@@ -62,7 +57,7 @@ export default new Vuex.Store({
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // if there is an existing api key
 
@@ -81,16 +76,6 @@ export default new Vuex.Store({
 
         if (createStatus === 200) {
           commit('setApiKey', key);
-        }
-      }
-    },
-    async fetchFullLocation({ state, commit }, location) {
-      if (location && location._id && location._modelType) {
-        const { _id: id, _modelType: modelType } = location;
-        const resp = await state.girderRest.get(`${modelType}/${id}`);
-
-        if (resp.status === 200) {
-          commit('setBrowseLocation', resp.data);
         }
       }
     },
@@ -114,4 +99,4 @@ export default new Vuex.Store({
       await state.girderRest.logout();
     },
   },
-});
+};

@@ -17,7 +17,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .dandi-app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

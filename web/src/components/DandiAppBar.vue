@@ -1,19 +1,37 @@
 <template>
-  <v-app-bar app color="primary">
+  <v-app-bar
+    app
+    color="primary"
+  >
     <router-link to="/root">
       <v-toolbar-title>
-        <img align="center" alt="DANDI logo" height="48px" src="@/assets/logo.svg" />
+        <img
+          align="center"
+          alt="DANDI logo"
+          height="48px"
+          src="@/assets/logo.svg"
+        >
       </v-toolbar-title>
     </router-link>
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
-        <v-btn text :href="dandiUrl"
-        class="ml-2 white--text" dark v-on="on">About</v-btn>
+        <v-btn
+          text
+          :href="dandiUrl"
+          class="ml-2 white--text"
+          dark
+          v-on="on"
+        >
+          About
+        </v-btn>
       </template>
       <span>You are currently viewing the data portal.
-      Click this button to learn more about the DANDI project.</span>
+        Click this button to learn more about the DANDI project.</span>
     </v-tooltip>
-    <v-dialog max-width="600px" v-model="regdialog">
+    <v-dialog
+      v-model="regdialog"
+      max-width="600px"
+    >
       <template v-slot:activator="{ on }">
         <v-btn
           text
@@ -31,25 +49,25 @@
         </v-card-title>
         <v-card-text>
           <v-text-field
+            v-model="name"
             label="Name*"
             hint="Provide a title for this dataset"
             persistent-hint
             :counter="120"
-            v-model="name"
             required
           />
           <v-textarea
+            v-model="description"
             label="Description*"
             hint="Provide a description for this dataset"
             :counter="3000"
             persistent-hint
-            v-model="description"
             required
           />
           <small>*indicates required field</small>
         </v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-btn
             type="submit"
             color="primary"
@@ -66,8 +84,17 @@
     </v-dialog>
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
-        <v-chip class="ml-2" color="secondary" v-on="on">
-          <v-icon left color="amber">$vuetify.icons.alert</v-icon>Early Access
+        <v-chip
+          class="ml-2"
+          color="secondary"
+          v-on="on"
+        >
+          <v-icon
+            left
+            color="amber"
+          >
+            $vuetify.icons.alert
+          </v-icon>Early Access
         </v-chip>
       </template>
       <span>
@@ -75,9 +102,14 @@
         Public release isn't until March 2020.
       </span>
     </v-tooltip>
-    <v-spacer/>
-    <girder-search @select="selectSearchResult" search-mode="dandi"
-        :search-types="['item']" :hide-options-menu="true" placeholder="Type search query" >
+    <v-spacer />
+    <girder-search
+      search-mode="dandi"
+      :search-types="['item']"
+      :hide-options-menu="true"
+      placeholder="Type search query"
+      @select="selectSearchResult"
+    >
       <template v-slot:searchresult="result">
         <v-list-item-action>
           <v-icon> {{ $vuetify.icons.values[result._modelType] }} </v-icon>
@@ -103,9 +135,18 @@
         </v-list-item-content>
       </template>
     </girder-search>
-    <v-menu offset-y v-if="loggedIn" :close-on-content-click="false">
+    <v-menu
+      v-if="loggedIn"
+      offset-y
+      :close-on-content-click="false"
+    >
       <template v-slot:activator="{ on }">
-        <v-btn v-on="on" class="ml-2" icon dark>
+        <v-btn
+          class="ml-2"
+          icon
+          dark
+          v-on="on"
+        >
           <v-avatar color="primary darken-1">
             {{ initials }}
           </v-avatar>
@@ -114,17 +155,20 @@
       <v-list dense>
         <v-list-item>
           <v-list-item-action class="mr-2">
-            <v-btn icon @click="reloadApiKey">
+            <v-btn
+              icon
+              @click="reloadApiKey"
+            >
               <v-icon>mdi-reload</v-icon>
             </v-btn>
           </v-list-item-action>
           <v-list-item-content>
             <v-text-field
               ref="apiKey"
+              v-model="apiKey"
               label="Api Key"
               :readonly="true"
               append-outer-icon="mdi-content-copy"
-              v-model="apiKey"
               @click:append-outer="copyApiKey"
             />
           </v-list-item-content>
@@ -141,13 +185,23 @@
         </v-list-item>
       </v-list>
     </v-menu>
-    <v-dialog v-else max-width="600">
+    <v-dialog
+      v-else
+      max-width="600"
+    >
       <template v-slot:activator="{ on }">
-        <v-btn v-on="on" class="ml-4">
+        <v-btn
+          class="ml-4"
+          v-on="on"
+        >
           Login
         </v-btn>
       </template>
-      <girder-auth :force-otp="false" :show-forgot-password="false" :oauth="true" />
+      <girder-auth
+        :force-otp="false"
+        :show-forgot-password="false"
+        :oauth="true"
+      />
     </v-dialog>
   </v-app-bar>
 </template>
@@ -159,19 +213,19 @@ import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/co
 import { dandiUrl } from '@/utils';
 
 export default {
+  components: { GirderSearch, GirderAuth },
   data: () => ({
     dandiUrl,
     name: '',
     description: '',
     regdialog: false,
   }),
-  components: { GirderSearch, GirderAuth },
   computed: {
     saveDisabled() {
       return !(this.name && this.description);
     },
-    ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['apiKey', 'girderRest']),
+    ...mapGetters('girder', ['loggedIn', 'user']),
+    ...mapState('girder', ['apiKey', 'girderRest']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -214,7 +268,7 @@ export default {
         this.regdialog = false;
       }
     },
-    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
+    ...mapActions('girder', ['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
   },
 };
 </script>
