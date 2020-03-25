@@ -160,7 +160,7 @@ import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
 import NWB_SCHEMA from '@/assets/schema/nwb.json';
 
 export default {
-  name: 'DandisetLandingPage',
+  name: 'DandisetLandingView',
   components: {
     MetaEditor,
     VueJsonPretty,

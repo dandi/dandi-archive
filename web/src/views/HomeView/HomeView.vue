@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    TODO
+    TODO: HomeView
   </v-container>
 </template>
 

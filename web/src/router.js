@@ -1,22 +1,35 @@
 import Vue from 'vue';
 import Router from 'vue-router';
+
 import HomeView from '@/views/HomeView/HomeView.vue';
-import DandiMetaViewer from '@/views/DandiMetaViewer/DandiMetaViewer.vue';
+import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
+import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
+import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
 
 Vue.use(Router);
 
 export default new Router({
   routes: [
     {
-      path: '/dandiset-meta/:id',
-      name: 'dandiset-metadata-viewer',
-      props: true,
-      component: DandiMetaViewer,
-    },
-    {
       path: '/',
       name: 'home',
       component: HomeView,
+    },
+    {
+      path: '/dandiset',
+      name: 'publicDandisets',
+      component: PublicDandisetsView,
+    },
+    {
+      path: '/dandiset/my',
+      name: 'myDandisets',
+      component: MyDandisetsView,
+    },
+    {
+      path: '/dandiset/:id',
+      name: 'dandisetLanding',
+      props: true,
+      component: DandisetLandingView,
     },
   ],
 });

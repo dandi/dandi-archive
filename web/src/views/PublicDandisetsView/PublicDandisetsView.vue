@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    TODO
+    TODO: PublicDandisetsView
   </v-container>
 </template>
 
