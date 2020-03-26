@@ -1,6 +1,7 @@
 from girder.api import access
 from girder.api.rest import Resource
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
+from girder.constants import TokenScope
 from girder.models.setting import Setting
 from girder.models.folder import Folder
 from girder.exceptions import RestException
@@ -22,7 +23,7 @@ class DandiResource(Resource):
         self.route("GET", ("list",), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
 
-    @access.user
+    @access.user(scope=TokenScope.DATA_WRITE)
     @describeRoute(
         Description("Create Dandiset")
         .param("name", "Name of the Dandiset")
