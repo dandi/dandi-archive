@@ -8,7 +8,7 @@ pytestmark = pytest.mark.plugin("dandi_archive")
 def test_get_dandiset(server, request_auth, dandiset_1):
     identifier = dandiset_1["name"]
 
-    resp = server.request(path="/dandi/" + identifier, method="GET", **request_auth,)
+    resp = server.request(path=f"/dandi/{identifier}", method="GET", **request_auth,)
     assertStatusOk(resp)
 
     assert_dandisets_are_equal(dandiset_1, resp.json)
