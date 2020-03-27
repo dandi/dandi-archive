@@ -89,7 +89,6 @@ def test_stats_two_species(server, user, dandiset_1):
 
 
 def test_stats_subjects(server, user, dandiset_1):
-
     subject_count = 7
 
     dandiset_1["meta"]["dandiset"]["number_of_subjects"] = subject_count
@@ -109,7 +108,6 @@ def test_stats_subjects(server, user, dandiset_1):
 
 
 def test_stats_cells(server, user, dandiset_1):
-
     cell_count = 11
 
     dandiset_1["meta"]["dandiset"]["number_of_cells"] = cell_count
