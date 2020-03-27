@@ -19,8 +19,8 @@ class DandiResource(Resource):
         super(DandiResource, self).__init__()
 
         self.resourceName = "dandi"
-        self.route("GET", (), self.get_dandiset)
-        self.route("GET", ("list",), self.list_dandisets)
+        self.route("GET", (":identifier",), self.get_dandiset)
+        self.route("GET", (), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
 
     @access.user(scope=TokenScope.DATA_WRITE)
@@ -63,13 +63,11 @@ class DandiResource(Resource):
 
     @access.public
     @describeRoute(
-        Description("Get Dandiset").param("identifier", "Dandiset Identifier")
+        Description("Get Dandiset").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
     )
-    def get_dandiset(self, params):
-        if "identifier" not in params:
-            raise RestException("identifier required.")
-
-        identifier = params["identifier"]
+    def get_dandiset(self, identifier, params):
 
         if not identifier:
             raise RestException("identifier must not be empty.")

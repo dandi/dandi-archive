@@ -3,7 +3,7 @@ from pytest_girder.assertions import assertStatusOk
 from rest_utils import assert_dandisets_are_equal
 
 pytestmark = pytest.mark.plugin("dandi_archive")
-path = "/dandi/list"
+path = "/dandi"
 
 
 def test_list_dandisets(server, request_auth, dandiset_1, dandiset_2):
