@@ -37,13 +37,13 @@ def test_stats_user(server, user):
     } == resp.json
 
 
-def test_stats_draft(server, user, dandiset_1):
+def test_stats_draft(server, dandiset_1):
     resp = server.request(path=path, method="GET")
     assertStatusOk(resp)
     assert {
         "draft_count": 1,
         "published_count": 0,
-        "user_count": 2,  # one admin user, one normal user
+        "user_count": 2,  # one admin user, one normal user, required by dandiset_1
         "species_count": 0,
         "subject_count": 0,
         "cell_count": 0,
@@ -51,7 +51,7 @@ def test_stats_draft(server, user, dandiset_1):
     } == resp.json
 
 
-def test_stats_species(server, user, dandiset_1):
+def test_stats_species(server, dandiset_1):
     dandiset_1["meta"]["dandiset"]["organism"] = [{"species": "Homo Sapiens"}]
     Folder().setMetadata(dandiset_1, dandiset_1["meta"])
 
@@ -60,7 +60,7 @@ def test_stats_species(server, user, dandiset_1):
     assert {
         "draft_count": 1,
         "published_count": 0,
-        "user_count": 2,  # one admin user, one normal user
+        "user_count": 2,  # one admin user, one normal user, required by dandiset_1
         "species_count": 1,
         "subject_count": 0,
         "cell_count": 0,
@@ -68,7 +68,7 @@ def test_stats_species(server, user, dandiset_1):
     } == resp.json
 
 
-def test_stats_two_species(server, user, dandiset_1):
+def test_stats_two_species(server, dandiset_1):
     dandiset_1["meta"]["dandiset"]["organism"] = [
         {"species": "Homo Sapiens"},
         {"species": "Homo Erectus"},
@@ -80,7 +80,7 @@ def test_stats_two_species(server, user, dandiset_1):
     assert {
         "draft_count": 1,
         "published_count": 0,
-        "user_count": 2,  # one admin user, one normal user
+        "user_count": 2,  # one admin user, one normal user, required by dandiset_1
         "species_count": 2,
         "subject_count": 0,
         "cell_count": 0,
@@ -88,7 +88,7 @@ def test_stats_two_species(server, user, dandiset_1):
     } == resp.json
 
 
-def test_stats_subjects(server, user, dandiset_1):
+def test_stats_subjects(server, dandiset_1):
 
     subject_count = 7
 
@@ -100,7 +100,7 @@ def test_stats_subjects(server, user, dandiset_1):
     assert {
         "draft_count": 1,
         "published_count": 0,
-        "user_count": 2,  # one admin user, one normal user
+        "user_count": 2,  # one admin user, one normal user, required by dandiset_1
         "species_count": 0,
         "subject_count": subject_count,
         "cell_count": 0,
@@ -108,7 +108,7 @@ def test_stats_subjects(server, user, dandiset_1):
     } == resp.json
 
 
-def test_stats_cells(server, user, dandiset_1):
+def test_stats_cells(server, dandiset_1):
 
     cell_count = 11
 
@@ -120,7 +120,7 @@ def test_stats_cells(server, user, dandiset_1):
     assert {
         "draft_count": 1,
         "published_count": 0,
-        "user_count": 2,  # one admin user, one normal user
+        "user_count": 2,  # one admin user, one normal user, required by dandiset_1
         "species_count": 0,
         "subject_count": 0,
         "cell_count": cell_count,
@@ -128,7 +128,7 @@ def test_stats_cells(server, user, dandiset_1):
     } == resp.json
 
 
-def test_stats_size(server, fsAssetstore, user, dandiset_1):
+def test_stats_size(server, fsAssetstore, dandiset_1):
     file_contents = "Hello World!"
     upload = Upload().createUpload(
         user=user,
@@ -144,7 +144,7 @@ def test_stats_size(server, fsAssetstore, user, dandiset_1):
     assert {
         "draft_count": 1,
         "published_count": 0,
-        "user_count": 2,  # one admin user, one normal user
+        "user_count": 2,  # one admin user, one normal user, required by dandiset_1
         "species_count": 0,
         "subject_count": 0,
         "cell_count": 0,
