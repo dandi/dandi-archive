@@ -17,7 +17,7 @@ Sentry.init({
 
 const apiRoot = process.env.VUE_APP_API_ROOT || 'http://localhost:8080/api/v1';
 const girderRest = new RestClient({ apiRoot, setLocalCookie: true });
-store.commit('setGirderRest', girderRest);
+store.commit('girder/setGirderRest', girderRest);
 sync(store, router);
 
 girderRest.fetchUser().then(() => {

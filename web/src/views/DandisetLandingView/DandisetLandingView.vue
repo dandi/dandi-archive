@@ -255,7 +255,7 @@ export default {
       async handler(value) {
         if (!this.selected || !this.meta.length) {
           const resp = await this.girderRest.get(`folder/${value}`);
-          this.$store.commit('setSelected', [resp.data]);
+          this.$store.commit('girder/setSelected', [resp.data]);
         }
       },
     },
