@@ -5,7 +5,7 @@
       subheader
     >
       <v-list-item
-        v-for="(item, i) in dandisets"
+        v-for="(item, i) in items"
         :key="i"
         selectable
         :to="{ name: 'dandisetLanding', params: { id: item._id } }"
@@ -38,6 +38,23 @@
             Created on <b>{{ formatDate(item.created) }}</b>
           </v-list-item-subtitle>
         </v-list-item-content>
+        <v-row
+          no-gutters
+          justify="end"
+        >
+          <v-col cols="2">
+            <v-icon color="primary">
+              mdi-file
+            </v-icon>
+            {{ item.details.nItems }}
+          </v-col>
+          <v-col cols="2">
+            <v-icon color="primary">
+              mdi-server
+            </v-icon>
+            {{ filesize(item.size) }}
+          </v-col>
+        </v-row>
       </v-list-item>
     </v-list>
   </v-row>
@@ -45,6 +62,7 @@
 
 <script>
 import moment from 'moment';
+import filesize from 'filesize';
 
 import { getDandisetContact } from '@/utils';
 
@@ -72,6 +90,7 @@ export default {
     },
   },
   methods: {
+    filesize,
     getDandisetContact,
     formatDate(date) {
       return moment(date).format('LL');
