@@ -15,8 +15,6 @@
         <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
     </v-select>
-    <!-- changed v-text-field to v-textarea for name and description-->
-    <!-- should I add auto-grow -->
     <component
       v-else
       :is="stringInputType"
@@ -29,7 +27,6 @@
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
-        <!--issue 154 the icon for identifier/name/description -->
         <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
     </component>
@@ -219,7 +216,7 @@ export default {
   methods: {
     copyValue(val) {
       if (val === undefined) return val;
-
+      
       if (val instanceof Object && !Array.isArray(val)) {
         return { ...val };
       }
