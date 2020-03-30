@@ -49,6 +49,17 @@ function copyToClipboard(text) {
   return false;
 }
 
+function getDandisetContact(dandiset) {
+  if (dandiset.meta.dandiset.contributors) {
+    const contact = dandiset.meta.dandiset.contributors.find((cont) => cont.roles && cont.roles.includes('ContactPerson'));
+
+    if (!contact) return null;
+    return contact.name;
+  }
+
+  return null;
+}
+
 export {
   dandiUrl,
   getLocationFromRoute,
@@ -56,4 +67,5 @@ export {
   getSelectedFromRoute,
   getPathFromSelected,
   copyToClipboard,
+  getDandisetContact,
 };
