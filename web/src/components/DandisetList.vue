@@ -35,7 +35,7 @@
           <v-list-item-subtitle>
             Contact <b>{{ getDandisetContact(item) }}</b>
             ·
-            Created on <b>{{ item.created }}</b>
+            Created on <b>{{ formatDate(item.created) }}</b>
           </v-list-item-subtitle>
         </v-list-item-content>
       </v-list-item>
@@ -44,6 +44,7 @@
 </template>
 
 <script>
+import moment from 'moment';
 
 import { getDandisetContact } from '@/utils';
 
@@ -72,6 +73,9 @@ export default {
   },
   methods: {
     getDandisetContact,
+    formatDate(date) {
+      return moment(date).format('LL');
+    },
   },
 };
 </script>
