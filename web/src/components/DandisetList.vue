@@ -10,45 +10,47 @@
         selectable
         :to="{ name: 'dandisetLanding', params: { id: item._id } }"
       >
-        <v-list-item-content>
-          <v-list-item-title>
-            <template v-if="item.meta.dandiset.version">
-              <v-chip
-                v-if="item.meta.dandiset.version === 'draft'"
-                small
-                color="amber lighten-3"
-                text-color="amber darken-4"
-              >
-                <b>DRAFT</b>
-              </v-chip>
-              <v-chip
-                v-else
-                small
-                color="light-blue lighten-4"
-                text-color="light-blue darken-3"
-              >
-                <b>{{ item.meta.dandiset.version }}</b>
-              </v-chip>
-            </template>
-            {{ item.meta.dandiset.name }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            Contact <b>{{ getDandisetContact(item) }}</b>
-            ·
-            Created on <b>{{ formatDate(item.created) }}</b>
-          </v-list-item-subtitle>
-        </v-list-item-content>
         <v-row
           no-gutters
-          justify="end"
+          align="center"
         >
-          <v-col cols="2">
+          <v-col cols="10">
+            <v-list-item-content>
+              <v-list-item-title>
+                <template v-if="item.meta.dandiset.version">
+                  <v-chip
+                    v-if="item.meta.dandiset.version === 'draft'"
+                    small
+                    color="amber lighten-3"
+                    text-color="amber darken-4"
+                  >
+                    <b>DRAFT</b>
+                  </v-chip>
+                  <v-chip
+                    v-else
+                    small
+                    color="light-blue lighten-4"
+                    text-color="light-blue darken-3"
+                  >
+                    <b>{{ item.meta.dandiset.version }}</b>
+                  </v-chip>
+                </template>
+                {{ item.meta.dandiset.name }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                Contact <b>{{ getDandisetContact(item) }}</b>
+                ·
+                Created on <b>{{ formatDate(item.created) }}</b>
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-col>
+          <v-col cols="1">
             <v-icon color="primary">
               mdi-file
             </v-icon>
             {{ item.details.nItems }}
           </v-col>
-          <v-col cols="2">
+          <v-col cols="1">
             <v-icon color="primary">
               mdi-server
             </v-icon>
