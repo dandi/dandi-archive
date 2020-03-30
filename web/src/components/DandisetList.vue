@@ -81,11 +81,6 @@ export default {
       required: true,
     },
   },
-  data() {
-    return {
-
-    };
-  },
   computed: {
     items() {
       return this.dandisets.map((item, i) => ({ ...item, details: this.dandisetDetails[i] }));
