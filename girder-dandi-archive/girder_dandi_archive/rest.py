@@ -1,9 +1,9 @@
 from girder.api import access
-from girder.api.rest import Resource
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
-from girder.models.setting import Setting
-from girder.models.folder import Folder
+from girder.api.rest import Resource
 from girder.exceptions import RestException
+from girder.models.folder import Folder
+from girder.models.setting import Setting
 
 from .util import (
     DANDISET_IDENTIFIER_COUNTER,

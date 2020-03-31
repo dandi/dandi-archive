@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import re
 
-from girder.plugin import GirderPlugin
-from girder.settings import SettingKey
 from girder.models.folder import Folder
 from girder.models.item import Item
 from girder.models.setting import Setting
+from girder.plugin import GirderPlugin
+from girder.settings import SettingKey
 from girder.utility import search
-
 from girder_user_quota.settings import PluginSettings as UserQuotaPluginSettings
 
 from .rest import DandiResource
