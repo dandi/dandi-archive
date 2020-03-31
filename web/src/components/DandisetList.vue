@@ -5,8 +5,8 @@
       subheader
     >
       <v-list-item
-        v-for="(item, i) in items"
-        :key="i"
+        v-for="item in items"
+        :key="item._id"
         selectable
         :to="{ name: 'dandisetLanding', params: { id: item._id } }"
       >
