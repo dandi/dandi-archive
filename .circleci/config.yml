@@ -1,20 +1,12 @@
 version: 2
 jobs:
-  test:
+  test-server:
     docker:
-      - image: circleci/python:3.7.2
-      - image: circleci/mongo:4.1
-        port: 27017:27017
+      - image: circleci/python:3.7
+      - image: circleci/mongo:4.2
+        command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
     steps:
       - checkout
-      - run:
-          name: Create a virtualenv for testing
-          command: |
-            python3 -m venv deployment_env
-            . deployment_env/bin/activate
-      - run:
-          name: Activate virtual environment
-          command: echo ". $CIRCLE_WORKING_DIRECTORY/deployment_env/bin/activate" >> $BASH_ENV
       - run:
           name: Upgrade pip
           command: pip install -U pip
@@ -26,9 +18,27 @@ jobs:
           command: tox
           working_directory: girder-dandi-archive
 
+  test-gui:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - checkout
+      - run:
+          name: Install web app dependencies
+          command: yarn install --frozen-lockfile
+          working_directory: web
+      - run:
+          name: Lint web app
+          command: yarn run lint
+          working_directory: web
+      - run:
+          name: Build web app
+          command: yarn run build
+          working_directory: web
+
   provision:
     docker:
-      - image: circleci/python:3.7.2
+      - image: circleci/python:3.7
     environment:
       ANSIBLE_PRIVATE_KEY_FILE: "$HOME/girder-dandi-server.pem"
     steps:
@@ -62,10 +72,12 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - test
+      - test-server
+      - test-gui
       - provision:
           requires:
-            - test
+            - test-server
+            - test-gui
           filters:
             branches:
               only: master
