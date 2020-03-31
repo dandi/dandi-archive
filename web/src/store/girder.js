@@ -31,7 +31,7 @@ export default {
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // send the key id to "PUT" endpoint for updating
         const { data: { key } } = await girderRest.put(`api_key/${dandiKey._id}`);
@@ -51,7 +51,7 @@ export default {
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // if there is an existing api key
 
