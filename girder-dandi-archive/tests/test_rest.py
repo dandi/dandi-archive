@@ -1,11 +1,10 @@
 import pytest
 
-from girder_dandi_archive.util import get_or_create_drafts_collection
-
 from girder.models.collection import Collection
 from girder.models.folder import Folder
-
 from pytest_girder.assertions import assertStatus, assertStatusOk
+
+from girder_dandi_archive.util import get_or_create_drafts_collection
 
 pytestmark = pytest.mark.plugin("dandi_archive")
 

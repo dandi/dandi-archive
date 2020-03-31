@@ -127,6 +127,7 @@ import jsYaml from 'js-yaml';
 import Ajv from 'ajv';
 
 import MetaNode from '@/components/MetaNode.vue';
+import girderRest from '@/rest';
 
 const ajv = new Ajv({ allErrors: true });
 
@@ -174,7 +175,6 @@ export default {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
     ...mapState('girder', {
-      girderRest: 'girderRest',
       id: (state) => state.selected[0]._id,
     }),
   },
@@ -196,7 +196,7 @@ export default {
       this.$emit('close');
     },
     async save() {
-      const { status, data } = await this.girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
+      const { status, data } = await girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
 
       if (status === 200) {
         this.setSelected([data]);

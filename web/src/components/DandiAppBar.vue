@@ -207,10 +207,11 @@
 </template>
 
 <script>
-import { mapActions, mapGetters, mapState } from 'vuex';
+import { mapActions, mapState } from 'vuex';
 import { Search as GirderSearch, Authentication as GirderAuth } from '@girder/components/src/components';
 
 import { dandiUrl } from '@/utils';
+import girderRest, { loggedIn, user } from '@/rest';
 
 export default {
   components: { GirderSearch, GirderAuth },
@@ -221,11 +222,12 @@ export default {
     regdialog: false,
   }),
   computed: {
+    loggedIn,
+    user,
     saveDisabled() {
       return !(this.name && this.description);
     },
-    ...mapGetters('girder', ['loggedIn', 'user']),
-    ...mapState('girder', ['apiKey', 'girderRest']),
+    ...mapState('girder', ['apiKey']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -256,7 +258,7 @@ export default {
     },
     async register_dandiset() {
       const { name, description } = this;
-      const { status, data } = await this.girderRest.post('dandi', null, { params: { name, description } });
+      const { status, data } = await girderRest.post('dandi', null, { params: { name, description } });
 
       if (status === 200) {
         this.name = '';
