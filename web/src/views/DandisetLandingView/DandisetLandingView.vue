@@ -149,11 +149,12 @@
 
 <script>
 import filesize from 'filesize';
-import { mapState, mapGetters } from 'vuex';
+import { mapState } from 'vuex';
 import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
 import { dandiUrl } from '@/utils';
+import girderRest, { loggedIn } from '@/rest';
 
 import SCHEMA from '@/assets/schema/base.json';
 import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
@@ -195,6 +196,7 @@ export default {
     };
   },
   computed: {
+    loggedIn,
     schema() {
       if (this.create) {
         return NEW_SCHEMA;
@@ -215,7 +217,7 @@ export default {
     extraFields() {
       const { meta, mainFields } = this;
       const extra = Object.keys(meta).filter(
-        (x) => !mainFields.includes(x) && x in this.schema.properties,
+        x => !mainFields.includes(x) && x in this.schema.properties,
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
@@ -224,10 +226,8 @@ export default {
       return filesize(this.selected.size);
     },
     ...mapState('girder', {
-      selected: (state) => (state.selected.length === 1 ? state.selected[0] : undefined),
-      girderRest: 'girderRest',
+      selected: state => (state.selected.length === 1 ? state.selected[0] : undefined),
     }),
-    ...mapGetters('girder', ['loggedIn']),
   },
   watch: {
     async selected(val) {
@@ -239,13 +239,13 @@ export default {
       this.meta = { ...val.meta.dandiset };
       this.last_modified = new Date(val.updated).toString();
 
-      let res = await this.girderRest.get(`/user/${val.creatorId}`);
+      let res = await girderRest.get(`/user/${val.creatorId}`);
       if (res.status === 200) {
         const { data: { firstName, lastName } } = res;
         this.uploader = `${firstName} ${lastName}`;
       }
 
-      res = await this.girderRest.get(`/folder/${val._id}/details`);
+      res = await girderRest.get(`/folder/${val._id}/details`);
       if (res.status === 200) {
         this.details = res.data;
       }
@@ -254,7 +254,7 @@ export default {
       immediate: true,
       async handler(value) {
         if (!this.selected || !this.meta.length) {
-          const resp = await this.girderRest.get(`folder/${value}`);
+          const resp = await girderRest.get(`folder/${value}`);
           this.$store.commit('girder/setSelected', [resp.data]);
         }
       },

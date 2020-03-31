@@ -1,32 +1,26 @@
 import Vue from 'vue';
 
+import girderRest from '@/rest';
+
 export default {
   namespaced: true,
   state: {
     apiKey: null,
-    girderRest: null,
     browseLocation: null,
     selected: [],
-  },
-  getters: {
-    loggedIn: (state) => !!state.girderRest.user,
-    user: (state) => state.girderRest.user,
   },
   mutations: {
     setApiKey(state, apiKey) {
       state.apiKey = apiKey;
-    },
-    setGirderRest(state, gr) {
-      state.girderRest = gr;
     },
     setSelected(state, selected) {
       state.selected = selected;
     },
   },
   actions: {
-    async reloadApiKey({ state, commit, getters }) {
-      const { user } = getters;
-      const { status, data } = await state.girderRest.get(
+    async reloadApiKey({ commit }) {
+      const { user } = girderRest;
+      const { status, data } = await girderRest.get(
         'api_key', {
           params: {
             userId: user._id,
@@ -37,16 +31,16 @@ export default {
         },
       );
 
-      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
+      const [dandiKey] = data.filter(key => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // send the key id to "PUT" endpoint for updating
-        const { data: { key } } = await state.girderRest.put(`api_key/${dandiKey._id}`);
+        const { data: { key } } = await girderRest.put(`api_key/${dandiKey._id}`);
         commit('setApiKey', key);
       }
     },
-    async fetchApiKey({ state, commit, getters }) {
-      const { user } = getters;
-      const { status, data } = await state.girderRest.get(
+    async fetchApiKey({ commit }) {
+      const { user } = girderRest;
+      const { status, data } = await girderRest.get(
         'api_key', {
           params: {
             userId: user._id,
@@ -57,7 +51,7 @@ export default {
         },
       );
 
-      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
+      const [dandiKey] = data.filter(key => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // if there is an existing api key
 
@@ -65,7 +59,7 @@ export default {
         commit('setApiKey', dandiKey.key);
       } else {
         // create a key using "POST" endpoint
-        const { status: createStatus, data: { key } } = await state.girderRest.post('api_key', null, {
+        const { status: createStatus, data: { key } } = await girderRest.post('api_key', null, {
           params: {
             name: 'dandicli',
             scope: null,
@@ -79,11 +73,11 @@ export default {
         }
       }
     },
-    async selectSearchResult({ state, commit }, result) {
+    async selectSearchResult({ commit }, result) {
       commit('setSelected', []);
 
       if (result._modelType === 'item') {
-        const resp = await state.girderRest.get(`folder/${result.folderId}`);
+        const resp = await girderRest.get(`folder/${result.folderId}`);
         commit('setBrowseLocation', resp.data);
         // Because setting the location is going to trigger the DataBrowser to
         // set its selected value to [], which due to two-way binding also propagates back
@@ -95,8 +89,8 @@ export default {
         commit('setBrowseLocation', result);
       }
     },
-    async logout({ state }) {
-      await state.girderRest.logout();
+    async logout() {
+      await girderRest.logout();
     },
   },
 };
