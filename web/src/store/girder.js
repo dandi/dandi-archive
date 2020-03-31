@@ -19,11 +19,11 @@ export default {
   },
   actions: {
     async reloadApiKey({ commit }) {
-      const { user } = girderRest;
       const { status, data } = await girderRest.get(
         'api_key', {
           params: {
-            userId: user._id,
+            // eslint-disable-next-line import/no-named-as-default-member
+            userId: girderRest.user._id,
             limit: 50,
             sort: 'name',
             sortdir: 1,
@@ -31,7 +31,7 @@ export default {
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // send the key id to "PUT" endpoint for updating
         const { data: { key } } = await girderRest.put(`api_key/${dandiKey._id}`);
@@ -39,11 +39,11 @@ export default {
       }
     },
     async fetchApiKey({ commit }) {
-      const { user } = girderRest;
       const { status, data } = await girderRest.get(
         'api_key', {
           params: {
-            userId: user._id,
+            // eslint-disable-next-line import/no-named-as-default-member
+            userId: girderRest.user._id,
             limit: 50,
             sort: 'name',
             sortdir: 1,
@@ -51,7 +51,7 @@ export default {
         },
       );
 
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
+      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // if there is an existing api key
 

@@ -175,7 +175,7 @@ export default {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
     ...mapState('girder', {
-      id: state => state.selected[0]._id,
+      id: (state) => state.selected[0]._id,
     }),
   },
   watch: {

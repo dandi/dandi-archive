@@ -11,7 +11,7 @@
       <v-container>
         <v-row>
           <v-col
-            xs="12"
+            class="xs"
             lg="9"
             xl="6"
           >
@@ -217,7 +217,7 @@ export default {
     extraFields() {
       const { meta, mainFields } = this;
       const extra = Object.keys(meta).filter(
-        x => !mainFields.includes(x) && x in this.schema.properties,
+        (x) => !mainFields.includes(x) && x in this.schema.properties,
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
@@ -226,7 +226,7 @@ export default {
       return filesize(this.selected.size);
     },
     ...mapState('girder', {
-      selected: state => (state.selected.length === 1 ? state.selected[0] : undefined),
+      selected: (state) => (state.selected.length === 1 ? state.selected[0] : undefined),
     }),
   },
   watch: {
