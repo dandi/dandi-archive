@@ -19,11 +19,11 @@ export default {
   },
   actions: {
     async reloadApiKey({ commit }) {
-      const { user } = girderRest;
       const { status, data } = await girderRest.get(
         'api_key', {
           params: {
-            userId: user._id,
+            // eslint-disable-next-line import/no-named-as-default-member
+            userId: girderRest.user._id,
             limit: 50,
             sort: 'name',
             sortdir: 1,
@@ -39,11 +39,11 @@ export default {
       }
     },
     async fetchApiKey({ commit }) {
-      const { user } = girderRest;
       const { status, data } = await girderRest.get(
         'api_key', {
           params: {
-            userId: user._id,
+            // eslint-disable-next-line import/no-named-as-default-member
+            userId: girderRest.user._id,
             limit: 50,
             sort: 'name',
             sortdir: 1,
