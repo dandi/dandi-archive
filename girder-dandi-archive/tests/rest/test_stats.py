@@ -125,7 +125,7 @@ def test_stats_cells(server, dandiset_1):
     } == resp.json
 
 
-def test_stats_size(server, fsAssetstore, user, dandiset_1):
+def test_stats_size(server, fsAssetstore, user, dandiset_1):  # NOQA
     file_contents = "Hello World!"
     upload = Upload().createUpload(
         user=user,
