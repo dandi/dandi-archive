@@ -51,26 +51,29 @@
     >
       Want to create your own datasets?
     </span>
-    <v-btn
-      v-if="!loggedIn"
-      :to="{ name: 'userRegister' }"
-      color="primary"
-      outlined
-      rounded
-    >
-      Create Account
-    </v-btn>
-    <v-btn
-      v-if="!loggedIn"
-      :to="{ name: 'userLogin' }"
-      color="primary"
-      rounded
-    >
-      Login
-    </v-btn>
-    <UserMenu
-      v-if="loggedIn"
-    />
+    
+    <template v-if="loggedIn">
+      <UserMenu
+        v-if="loggedIn"
+      />
+    </template>
+    <template v-else>
+      <v-btn
+        :to="{ name: 'userRegister' }"
+        color="primary"
+        outlined
+        rounded
+      >
+        Create Account
+      </v-btn>
+      <v-btn
+        :to="{ name: 'userLogin' }"
+        color="primary"
+        rounded
+      >
+        Login
+      </v-btn>
+    </template>
   </v-app-bar>
 </template>
 
