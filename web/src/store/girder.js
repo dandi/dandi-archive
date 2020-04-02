@@ -62,7 +62,7 @@ export default {
         const { status: createStatus, data: { key } } = await girderRest.post('api_key', null, {
           params: {
             name: 'dandicli',
-            scope: null,
+            scope: JSON.stringify(['core.data.read', 'core.data.write']),
             tokenDuration: 30,
             active: true,
           },
