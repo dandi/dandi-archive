@@ -2,7 +2,7 @@ version: 2
 jobs:
   test-server:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.6
       - image: circleci/mongo:4.2
         command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
     steps:
@@ -38,7 +38,7 @@ jobs:
 
   provision:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.6
     environment:
       ANSIBLE_PRIVATE_KEY_FILE: "$HOME/girder-dandi-server.pem"
     steps:
