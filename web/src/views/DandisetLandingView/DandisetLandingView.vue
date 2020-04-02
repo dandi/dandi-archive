@@ -156,8 +156,8 @@ import MetaEditor from '@/components/MetaEditor.vue';
 import { dandiUrl } from '@/utils';
 import girderRest, { loggedIn } from '@/rest';
 
-import SCHEMA from '@/assets/schema/base.json';
-import NEW_SCHEMA from '@/assets/schema/new_dandiset.json';
+import SCHEMA from '@/assets/schema/dandiset.json';
+import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/nwb.json';
 
 export default {
