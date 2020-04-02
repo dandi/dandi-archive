@@ -96,7 +96,7 @@ def add_search_key_values(key_values):
         "subject_id": {"arity": "single", "values": []},
         "identifier": {"arity": "single", "values": []},
         "session_id": {"arity": "single", "values": []},
-        "units": {"arity": "more_fewer", "min": None, "max": None, "meta_key": "number_of_units",},
+        "units": {"arity": "more_fewer", "min": None, "max": None, "meta_key": "number_of_units"},
         "electrodes": {
             "arity": "more_fewer",
             "min": None,

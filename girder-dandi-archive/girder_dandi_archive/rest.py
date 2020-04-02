@@ -128,7 +128,7 @@ class DandiResource(Resource):
 
         subject_count = list(
             Folder().collection.aggregate(
-                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_subjects"},}},]
+                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_subjects"}}}]
             )
         )
         if subject_count:
@@ -138,7 +138,7 @@ class DandiResource(Resource):
 
         cell_count = list(
             Folder().collection.aggregate(
-                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_cells"},}},]
+                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_cells"}}}]
             )
         )
         if cell_count:

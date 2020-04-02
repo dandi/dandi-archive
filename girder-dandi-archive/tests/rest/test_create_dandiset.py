@@ -28,7 +28,7 @@ def test_create_dandiset(server, request_auth, drafts_collection, user):
 
     assert_dandisets_are_equal(
         {
-            "access": {"groups": [], "users": [{"flags": [], "id": user_id, "level": 2}],},
+            "access": {"groups": [], "users": [{"flags": [], "id": user_id, "level": 2}]},
             "baseParentId": drafts_collection_id,
             "baseParentType": "collection",
             # TODO created datetime
@@ -36,7 +36,7 @@ def test_create_dandiset(server, request_auth, drafts_collection, user):
             "description": "",
             "lowerName": "000001",
             "meta": {
-                "dandiset": {"identifier": "000001", "name": NAME_1, "description": DESCRIPTION_1,}
+                "dandiset": {"identifier": "000001", "name": NAME_1, "description": DESCRIPTION_1}
             },
             "name": "000001",
             "parentCollection": "collection",
@@ -63,7 +63,7 @@ def test_create_two_dandisets(server, request_auth, drafts_collection, user, dan
 
     assert_dandisets_are_equal(
         {
-            "access": {"groups": [], "users": [{"flags": [], "id": user_id, "level": 2}],},
+            "access": {"groups": [], "users": [{"flags": [], "id": user_id, "level": 2}]},
             "baseParentId": drafts_collection_id,
             "baseParentType": "collection",
             # TODO created datetime
@@ -71,7 +71,7 @@ def test_create_two_dandisets(server, request_auth, drafts_collection, user, dan
             "description": "",
             "lowerName": "000002",
             "meta": {
-                "dandiset": {"identifier": "000002", "name": NAME_2, "description": DESCRIPTION_2,}
+                "dandiset": {"identifier": "000002", "name": NAME_2, "description": DESCRIPTION_2}
             },
             "name": "000002",
             "parentCollection": "collection",
