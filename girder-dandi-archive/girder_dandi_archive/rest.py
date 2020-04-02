@@ -56,19 +56,14 @@ class DandiResource(Resource):
 
         drafts = get_or_create_drafts_collection()
         folder = Folder().createFolder(
-            drafts,
-            padded_identifier,
-            parentType="collection",
-            creator=self.getCurrentUser(),
+            drafts, padded_identifier, parentType="collection", creator=self.getCurrentUser(),
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder
 
     @access.public
     @describeRoute(
-        Description("Get Dandiset").param(
-            "identifier", "Dandiset Identifier", paramType="path"
-        )
+        Description("Get Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
     )
     def get_dandiset(self, identifier, params):
 
@@ -80,25 +75,19 @@ class DandiResource(Resource):
 
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
-        doc = Folder().findOne(
-            {"parentId": drafts["_id"], "meta.dandiset.identifier": identifier}
-        )
+        doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
 
     @access.public
     @autoDescribeRoute(
-        Description("List Dandisets").pagingParams(
-            defaultSort="meta.dandiset.identifier"
-        )
+        Description("List Dandisets").pagingParams(defaultSort="meta.dandiset.identifier")
     )
     def list_dandisets(self, limit, offset, sort):
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
-        return Folder().find(
-            {"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort
-        )
+        return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
 
     @access.public
     @describeRoute(Description("Global Dandiset Statistics"))
@@ -139,14 +128,7 @@ class DandiResource(Resource):
 
         subject_count = list(
             Folder().collection.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "0",
-                            "count": {"$sum": "$meta.dandiset.number_of_subjects"},
-                        }
-                    },
-                ]
+                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_subjects"},}},]
             )
         )
         if subject_count:
@@ -156,14 +138,7 @@ class DandiResource(Resource):
 
         cell_count = list(
             Folder().collection.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "0",
-                            "count": {"$sum": "$meta.dandiset.number_of_cells"},
-                        }
-                    },
-                ]
+                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_cells"},}},]
             )
         )
         if cell_count:

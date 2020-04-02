@@ -11,9 +11,7 @@ from girder_dandi_archive.util import get_or_create_drafts_collection
 
 @pytest.fixture
 def read_write_token(user):
-    return Token().createToken(
-        user, scope=[TokenScope.DATA_READ, TokenScope.DATA_WRITE]
-    )
+    return Token().createToken(user, scope=[TokenScope.DATA_READ, TokenScope.DATA_WRITE])
 
 
 @pytest.fixture(params=["user", "read_write_token"])
@@ -31,14 +29,9 @@ def drafts_collection(db):
     )
     # A folder that matches dandiset metadata, but not in drafts collection.
     red_herring_dandiset_000001_folder = Folder().createFolder(
-        parent=red_herring_collection,
-        parentType="collection",
-        name="000001",
-        public=True,
+        parent=red_herring_collection, parentType="collection", name="000001", public=True,
     )
-    meta = {
-        "dandiset": {"name": "red", "description": "herring", "identifier": "000001"}
-    }
+    meta = {"dandiset": {"name": "red", "description": "herring", "identifier": "000001"}}
     Folder().setMetadata(red_herring_dandiset_000001_folder, meta)
 
     return get_or_create_drafts_collection()

@@ -17,10 +17,7 @@ def test_list_dandisets(server, request_auth, dandiset_1, dandiset_2):
 
 def test_list_dandisets_sort(server, request_auth, dandiset_1, dandiset_2):
     resp = server.request(
-        path=path,
-        method="GET",
-        params={"sort": "meta.dandiset.description"},
-        **request_auth,
+        path=path, method="GET", params={"sort": "meta.dandiset.description"}, **request_auth,
     )
     assertStatusOk(resp)
     assert len(resp.json) == 2

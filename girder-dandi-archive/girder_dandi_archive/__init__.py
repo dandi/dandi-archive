@@ -24,9 +24,7 @@ class DandiArchivePlugin(GirderPlugin):
         Folder().ensureIndex(([("meta.dandiset.identifier", 1), ("parentId", 1)], {}))
 
         Setting().collection.update(
-            {"key": DANDISET_IDENTIFIER_COUNTER},
-            {"$setOnInsert": {"value": 1}},
-            upsert=True,
+            {"key": DANDISET_IDENTIFIER_COUNTER}, {"$setOnInsert": {"value": 1}}, upsert=True,
         )
         # Allow the client and netlify to access the girder server
         Setting().set(SettingKey.CORS_ALLOW_ORIGIN, "*")
@@ -45,9 +43,7 @@ def dandi_search_handler(query, types, user=None, level=None, limit=0, offset=0)
             # specifying the query using the search DSL.
             items = []
         else:
-            items = list(
-                Item().findWithPermissions(query=query, types=types, user=user)
-            )
+            items = list(Item().findWithPermissions(query=query, types=types, user=user))
             for item in items:
                 item["_modelType"] = "item"  # TODO why is this necessary to provide?
     except SyntaxError:
@@ -70,12 +66,7 @@ def extract_key_values(tokens):
     key_values = {}
     for tok in tokens:
         if ":" in tok:
-            if (
-                tok == ":"
-                or tok.count(":") > 1
-                or tok.startswith(":")
-                or tok.endswith(":")
-            ):
+            if tok == ":" or tok.count(":") > 1 or tok.startswith(":") or tok.endswith(":"):
                 raise SyntaxError("Malformed key value pair")
             else:
                 key, value = tok.split(":")
@@ -105,12 +96,7 @@ def add_search_key_values(key_values):
         "subject_id": {"arity": "single", "values": []},
         "identifier": {"arity": "single", "values": []},
         "session_id": {"arity": "single", "values": []},
-        "units": {
-            "arity": "more_fewer",
-            "min": None,
-            "max": None,
-            "meta_key": "number_of_units",
-        },
+        "units": {"arity": "more_fewer", "min": None, "max": None, "meta_key": "number_of_units",},
         "electrodes": {
             "arity": "more_fewer",
             "min": None,
@@ -142,10 +128,7 @@ def add_search_key_values(key_values):
                                 search_keys[search_key]["max"] = value
                                 continue
             else:
-                if (
-                    search_keys[key]["arity"] == "single"
-                    and len(search_keys[key]["values"]) > 1
-                ):
+                if search_keys[key]["arity"] == "single" and len(search_keys[key]["values"]) > 1:
                     raise ValueError("Only one value for %s allowed") % key
                 search_keys[key]["values"].append(value)
                 continue
@@ -155,9 +138,7 @@ def add_search_key_values(key_values):
 
 def validate_search_key_values(search_keys):
     for key, search_data in search_keys.items():
-        if search_data["arity"] == "more_fewer" and (
-            search_data["min"] or search_data["max"]
-        ):
+        if search_data["arity"] == "more_fewer" and (search_data["min"] or search_data["max"]):
             if search_data["min"]:
                 search_data["min"] = int(search_data["min"])
                 if search_data["min"] < 0:
@@ -213,15 +194,9 @@ def build_query_from_query_terms(search_keys):
         mongo_key = get_mongo_key(key, search_data)
         # set something with values, either single or multiple
         if "values" in search_data and search_data["values"]:
-            query[mongo_key] = get_mongo_value(
-                search_data["arity"], search_data["values"]
-            )
-        elif search_data["arity"] == "more_fewer" and (
-            search_data["min"] or search_data["max"]
-        ):
-            query[mongo_key] = get_mongo_more_fewer_value(
-                search_data["min"], search_data["max"]
-            )
+            query[mongo_key] = get_mongo_value(search_data["arity"], search_data["values"])
+        elif search_data["arity"] == "more_fewer" and (search_data["min"] or search_data["max"]):
+            query[mongo_key] = get_mongo_more_fewer_value(search_data["min"], search_data["max"])
     return query
 
 
