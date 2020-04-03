@@ -22,6 +22,4 @@ def validate_dandiset_identifier(dandiset_identifier):
 
 
 def get_or_create_drafts_collection():
-    return Collection().createCollection(
-        DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True
-    )
+    return Collection().createCollection(DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True)
