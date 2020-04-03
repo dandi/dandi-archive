@@ -1,0 +1,10 @@
+boto3
+django
+django-storages
+djangorestframework
+httpx
+psycopg2-binary
+
+django-stubs
+djangorestframework-stubs
+mypy-boto3-s3
