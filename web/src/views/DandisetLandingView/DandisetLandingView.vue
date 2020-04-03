@@ -38,12 +38,12 @@
                 dense
                 class="py-0"
               >
-                <v-list-item>
+                <v-list-item selectable>
                   <v-list-item-content>
                     Identifier: {{ meta.identifier }}
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item>
+                <v-list-item selectable>
                   <v-list-item-content>
                     <a :href="permalink">
                       {{ permalink }}
@@ -87,17 +87,17 @@
               </v-card-actions>
               <v-list dense>
                 <v-divider />
-                <v-list-item>
+                <v-list-item selectable>
                   <v-list-item-content>
                     Uploaded by {{ uploader }}
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item>
+                <v-list-item selectable>
                   <v-list-item-content>
                     Last modified {{ last_modified }}
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item v-if="details">
+                <v-list-item v-if="details" selectable>
                   <v-list-item-content>
                     Files: {{ details.nItems }}, Folders: {{ details.nFolders }}
                   </v-list-item-content>
@@ -105,7 +105,7 @@
                 <v-divider />
                 <template v-if="meta.description">
                   <v-subheader>Description</v-subheader>
-                  <v-list-item>
+                  <v-list-item selectable>
                     <v-list-item-content>
                       {{ meta.description }}
                     </v-list-item-content>
@@ -116,6 +116,7 @@
                   <v-list-item
                     v-for="(item, i) in meta.contributors"
                     :key="i"
+                    selectable
                   >
                     <v-list-item-content>{{ item }}</v-list-item-content>
                   </v-list-item>
@@ -124,7 +125,7 @@
                   <v-subheader :key="k">
                     {{ k }}
                   </v-subheader>
-                  <v-list-item :key="k">
+                  <v-list-item :key="k" selectable>
                     <v-list-item-content>
                       <template v-if="['object', 'array'].includes(schema.properties[k].type)">
                         <vue-json-pretty
