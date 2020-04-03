@@ -1,6 +1,38 @@
 <template>
-  <div>
-    <template v-if="leaf">
+<div>
+  <template v-if="leaf">
+    <v-select
+      v-if="schema.enum"
+      v-model="value"
+      dense
+      :class="leafClasses"
+      :items="schema.enum"
+      :readonly="schema.readOnly"
+      :label="schema.title"
+    >
+      <template v-slot:prepend>
+        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <v-icon v-else>mdi-circle-medium</v-icon>
+      </template>
+    </v-select>
+    <component
+      v-else
+      :is="stringInputType"
+      :label="schema.title"
+      :type="fieldType(schema)"
+      :class="leafClasses"
+      :readonly="schema.readOnly"
+      v-model="value"
+      dense
+    >
+      <template v-slot:prepend>
+        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
+        <v-icon v-else>mdi-circle-medium</v-icon>
+      </template>
+    </component>
+  </template>
+  <template v-else-if="array">
+    <template v-if="schema.items.enum">
       <v-select
         v-if="schema.enum"
         v-model="value"
@@ -148,6 +180,8 @@
 </template>
 
 <script>
+import { VTextField, VTextarea } from 'vuetify/lib';
+
 export default {
   name: 'MetaNode',
   props: {
@@ -183,6 +217,9 @@ export default {
     };
   },
   computed: {
+    stringInputType() {
+      return this.schema.long ? VTextarea : VTextField;
+    },
     leaf() {
       return this.isLeaf(this.schema);
     },
