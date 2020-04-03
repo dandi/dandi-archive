@@ -1,3 +1,4 @@
+<!--(https://raw.githubusercontent.com/dandi/artwork/master/pics/dandi-banner.png)-->
 # dandiarchive [![CircleCI](https://circleci.com/gh/dandi/dandiarchive/tree/master.svg?style=svg)](https://circleci.com/gh/dandi/dandiarchive/tree/master)
 Infrastructure and code for the dandiarchive
 
