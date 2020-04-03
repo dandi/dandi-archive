@@ -114,7 +114,7 @@
       <v-list dense>
         <v-list-item>
           <v-list-item-action class="mr-2">
-            <v-btn icon @click="reloadApiKey">
+            <v-btn icon @click="fetchApiKey">
               <v-icon>mdi-reload</v-icon>
             </v-btn>
           </v-list-item-action>
@@ -171,7 +171,7 @@ export default {
       return !(this.name && this.description);
     },
     ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['apiKey', 'girderRest']),
+    ...mapState(['apiKey', 'girderRest', 'status']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -214,7 +214,7 @@ export default {
         this.regdialog = false;
       }
     },
-    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey', 'reloadApiKey']),
+    ...mapActions(['logout', 'selectSearchResult', 'fetchApiKey']),
   },
 };
 </script>
