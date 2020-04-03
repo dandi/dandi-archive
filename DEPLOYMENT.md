@@ -54,10 +54,3 @@ We are using Google's [public DNS service](https://developers.google.com/speed/p
 ## E-mail
 
 We are using [mailgun](https://www.mailgun.com/) as our e-mail service. This is email that comes from Girder, which is mostly used for resetting passwords, and as most users will be logging in via OAuth, this will largely be unused.
-
-## CORS
-
-For the client to be able to access the girder server, and for dynamic preview URLs from netlify to access the girder server, the following CORS setting must be set on the girder server.
-```
-*
-```
