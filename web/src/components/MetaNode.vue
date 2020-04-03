@@ -176,7 +176,8 @@
         </v-list-item>
       </v-list>
     </v-menu>
-  </div>
+  </template>
+</div>
 </template>
 
 <script>
