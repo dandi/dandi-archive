@@ -33,18 +33,19 @@
       class="
         mx-12
         my-12"
-      :dandisets="$store.state.publicDandisets.dandisets"
+      :dandisets="dandisets"
     />
     <v-pagination
-      v-model="$store.state.publicDandisets.page"
-      :length="$store.state.publicDandisets.pages"
-      :value="$store.state.publicDandisets.page"
+      v-model="page"
+      :value="page"
+      :length="pages"
       @input="reload"
     />
   </div>
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import DandisetList from '@/components/DandisetList.vue';
 import SearchField from '@/views/PublicDandisetsView/SearchField.vue';
 
@@ -81,12 +82,23 @@ export default {
       options: OPTIONS,
     };
   },
+  computed: {
+    page: {
+      get() {
+        return this.$store.state.publicDandisets.page;
+      },
+      set(page) {
+        this.$store.state.publicDandisets.page = page;
+      },
+    },
+    ...mapState('publicDandisets', ['dandisets', 'pages']),
+  },
   created() {
-    this.$store.dispatch('publicDandisets/reload');
+    this.reload();
   },
   methods: {
     setSort(sort) {
-      this.$store.commit('publicDandisets/setSearchSettings', { sort });
+      this.$store.dispatch('publicDandisets/changeSearchSettings', { sort });
     },
     reload() {
       this.$store.dispatch('publicDandisets/reload');

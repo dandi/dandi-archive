@@ -20,7 +20,6 @@ export default {
     setSearchSettings(state, { sort }) {
       state.sort = sort;
       state.page = 1;
-      this.dispatch('publicDandisets/reload');
     },
     setDandisets(state, { dandisets, total }) {
       state.dandisets = dandisets;
@@ -29,7 +28,7 @@ export default {
   },
   actions: {
     async reload({ commit, state }) {
-      const { data: dandisets, headers } = await girderRest.get('dandi/list', {
+      const { data: dandisets, headers } = await girderRest.get('dandi', {
         params: {
           limit: DANDISETS_PER_PAGE,
           offset: (state.page - 1) * DANDISETS_PER_PAGE,
@@ -39,6 +38,10 @@ export default {
       });
       const total = headers['girder-total-count'];
       commit('setDandisets', { dandisets, total });
+    },
+    async changeSearchSettings({ commit, dispatch }, { sort }) {
+      commit('setSearchSettings', { sort });
+      dispatch('reload');
     },
   },
 };
