@@ -15,20 +15,21 @@
         <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
     </v-select>
-    <v-text-field
+    <component
       v-else
-      v-model="value"
-      dense
+      :is="stringInputType"
       :label="schema.title"
       :type="fieldType(schema)"
       :class="leafClasses"
       :readonly="schema.readOnly"
+      v-model="value"
+      dense
     >
       <template v-slot:prepend>
         <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
         <v-icon v-else>mdi-circle-medium</v-icon>
       </template>
-    </v-text-field>
+    </component>
   </template>
   <template v-else-if="array">
     <template v-if="schema.items.enum">
@@ -115,6 +116,8 @@
 </template>
 
 <script>
+import { VTextField, VTextarea } from 'vuetify/lib';
+
 export default {
   name: 'MetaNode',
   props: {
@@ -156,6 +159,9 @@ export default {
     }
   },
   computed: {
+    stringInputType() {
+      return this.schema.long ? VTextarea : VTextField;
+    },
     leaf() {
       return this.isLeaf(this.schema);
     },
@@ -210,7 +216,7 @@ export default {
   methods: {
     copyValue(val) {
       if (val === undefined) return val;
-
+      
       if (val instanceof Object && !Array.isArray(val)) {
         return { ...val };
       }
