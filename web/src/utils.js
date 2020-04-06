@@ -17,14 +17,14 @@ function getPathFromLocation(location) {
 
 function getSelectedFromRoute(route) {
   const { ids } = route.params;
-  return ids ? ids.split('/').map(item => item.split('+')).map(([type, id]) => ({ _id: id, _modelType: type })) : [];
+  return ids ? ids.split('/').map((item) => item.split('+')).map(([type, id]) => ({ _id: id, _modelType: type })) : [];
 }
 
 function getPathFromSelected(selected) {
   if (!selected.length) {
     return '';
   }
-  return `/selected/${selected.map(model => `${model._modelType}+${model._id}`).join('/')}`;
+  return `/selected/${selected.map((model) => `${model._modelType}+${model._id}`).join('/')}`;
 }
 
 // https://stackoverflow.com/a/33928558/1643850 with slight modification
@@ -49,6 +49,17 @@ function copyToClipboard(text) {
   return false;
 }
 
+function getDandisetContact(dandiset) {
+  if (dandiset.meta.dandiset.contributors) {
+    const contact = dandiset.meta.dandiset.contributors.find((cont) => cont.roles && cont.roles.includes('ContactPerson'));
+
+    if (!contact) return null;
+    return contact.name;
+  }
+
+  return null;
+}
+
 export {
   dandiUrl,
   getLocationFromRoute,
@@ -56,4 +67,5 @@ export {
   getSelectedFromRoute,
   getPathFromSelected,
   copyToClipboard,
+  getDandisetContact,
 };
