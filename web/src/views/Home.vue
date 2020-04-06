@@ -1,9 +1,8 @@
 <template>
   <v-container style="height: 100%;">
     <v-card flat>
-      <v-row justify="center">
-        <v-card-title>Public Dandisets</v-card-title>
-      </v-row>
+      <v-card-title>Public Dandisets</v-card-title>
+      <v-divider />
       <v-row>
         <v-col cols="12">
           <DandisetList :dandisets="dandisets"/>
