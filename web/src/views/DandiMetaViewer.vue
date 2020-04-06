@@ -46,7 +46,7 @@
               <v-card-actions v-if="selected" class="py-0">
                 <v-btn
                   icon
-                  :to="`/collection/${selected.parentId}`"
+                  :to="{ name: 'home' }"
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
@@ -65,7 +65,7 @@
                   You must be logged in to edit.
                 </v-tooltip>
                 <v-btn
-                  :to="`/folder/${id}`"
+                  :to="{ name: 'file-browser', params: { _modelType: 'folder', _id: id }}"
                   icon
                 >
                   <v-icon>mdi-file-tree</v-icon>
@@ -108,7 +108,7 @@
                   </v-list-item>
                 </template>
                 <template v-for="(item, k) in extraFields">
-                  <v-subheader :key="k">{{ k }}</v-subheader>
+                  <v-subheader :key="`header-${k}`">{{ k }}</v-subheader>
                   <v-list-item :key="k" selectable>
                     <v-list-item-content>
                       <template v-if="['object', 'array'].includes(schema.properties[k].type)">
