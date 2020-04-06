@@ -37,10 +37,7 @@ import { DefaultActionKeys } from '@girder/components/src/components/DataDetails
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
 
 import {
-  getPathFromLocation,
   getLocationFromRoute,
-  getSelectedFromRoute,
-  getPathFromSelected,
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
@@ -106,44 +103,10 @@ export default {
     ...mapState(['browseLocation', 'selected']),
     ...mapGetters(['loggedIn']),
   },
-  watch: {
-    browseLocation(value) {
-      const newPath = getPathFromLocation(value) + getPathFromSelected(this.selected);
-      if (this.$route.path !== newPath) {
-        this.$router.push(newPath);
-      }
-    },
-    selected(selected) {
-      const newPath = getPathFromLocation(this.location) + getPathFromSelected(selected);
-      if (this.$route.path !== newPath) {
-        this.$router.push(newPath);
-      }
-    },
-    $route(to) {
-      const location = getLocationFromRoute(to);
-      const selected = getSelectedFromRoute(to);
-      if (location._id !== this.location._id) {
-        this.location = location;
-      }
-      if (
-        selected.length !== this.selected.length
-        || selected.find((model, i) => (
-          model._id !== (this.selected[i] ? this.selected[i]._id : null)
-        ))
-      ) {
-        // Same reason as what it says in store.js
-        this.$nextTick(() => {
-          this.setSelected(selected);
-        });
-      }
-    },
-  },
   created() {
     const location = getLocationFromRoute(this.$route);
-    const selected = getSelectedFromRoute(this.$route);
     this.setBrowseLocation(location);
     this.fetchFullLocation(location);
-    this.setSelected(selected);
   },
   methods: {
     ...mapMutations(['setBrowseLocation', 'setSelected']),
