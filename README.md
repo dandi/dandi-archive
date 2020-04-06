@@ -1,3 +1,4 @@
+<!--(https://raw.githubusercontent.com/dandi/artwork/master/pics/dandi-banner.png)-->
 # dandiarchive [![CircleCI](https://circleci.com/gh/dandi/dandiarchive/tree/master.svg?style=svg)](https://circleci.com/gh/dandi/dandiarchive/tree/master)
 Infrastructure and code for the dandiarchive
 
@@ -42,9 +43,6 @@ By default girder will start at port 8080 (http://localhost:8080).
 The first user created automatically becomes the admin user.
 
 2) Create a filesystem assetstore (http://localhost:8080/#assetstores).
-
-3) Set CORS settings so that the vue client can talk to the Girder server (http://localhost:8080/#settings).
-In the "Advanced Settings" set the "CORS Allowed Origins" value to "*" and save.
 
 ### 2. Client
 
