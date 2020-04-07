@@ -796,9 +796,9 @@
     to-fast-properties "^2.0.0"
 
 "@girder/components@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.2.0.tgz#962f19ecc07cf45bc676a94c93d618f4509871b1"
-  integrity sha512-wDLlr4WHqxUJP0ZzbUqCE90Oiq2tczliJOhNEUFLsO9MH6ltosEVUz8HpuTIoawu5zZUEgZJ33vvPeT559RIOA==
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.2.1.tgz#25493e4e524b9c9f061e754fc31f31df80fdd397"
+  integrity sha512-GlcSFkfCRTMBWw1DURiRXrQohBTj9uCDySmFRrnJUGoB9c+97bBqxOkwd+ngJ/gSGotjQUEUSdO27Kj5znr9ng==
   dependencies:
     "@mdi/font" "^3.5.95"
     axios "^0.18.1"
@@ -7967,9 +7967,9 @@ terser-webpack-plugin@^2.3.4:
     webpack-sources "^1.4.3"
 
 terser@^4.1.2, terser@^4.4.3:
-  version "4.6.9"
-  resolved "https://registry.yarnpkg.com/terser/-/terser-4.6.9.tgz#deec3d8c4536461f46392e4d457bcd1ba2ab1212"
-  integrity sha512-9UuZOApK4oiTpX4AjnWhTCY3fCqntS3ggPQOku9M3Rvr70VETYsuHjSGuRy0D7X/Z994hfnzMy6TQ/H0WQSmXQ==
+  version "4.6.10"
+  resolved "https://registry.yarnpkg.com/terser/-/terser-4.6.10.tgz#90f5bd069ff456ddbc9503b18e52f9c493d3b7c2"
+  integrity sha512-qbF/3UOo11Hggsbsqm2hPa6+L4w7bkr+09FNseEe8xrcVD3APGLFqE+Oz1ZKAxjYnFsj80rLOfgAtJ0LNJjtTA==
   dependencies:
     commander "^2.20.0"
     source-map "~0.6.1"
@@ -8485,10 +8485,10 @@ vuetify-loader@^1.4.3:
   dependencies:
     loader-utils "^1.2.0"
 
-vuetify@2.2.19, vuetify@^2.2.4:
-  version "2.2.19"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.2.19.tgz#826f6899267a0f867aff56aff0cf000d07a421e7"
-  integrity sha512-6o+wdB77FBTkZsFlF8g3W5paG6CsFWtxv6gjkovOQ1P0nggTX8AbIGYIX7xHiOqG+PvBsoIfOEt2E/x6U/d45g==
+vuetify@^2.2.20, vuetify@^2.2.4:
+  version "2.2.20"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.2.20.tgz#8cb042f7274f39130f8d40d85d23d62d1c33cae4"
+  integrity sha512-tiij3ammBiG7QrdwRBJxW917AyDLcMekRtLosdyVshDKHA5CpKrru8Ljn1gAmeUyhYZyUw4gz3XbrrIJ++TP7w==
 
 vuex-router-sync@^5.0.0:
   version "5.0.0"
