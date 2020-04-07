@@ -2,14 +2,17 @@ from dataclasses import dataclass
 from hashlib import sha256
 from json import JSONDecodeError
 from tempfile import TemporaryFile
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import Any, cast, Dict, List, Optional, TYPE_CHECKING
 
-import boto3
+import boto3  # type: ignore
 from botocore.exceptions import ClientError  # type: ignore
-import click
+from celery import shared_task
+from celery.utils.log import get_task_logger
+from django.db.transaction import atomic
 from httpx import Client, Response, stream
-from tqdm import tqdm  # type: ignore
 from yaml import dump
+
+from publish import models
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client  # noqa
@@ -18,6 +21,8 @@ BASE_URL = 'https://girder.dandiarchive.org/api/v1/'
 S3_BUCKET = 'dandi'
 S3_PREFIX = 'dandisets'
 S3_ENDPOINT_URL = 'http://localhost:9000'
+
+logger = get_task_logger(__name__)
 
 
 class DandiSetLoadError(Exception):
@@ -49,36 +54,36 @@ class DandiFile:
     metadata: Dict[str, Any]
     size: int
 
-    def publish(self, s3: 'S3Client', prefix: str):
+    def publish(self, subject: models.Subject, s3: 'S3Client', prefix: str):
         nwb_key = f'{prefix}/{self.name}'
         with TemporaryFile('r+b') as nwb, stream('GET', self.url) as response:
-            click.echo(f'Downloading {self.name}...')
+            logger.info(f'Downloading {self.name}...')
             response.raise_for_status()
             hash = sha256()
-            with tqdm(total=self.size, unit_scale=True, unit_divisor=1024, unit='B', leave=False) as bar:
-                i = 0
-                for chunk in response.iter_bytes():
-                    if i > 10:
-                        break
-                    if chunk:
-                        i += 1
-                        hash.update(chunk)
-                        bar.update(len(chunk))
-                        nwb.write(chunk)
+            i = 0
+            for chunk in response.iter_bytes():
+                if i > 10:
+                    break
+                if chunk:
+                    i += 1
+                    hash.update(chunk)
+                    nwb.write(chunk)
 
-            click.echo(hash.hexdigest())
-            click.echo(f'Uploading {self.name}...')
+            logger.info(f'Uploading {self.name}...')
             nwb.seek(0)
-            with tqdm(total=self.size, unit_scale=True, unit_divisor=1024, unit='B', leave=False) as bar:
-                def callback(size):
-                    bar.update(size)
-                s3.upload_fileobj(
-                    nwb,
-                    S3_BUCKET,
-                    nwb_key,
-                    ExtraArgs={'ACL': 'public-read'},
-                    Callback=callback,
-                )
+
+            s3.upload_fileobj(
+                nwb, S3_BUCKET, nwb_key, ExtraArgs={'ACL': 'public-read'},
+            )
+            nwb_file = models.NWBFile(
+                subject=subject,
+                name=self.name,
+                size=self.size,
+                sha256=hash.hexdigest(),
+                metadata=self.metadata,
+            )
+            nwb_file.file = nwb_key
+            nwb_file.save()
 
 
 @dataclass
@@ -107,10 +112,12 @@ class DandiSubject:
             )
         return cls(girder_id=girder_id, name=name, files=files)
 
-    def publish(self, s3: 'S3Client', prefix: str):
+    def publish(self, dandiset: models.Dandiset, s3: 'S3Client', prefix: str):
+        subject = models.Subject(dandiset=dandiset, name=self.name)
+        subject.save()
         subject_prefix = f'{prefix}/{self.name}'
         for file in self.files:
-            file.publish(s3, subject_prefix)
+            file.publish(subject, s3, subject_prefix)
 
 
 @dataclass
@@ -155,8 +162,14 @@ class DandiSet:
         version = self._get_next_version(s3)
         prefix = self.s3_path(version)
 
+        dandiset = models.Dandiset(
+            dandi_id=self.dandi_id,
+            version=version,
+            metadata=self.metadata,
+        )
+        dandiset.save()
         for subject in self.subjects:
-            subject.publish(s3, prefix)
+            subject.publish(dandiset, s3, prefix)
 
         s3.put_object(
             Bucket=S3_BUCKET,
@@ -167,15 +180,10 @@ class DandiSet:
         return f's3://{S3_BUCKET}/{prefix}'
 
 
-@click.command()
-@click.argument('girder_id')
-def publish_dandiset(girder_id: str):
-    s3 = boto3.client('s3', endpoint_url=S3_ENDPOINT_URL)
-    click.echo('Getting dandiset metadata...')
-    with DandiClient() as client:
+@shared_task
+@atomic
+def publish_dandiset(girder_id: str, token: Optional[str] = None) -> str:
+    s3 = cast('S3Client', boto3.client('s3', endpoint_url=S3_ENDPOINT_URL))
+    with DandiClient(token=token) as client:
         dandiset = DandiSet.load(client, girder_id)
-    click.echo(dandiset.publish(s3))
-
-
-if __name__ == '__main__':
-    publish_dandiset()
+    return dandiset.publish(s3)

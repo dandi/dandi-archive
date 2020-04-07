@@ -1,9 +1,11 @@
 boto3
 django
+django-celery-results
 django-storages
 djangorestframework
 httpx
 psycopg2-binary
+pyyaml
 
 django-stubs
 djangorestframework-stubs

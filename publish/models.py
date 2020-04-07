@@ -6,7 +6,7 @@ class Dandiset(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    dandi_id = models.CharField(max_length=16, unique=True)
+    dandi_id = models.CharField(max_length=16)
     version = models.IntegerField()
     metadata = JSONField(default=dict)
 
@@ -29,7 +29,7 @@ class NWBFile(models.Model):
 
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     name = models.CharField(max_length=512)
-    size = models.IntegerField()
+    size = models.BigIntegerField()
     sha256 = models.CharField(max_length=64)
     metadata = JSONField(default=dict)
 

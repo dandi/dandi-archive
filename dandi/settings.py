@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.postgres',
     'django.contrib.staticfiles',
+    'django_celery_results',
     'publish',
     'rest_framework',
 ]
@@ -124,3 +125,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_STORAGE_BUCKET_NAME = 'dandi'
+AWS_S3_ENDPOINT_URL = 'http://localhost:9000'
+AWS_ACCESS_KEY_ID = 'admin'
+AWS_SECRET_ACCESS_KEY = 'miniopassword'
+AWS_S3_USE_SSL = False
+AWS_DEFAULT_ACL = 'public-read'
+os.environ['AWS_ACCESS_KEY_ID'] = AWS_ACCESS_KEY_ID
+os.environ['AWS_SECRET_ACCESS_KEY'] = AWS_SECRET_ACCESS_KEY
+
+# https://docs.celeryproject.org/en/stable/django/first-steps-with-django.html
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
