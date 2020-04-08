@@ -38,6 +38,7 @@ import { FileManager as GirderFileManager } from '@girder/components/src/compone
 
 import {
   getLocationFromRoute,
+  getPathFromLocation,
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
@@ -100,8 +101,26 @@ export default {
         this.setBrowseLocation(value);
       },
     },
-    ...mapState(['browseLocation', 'selected']),
+    ...mapState(['browseLocation', 'selected', 'route']),
     ...mapGetters(['loggedIn']),
+  },
+  watch: {
+    browseLocation(value) {
+      const newPath = getPathFromLocation(value);
+      if (this.$route.path !== newPath) {
+        this.$router.push(newPath);
+      }
+    },
+    $route(to) {
+      const location = getLocationFromRoute(to);
+
+      if (location === null) {
+        throw new Error('Invalid Path');
+      }
+
+      this.location = location;
+      this.fetchFullLocation(location);
+    },
   },
   created() {
     const location = getLocationFromRoute(this.$route);
