@@ -82,12 +82,16 @@ class DandiResource(Resource):
         return doc
 
     @access.user
-    @describeRoute(Description("Get User Dandisets"))
-    def get_user_dandisets(self, params):
+    @autoDescribeRoute(
+        Description("Get User Dandisets").pagingParams(defaultSort="meta.dandiset.identifier")
+    )
+    def get_user_dandisets(self, limit, offset, sort):
         drafts = get_or_create_drafts_collection()
         userId = self.getCurrentUser()["_id"]
 
-        return Folder().find({"parentId": drafts["_id"], "creatorId": userId})
+        return Folder().find(
+            {"parentId": drafts["_id"], "creatorId": userId}, limit=limit, offset=offset, sort=sort
+        )
 
     @access.public
     @autoDescribeRoute(
