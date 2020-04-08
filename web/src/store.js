@@ -29,26 +29,6 @@ export default new Vuex.Store({
     },
   },
   actions: {
-    async reloadApiKey({ state, commit, getters }) {
-      const { user } = getters;
-      const { status, data } = await state.girderRest.get(
-        'api_key', {
-          params: {
-            userId: user._id,
-            limit: 50,
-            sort: 'name',
-            sortdir: 1,
-          },
-        },
-      );
-
-      const [dandiKey] = data.filter(key => key.name === 'dandicli');
-      if (status === 200 && dandiKey) {
-        // send the key id to "PUT" endpoint for updating
-        const { data: { key } } = await state.girderRest.put(`api_key/${dandiKey._id}`);
-        commit('setApiKey', key);
-      }
-    },
     async fetchApiKey({ state, commit, getters }) {
       const { user } = getters;
       const { status, data } = await state.girderRest.get(
@@ -65,9 +45,9 @@ export default new Vuex.Store({
       const [dandiKey] = data.filter(key => key.name === 'dandicli');
       if (status === 200 && dandiKey) {
         // if there is an existing api key
-
-        // set the user key
-        commit('setApiKey', dandiKey.key);
+        // send the key id to "PUT" endpoint for updating
+        const { data: { key } } = await state.girderRest.put(`api_key/${dandiKey._id}`);
+        commit('setApiKey', key);
       } else {
         // create a key using "POST" endpoint
         const { status: createStatus, data: { key } } = await state.girderRest.post('api_key', null, {
