@@ -22,6 +22,7 @@ class DandiResource(Resource):
 
         self.resourceName = "dandi"
         self.route("GET", (":identifier",), self.get_dandiset)
+        self.route("GET", ("user",), self.get_user_dandisets)
         self.route("GET", (), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
         self.route("GET", ("stats",), self.stats)
@@ -79,6 +80,14 @@ class DandiResource(Resource):
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
+
+    @access.user
+    @describeRoute(Description("Get User Dandisets"))
+    def get_user_dandisets(self, params):
+        drafts = get_or_create_drafts_collection()
+        userId = self.getCurrentUser()["_id"]
+
+        return Folder().find({"parentId": drafts["_id"], "creatorId": userId})
 
     @access.public
     @autoDescribeRoute(
