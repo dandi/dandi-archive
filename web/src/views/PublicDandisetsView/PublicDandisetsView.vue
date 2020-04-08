@@ -46,32 +46,10 @@
 
 <script>
 import { mapState } from 'vuex';
+
 import DandisetList from '@/components/DandisetList.vue';
 import SearchField from '@/views/PublicDandisetsView/SearchField.vue';
-
-const OPTIONS = [
-  {
-    name: 'Oldest',
-    sort: {
-      field: 'created',
-      direction: 1,
-    },
-  },
-  {
-    name: 'Newest',
-    sort: {
-      field: 'created',
-      direction: -1,
-    },
-  },
-  {
-    name: 'Name',
-    sort: {
-      field: 'meta.dandiset.name',
-      direction: 1,
-    },
-  },
-];
+import { basicDandisetSortingOptions } from '@/utils';
 
 export default {
   name: 'PublicDandisetsView',
@@ -79,7 +57,7 @@ export default {
   data() {
     return {
       selection: 'newest',
-      options: OPTIONS,
+      options: basicDandisetSortingOptions,
     };
   },
   computed: {
