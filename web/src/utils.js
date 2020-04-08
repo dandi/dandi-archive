@@ -1,4 +1,5 @@
 const dandiUrl = 'https://dandiarchive.org';
+const pathPrefix = 'file-browser';
 
 function getLocationFromRoute(route) {
   const { _modelType, _id } = route.params;
@@ -12,7 +13,7 @@ function getPathFromLocation(location) {
   if (!location) {
     return '/';
   }
-  return `/${location._modelType || location.type}${location._id ? `/${location._id}` : ''}`;
+  return `/${pathPrefix}/${location._modelType || location.type}${location._id ? `/${location._id}` : ''}`;
 }
 
 function getSelectedFromRoute(route) {
@@ -49,6 +50,17 @@ function copyToClipboard(text) {
   return false;
 }
 
+function getDandisetContact(dandiset) {
+  if (dandiset.meta.dandiset.contributors) {
+    const contact = dandiset.meta.dandiset.contributors.find(cont => cont.roles && cont.roles.includes('ContactPerson'));
+
+    if (!contact) return null;
+    return contact.name;
+  }
+
+  return null;
+}
+
 export {
   dandiUrl,
   getLocationFromRoute,
@@ -56,4 +68,5 @@ export {
   getSelectedFromRoute,
   getPathFromSelected,
   copyToClipboard,
+  getDandisetContact,
 };
