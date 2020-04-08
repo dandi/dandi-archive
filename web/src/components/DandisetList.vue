@@ -13,7 +13,7 @@
         no-gutters
         align="center"
       >
-        <v-col cols="11">
+        <v-col cols="12">
           <v-list-item-content>
             <v-list-item-title>
               <template v-if="item.meta.dandiset.version">
@@ -40,15 +40,10 @@
               Contact <b>{{ getDandisetContact(item) }}</b>
               ·
               Created on <b>{{ formatDate(item.created) }}</b>
+              ·
+              DANDI:<b>{{item.meta.dandiset.identifier}}</b>
             </v-list-item-subtitle>
           </v-list-item-content>
-        </v-col>
-        <v-col v-if="item.meta.dandiset.identifier" cols="1">
-          <v-list-item-action>
-            <v-list-item-action-text>
-              DANDI:{{item.meta.dandiset.identifier}}
-            </v-list-item-action-text>
-          </v-list-item-action>
         </v-col>
         <!-- TODO: Uncomment this once backend detail issue is sorted -->
         <!-- <v-col cols="1">
