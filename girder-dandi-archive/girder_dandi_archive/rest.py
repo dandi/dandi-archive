@@ -87,10 +87,10 @@ class DandiResource(Resource):
     )
     def get_user_dandisets(self, limit, offset, sort):
         drafts = get_or_create_drafts_collection()
-        userId = self.getCurrentUser()["_id"]
+        user_id = self.getCurrentUser()["_id"]
 
         return Folder().find(
-            {"parentId": drafts["_id"], "creatorId": userId}, limit=limit, offset=offset, sort=sort
+            {"parentId": drafts["_id"], "creatorId": user_id}, limit=limit, offset=offset, sort=sort
         )
 
     @access.public
