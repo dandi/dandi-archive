@@ -171,7 +171,7 @@ export default {
       return !(this.name && this.description);
     },
     ...mapGetters(['loggedIn', 'user']),
-    ...mapState(['apiKey', 'girderRest', 'status']),
+    ...mapState(['apiKey', 'girderRest']),
     version() {
       return process.env.VUE_APP_VERSION;
     },
