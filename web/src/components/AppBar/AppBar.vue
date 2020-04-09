@@ -14,6 +14,7 @@
 
     <v-btn
       :to="{ name: 'home' }"
+      class="ml-2"
       exact
       text
     >
@@ -41,17 +42,17 @@
       text
     >
       About
-      <v-icon>mdi-open-in-new</v-icon>
+      <v-icon class="ml-1">
+        mdi-open-in-new
+      </v-icon>
     </v-btn>
 
     <v-spacer />
 
-    <span
-      v-if="!loggedIn"
-    >
+    <span v-if="!loggedIn" class="mr-1">
       Want to create your own datasets?
     </span>
-    
+
     <template v-if="loggedIn">
       <UserMenu
         v-if="loggedIn"
@@ -60,6 +61,7 @@
     <template v-else>
       <v-btn
         :to="{ name: 'userRegister' }"
+        class="mx-1"
         color="primary"
         outlined
         rounded
@@ -68,6 +70,7 @@
       </v-btn>
       <v-btn
         :to="{ name: 'userLogin' }"
+        class="mx-1"
         color="primary"
         rounded
       >
