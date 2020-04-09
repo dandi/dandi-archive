@@ -57,7 +57,7 @@
               >
                 <v-btn
                   icon
-                  :to="`/collection/${selected.parentId}`"
+                  :to="{ name: 'publicDandisets' }"
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
