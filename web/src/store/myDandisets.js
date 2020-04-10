@@ -16,6 +16,9 @@ export default {
     pages: 0,
   },
   mutations: {
+    setPage(state, { page }) {
+      state.page = page;
+    },
     setSearchSettings(state, { sort }) {
       state.sort = sort;
       state.page = 1;

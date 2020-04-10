@@ -63,10 +63,10 @@ export default {
   computed: {
     page: {
       get() {
-        return this.$store.state.publicDandisets.page;
+        return this.$store.state.myDandisets.page;
       },
       set(page) {
-        this.$store.state.publicDandisets.page = page;
+        this.$store.commit('myDandisets/setPage', { page });
       },
     },
     ...mapState('myDandisets', ['dandisets', 'pages']),
