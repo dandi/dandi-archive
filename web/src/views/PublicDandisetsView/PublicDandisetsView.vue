@@ -73,7 +73,7 @@ export default {
     this.reload();
   },
   methods: {
-    ...mapActions('myDandisets', ['changeSort', 'changePage', 'reload']),
+    ...mapActions('publicDandisets', ['changeSort', 'changePage', 'reload']),
   },
 };
 </script>
