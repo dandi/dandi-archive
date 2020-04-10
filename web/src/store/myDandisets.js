@@ -19,7 +19,7 @@ export default {
     setPage(state, { page }) {
       state.page = page;
     },
-    setSearchSettings(state, { sort }) {
+    setSort(state, { sort }) {
       state.sort = sort;
       state.page = 1;
     },
@@ -41,8 +41,12 @@ export default {
       const total = headers['girder-total-count'];
       commit('setDandisets', { dandisets, total });
     },
-    async changeSearchSettings({ commit, dispatch }, { sort }) {
-      commit('setSearchSettings', { sort });
+    async changeSort({ commit, dispatch }, { sort }) {
+      commit('setSort', { sort });
+      dispatch('reload');
+    },
+    async changePage({ commit, dispatch }, { page }) {
+      commit('setPage', { page });
       dispatch('reload');
     },
   },

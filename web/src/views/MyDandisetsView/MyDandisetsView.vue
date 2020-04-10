@@ -22,7 +22,7 @@
         <v-chip
           v-for="option in options"
           :key="option.name"
-          @click="setSort(option.sort)"
+          @click="changeSort({sort: option.sort})"
         >
           {{ option.name }}
         </v-chip>
@@ -37,15 +37,13 @@
     />
     <v-pagination
       v-model="page"
-      :value="page"
       :length="pages"
-      @input="reload"
     />
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 
 import DandisetList from '@/components/DandisetList.vue';
 import SearchField from '@/views/PublicDandisetsView/SearchField.vue';
@@ -66,7 +64,7 @@ export default {
         return this.$store.state.myDandisets.page;
       },
       set(page) {
-        this.$store.commit('myDandisets/setPage', { page });
+        this.changePage({ page });
       },
     },
     ...mapState('myDandisets', ['dandisets', 'pages']),
@@ -75,12 +73,7 @@ export default {
     this.reload();
   },
   methods: {
-    setSort(sort) {
-      this.$store.dispatch('myDandisets/changeSearchSettings', { sort });
-    },
-    reload() {
-      this.$store.dispatch('myDandisets/reload');
-    },
+    ...mapActions('myDandisets', ['changeSort', 'changePage', 'reload']),
   },
 };
 </script>
