@@ -70,7 +70,7 @@ export default {
     ...mapState('myDandisets', ['dandisets', 'pages']),
   },
   created() {
-    this.reload();
+    this.reload({ user: true });
   },
   methods: {
     ...mapActions('myDandisets', ['changeSort', 'changePage', 'reload']),

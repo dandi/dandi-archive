@@ -29,8 +29,9 @@ export default {
     },
   },
   actions: {
-    async reload({ commit, state }) {
-      const { data: dandisets, headers } = await girderRest.get('dandi/user', {
+    async reload({ commit, state }, { user } = { user: false }) {
+      const listingUrl = user ? 'dandi/user' : 'dandi';
+      const { data: dandisets, headers } = await girderRest.get(listingUrl, {
         params: {
           limit: DANDISETS_PER_PAGE,
           offset: (state.page - 1) * DANDISETS_PER_PAGE,
