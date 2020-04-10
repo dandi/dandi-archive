@@ -2,10 +2,9 @@ import girderRest from '@/rest';
 
 const DANDISETS_PER_PAGE = 8;
 
-export default {
+export default ({ user } = { user: false }) => ({
   namespaced: true,
   state: {
-    // search settings
     sort: {
       field: 'created',
       direction: 1,
@@ -17,7 +16,10 @@ export default {
     pages: 0,
   },
   mutations: {
-    setSearchSettings(state, { sort }) {
+    setPage(state, { page }) {
+      state.page = page;
+    },
+    setSort(state, { sort }) {
       state.sort = sort;
       state.page = 1;
     },
@@ -28,7 +30,8 @@ export default {
   },
   actions: {
     async reload({ commit, state }) {
-      const { data: dandisets, headers } = await girderRest.get('dandi', {
+      const listingUrl = user ? 'dandi/user' : 'dandi';
+      const { data: dandisets, headers } = await girderRest.get(listingUrl, {
         params: {
           limit: DANDISETS_PER_PAGE,
           offset: (state.page - 1) * DANDISETS_PER_PAGE,
@@ -39,9 +42,13 @@ export default {
       const total = headers['girder-total-count'];
       commit('setDandisets', { dandisets, total });
     },
-    async changeSearchSettings({ commit, dispatch }, { sort }) {
-      commit('setSearchSettings', { sort });
+    async changeSort({ commit, dispatch }, { sort }) {
+      commit('setSort', { sort });
+      dispatch('reload');
+    },
+    async changePage({ commit, dispatch }, { page }) {
+      commit('setPage', { page });
       dispatch('reload');
     },
   },
-};
+});
