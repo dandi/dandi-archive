@@ -60,6 +60,30 @@ function getDandisetContact(dandiset) {
   return null;
 }
 
+const basicDandisetSortingOptions = [
+  {
+    name: 'Oldest',
+    sort: {
+      field: 'created',
+      direction: 1,
+    },
+  },
+  {
+    name: 'Newest',
+    sort: {
+      field: 'created',
+      direction: -1,
+    },
+  },
+  {
+    name: 'Name',
+    sort: {
+      field: 'meta.dandiset.name',
+      direction: 1,
+    },
+  },
+];
+
 export {
   dandiUrl,
   getLocationFromRoute,
@@ -68,4 +92,5 @@ export {
   getPathFromSelected,
   copyToClipboard,
   getDandisetContact,
+  basicDandisetSortingOptions,
 };
