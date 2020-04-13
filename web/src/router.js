@@ -7,6 +7,7 @@ import UserRegisterView from '@/views/UserRegisterView/UserRegisterView.vue';
 import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
 import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
 import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
+import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
 
 Vue.use(Router);
 
@@ -36,6 +37,11 @@ export default new Router({
       path: '/dandiset/my',
       name: 'myDandisets',
       component: MyDandisetsView,
+    },
+    {
+      path: '/dandiset/create',
+      name: 'createDandiset',
+      component: CreateDandisetView,
     },
     {
       path: '/dandiset/:id',

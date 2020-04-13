@@ -28,10 +28,10 @@
         type="submit"
         color="primary"
         :disabled="saveDisabled"
-        @click="register_dandiset"
+        @click="registerDandiset"
       >
         Register dataset
-        <template v-slot:loader>
+        <template #loader>
           <span>Registering...</span>
         </template>
       </v-btn>
@@ -40,6 +40,8 @@
 </template>
 
 <script>
+import girderRest, { loggedIn } from '@/rest';
+
 export default {
   name: 'CreateDandisetView',
   data() {
@@ -53,19 +55,25 @@ export default {
       return !(this.name && this.description);
     },
   },
+  created() {
+    if (!loggedIn()) {
+      this.$router.push({ name: 'home' });
+    }
+  },
   methods: {
-    async register_dandiset() {
+    async registerDandiset() {
       const { name, description } = this;
-      const { status, data } = await this.girderRest.post('dandi', null, { params: { name, description } });
+      const { data } = await girderRest.post('dandi', null, {
+        params: {
+          name,
+          description,
+        },
+      });
 
-      if (status === 200) {
-        this.name = '';
-        this.description = '';
-        this.$router.push({
-          name: 'dandiset-metadata-viewer',
-          params: { id: data._id },
-        });
-      }
+      this.$router.push({
+        name: 'dandisetLanding',
+        params: { id: data._id },
+      });
     },
   },
 };

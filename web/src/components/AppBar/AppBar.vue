@@ -49,16 +49,22 @@
 
     <v-spacer />
 
-    <span v-if="!loggedIn" class="mr-1">
-      Want to create your own datasets?
-    </span>
-
     <template v-if="loggedIn">
-      <UserMenu
-        v-if="loggedIn"
-      />
+      <v-btn
+        :to="{ name: 'createDandiset' }"
+        exact
+        class="mx-3"
+        color="primary"
+        rounded
+      >
+        New Dandiset
+      </v-btn>
+      <UserMenu />
     </template>
     <template v-else>
+      <span class="mr-1">
+        Want to create your own datasets?
+      </span>
       <v-btn
         :to="{ name: 'userRegister' }"
         class="mx-1"
