@@ -69,7 +69,7 @@ export default {
   computed: {
     page: {
       get() {
-        return this.$store.state[this.module].page;
+        return this.moduleRoot.page;
       },
       set(page) {
         this.changePage({ page });
