@@ -1,15 +1,15 @@
 <template>
-  <DandisetPage
+  <DandisetsPage
     title="My Dandisets"
     module="myDandisets"
   />
 </template>
 
 <script>
-import DandisetPage from '@/components/DandisetPage.vue';
+import DandisetsPage from '@/components/DandisetsPage.vue';
 
 export default {
   name: 'MyDandisetsView',
-  components: { DandisetPage },
+  components: { DandisetsPage },
 };
 </script>

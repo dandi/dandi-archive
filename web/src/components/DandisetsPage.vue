@@ -48,7 +48,7 @@ import SearchField from '@/views/PublicDandisetsView/SearchField.vue';
 import { basicDandisetSortingOptions } from '@/utils';
 
 export default {
-  name: 'DandisetPage',
+  name: 'DandisetsPage',
   components: { DandisetList, SearchField },
   props: {
     title: {
