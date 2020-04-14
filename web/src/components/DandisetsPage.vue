@@ -85,7 +85,7 @@ export default {
   data() {
     return {
       sortingOptions,
-      sortOption: this.$route.query.sortOption || 0,
+      sortOption: Number(this.$route.query.sortOption) || 0,
       sortDir: this.$route.query.sortDir || 1,
       page: Number(this.$route.query.page) || 1,
       total: 0,
