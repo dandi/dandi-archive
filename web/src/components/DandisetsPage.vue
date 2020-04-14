@@ -40,7 +40,7 @@
       class="
         mx-12
         my-12"
-      :dandisets="dandisets"
+      :dandisets="dandisets || []"
     />
     <v-pagination
       v-model="page"
@@ -86,24 +86,43 @@ export default {
       sortingOptions,
       sortField: sortingOptions[0].field,
       sortDir: 1,
-      dandisets: [],
-      pages: 0,
       page: Number(this.$route.query.page) || 1,
+      total: 0,
     };
   },
   computed: {
     listingUrl() {
       return this.user ? 'dandi/user' : 'dandi';
     },
+    pages() {
+      return Math.ceil(this.total / DANDISETS_PER_PAGE) || 1;
+    },
+  },
+  asyncComputed: {
+    async dandisets() {
+      const {
+        listingUrl, page, sortField, sortDir,
+      } = this;
+
+      const { data: dandisets } = await girderRest.get(listingUrl, {
+        params: {
+          limit: DANDISETS_PER_PAGE,
+          offset: (page - 1) * DANDISETS_PER_PAGE,
+          sort: sortField,
+          sortdir: sortDir,
+        },
+      });
+
+      return dandisets;
+    },
   },
   watch: {
     page() {
       this.updateRouter();
-      this.reload();
     },
   },
   created() {
-    this.reload();
+    this.getTotalDandisets();
   },
   methods: {
     changeSort(sort) {
@@ -115,7 +134,6 @@ export default {
       }
 
       this.page = 1;
-      this.reload();
     },
     updateRouter() {
       const { page } = this;
@@ -126,23 +144,9 @@ export default {
         },
       });
     },
-    async reload() {
-      const {
-        listingUrl, page, sortField, sortDir,
-      } = this;
-
-      const { data: dandisets, headers } = await girderRest.get(listingUrl, {
-        params: {
-          limit: DANDISETS_PER_PAGE,
-          offset: (page - 1) * DANDISETS_PER_PAGE,
-          sort: sortField,
-          sortdir: sortDir,
-        },
-      });
-      const total = headers['girder-total-count'];
-
-      this.dandisets = dandisets;
-      this.pages = Math.ceil(total / DANDISETS_PER_PAGE);
+    async getTotalDandisets() {
+      const { headers: { 'girder-total-count': total } } = await girderRest.get(this.listingUrl, { params: { limit: 1 } });
+      this.total = total;
     },
   },
 };
