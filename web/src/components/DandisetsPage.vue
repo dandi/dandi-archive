@@ -131,8 +131,18 @@ export default {
     },
   },
   watch: {
-    route() {
-      this.$router.replace(this.route);
+    async route() {
+      /*
+        Try-Catch is necessary because vue-router doesn't recognize changed query params
+        as different routes, and throws an error about navigating to the same route.
+      */
+      try {
+        await this.$router.replace(this.route);
+      } catch (err) {
+        if (err.name !== 'NavigationDuplicated') {
+          throw err;
+        }
+      }
     },
   },
   created() {
