@@ -88,7 +88,6 @@ export default {
       sortOption: Number(this.$route.query.sortOption) || 0,
       sortDir: this.$route.query.sortDir || 1,
       page: Number(this.$route.query.page) || 1,
-      total: 0,
     };
   },
   computed: {
@@ -96,7 +95,7 @@ export default {
       return this.user ? 'dandi/user' : 'dandi';
     },
     pages() {
-      return Math.ceil(this.total / DANDISETS_PER_PAGE) || 1;
+      return Math.ceil(this.totalDandisets / DANDISETS_PER_PAGE) || 1;
     },
     sortField() {
       return this.sortingOptions[this.sortOption].field;
@@ -112,14 +111,22 @@ export default {
         sortDir,
       };
     },
+    dandisets() {
+      return this.dandisetRequest ? this.dandisetRequest.data : [];
+    },
+    totalDandisets() {
+      return this.dandisetRequest ? this.dandisetRequest.headers['girder-total-count'] : 0;
+    },
   },
   asyncComputed: {
-    async dandisets() {
+    async dandisetRequest() {
       const {
         listingUrl, page, sortField, sortDir,
       } = this;
 
-      const { data: dandisets } = await girderRest.get(listingUrl, {
+      const {
+        data, headers, status, statusText,
+      } = await girderRest.get(listingUrl, {
         params: {
           limit: DANDISETS_PER_PAGE,
           offset: (page - 1) * DANDISETS_PER_PAGE,
@@ -128,7 +135,12 @@ export default {
         },
       });
 
-      return dandisets;
+      return {
+        data,
+        headers,
+        status,
+        statusText,
+      };
     },
   },
   watch: {
@@ -138,9 +150,6 @@ export default {
         query,
       });
     },
-  },
-  created() {
-    this.getTotalDandisets();
   },
   methods: {
     changeSort(index) {
@@ -152,10 +161,6 @@ export default {
       }
 
       this.page = 1;
-    },
-    async getTotalDandisets() {
-      const { headers: { 'girder-total-count': total } } = await girderRest.get(this.listingUrl, { params: { limit: 1 } });
-      this.total = total;
     },
   },
 };
