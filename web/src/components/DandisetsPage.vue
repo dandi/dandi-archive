@@ -88,7 +88,7 @@ export default {
       sortDir: 1,
       dandisets: [],
       pages: 0,
-      page: 1,
+      page: Number(this.$route.query.page) || 1,
     };
   },
   computed: {
@@ -98,6 +98,7 @@ export default {
   },
   watch: {
     page() {
+      this.updateRouter();
       this.reload();
     },
   },
@@ -115,6 +116,15 @@ export default {
 
       this.page = 1;
       this.reload();
+    },
+    updateRouter() {
+      const { page } = this;
+      this.$router.replace({
+        ...this.$route,
+        query: {
+          page,
+        },
+      });
     },
     async reload() {
       const {
