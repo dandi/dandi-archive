@@ -101,18 +101,15 @@ export default {
     sortField() {
       return this.sortingOptions[this.sortOption].field;
     },
-    route() {
+    queryParams() {
       const {
-        page, sortOption, sortDir, $route,
+        page, sortOption, sortDir,
       } = this;
 
       return {
-        ...$route,
-        query: {
-          page,
-          sortOption,
-          sortDir,
-        },
+        page,
+        sortOption,
+        sortDir,
       };
     },
   },
@@ -135,18 +132,11 @@ export default {
     },
   },
   watch: {
-    async route(val) {
-      /*
-        Try-Catch is necessary because vue-router doesn't recognize changed query params
-        as different routes, and throws an error about navigating to the same route.
-      */
-      try {
-        await this.$router.replace(val);
-      } catch (err) {
-        if (err.name !== 'NavigationDuplicated') {
-          throw err;
-        }
-      }
+    queryParams(query) {
+      this.$router.replace({
+        ...this.$route,
+        query,
+      });
     },
   },
   created() {
