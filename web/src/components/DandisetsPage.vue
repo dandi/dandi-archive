@@ -14,7 +14,7 @@
         Sort By:
       </div>
       <v-chip-group
-        :value="Number(sortOption)"
+        :value="sortOption"
         active-class="white light-blue--text"
         dark
         mandatory
