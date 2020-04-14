@@ -14,17 +14,24 @@
         Sort By:
       </div>
       <v-chip-group
-        v-model="selection"
         active-class="white light-blue--text"
         dark
         mandatory
       >
         <v-chip
-          v-for="option in options"
+          v-for="option in sortingOptions"
           :key="option.name"
-          @click="changeSort({sort: option.sort})"
+          @click="changeSort(option)"
         >
           {{ option.name }}
+          <v-icon right>
+            <template v-if="sortDir === 1 || sortField !== option.field">
+              mdi-sort-ascending
+            </template>
+            <template v-else>
+              mdi-sort-descending
+            </template>
+          </v-icon>
         </v-chip>
       </v-chip-group>
       <SearchField />
@@ -45,7 +52,20 @@
 <script>
 import DandisetList from '@/components/DandisetList.vue';
 import SearchField from '@/views/PublicDandisetsView/SearchField.vue';
-import { basicDandisetSortingOptions } from '@/utils';
+import girderRest from '@/rest';
+
+const DANDISETS_PER_PAGE = 8;
+
+const sortingOptions = [
+  {
+    name: 'Created',
+    field: 'created',
+  },
+  {
+    name: 'Name',
+    field: 'meta.dandiset.name',
+  },
+];
 
 export default {
   name: 'DandisetsPage',
@@ -55,48 +75,64 @@ export default {
       type: String,
       required: true,
     },
-    module: {
-      type: String,
-      required: true,
+    user: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   data() {
     return {
-      selection: 'newest',
-      options: basicDandisetSortingOptions,
+      sortingOptions,
+      sortField: sortingOptions[0].field,
+      sortDir: 1,
+      dandisets: [],
+      pages: 0,
+      page: 1,
     };
   },
   computed: {
-    page: {
-      get() {
-        return this.moduleRoot.page;
-      },
-      set(page) {
-        this.changePage({ page });
-      },
+    listingUrl() {
+      return this.user ? 'dandi/user' : 'dandi';
     },
-    moduleRoot() {
-      return this.$store.state[this.module];
-    },
-    dandisets() {
-      return this.moduleRoot.dandisets;
-    },
-    pages() {
-      return this.moduleRoot.pages;
+  },
+  watch: {
+    page() {
+      this.reload();
     },
   },
   created() {
     this.reload();
   },
   methods: {
-    changeSort(payload) {
-      return this.$store.dispatch(`${this.module}/changeSort`, payload);
+    changeSort(sort) {
+      if (this.sortField === sort.field) {
+        this.sortDir *= -1;
+      } else {
+        this.sortField = sort.field;
+        this.sortDir = 1;
+      }
+
+      this.page = 1;
+      this.reload();
     },
-    changePage(payload) {
-      return this.$store.dispatch(`${this.module}/changePage`, payload);
-    },
-    reload(payload) {
-      return this.$store.dispatch(`${this.module}/reload`, payload);
+    async reload() {
+      const {
+        listingUrl, page, sortField, sortDir,
+      } = this;
+
+      const { data: dandisets, headers } = await girderRest.get(listingUrl, {
+        params: {
+          limit: DANDISETS_PER_PAGE,
+          offset: (page - 1) * DANDISETS_PER_PAGE,
+          sort: sortField,
+          sortdir: sortDir,
+        },
+      });
+      const total = headers['girder-total-count'];
+
+      this.dandisets = dandisets;
+      this.pages = Math.ceil(total / DANDISETS_PER_PAGE);
     },
   },
 };
