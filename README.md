@@ -3,7 +3,7 @@ Infrastructure and code for the DANDI Archive.
 
 Folders in this repo:
 
-- `girder-dandi-archive`: A Girder plugin which serves the DANDI Archive.
+- `girder-dandi-archive`: A Girder plugin which adds the custom endpoints for the DANDI Archive.
 - `web`: The web application front-end, based on Vue.js.
 - `ansible`: Ansible code for deploying `girder-dandi-archive`.
 
