@@ -84,8 +84,8 @@ export default {
   data() {
     return {
       sortingOptions,
-      sortField: sortingOptions[0].field,
-      sortDir: 1,
+      sortField: this.$route.query.sortField || sortingOptions[0].field,
+      sortDir: this.$route.query.sortDir || 1,
       page: Number(this.$route.query.page) || 1,
       total: 0,
     };
@@ -96,6 +96,20 @@ export default {
     },
     pages() {
       return Math.ceil(this.total / DANDISETS_PER_PAGE) || 1;
+    },
+    route() {
+      const {
+        page, sortField, sortDir, $route,
+      } = this;
+
+      return {
+        ...$route,
+        query: {
+          page,
+          sortField,
+          sortDir,
+        },
+      };
     },
   },
   asyncComputed: {
@@ -117,8 +131,8 @@ export default {
     },
   },
   watch: {
-    page() {
-      this.updateRouter();
+    route() {
+      this.$router.replace(this.route);
     },
   },
   created() {
@@ -134,15 +148,6 @@ export default {
       }
 
       this.page = 1;
-    },
-    updateRouter() {
-      const { page } = this;
-      this.$router.replace({
-        ...this.$route,
-        query: {
-          page,
-        },
-      });
     },
     async getTotalDandisets() {
       const { headers: { 'girder-total-count': total } } = await girderRest.get(this.listingUrl, { params: { limit: 1 } });
