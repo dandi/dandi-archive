@@ -2,6 +2,9 @@
 # dandiarchive [![CircleCI](https://circleci.com/gh/dandi/dandiarchive/tree/master.svg?style=svg)](https://circleci.com/gh/dandi/dandiarchive/tree/master)
 Infrastructure and code for the dandiarchive
 
+| A [beta preview of the updated web app](https://refactor--gui-dandiarchive-org.netlify.com/) is online! |
+| -- |
+
 Folders in this repo:
 
 - Ansible: Ansible code for deploying the girder.dandiarchive.org site.
