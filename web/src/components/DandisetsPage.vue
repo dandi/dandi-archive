@@ -14,18 +14,19 @@
         Sort By:
       </div>
       <v-chip-group
+        :value="Number(sortOption)"
         active-class="white light-blue--text"
         dark
         mandatory
       >
         <v-chip
-          v-for="option in sortingOptions"
+          v-for="(option, i) in sortingOptions"
           :key="option.name"
-          @click="changeSort(option)"
+          @click="changeSort(i)"
         >
           {{ option.name }}
           <v-icon right>
-            <template v-if="sortDir === 1 || sortField !== option.field">
+            <template v-if="sortDir === 1 || sortOption !== i">
               mdi-sort-ascending
             </template>
             <template v-else>
@@ -84,7 +85,7 @@ export default {
   data() {
     return {
       sortingOptions,
-      sortField: this.$route.query.sortField || sortingOptions[0].field,
+      sortOption: this.$route.query.sortOption || 0,
       sortDir: this.$route.query.sortDir || 1,
       page: Number(this.$route.query.page) || 1,
       total: 0,
@@ -97,16 +98,19 @@ export default {
     pages() {
       return Math.ceil(this.total / DANDISETS_PER_PAGE) || 1;
     },
+    sortField() {
+      return this.sortingOptions[this.sortOption].field;
+    },
     route() {
       const {
-        page, sortField, sortDir, $route,
+        page, sortOption, sortDir, $route,
       } = this;
 
       return {
         ...$route,
         query: {
           page,
-          sortField,
+          sortOption,
           sortDir,
         },
       };
@@ -131,13 +135,13 @@ export default {
     },
   },
   watch: {
-    async route() {
+    async route(val) {
       /*
         Try-Catch is necessary because vue-router doesn't recognize changed query params
         as different routes, and throws an error about navigating to the same route.
       */
       try {
-        await this.$router.replace(this.route);
+        await this.$router.replace(val);
       } catch (err) {
         if (err.name !== 'NavigationDuplicated') {
           throw err;
@@ -149,11 +153,11 @@ export default {
     this.getTotalDandisets();
   },
   methods: {
-    changeSort(sort) {
-      if (this.sortField === sort.field) {
+    changeSort(index) {
+      if (this.sortOption === index) {
         this.sortDir *= -1;
       } else {
-        this.sortField = sort.field;
+        this.sortOption = index;
         this.sortDir = 1;
       }
 
