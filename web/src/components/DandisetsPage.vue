@@ -41,7 +41,7 @@
       class="
         mx-12
         my-12"
-      :dandisets="dandisets || []"
+      :dandisets="dandisets"
     />
     <v-pagination
       v-model="page"
