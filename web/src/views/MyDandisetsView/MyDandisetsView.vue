@@ -1,7 +1,7 @@
 <template>
   <DandisetsPage
     title="My Dandisets"
-    module="myDandisets"
+    user
   />
 </template>
 

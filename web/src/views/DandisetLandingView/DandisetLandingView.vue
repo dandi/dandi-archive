@@ -57,7 +57,7 @@
               >
                 <v-btn
                   icon
-                  :to="{ name: 'publicDandisets' }"
+                  @click="$router.go(-1)"
                 >
                   <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
@@ -97,7 +97,10 @@
                     Last modified {{ last_modified }}
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item v-if="details" selectable>
+                <v-list-item
+                  v-if="details"
+                  selectable
+                >
                   <v-list-item-content>
                     Files: {{ details.nItems }}, Folders: {{ details.nFolders }}
                   </v-list-item-content>
@@ -125,7 +128,10 @@
                   <v-subheader :key="k">
                     {{ k }}
                   </v-subheader>
-                  <v-list-item :key="k" selectable>
+                  <v-list-item
+                    :key="k"
+                    selectable
+                  >
                     <v-list-item-content>
                       <template v-if="['object', 'array'].includes(schema.properties[k].type)">
                         <vue-json-pretty

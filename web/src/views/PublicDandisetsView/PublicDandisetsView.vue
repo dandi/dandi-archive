@@ -1,8 +1,5 @@
 <template>
-  <DandisetsPage
-    title="Public Dandisets"
-    module="publicDandisets"
-  />
+  <DandisetsPage title="Public Dandisets" />
 </template>
 
 <script>
