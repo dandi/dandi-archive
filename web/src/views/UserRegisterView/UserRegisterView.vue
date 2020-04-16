@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container v-title="'Sign Up'">
     <GirderRegister :oauth-providers="oauthProviders" />
   </v-container>
 </template>

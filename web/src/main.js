@@ -8,6 +8,7 @@ import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
 import girderRest from '@/rest';
+import title from '@/title';
 
 Vue.use(Girder);
 

@@ -2,6 +2,7 @@
   <v-container
     fluid
     class="pa-0"
+    v-title=""
   >
     <v-row>
       <v-img
@@ -73,13 +74,22 @@ export default {
 <style scoped>
 .brain-gradient {
   height: 100%;
-  background-image: linear-gradient(to right, rgba(250,250,250,0.85),
-        rgba(250,250,250,1), rgba(250,250,250,1), rgba(250,250,250,1));
+  background-image: linear-gradient(
+    to right,
+    rgba(250, 250, 250, 0.85),
+    rgba(250, 250, 250, 1),
+    rgba(250, 250, 250, 1),
+    rgba(250, 250, 250, 1)
+  );
 }
 
 .hide-brain {
   height: 100%;
-  background-image: linear-gradient(to right, rgba(250,250,250,1), rgba(250,250,250,1));
+  background-image: linear-gradient(
+    to right,
+    rgba(250, 250, 250, 1),
+    rgba(250, 250, 250, 1)
+  );
 }
 
 .splash-text {
