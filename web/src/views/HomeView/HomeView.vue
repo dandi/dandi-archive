@@ -1,8 +1,8 @@
 <template>
   <v-container
+    v-page-title=""
     fluid
     class="pa-0"
-    v-page-title=""
   >
     <v-row>
       <v-img

@@ -25,7 +25,7 @@ export default {
       if (val) {
         this.$router.push({ name: 'home' });
       }
-    }
-  }
+    },
+  },
 };
 </script>

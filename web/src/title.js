@@ -6,7 +6,7 @@ const setPageTitle = (el, binding) => {
   } else {
     document.title = 'DANDI Archive';
   }
-}
+};
 
 Vue.directive('page-title', {
   inserted: setPageTitle,
