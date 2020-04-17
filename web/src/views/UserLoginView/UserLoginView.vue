@@ -1,5 +1,5 @@
 <template>
-  <v-container v-title="'Log In'">
+  <v-container v-page-title="'Log In'">
     <GirderAuth
       :force-otp="false"
       :show-forgot-password="false"

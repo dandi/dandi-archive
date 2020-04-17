@@ -1,6 +1,6 @@
 import Vue from 'vue';
 
-const setTitle = (el, binding) => {
+const setPageTitle = (el, binding) => {
   if (binding && binding.value) {
     document.title = `${binding.value} - DANDI Archive`;
   } else {
@@ -8,7 +8,7 @@ const setTitle = (el, binding) => {
   }
 }
 
-Vue.directive('title', {
-  inserted: setTitle,
-  update: setTitle,
+Vue.directive('page-title', {
+  inserted: setPageTitle,
+  update: setPageTitle,
 });

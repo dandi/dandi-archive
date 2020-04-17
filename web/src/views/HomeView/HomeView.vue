@@ -2,7 +2,7 @@
   <v-container
     fluid
     class="pa-0"
-    v-title=""
+    v-page-title=""
   >
     <v-row>
       <v-img

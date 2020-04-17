@@ -1,5 +1,5 @@
 <template>
-  <div v-title="pageTitle">
+  <div v-page-title="pageTitle">
     <v-toolbar color="grey darken-2 white--text">
       <v-toolbar-title class="d-none d-md-block mx-8">
         {{ title }}
