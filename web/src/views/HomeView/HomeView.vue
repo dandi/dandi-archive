@@ -49,19 +49,21 @@
     <v-row class="flex-grow-0">
       <StatsBar />
     </v-row>
-    <v-row>
-      <Search />
+    <v-row no-gutters>
+      <v-col class="grey darken-2 pa-12">
+        <DandisetSearchField :dense="false" />
+      </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script>
 import StatsBar from '@/views/HomeView/StatsBar.vue';
-import Search from '@/views/HomeView/Search.vue';
+import DandisetSearchField from '@/components/DandisetSearchField.vue';
 
 export default {
   name: 'HomeView',
-  components: { StatsBar, Search },
+  components: { StatsBar, DandisetSearchField },
   created() {
     this.$store.dispatch('stats/reload');
   },

@@ -6,6 +6,7 @@ import UserLoginView from '@/views/UserLoginView/UserLoginView.vue';
 import UserRegisterView from '@/views/UserRegisterView/UserRegisterView.vue';
 import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
 import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
+import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView.vue';
 import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
 import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
 
@@ -37,6 +38,11 @@ export default new Router({
       path: '/dandiset/my',
       name: 'myDandisets',
       component: MyDandisetsView,
+    },
+    {
+      path: '/dandiset/search',
+      name: 'searchDandisets',
+      component: SearchDandisetsView,
     },
     {
       path: '/dandiset/create',

@@ -1,3 +1,5 @@
+import re
+
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
 from girder.api.rest import Resource
@@ -23,6 +25,7 @@ class DandiResource(Resource):
         self.resourceName = "dandi"
         self.route("GET", (":identifier",), self.get_dandiset)
         self.route("GET", ("user",), self.get_user_dandisets)
+        self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
         self.route("GET", ("stats",), self.stats)
@@ -101,6 +104,45 @@ class DandiResource(Resource):
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
         return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
+
+    @access.public
+    @autoDescribeRoute(
+        Description("Search Dandisets")
+        .param("search", "Search Query", paramType="query")
+        .pagingParams(defaultSort="meta.dandiset.identifier")
+    )
+    def search_dandisets(self, search, limit, offset, sort):
+        # Ensure we are only looking for drafts collection child folders.
+        drafts = get_or_create_drafts_collection()
+        # TODO Currently only searching identifier, name, and description of public dandisets
+        if not search:
+            # Empty search string should return all possible results
+            return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
+        return Folder().find(
+            {
+                "parentId": drafts["_id"],
+                "$or": [
+                    {
+                        "meta.dandiset.identifier": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                    {
+                        "meta.dandiset.name": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                    {
+                        "meta.dandiset.description": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                ],
+            },
+            limit=limit,
+            offset=offset,
+            sort=sort,
+        )
 
     @access.public
     @describeRoute(Description("Global Dandiset Statistics"))

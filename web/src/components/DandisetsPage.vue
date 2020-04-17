@@ -1,8 +1,6 @@
 <template>
   <div>
-    <v-toolbar
-      color="grey darken-2 white--text"
-    >
+    <v-toolbar color="grey darken-2 white--text">
       <v-toolbar-title class="d-none d-md-block mx-8">
         {{ title }}
       </v-toolbar-title>
@@ -35,12 +33,10 @@
           </v-icon>
         </v-chip>
       </v-chip-group>
-      <SearchField />
+      <DandisetSearchField />
     </v-toolbar>
     <DandisetList
-      class="
-        mx-12
-        my-12"
+      class="mx-12 my-12"
       :dandisets="dandisets"
     />
     <v-pagination
@@ -52,7 +48,7 @@
 
 <script>
 import DandisetList from '@/components/DandisetList.vue';
-import SearchField from '@/views/PublicDandisetsView/SearchField.vue';
+import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import girderRest from '@/rest';
 
 const DANDISETS_PER_PAGE = 8;
@@ -70,13 +66,18 @@ const sortingOptions = [
 
 export default {
   name: 'DandisetsPage',
-  components: { DandisetList, SearchField },
+  components: { DandisetList, DandisetSearchField },
   props: {
     title: {
       type: String,
       required: true,
     },
     user: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    search: {
       type: Boolean,
       required: false,
       default: false,
@@ -92,7 +93,13 @@ export default {
   },
   computed: {
     listingUrl() {
-      return this.user ? 'dandi/user' : 'dandi';
+      if (this.user) {
+        return 'dandi/user';
+      }
+      if (this.search) {
+        return 'dandi/search';
+      }
+      return 'dandi';
     },
     pages() {
       return Math.ceil(this.totalDandisets / DANDISETS_PER_PAGE) || 1;
@@ -104,12 +111,7 @@ export default {
       const {
         page, sortOption, sortDir,
       } = this;
-
-      return {
-        page,
-        sortOption,
-        sortDir,
-      };
+      return { page, sortOption, sortDir };
     },
     dandisets() {
       return this.dandisetRequest ? this.dandisetRequest.data : [];
@@ -122,6 +124,11 @@ export default {
     async dandisetRequest() {
       const {
         listingUrl, page, sortField, sortDir,
+        $route: {
+          query: {
+            search,
+          },
+        },
       } = this;
 
       const {
@@ -132,22 +139,24 @@ export default {
           offset: (page - 1) * DANDISETS_PER_PAGE,
           sort: sortField,
           sortdir: sortDir,
+          search,
         },
       });
 
       return {
-        data,
-        headers,
-        status,
-        statusText,
+        data, headers, status, statusText,
       };
     },
   },
   watch: {
-    queryParams(query) {
+    queryParams(params) {
       this.$router.replace({
         ...this.$route,
-        query,
+        query: {
+          // do not override the search parameter, if present
+          ...this.$route.query,
+          ...params,
+        },
       });
     },
   },
