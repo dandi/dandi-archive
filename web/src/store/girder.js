@@ -5,74 +5,15 @@ import girderRest from '@/rest';
 export default {
   namespaced: true,
   state: {
-    apiKey: null,
     browseLocation: null,
     selected: [],
   },
   mutations: {
-    setApiKey(state, apiKey) {
-      state.apiKey = apiKey;
-    },
     setSelected(state, selected) {
       state.selected = selected;
     },
   },
   actions: {
-    async reloadApiKey({ commit }) {
-      const { status, data } = await girderRest.get(
-        'api_key', {
-          params: {
-            // eslint-disable-next-line import/no-named-as-default-member
-            userId: girderRest.user._id,
-            limit: 50,
-            sort: 'name',
-            sortdir: 1,
-          },
-        },
-      );
-
-      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
-      if (status === 200 && dandiKey) {
-        // send the key id to "PUT" endpoint for updating
-        const { data: { key } } = await girderRest.put(`api_key/${dandiKey._id}`);
-        commit('setApiKey', key);
-      }
-    },
-    async fetchApiKey({ commit }) {
-      const { status, data } = await girderRest.get(
-        'api_key', {
-          params: {
-            // eslint-disable-next-line import/no-named-as-default-member
-            userId: girderRest.user._id,
-            limit: 50,
-            sort: 'name',
-            sortdir: 1,
-          },
-        },
-      );
-
-      const [dandiKey] = data.filter((key) => key.name === 'dandicli');
-      if (status === 200 && dandiKey) {
-        // if there is an existing api key
-
-        // set the user key
-        commit('setApiKey', dandiKey.key);
-      } else {
-        // create a key using "POST" endpoint
-        const { status: createStatus, data: { key } } = await girderRest.post('api_key', null, {
-          params: {
-            name: 'dandicli',
-            scope: JSON.stringify(['core.data.read', 'core.data.write']),
-            tokenDuration: 30,
-            active: true,
-          },
-        });
-
-        if (createStatus === 200) {
-          commit('setApiKey', key);
-        }
-      }
-    },
     async selectSearchResult({ commit }, result) {
       commit('setSelected', []);
 
