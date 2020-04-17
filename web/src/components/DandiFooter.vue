@@ -27,7 +27,7 @@ export default {
     <v-container>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 DANDI<br>
+          &copy; 2020 DANDI<br>
           version
           <v-tooltip
             v-model="copied"
