@@ -165,7 +165,7 @@ import girderRest, { loggedIn } from '@/rest';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
-import NWB_SCHEMA from '@/assets/schema/nwb.json';
+import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 export default {
   name: 'DandisetLandingView',
