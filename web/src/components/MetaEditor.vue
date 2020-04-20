@@ -15,8 +15,8 @@
             </template>
             <template v-else>
               <v-alert
-                v-for="(error, i) in errors"
-                :key="i"
+                v-for="error in errors"
+                :key="error.schemaPath"
                 dense
                 type="error"
                 text-color="white"
