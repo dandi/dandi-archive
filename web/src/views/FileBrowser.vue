@@ -54,8 +54,8 @@ const actionKeys = [
       window.open(`${JUPYTER_ROOT}`, '_blank');
     },
   },
-  DefaultActionKeys[1], // Download
-  DefaultActionKeys[2], // Download (zip)
+  // Download for items only
+  DefaultActionKeys[1],
 ];
 
 export default {
