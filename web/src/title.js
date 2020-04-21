@@ -14,5 +14,5 @@ Vue.directive('page-title', {
   // using inserted rather than bind causes less flickering
   inserted: setPageTitle,
   update: setPageTitle,
-  unbind: () => document.title = TITLE
+  unbind: () => { document.title = TITLE; },
 });
