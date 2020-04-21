@@ -38,8 +38,7 @@
                 The DANDI Archive
               </div>
               <div class="title font-weight-light text-center">
-                Lorem ipsum dolor sit amet, consectetur adipiscing Donec ac
-                lectus ellum ipsum dominum massa.
+                A platform for publishing and sharing cellular neurophysiology data.
               </div>
             </v-col>
           </v-row>
