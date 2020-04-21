@@ -38,7 +38,8 @@
                 The DANDI Archive
               </div>
               <div class="title font-weight-light text-center">
-                The BRAIN Initiative archive for publishing and sharing cellular neurophysiology data
+                The BRAIN Initiative archive for publishing and sharing
+                cellular neurophysiology data
               </div>
             </v-col>
           </v-row>
