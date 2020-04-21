@@ -1,6 +1,5 @@
 <template>
   <v-container
-    v-page-title=""
     fluid
     class="pa-0"
   >

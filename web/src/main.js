@@ -8,8 +8,7 @@ import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
 import girderRest from '@/rest';
-// eslint-disable-next-line no-unused-vars
-import title from '@/title';
+import '@/title';
 
 Vue.use(Girder);
 
