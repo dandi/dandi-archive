@@ -24,14 +24,7 @@
     <v-list
       dense
     >
-      <v-list-item>
-        <v-list-item-content>
-          Get Girder API Key
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-icon>mdi-key</v-icon>
-        </v-list-item-action>
-      </v-list-item>
+      <ApiKeyItem />
       <v-list-item
         @click="logout"
       >
@@ -50,9 +43,13 @@
 import { mapActions } from 'vuex';
 
 import { user } from '@/rest';
+import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
 export default {
   name: 'UserMenu',
+  components: {
+    ApiKeyItem,
+  },
   data() {
     return {
     };
