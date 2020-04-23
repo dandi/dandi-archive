@@ -40,7 +40,7 @@ export default {
   components: { SingleStat },
   computed: mapState({
     stats: (state) => [
-      { name: 'dandisets', value: state.stats.drafts, description: 'Draft dandisets, that is. Publishing is coming soon™' },
+      { name: 'dandisets', value: state.stats.drafts, description: 'A DANDI dataset including files and dataset-level metadata' },
       { name: 'users', value: state.stats.users },
       { name: 'species', value: state.stats.species },
       { name: 'subjects', value: state.stats.subjects },
