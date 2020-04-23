@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-page-title="meta.name">
     <meta-editor
       v-if="edit && Object.entries(meta).length"
       :schema="schema"

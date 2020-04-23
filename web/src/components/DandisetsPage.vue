@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-page-title="pageTitle">
     <v-toolbar color="grey darken-2 white--text">
       <v-toolbar-title class="d-none d-md-block mx-8">
         {{ title }}
@@ -92,6 +92,9 @@ export default {
     };
   },
   computed: {
+    pageTitle() {
+      return (this.search) ? this.$route.query.search : this.title;
+    },
     listingUrl() {
       if (this.user) {
         return 'dandi/user';

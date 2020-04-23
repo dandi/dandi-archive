@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container v-page-title="'Log In'">
     <GirderAuth
       :force-otp="false"
       :show-forgot-password="false"
@@ -25,7 +25,7 @@ export default {
       if (val) {
         this.$router.push({ name: 'home' });
       }
-    }
-  }
+    },
+  },
 };
 </script>
