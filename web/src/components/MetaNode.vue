@@ -255,7 +255,7 @@ export default {
   },
   methods: {
     copyValue(val) {
-      if (val === undefined) return val;
+      if (val === undefined || val === null) return val;
 
       if (val instanceof Object && !Array.isArray(val)) {
         return { ...val };
