@@ -50,148 +50,100 @@
     <template v-else-if="array">
       <template v-if="schema.items.enum">
         <v-select
-          v-if="schema.enum"
           v-model="value"
           dense
-          :class="leafClasses"
-          :items="schema.enum"
-          :readonly="schema.readOnly"
+          multiple
           :label="schema.title"
-        >
-          <template v-slot:prepend>
-            <v-icon
-              v-if="!required"
-              color="error"
-              @click="$emit('remove')"
-            >
-              mdi-minus-circle
-            </v-icon>
-            <v-icon v-else>
-              mdi-circle-medium
-            </v-icon>
-          </template>
-        </v-select>
-        <v-text-field
-          v-else
-          v-model="value"
-          dense
-          :label="schema.title"
-          :type="fieldType(schema)"
           :class="leafClasses"
-          :readonly="schema.readOnly"
+          :items="schema.items.enum"
+        />
+      </template>
+      <template v-else>
+        <meta-node
+          v-for="(el, i) in value"
+          :key="i"
+          v-model="value[i]"
+          :schema="schema.items"
+          :initial="el"
+          :level="level+1"
+          array-item
+          @remove="removeArrayItem(i)"
+        />
+        <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
+        <v-btn
+          color="success"
+          dark
+          rounded
+          class="ml-2"
+          icon
+          @click="addArrayItem"
         >
-          <template v-slot:prepend>
-            <v-icon
-              v-if="!required"
-              color="error"
-              @click="$emit('remove')"
-            >
-              mdi-minus-circle
-            </v-icon>
-            <v-icon v-else>
-              mdi-circle-medium
-            </v-icon>
-          </template>
-        </v-text-field>
+          <v-icon left>
+            mdi-plus
+          </v-icon>
+        </v-btn>
       </template>
-      <template v-else-if="array">
-        <template v-if="schema.items.enum">
-          <v-select
-            v-model="value"
-            dense
-            multiple
-            :label="schema.title"
-            :class="leafClasses"
-            :items="schema.items.enum"
-          />
-        </template>
-        <template v-else>
-          <meta-node
-            v-for="(el, i) in value"
-            :key="i"
-            v-model="value[i]"
-            :schema="schema.items"
-            :initial="el"
-            :level="level+1"
-            array-item
-            @remove="removeArrayItem(i)"
-          />
-          <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
-          <v-btn
-            color="success"
-            dark
-            rounded
-            class="ml-2"
-            icon
-            @click="addArrayItem"
-          >
-            <v-icon left>
-              mdi-plus
-            </v-icon>
-          </v-btn>
-        </template>
-      </template>
-      <template
-        v-for="(prop, k) in activeProperties"
-        v-else
-      >
-        <v-card
-          :key="k"
-          class="ml-4 mb-2 py-2"
-          :flat="isLeaf(prop)"
-        >
-          <v-card-title
-            v-if="!isLeaf(prop)"
-            class="pt-0"
-          >
-            <v-icon
-              v-if="!(k in requiredProperties)"
-              class="mr-2"
-              color="error"
-              @click="removeObjectItem(k)"
-            >
-              mdi-minus-circle
-            </v-icon>
-            {{ prop.title }}
-          </v-card-title>
-          <meta-node
-            v-model="value[k]"
-            :schema="prop"
-            :initial="value[k]"
-            :level="level+1"
-            :required="k in requiredProperties"
-            @remove="removeObjectItem(k)"
-          />
-        </v-card>
-      </template>
-      <v-menu
-        v-if="Object.keys(optionalProperties).length"
-        offset-y
-      >
-        <template v-slot:activator="{ on }">
-          <v-btn
-            color="primary"
-            dark
-            rounded
-            class="ml-2"
-            v-on="on"
-          >
-            <v-icon left>
-              mdi-plus
-            </v-icon>Add Property
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item
-            v-for="key in Object.keys(optionalProperties)"
-            :key="key"
-            @click="addProperty(key)"
-          >
-            <v-list-item-title>{{ key }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
     </template>
+    <template
+      v-for="(prop, k) in activeProperties"
+      v-else
+    >
+      <v-card
+        :key="k"
+        class="ml-4 mb-2 py-2"
+        :flat="isLeaf(prop)"
+      >
+        <v-card-title
+          v-if="!isLeaf(prop)"
+          class="pt-0"
+        >
+          <v-icon
+            v-if="!(k in requiredProperties)"
+            class="mr-2"
+            color="error"
+            @click="removeObjectItem(k)"
+          >
+            mdi-minus-circle
+          </v-icon>
+          {{ prop.title }}
+        </v-card-title>
+        <meta-node
+          v-model="value[k]"
+          :schema="prop"
+          :initial="value[k]"
+          :level="level+1"
+          :required="k in requiredProperties"
+          @remove="removeObjectItem(k)"
+        />
+      </v-card>
+    </template>
+    <v-menu
+      v-if="Object.keys(optionalProperties).length"
+      offset-y
+    >
+      <template v-slot:activator="{ on }">
+        <v-btn
+          color="primary"
+          dark
+          rounded
+          class="ml-2"
+          v-on="on"
+        >
+          <v-icon left>
+            mdi-plus
+          </v-icon>Add Property
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item
+          v-for="key in Object.keys(optionalProperties)"
+          :key="key"
+          @click="addProperty(key)"
+        >
+          <v-list-item-title>{{ key }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
   </div>
 </template>
 
