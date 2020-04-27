@@ -117,8 +117,8 @@
                 <template v-if="meta.contributors">
                   <v-subheader>Contributors</v-subheader>
                   <v-list-item
-                    v-for="(item, i) in meta.contributors"
-                    :key="i"
+                    v-for="item in meta.contributors"
+                    :key="item.orcid || `${item.name}-${item.roles}`"
                     selectable
                   >
                     <v-list-item-content>{{ item }}</v-list-item-content>
@@ -129,7 +129,7 @@
                     {{ k }}
                   </v-subheader>
                   <v-list-item
-                    :key="k"
+                    :key="`${k}-item`"
                     selectable
                   >
                     <v-list-item-content>
