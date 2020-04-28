@@ -2,7 +2,7 @@
   <v-form @submit="performSearch">
     <v-text-field
       :value="$route.query.search"
-      label="Search Dandisets"
+      label="Search Dandisets by name, description, or identifier"
       outlined
       solo
       hide-details
