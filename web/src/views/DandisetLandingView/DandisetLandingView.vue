@@ -79,7 +79,7 @@
                   You must be logged in to edit.
                 </v-tooltip>
                 <v-btn
-                  :to="`/folder/${id}`"
+                  :to="{ name: 'file-browser', params: { _id: id, _modelType: 'folder' }}"
                   icon
                 >
                   <v-icon>mdi-file-tree</v-icon>

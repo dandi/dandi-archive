@@ -1,6 +1,6 @@
 import Vue from 'vue';
 
-import girderRest from '@/rest';
+import girderRest, { loggedIn } from '@/rest';
 
 export default {
   namespaced: true,
@@ -8,9 +8,15 @@ export default {
     browseLocation: null,
     selected: [],
   },
+  getters: {
+    loggedIn,
+  },
   mutations: {
     setSelected(state, selected) {
       state.selected = selected;
+    },
+    setBrowseLocation(state, location) {
+      state.browseLocation = location;
     },
   },
   actions: {
@@ -28,6 +34,16 @@ export default {
         Vue.nextTick(() => { commit('setSelected', [result]); });
       } else {
         commit('setBrowseLocation', result);
+      }
+    },
+    async fetchFullLocation({ commit }, location) {
+      if (location && location._id && location._modelType) {
+        const { _id: id, _modelType: modelType } = location;
+
+        const { status, data } = await girderRest.get(`${modelType}/${id}`);
+        if (status === 200) {
+          commit('setBrowseLocation', data);
+        }
       }
     },
     async logout() {
