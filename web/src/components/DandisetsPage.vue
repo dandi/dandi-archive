@@ -48,8 +48,8 @@
       >
         <v-col>
           <v-progress-circular
-            indeterminate
             v-if="!dandisets"
+            indeterminate
           />
           <slot
             v-else
