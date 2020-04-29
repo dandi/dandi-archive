@@ -107,14 +107,25 @@ export default {
     },
     location: {
       get() {
-        return this.browseLocation;
+        return this.$store.state.girder.browseLocation;
       },
       set(value) {
         this.setBrowseLocation(value);
       },
     },
-    ...mapState('girder', ['browseLocation', 'selected']),
+    ...mapState('girder', ['selected']),
     ...mapGetters('girder', ['loggedIn']),
+  },
+  watch: {
+    location(newValue, oldValue) {
+      if (
+        !oldValue === null
+        || newValue._modelType !== oldValue._modelType
+        || newValue._id !== oldValue._id
+      ) {
+        this.$router.push({ name: 'file-browser', params: { _modelType: newValue._modelType, _id: newValue._id } });
+      }
+    },
   },
   created() {
     const location = getLocationFromRoute(this.$route);
