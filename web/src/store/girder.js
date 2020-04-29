@@ -1,5 +1,3 @@
-import Vue from 'vue';
-
 import girderRest, { loggedIn } from '@/rest';
 
 export default {
