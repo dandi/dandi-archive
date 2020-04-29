@@ -167,7 +167,7 @@ export default {
       required: true,
     },
     initial: {
-      type: Object,
+      type: [Object, Array, String, Number],
       default: null,
       required: false,
     },
