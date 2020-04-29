@@ -175,7 +175,7 @@ export default {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
     ...mapState('girder', {
-      id: (state) => state.selected[0]._id,
+      id: (state) => (state.currentDandiset ? state.currentDandiset._id : null),
     }),
   },
   watch: {
@@ -199,7 +199,7 @@ export default {
       const { status, data } = await girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
 
       if (status === 200) {
-        this.setSelected([data]);
+        this.setCurrentDandiset(data);
       }
 
       this.closeEditor();
@@ -236,7 +236,7 @@ export default {
       link.click();
       URL.revokeObjectURL(link.href);
     },
-    ...mapMutations('girder', ['setSelected']),
+    ...mapMutations('girder', ['setCurrentDandiset']),
   },
 };
 </script>
