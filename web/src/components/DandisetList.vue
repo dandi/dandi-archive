@@ -41,7 +41,7 @@
               ·
               Created on <b>{{ formatDate(item.created) }}</b>
               ·
-              DANDI:<b>{{item.meta.dandiset.identifier}}</b>  
+              DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>
