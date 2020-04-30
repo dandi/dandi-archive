@@ -117,12 +117,10 @@ export default {
     ...mapGetters('girder', ['loggedIn']),
   },
   watch: {
-    location(newValue, oldValue) {
-      if (
-        !oldValue === null
-        || newValue._modelType !== oldValue._modelType
-        || newValue._id !== oldValue._id
-      ) {
+    location(newValue) {
+      const { _modelType, _id } = this.$route.params;
+
+      if (newValue._modelType !== _modelType || newValue._id !== _id) {
         this.$router.push({ name: 'file-browser', params: { _modelType: newValue._modelType, _id: newValue._id } });
       }
     },
