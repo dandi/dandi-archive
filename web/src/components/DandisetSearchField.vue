@@ -11,7 +11,7 @@
       color="black"
       @input="updateSearch"
     >
-      <template v-slot:append>
+      <template v-slot:prepend-inner>
         <v-icon @click="performSearch">
           mdi-magnify
         </v-icon>
