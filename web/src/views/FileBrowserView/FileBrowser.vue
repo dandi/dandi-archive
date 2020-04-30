@@ -3,9 +3,9 @@
     <v-row v-if="selected">
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
-          :selectable="true"
+          selectable
+          root-location-disabled
           :location.sync="location"
-          :upload-enabled="false"
           :value="selected"
           :initial-items-per-page="25"
           :items-per-page-options="[10,25,50,100,-1]"
@@ -62,9 +62,10 @@ const actionKeys = [
     name: 'Open JupyterLab',
     icon: 'mdi-language-python',
     color: 'primary',
-    handler() {
-      window.open(`${JUPYTER_ROOT}`, '_blank');
+    generateHref() {
+      return JUPYTER_ROOT;
     },
+    target: '_blank',
   },
   // Download for items only
   DefaultActionKeys[1],
