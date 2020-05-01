@@ -31,10 +31,6 @@ jobs:
           name: Lint web app
           command: yarn run lint
           working_directory: web
-      - run:
-          name: Build web app
-          command: yarn run build
-          working_directory: web
 
   test-end-to-end:
     docker:
@@ -53,10 +49,7 @@ jobs:
           command: pip install -U pip
       - run:
           name: Install girder-dandi-archive
-          command: |
-            whereis python
-            whereis pip
-            pip install .
+          command: pip install .
           working_directory: girder-dandi-archive
       - run:
           name: Run girder-dandi-archive in the background
