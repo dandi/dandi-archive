@@ -1,6 +1,12 @@
 import expectPuppeteer from 'expect-puppeteer';
 import { CLIENT_URL, uniqueId } from '../util';
-import { vAvatar, vBtn, vTextField, vListItem, vIcon } from '../vuetify-xpaths';
+import {
+  vAvatar,
+  vBtn,
+  vTextField,
+  vListItem,
+  vIcon,
+} from '../vuetify-xpaths';
 
 
 beforeAll(async () => {
@@ -24,7 +30,6 @@ describe('account', () => {
     await expect(page).toFillXPath(vTextField('Password'), password);
     await expect(page).toFillXPath(vTextField('Retype password'), password);
 
-    //await (await page.waitForXPath(vBtn('Register'))).click();
     await expect(page).toClickXPath(vBtn('Register'));
 
     // the user avatar contains the initials and is only rendered when logged in successfully

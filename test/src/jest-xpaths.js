@@ -4,22 +4,16 @@ import 'expect-puppeteer';
 expect.extend({
   async toContainXPath(page, xpath) {
     return page.waitForXPath(xpath)
-      .then(() => {
-        return { pass: true }; s
-      });
+      .then(() => ({ pass: true }));
   },
   async toClickXPath(page, xpath) {
     return (await page.waitForXPath(xpath))
       .click()
-      .then(() => {
-        return { pass: true };
-      });
+      .then(() => ({ pass: true }));
   },
   async toFillXPath(page, xpath, text) {
     return (await page.waitForXPath(xpath))
       .type(text)
-      .then(() => {
-        return { pass: true };
-      });
-  }
+      .then(() => ({ pass: true }));
+  },
 });
