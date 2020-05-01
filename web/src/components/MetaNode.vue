@@ -1,38 +1,6 @@
 <template>
-<div>
-  <template v-if="leaf">
-    <v-select
-      v-if="schema.enum"
-      v-model="value"
-      dense
-      :class="leafClasses"
-      :items="schema.enum"
-      :readonly="schema.readOnly"
-      :label="schema.title"
-    >
-      <template v-slot:prepend>
-        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
-        <v-icon v-else>mdi-circle-medium</v-icon>
-      </template>
-    </v-select>
-    <component
-      v-else
-      :is="stringInputType"
-      :label="schema.title"
-      :type="fieldType(schema)"
-      :class="leafClasses"
-      :readonly="schema.readOnly"
-      v-model="value"
-      dense
-    >
-      <template v-slot:prepend>
-        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
-        <v-icon v-else>mdi-circle-medium</v-icon>
-      </template>
-    </component>
-  </template>
-  <template v-else-if="array">
-    <template v-if="schema.items.enum">
+  <div>
+    <template v-if="leaf">
       <v-select
         v-if="schema.enum"
         v-model="value"
@@ -55,14 +23,15 @@
           </v-icon>
         </template>
       </v-select>
-      <v-text-field
+      <component
+        :is="stringInputType"
         v-else
         v-model="value"
-        dense
         :label="schema.title"
         :type="fieldType(schema)"
         :class="leafClasses"
         :readonly="schema.readOnly"
+        dense
       >
         <template v-slot:prepend>
           <v-icon
@@ -76,7 +45,7 @@
             mdi-circle-medium
           </v-icon>
         </template>
-      </v-text-field>
+      </component>
     </template>
     <template v-else-if="array">
       <template v-if="schema.items.enum">
@@ -162,8 +131,7 @@
         >
           <v-icon left>
             mdi-plus
-          </v-icon>
-          Add Property
+          </v-icon>Add Property
         </v-btn>
       </template>
       <v-list>
@@ -176,8 +144,7 @@
         </v-list-item>
       </v-list>
     </v-menu>
-  </template>
-</div>
+  </div>
 </template>
 
 <script>
@@ -200,7 +167,7 @@ export default {
       required: true,
     },
     initial: {
-      type: Object,
+      type: [Object, Array, String, Number],
       default: null,
       required: false,
     },
@@ -255,10 +222,14 @@ export default {
 
       const requiredKeys = Object.keys(this.requiredProperties);
       const addedKeys = Object.keys(this.addedProperties);
-      const optionalKeys = Object.keys(props)
-        .filter((x) => !requiredKeys.includes(x) && !addedKeys.includes(x));
+      const optionalKeys = Object.keys(props).filter(
+        (x) => !requiredKeys.includes(x) && !addedKeys.includes(x),
+      );
 
-      return optionalKeys.reduce((obj, key) => ({ ...obj, [key]: props[key] }), {});
+      return optionalKeys.reduce(
+        (obj, key) => ({ ...obj, [key]: props[key] }),
+        {},
+      );
     },
     activeProperties() {
       return { ...this.requiredProperties, ...this.addedProperties };
@@ -277,12 +248,14 @@ export default {
       const extra = Object.keys(this.value).filter(
         (key) => !(key in this.requiredProperties) && key in this.optionalProperties,
       );
-      extra.forEach((key) => { this.addProperty(key); });
+      extra.forEach((key) => {
+        this.addProperty(key);
+      });
     }
   },
   methods: {
     copyValue(val) {
-      if (val === undefined) return val;
+      if (val === undefined || val === null) return val;
 
       if (val instanceof Object && !Array.isArray(val)) {
         return { ...val };

@@ -79,7 +79,7 @@
                   You must be logged in to edit.
                 </v-tooltip>
                 <v-btn
-                  :to="`/folder/${id}`"
+                  :to="{ name: 'file-browser', params: { _id: id, _modelType: 'folder' }}"
                   icon
                 >
                   <v-icon>mdi-file-tree</v-icon>
@@ -117,8 +117,8 @@
                 <template v-if="meta.contributors">
                   <v-subheader>Contributors</v-subheader>
                   <v-list-item
-                    v-for="(item, i) in meta.contributors"
-                    :key="i"
+                    v-for="item in meta.contributors"
+                    :key="item.orcid || `${item.name}-${item.roles}`"
                     selectable
                   >
                     <v-list-item-content>{{ item }}</v-list-item-content>
@@ -129,7 +129,7 @@
                     {{ k }}
                   </v-subheader>
                   <v-list-item
-                    :key="k"
+                    :key="`${k}-item`"
                     selectable
                   >
                     <v-list-item-content>
@@ -233,7 +233,7 @@ export default {
       return filesize(this.selected.size);
     },
     ...mapState('girder', {
-      selected: (state) => (state.selected.length === 1 ? state.selected[0] : undefined),
+      selected: (state) => state.currentDandiset,
     }),
   },
   watch: {
@@ -261,8 +261,8 @@ export default {
       immediate: true,
       async handler(value) {
         if (!this.selected || !this.meta.length) {
-          const resp = await girderRest.get(`folder/${value}`);
-          this.$store.commit('girder/setSelected', [resp.data]);
+          const { data } = await girderRest.get(`folder/${value}`);
+          this.$store.commit('girder/setCurrentDandiset', data);
         }
       },
     },

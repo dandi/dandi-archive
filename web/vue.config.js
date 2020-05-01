@@ -8,5 +8,5 @@ module.exports = {
   devServer: {
     // The default port 8080 conflicts with Girder
     port: 8085,
-  }
+  },
 };

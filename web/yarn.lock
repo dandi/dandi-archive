@@ -795,10 +795,10 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@girder/components@^2.2.0":
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.2.1.tgz#25493e4e524b9c9f061e754fc31f31df80fdd397"
-  integrity sha512-GlcSFkfCRTMBWw1DURiRXrQohBTj9uCDySmFRrnJUGoB9c+97bBqxOkwd+ngJ/gSGotjQUEUSdO27Kj5znr9ng==
+"@girder/components@^2.2.2":
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/@girder/components/-/components-2.2.2.tgz#aa00f15d6e84d03d7721d837c70e6f56aeae4c41"
+  integrity sha512-W/iZ11rN7LEPxWQLDZ2YcwYjXJz7fpD/kA4oZHPAGtmM/loQVRqg8KyGv3tM3tkl2ohO/TokgDLMuqFmK4kv8g==
   dependencies:
     "@mdi/font" "^3.5.95"
     axios "^0.18.1"

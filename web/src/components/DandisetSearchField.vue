@@ -2,7 +2,7 @@
   <v-form @submit="performSearch">
     <v-text-field
       :value="$route.query.search"
-      label="Search Dandisets"
+      label="Search Dandisets by name, description, or identifier"
       outlined
       solo
       hide-details
@@ -11,7 +11,7 @@
       color="black"
       @input="updateSearch"
     >
-      <template v-slot:append>
+      <template v-slot:prepend-inner>
         <v-icon @click="performSearch">
           mdi-magnify
         </v-icon>
