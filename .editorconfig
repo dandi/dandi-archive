@@ -11,16 +11,11 @@ charset = utf-8
 indent_size = 4
 max_line_length = 100
 
-[*.js]
-indent_size = 4
+[*.{js,ts,vue}]
+indent_size = 2
+max_line_length = 100
 
 [*.json]
-indent_size = 4
-
-[*.pug]
-indent_size = 2
-
-[*.styl]
 indent_size = 2
 
 [*.yml]

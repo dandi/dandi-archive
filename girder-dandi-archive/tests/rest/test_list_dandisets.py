@@ -1,6 +1,7 @@
 import pytest
-from pytest_girder.assertions import assertStatusOk
 from rest_utils import assert_dandisets_are_equal
+
+from pytest_girder.assertions import assertStatusOk
 
 pytestmark = pytest.mark.plugin("dandi_archive")
 path = "/dandi"
@@ -16,10 +17,7 @@ def test_list_dandisets(server, request_auth, dandiset_1, dandiset_2):
 
 def test_list_dandisets_sort(server, request_auth, dandiset_1, dandiset_2):
     resp = server.request(
-        path=path,
-        method="GET",
-        params={"sort": "meta.dandiset.description"},
-        **request_auth,
+        path=path, method="GET", params={"sort": "meta.dandiset.description"}, **request_auth,
     )
     assertStatusOk(resp)
     assert len(resp.json) == 2

@@ -7,7 +7,7 @@
       v-for="item in items"
       :key="item._id"
       selectable
-      :to="{ name: 'dandiset-metadata-viewer', params: { id: item._id } }"
+      :to="{ name: 'dandisetLanding', params: { id: item._id } }"
     >
       <v-row
         no-gutters
@@ -41,7 +41,7 @@
               ·
               Created on <b>{{ formatDate(item.created) }}</b>
               ·
-              DANDI:<b>{{item.meta.dandiset.identifier}}</b>
+              DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>

@@ -1,18 +1,24 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import Home from './views/Home.vue';
-import DandiMetaViewer from '@/views/DandiMetaViewer.vue';
-import FileBrowser from '@/views/FileBrowser.vue';
+import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
+
+import HomeView from '@/views/HomeView/HomeView.vue';
+import UserLoginView from '@/views/UserLoginView/UserLoginView.vue';
+import UserRegisterView from '@/views/UserRegisterView/UserRegisterView.vue';
+import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
+import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
+import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView.vue';
+import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
+import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
 
 Vue.use(Router);
 
 export default new Router({
   routes: [
     {
-      path: '/dandiset-meta/:id',
-      name: 'dandiset-metadata-viewer',
-      props: true,
-      component: DandiMetaViewer,
+      path: '/',
+      name: 'home',
+      component: HomeView,
     },
     {
       path: '/file-browser/:_modelType?/:_id?',
@@ -20,9 +26,40 @@ export default new Router({
       component: FileBrowser,
     },
     {
-      path: '/',
-      name: 'home',
-      component: Home,
+      path: '/user/login',
+      name: 'userLogin',
+      component: UserLoginView,
+    },
+    {
+      path: '/user/register',
+      name: 'userRegister',
+      component: UserRegisterView,
+    },
+    {
+      path: '/dandiset',
+      name: 'publicDandisets',
+      component: PublicDandisetsView,
+    },
+    {
+      path: '/dandiset/my',
+      name: 'myDandisets',
+      component: MyDandisetsView,
+    },
+    {
+      path: '/dandiset/search',
+      name: 'searchDandisets',
+      component: SearchDandisetsView,
+    },
+    {
+      path: '/dandiset/create',
+      name: 'createDandiset',
+      component: CreateDandisetView,
+    },
+    {
+      path: '/dandiset/:id',
+      name: 'dandisetLanding',
+      props: true,
+      component: DandisetLandingView,
     },
   ],
 });

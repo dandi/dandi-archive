@@ -1,6 +1,6 @@
 <template>
   <v-app class="dandi-app">
-    <dandi-app-bar />
+    <AppBar />
     <v-content>
       <router-view />
       <DandiFooter />
@@ -9,15 +9,18 @@
 </template>
 
 <script>
-import DandiAppBar from './components/DandiAppBar.vue';
-import DandiFooter from './components/DandiFooter.vue';
+import AppBar from '@/components/AppBar/AppBar.vue';
+import DandiFooter from '@/components/DandiFooter.vue';
 
 export default {
-  components: { DandiAppBar, DandiFooter },
+  components: {
+    AppBar,
+    DandiFooter,
+  },
 };
 </script>
 
-<style>
+<style scoped>
 .dandi-app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -1,6 +1,8 @@
+import re
+
 from girder.api import access
-from girder.api.rest import Resource
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
+from girder.api.rest import Resource
 from girder.constants import TokenScope
 from girder.exceptions import RestException
 from girder.models.collection import Collection
@@ -22,6 +24,8 @@ class DandiResource(Resource):
 
         self.resourceName = "dandi"
         self.route("GET", (":identifier",), self.get_dandiset)
+        self.route("GET", ("user",), self.get_user_dandisets)
+        self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
         self.route("GET", ("stats",), self.stats)
@@ -56,19 +60,14 @@ class DandiResource(Resource):
 
         drafts = get_or_create_drafts_collection()
         folder = Folder().createFolder(
-            drafts,
-            padded_identifier,
-            parentType="collection",
-            creator=self.getCurrentUser(),
+            drafts, padded_identifier, parentType="collection", creator=self.getCurrentUser(),
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder
 
     @access.public
     @describeRoute(
-        Description("Get Dandiset").param(
-            "identifier", "Dandiset Identifier", paramType="path"
-        )
+        Description("Get Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
     )
     def get_dandiset(self, identifier, params):
 
@@ -80,24 +79,69 @@ class DandiResource(Resource):
 
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
-        doc = Folder().findOne(
-            {"parentId": drafts["_id"], "meta.dandiset.identifier": identifier}
-        )
+        doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
 
+    @access.user
+    @autoDescribeRoute(
+        Description("Get User Dandisets").pagingParams(defaultSort="meta.dandiset.identifier")
+    )
+    def get_user_dandisets(self, limit, offset, sort):
+        drafts = get_or_create_drafts_collection()
+        user_id = self.getCurrentUser()["_id"]
+
+        return Folder().find(
+            {"parentId": drafts["_id"], "creatorId": user_id}, limit=limit, offset=offset, sort=sort
+        )
+
     @access.public
     @autoDescribeRoute(
-        Description("List Dandisets").pagingParams(
-            defaultSort="meta.dandiset.identifier"
-        )
+        Description("List Dandisets").pagingParams(defaultSort="meta.dandiset.identifier")
     )
     def list_dandisets(self, limit, offset, sort):
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
+        return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
+
+    @access.public
+    @autoDescribeRoute(
+        Description("Search Dandisets")
+        .param("search", "Search Query", paramType="query")
+        .pagingParams(defaultSort="meta.dandiset.identifier")
+    )
+    def search_dandisets(self, search, limit, offset, sort):
+        # Ensure we are only looking for drafts collection child folders.
+        drafts = get_or_create_drafts_collection()
+        # TODO Currently only searching identifier, name, and description of public dandisets
+        if not search:
+            # Empty search string should return all possible results
+            return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
         return Folder().find(
-            {"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort
+            {
+                "parentId": drafts["_id"],
+                "$or": [
+                    {
+                        "meta.dandiset.identifier": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                    {
+                        "meta.dandiset.name": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                    {
+                        "meta.dandiset.description": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                ],
+            },
+            limit=limit,
+            offset=offset,
+            sort=sort,
         )
 
     @access.public
@@ -139,14 +183,7 @@ class DandiResource(Resource):
 
         subject_count = list(
             Folder().collection.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "0",
-                            "count": {"$sum": "$meta.dandiset.number_of_subjects"},
-                        }
-                    },
-                ]
+                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_subjects"}}}]
             )
         )
         if subject_count:
@@ -156,14 +193,7 @@ class DandiResource(Resource):
 
         cell_count = list(
             Folder().collection.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "0",
-                            "count": {"$sum": "$meta.dandiset.number_of_cells"},
-                        }
-                    },
-                ]
+                [{"$group": {"_id": "0", "count": {"$sum": "$meta.dandiset.number_of_cells"}}}]
             )
         )
         if cell_count:

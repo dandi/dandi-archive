@@ -1,118 +1,150 @@
 <template>
-<div>
-  <template v-if="leaf">
-    <v-select
-      v-if="schema.enum"
-      v-model="value"
-      dense
-      :class="leafClasses"
-      :items="schema.enum"
-      :readonly="schema.readOnly"
-      :label="schema.title"
-    >
-      <template v-slot:prepend>
-        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
-        <v-icon v-else>mdi-circle-medium</v-icon>
-      </template>
-    </v-select>
-    <component
-      v-else
-      :is="stringInputType"
-      :label="schema.title"
-      :type="fieldType(schema)"
-      :class="leafClasses"
-      :readonly="schema.readOnly"
-      v-model="value"
-      dense
-    >
-      <template v-slot:prepend>
-        <v-icon v-if="!required" color="error" @click="$emit('remove')">mdi-minus-circle</v-icon>
-        <v-icon v-else>mdi-circle-medium</v-icon>
-      </template>
-    </component>
-  </template>
-  <template v-else-if="array">
-    <template v-if="schema.items.enum">
+  <div>
+    <template v-if="leaf">
       <v-select
-        dense
-        multiple
-        :label="schema.title"
-        :class="leafClasses"
-        :items="schema.items.enum"
+        v-if="schema.enum"
         v-model="value"
-      />
-    </template>
-    <template v-else>
-      <meta-node
-        v-for="(el, i) in value"
-        :key="i"
-        :schema="schema.items"
-        :initial="el"
-        :level="level+1"
-        v-model="value[i]"
-        arrayItem
-        @remove="removeArrayItem(i)"
-      />
-      <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
-      <v-btn
-        color="success"
-        dark
-        rounded
-        class="ml-2"
-        @click="addArrayItem"
-        icon
+        dense
+        :class="leafClasses"
+        :items="schema.enum"
+        :readonly="schema.readOnly"
+        :label="schema.title"
       >
-        <v-icon left>mdi-plus</v-icon>
-      </v-btn>
+        <template v-slot:prepend>
+          <v-icon
+            v-if="!required"
+            color="error"
+            @click="$emit('remove')"
+          >
+            mdi-minus-circle
+          </v-icon>
+          <v-icon v-else>
+            mdi-circle-medium
+          </v-icon>
+        </template>
+      </v-select>
+      <component
+        :is="stringInputType"
+        v-else
+        v-model="value"
+        :label="schema.title"
+        :type="fieldType(schema)"
+        :class="leafClasses"
+        :readonly="schema.readOnly"
+        dense
+      >
+        <template v-slot:prepend>
+          <v-icon
+            v-if="!required"
+            color="error"
+            @click="$emit('remove')"
+          >
+            mdi-minus-circle
+          </v-icon>
+          <v-icon v-else>
+            mdi-circle-medium
+          </v-icon>
+        </template>
+      </component>
     </template>
-  </template>
-  <template v-else v-for="(prop, k) in activeProperties">
-    <v-card :key="k" class="ml-4 mb-2 py-2" :flat="isLeaf(prop)">
-      <v-card-title v-if="!isLeaf(prop)" class="pt-0">
-        <v-icon
-          v-if="!(k in requiredProperties)"
-          class="mr-2"
-          color="error"
-          @click="removeObjectItem(k)"
+    <template v-else-if="array">
+      <template v-if="schema.items.enum">
+        <v-select
+          v-model="value"
+          dense
+          multiple
+          :label="schema.title"
+          :class="leafClasses"
+          :items="schema.items.enum"
+        />
+      </template>
+      <template v-else>
+        <meta-node
+          v-for="(el, i) in value"
+          :key="i"
+          v-model="value[i]"
+          :schema="schema.items"
+          :initial="el"
+          :level="level+1"
+          array-item
+          @remove="removeArrayItem(i)"
+        />
+        <!-- <v-divider v-if="i !== value.length - 1" :key="i" /> -->
+        <v-btn
+          color="success"
+          dark
+          rounded
+          class="ml-2"
+          icon
+          @click="addArrayItem"
         >
-          mdi-minus-circle
-        </v-icon>
-        {{prop.title}}
-      </v-card-title>
-      <meta-node
-        :schema="prop"
-        :initial="value[k]"
-        :level="level+1"
-        v-model="value[k]"
-        @remove="removeObjectItem(k)"
-        :required="k in requiredProperties"
-      />
-    </v-card>
-  </template>
-  <v-menu offset-y v-if="Object.keys(optionalProperties).length">
-    <template v-slot:activator="{ on }">
-      <v-btn
-        color="primary"
-        dark
-        rounded
-        v-on="on"
-        class="ml-2"
-      >
-        <v-icon left>mdi-plus</v-icon>
-        Add Property
-      </v-btn>
+          <v-icon left>
+            mdi-plus
+          </v-icon>
+        </v-btn>
+      </template>
     </template>
-    <v-list>
-      <v-list-item
-        v-for="key in Object.keys(optionalProperties)"
-        :key="key"
-        @click="addProperty(key)"
+    <template
+      v-for="(prop, k) in activeProperties"
+      v-else
+    >
+      <v-card
+        :key="k"
+        class="ml-4 mb-2 py-2"
+        :flat="isLeaf(prop)"
       >
-        <v-list-item-title>{{ key }}</v-list-item-title>
-      </v-list-item>
-    </v-list>
-  </v-menu>
-</div>
+        <v-card-title
+          v-if="!isLeaf(prop)"
+          class="pt-0"
+        >
+          <v-icon
+            v-if="!(k in requiredProperties)"
+            class="mr-2"
+            color="error"
+            @click="removeObjectItem(k)"
+          >
+            mdi-minus-circle
+          </v-icon>
+          {{ prop.title }}
+        </v-card-title>
+        <meta-node
+          v-model="value[k]"
+          :schema="prop"
+          :initial="value[k]"
+          :level="level+1"
+          :required="k in requiredProperties"
+          @remove="removeObjectItem(k)"
+        />
+      </v-card>
+    </template>
+    <v-menu
+      v-if="Object.keys(optionalProperties).length"
+      offset-y
+    >
+      <template v-slot:activator="{ on }">
+        <v-btn
+          color="primary"
+          dark
+          rounded
+          class="ml-2"
+          v-on="on"
+        >
+          <v-icon left>
+            mdi-plus
+          </v-icon>Add Property
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-item
+          v-for="key in Object.keys(optionalProperties)"
+          :key="key"
+          @click="addProperty(key)"
+        >
+          <v-list-item-title>{{ key }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+  </div>
 </template>
 
 <script>
@@ -135,6 +167,8 @@ export default {
       required: true,
     },
     initial: {
+      type: [Object, Array, String, Number],
+      default: null,
       required: false,
     },
     level: {
@@ -149,14 +183,6 @@ export default {
       addedProperties: {},
       leafClasses: 'ml-2 pr-3 pt-1',
     };
-  },
-  created() {
-    if (this.schema.type === 'object') {
-      const extra = Object.keys(this.value).filter(
-        key => !(key in this.requiredProperties) && key in this.optionalProperties,
-      );
-      extra.forEach((key) => { this.addProperty(key); });
-    }
   },
   computed: {
     stringInputType() {
@@ -196,10 +222,14 @@ export default {
 
       const requiredKeys = Object.keys(this.requiredProperties);
       const addedKeys = Object.keys(this.addedProperties);
-      const optionalKeys = Object.keys(props)
-        .filter(x => !requiredKeys.includes(x) && !addedKeys.includes(x));
+      const optionalKeys = Object.keys(props).filter(
+        (x) => !requiredKeys.includes(x) && !addedKeys.includes(x),
+      );
 
-      return optionalKeys.reduce((obj, key) => ({ ...obj, [key]: props[key] }), {});
+      return optionalKeys.reduce(
+        (obj, key) => ({ ...obj, [key]: props[key] }),
+        {},
+      );
     },
     activeProperties() {
       return { ...this.requiredProperties, ...this.addedProperties };
@@ -213,10 +243,20 @@ export default {
       deep: true,
     },
   },
+  created() {
+    if (this.schema.type === 'object') {
+      const extra = Object.keys(this.value).filter(
+        (key) => !(key in this.requiredProperties) && key in this.optionalProperties,
+      );
+      extra.forEach((key) => {
+        this.addProperty(key);
+      });
+    }
+  },
   methods: {
     copyValue(val) {
-      if (val === undefined) return val;
-      
+      if (val === undefined || val === null) return val;
+
       if (val instanceof Object && !Array.isArray(val)) {
         return { ...val };
       }
@@ -264,7 +304,3 @@ export default {
   },
 };
 </script>
-
-<style>
-
-</style>

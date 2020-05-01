@@ -1,6 +1,8 @@
 import pytest
-from pytest_girder.assertions import assertStatus, assertStatusOk
 from rest_utils import assert_dandisets_are_equal
+
+from pytest_girder.assertions import assertStatus, assertStatusOk
+
 
 pytestmark = pytest.mark.plugin("dandi_archive")
 

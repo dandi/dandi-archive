@@ -1,4 +1,5 @@
 import pytest
+
 from girder_dandi_archive import convert_search_to_mongo_query, dandi_search_handler
 
 
@@ -7,16 +8,10 @@ from girder_dandi_archive import convert_search_to_mongo_query, dandi_search_han
     ["string", "expected"],
     [
         ("more_units_than:3", {"meta.number_of_units": {"$gt": 3}}),
-        (
-            "more_units_than:3 fewer_units_than:20",
-            {"meta.number_of_units": {"$gt": 3, "$lt": 20}},
-        ),
+        ("more_units_than:3 fewer_units_than:20", {"meta.number_of_units": {"$gt": 3, "$lt": 20}},),
         ("doi:10.1101/354340", {"meta.related_publications": "10.1101/354340"}),
         ("keyword:mouse", {"meta.keywords": "mouse"}),
-        (
-            "keyword:mouse keyword:burgle",
-            {"meta.keywords": {"$all": ["mouse", "burgle"]}},
-        ),
+        ("keyword:mouse keyword:burgle", {"meta.keywords": {"$all": ["mouse", "burgle"]}},),
     ],
 )
 def test_valid_search_strings(string, expected):

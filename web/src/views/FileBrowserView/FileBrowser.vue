@@ -1,25 +1,38 @@
 <template>
   <v-container style="height: 100%;">
-    <v-row>
+    <v-row v-if="selected">
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
-          :selectable="true"
+          selectable
+          root-location-disabled
           :location.sync="location"
-          :upload-enabled="false"
           :value="selected"
-          @input="setSelected"
           :initial-items-per-page="25"
           :items-per-page-options="[10,25,50,100,-1]"
+          @input="setSelected"
         >
-          <template v-slot:headerwidget v-if="isDandiset">
-            <v-btn icon color="primary" :to="`/dandiset-meta/${location._id}`">
+          <template
+            v-if="isDandiset"
+            v-slot:headerwidget
+          >
+            <v-btn
+              icon
+              color="primary"
+              :to="{ name: 'dandisetLanding', params: { id: location._id }}"
+            >
               <v-icon>mdi-eye</v-icon>
             </v-btn>
           </template>
         </girder-file-manager>
       </v-col>
-      <v-col cols="4" v-if="selected.length">
-        <girder-data-details :value="selected" :action-keys="actions" />
+      <v-col
+        v-if="selected.length"
+        cols="4"
+      >
+        <girder-data-details
+          :value="selected"
+          :action-keys="actions"
+        />
       </v-col>
     </v-row>
   </v-container>
@@ -38,7 +51,6 @@ import { FileManager as GirderFileManager } from '@girder/components/src/compone
 
 import {
   getLocationFromRoute,
-  getPathFromLocation,
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
@@ -50,9 +62,10 @@ const actionKeys = [
     name: 'Open JupyterLab',
     icon: 'mdi-language-python',
     color: 'primary',
-    handler() {
-      window.open(`${JUPYTER_ROOT}`, '_blank');
+    generateHref() {
+      return JUPYTER_ROOT;
     },
+    target: '_blank',
   },
   // Download for items only
   DefaultActionKeys[1],
@@ -95,31 +108,22 @@ export default {
     },
     location: {
       get() {
-        return this.browseLocation;
+        return this.$store.state.girder.browseLocation;
       },
       set(value) {
         this.setBrowseLocation(value);
       },
     },
-    ...mapState(['browseLocation', 'selected', 'route']),
-    ...mapGetters(['loggedIn']),
+    ...mapState('girder', ['selected']),
+    ...mapGetters('girder', ['loggedIn']),
   },
   watch: {
-    browseLocation(value) {
-      const newPath = getPathFromLocation(value);
-      if (this.$route.path !== newPath) {
-        this.$router.push(newPath);
-      }
-    },
-    $route(to) {
-      const location = getLocationFromRoute(to);
+    location(newValue) {
+      const { _modelType, _id } = this.$route.params;
 
-      if (location === null) {
-        throw new Error('Invalid Path');
+      if (newValue._modelType !== _modelType || newValue._id !== _id) {
+        this.$router.push({ name: 'file-browser', params: { _modelType: newValue._modelType, _id: newValue._id } });
       }
-
-      this.location = location;
-      this.fetchFullLocation(location);
     },
   },
   created() {
@@ -128,8 +132,8 @@ export default {
     this.fetchFullLocation(location);
   },
   methods: {
-    ...mapMutations(['setBrowseLocation', 'setSelected']),
-    ...mapActions(['fetchFullLocation']),
+    ...mapMutations('girder', ['setBrowseLocation', 'setSelected']),
+    ...mapActions('girder', ['fetchFullLocation']),
   },
 };
 </script>

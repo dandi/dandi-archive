@@ -1,8 +1,8 @@
 import re
 
+from girder.exceptions import ValidationException
 from girder.models.collection import Collection
 from girder.utility import setting_utilities
-from girder.exceptions import ValidationException
 
 DANDISET_IDENTIFIER_COUNTER = "dandi.identifier_counter"
 DANDISET_IDENTIFIER_LENGTH = 6
@@ -22,6 +22,4 @@ def validate_dandiset_identifier(dandiset_identifier):
 
 
 def get_or_create_drafts_collection():
-    return Collection().createCollection(
-        DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True
-    )
+    return Collection().createCollection(DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True)

@@ -1,0 +1,39 @@
+import girderRest, { loggedIn } from '@/rest';
+
+export default {
+  namespaced: true,
+  state: {
+    browseLocation: null,
+    selected: [],
+    currentDandiset: null,
+  },
+  getters: {
+    loggedIn,
+  },
+  mutations: {
+    setSelected(state, selected) {
+      state.selected = selected;
+    },
+    setCurrentDandiset(state, dandiset) {
+      state.currentDandiset = dandiset;
+    },
+    setBrowseLocation(state, location) {
+      state.browseLocation = location;
+    },
+  },
+  actions: {
+    async fetchFullLocation({ commit }, location) {
+      if (location && location._id && location._modelType) {
+        const { _id: id, _modelType: modelType } = location;
+
+        const { status, data } = await girderRest.get(`${modelType}/${id}`);
+        if (status === 200) {
+          commit('setBrowseLocation', data);
+        }
+      }
+    },
+    async logout() {
+      await girderRest.logout();
+    },
+  },
+};

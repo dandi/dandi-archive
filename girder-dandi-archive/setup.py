@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -19,14 +19,11 @@ setup(
         "Development Status :: 2 - Pre-Alpha",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
     description="A Girder plugin used as a prototype DANDI neuroscience archive.",
+    python_requires=">=3.6.0",
     install_requires=requirements,
     license="Apache Software License 2.0",
     long_description=readme,
@@ -38,7 +35,5 @@ setup(
     url="https://github.com/dandi/dandiarchive",
     version="0.1.0",
     zip_safe=False,
-    entry_points={
-        "girder.plugin": ["dandi_archive = girder_dandi_archive:DandiArchivePlugin"]
-    },
+    entry_points={"girder.plugin": ["dandi_archive = girder_dandi_archive:DandiArchivePlugin"]},
 )

@@ -2,7 +2,6 @@ import pytest
 
 from girder.models.folder import Folder
 from girder.models.upload import Upload
-
 from pytest_girder.assertions import assertStatusOk
 
 pytestmark = pytest.mark.plugin("dandi_archive")
@@ -126,7 +125,7 @@ def test_stats_cells(server, dandiset_1):
     } == resp.json
 
 
-def test_stats_size(server, fsAssetstore, user, dandiset_1):
+def test_stats_size(server, fsAssetstore, user, dandiset_1):  # noqa: N803
     file_contents = "Hello World!"
     upload = Upload().createUpload(
         user=user,
