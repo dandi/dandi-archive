@@ -15,39 +15,40 @@ describe('account', () => {
   const password = 'password'; // Top secret
 
   it('register', async () => {
-    await (await page.waitForXPath(vBtn('Create Account'))).click();
+    await expect(page).toClickXPath(vBtn('Create Account'));
 
-    await (await page.waitForXPath(vTextField('Username'))).type(username);
-    await (await page.waitForXPath(vTextField('Email'))).type(email);
-    await (await page.waitForXPath(vTextField('First Name'))).type('Mister');
-    await (await page.waitForXPath(vTextField('Last Name'))).type('Roboto');
-    await (await page.waitForXPath(vTextField('Password'))).type(password);
-    await (await page.waitForXPath(vTextField('Retype password'))).type(password);
+    await expect(page).toFillXPath(vTextField('Username'), username);
+    await expect(page).toFillXPath(vTextField('Email'), email);
+    await expect(page).toFillXPath(vTextField('First Name'), 'Mister');
+    await expect(page).toFillXPath(vTextField('Last Name'), 'Roboto');
+    await expect(page).toFillXPath(vTextField('Password'), password);
+    await expect(page).toFillXPath(vTextField('Retype password'), password);
 
-    await (await page.waitForXPath(vBtn('Register'))).click();
+    //await (await page.waitForXPath(vBtn('Register'))).click();
+    await expect(page).toClickXPath(vBtn('Register'));
 
     // the user avatar contains the initials and is only rendered when logged in successfully
-    await page.waitForXPath(vAvatar('MR'));
+    await expect(page).toContainXPath(vAvatar('MR'));
   });
 
   it('logout', async () => {
-    await (await page.waitForXPath(vAvatar('MR'))).click();
+    await expect(page).toClickXPath(vAvatar('MR'));
     await page.waitFor(500);
-    await (await page.waitForXPath(vListItem('Logout', vIcon('mdi-logout')))).click();
+    await expect(page).toClickXPath(vListItem('Logout', vIcon('mdi-logout')));
 
     // this text is only displayed when not logged in
     await expect(page).toMatch('Want to create your own datasets?');
   });
 
   it('login', async () => {
-    await (await page.waitForXPath(vBtn('Login'))).click();
+    await expect(page).toClickXPath(vBtn('Login'));
 
-    await (await page.waitForXPath(vTextField('Username or e-mail'))).type(username);
-    await (await page.waitForXPath(vTextField('Password'))).type(password);
+    await expect(page).toFillXPath(vTextField('Username or e-mail'), username);
+    await expect(page).toFillXPath(vTextField('Password'), password);
 
-    await (await page.waitForXPath(vBtn(['Login', vIcon('mdi-login')]))).click();
+    await expect(page).toClickXPath(vBtn(['Login', vIcon('mdi-login')]));
 
     // the user avatar contains the initials and is only rendered when logged in successfully
-    await page.waitForXPath(vAvatar('MR'));
+    await expect(page).toContainXPath(vAvatar('MR'));
   });
 });

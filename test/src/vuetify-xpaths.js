@@ -1,3 +1,5 @@
+import './jest-xpaths';
+
 const _xpath_regex = /\/\/[a-z*]+(\[.*\])*/;
 
 function isXPath(text) {
