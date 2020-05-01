@@ -36,7 +36,7 @@
       My Dandisets
     </v-btn>
     <v-btn
-      :href="dandiUrl"
+      :href="dandiAboutUrl"
       target="_blank"
       rel="noopener"
       text
@@ -88,7 +88,7 @@
 
 <script>
 import { loggedIn } from '@/rest';
-import { dandiUrl } from '@/utils';
+import { dandiUrl, dandiAboutUrl } from '@/utils';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
 export default {
@@ -99,6 +99,7 @@ export default {
   data() {
     return {
       dandiUrl,
+      dandiAboutUrl,
     };
   },
   computed: {
