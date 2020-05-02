@@ -63,6 +63,7 @@ function getDandisetContact(dandiset) {
 
 export {
   dandiUrl,
+  dandiAboutUrl,
   getLocationFromRoute,
   getPathFromLocation,
   getSelectedFromRoute,
