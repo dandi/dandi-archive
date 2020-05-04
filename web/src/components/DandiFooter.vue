@@ -1,11 +1,10 @@
 <script>
-import { copyToClipboard, dandiUrl, dandiAboutUrl } from '@/utils';
+import { copyToClipboard, dandiAboutUrl } from '@/utils';
 
 export default {
   name: 'DandiFooter',
   data: () => ({
     copied: false,
-    dandiUrl,
     dandiAboutUrl,
   }),
   computed: {

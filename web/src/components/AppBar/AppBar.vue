@@ -88,7 +88,7 @@
 
 <script>
 import { loggedIn } from '@/rest';
-import { dandiUrl, dandiAboutUrl } from '@/utils';
+import { dandiAboutUrl } from '@/utils';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
 export default {
@@ -98,7 +98,6 @@ export default {
   },
   data() {
     return {
-      dandiUrl,
       dandiAboutUrl,
     };
   },
