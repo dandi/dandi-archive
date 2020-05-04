@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "lint": "eslint .",
     "test": "jest --runInBand",
     "test-debug": "DEBUG=true jest --runInBand"
   },
