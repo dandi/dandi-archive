@@ -8,10 +8,9 @@ import {
   vIcon,
 } from '../vuetify-xpaths';
 
-
 describe('account', () => {
   const username = `user${uniqueId()}`;
-  const email = `${username}@kitware.com`;
+  const email = `${username}@dandi.test`;
   const password = 'password'; // Top secret
 
   beforeAll(async () => {

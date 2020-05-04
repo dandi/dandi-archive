@@ -18,7 +18,7 @@ export function uniqueId() {
  */
 export async function registerNewUser() {
   const username = `user${uniqueId()}`;
-  const email = `${username}@kitware.com`;
+  const email = `${username}@dandi.test`;
   const password = 'password'; // Top secret
 
   await (await page.waitForXPath(vBtn('Create Account'))).click();
