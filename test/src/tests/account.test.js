@@ -9,18 +9,20 @@ import {
 } from '../vuetify-xpaths';
 
 
-beforeAll(async () => {
-  // Set the default action timeout to something greater than 500ms
-  expectPuppeteer.setDefaultOptions({ timeout: 10000 });
-  await page.goto(CLIENT_URL);
-});
-
 describe('account', () => {
   const username = `user${uniqueId()}`;
   const email = `${username}@kitware.com`;
   const password = 'password'; // Top secret
 
+  beforeAll(async () => {
+    // Set the default action timeout to something greater than 500ms
+    expectPuppeteer.setDefaultOptions({ timeout: 10000 });
+    await page.goto(CLIENT_URL);
+  });
+
   it('register', async () => {
+    expect.assertions(9);
+
     await expect(page).toClickXPath(vBtn('Create Account'));
 
     await expect(page).toFillXPath(vTextField('Username'), username);
@@ -37,6 +39,8 @@ describe('account', () => {
   });
 
   it('logout', async () => {
+    expect.assertions(3);
+
     await expect(page).toClickXPath(vAvatar('MR'));
     await page.waitFor(500);
     await expect(page).toClickXPath(vListItem('Logout', vIcon('mdi-logout')));
@@ -46,6 +50,8 @@ describe('account', () => {
   });
 
   it('login', async () => {
+    expect.assertions(5);
+
     await expect(page).toClickXPath(vBtn('Login'));
 
     await expect(page).toFillXPath(vTextField('Username or e-mail'), username);

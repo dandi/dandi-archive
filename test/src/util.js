@@ -1,3 +1,9 @@
+import {
+  vBtn,
+  vTextField,
+  vIcon,
+} from './vuetify-xpaths';
+
 export const { CLIENT_URL } = process.env;
 
 export function uniqueId() {
