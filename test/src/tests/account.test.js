@@ -1,4 +1,3 @@
-import expectPuppeteer from 'expect-puppeteer';
 import { CLIENT_URL, uniqueId } from '../util';
 import {
   vAvatar,
@@ -14,8 +13,6 @@ describe('account', () => {
   const password = 'password'; // Top secret
 
   beforeAll(async () => {
-    // Set the default action timeout to something greater than 500ms
-    expectPuppeteer.setDefaultOptions({ timeout: 10000 });
     await page.goto(CLIENT_URL);
   });
 
