@@ -31,10 +31,50 @@ jobs:
           name: Lint web app
           command: yarn run lint
           working_directory: web
+
+  test-end-to-end:
+    docker:
+      - image: circleci/python:3.6-node-browsers
+      - image: circleci/mongo:4.2
+        command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
+    steps:
+      - checkout
       - run:
-          name: Build web app
-          command: yarn run build
+          name: Create a virtualenv for installation
+          command: |
+            python3 -m venv install_env
+            . install_env/bin/activate
+      - run:
+          name: Upgrade pip
+          command: pip install -U pip
+      - run:
+          name: Install girder-dandi-archive
+          command: pip install .
+          working_directory: girder-dandi-archive
+      - run:
+          name: Run girder-dandi-archive in the background
+          command: girder serve
+          working_directory: girder-dandi-archive
+          background: true
+      - run:
+          name: Install web app
+          command: yarn install --frozen-lockfile
           working_directory: web
+      - run:
+          name: Run web app
+          command: yarn serve
+          working_directory: web
+          background: true
+      - run:
+          name: Install tests
+          command: yarn install --frozen-lockfile
+          working_directory: test
+      - run:
+          name: Run tests
+          command: yarn run test
+          working_directory: test
+          environment:
+            CLIENT_URL: http://localhost:8085
 
   provision:
     docker:
@@ -74,10 +114,13 @@ workflows:
     jobs:
       - test-server
       - test-gui
-      - provision:
+      - test-end-to-end:
           requires:
             - test-server
             - test-gui
+      - provision:
+          requires:
+            - test-end-to-end
           filters:
             branches:
               only: master
