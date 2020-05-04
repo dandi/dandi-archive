@@ -5,4 +5,4 @@ module.exports = {
   },
   // we don't want the browser to retain any session tokens after reset
   browserContext: 'incognito',
-}
+};

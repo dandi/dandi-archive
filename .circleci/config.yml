@@ -123,4 +123,4 @@ workflows:
             - test-end-to-end
           filters:
             branches:
-              only: refactor
+              only: master

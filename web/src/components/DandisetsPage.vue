@@ -33,12 +33,31 @@
           </v-icon>
         </v-chip>
       </v-chip-group>
-      <DandisetSearchField />
+      <DandisetSearchField class="flex-grow-1" />
     </v-toolbar>
     <DandisetList
+      v-if="dandisets && dandisets.length"
       class="mx-12 my-12"
       :dandisets="dandisets"
     />
+    <v-container v-else>
+      <v-row
+        class="text-center ma-12 grey--text"
+        align="center"
+        justify="center"
+      >
+        <v-col>
+          <v-progress-circular
+            v-if="!dandisets"
+            indeterminate
+          />
+          <slot
+            v-else
+            name="no-content"
+          />
+        </v-col>
+      </v-row>
+    </v-container>
     <v-pagination
       v-model="page"
       :length="pages"
@@ -117,7 +136,7 @@ export default {
       return { page, sortOption, sortDir };
     },
     dandisets() {
-      return this.dandisetRequest ? this.dandisetRequest.data : [];
+      return this.dandisetRequest ? this.dandisetRequest.data : undefined;
     },
     totalDandisets() {
       return this.dandisetRequest ? this.dandisetRequest.headers['girder-total-count'] : 0;

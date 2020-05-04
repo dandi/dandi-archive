@@ -1,4 +1,4 @@
-export const CLIENT_URL = process.env.CLIENT_URL;
+export const { CLIENT_URL } = process.env;
 
 export function uniqueId() {
   // TODO think of something cleaner
@@ -41,4 +41,4 @@ export async function login(username, password) {
   await (await page.waitForXPath(vTextField('Password'))).type(password);
   // this button has the same text as the button in the app bar, but also contains a mdi-login icon
   await (await page.waitForXPath(vBtn(['Login', vIcon('mdi-login')]))).click();
-};
+}

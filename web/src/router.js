@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Router from 'vue-router';
+import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
 
 import HomeView from '@/views/HomeView/HomeView.vue';
 import UserLoginView from '@/views/UserLoginView/UserLoginView.vue';
@@ -18,6 +19,11 @@ export default new Router({
       path: '/',
       name: 'home',
       component: HomeView,
+    },
+    {
+      path: '/file-browser/:_modelType?/:_id?',
+      name: 'file-browser',
+      component: FileBrowser,
     },
     {
       path: '/user/login',

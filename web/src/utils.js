@@ -1,4 +1,5 @@
 const dandiUrl = 'https://dandiarchive.org';
+const dandiAboutUrl = 'https://dandiarchive.org/about';
 
 function getLocationFromRoute(route) {
   const { _modelType, _id } = route.params;
@@ -62,6 +63,7 @@ function getDandisetContact(dandiset) {
 
 export {
   dandiUrl,
+  dandiAboutUrl,
   getLocationFromRoute,
   getPathFromLocation,
   getSelectedFromRoute,

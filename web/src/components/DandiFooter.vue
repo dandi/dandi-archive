@@ -1,11 +1,11 @@
 <script>
-import { copyToClipboard, dandiUrl } from '@/utils';
+import { copyToClipboard, dandiAboutUrl } from '@/utils';
 
 export default {
   name: 'DandiFooter',
   data: () => ({
     copied: false,
-    dandiUrl,
+    dandiAboutUrl,
   }),
   computed: {
     version() {
@@ -59,7 +59,7 @@ export default {
           Support:<br>
           - <a
             target="_blank"
-            :href="dandiUrl"
+            :href="dandiAboutUrl"
           >Dandi Project Homepage</a><br>
           - <a
             target="_blank"
