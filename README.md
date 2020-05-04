@@ -1,9 +1,6 @@
 # dandiarchive [![CircleCI](https://circleci.com/gh/dandi/dandiarchive/tree/master.svg?style=svg)](https://circleci.com/gh/dandi/dandiarchive/tree/master)
 Infrastructure and code for the DANDI Archive.
 
-| A [beta preview of the updated web app](https://refactor--gui-dandiarchive-org.netlify.com/) is online! |
-| -- |
-
 Folders in this repo:
 
 - `girder-dandi-archive`: A Girder plugin which adds the custom endpoints for the DANDI Archive.
