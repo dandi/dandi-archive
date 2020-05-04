@@ -3,17 +3,27 @@ import 'expect-puppeteer';
 // Some extensions to the Jest expect API to better support XPaths
 expect.extend({
   async toContainXPath(page, xpath) {
-    return page.waitForXPath(xpath)
-      .then(() => ({ pass: true }));
+    try {
+      await page.waitForXPath(xpath);
+      return { pass: true }
+    } catch {
+      return { pass: false, message: () => `XPath not found: ${xpath}` }
+    }
   },
   async toClickXPath(page, xpath) {
-    return (await page.waitForXPath(xpath))
-      .click()
-      .then(() => ({ pass: true }));
+    try {
+      await (await page.waitForXPath(xpath)).click();
+      return { pass: true }
+    } catch {
+      return { pass: false, message: () => `XPath not found: ${xpath}` }
+    }
   },
   async toFillXPath(page, xpath, text) {
-    return (await page.waitForXPath(xpath))
-      .type(text)
-      .then(() => ({ pass: true }));
+    try {
+      await (await page.waitForXPath(xpath)).type(text);
+      return { pass: true }
+    } catch {
+      return { pass: false, message: () => `XPath not found: ${xpath}` }
+    }
   },
 });
