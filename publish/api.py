@@ -9,23 +9,25 @@ from .serializers import DandisetSerializer, DandisetPublishSerializer, NWBFileS
 from .tasks import publish_dandiset
 
 
-class DandisetPagination(PageNumberPagination):
-    page_size = 25
-    max_page_size = 100
-    page_size_query_param = 'page_size'
-
-
-class DandisetViewSet(viewsets.ModelViewSet):
-    queryset = Dandiset.objects.all().order_by('id')
-    serializer_class = DandisetSerializer
-    pagination_class = DandisetPagination
-
+class PermissionMixin:
     def get_permissions(self):
         if self.action in ['retrieve', 'list']:
             permission_classes = []
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+
+
+class DandisetPagination(PageNumberPagination):
+    page_size = 25
+    max_page_size = 100
+    page_size_query_param = 'page_size'
+
+
+class DandisetViewSet(PermissionMixin, viewsets.ModelViewSet):
+    queryset = Dandiset.objects.all().order_by('id')
+    serializer_class = DandisetSerializer
+    pagination_class = DandisetPagination
 
     @action(detail=False, methods=['POST'])
     def publish(self, request, *args, **kwargs):
@@ -35,27 +37,13 @@ class DandisetViewSet(viewsets.ModelViewSet):
         return Response(publish_dandiset.delay(**data).id)
 
 
-class SubjectViewSet(viewsets.ModelViewSet):
+class SubjectViewSet(PermissionMixin, viewsets.ModelViewSet):
     queryset = Subject.objects.all().order_by('id')
     serializer_class = SubjectSerializer
     pagination_class = DandisetPagination
 
-    def get_permissions(self):
-        if self.action in ['retrieve', 'list']:
-            permission_classes = []
-        else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
 
-
-class NWBFileViewSet(viewsets.ModelViewSet):
+class NWBFileViewSet(PermissionMixin, viewsets.ModelViewSet):
     queryset = NWBFile.objects.all().order_by('id')
     serializer_class = NWBFileSerializer
     pagination_class = DandisetPagination
-
-    def get_permissions(self):
-        if self.action in ['retrieve', 'list']:
-            permission_classes = []
-        else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
