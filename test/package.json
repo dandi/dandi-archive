@@ -18,7 +18,8 @@
     "babel-eslint": "^10.0.1",
     "eslint": "6.8.0",
     "eslint-config-airbnb-base": "14.1.0",
-    "eslint-plugin-import": "^2.20.1"
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-jest": "^23.9.0"
   },
   "eslintConfig": {
     "root": true,
@@ -26,9 +27,18 @@
       "node": true
     },
     "extends": [
-      "airbnb-base"
+      "airbnb-base",
+      "plugin:jest/all"
     ],
-    "rules": {},
+    "rules": {
+      "jest/no-hooks": "off"
+    },
+    "globals": {
+      "page": true,
+      "browser": true,
+      "context": true,
+      "jestPuppeteer": true
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }
