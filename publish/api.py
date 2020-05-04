@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Dandiset, NWBFile, Subject
@@ -19,6 +20,13 @@ class DandisetViewSet(viewsets.ModelViewSet):
     serializer_class = DandisetSerializer
     pagination_class = DandisetPagination
 
+    def get_permissions(self):
+        if self.action in ['retrieve', 'list']:
+            permission_classes = []
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
     @action(detail=False, methods=['POST'])
     def publish(self, request, *args, **kwargs):
         serializer = DandisetPublishSerializer(data=request.data)
@@ -32,8 +40,22 @@ class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
     pagination_class = DandisetPagination
 
+    def get_permissions(self):
+        if self.action in ['retrieve', 'list']:
+            permission_classes = []
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
 
 class NWBFileViewSet(viewsets.ModelViewSet):
     queryset = NWBFile.objects.all().order_by('id')
     serializer_class = NWBFileSerializer
     pagination_class = DandisetPagination
+
+    def get_permissions(self):
+        if self.action in ['retrieve', 'list']:
+            permission_classes = []
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
