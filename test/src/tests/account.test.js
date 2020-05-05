@@ -1,4 +1,3 @@
-import expectPuppeteer from 'expect-puppeteer';
 import { CLIENT_URL, uniqueId } from '../util';
 import {
   vAvatar,
@@ -8,17 +7,14 @@ import {
   vIcon,
 } from '../vuetify-xpaths';
 
-
-beforeAll(async () => {
-  // Set the default action timeout to something greater than 500ms
-  expectPuppeteer.setDefaultOptions({ timeout: 10000 });
-  await page.goto(CLIENT_URL);
-});
-
 describe('account', () => {
   const username = `user${uniqueId()}`;
-  const email = `${username}@kitware.com`;
+  const email = `${username}@dandi.test`;
   const password = 'password'; // Top secret
+
+  beforeAll(async () => {
+    await page.goto(CLIENT_URL);
+  });
 
   it('register', async () => {
     await expect(page).toClickXPath(vBtn('Create Account'));

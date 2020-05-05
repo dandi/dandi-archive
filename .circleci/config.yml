@@ -24,15 +24,23 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install web app dependencies
+          name: Install web app
           command: yarn install --frozen-lockfile
           working_directory: web
       - run:
           name: Lint web app
           command: yarn run lint
           working_directory: web
+      - run:
+          name: Install E2E tests
+          command: yarn install --frozen-lockfile
+          working_directory: test
+      - run:
+          name: Lint E2E tests
+          command: yarn run lint
+          working_directory: test
 
-  test-end-to-end:
+  test-e2e:
     docker:
       - image: circleci/python:3.6-node-browsers
       - image: circleci/mongo:4.2
@@ -66,11 +74,11 @@ jobs:
           working_directory: web
           background: true
       - run:
-          name: Install tests
+          name: Install E2E tests
           command: yarn install --frozen-lockfile
           working_directory: test
       - run:
-          name: Run tests
+          name: Run E2E tests
           command: yarn run test
           working_directory: test
           environment:
@@ -114,13 +122,13 @@ workflows:
     jobs:
       - test-server
       - test-gui
-      - test-end-to-end:
+      - test-e2e:
           requires:
             - test-server
             - test-gui
       - provision:
           requires:
-            - test-end-to-end
+            - test-e2e
           filters:
             branches:
               only: master

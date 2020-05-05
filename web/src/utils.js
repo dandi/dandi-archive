@@ -41,7 +41,7 @@ function copyToClipboard(text) {
     textarea.select();
     try {
       return document.execCommand('copy'); // Security exception may be thrown by some browsers.
-    } catch (ex) {
+    } catch (e) {
       return false;
     } finally {
       document.body.removeChild(textarea);
