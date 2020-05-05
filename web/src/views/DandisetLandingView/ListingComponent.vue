@@ -5,10 +5,10 @@
         <v-expansion-panels>
           <v-expansion-panel
             v-for="item in data"
-            :key="item[schema.items.listingKey]"
+            :key="item[primaryKey]"
           >
             <!-- item is an object -->
-            <v-expansion-panel-header>{{ item[schema.items.listingKey] }}</v-expansion-panel-header>
+            <v-expansion-panel-header>{{ item[primaryKey] }}</v-expansion-panel-header>
             <v-expansion-panel-content>
               <v-list>
                 <v-list-item
@@ -63,6 +63,20 @@ export default {
       // The data at the matching level of schema
       type: [Object, Number, String, Array],
       required: true,
+    },
+  },
+  computed: {
+    primaryKey() {
+      switch (this.schema.title) {
+        case 'Access':
+          return 'status';
+        case 'Publications':
+          return 'url';
+        case 'Organism':
+          return 'species';
+        default:
+          return 'name';
+      }
     },
   },
 };
