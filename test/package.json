@@ -32,7 +32,8 @@
       "plugin:jest/all"
     ],
     "rules": {
-      "jest/no-hooks": "off"
+      "jest/no-hooks": "off",
+      "jest/prefer-expect-assertions": "off"
     },
     "globals": {
       "page": true,

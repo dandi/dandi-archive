@@ -17,8 +17,6 @@ describe('account', () => {
   });
 
   it('register', async () => {
-    expect.assertions(9);
-
     await expect(page).toClickXPath(vBtn('Create Account'));
 
     await expect(page).toFillXPath(vTextField('Username'), username);
@@ -35,8 +33,6 @@ describe('account', () => {
   });
 
   it('logout', async () => {
-    expect.assertions(3);
-
     await expect(page).toClickXPath(vAvatar('MR'));
     await page.waitFor(500);
     await expect(page).toClickXPath(vListItem('Logout', vIcon('mdi-logout')));
@@ -46,8 +42,6 @@ describe('account', () => {
   });
 
   it('login', async () => {
-    expect.assertions(5);
-
     await expect(page).toClickXPath(vBtn('Login'));
 
     await expect(page).toFillXPath(vTextField('Username or e-mail'), username);
