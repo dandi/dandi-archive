@@ -116,32 +116,29 @@
                 </template>
                 <template v-if="meta.contributors">
                   <v-subheader>Contributors</v-subheader>
-                  <v-list-item
-                    v-for="item in meta.contributors"
-                    :key="item.orcid || `${item.name}-${item.roles}`"
-                    selectable
-                  >
-                    <v-list-item-content>{{ item }}</v-list-item-content>
+                  <v-list-item>
+                    <ListingComponent
+                      :data="meta.contributors"
+                      :schema="schema.properties.contributors"
+                    />
                   </v-list-item>
                 </template>
+
+                <!-- END OF HARD CODED FIELDS -->
+
                 <template v-for="(item, k) in extraFields">
                   <v-subheader :key="k">
-                    {{ k }}
+                    {{ schema.properties[k].title }}
                   </v-subheader>
                   <v-list-item
                     :key="`${k}-item`"
                     selectable
                   >
                     <v-list-item-content>
-                      <template v-if="['object', 'array'].includes(schema.properties[k].type)">
-                        <vue-json-pretty
-                          :data="item"
-                          highlight-mouseover-node
-                        />
-                      </template>
-                      <template v-else>
-                        {{ item }}
-                      </template>
+                      <ListingComponent
+                        :schema="schema.properties[k]"
+                        :data="item"
+                      />
                     </v-list-item-content>
                   </v-list-item>
                 </template>
@@ -157,9 +154,9 @@
 <script>
 import filesize from 'filesize';
 import { mapState } from 'vuex';
-import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
+import ListingComponent from '@/views/DandisetLandingView/ListingComponent.vue';
 import { dandiUrl } from '@/utils';
 import girderRest, { loggedIn } from '@/rest';
 
@@ -171,7 +168,7 @@ export default {
   name: 'DandisetLandingView',
   components: {
     MetaEditor,
-    VueJsonPretty,
+    ListingComponent,
   },
   props: {
     id: {
