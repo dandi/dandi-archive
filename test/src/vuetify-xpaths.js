@@ -41,28 +41,56 @@ function classAsPredicate(...classes) {
       return cssClass.map((c) => classAsPredicate(c)).join('');
     }
     if (typeof cssClass === 'string') {
-      return `[contains(@class, "${cssClass}")]`;
+      return `[contains(concat(" ",@class," "), " ${cssClass} ")]`;
     }
     return '';
   }).join('');
 }
 
-export function vAvatar(contents, cssClass = undefined) {
+export function vAvatar(contents, { cssClass } = {}) {
   return `//div${classAsPredicate('v-avatar', cssClass)}[span${contentsAsPredicate(contents)}]`;
 }
 
-export function vBtn(contents, cssClass = undefined) {
+export function vBtn(contents, { cssClass } = {}) {
   return `//*${classAsPredicate('v-btn', cssClass)}[span${contentsAsPredicate(contents)}]`;
 }
 
-export function vIcon(icon, cssClass = undefined) {
-  return `//i${classAsPredicate('v-icon', icon, cssClass)}`;
+export function vCard(contents, { cssClass, title, actions } = {}) {
+  const titlePredicate = (title) ? `[div[@class='v-card__title']${contentsAsPredicate(title)}]` : '';
+  const actionsPredicate = (actions) ? `[div[@class='v-card__actions']${contentsAsPredicate(actions)}]` : '';
+  return `//div${classAsPredicate('v-card', cssClass)}${titlePredicate}${actionsPredicate}${contentsAsPredicate(contents)}`;
 }
 
-export function vListItem(contents, action = undefined) {
-  return `//div${classAsPredicate('v-list-item')}[div[@class='v-list-item__content']${contentsAsPredicate(contents)}][div[@class='v-list-item__action']${contentsAsPredicate(action)}]`;
+export function vChip(contents, { cssClass } = {}) {
+  return `//*${classAsPredicate('v-chip', cssClass)}[*[@class='v-chip__content']${contentsAsPredicate(contents)}]`;
 }
 
-export function vTextField(label, cssClass = undefined) {
-  return `//div${classAsPredicate('v-text-field', cssClass)}//div[label[contains(text(),"${label}")]]/input`;
+export function vIcon(icon, { cssClass } = {}) {
+  return `//*${classAsPredicate('v-icon', icon, cssClass)}`;
+}
+
+export function vListItem(contents, { action, title, subtitle } = {}) {
+  const contentsPredicate = (contents) ? `[.//div[@class='v-list-item__content']${contentsAsPredicate(contents)}]` : '';
+  const actionPredicate = (action) ? `[.//div[@class='v-list-item__action']${contentsAsPredicate(action)}]` : '';
+  const titlePredicate = (title) ? `[.//div[@class='v-list-item__title']${contentsAsPredicate(title)}]` : '';
+  const subtitlePredicate = (subtitle) ? `[//div[@class='v-list-item__subtitle']${contentsAsPredicate(subtitle)}]` : '';
+  return `//*${classAsPredicate('v-list-item')}${contentsPredicate}${actionPredicate}${titlePredicate}${subtitlePredicate}`;
+}
+
+export function vListItemTitle(contents, { cssClass } = {}) {
+  return `//div${classAsPredicate('v-list-item__title', cssClass)}${contentsAsPredicate(contents)}`;
+}
+
+export function vTextarea(label, { cssClass } = {}) {
+  return `//div${classAsPredicate('v-textarea', cssClass)}//div[label[contains(text(),"${label}")]]//textarea`;
+}
+
+
+export function vTextField(label, { cssClass } = {}) {
+  const labelPredicate = (label) ? `[.//div[label[contains(text(),"${label}")]]]` : '';
+  return `//div${classAsPredicate('v-text-field', cssClass)}${labelPredicate}//input`;
+}
+
+export function vToolbar(contents, { cssClass } = {}) {
+  return `//*${classAsPredicate('v-toolbar', cssClass)}[*[@class='v-toolbar__content']${contentsAsPredicate(contents)}]`;
 }
