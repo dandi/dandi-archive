@@ -26,6 +26,15 @@
           </v-expansion-panel>
         </v-expansion-panels>
       </template>
+      <template v-else-if="schema.items.type === 'array'">
+        <!-- May not work. Not tested in a real scenario. -->
+        <ListingComponent
+          v-for="item in data"
+          :key="item"
+          :schema="schema.items"
+          :data="item"
+        />
+      </template>
       <template v-else>
         <b>{{ schema.title }}</b>: {{ data.join(', ') }}
       </template>
