@@ -296,7 +296,7 @@
       "title": "Ethics Approvals",
       "items": {
         "$id": "#/properties/ethicsApprovals/items",
-        "type": "array",
+        "type": "object",
         "title": "Items",
         "required": [
           "name",
