@@ -29,7 +29,7 @@ export default {
       immediate: true,
       handler(val) {
         if (val) {
-          this.$router.push(this.returnTo);
+          this.$router.replace(this.returnTo);
         }
       },
     },
