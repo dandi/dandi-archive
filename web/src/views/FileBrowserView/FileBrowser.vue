@@ -3,6 +3,7 @@
     <v-row v-if="selected">
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
+          ref="girderFileManager"
           selectable
           root-location-disabled
           :location.sync="location"
@@ -32,6 +33,7 @@
         <girder-data-details
           :value="selected"
           :action-keys="actions"
+          @action="handleAction"
         />
       </v-col>
     </v-row>
@@ -138,6 +140,12 @@ export default {
     this.fetchFullLocation(location);
   },
   methods: {
+    async handleAction(action) {
+      if (action.name === 'Delete') {
+        await this.$refs.girderFileManager.refresh();
+        this.setSelected([]);
+      }
+    },
     ...mapMutations('girder', ['setBrowseLocation', 'setSelected']),
     ...mapActions('girder', ['fetchFullLocation']),
   },
