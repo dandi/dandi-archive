@@ -19,11 +19,15 @@ export default {
   },
   computed: {
     loggedIn,
+    returnTo() {
+      const { returnTo } = this.$route.query;
+      return returnTo ? JSON.parse(returnTo) : { name: 'home' };
+    },
   },
   watch: {
     loggedIn(val) {
       if (val) {
-        this.$router.push({ name: 'home' });
+        this.$router.push(this.returnTo);
       }
     },
   },
