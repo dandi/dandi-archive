@@ -114,7 +114,8 @@ class DandiResource(Resource):
     def search_dandisets(self, search, limit, offset, sort):
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
-        # TODO Currently only searching identifier, name, and description of public dandisets
+        # TODO Currently only searching identifier, name, description, and contributor name
+        # of public dandisets
         if not search:
             # Empty search string should return all possible results
             return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
@@ -134,6 +135,11 @@ class DandiResource(Resource):
                     },
                     {
                         "meta.dandiset.description": {
+                            "$regex": re.compile(re.escape(search), re.IGNORECASE)
+                        }
+                    },
+                    {
+                        "meta.dandiset.contributors.name": {
                             "$regex": re.compile(re.escape(search), re.IGNORECASE)
                         }
                     },
