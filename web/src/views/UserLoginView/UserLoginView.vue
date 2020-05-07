@@ -25,10 +25,13 @@ export default {
     },
   },
   watch: {
-    loggedIn(val) {
-      if (val) {
-        this.$router.push(this.returnTo);
-      }
+    loggedIn: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.$router.push(this.returnTo);
+        }
+      },
     },
   },
 };
