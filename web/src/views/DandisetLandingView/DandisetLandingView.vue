@@ -200,9 +200,8 @@ export default {
     };
   },
   computed: {
-    loggedIn,
     editDisabledMessage() {
-      if (!this.loggedIn) {
+      if (!loggedIn) {
         return 'You must be logged in to edit.';
       }
 
