@@ -61,7 +61,8 @@
         {
           "allow": [
             "_id",
-            "_modelType"
+            "_modelType",
+            "_accessLevel"
           ]
         }
       ]

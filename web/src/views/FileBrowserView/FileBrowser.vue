@@ -3,6 +3,7 @@
     <v-row v-if="selected">
       <v-col :cols="selected.length ? 8 : 12">
         <girder-file-manager
+          ref="girderFileManager"
           selectable
           root-location-disabled
           :location.sync="location"
@@ -32,6 +33,7 @@
         <girder-data-details
           :value="selected"
           :action-keys="actions"
+          @action="handleAction"
         />
       </v-col>
     </v-row>
@@ -78,7 +80,12 @@ export default {
       return !!(this.location && this.location.meta && this.location.meta.dandiset);
     },
     actions() {
-      let actions = actionKeys;
+      const actions = [...actionKeys];
+      const canDelete = (resource) => (
+        (resource._modelType === 'folder' && resource._accessLevel === 2)
+        || (resource._modelType === 'item' && this.location._accessLevel === 2)
+      );
+
       if (
         this.selected.length === 1
         && this.selected[0].meta
@@ -86,22 +93,23 @@ export default {
       ) {
         const id = this.selected[0]._id;
 
-        actions = [
-          {
-            for: ['folder'],
-            name: 'View DANDI Metadata',
-            icon: 'mdi-pencil',
-            color: 'primary',
-            handler() {
-              // eslint-disable-next-line
+        actions.push({
+          for: ['folder'],
+          name: 'View DANDI Metadata',
+          icon: 'mdi-pencil',
+          color: 'primary',
+          handler() {
+            // eslint-disable-next-line
               this.$router.push({
-                name: 'dandiset-metadata-viewer',
-                params: { id },
-              });
-            },
+              name: 'dandiset-metadata-viewer',
+              params: { id },
+            });
           },
-          ...actionKeys,
-        ];
+        });
+      }
+
+      if (this.selected.every((item) => canDelete(item))) {
+        actions.push(DefaultActionKeys[3]);
       }
 
       return actions;
@@ -132,6 +140,12 @@ export default {
     this.fetchFullLocation(location);
   },
   methods: {
+    async handleAction(action) {
+      if (action.name === 'Delete') {
+        await this.$refs.girderFileManager.refresh();
+        this.setSelected([]);
+      }
+    },
     ...mapMutations('girder', ['setBrowseLocation', 'setSelected']),
     ...mapActions('girder', ['fetchFullLocation']),
   },

@@ -63,20 +63,20 @@
                 </v-btn>
                 <v-tooltip
                   right
-                  :disabled="loggedIn"
+                  :disabled="editDisabledMessage === null"
                 >
                   <template v-slot:activator="{ on }">
                     <div v-on="on">
                       <v-btn
                         icon
-                        :disabled="!loggedIn"
+                        :disabled="editDisabledMessage !== null"
                         @click="edit = true"
                       >
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
                     </div>
                   </template>
-                  You must be logged in to edit.
+                  {{ editDisabledMessage }}
                 </v-tooltip>
                 <v-btn
                   :to="{ name: 'file-browser', params: { _id: id, _modelType: 'folder' }}"
@@ -200,7 +200,17 @@ export default {
     };
   },
   computed: {
-    loggedIn,
+    editDisabledMessage() {
+      if (!loggedIn) {
+        return 'You must be logged in to edit.';
+      }
+
+      if (this.selected._accessLevel < 1) {
+        return 'You do not have permission to edit this dandiset.';
+      }
+
+      return null;
+    },
     schema() {
       if (this.create) {
         return NEW_SCHEMA;
