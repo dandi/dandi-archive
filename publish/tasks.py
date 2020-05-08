@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from hashlib import sha256
 from json import JSONDecodeError
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 from typing import Any, cast, Dict, List, Optional, TYPE_CHECKING
+import subprocess
 
 import boto3  # type: ignore
 from botocore.exceptions import ClientError  # type: ignore
@@ -39,11 +40,13 @@ class DandiClient(Client):
 
 def _get_json(response: Response) -> Any:
     if response.status_code != 200:
-        raise DandiSetLoadError(f'Girder returned status code {response.status_code}')
+        raise DandiSetLoadError(
+            f'Girder returned status code {response.status_code}')
     try:
         return response.json()
     except JSONDecodeError:
-        raise DandiSetLoadError(f'Girder returned non-json response: {repr(response.content)}')
+        raise DandiSetLoadError(
+            f'Girder returned non-json response: {repr(response.content)}')
 
 
 @dataclass
@@ -56,7 +59,7 @@ class DandiFile:
 
     def publish(self, subject: models.Subject, s3: 'S3Client', prefix: str):
         nwb_key = f'{prefix}/{self.name}'
-        with TemporaryFile('r+b') as nwb, stream('GET', self.url) as response:
+        with NamedTemporaryFile('r+b') as nwb, stream('GET', self.url) as response:
             logger.info(f'Downloading {self.name}...')
             response.raise_for_status()
             hash = sha256()
@@ -68,6 +71,9 @@ class DandiFile:
                     i += 1
                     hash.update(chunk)
                     nwb.write(chunk)
+
+            r = subprocess.call(["dandi", "validate", nwb.name])
+            print("Called dandi validate:", r)
 
             logger.info(f'Uploading {self.name}...')
             nwb.seek(0)
@@ -94,12 +100,14 @@ class DandiSubject:
 
     @classmethod
     def load(cls, client: Client, girder_id: str, name: str) -> 'DandiSubject':
-        items = _get_json(client.get(f'item', params={'folderId': str(girder_id), 'limit': 0}))
+        items = _get_json(client.get(
+            f'item', params={'folderId': str(girder_id), 'limit': 0}))
         files = []
         for item in items:
             file_list = _get_json(client.get(f'item/{item["_id"]}/files'))
             if len(file_list) != 1:
-                raise DandiSetLoadError(f'Expected exactly one file per item not {len(file_list)}')
+                raise DandiSetLoadError(
+                    f'Expected exactly one file per item not {len(file_list)}')
             f = file_list[0]
             files.append(
                 DandiFile(
@@ -135,7 +143,8 @@ class DandiSet:
                 f'folder', params={'parentId': str(girder_id), 'parentType': 'folder', 'limit': 0}
             )
         )
-        subjects = [DandiSubject.load(client, f['_id'], f['name']) for f in subject_folders]
+        subjects = [DandiSubject.load(client, f['_id'], f['name'])
+                    for f in subject_folders]
 
         return cls(
             girder_id=girder_id,
@@ -151,7 +160,8 @@ class DandiSet:
         version = 1
         while True:
             try:
-                s3.get_object(Bucket=S3_BUCKET, Key=f'{self.s3_path(version)}/dandiset.yaml')
+                s3.get_object(Bucket=S3_BUCKET,
+                              Key=f'{self.s3_path(version)}/dandiset.yaml')
             except ClientError as e:
                 if e.response['Error']['Code'] == 'NoSuchKey':
                     return version
@@ -174,7 +184,7 @@ class DandiSet:
         s3.put_object(
             Bucket=S3_BUCKET,
             Key=f'{prefix}/dandiset.yaml',
-            Body=dump(self.metadata).encode(),
+            Body=dump(self.metadata['dandiset']).encode(),
             ACL='public-read',
         )
         return f's3://{S3_BUCKET}/{prefix}'
