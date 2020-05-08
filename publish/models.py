@@ -18,7 +18,8 @@ class Subject(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    dandiset = models.ForeignKey(Dandiset, on_delete=models.CASCADE)
+    dandiset = models.ForeignKey(
+        Dandiset, related_name='subjects', on_delete=models.CASCADE)
     name = models.CharField(max_length=512)
     metadata = JSONField(default=dict)
 
@@ -27,7 +28,8 @@ class NWBFile(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    subject = models.ForeignKey(
+        Subject, related_name='nwb_files', on_delete=models.CASCADE)
     name = models.CharField(max_length=512)
     size = models.BigIntegerField()
     sha256 = models.CharField(max_length=64)
