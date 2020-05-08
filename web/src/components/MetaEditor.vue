@@ -220,10 +220,12 @@ export default {
           this.setCurrentDandiset(data);
           this.closeEditor();
         }
-      } catch ({ response: { status } }) {
-        if (status === 403) {
+      } catch (error) {
+        if (error.response.status === 403) {
           this.invalidPermissionSnackbar = true;
         }
+
+        throw error;
       }
     },
     publish() {
