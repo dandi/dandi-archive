@@ -3,9 +3,11 @@ Infrastructure and code for the DANDI Archive.
 
 Folders in this repo:
 
-- `girder-dandi-archive`: A Girder plugin which adds the custom endpoints for the DANDI Archive.
-- `web`: The web application front-end, based on Vue.js.
 - `ansible`: Ansible code for deploying `girder-dandi-archive`.
+- `docker`: Docker files for building and deploying the application in Docker.
+- `girder-dandi-archive`: A Girder plugin which adds the custom endpoints for the DANDI Archive.
+- `test`: End-to-end tests for the entire application.
+- `web`: The web application front-end, based on Vue.js.
 
 ## Developing Locally
 
@@ -71,6 +73,9 @@ The web app will be served at `http://localhost:8085/`.
 # within "web"
 yarn run lint
 ```
+
+#### End-to-End Testing
+See `test/README.md` for end-to-end testing instructions.
 
 ## Docker
 
