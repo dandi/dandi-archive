@@ -1,6 +1,6 @@
 # End-to-End Tests
 
-The end-to-end tests use Puppeteer and Jest to connect to a running instance of the application and use it through a browser like a normal user would.
+The end-to-end tests use [Puppeteer](https://github.com/puppeteer/puppeteer/) and [Jest](https://jestjs.io/en/) to connect to a running instance of the application and use it through a browser like a normal user would.
 
 ## Installation
 ```bash
@@ -32,7 +32,7 @@ You can also include `await jestPuppeteer.debug();` at any point in the test to 
 
 ## Writing Tests
 
-### BDD
+### Behavior Driven Development (BDD)
 Jest encourages BDD testing syntax.
 All tests should be formatted roughly like this:
 ```javascript
