@@ -155,14 +155,15 @@
 import filesize from 'filesize';
 import { mapState } from 'vuex';
 
-import MetaEditor from '@/components/MetaEditor.vue';
-import ListingComponent from '@/views/DandisetLandingView/ListingComponent.vue';
 import { dandiUrl } from '@/utils';
 import girderRest, { loggedIn } from '@/rest';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
+
+import ListingComponent from './ListingComponent.vue';
+import MetaEditor from './MetaEditor.vue';
 
 export default {
   name: 'DandisetLandingView',
