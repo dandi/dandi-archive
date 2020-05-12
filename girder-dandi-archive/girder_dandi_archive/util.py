@@ -1,6 +1,6 @@
 import re
 
-from girder.exceptions import ValidationException
+from girder.exceptions import ValidationException, RestException
 from girder.models.collection import Collection
 from girder.utility import setting_utilities
 
@@ -23,3 +23,17 @@ def validate_dandiset_identifier(dandiset_identifier):
 
 def get_or_create_drafts_collection():
     return Collection().createCollection(DANDI_DRAFTS_COLLECTION_NAME, reuseExisting=True)
+
+
+def dandiset_identifier(func):
+    def wrapper(*args, **kwargs):
+        identifier = kwargs["identifier"]
+        if not identifier:
+            raise RestException("identifier must not be empty.")
+
+        if not validate_dandiset_identifier(identifier):
+            raise RestException("Invalid Dandiset Identifier")
+
+        return func(*args, **kwargs)
+
+    return wrapper

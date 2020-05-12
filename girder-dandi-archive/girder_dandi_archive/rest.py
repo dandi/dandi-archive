@@ -14,7 +14,7 @@ from .util import (
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
     get_or_create_drafts_collection,
-    validate_dandiset_identifier,
+    dandiset_identifier,
 )
 
 
@@ -24,6 +24,11 @@ class DandiResource(Resource):
 
         self.resourceName = "dandi"
         self.route("GET", (":identifier",), self.get_dandiset)
+
+        self.route("GET", (":identifier", "owners"), self.get_dandiset_owners)
+        self.route("PUT", (":identifier", "owners"), self.add_dandiset_owners)
+        self.route("DELETE", (":identifier", "owners"), self.remove_dandiset_owners)
+
         self.route("GET", ("user",), self.get_user_dandisets)
         self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
@@ -69,20 +74,68 @@ class DandiResource(Resource):
     @describeRoute(
         Description("Get Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
     )
+    @dandiset_identifier
     def get_dandiset(self, identifier, params):
-
-        if not identifier:
-            raise RestException("identifier must not be empty.")
-
-        if not validate_dandiset_identifier(identifier):
-            raise RestException("Invalid Dandiset Identifier")
-
         # Ensure we are only looking for drafts collection child folders.
         drafts = get_or_create_drafts_collection()
         doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
+
+    @access.public
+    @describeRoute(
+        Description("Get Dandiset Owners").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
+    )
+    @dandiset_identifier
+    def get_dandiset_owners(self, identifier, params):
+        # Ensure we are only looking for drafts collection child folders.
+        # drafts = get_or_create_drafts_collection()
+        # doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
+        # if not doc:
+        #     raise RestException("No such dandiset found.")
+        # return doc
+
+        # TODO:
+        pass
+
+    @access.user
+    @describeRoute(
+        Description("Add Dandiset Owners").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
+    )
+    @dandiset_identifier
+    def add_dandiset_owners(self, identifier, params):
+        # # Ensure we are only looking for drafts collection child folders.
+        # drafts = get_or_create_drafts_collection()
+        # doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
+        # if not doc:
+        #     raise RestException("No such dandiset found.")
+        # return doc
+
+        # TODO:
+        pass
+
+    @access.user
+    @describeRoute(
+        Description("Remove Dandiset Owners").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
+    )
+    @dandiset_identifier
+    def remove_dandiset_owners(self, identifier, params):
+        # # Ensure we are only looking for drafts collection child folders.
+        # drafts = get_or_create_drafts_collection()
+        # doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
+        # if not doc:
+        #     raise RestException("No such dandiset found.")
+        # return doc
+
+        # TODO:
+        pass
 
     @access.user
     @autoDescribeRoute(
