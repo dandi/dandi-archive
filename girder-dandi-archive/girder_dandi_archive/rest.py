@@ -3,18 +3,21 @@ import re
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
 from girder.api.rest import Resource
-from girder.constants import TokenScope
+from girder.constants import AccessType, TokenScope
 from girder.exceptions import RestException
 from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.setting import Setting
 from girder.models.user import User
+from girder.models.group import Group
 
 from .util import (
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
+    find_dandiset_by_identifier,
     get_or_create_drafts_collection,
     dandiset_identifier,
+    get_or_create_dandiset_group,
 )
 
 
@@ -24,11 +27,9 @@ class DandiResource(Resource):
 
         self.resourceName = "dandi"
         self.route("GET", (":identifier",), self.get_dandiset)
-
         self.route("GET", (":identifier", "owners"), self.get_dandiset_owners)
         self.route("PUT", (":identifier", "owners"), self.add_dandiset_owners)
         self.route("DELETE", (":identifier", "owners"), self.remove_dandiset_owners)
-
         self.route("GET", ("user",), self.get_user_dandisets)
         self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
@@ -91,51 +92,66 @@ class DandiResource(Resource):
     )
     @dandiset_identifier
     def get_dandiset_owners(self, identifier, params):
-        # Ensure we are only looking for drafts collection child folders.
-        # drafts = get_or_create_drafts_collection()
-        # doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
-        # if not doc:
-        #     raise RestException("No such dandiset found.")
-        # return doc
-
-        # TODO:
-        pass
+        return Folder().getFullAccessList(find_dandiset_by_identifier(identifier))["users"]
 
     @access.user
-    @describeRoute(
-        Description("Add Dandiset Owners").param(
-            "identifier", "Dandiset Identifier", paramType="path"
+    @autoDescribeRoute(
+        Description("Add Dandiset Owners")
+        .param("identifier", "Dandiset Identifier", paramType="path")
+        .jsonParam(
+            "owners",
+            "A JSON list of girder users to add as owners.",
+            paramType="body",
+            requireArray=True,
         )
     )
     @dandiset_identifier
-    def add_dandiset_owners(self, identifier, params):
-        # # Ensure we are only looking for drafts collection child folders.
-        # drafts = get_or_create_drafts_collection()
-        # doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
-        # if not doc:
-        #     raise RestException("No such dandiset found.")
-        # return doc
+    def add_dandiset_owners(self, identifier, owners, params):
+        dandiset = find_dandiset_by_identifier(identifier)
+        Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
-        # TODO:
-        pass
+        # Make sure the list doesn't contain duplicates
+        current_owners = [
+            (str(user["id"]), user["level"])
+            for user in Folder().getFullAccessList(dandiset)["users"]
+        ]
+        new_owners = [(user["_id"], AccessType.ADMIN) for user in owners]
+        final_owners = [
+            {"id": user_id, "level": level}
+            for user_id, level in set([*current_owners, *new_owners])
+        ]
+
+        doc = Folder().setAccessList(dandiset, {"users": final_owners}, save=True, recurse=True)
+        return Folder().getFullAccessList(doc)
 
     @access.user
-    @describeRoute(
-        Description("Remove Dandiset Owners").param(
-            "identifier", "Dandiset Identifier", paramType="path"
+    @autoDescribeRoute(
+        Description("Remove Dandiset Owners")
+        .param("identifier", "Dandiset Identifier", paramType="path")
+        .jsonParam(
+            "owners",
+            "A JSON list of girder users to remove from owners.",
+            paramType="body",
+            requireArray=True,
         )
     )
     @dandiset_identifier
-    def remove_dandiset_owners(self, identifier, params):
-        # # Ensure we are only looking for drafts collection child folders.
-        # drafts = get_or_create_drafts_collection()
-        # doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
-        # if not doc:
-        #     raise RestException("No such dandiset found.")
-        # return doc
+    def remove_dandiset_owners(self, identifier, owners, params):
+        dandiset = find_dandiset_by_identifier(identifier)
+        Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
-        # TODO:
-        pass
+        current_owners = {
+            (str(user["id"]), user["level"])
+            for user in Folder().getFullAccessList(dandiset)["users"]
+        }
+        owners_to_delete = {(user["_id"], AccessType.ADMIN) for user in owners}
+        final_owners = [
+            {"id": user_id, "level": level}
+            for user_id, level in (current_owners - owners_to_delete)
+        ]
+
+        doc = Folder().setAccessList(dandiset, {"users": final_owners}, save=True, recurse=True)
+        return Folder().getFullAccessList(doc)
 
     @access.user
     @autoDescribeRoute(

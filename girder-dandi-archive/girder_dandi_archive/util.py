@@ -1,7 +1,10 @@
 import re
 
-from girder.exceptions import ValidationException, RestException
+from girder.exceptions import ValidationException
 from girder.models.collection import Collection
+from girder.models.folder import Folder
+from girder.models.user import User
+from girder.models.group import Group
 from girder.utility import setting_utilities
 
 DANDISET_IDENTIFIER_COUNTER = "dandi.identifier_counter"
@@ -26,14 +29,25 @@ def get_or_create_drafts_collection():
 
 
 def dandiset_identifier(func):
+    """Raise a ValidationException if the passed dandi identifier is invalid."""
+
     def wrapper(*args, **kwargs):
-        identifier = kwargs["identifier"]
+        identifier = kwargs.get("identifier")
         if not identifier:
-            raise RestException("identifier must not be empty.")
+            raise ValidationException("identifier must not be empty.")
 
         if not validate_dandiset_identifier(identifier):
-            raise RestException("Invalid Dandiset Identifier")
+            raise ValidationException("Invalid Dandiset Identifier")
 
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def get_dandiset_owner(identifier):
+    dandiset = Folder().findOne({"meta.dandiset.identifier": identifier})
+    if dandiset is None:
+        raise ValidationException("Dandiset does not exist.")
+
+    user = User().findOne({"_id": dandiset["creatorId"]})
+    return user
