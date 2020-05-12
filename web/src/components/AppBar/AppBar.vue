@@ -75,7 +75,7 @@
         Create Account
       </v-btn>
       <v-btn
-        :to="{ name: 'userLogin' }"
+        :to="{ name: 'userLogin', query: { returnTo: returnObject } }"
         class="mx-1"
         color="primary"
         rounded
@@ -103,6 +103,10 @@ export default {
   },
   computed: {
     loggedIn,
+    returnObject() {
+      const { name, query } = this.$route;
+      return JSON.stringify({ name, query });
+    },
   },
 };
 </script>

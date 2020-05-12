@@ -1,6 +1,23 @@
 <template>
   <v-container>
     <v-row>
+      <v-snackbar
+        v-model="invalidPermissionSnackbar"
+        top
+        :timeout="2000"
+        color="error"
+      >
+        Save Failed: Insufficient Permissions
+        <v-btn
+          icon
+          @click="invalidPermissionSnackbar = false"
+        >
+          <v-icon color="white">
+            mdi-close-circle
+          </v-icon>
+        </v-btn>
+      </v-snackbar>
+
       <v-col sm="6">
         <v-card class="mb-2">
           <v-card-title>{{ meta.name }}</v-card-title>
@@ -156,6 +173,7 @@ export default {
       yamlOutput: true,
       errors: [],
       meta: this.copyValue(this.model),
+      invalidPermissionSnackbar: false,
     };
   },
   computed: {
@@ -196,13 +214,19 @@ export default {
       this.$emit('close');
     },
     async save() {
-      const { status, data } = await girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
+      try {
+        const { status, data } = await girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
+        if (status === 200) {
+          this.setCurrentDandiset(data);
+          this.closeEditor();
+        }
+      } catch (error) {
+        if (error.response.status === 403) {
+          this.invalidPermissionSnackbar = true;
+        }
 
-      if (status === 200) {
-        this.setCurrentDandiset(data);
+        throw error;
       }
-
-      this.closeEditor();
     },
     publish() {
       // Call this.save()

@@ -3,7 +3,7 @@ import {
   vTextField,
   vToolbar,
   vListItem,
-} from '../vuetify-xpaths';
+} from 'jest-puppeteer-vuetify';
 
 
 /**

@@ -63,20 +63,20 @@
                 </v-btn>
                 <v-tooltip
                   right
-                  :disabled="loggedIn"
+                  :disabled="editDisabledMessage === null"
                 >
                   <template v-slot:activator="{ on }">
                     <div v-on="on">
                       <v-btn
                         icon
-                        :disabled="!loggedIn"
+                        :disabled="editDisabledMessage !== null"
                         @click="edit = true"
                       >
                         <v-icon>mdi-pencil</v-icon>
                       </v-btn>
                     </div>
                   </template>
-                  You must be logged in to edit.
+                  {{ editDisabledMessage }}
                 </v-tooltip>
                 <v-btn
                   :to="{ name: 'file-browser', params: { _id: id, _modelType: 'folder' }}"
@@ -116,32 +116,29 @@
                 </template>
                 <template v-if="meta.contributors">
                   <v-subheader>Contributors</v-subheader>
-                  <v-list-item
-                    v-for="item in meta.contributors"
-                    :key="item.orcid || `${item.name}-${item.roles}`"
-                    selectable
-                  >
-                    <v-list-item-content>{{ item }}</v-list-item-content>
+                  <v-list-item>
+                    <ListingComponent
+                      :data="meta.contributors"
+                      :schema="schema.properties.contributors"
+                    />
                   </v-list-item>
                 </template>
+
+                <!-- END OF HARD CODED FIELDS -->
+
                 <template v-for="(item, k) in extraFields">
                   <v-subheader :key="k">
-                    {{ k }}
+                    {{ schema.properties[k].title }}
                   </v-subheader>
                   <v-list-item
                     :key="`${k}-item`"
                     selectable
                   >
                     <v-list-item-content>
-                      <template v-if="['object', 'array'].includes(schema.properties[k].type)">
-                        <vue-json-pretty
-                          :data="item"
-                          highlight-mouseover-node
-                        />
-                      </template>
-                      <template v-else>
-                        {{ item }}
-                      </template>
+                      <ListingComponent
+                        :schema="schema.properties[k]"
+                        :data="item"
+                      />
                     </v-list-item-content>
                   </v-list-item>
                 </template>
@@ -157,9 +154,9 @@
 <script>
 import filesize from 'filesize';
 import { mapState } from 'vuex';
-import VueJsonPretty from 'vue-json-pretty';
 
 import MetaEditor from '@/components/MetaEditor.vue';
+import ListingComponent from '@/views/DandisetLandingView/ListingComponent.vue';
 import { dandiUrl } from '@/utils';
 import girderRest, { loggedIn } from '@/rest';
 
@@ -171,7 +168,7 @@ export default {
   name: 'DandisetLandingView',
   components: {
     MetaEditor,
-    VueJsonPretty,
+    ListingComponent,
   },
   props: {
     id: {
@@ -203,7 +200,17 @@ export default {
     };
   },
   computed: {
-    loggedIn,
+    editDisabledMessage() {
+      if (!loggedIn) {
+        return 'You must be logged in to edit.';
+      }
+
+      if (this.selected._accessLevel < 1) {
+        return 'You do not have permission to edit this dandiset.';
+      }
+
+      return null;
+    },
     schema() {
       if (this.create) {
         return NEW_SCHEMA;

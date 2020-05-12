@@ -1,4 +1,4 @@
-import { vIcon, vTextField } from '../vuetify-xpaths';
+import { vIcon, vTextField } from 'jest-puppeteer-vuetify';
 
 /**
  * Gets the current value of the given stat from the home page
@@ -15,7 +15,7 @@ export async function getStat(stat) {
  * @param {String} query
  */
 export async function search(query) {
-  await expect(page).toFillXPath(vTextField('Search Dandisets by name, description, or identifier'), query);
+  await expect(page).toFillXPath(vTextField('Search Dandisets by name, description, identifier, or contributor name'), query);
   await expect(page).toClickXPath(vIcon('mdi-magnify'));
   // TODO figure out a dynamic wait
   await page.waitFor(2000);

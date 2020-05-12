@@ -1,11 +1,11 @@
-import { CLIENT_URL, uniqueId, registerNewUser } from '../util';
 import {
   vBtn,
   vTextField,
   vTextarea,
   vCard,
   vChip,
-} from '../vuetify-xpaths';
+} from 'jest-puppeteer-vuetify';
+import { CLIENT_URL, uniqueId, registerNewUser } from '../util';
 
 
 describe('dandiset registration page', () => {

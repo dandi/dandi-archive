@@ -1,11 +1,11 @@
-import { CLIENT_URL, uniqueId } from '../util';
 import {
   vAvatar,
   vBtn,
   vTextField,
   vListItem,
   vIcon,
-} from '../vuetify-xpaths';
+} from 'jest-puppeteer-vuetify';
+import { CLIENT_URL, uniqueId } from '../util';
 
 describe('account management', () => {
   const username = `user${uniqueId()}`;

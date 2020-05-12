@@ -8,7 +8,7 @@
         No results!
       </div>
       <div>
-        You can search by dandiset name, description, or identifier.
+        You can search by dandiset name, description, identifier, or contributor name.
       </div>
     </template>
   </DandisetsPage>

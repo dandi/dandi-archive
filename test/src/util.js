@@ -3,7 +3,7 @@ import {
   vTextField,
   vIcon,
   vTextarea,
-} from './vuetify-xpaths';
+} from 'jest-puppeteer-vuetify';
 
 export const { CLIENT_URL } = process.env;
 
