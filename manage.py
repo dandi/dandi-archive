@@ -2,9 +2,18 @@
 import os
 import sys
 
+import configurations.importer
+
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dandi.settings')
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'dandi.settings'
+    # Production usage runs manage.py for tasks like collectstatic,
+    # so DANDI_CONFIGURATION should always be explicitly set in production
+    os.environ.setdefault('DANDI_CONFIGURATION', 'DevelopmentConfiguration')
+    configurations.importer.ConfigurationImporter.namevar = 'DANDI_CONFIGURATION'
+    # No need for check_options, users should always set DANDI_CONFIGURATION
+    configurations.importer.install(check_options=False)
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
