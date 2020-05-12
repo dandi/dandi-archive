@@ -1,11 +1,17 @@
 boto3
 django
 django-celery-results
+django-configurations[database]
+django-debug-toolbar
+django-minio-storage
 django-storages
 djangorestframework
+gunicorn
 httpx
-psycopg2-binary
+# TODO: consider using psycopg2-binary, though it may not be stable
+psycopg2
 pyyaml
+whitenoise[brotli]
 
 django-stubs
 djangorestframework-stubs
