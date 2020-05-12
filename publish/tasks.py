@@ -57,7 +57,7 @@ class DandiFile:
     metadata: Dict[str, Any]
     size: int
 
-    def publish(self, subject: models.Subject, s3: 'S3Client', prefix: str):
+    def publish(self, dandiset: models.Dandiset, s3: 'S3Client', prefix: str):
         nwb_key = f'{prefix}/{self.name}'
         with NamedTemporaryFile('r+b') as nwb, stream('GET', self.url) as response:
             logger.info(f'Downloading {self.name}...')
@@ -82,7 +82,7 @@ class DandiFile:
                 nwb, S3_BUCKET, nwb_key, ExtraArgs={'ACL': 'public-read'},
             )
             nwb_file = models.NWBFile(
-                subject=subject,
+                dandiset=dandiset,
                 name=self.name,
                 size=self.size,
                 sha256=hash.hexdigest(),
@@ -93,15 +93,32 @@ class DandiFile:
 
 
 @dataclass
-class DandiSubject:
+class DandiSet:
     girder_id: str
-    name: str
+    dandi_id: str
+    metadata: Dict[str, Any]
     files: List[DandiFile]
 
     @classmethod
-    def load(cls, client: Client, girder_id: str, name: str) -> 'DandiSubject':
-        items = _get_json(client.get(
-            f'item', params={'folderId': str(girder_id), 'limit': 0}))
+    def load(cls, client: Client, girder_id: str) -> 'DandiSet':
+        dandiset_folder = _get_json(client.get(f'folder/{girder_id}'))
+
+        files = cls._load_folder(client, '', girder_id)
+
+        return cls(
+            girder_id=girder_id,
+            dandi_id=dandiset_folder['name'],
+            metadata=dandiset_folder['meta'],
+            files=files,
+        )
+
+    @staticmethod
+    def _load_folder(client: Client, path: str, parent_id: str) -> List[DandiFile]:
+        items = _get_json(
+            client.get(f'item', params={
+                'folderId': str(parent_id),
+                'limit': 0,
+            }))
         files = []
         for item in items:
             file_list = _get_json(client.get(f'item/{item["_id"]}/files'))
@@ -112,46 +129,23 @@ class DandiSubject:
             files.append(
                 DandiFile(
                     girder_id=f['_id'],
-                    name=f['name'],
+                    name=path + f['name'],
                     metadata=item['meta'],
                     url=f'{BASE_URL}file/{f["_id"]}/download',
                     size=f['size'],
                 )
             )
-        return cls(girder_id=girder_id, name=name, files=files)
-
-    def publish(self, dandiset: models.Dandiset, s3: 'S3Client', prefix: str):
-        subject = models.Subject(dandiset=dandiset, name=self.name)
-        subject.save()
-        subject_prefix = f'{prefix}/{self.name}'
-        for file in self.files:
-            file.publish(subject, s3, subject_prefix)
-
-
-@dataclass
-class DandiSet:
-    girder_id: str
-    dandi_id: str
-    metadata: Dict[str, Any]
-    subjects: List[DandiSubject]
-
-    @classmethod
-    def load(cls, client: Client, girder_id: str) -> 'DandiSet':
-        dandiset_folder = _get_json(client.get(f'folder/{girder_id}'))
-        subject_folders = _get_json(
-            client.get(
-                f'folder', params={'parentId': str(girder_id), 'parentType': 'folder', 'limit': 0}
-            )
-        )
-        subjects = [DandiSubject.load(client, f['_id'], f['name'])
-                    for f in subject_folders]
-
-        return cls(
-            girder_id=girder_id,
-            dandi_id=dandiset_folder['name'],
-            metadata=dandiset_folder['meta'],
-            subjects=subjects,
-        )
+        subfolders = _get_json(
+            client.get(f'folder', params={
+                'parentId': str(parent_id),
+                'parentType': 'folder',
+                'limit': 0,
+            }))
+        for subfolder in subfolders:
+            files += DandiSet._load_folder(client,
+                                           path + subfolder['name'] + '/',
+                                           subfolder['_id'])
+        return files
 
     def s3_path(self, version):
         return f'{S3_PREFIX}/{self.dandi_id}/{version}'
@@ -178,8 +172,8 @@ class DandiSet:
             metadata=self.metadata,
         )
         dandiset.save()
-        for subject in self.subjects:
-            subject.publish(dandiset, s3, prefix)
+        for file in self.files:
+            file.publish(dandiset, s3, prefix)
 
         s3.put_object(
             Bucket=S3_BUCKET,

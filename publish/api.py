@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 from django.db import models
 from django.db.models.functions import Cast
 
-from .models import Dandiset, NWBFile, Subject
-from .serializers import DandisetSerializer, DandisetListSerializer, DandisetPublishSerializer, NWBFileSerializer, SubjectSerializer
+from .models import Dandiset, NWBFile
+from .serializers import DandisetSerializer, DandisetListSerializer, DandisetPublishSerializer, NWBFileSerializer
 from .tasks import publish_dandiset
 
 

@@ -1,38 +1,30 @@
 from rest_framework import serializers
 
-from .models import Dandiset, NWBFile, Subject
+from .models import Dandiset, NWBFile
 
 
 class NWBFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = NWBFile
-        fields = ['created', 'updated', 'subject',
-                  'name', 'size', 'sha256', 'metadata']
-
-
-class SubjectSerializer(serializers.ModelSerializer):
-    nwb_files = NWBFileSerializer(many=True)
-
-    class Meta:
-        model = Subject
-        fields = ['created', 'updated', 'name', 'metadata', 'nwb_files']
+        fields = ['created', 'updated', 'name',
+                  'size', 'sha256', 'metadata']
 
 
 class DandisetSerializer(serializers.ModelSerializer):
     """
-    Serializes a dandiset with all subject/file information
+    Serializes a dandiset with all file information
     """
-    subjects = SubjectSerializer(many=True)
+    nwb_files = NWBFileSerializer(many=True)
 
     class Meta:
         model = Dandiset
         fields = ['created', 'updated', 'dandi_id',
-                  'version', 'metadata', 'subjects']
+                  'version', 'metadata', 'nwb_files']
 
 
 class DandisetListSerializer(serializers.ModelSerializer):
     """
-    Serializes a dandiset with only metadata (no subjects/files)
+    Serializes a dandiset with only metadata (no files)
     """
     class Meta:
         model = Dandiset
