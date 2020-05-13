@@ -91,7 +91,9 @@ export function vIcon(icon, { cssClass } = {}) {
 }
 
 export function vListItem(content, { action, title, subtitle } = {}) {
-  return `//*${classAsPredicate('v-list-item')}${elementsAsPredicate('v-list-item', { content, action, title, subtitle })}`;
+  return `//*${classAsPredicate('v-list-item')}${elementsAsPredicate('v-list-item', {
+    content, action, title, subtitle,
+  })}`;
 }
 
 export function vListItemTitle(content, { cssClass } = {}) {
