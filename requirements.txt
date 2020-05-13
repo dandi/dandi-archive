@@ -16,3 +16,5 @@ whitenoise[brotli]
 django-stubs
 djangorestframework-stubs
 mypy-boto3-s3
+
+dandi==0.4.5
