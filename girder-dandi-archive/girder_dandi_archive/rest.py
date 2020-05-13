@@ -9,15 +9,14 @@ from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.setting import Setting
 from girder.models.user import User
-from girder.models.group import Group
 
 from .util import (
+    dandiset_identifier,
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
     find_dandiset_by_identifier,
-    get_or_create_drafts_collection,
-    dandiset_identifier,
     get_or_create_dandiset_group,
+    get_or_create_drafts_collection,
 )
 
 
