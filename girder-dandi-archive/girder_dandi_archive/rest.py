@@ -110,17 +110,18 @@ class DandiResource(Resource):
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
         # Make sure the list doesn't contain duplicates
-        current_owners = [
-            (str(user["id"]), user["level"])
-            for user in Folder().getFullAccessList(dandiset)["users"]
-        ]
-        new_owners = [(user["_id"], AccessType.ADMIN) for user in owners]
-        final_owners = [
-            {"id": user_id, "level": level}
-            for user_id, level in set([*current_owners, *new_owners])
+        user_id_to_level = {
+            str(user["id"]): user["level"] for user in Folder().getFullAccessList(dandiset)["users"]
+        }
+
+        for owner in owners:
+            user_id_to_level[owner["_id"]] = AccessType.ADMIN
+
+        final_users = [
+            {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()
         ]
 
-        doc = Folder().setAccessList(dandiset, {"users": final_owners}, save=True, recurse=True)
+        doc = Folder().setAccessList(dandiset, {"users": final_users}, save=True, recurse=True)
         return get_dandiset_owners(doc)
 
     @access.user
@@ -139,17 +140,18 @@ class DandiResource(Resource):
         dandiset = find_dandiset_by_identifier(identifier)
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
-        current_owners = {
-            (str(user["id"]), user["level"])
-            for user in Folder().getFullAccessList(dandiset)["users"]
+        user_id_to_level = {
+            str(user["id"]): user["level"] for user in Folder().getFullAccessList(dandiset)["users"]
         }
-        owners_to_delete = {(user["_id"], AccessType.ADMIN) for user in owners}
-        final_owners = [
-            {"id": user_id, "level": level}
-            for user_id, level in (current_owners - owners_to_delete)
+
+        for owner in owners:
+            del user_id_to_level[owner["_id"]]
+
+        final_users = [
+            {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()
         ]
 
-        doc = Folder().setAccessList(dandiset, {"users": final_owners}, save=True, recurse=True)
+        doc = Folder().setAccessList(dandiset, {"users": final_users}, save=True, recurse=True)
         return get_dandiset_owners(doc)
 
     @access.user
