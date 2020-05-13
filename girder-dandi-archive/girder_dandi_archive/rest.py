@@ -15,7 +15,7 @@ from .util import (
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
     find_dandiset_by_identifier,
-    get_or_create_dandiset_group,
+    get_dandiset_owners,
     get_or_create_drafts_collection,
 )
 
@@ -91,7 +91,7 @@ class DandiResource(Resource):
     )
     @dandiset_identifier
     def get_dandiset_owners(self, identifier, params):
-        return Folder().getFullAccessList(find_dandiset_by_identifier(identifier))["users"]
+        return get_dandiset_owners(find_dandiset_by_identifier(identifier))
 
     @access.user
     @autoDescribeRoute(
@@ -121,7 +121,7 @@ class DandiResource(Resource):
         ]
 
         doc = Folder().setAccessList(dandiset, {"users": final_owners}, save=True, recurse=True)
-        return Folder().getFullAccessList(doc)
+        return get_dandiset_owners(doc)
 
     @access.user
     @autoDescribeRoute(
@@ -150,7 +150,7 @@ class DandiResource(Resource):
         ]
 
         doc = Folder().setAccessList(dandiset, {"users": final_owners}, save=True, recurse=True)
-        return Folder().getFullAccessList(doc)
+        return get_dandiset_owners(doc)
 
     @access.user
     @autoDescribeRoute(

@@ -80,7 +80,7 @@ def test_add_dandiset_owners(server, admin, user, admin_created_dandiset):
         type="application/json",
     )
 
-    users = resp.json["users"]
+    users = resp.json
     assert len(users) == 2
     assert [new_user for new_user in users if new_user["id"] == str(user["_id"])]
 
@@ -98,6 +98,6 @@ def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
         type="application/json",
     )
 
-    users = resp.json["users"]
+    users = resp.json
     assert len(users) == 1
     assert not [new_user for new_user in users if new_user["id"] == str(user["_id"])]

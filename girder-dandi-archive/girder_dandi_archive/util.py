@@ -1,10 +1,9 @@
 import re
 
+from girder.constants import AccessType
 from girder.exceptions import ValidationException
 from girder.models.collection import Collection
 from girder.models.folder import Folder
-from girder.models.group import Group
-from girder.models.user import User
 from girder.utility import setting_utilities
 
 DANDISET_IDENTIFIER_COUNTER = "dandi.identifier_counter"
@@ -56,10 +55,7 @@ def dandiset_identifier(func):
     return wrapper
 
 
-def get_dandiset_owner(identifier):
-    dandiset = find_dandiset_by_identifier(identifier)
-    if dandiset is None:
-        raise ValidationException("Dandiset does not exist.")
-
-    user = User().findOne({"_id": dandiset["creatorId"]})
-    return user
+def get_dandiset_owners(dandiset):
+    """Return the valid dandiset owners from the `users` portion of an ACL."""
+    owners = Folder().getFullAccessList(dandiset)["users"]
+    return [owner for owner in owners if owner["level"] == AccessType.ADMIN]
