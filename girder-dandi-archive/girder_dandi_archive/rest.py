@@ -110,8 +110,11 @@ class DandiResource(Resource):
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
         # Make sure the list doesn't contain duplicates
+        # Only work with admin level users, removing non-admins from the ACL
         user_id_to_level = {
-            str(user["id"]): user["level"] for user in Folder().getFullAccessList(dandiset)["users"]
+            str(user["id"]): user["level"]
+            for user in Folder().getFullAccessList(dandiset)["users"]
+            if user["level"] == AccessType.ADMIN
         }
 
         for owner in owners:
@@ -140,12 +143,16 @@ class DandiResource(Resource):
         dandiset = find_dandiset_by_identifier(identifier)
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
+        # Only work with admin level users, removing non-admins from the ACL
         user_id_to_level = {
-            str(user["id"]): user["level"] for user in Folder().getFullAccessList(dandiset)["users"]
+            str(user["id"]): user["level"]
+            for user in Folder().getFullAccessList(dandiset)["users"]
+            if user["level"] == AccessType.ADMIN
         }
 
         for owner in owners:
-            del user_id_to_level[owner["_id"]]
+            # Prevents a KeyError if owner isn't an existing owner
+            user_id_to_level.pop(owner["_id"], None)
 
         final_users = [
             {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()

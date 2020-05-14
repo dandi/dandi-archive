@@ -2,9 +2,23 @@ import json
 
 import pytest
 
-from pytest_girder.assertions import assertStatusOk, assertStatus
+from girder.constants import AccessType
+from girder.models.user import User
+from pytest_girder.assertions import assertStatus, assertStatusOk
 
 pytestmark = pytest.mark.plugin("dandi_archive")
+
+
+@pytest.fixture
+def user_2(server):
+    return User().createUser(
+        email="user2@girder.test",
+        login="user2",
+        firstName="user2",
+        lastName="user2",
+        password="password",
+        admin=False,
+    )
 
 
 @pytest.fixture
@@ -132,4 +146,89 @@ def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
             path=f"/folder/{multi_owner_dandiset['_id']}/access", method="GET", user=user
         ),
         403,
+    )
+
+
+def test_user_removed_from_owners(server, user, user_2, admin, admin_created_dandiset):
+    """Test that an existing user without admin permissions has none after another user is added."""
+    access_param = json.dumps(
+        {"users": [{"id": user["_id"], "level": AccessType.WRITE}]}, default=str
+    )
+    assertStatusOk(
+        server.request(
+            path=f"/folder/{admin_created_dandiset['_id']}/access",
+            method="PUT",
+            user=admin,
+            params={"access": access_param},
+        )
+    )
+
+    resp = server.request(
+        path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=admin,
+    )
+    assertStatusOk(resp)
+    assert len(resp.json["users"]) == 1
+    assert resp.json["users"][0]["id"] == str(user["_id"])
+
+    identifier = admin_created_dandiset["meta"]["dandiset"]["identifier"]
+    request_body = json.dumps([user_2], default=str)
+    resp = server.request(
+        path=f"/dandi/{identifier}/owners",
+        method="PUT",
+        body=request_body,
+        user=admin,
+        type="application/json",
+    )
+
+    assertStatusOk(resp)
+    assert len(resp.json) == 1
+    assert resp.json[0]["id"] != str(user["_id"])
+    assert resp.json[0]["id"] == str(user_2["_id"])
+    assertStatus(
+        server.request(
+            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user,
+        ),
+        403,
+    )
+
+
+def test_user_promoted_to_owner(server, user, user_2, admin, admin_created_dandiset):
+    """Test that an existing user without admin permissions has admin after that user is added."""
+    access_param = json.dumps(
+        {"users": [{"id": user["_id"], "level": AccessType.WRITE}]}, default=str
+    )
+    assertStatusOk(
+        server.request(
+            path=f"/folder/{admin_created_dandiset['_id']}/access",
+            method="PUT",
+            user=admin,
+            params={"access": access_param},
+        )
+    )
+
+    resp = server.request(
+        path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=admin,
+    )
+    assertStatusOk(resp)
+    assert len(resp.json["users"]) == 1
+    assert resp.json["users"][0]["id"] == str(user["_id"])
+
+    # Add user to owners, which should promote existing WRITE permission to ADMIN
+    identifier = admin_created_dandiset["meta"]["dandiset"]["identifier"]
+    resp = server.request(
+        path=f"/dandi/{identifier}/owners",
+        method="PUT",
+        body=json.dumps([user], default=str),
+        user=admin,
+        type="application/json",
+    )
+
+    assertStatusOk(resp)
+    assert len(resp.json) == 1
+    assert resp.json[0]["id"] == str(user["_id"])
+    assert resp.json[0]["level"] == AccessType.ADMIN
+    assertStatusOk(
+        server.request(
+            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user,
+        ),
     )
