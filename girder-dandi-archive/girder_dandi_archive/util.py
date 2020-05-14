@@ -1,9 +1,12 @@
 import re
 
+from bson.objectid import ObjectId
+
 from girder.constants import AccessType
 from girder.exceptions import ValidationException
 from girder.models.collection import Collection
 from girder.models.folder import Folder
+from girder.models.user import User
 from girder.utility import setting_utilities
 
 DANDISET_IDENTIFIER_COUNTER = "dandi.identifier_counter"
@@ -59,3 +62,12 @@ def get_dandiset_owners(dandiset):
     """Return the valid dandiset owners from the `users` portion of an ACL."""
     owners = Folder().getFullAccessList(dandiset)["users"]
     return [owner for owner in owners if owner["level"] == AccessType.ADMIN]
+
+
+def validate_user(doc):
+    """Validate that a user doc is valid based on our needs."""
+    if "_id" not in doc:
+        return False
+
+    _id = doc.get("_id") if isinstance(doc.get("_id"), ObjectId) else ObjectId(doc.get("_id"))
+    return bool(User().findOne({"_id": _id}))

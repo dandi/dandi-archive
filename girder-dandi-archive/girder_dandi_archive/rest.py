@@ -4,7 +4,7 @@ from girder.api import access
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
 from girder.api.rest import Resource
 from girder.constants import AccessType, TokenScope
-from girder.exceptions import RestException
+from girder.exceptions import RestException, ValidationException
 from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.setting import Setting
@@ -17,6 +17,7 @@ from .util import (
     find_dandiset_by_identifier,
     get_dandiset_owners,
     get_or_create_drafts_collection,
+    validate_user,
 )
 
 
@@ -118,6 +119,9 @@ class DandiResource(Resource):
         }
 
         for owner in owners:
+            if not validate_user(owner):
+                raise ValidationException("All owners must be valid user objects.")
+
             user_id_to_level[owner["_id"]] = AccessType.ADMIN
 
         final_users = [
@@ -155,6 +159,9 @@ class DandiResource(Resource):
         }
 
         for owner in owners:
+            if not validate_user(owner):
+                raise ValidationException("All owners must be valid user objects.")
+
             # Prevents a KeyError if owner isn't an existing owner
             user_id_to_level.pop(owner["_id"], None)
 
