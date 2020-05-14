@@ -124,7 +124,11 @@ class DandiResource(Resource):
             {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()
         ]
 
-        doc = Folder().setAccessList(dandiset, {"users": final_users}, save=True, recurse=True)
+        # Assumes there is at least one admin
+        admin = next(User().getAdmins())
+        doc = Folder().setAccessList(
+            dandiset, {"users": final_users}, save=True, recurse=True, user=admin
+        )
         return get_dandiset_owners(doc)
 
     @access.user
@@ -158,7 +162,11 @@ class DandiResource(Resource):
             {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()
         ]
 
-        doc = Folder().setAccessList(dandiset, {"users": final_users}, save=True, recurse=True)
+        # Assumes there is at least one admin
+        admin = next(User().getAdmins())
+        doc = Folder().setAccessList(
+            dandiset, {"users": final_users}, save=True, recurse=True, user=admin
+        )
         return get_dandiset_owners(doc)
 
     @access.user
