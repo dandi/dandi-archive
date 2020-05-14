@@ -34,7 +34,7 @@ class DandisetViewSet(viewsets.ModelViewSet):
         data = serializer.validated_data
         return Response(publish_dandiset.delay(**data).id)
 
-    @action(detail=True, methods=['GET'], url_path='(?P<version>[^/.]+)')
+    @action(detail=True, methods=['GET'], url_path='(?P<version>[^/]+)')
     def version(self, request, dandi_id, version):
         queryset = self.filter_queryset(self.get_queryset())
         filter_kwargs = {'dandi_id': dandi_id, 'version': version}
