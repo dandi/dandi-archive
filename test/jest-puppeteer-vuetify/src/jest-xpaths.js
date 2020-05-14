@@ -1,7 +1,7 @@
 import 'expect-puppeteer';
 
 // Some extensions to the Jest expect API to better support XPaths
-expect.extend({
+global.expect.extend({
   async toContainXPath(page, xpath) {
     try {
       await page.waitForXPath(xpath);
