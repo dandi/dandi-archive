@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from pytest_girder.assertions import assertStatusOk
+from pytest_girder.assertions import assertStatusOk, assertStatus
 
 pytestmark = pytest.mark.plugin("dandi_archive")
 
@@ -55,7 +55,7 @@ def test_fixtures_independent(admin_created_dandiset, multi_owner_dandiset):
     assert admin_created_dandiset["_id"] != multi_owner_dandiset["_id"]
 
 
-def test_initial_dandiset_owners(server, admin_created_dandiset):
+def test_initial_dandiset_owners(server, admin, admin_created_dandiset):
     """Assert that the list of owners isn't zero.
 
     The group members should always contain at least the dandiset creator.
@@ -65,13 +65,21 @@ def test_initial_dandiset_owners(server, admin_created_dandiset):
 
     assertStatusOk(resp)
     assert len(resp.json) == 1
+    assert resp.json[0]["id"] == str(admin["_id"])
 
 
 def test_add_dandiset_owners(server, admin, user, admin_created_dandiset):
     """Assert that adding a user to the list of owners produces the expected result."""
+    # Assert that user initially doesn't have permissions
+    assertStatus(
+        server.request(
+            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user
+        ),
+        403,
+    )
+
     identifier = admin_created_dandiset["meta"]["dandiset"]["identifier"]
     request_body = json.dumps([user], default=str)
-
     resp = server.request(
         path=f"/dandi/{identifier}/owners",
         method="PUT",
@@ -79,17 +87,33 @@ def test_add_dandiset_owners(server, admin, user, admin_created_dandiset):
         user=admin,
         type="application/json",
     )
-
+    assertStatusOk(resp)
     users = resp.json
+
     assert len(users) == 2
     assert [new_user for new_user in users if new_user["id"] == str(user["_id"])]
+
+    # Assert that user now has permissions
+    assertStatus(
+        server.request(
+            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user
+        ),
+        200,
+    )
 
 
 def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
     """Assert that removing a user to the list of owners produces the expected result."""
+    # Assert that user initially has permissions
+    assertStatus(
+        server.request(
+            path=f"/folder/{multi_owner_dandiset['_id']}/access", method="GET", user=user
+        ),
+        200,
+    )
+
     identifier = multi_owner_dandiset["meta"]["dandiset"]["identifier"]
     request_body = json.dumps([user], default=str)
-
     resp = server.request(
         path=f"/dandi/{identifier}/owners",
         method="DELETE",
@@ -101,3 +125,11 @@ def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
     users = resp.json
     assert len(users) == 1
     assert not [new_user for new_user in users if new_user["id"] == str(user["_id"])]
+
+    # Assert that now user doesn't have permissions
+    assertStatus(
+        server.request(
+            path=f"/folder/{multi_owner_dandiset['_id']}/access", method="GET", user=user
+        ),
+        403,
+    )
