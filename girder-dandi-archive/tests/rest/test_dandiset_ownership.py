@@ -136,9 +136,8 @@ def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
         type="application/json",
     )
 
-    users = resp.json
-    assert len(users) == 1
-    assert not [new_user for new_user in users if new_user["id"] == str(user["_id"])]
+    assert len(resp.json) == 1
+    assert resp.json[0]["id"] != str(user["_id"])
 
     # Assert that now user doesn't have permissions
     assertStatus(
@@ -149,11 +148,10 @@ def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
     )
 
 
-def test_user_removed_from_owners(server, user, user_2, admin, admin_created_dandiset):
+@pytest.mark.parametrize("accesslevel", [AccessType.READ, AccessType.WRITE])
+def test_user_removed_from_owners(server, user, user_2, admin, admin_created_dandiset, accesslevel):
     """Test that an existing user without admin permissions has none after another user is added."""
-    access_param = json.dumps(
-        {"users": [{"id": user["_id"], "level": AccessType.WRITE}]}, default=str
-    )
+    access_param = json.dumps({"users": [{"id": user["_id"], "level": accesslevel}]}, default=str)
     assertStatusOk(
         server.request(
             path=f"/folder/{admin_created_dandiset['_id']}/access",
@@ -192,11 +190,10 @@ def test_user_removed_from_owners(server, user, user_2, admin, admin_created_dan
     )
 
 
-def test_user_promoted_to_owner(server, user, user_2, admin, admin_created_dandiset):
+@pytest.mark.parametrize("accesslevel", [AccessType.READ, AccessType.WRITE])
+def test_user_promoted_to_owner(server, user, user_2, admin, admin_created_dandiset, accesslevel):
     """Test that an existing user without admin permissions has admin after that user is added."""
-    access_param = json.dumps(
-        {"users": [{"id": user["_id"], "level": AccessType.WRITE}]}, default=str
-    )
+    access_param = json.dumps({"users": [{"id": user["_id"], "level": accesslevel}]}, default=str)
     assertStatusOk(
         server.request(
             path=f"/folder/{admin_created_dandiset['_id']}/access",

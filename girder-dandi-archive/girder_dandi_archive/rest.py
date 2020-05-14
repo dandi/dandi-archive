@@ -113,8 +113,7 @@ class DandiResource(Resource):
         # Make sure the list doesn't contain duplicates
         # Only work with admin level users, removing non-admins from the ACL
         user_id_to_level = {
-            str(user["id"]): AcessType.ADMIN
-            for user in get_dandiset_owners(dandiset)
+            str(user["id"]): AccessType.ADMIN for user in get_dandiset_owners(dandiset)
         }
 
         for owner in owners:
@@ -152,8 +151,7 @@ class DandiResource(Resource):
 
         # Only work with admin level users, removing non-admins from the ACL
         user_id_to_level = {
-            str(user["id"]): AcessType.ADMIN
-            for user in get_dandiset_owners(dandiset)
+            str(user["id"]): AccessType.ADMIN for user in get_dandiset_owners(dandiset)
         }
 
         for owner in owners:
