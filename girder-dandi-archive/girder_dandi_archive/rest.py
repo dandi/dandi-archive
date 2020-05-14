@@ -152,9 +152,8 @@ class DandiResource(Resource):
 
         # Only work with admin level users, removing non-admins from the ACL
         user_id_to_level = {
-            str(user["id"]): user["level"]
-            for user in Folder().getFullAccessList(dandiset)["users"]
-            if user["level"] == AccessType.ADMIN
+            str(user["id"]): AcessType.ADMIN
+            for user in get_dandiset_owners(dandiset)
         }
 
         for owner in owners:
