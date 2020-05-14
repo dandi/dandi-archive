@@ -1,15 +1,19 @@
 import re
 
+import requests
+from requests.exceptions import ConnectionError
+
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
 from girder.api.rest import Resource
-from girder.constants import TokenScope
+from girder.constants import AccessType, TokenScope
 from girder.exceptions import RestException
 from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.setting import Setting
 from girder.models.user import User
 
+from .settings import PUBLISH_API_KEY, PUBLISH_API_URL
 from .util import (
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
@@ -28,6 +32,7 @@ class DandiResource(Resource):
         self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
+        self.route("POST", (":identifier",), self.publish_dandiset)
         self.route("GET", ("stats",), self.stats)
 
     @access.user(scope=TokenScope.DATA_WRITE)
@@ -149,6 +154,28 @@ class DandiResource(Resource):
             offset=offset,
             sort=sort,
         )
+
+    @access.user
+    @autoDescribeRoute(
+        Description("Publish Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
+    )
+    def publish_dandiset(self, identifier):
+        dandiset_folder = self.get_dandiset(identifier, None)
+        Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.WRITE),
+
+        publish_api_url = Setting().get(PUBLISH_API_URL)
+        publish_api_key = Setting().get(PUBLISH_API_KEY)
+
+        try:
+            response = requests.post(
+                publish_api_url,
+                headers={"Authorization": f"Token {publish_api_key}"},
+                data={"girder_id": dandiset_folder["_id"]},
+            )
+            if response.status_code != 200:
+                raise RestException(message="Failed to publish")
+        except ConnectionError:
+            raise RestException(message="Failed to contact publish API")
 
     @access.public
     @describeRoute(Description("Global Dandiset Statistics"))

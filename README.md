@@ -101,3 +101,14 @@ After docker-compose up succeeds and the provision container finishes, you shoul
 1) Girder up and running on port 8091
 2) Web client up and running on port 8092
 3) MongoDB container up and running, and only visible to the other docker containers
+
+## Publish
+
+Functionality for publish is currently provided by a separate application. For local installations, you will need to install and run that application separately, then configure the following setting variables in girder:
+
+```
+dandi.publish_api_url = http://localhost:12345
+dandi.publish_api_key = your_api_key
+```
+
+This can be done easily using the `PUT /system/setting` endpoint on the swagger page.

@@ -63,13 +63,13 @@
                 </v-btn>
                 <v-tooltip
                   right
-                  :disabled="editDisabledMessage === null"
+                  :disabled="hasAccess"
                 >
                   <template v-slot:activator="{ on }">
                     <div v-on="on">
                       <v-btn
                         icon
-                        :disabled="editDisabledMessage !== null"
+                        :disabled="!hasAccess"
                         @click="edit = true"
                       >
                         <v-icon>mdi-pencil</v-icon>
@@ -84,6 +84,24 @@
                 >
                   <v-icon>mdi-file-tree</v-icon>
                 </v-btn>
+
+                <v-tooltip
+                  right
+                  :disabled="hasAccess"
+                >
+                  <template v-slot:activator="{ on }">
+                    <div v-on="on">
+                      <v-btn
+                        icon
+                        :disabled="!hasAccess"
+                        @click="publish"
+                      >
+                        <v-icon>mdi-publish</v-icon>
+                      </v-btn>
+                    </div>
+                  </template>
+                  {{ publishDisabledMessage }}
+                </v-tooltip>
               </v-card-actions>
               <v-list dense>
                 <v-divider />
@@ -200,15 +218,25 @@ export default {
     };
   },
   computed: {
+    hasAccess() {
+      return loggedIn && this.selected._accessLevel >= 1;
+    },
     editDisabledMessage() {
       if (!loggedIn) {
         return 'You must be logged in to edit.';
       }
-
       if (this.selected._accessLevel < 1) {
         return 'You do not have permission to edit this dandiset.';
       }
-
+      return null;
+    },
+    publishDisabledMessage() {
+      if (!loggedIn) {
+        return 'You must be logged in to publish.';
+      }
+      if (this.selected._accessLevel < 1) {
+        return 'You do not have permission to publish this dandiset.';
+      }
       return null;
     },
     schema() {
@@ -272,6 +300,11 @@ export default {
           this.$store.commit('girder/setCurrentDandiset', data);
         }
       },
+    },
+  },
+  methods: {
+    publish() {
+      girderRest.post(`/dandi/${this.meta.identifier}`);
     },
   },
 };
