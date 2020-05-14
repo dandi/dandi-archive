@@ -7,7 +7,7 @@ class Dandiset(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     dandi_id = models.CharField(max_length=16)
-    version = models.IntegerField()
+    version = models.CharField(max_length=13)
     metadata = JSONField(default=dict)
 
     class Meta:
