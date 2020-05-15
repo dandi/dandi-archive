@@ -7,7 +7,7 @@
 <script>
 import GirderRegister from '@girder/components/src/components/Authentication/Register.vue';
 import { OauthTokenPrefix, OauthTokenSuffix } from '@girder/components/src/rest';
-import girderRest, { loggedIn } from '@/rest';
+import { girderRest, loggedIn } from '@/rest';
 
 export default {
   name: 'UserRegisterView',

@@ -7,7 +7,7 @@ import * as Integrations from '@sentry/integrations';
 import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
-import girderRest from '@/rest';
+import { girderRest } from '@/rest';
 import '@/title';
 
 Vue.use(Girder);

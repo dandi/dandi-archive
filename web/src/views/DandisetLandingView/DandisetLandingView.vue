@@ -123,6 +123,13 @@
                     Files: {{ details.nItems }}, Folders: {{ details.nFolders }}
                   </v-list-item-content>
                 </v-list-item>
+                <v-list-item>Published Versions:</v-list-item>
+                <v-list-item
+                  v-for="version in versions"
+                  :key="version"
+                >
+                  <div>{{ version }}</div>
+                </v-list-item>
                 <v-divider />
                 <template v-if="meta.description">
                   <v-subheader>Description</v-subheader>
@@ -176,7 +183,7 @@ import { mapState } from 'vuex';
 import MetaEditor from '@/components/MetaEditor.vue';
 import ListingComponent from '@/views/DandisetLandingView/ListingComponent.vue';
 import { dandiUrl } from '@/utils';
-import girderRest, { loggedIn } from '@/rest';
+import { girderRest, loggedIn } from '@/rest';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
@@ -270,6 +277,10 @@ export default {
     ...mapState('girder', {
       selected: (state) => state.currentDandiset,
     }),
+    ...mapState('publish', {
+      mostRecentDandiset: (state) => state.mostRecentDandiset,
+      versions: (state) => state.versions,
+    }),
   },
   watch: {
     async selected(val) {
@@ -300,6 +311,10 @@ export default {
           this.$store.commit('girder/setCurrentDandiset', data);
         }
       },
+    },
+    // TODO move this somewhere more sensical
+    async meta(val) {
+      this.$store.dispatch('publish/fetchPublishedVersions', val.identifier);
     },
   },
   methods: {
