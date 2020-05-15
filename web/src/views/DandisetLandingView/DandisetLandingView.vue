@@ -8,13 +8,34 @@
       @close="edit = false"
     />
     <template v-else>
-      <v-container>
+      <v-toolbar class="grey darken-2 white--text">
+        <v-btn icon>
+          <v-icon color="white">
+            mdi-arrow-left
+          </v-icon>
+        </v-btn>
+        <v-toolbar-title>
+          Dandiset Dashboard
+        </v-toolbar-title>
+        <v-spacer />
+        <DandisetSearchField />
+        <v-btn
+          icon
+          @click="detailsPanel = !detailsPanel"
+        >
+          <v-icon color="white">
+            <template v-if="detailsPanel">
+              mdi-chevron-right
+            </template>
+            <template v-else>
+              mdi-chevron-left
+            </template>
+          </v-icon>
+        </v-btn>
+      </v-toolbar>
+      <v-container class="mr-0">
         <v-row>
-          <v-col
-            class="xs"
-            lg="9"
-            xl="6"
-          >
+          <v-col>
             <v-card>
               <v-card-title>
                 {{ meta.name }}
@@ -145,6 +166,12 @@
               </v-list>
             </v-card>
           </v-col>
+          <v-col
+            v-if="detailsPanel"
+            cols="3"
+          >
+            <DandisetDetails />
+          </v-col>
         </v-row>
       </v-container>
     </template>
@@ -162,14 +189,18 @@ import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
+import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import ListingComponent from './ListingComponent.vue';
 import MetaEditor from './MetaEditor.vue';
+import DandisetDetails from './DandisetDetails.vue';
 
 export default {
   name: 'DandisetLandingView',
   components: {
     MetaEditor,
     ListingComponent,
+    DandisetSearchField,
+    DandisetDetails,
   },
   props: {
     id: {
@@ -191,6 +222,7 @@ export default {
       uploader: '',
       last_modified: null,
       details: null,
+      detailsPanel: true,
       mainFields: [
         'name',
         'version',
