@@ -3,37 +3,9 @@ import json
 import pytest
 
 from girder.constants import AccessType
-from girder.models.user import User
 from pytest_girder.assertions import assertStatus, assertStatusOk
 
 pytestmark = pytest.mark.plugin("dandi_archive")
-
-
-@pytest.fixture
-def user_2(server):
-    return User().createUser(
-        email="user2@girder.test",
-        login="user2",
-        firstName="user2",
-        lastName="user2",
-        password="password",
-        admin=False,
-    )
-
-
-@pytest.fixture
-def admin_created_dandiset(server, admin):
-    resp = server.request(
-        path="/dandi",
-        method="POST",
-        user=admin,
-        params={
-            "name": "admin_created_dandiset",
-            "description": "Admin created this test dandiset.",
-        },
-    )
-    assertStatusOk(resp)
-    return resp.json
 
 
 @pytest.fixture
