@@ -36,12 +36,6 @@ def find_dandiset_by_identifier(identifier):
     return Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
 
 
-def dandiset_find(query, **kwargs):
-    """Search for dandisets within the dandiset drafts collection."""
-    drafts = get_or_create_drafts_collection()
-    return Folder().find({"parentId": drafts["_id"], **query}, **kwargs)
-
-
 def dandiset_identifier(func):
     """Raise a ValidationException if the passed dandi identifier is invalid."""
 
