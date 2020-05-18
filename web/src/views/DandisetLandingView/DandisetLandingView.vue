@@ -9,7 +9,10 @@
     />
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-btn icon>
+        <v-btn
+          icon
+          @click="$router.go(-1)"
+        >
           <v-icon color="white">
             mdi-arrow-left
           </v-icon>
@@ -33,142 +36,18 @@
           </v-icon>
         </v-btn>
       </v-toolbar>
-      <v-container class="mr-0">
+      <v-container fluid>
         <v-row>
           <v-col>
-            <v-card>
-              <v-card-title>
-                {{ meta.name }}
-                <v-chip
-                  v-if="meta.version"
-                  class="primary ml-2"
-                  round
-                >
-                  Version: {{ meta.version }}
-                </v-chip>
-                <v-chip
-                  v-if="!published"
-                  class="orange ml-2"
-                  round
-                >
-                  This dataset has not been published!
-                </v-chip>
-              </v-card-title>
-              <v-list
-                v-if="meta.identifier"
-                dense
-                class="py-0"
-              >
-                <v-list-item selectable>
-                  <v-list-item-content>
-                    Identifier: {{ meta.identifier }}
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item selectable>
-                  <v-list-item-content>
-                    <a :href="permalink">
-                      {{ permalink }}
-                    </a>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-list>
-              <v-card-actions
-                v-if="selected"
-                class="py-0"
-              >
-                <v-btn
-                  icon
-                  @click="$router.go(-1)"
-                >
-                  <v-icon>mdi-arrow-left</v-icon>
-                </v-btn>
-                <v-tooltip
-                  right
-                  :disabled="editDisabledMessage === null"
-                >
-                  <template v-slot:activator="{ on }">
-                    <div v-on="on">
-                      <v-btn
-                        icon
-                        :disabled="editDisabledMessage !== null"
-                        @click="edit = true"
-                      >
-                        <v-icon>mdi-pencil</v-icon>
-                      </v-btn>
-                    </div>
-                  </template>
-                  {{ editDisabledMessage }}
-                </v-tooltip>
-                <v-btn
-                  :to="{ name: 'file-browser', params: { _id: id, _modelType: 'folder' }}"
-                  icon
-                >
-                  <v-icon>mdi-file-tree</v-icon>
-                </v-btn>
-              </v-card-actions>
-              <v-list dense>
-                <v-divider />
-                <v-list-item selectable>
-                  <v-list-item-content>
-                    Uploaded by {{ uploader }}
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item selectable>
-                  <v-list-item-content>
-                    Last modified {{ last_modified }}
-                  </v-list-item-content>
-                </v-list-item>
-                <v-list-item
-                  v-if="details"
-                  selectable
-                >
-                  <v-list-item-content>
-                    Files: {{ details.nItems }}, Folders: {{ details.nFolders }}
-                  </v-list-item-content>
-                </v-list-item>
-                <v-divider />
-                <template v-if="meta.description">
-                  <v-subheader>Description</v-subheader>
-                  <v-list-item selectable>
-                    <v-list-item-content>
-                      {{ meta.description }}
-                    </v-list-item-content>
-                  </v-list-item>
-                </template>
-                <template v-if="meta.contributors">
-                  <v-subheader>Contributors</v-subheader>
-                  <v-list-item>
-                    <ListingComponent
-                      :data="meta.contributors"
-                      :schema="schema.properties.contributors"
-                    />
-                  </v-list-item>
-                </template>
-
-                <!-- END OF HARD CODED FIELDS -->
-
-                <template v-for="(item, k) in extraFields">
-                  <v-subheader :key="k">
-                    {{ schema.properties[k].title }}
-                  </v-subheader>
-                  <v-list-item
-                    :key="`${k}-item`"
-                    selectable
-                  >
-                    <v-list-item-content>
-                      <ListingComponent
-                        :schema="schema.properties[k]"
-                        :data="item"
-                      />
-                    </v-list-item-content>
-                  </v-list-item>
-                </template>
-              </v-list>
-            </v-card>
+            <DandisetData
+              :schema="schema"
+              :meta="meta"
+              @edit="edit = true"
+            />
           </v-col>
           <v-col
             v-if="detailsPanel"
-            cols="3"
+            cols="auto"
           >
             <DandisetDetails />
           </v-col>
@@ -192,12 +71,14 @@ import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import ListingComponent from './ListingComponent.vue';
 import MetaEditor from './MetaEditor.vue';
+import DandisetData from './DandisetData.vue';
 import DandisetDetails from './DandisetDetails.vue';
 
 export default {
   name: 'DandisetLandingView',
   components: {
     MetaEditor,
+    DandisetData,
     ListingComponent,
     DandisetSearchField,
     DandisetDetails,
