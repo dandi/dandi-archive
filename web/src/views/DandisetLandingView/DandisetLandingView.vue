@@ -123,13 +123,20 @@
                     Files: {{ details.nItems }}, Folders: {{ details.nFolders }}
                   </v-list-item-content>
                 </v-list-item>
-                <v-list-item>Published Versions:</v-list-item>
-                <v-list-item
-                  v-for="version in versions"
-                  :key="version"
-                >
-                  <div>{{ version }}</div>
-                </v-list-item>
+                <div v-if="versions !== null">
+                  <v-list-item v-if="!versions.length">
+                    No Published Versions
+                  </v-list-item>
+                  <div v-else>
+                    <v-list-item>Published Versions:</v-list-item>
+                    <v-list-item
+                      v-for="version in versions"
+                      :key="version"
+                    >
+                      <div>{{ version }}</div>
+                    </v-list-item>
+                  </div>
+                </div>
                 <v-divider />
                 <template v-if="meta.description">
                   <v-subheader>Description</v-subheader>
@@ -183,7 +190,7 @@ import { mapState } from 'vuex';
 import MetaEditor from '@/components/MetaEditor.vue';
 import ListingComponent from '@/views/DandisetLandingView/ListingComponent.vue';
 import { dandiUrl } from '@/utils';
-import { girderRest, loggedIn } from '@/rest';
+import { girderRest, publishRest, loggedIn } from '@/rest';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
@@ -222,6 +229,7 @@ export default {
         'description',
         'identifier',
       ],
+      versions: null,
     };
   },
   computed: {
@@ -277,10 +285,6 @@ export default {
     ...mapState('girder', {
       selected: (state) => state.currentDandiset,
     }),
-    ...mapState('publish', {
-      mostRecentDandiset: (state) => state.mostRecentDandiset,
-      versions: (state) => state.versions,
-    }),
   },
   watch: {
     async selected(val) {
@@ -291,6 +295,8 @@ export default {
 
       this.meta = { ...val.meta.dandiset };
       this.last_modified = new Date(val.updated).toString();
+
+      this.fetchPublishedVersions(this.meta.identifier);
 
       let res = await girderRest.get(`/user/${val.creatorId}`);
       if (res.status === 200) {
@@ -312,14 +318,22 @@ export default {
         }
       },
     },
-    // TODO move this somewhere more sensical
-    async meta(val) {
-      this.$store.dispatch('publish/fetchPublishedVersions', val.identifier);
-    },
   },
   methods: {
     publish() {
       girderRest.post(`/dandi/${this.meta.identifier}`);
+    },
+    async fetchPublishedVersions(identifier) {
+      try {
+        const response = await publishRest.get(`dandisets/${identifier}/versions/`);
+        this.versions = response.data;
+      } catch (error) {
+        if (error.response.status === 404) {
+          this.versions = [];
+        } else {
+          throw error;
+        }
+      }
     },
   },
 };
