@@ -112,6 +112,7 @@ class DandiResource(Resource):
 
         # Make sure the list doesn't contain duplicates
         # Only work with admin level users, removing non-admins from the ACL
+        # This is done intentionally as a simplifying assumption of providing this API.
         user_id_to_level = {
             str(user["id"]): AccessType.ADMIN for user in get_dandiset_owners(dandiset)
         }
@@ -150,6 +151,7 @@ class DandiResource(Resource):
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
         # Only work with admin level users, removing non-admins from the ACL
+        # This is done intentionally as a simplifying assumption of providing this API.
         user_id_to_level = {
             str(user["id"]): AccessType.ADMIN for user in get_dandiset_owners(dandiset)
         }
