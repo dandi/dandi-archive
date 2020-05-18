@@ -7,7 +7,7 @@ import {
 } from 'jest-puppeteer-vuetify';
 import { CLIENT_URL, uniqueId } from '../util';
 
-describe('account', () => {
+describe('account management', () => {
   const username = `user${uniqueId()}`;
   const email = `${username}@dandi.test`;
   const password = 'password'; // Top secret
@@ -16,7 +16,7 @@ describe('account', () => {
     await page.goto(CLIENT_URL);
   });
 
-  it('register', async () => {
+  it('registers a new user', async () => {
     await expect(page).toClickXPath(vBtn('Create Account'));
 
     await expect(page).toFillXPath(vTextField('Username'), username);
@@ -32,16 +32,16 @@ describe('account', () => {
     await expect(page).toContainXPath(vAvatar('MR'));
   });
 
-  it('logout', async () => {
+  it('logs the user out', async () => {
     await expect(page).toClickXPath(vAvatar('MR'));
     await page.waitFor(500);
-    await expect(page).toClickXPath(vListItem('Logout', vIcon('mdi-logout')));
+    await expect(page).toClickXPath(vListItem('Logout', { action: vIcon('mdi-logout') }));
 
     // this text is only displayed when not logged in
     await expect(page).toMatch('Want to create your own datasets?');
   });
 
-  it('login', async () => {
+  it('logs the user in', async () => {
     await expect(page).toClickXPath(vBtn('Login'));
 
     await expect(page).toFillXPath(vTextField('Username or e-mail'), username);

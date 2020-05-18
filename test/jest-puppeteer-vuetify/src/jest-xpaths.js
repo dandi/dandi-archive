@@ -20,7 +20,11 @@ global.expect.extend({
   },
   async toFillXPath(page, xpath, text) {
     try {
-      await (await page.waitForXPath(xpath)).type(text);
+      const input = await page.waitForXPath(xpath);
+      // triple click to select all text currently in the element
+      await input.click({ clickCount: 3 });
+      // typing will now overwrite the current text
+      await input.type(text);
       return { pass: true };
     } catch (e) {
       return { pass: false, message: () => `XPath not found: ${xpath}` };
