@@ -104,8 +104,8 @@ export default {
   computed: {
     loggedIn,
     returnObject() {
-      const { name, query } = this.$route;
-      return JSON.stringify({ name, query });
+      const { name, query, params } = this.$route;
+      return JSON.stringify({ name, query, params });
     },
   },
 };
