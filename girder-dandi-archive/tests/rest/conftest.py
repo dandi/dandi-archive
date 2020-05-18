@@ -4,6 +4,7 @@ from rest_utils import DESCRIPTION_1, DESCRIPTION_2, NAME_1, NAME_2
 from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.token import Token, TokenScope
+from girder.models.user import User
 from pytest_girder.assertions import assertStatusOk
 
 from girder_dandi_archive.util import get_or_create_drafts_collection
@@ -59,3 +60,30 @@ def dandiset_2(server, request_auth):
     )
     assertStatusOk(resp)
     return resp.json
+
+
+@pytest.fixture
+def admin_created_dandiset(server, admin):
+    resp = server.request(
+        path="/dandi",
+        method="POST",
+        user=admin,
+        params={
+            "name": "admin_created_dandiset",
+            "description": "Admin created this test dandiset.",
+        },
+    )
+    assertStatusOk(resp)
+    return resp.json
+
+
+@pytest.fixture
+def user_2(server):
+    return User().createUser(
+        email="user2@girder.test",
+        login="user2",
+        firstName="user2",
+        lastName="user2",
+        password="password",
+        admin=False,
+    )
