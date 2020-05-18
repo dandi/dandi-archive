@@ -21,7 +21,8 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client  # noqa
 
 # TODO add a setting for this
-BASE_URL = 'https://girder.dandiarchive.org/api/v1/'
+#BASE_URL = 'https://girder.dandiarchive.org/api/v1/'
+BASE_URL = 'http://localhost:8080/api/v1/'
 S3_BUCKET = settings.DANDISETS_BUCKET_NAME
 S3_PREFIX = 'dandisets'
 S3_ENDPOINT_URL = 'http://localhost:9000'
@@ -160,15 +161,15 @@ class DandiSet:
         time = datetime.datetime.utcnow()
         version = self._get_version_for_datetime(time)
         # increment time until there are no collisions
-        collisions = models.Dandiset.objects\
+        collision = models.Dandiset.objects\
             .filter(dandi_id=self.dandi_id, version=version)\
-            .count()
-        while collisions > 0:
+            .exists()
+        while collision:
             time += datetime.timedelta(minutes=1)
             version = self._get_version_for_datetime(time)
-            collisions = models.Dandiset.objects\
+            collision = models.Dandiset.objects\
                 .filter(dandi_id=self.dandi_id, version=version)\
-                .count()
+                .exists()
         return version
 
     def publish(self, s3: 'S3Client') -> str:

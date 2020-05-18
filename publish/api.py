@@ -46,11 +46,11 @@ class DandisetViewSet(viewsets.ModelViewSet):
     def versions(self, request, dandi_id):
         queryset = self.filter_queryset(self.get_queryset())
         filter_kwargs = {'dandi_id': dandi_id}
-        get_object_or_404(queryset, **filter_kwargs)
-        versions = [v['version'] for v in
+        if not Dandiset.objects.filter(**filter_kwargs).exists():
+            return Response(status=404)
+        versions = [v.version for v in
                     Dandiset.objects
                     .filter(**filter_kwargs)
-                    .values('version')
                     ]
         return Response(versions)
 
