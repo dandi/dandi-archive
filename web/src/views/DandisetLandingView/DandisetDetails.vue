@@ -116,7 +116,7 @@
 </template>
 
 <script>
-// import filesize from 'filesize';
+import filesize from 'filesize';
 import { mapState } from 'vuex';
 import moment from 'moment';
 
@@ -131,6 +131,10 @@ export default {
     };
   },
   computed: {
+    computedSize() {
+      if (!this.currentDandiset || !this.currentDandiset.size) return null;
+      return filesize(this.currentDandiset.size);
+    },
     created() {
       return this.formatDateTime(this.currentDandiset.created);
     },
