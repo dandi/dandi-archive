@@ -11,6 +11,7 @@ from girder.models.setting import Setting
 from girder.models.user import User
 
 from .util import (
+    dandiset_find,
     dandiset_identifier,
     DANDISET_IDENTIFIER_COUNTER,
     DANDISET_IDENTIFIER_LENGTH,
@@ -78,8 +79,7 @@ class DandiResource(Resource):
     @dandiset_identifier
     def get_dandiset(self, identifier, params):
         # Ensure we are only looking for drafts collection child folders.
-        drafts = get_or_create_drafts_collection()
-        doc = Folder().findOne({"parentId": drafts["_id"], "meta.dandiset.identifier": identifier})
+        doc = find_dandiset_by_identifier(identifier)
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
@@ -179,12 +179,8 @@ class DandiResource(Resource):
         Description("Get User Dandisets").pagingParams(defaultSort="meta.dandiset.identifier")
     )
     def get_user_dandisets(self, limit, offset, sort):
-        drafts = get_or_create_drafts_collection()
         user_id = self.getCurrentUser()["_id"]
-
-        return Folder().find(
-            {"parentId": drafts["_id"], "creatorId": user_id}, limit=limit, offset=offset, sort=sort
-        )
+        return dandiset_find({"creatorId": user_id}, limit=limit, offset=offset, sort=sort)
 
     @access.public
     @autoDescribeRoute(
@@ -192,8 +188,7 @@ class DandiResource(Resource):
     )
     def list_dandisets(self, limit, offset, sort):
         # Ensure we are only looking for drafts collection child folders.
-        drafts = get_or_create_drafts_collection()
-        return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
+        return dandiset_find({}, limit=limit, offset=offset, sort=sort)
 
     @access.public
     @autoDescribeRoute(
@@ -203,15 +198,14 @@ class DandiResource(Resource):
     )
     def search_dandisets(self, search, limit, offset, sort):
         # Ensure we are only looking for drafts collection child folders.
-        drafts = get_or_create_drafts_collection()
         # TODO Currently only searching identifier, name, description, and contributor name
         # of public dandisets
         if not search:
             # Empty search string should return all possible results
-            return Folder().find({"parentId": drafts["_id"]}, limit=limit, offset=offset, sort=sort)
-        return Folder().find(
+            return dandiset_find({}, limit=limit, offset=offset, sort=sort)
+
+        return dandiset_find(
             {
-                "parentId": drafts["_id"],
                 "$or": [
                     {
                         "meta.dandiset.identifier": {
