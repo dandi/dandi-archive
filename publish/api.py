@@ -34,13 +34,25 @@ class DandisetViewSet(viewsets.ModelViewSet):
         data = serializer.validated_data
         return Response(publish_dandiset.delay(**data).id)
 
-    @action(detail=True, methods=['GET'], url_path='(?P<version>[^/.]+)')
+    @action(detail=True, methods=['GET'], url_path='(?P<version>[.0-9]+)')
     def version(self, request, dandi_id, version):
         queryset = self.filter_queryset(self.get_queryset())
         filter_kwargs = {'dandi_id': dandi_id, 'version': version}
         obj = get_object_or_404(queryset, **filter_kwargs)
         serializer = DandisetSerializer(obj)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['GET'], url_path='versions')
+    def versions(self, request, dandi_id):
+        queryset = self.filter_queryset(self.get_queryset())
+        filter_kwargs = {'dandi_id': dandi_id}
+        if not Dandiset.objects.filter(**filter_kwargs).exists():
+            return Response(status=404)
+        versions = [v.version for v in
+                    Dandiset.objects
+                    .filter(**filter_kwargs)
+                    ]
+        return Response(versions)
 
     @action(detail=False)
     def search(self, request, *args, **kwargs):

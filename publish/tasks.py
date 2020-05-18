@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import datetime
 from hashlib import sha256
 from json import JSONDecodeError
 from tempfile import NamedTemporaryFile
@@ -9,6 +10,7 @@ import boto3  # type: ignore
 from botocore.exceptions import ClientError  # type: ignore
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 from django.db.transaction import atomic
 from httpx import Client, Response, stream
 from yaml import dump
@@ -18,8 +20,9 @@ from publish import models
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client  # noqa
 
+# TODO add a setting for this
 BASE_URL = 'https://girder.dandiarchive.org/api/v1/'
-S3_BUCKET = 'dandi'
+S3_BUCKET = settings.DANDISETS_BUCKET_NAME
 S3_PREFIX = 'dandisets'
 S3_ENDPOINT_URL = 'http://localhost:9000'
 
@@ -150,20 +153,26 @@ class DandiSet:
     def s3_path(self, version):
         return f'{S3_PREFIX}/{self.dandi_id}/{version}'
 
-    def _get_next_version(self, s3: 'S3Client') -> int:
-        version = 1
-        while True:
-            try:
-                s3.get_object(Bucket=S3_BUCKET,
-                              Key=f'{self.s3_path(version)}/dandiset.yaml')
-            except ClientError as e:
-                if e.response['Error']['Code'] == 'NoSuchKey':
-                    return version
-                raise
-            version += 1
+    def _get_version_for_datetime(self, time):
+        return time.strftime('0.%y%m%d.%H%M')
+
+    def _get_next_version(self) -> str:
+        time = datetime.datetime.utcnow()
+        version = self._get_version_for_datetime(time)
+        # increment time until there are no collisions
+        collision = models.Dandiset.objects\
+            .filter(dandi_id=self.dandi_id, version=version)\
+            .exists()
+        while collision:
+            time += datetime.timedelta(minutes=1)
+            version = self._get_version_for_datetime(time)
+            collision = models.Dandiset.objects\
+                .filter(dandi_id=self.dandi_id, version=version)\
+                .exists()
+        return version
 
     def publish(self, s3: 'S3Client') -> str:
-        version = self._get_next_version(s3)
+        version = self._get_next_version()
         prefix = self.s3_path(version)
 
         dandiset = models.Dandiset(
