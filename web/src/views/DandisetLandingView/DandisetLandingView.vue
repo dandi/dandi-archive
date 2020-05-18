@@ -36,7 +36,10 @@
           </v-icon>
         </v-btn>
       </v-toolbar>
-      <v-container fluid>
+      <v-container
+        fluid
+        class="grey lighten-4"
+      >
         <v-row>
           <v-col>
             <DandisetData
@@ -58,18 +61,15 @@
 </template>
 
 <script>
-import filesize from 'filesize';
 import { mapState } from 'vuex';
 
-import { dandiUrl } from '@/utils';
-import girderRest, { loggedIn } from '@/rest';
+import girderRest from '@/rest';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import ListingComponent from './ListingComponent.vue';
 import MetaEditor from './MetaEditor.vue';
 import DandisetData from './DandisetData.vue';
 import DandisetDetails from './DandisetDetails.vue';
@@ -79,7 +79,6 @@ export default {
   components: {
     MetaEditor,
     DandisetData,
-    ListingComponent,
     DandisetSearchField,
     DandisetDetails,
   },
@@ -96,35 +95,11 @@ export default {
   },
   data() {
     return {
-      dandiUrl,
-      meta: {},
       edit: false,
-      published: false,
-      uploader: '',
-      last_modified: null,
-      details: null,
       detailsPanel: true,
-      mainFields: [
-        'name',
-        'version',
-        'contributors',
-        'description',
-        'identifier',
-      ],
     };
   },
   computed: {
-    editDisabledMessage() {
-      if (!loggedIn) {
-        return 'You must be logged in to edit.';
-      }
-
-      if (this.selected._accessLevel < 1) {
-        return 'You do not have permission to edit this dandiset.';
-      }
-
-      return null;
-    },
     schema() {
       if (this.create) {
         return NEW_SCHEMA;
@@ -139,49 +114,29 @@ export default {
 
       return { properties, required };
     },
-    permalink() {
-      return `${this.dandiUrl}/dandiset/${this.meta.identifier}/draft`;
-    },
-    extraFields() {
-      const { meta, mainFields } = this;
-      const extra = Object.keys(meta).filter(
-        (x) => !mainFields.includes(x) && x in this.schema.properties,
-      );
-      return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
-    },
-    computedSize() {
-      if (!this.selected || !this.selected.size) return null;
-      return filesize(this.selected.size);
+    meta() {
+      if (
+        !this.currentDandiset
+        || !this.currentDandiset.meta
+        || !this.currentDandiset.meta.dandiset
+      ) {
+        return {};
+      }
+
+      return { ...this.currentDandiset.meta.dandiset };
     },
     ...mapState('girder', {
-      selected: (state) => state.currentDandiset,
+      currentDandiset: (state) => state.currentDandiset,
     }),
   },
   watch: {
-    async selected(val) {
-      if (!val || !val.meta || !val.meta.dandiset) {
-        this.meta = {};
-        return;
-      }
-
-      this.meta = { ...val.meta.dandiset };
-      this.last_modified = new Date(val.updated).toString();
-
-      let res = await girderRest.get(`/user/${val.creatorId}`);
-      if (res.status === 200) {
-        const { data: { firstName, lastName } } = res;
-        this.uploader = `${firstName} ${lastName}`;
-      }
-
-      res = await girderRest.get(`/folder/${val._id}/details`);
-      if (res.status === 200) {
-        this.details = res.data;
-      }
-    },
     id: {
       immediate: true,
       async handler(value) {
-        if (!this.selected || !this.meta.length) {
+        // If we ever change the URL to contain the dandiset ID instead of the
+        // girder folder ID, this should be moved into the store
+
+        if (!this.currentDandiset || !this.meta.length) {
           const { data } = await girderRest.get(`folder/${value}`);
           this.$store.commit('girder/setCurrentDandiset', data);
         }

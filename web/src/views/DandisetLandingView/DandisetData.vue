@@ -1,119 +1,79 @@
 <template>
-  <v-card>
-    <v-card-title>
-      {{ meta.name }}
-      <v-chip
-        v-if="meta.version"
-        class="primary ml-2"
-        round
+  <div>
+    <v-row class="mx-2 my-2">
+      <h1 class="font-weight-regular">
+        {{ meta.name }}
+      </h1>
+    </v-row>
+    <v-card>
+      <v-row
+        class="mx-2"
+        align-content="center"
       >
-        Version: {{ meta.version }}
-      </v-chip>
-      <v-chip
-        v-if="!published"
-        class="orange ml-2"
-        round
-      >
-        This dataset has not been published!
-      </v-chip>
-    </v-card-title>
-    <v-list
-      v-if="meta.identifier"
-      dense
-      class="py-0"
-    >
-      <v-list-item selectable>
-        <v-list-item-content>
-          Identifier: {{ meta.identifier }}
-        </v-list-item-content>
-      </v-list-item>
-      <v-list-item selectable>
-        <v-list-item-content>
+        <v-col>
           <a :href="permalink">
             {{ permalink }}
           </a>
-        </v-list-item-content>
-      </v-list-item>
-    </v-list>
-    <v-card-actions
-      v-if="currentDandiset"
-      class="py-0"
-    >
-      <v-tooltip
-        right
-        :disabled="editDisabledMessage === null"
-      >
-        <template v-slot:activator="{ on }">
-          <div v-on="on">
-            <v-btn
-              icon
-              :disabled="editDisabledMessage !== null"
-              @click="$emit('edit')"
-            >
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-          </div>
-        </template>
-        {{ editDisabledMessage }}
-      </v-tooltip>
-      <v-btn
-        :to="{ name: 'file-browser', params: { _id: currentDandiset._id, _modelType: 'folder' }}"
-        icon
-      >
-        <v-icon>mdi-file-tree</v-icon>
-      </v-btn>
-    </v-card-actions>
-    <v-list dense>
-      <v-divider />
-      <v-list-item selectable>
-        <v-list-item-content>
-          Uploaded by {{ uploader }}
-        </v-list-item-content>
-      </v-list-item>
-      <v-list-item selectable>
-        <v-list-item-content>
-          Last modified {{ last_modified }}
-        </v-list-item-content>
-      </v-list-item>
-      <v-divider />
-      <template v-if="meta.description">
-        <v-subheader>Description</v-subheader>
-        <v-list-item selectable>
-          <v-list-item-content>
-            {{ meta.description }}
-          </v-list-item-content>
-        </v-list-item>
-      </template>
-      <template v-if="meta.contributors">
-        <v-subheader>Contributors</v-subheader>
-        <v-list-item>
-          <ListingComponent
-            :data="meta.contributors"
-            :schema="schema.properties.contributors"
-          />
-        </v-list-item>
-      </template>
-
-      <!-- END OF HARD CODED FIELDS -->
-
-      <template v-for="(item, k) in extraFields">
-        <v-subheader :key="k">
-          {{ schema.properties[k].title }}
-        </v-subheader>
-        <v-list-item
-          :key="`${k}-item`"
-          selectable
+        </v-col>
+        <v-tooltip
+          left
+          :disabled="editDisabledMessage === null"
         >
-          <v-list-item-content>
-            <ListingComponent
-              :schema="schema.properties[k]"
-              :data="item"
-            />
-          </v-list-item-content>
-        </v-list-item>
+          <template v-slot:activator="{ on }">
+            <div v-on="on">
+              <v-btn
+                class="mt-2"
+                text
+                :disabled="editDisabledMessage !== null"
+                @click="$emit('edit')"
+              >
+                <v-icon class="mr-3 ml-0">
+                  mdi-pencil
+                </v-icon>
+                Edit metadata
+              </v-btn>
+            </div>
+          </template>
+          {{ editDisabledMessage }}
+        </v-tooltip>
+      </v-row>
+
+      <v-divider />
+
+      <v-row :class="titleClasses">
+        <v-card-title class="font-weight-regular">
+          Description
+        </v-card-title>
+      </v-row>
+      <v-row class="mx-1 px-4 font-weight-light">
+        {{ meta.description }}
+      </v-row>
+
+      <template v-for="(field, key) in extraFields">
+        <v-divider
+          :key="`${key}-divider`"
+          class="mt-4"
+        />
+        <v-row
+          :key="`${key}-title`"
+          :class="titleClasses"
+        >
+          <v-card-title class="font-weight-regular">
+            {{ schema.properties[key].title }}
+          </v-card-title>
+        </v-row>
+        <v-row
+          :key="key"
+          class="mx-4"
+        >
+          <ListingComponent
+            :schema="schema.properties[key]"
+            :data="field"
+          />
+        </v-row>
       </template>
-    </v-list>
-  </v-card>
+    </v-card>
+  </div>
 </template>
 
 <script>
@@ -141,17 +101,10 @@ export default {
   },
   data() {
     return {
-      dandiUrl,
-      edit: false,
-      published: false,
-      uploader: '',
-      last_modified: null,
+      titleClasses: 'mx-1',
       mainFields: [
         'name',
-        'version',
-        'contributors',
         'description',
-        'identifier',
       ],
     };
   },
@@ -162,28 +115,18 @@ export default {
         return 'You must be logged in to edit.';
       }
 
+      if (!this.currentDandiset) {
+        return null;
+      }
+
       if (this.currentDandiset._accessLevel < 1) {
         return 'You do not have permission to edit this dandiset.';
       }
 
       return null;
     },
-    // schema() {
-    //   if (this.create) {
-    //     return NEW_SCHEMA;
-    //   }
-
-    //   if (this.edit) {
-    //     return SCHEMA;
-    //   }
-
-    //   const properties = { ...SCHEMA.properties, ...NWB_SCHEMA.properties };
-    //   const required = [...SCHEMA.required, ...NWB_SCHEMA.required];
-
-    //   return { properties, required };
-    // },
     permalink() {
-      return `${this.dandiUrl}/dandiset/${this.meta.identifier}/draft`;
+      return `${dandiUrl}/dandiset/${this.meta.identifier}/draft`;
     },
     extraFields() {
       const { meta, mainFields } = this;
@@ -192,44 +135,9 @@ export default {
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
-    // computedSize() {
-    //   if (!this.currentDandiset || !this.currentDandiset.size) return null;
-    //   return filesize(this.currentDandiset.size);
-    // },
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
     }),
-  },
-  watch: {
-    // async currentDandiset(val) {
-    //   if (!val || !val.meta || !val.meta.dandiset) {
-    //     this.meta = {};
-    //     return;
-    //   }
-
-    //   this.meta = { ...val.meta.dandiset };
-    //   this.last_modified = new Date(val.updated).toString();
-
-    //   let res = await girderRest.get(`/user/${val.creatorId}`);
-    //   if (res.status === 200) {
-    //     const { data: { firstName, lastName } } = res;
-    //     this.uploader = `${firstName} ${lastName}`;
-    //   }
-
-    //   res = await girderRest.get(`/folder/${val._id}/details`);
-    //   if (res.status === 200) {
-    //     this.details = res.data;
-    //   }
-    // },
-    // id: {
-    //   immediate: true,
-    //   async handler(value) {
-    //     if (!this.currentDandiset || !this.meta.length) {
-    //       const { data } = await girderRest.get(`folder/${value}`);
-    //       this.$store.commit('girder/setCurrentDandiset', data);
-    //     }
-    //   },
-    // },
   },
 };
 </script>
