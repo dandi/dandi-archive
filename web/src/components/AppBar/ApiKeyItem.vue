@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import girderRest from '@/rest';
+import { girderRest } from '@/rest';
 
 export default {
   name: 'ApiKeyItem',

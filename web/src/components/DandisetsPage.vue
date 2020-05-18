@@ -68,7 +68,7 @@
 <script>
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import girderRest from '@/rest';
+import { girderRest } from '@/rest';
 
 const DANDISETS_PER_PAGE = 8;
 

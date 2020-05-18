@@ -1,4 +1,4 @@
-import girderRest, { loggedIn } from '@/rest';
+import { girderRest, loggedIn } from '@/rest';
 
 export default {
   namespaced: true,

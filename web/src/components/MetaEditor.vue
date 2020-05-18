@@ -144,7 +144,7 @@ import jsYaml from 'js-yaml';
 import Ajv from 'ajv';
 
 import MetaNode from '@/components/MetaNode.vue';
-import girderRest from '@/rest';
+import { girderRest } from '@/rest';
 
 const ajv = new Ajv({ allErrors: true });
 
