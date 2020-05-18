@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-card class="px-3 py-1">
     <template v-if="currentDandiset">
       <v-row
         no-gutters
@@ -28,7 +28,7 @@
 
       <v-divider class="my-2" />
 
-      <v-row :class="rowClasses">
+      <v-row :class="`${rowClasses} px-2`">
         <span :class="labelClasses">Identifier</span>
         <span :class="itemClasses">{{ currentDandiset.meta.dandiset.identifier }}</span>
       </v-row>
@@ -112,7 +112,7 @@
         indeterminate
       />
     </template>
-  </div>
+  </v-card>
 </template>
 
 <script>
