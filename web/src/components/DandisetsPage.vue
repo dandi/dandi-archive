@@ -68,7 +68,7 @@
 <script>
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { girderRest } from '@/rest';
+import { girderRest, publishRest } from '@/rest';
 
 const DANDISETS_PER_PAGE = 8;
 
@@ -136,14 +136,25 @@ export default {
       return { page, sortOption, sortDir };
     },
     dandisets() {
-      return this.dandisetRequest ? this.dandisetRequest.data : undefined;
+      if (this.girderDandisetRequest === null || this.publishedVersions === null) {
+        return null;
+      }
+      const dandisets = [];
+      for (let i = 0; i < this.totalDandisets; i += 1) {
+        if (this.publishedVersions[i]) {
+          dandisets.push(this.publishedVersions[i]);
+        } else {
+          dandisets.push(this.girderDandisetRequest.data[i]);
+        }
+      }
+      return dandisets;
     },
     totalDandisets() {
-      return this.dandisetRequest ? this.dandisetRequest.headers['girder-total-count'] : 0;
+      return this.girderDandisetRequest ? this.girderDandisetRequest.headers['girder-total-count'] : 0;
     },
   },
   asyncComputed: {
-    async dandisetRequest() {
+    async girderDandisetRequest() {
       const {
         listingUrl, page, sortField, sortDir,
         $route: {
@@ -168,6 +179,16 @@ export default {
       return {
         data, headers, status, statusText,
       };
+    },
+    async publishedVersions() {
+      if (!this.girderDandisetRequest) {
+        return null;
+      }
+      return Promise.all(this.girderDandisetRequest.data.map(
+        async (dandiset) => publishRest.mostRecentVersion(
+          dandiset.meta.dandiset.identifier, dandiset._id,
+        ),
+      ));
     },
   },
   watch: {

@@ -16,24 +16,22 @@
         <v-col cols="12">
           <v-list-item-content>
             <v-list-item-title>
-              <template v-if="item.meta.dandiset.version">
-                <v-chip
-                  v-if="item.meta.dandiset.version === 'draft'"
-                  small
-                  color="amber lighten-3"
-                  text-color="amber darken-4"
-                >
-                  <b>DRAFT</b>
-                </v-chip>
-                <v-chip
-                  v-else
-                  small
-                  color="light-blue lighten-4"
-                  text-color="light-blue darken-3"
-                >
-                  <b>{{ item.meta.dandiset.version }}</b>
-                </v-chip>
-              </template>
+              <v-chip
+                v-if="item.version"
+                small
+                color="light-blue lighten-4"
+                text-color="light-blue darken-3"
+              >
+                <b>{{ item.version }}</b>
+              </v-chip>
+              <v-chip
+                v-else
+                small
+                color="amber lighten-3"
+                text-color="amber darken-4"
+              >
+                <b>DRAFT</b>
+              </v-chip>
               {{ item.meta.dandiset.name }}
             </v-list-item-title>
             <v-list-item-subtitle>
