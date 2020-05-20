@@ -1,5 +1,8 @@
 <template>
-  <v-card class="px-3 py-1">
+  <v-card
+    height="100%"
+    class="px-3 py-1"
+  >
     <template v-if="currentDandiset">
       <v-row
         no-gutters
@@ -72,7 +75,7 @@
           </v-card>
         </v-col>
       </v-row>
-
+      <!-- TODO: Uncomment this once the versions API is accessible -->
       <!-- <v-row>
         <v-col class="pa-0">
           <v-card
