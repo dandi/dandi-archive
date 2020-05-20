@@ -139,15 +139,9 @@ export default {
       if (this.girderDandisetRequest === null || this.publishedVersions === null) {
         return null;
       }
-      const dandisets = [];
-      for (let i = 0; i < this.totalDandisets; i += 1) {
-        if (this.publishedVersions[i]) {
-          dandisets.push(this.publishedVersions[i]);
-        } else {
-          dandisets.push(this.girderDandisetRequest.data[i]);
-        }
-      }
-      return dandisets;
+      return this.girderDandisetRequest.data.map(
+        (dandiset, i) => (this.publishedVersions[i] || dandiset),
+      );
     },
     totalDandisets() {
       return this.girderDandisetRequest ? this.girderDandisetRequest.headers['girder-total-count'] : 0;
