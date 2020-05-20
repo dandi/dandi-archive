@@ -66,10 +66,13 @@
           :key="key"
           class="mx-4"
         >
-          <ListingComponent
-            :schema="schema.properties[key]"
-            :data="field"
-          />
+          <v-col class="py-0">
+            <ListingComponent
+              :schema="schema.properties[key]"
+              :data="field"
+              root
+            />
+          </v-col>
         </v-row>
       </template>
     </v-card>
