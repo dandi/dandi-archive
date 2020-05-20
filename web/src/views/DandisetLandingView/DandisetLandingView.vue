@@ -11,7 +11,7 @@
       <v-toolbar class="grey darken-2 white--text">
         <v-btn
           icon
-          @click="$router.go(-1)"
+          @click="navigateBack"
         >
           <v-icon color="white">
             mdi-arrow-left
@@ -141,6 +141,12 @@ export default {
           this.$store.commit('girder/setCurrentDandiset', data);
         }
       },
+    },
+  },
+  methods: {
+    navigateBack() {
+      const route = this.$route.params.origin || { name: 'publicDandisets' };
+      this.$router.push(route);
     },
   },
 };
