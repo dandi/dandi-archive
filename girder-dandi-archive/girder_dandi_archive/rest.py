@@ -78,7 +78,6 @@ class DandiResource(Resource):
     )
     @dandiset_identifier
     def get_dandiset(self, identifier, params):
-        # Ensure we are only looking for drafts collection child folders.
         doc = find_dandiset_by_identifier(identifier)
         if not doc:
             raise RestException("No such dandiset found.")
@@ -187,7 +186,6 @@ class DandiResource(Resource):
         Description("List Dandisets").pagingParams(defaultSort="meta.dandiset.identifier")
     )
     def list_dandisets(self, limit, offset, sort):
-        # Ensure we are only looking for drafts collection child folders.
         return dandiset_find({}, limit=limit, offset=offset, sort=sort)
 
     @access.public
@@ -197,9 +195,6 @@ class DandiResource(Resource):
         .pagingParams(defaultSort="meta.dandiset.identifier")
     )
     def search_dandisets(self, search, limit, offset, sort):
-        # Ensure we are only looking for drafts collection child folders.
-        # TODO Currently only searching identifier, name, description, and contributor name
-        # of public dandisets
         if not search:
             # Empty search string should return all possible results
             return dandiset_find({}, limit=limit, offset=offset, sort=sort)

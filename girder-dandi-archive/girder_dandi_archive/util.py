@@ -38,6 +38,7 @@ def find_dandiset_by_identifier(identifier):
 
 def dandiset_find(query, **kwargs):
     """Search for dandisets within the dandiset drafts collection."""
+    # Ensure we are only looking for drafts collection child folders.
     drafts = get_or_create_drafts_collection()
     return Folder().find({"parentId": drafts["_id"], **query}, **kwargs)
 
