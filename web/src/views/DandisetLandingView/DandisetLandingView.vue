@@ -296,7 +296,7 @@ export default {
       this.meta = { ...val.meta.dandiset };
       this.last_modified = new Date(val.updated).toString();
 
-      this.fetchPublishedVersions(this.meta.identifier);
+      this.versions = await publishRest.versions(this.meta.identifier);
 
       let res = await girderRest.get(`/user/${val.creatorId}`);
       if (res.status === 200) {
@@ -322,18 +322,6 @@ export default {
   methods: {
     publish() {
       girderRest.post(`/dandi/${this.meta.identifier}`);
-    },
-    async fetchPublishedVersions(identifier) {
-      try {
-        const response = await publishRest.get(`dandisets/${identifier}/versions/`);
-        this.versions = response.data;
-      } catch (error) {
-        if (error.response.status === 404) {
-          this.versions = [];
-        } else {
-          throw error;
-        }
-      }
     },
   },
 };
