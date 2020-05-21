@@ -194,6 +194,25 @@ class WhitenoiseStaticFileConfig(StaticFileConfig):
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
+class CorsConfig(Config):
+    @staticmethod
+    def before_binding(configuration: Type[ComposedConfiguration]):
+        configuration.INSTALLED_APPS += ['corsheaders']
+
+        # CorsMiddleware must be added immediately before WhiteNoiseMiddleware, so this can
+        # potentially add CORS headers to those responses too.
+        # Accordingly, CorsConfig must be loaded after WhitenoiseStaticFileConfig, so it can
+        # find the existing entry and insert accordingly.
+        try:
+            whitenoise_index = configuration.MIDDLEWARE.index('whitenoise.middleware.WhiteNoiseMiddleware')
+        except ValueError:
+            raise Exception('CorsConfig must be loaded after WhitenoiseStaticFileConfig.')
+        configuration.MIDDLEWARE.insert(whitenoise_index, 'corsheaders.middleware.CorsMiddleware')
+
+    CORS_ORIGIN_WHITELIST = values.ListValue()
+    CORS_ORIGIN_REGEX_WHITELIST = values.ListValue()
+
+
 class RestFrameworkConfig(Config):
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
@@ -298,6 +317,7 @@ class BaseConfiguration(
     CeleryConfig,
     DatabaseConfig,
     RestFrameworkConfig,
+    CorsConfig,
     WhitenoiseStaticFileConfig,
     LoggingConfig,
     DjangoConfig,
@@ -316,6 +336,7 @@ class DevelopmentConfiguration(
     DEBUG = True
     SECRET_KEY = 'insecuresecret'
     ALLOWED_HOSTS = values.ListValue(['localhost', '127.0.0.1'])
+    CORS_ORIGIN_REGEX_WHITELIST = values.ListValue([r'http://localhost:\d+', r'http://127\.0\.0\.1:\d+'])
 
     # INTERNAL_IPS does not work properly when this is run within Docker, since the bridge
     # sends requests from the host machine via a dedicated IP address
