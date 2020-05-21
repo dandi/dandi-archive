@@ -4,9 +4,8 @@ from celery import Celery
 import configurations.importer
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dandi.settings'
-if not os.environ.get('DANDI_CONFIGURATION'):
-    raise ValueError('The environment variable "DANDI_CONFIGURATION" must be set.')
-configurations.importer.ConfigurationImporter.namevar = 'DANDI_CONFIGURATION'
+if not os.environ.get('DJANGO_CONFIGURATION'):
+    raise ValueError('The environment variable "DJANGO_CONFIGURATION" must be set.')
 configurations.importer.install()
 
 # Using a string config_source means the worker doesn't have to serialize

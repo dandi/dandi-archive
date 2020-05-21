@@ -1,14 +1,10 @@
 boto3
+celery
+dandi==0.4.5
 django
-django-celery-results
 django-configurations[database]
-django-debug-toolbar
-django-minio-storage
-django-storages
 djangorestframework
-gunicorn
 httpx
-# TODO: consider using psycopg2-binary, though it may not be stable
 psycopg2
 pyyaml
 whitenoise[brotli]
@@ -17,4 +13,10 @@ django-stubs
 djangorestframework-stubs
 mypy-boto3-s3
 
-dandi==0.4.5
+# Production-only
+django-storages
+gunicorn
+
+# Development-only
+django-debug-toolbar
+django-minio-storage

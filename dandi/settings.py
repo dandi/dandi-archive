@@ -65,8 +65,8 @@ class Config:
 
 
 class DjangoConfig(Config):
-    SECRET_KEY = values.SecretValue(environ_prefix='DANDI')
-    ALLOWED_HOSTS = values.ListValue(environ_prefix='DANDI', environ_required=True)
+    SECRET_KEY = values.SecretValue()
+    ALLOWED_HOSTS = values.ListValue(environ_required=True)
 
     WSGI_APPLICATION = 'dandi.wsgi.application'
     ROOT_URLCONF = 'dandi.urls'
@@ -77,7 +77,6 @@ class DjangoConfig(Config):
         'django.contrib.contenttypes',
         'django.contrib.sessions',
         'django.contrib.messages',
-        'publish',
     ]
 
     MIDDLEWARE = [
@@ -132,7 +131,6 @@ class DjangoConfig(Config):
     USE_L10N = True # TODO: why?
 
 
-
 class LoggingConfig(Config):
     LOGGING = {
         'version': 1,
@@ -171,7 +169,7 @@ class StaticFileConfig(Config):
     WhitenoiseStaticFileConfig.
     """
     STATIC_URL = '/static/'
-    STATIC_ROOT = values.PathValue(os.path.join(BASE_DIR, 'staticfiles'), environ=False, check_exists=False) # TODO: How does this work in development if collectstatic isn't run?
+    STATIC_ROOT = values.PathValue(os.path.join(BASE_DIR, 'staticfiles'), environ=False, check_exists=False)
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
@@ -216,18 +214,14 @@ class DatabaseConfig(Config):
     # This cannot have a default value, since the password and database name are always
     # set by the service admin
     DATABASES = values.DatabaseURLValue(
-        environ_prefix='DANDI', environ_name='DATABASE_URL', environ_required=True,
+        environ_name='DATABASE_URL', environ_prefix='DJANGO', environ_required=True,
         # Additional kwargs to DatabaseURLValue are passed to dj-database-url
         engine='django.db.backends.postgresql',
         conn_max_age=600)
 
 
 class CeleryConfig(Config):
-    @staticmethod
-    def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.INSTALLED_APPS += ['django_celery_results'] # TODO: Do we want this, or just configure to not use results?
-
-    CELERY_BROKER_URL = values.Value('amqp://localhost:5672/', environ_prefix='DANDI')
+    CELERY_BROKER_URL = values.Value('amqp://localhost:5672/')
     CELERY_RESULT_BACKEND = None
     # Only acknowledge a task being done after the function finishes
     CELERY_TASK_ACKS_LATE = True
@@ -251,14 +245,13 @@ class StorageConfig(Config):
 
 class MinioStorageConfig(StorageConfig):
     DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
-    MINIO_STORAGE_ENDPOINT = values.Value('localhost:9000', environ_prefix='DANDI')
+    MINIO_STORAGE_ENDPOINT = values.Value('localhost:9000')
     MINIO_STORAGE_USE_HTTPS = False
     MINIO_STORAGE_MEDIA_BUCKET_NAME = values.Value(
-        environ_prefix='DANDI',
         environ_name='STORAGE_BUCKET_NAME',
         environ_required=True)
-    MINIO_STORAGE_ACCESS_KEY = values.SecretValue(environ_prefix='DANDI')
-    MINIO_STORAGE_SECRET_KEY = values.SecretValue(environ_prefix='DANDI')
+    MINIO_STORAGE_ACCESS_KEY = values.SecretValue()
+    MINIO_STORAGE_SECRET_KEY = values.SecretValue()
     MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
     # TODO: Boto config for minio?
 
@@ -266,10 +259,9 @@ class MinioStorageConfig(StorageConfig):
 class S3StorageConfig(StorageConfig):
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     # This exact environ_name is important, as direct use of Boto will also use it
-    AWS_S3_REGION_NAME = values.Value(environ_prefix=None, environ_name='AWS_DEFAULT_REGION',
-        environ_required=True) # TODO: this is also used by Boto directly
+    AWS_S3_REGION_NAME = values.Value(
+        environ_prefix=None, environ_name='AWS_DEFAULT_REGION', environ_required=True) # TODO: this is also used by Boto directly
     AWS_STORAGE_BUCKET_NAME = values.Value(
-        environ_prefix='DANDI',
         environ_name='STORAGE_BUCKET_NAME',
         environ_required=True)
     AWS_S3_MAX_MEMORY_SIZE = 5 * 1024 * 1024
@@ -293,28 +285,46 @@ class DebugToolbarConfig(Config):
 
 
 class DandiConfig(Config):
-    # TODO: should this setting's internal name start with DANDI_
-    DANDISETS_BUCKET_NAME = values.Value(environ_prefix='DANDI', environ_required=True)
+    @staticmethod
+    def before_binding(configuration: Type[ComposedConfiguration]):
+        configuration.INSTALLED_APPS += ['publish']
+
+    DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
 
 
-class BaseConfiguration(DjangoConfig, LoggingConfig, WhitenoiseStaticFileConfig,
-    RestFrameworkConfig, DatabaseConfig, CeleryConfig, EmailConfig, DandiConfig,
-    ComposedConfiguration):
+class BaseConfiguration(
+    DandiConfig,
+    EmailConfig,
+    CeleryConfig,
+    DatabaseConfig,
+    RestFrameworkConfig,
+    WhitenoiseStaticFileConfig,
+    LoggingConfig,
+    DjangoConfig,
+    ComposedConfiguration
+):
     # Does not include a StorageConfig, since that varies
     # significantly from development to production
     pass
 
 
-class DevelopmentConfiguration(MinioStorageConfig, DebugToolbarConfig,
-    BaseConfiguration):
-    @staticmethod
-    def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.ALLOWED_HOSTS.environ_required = False
-        configuration.ALLOWED_HOSTS.default = ['localhost', '127.0.0.1']
-
+class DevelopmentConfiguration(
+    DebugToolbarConfig,
+    MinioStorageConfig,
+    BaseConfiguration
+):
     DEBUG = True
-    INTERNAL_IPS = ['127.0.0.1']
     SECRET_KEY = 'insecuresecret'
+    ALLOWED_HOSTS = values.ListValue(['localhost', '127.0.0.1'])
+
+    # INTERNAL_IPS does not work properly when this is run within Docker, since the bridge
+    # sends requests from the host machine via a dedicated IP address
+    INTERNAL_IPS = ['127.0.0.1']
+    # SHOW_TOOLBAR_CALLBACK for debug_toolbar normally relies on INTERNAL_IPS,
+    # but force enable it to support Docker mode
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+    }
 
 
 class ProductionConfiguration(S3StorageConfig, BaseConfiguration):
@@ -322,12 +332,9 @@ class ProductionConfiguration(S3StorageConfig, BaseConfiguration):
 
 
 class HerokuProductionConfiguration(ProductionConfiguration):
-    @staticmethod
-    def before_binding(configuration: Type[ComposedConfiguration]):
-        # Use different env var names for services that Heroku auto-injects
-        configuration.DATABASES.environ_prefix = None
-        configuration.DATABASES._params['ssl_require'] = True
-
-        configuration.CELERY_BROKER_URL.environ_name = 'CLOUDAMQP_URL'
-        configuration.CELERY_BROKER_URL.environ_prefix = None
-        configuration.CELERY_BROKER_URL.environ_required = True
+    # Use different env var names (with no DJANGO_ prefix) for services that Heroku auto-injects
+    DATABASES = values.DatabaseURLValue(
+        environ_name='DATABASE_URL', environ_prefix=None, environ_required=True,
+        engine='django.db.backends.postgresql',
+        conn_max_age=600, ssl_require=True)
+    CELERY_BROKER_URL = values.Value(environ_name='CLOUDAMQP_URL', environ_prefix=None, environ_required=True)

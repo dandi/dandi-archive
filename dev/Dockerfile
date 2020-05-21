@@ -1,4 +1,6 @@
 FROM python:3.8-slim
+# Install system librarires for Python packages:
+# * psycopg2
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         libpq-dev gcc libc6-dev && \
@@ -7,9 +9,7 @@ RUN apt-get update && \
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# ENV PYTHONPATH=/code
+COPY ./requirements.txt /opt/dandi-publish/requirements.txt
+RUN pip install --requirement /opt/dandi-publish/requirements.txt
 
-COPY ./requirements.txt /code/requirements.txt
-RUN pip install --requirement /code/requirements.txt
-
-WORKDIR /code
+WORKDIR /opt/dandi-publish

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 # TODO add a setting for this
 BASE_URL = 'https://girder.dandiarchive.org/api/v1/'
-S3_BUCKET = settings.DANDISETS_BUCKET_NAME
+S3_BUCKET = settings.DANDI_DANDISETS_BUCKET_NAME
 S3_PREFIX = 'dandisets'
 S3_ENDPOINT_URL = 'http://localhost:9000'
 
