@@ -1,14 +1,18 @@
+from django.db import models
+from django.db.models.functions import Cast
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
-from django.db import models
-from django.db.models.functions import Cast
 
-from .models import Dandiset, NWBFile
-from .serializers import DandisetSerializer, DandisetListSerializer, DandisetPublishSerializer, NWBFileSerializer
+from .models import Dandiset
+from .serializers import (
+    DandisetListSerializer,
+    DandisetPublishSerializer,
+    DandisetSerializer,
+)
 from .tasks import publish_dandiset
 
 
@@ -19,9 +23,7 @@ class DandisetPagination(PageNumberPagination):
 
 
 class DandisetViewSet(viewsets.ModelViewSet):
-    queryset = Dandiset.objects.all()\
-        .order_by('dandi_id', '-version')\
-        .distinct('dandi_id')
+    queryset = Dandiset.objects.all().order_by('dandi_id', '-version').distinct('dandi_id')
     serializer_class = DandisetListSerializer
     pagination_class = DandisetPagination
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -44,14 +46,10 @@ class DandisetViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['GET'], url_path='versions')
     def versions(self, request, dandi_id):
-        queryset = self.filter_queryset(self.get_queryset())
         filter_kwargs = {'dandi_id': dandi_id}
         if not Dandiset.objects.filter(**filter_kwargs).exists():
             return Response(status=404)
-        versions = [v.version for v in
-                    Dandiset.objects
-                    .filter(**filter_kwargs)
-                    ]
+        versions = [v.version for v in Dandiset.objects.filter(**filter_kwargs)]
         return Response(versions)
 
     @action(detail=False)
@@ -60,10 +58,11 @@ class DandisetViewSet(viewsets.ModelViewSet):
         if not query:
             # return a listing of everything if there is no query
             return self.list(request)
-        queryset = Dandiset.objects\
-            .annotate(metadata_text=Cast('metadata', models.TextField()))\
-            .filter(metadata_text__search=query)\
-            .order_by('dandi_id', '-version')\
+        queryset = (
+            Dandiset.objects.annotate(metadata_text=Cast('metadata', models.TextField()))
+            .filter(metadata_text__search=query)
+            .order_by('dandi_id', '-version')
             .distinct('dandi_id')
+        )
         serializer = DandisetListSerializer(queryset, many=True)
         return Response(serializer.data)

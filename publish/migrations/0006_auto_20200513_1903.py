@@ -11,8 +11,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='dandiset',
-            name='version',
-            field=models.CharField(max_length=13),
+            model_name='dandiset', name='version', field=models.CharField(max_length=13),
         ),
     ]

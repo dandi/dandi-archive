@@ -9,39 +9,56 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Dandiset',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
                 ('dandi_id', models.CharField(max_length=16, unique=True)),
                 ('version', models.IntegerField()),
                 ('metadata', django.contrib.postgres.fields.jsonb.JSONField(default=dict)),
             ],
-            options={
-                'unique_together': {('dandi_id', 'version')},
-            },
+            options={'unique_together': {('dandi_id', 'version')}},
         ),
         migrations.CreateModel(
             name='Subject',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=512)),
                 ('metadata', django.contrib.postgres.fields.jsonb.JSONField(default=dict)),
-                ('dandiset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='publish.Dandiset')),
+                (
+                    'dandiset',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to='publish.Dandiset'
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
             name='NWBFile',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
                 ('name', models.CharField(max_length=512)),
@@ -49,10 +66,13 @@ class Migration(migrations.Migration):
                 ('sha256', models.CharField(max_length=64)),
                 ('metadata', django.contrib.postgres.fields.jsonb.JSONField(default=dict)),
                 ('file', models.FileField(upload_to='')),
-                ('subject', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='publish.Subject')),
+                (
+                    'subject',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to='publish.Subject'
+                    ),
+                ),
             ],
-            options={
-                'db_table': 'nwb_file',
-            },
+            options={'db_table': 'nwb_file'},
         ),
     ]

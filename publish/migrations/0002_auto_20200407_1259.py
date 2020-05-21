@@ -10,9 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='nwbfile',
-            name='size',
-            field=models.BigIntegerField(),
-        ),
+        migrations.AlterField(model_name='nwbfile', name='size', field=models.BigIntegerField(),),
     ]
