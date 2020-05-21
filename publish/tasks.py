@@ -2,12 +2,11 @@ from dataclasses import dataclass
 import datetime
 from hashlib import sha256
 from json import JSONDecodeError
+import subprocess
 from tempfile import NamedTemporaryFile
 from typing import Any, cast, Dict, List, Optional, TYPE_CHECKING
-import subprocess
 
 import boto3  # type: ignore
-from botocore.exceptions import ClientError  # type: ignore
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -43,13 +42,11 @@ class DandiClient(Client):
 
 def _get_json(response: Response) -> Any:
     if response.status_code != 200:
-        raise DandiSetLoadError(
-            f'Girder returned status code {response.status_code}')
+        raise DandiSetLoadError(f'Girder returned status code {response.status_code}')
     try:
         return response.json()
     except JSONDecodeError:
-        raise DandiSetLoadError(
-            f'Girder returned non-json response: {repr(response.content)}')
+        raise DandiSetLoadError(f'Girder returned non-json response: {repr(response.content)}')
 
 
 @dataclass
@@ -75,8 +72,8 @@ class DandiFile:
                     hash.update(chunk)
                     nwb.write(chunk)
 
-            r = subprocess.call(["dandi", "validate", nwb.name])
-            print("Called dandi validate:", r)
+            r = subprocess.call(['dandi', 'validate', nwb.name])
+            print('Called dandi validate:', r)
 
             logger.info(f'Uploading {self.name}...')
             nwb.seek(0)
@@ -117,17 +114,12 @@ class DandiSet:
 
     @staticmethod
     def _load_folder(client: Client, path: str, parent_id: str) -> List[DandiFile]:
-        items = _get_json(
-            client.get(f'item', params={
-                'folderId': str(parent_id),
-                'limit': 0,
-            }))
+        items = _get_json(client.get('item', params={'folderId': str(parent_id), 'limit': 0}))
         files = []
         for item in items:
             file_list = _get_json(client.get(f'item/{item["_id"]}/files'))
             if len(file_list) != 1:
-                raise DandiSetLoadError(
-                    f'Expected exactly one file per item not {len(file_list)}')
+                raise DandiSetLoadError(f'Expected exactly one file per item not {len(file_list)}')
             f = file_list[0]
             files.append(
                 DandiFile(
@@ -139,15 +131,12 @@ class DandiSet:
                 )
             )
         subfolders = _get_json(
-            client.get(f'folder', params={
-                'parentId': str(parent_id),
-                'parentType': 'folder',
-                'limit': 0,
-            }))
+            client.get(
+                'folder', params={'parentId': str(parent_id), 'parentType': 'folder', 'limit': 0}
+            )
+        )
         for subfolder in subfolders:
-            files += DandiSet._load_folder(client,
-                                           path + subfolder['name'] + '/',
-                                           subfolder['_id'])
+            files += DandiSet._load_folder(client, path + subfolder['name'] + '/', subfolder['_id'])
         return files
 
     def s3_path(self, version):
@@ -160,26 +149,20 @@ class DandiSet:
         time = datetime.datetime.utcnow()
         version = self._get_version_for_datetime(time)
         # increment time until there are no collisions
-        collision = models.Dandiset.objects\
-            .filter(dandi_id=self.dandi_id, version=version)\
-            .exists()
+        collision = models.Dandiset.objects.filter(dandi_id=self.dandi_id, version=version).exists()
         while collision:
             time += datetime.timedelta(minutes=1)
             version = self._get_version_for_datetime(time)
-            collision = models.Dandiset.objects\
-                .filter(dandi_id=self.dandi_id, version=version)\
-                .exists()
+            collision = models.Dandiset.objects.filter(
+                dandi_id=self.dandi_id, version=version
+            ).exists()
         return version
 
     def publish(self, s3: 'S3Client') -> str:
         version = self._get_next_version()
         prefix = self.s3_path(version)
 
-        dandiset = models.Dandiset(
-            dandi_id=self.dandi_id,
-            version=version,
-            metadata=self.metadata,
-        )
+        dandiset = models.Dandiset(dandi_id=self.dandi_id, version=version, metadata=self.metadata,)
         dandiset.save()
         for file in self.files:
             file.publish(dandiset, s3, prefix)

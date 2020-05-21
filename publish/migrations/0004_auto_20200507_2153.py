@@ -14,11 +14,19 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='nwbfile',
             name='subject',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='nwb_files', to='publish.Subject'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='nwb_files',
+                to='publish.Subject',
+            ),
         ),
         migrations.AlterField(
             model_name='subject',
             name='dandiset',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='publish.Dandiset'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='subjects',
+                to='publish.Dandiset',
+            ),
         ),
     ]
