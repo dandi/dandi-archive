@@ -1,7 +1,7 @@
 import re
 
 import requests
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, HTTPError
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
@@ -155,13 +155,15 @@ class DandiResource(Resource):
             sort=sort,
         )
 
-    @access.user
+    # TODO this is restricted to site admins for now
+    @access.admin
+    # @access.user
     @autoDescribeRoute(
         Description("Publish Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
     )
     def publish_dandiset(self, identifier):
         dandiset_folder = self.get_dandiset(identifier, None)
-        Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.WRITE),
+        Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.ADMIN),
 
         publish_api_url = Setting().get(PUBLISH_API_URL)
         publish_api_key = Setting().get(PUBLISH_API_KEY)
@@ -172,8 +174,9 @@ class DandiResource(Resource):
                 headers={"Authorization": f"Token {publish_api_key}"},
                 data={"girder_id": dandiset_folder["_id"]},
             )
-            if response.status_code != 200:
-                raise RestException(message="Failed to publish")
+            response.raise_for_status()
+        except HTTPError:
+            raise RestException(message="Failed to publish")
         except ConnectionError:
             raise RestException(message="Failed to contact publish API")
 

@@ -190,7 +190,12 @@ import { mapState } from 'vuex';
 import MetaEditor from '@/components/MetaEditor.vue';
 import ListingComponent from '@/views/DandisetLandingView/ListingComponent.vue';
 import { dandiUrl } from '@/utils';
-import { girderRest, publishRest, loggedIn } from '@/rest';
+import {
+  girderRest,
+  publishRest,
+  user,
+  loggedIn,
+} from '@/rest';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
@@ -234,7 +239,7 @@ export default {
   },
   computed: {
     hasAccess() {
-      return loggedIn && this.selected._accessLevel >= 1;
+      return loggedIn && this.selected._accessLevel === 2 && user.admin;
     },
     editDisabledMessage() {
       if (!loggedIn) {
@@ -249,7 +254,7 @@ export default {
       if (!loggedIn) {
         return 'You must be logged in to publish.';
       }
-      if (this.selected._accessLevel < 1) {
+      if (this.selected._accessLevel < 2 || !user.admin) {
         return 'You do not have permission to publish this dandiset.';
       }
       return null;
@@ -320,8 +325,8 @@ export default {
     },
   },
   methods: {
-    publish() {
-      girderRest.post(`/dandi/${this.meta.identifier}`);
+    async publish() {
+      await girderRest.post(`/dandi/${this.meta.identifier}`);
     },
   },
 };
