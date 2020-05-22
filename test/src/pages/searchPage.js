@@ -22,7 +22,7 @@ export async function search(query) {
  * Gets the results currently visible on the search page
  */
 export async function getSearchResults() {
-  const elements = await page.$x(vListItem(null, { title: true, subtitle: true }));
+  const elements = await page.$x(vListItem({ title: true, subtitle: true }));
   return Promise.all(elements.map(async (element) => {
     const name = await element.$eval('.v-list-item__title', (e) => e.innerText);
     const subtitle = await element.$eval('.v-list-item__subtitle', (e) => e.innerText);

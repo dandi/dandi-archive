@@ -35,7 +35,7 @@ describe('account management', () => {
   it('logs the user out', async () => {
     await expect(page).toClickXPath(vAvatar('MR'));
     await page.waitFor(500);
-    await expect(page).toClickXPath(vListItem('Logout', { action: vIcon('mdi-logout') }));
+    await expect(page).toClickXPath(vListItem({ content: 'Logout', action: vIcon('mdi-logout') }));
 
     // this text is only displayed when not logged in
     await expect(page).toMatch('Want to create your own datasets?');

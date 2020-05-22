@@ -27,6 +27,6 @@ describe('dandiset registration page', () => {
 
     await expect(page).toClickXPath(vBtn('Register dataset'));
 
-    await expect(page).toContainXPath(vCard(null, { title: [name, vChip('This dataset has not been published!')] }));
+    await expect(page).toContainXPath(vCard({ title: [name, vChip('This dataset has not been published!')] }));
   });
 });

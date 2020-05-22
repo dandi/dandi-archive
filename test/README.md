@@ -77,11 +77,26 @@ await expect(page).toFillXPath(vTextField('Username'), 'DandiDan');
 await expect(page).toClickXPath(vBtn('Submit'));
 ```
 #### Usage
-The first argument to any `vElement` will generally be the expected contents of the `v-element`.
-* If contents is falsy, like `vFoo()`, the XPath will match any `v-foo`.
-* If contents is a string, like `vFoo('contents')`, the XPath will match any `v-foo` which contains the text `contents`.
-* If contents is a valid XPath, like `vFoo(vBar())`, the XPath will match any `v-foo` which contains a `v-bar`.
+The canonical argument to any `vElement` is a destructured object.
+The arguments are unique to each element, but generally will have a `content` argument and a `cssClass` argument.
+If the argument is not an object, it is assumed to be `content`.
+* If `content` is falsy or absent, like `vFoo()` or `vFoo({content: null})`, the XPath will match any `v-foo`.
+* If `content` is a string, like `vFoo('Hello')` or `vFoo({content: 'World'})`, the XPath will match any `v-foo` which contains the string.
+* If `content` is a valid XPath, like `vFoo(vBar())`, the XPath will match any `v-foo` which contains a `v-bar`.
 Note that `vBar` is not necessarily an immediate child of `vFoo`; `vFoo(vBar())` will also match `<v-foo><div><v-bar /></div></v-foo>`.
+* If `content` is an array, every element in the array is treated as a separate `content`. `vFoo(['Hello', vBar()])` will match any `v-foo` which contains both a `v-bar` element and the text `Hello`.
+
+The same assumptions are generally made for different arguments.
+Here are some examples selectors and DOM elements they will locate:
+```
+vFoo({ contents: vBar('Hello World!'), cssClass: ['world', 'hello'] })
+
+<v-foo class='hello world'>
+  <v-bar>
+    Hello World!
+  </v-bar>
+</v-foo>
+```
 
 The second argument will generally be an object whose options will vary based on the element.
 Most elements have a `cssClass` option which will only match elements with the given class.
