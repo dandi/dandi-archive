@@ -7,14 +7,6 @@ import {
 import * as homePage from '../pages/homePage';
 
 describe('home page stats', () => {
-  beforeAll(async () => {
-    await Promise.all([
-      page.goto(CLIENT_URL),
-      // wait until there are no active network connections for 500ms
-      page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    ]);
-  });
-
   it('increments users stat when a new user registers', async () => {
     // wait for stats to load
     const initialUserCount = await homePage.getStat('users');
@@ -34,6 +26,8 @@ describe('home page stats', () => {
   });
 
   it('increments dandisets stat when a new dandiset is registered', async () => {
+    await registerNewUser();
+
     const dandisetName = `dandiset${uniqueId()}`;
     const dandisetDescription = `Description! ${uniqueId()}`;
 

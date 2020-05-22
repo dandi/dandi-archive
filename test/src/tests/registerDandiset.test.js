@@ -5,14 +5,10 @@ import {
   vCard,
   vChip,
 } from 'jest-puppeteer-vuetify';
-import { CLIENT_URL, uniqueId, registerNewUser } from '../util';
+import { uniqueId, registerNewUser } from '../util';
 
 
 describe('dandiset registration page', () => {
-  beforeAll(async () => {
-    await page.goto(CLIENT_URL);
-  });
-
   it('registers a new dandiset', async () => {
     const id = uniqueId();
     const name = `name ${id}`;
