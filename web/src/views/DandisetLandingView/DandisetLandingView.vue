@@ -47,7 +47,7 @@
       >
         <v-row>
           <v-col>
-            <DandisetData
+            <DandisetMain
               :schema="schema"
               :meta="meta"
               @edit="edit = true"
@@ -76,14 +76,14 @@ import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import MetaEditor from './MetaEditor.vue';
-import DandisetData from './DandisetData.vue';
+import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
 
 export default {
   name: 'DandisetLandingView',
   components: {
     MetaEditor,
-    DandisetData,
+    DandisetMain,
     DandisetSearchField,
     DandisetDetails,
   },

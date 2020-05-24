@@ -88,7 +88,7 @@ import { loggedIn } from '@/rest';
 import ListingComponent from './ListingComponent.vue';
 
 export default {
-  name: 'DandisetData',
+  name: 'DandisetMain',
   components: {
     ListingComponent,
   },
