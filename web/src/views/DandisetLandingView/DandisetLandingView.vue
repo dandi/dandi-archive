@@ -36,7 +36,12 @@
           </v-icon>
         </v-btn>
       </v-toolbar>
+      <v-progress-linear
+        v-if="!currentDandiset"
+        indeterminate
+      />
       <v-container
+        v-else
         fluid
         class="grey lighten-4"
       >

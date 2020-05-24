@@ -1,9 +1,10 @@
 <template>
   <v-card
+    v-if="currentDandiset"
     height="100%"
     class="px-3 py-1"
   >
-    <template v-if="currentDandiset">
+    <template>
       <v-row
         no-gutters
         :class="rowClasses"
@@ -108,12 +109,6 @@
           </v-timeline-item>
         </v-timeline>
       </v-row> -->
-    </template>
-    <template v-else>
-      <v-progress-linear
-        top
-        indeterminate
-      />
     </template>
   </v-card>
 </template>
