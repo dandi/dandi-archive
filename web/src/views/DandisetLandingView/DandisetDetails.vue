@@ -70,7 +70,7 @@
                     mdi-help-circle
                   </v-icon>
                 </template>
-                <span>This is a version of your dandiset that contains uncommitted changes.</span>
+                <span>This is a version of your dandiset that contains unpublished changes.</span>
               </v-tooltip>
             </v-row>
           </v-card>
