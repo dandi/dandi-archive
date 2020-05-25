@@ -83,7 +83,7 @@ function elementsAsPredicate(name, values) {
  * @param {*} defaultParam The name of the parameter to use if the argument is not an object.
  */
 function parseArguments(args, defaultParam = 'content') {
-  if (typeof (args) === 'object') {
+  if (typeof args === 'object' && !Array.isArray(args)) {
     return args;
   }
   const ret = {};
@@ -140,7 +140,7 @@ export function vListItemTitle(args) {
 }
 
 export function vTextarea(args) {
-  const { label, cssClass } = parseArguments(args);
+  const { label, cssClass } = parseArguments(args, 'label');
   return `//div${classAsPredicate('v-textarea', cssClass)}//div[label[contains(text(),"${label}")]]//textarea`;
 }
 
