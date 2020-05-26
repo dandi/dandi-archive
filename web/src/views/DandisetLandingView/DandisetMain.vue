@@ -5,10 +5,10 @@
         {{ meta.name }}
       </h1>
     </v-row>
-    <v-card>
+    <v-card class="pb-2">
       <v-row
         class="mx-2"
-        align-content="center"
+        align="center"
       >
         <v-col>
           <a :href="permalink">
@@ -22,12 +22,11 @@
           <template v-slot:activator="{ on }">
             <div v-on="on">
               <v-btn
-                class="mt-2"
                 text
                 :disabled="editDisabledMessage !== null"
                 @click="$emit('edit')"
               >
-                <v-icon class="mr-3 ml-0">
+                <v-icon class="mr-3">
                   mdi-pencil
                 </v-icon>
                 Edit metadata
@@ -45,15 +44,12 @@
           Description
         </v-card-title>
       </v-row>
-      <v-row class="mx-1 px-4 font-weight-light">
+      <v-row class="mx-1 mb-4 px-4 font-weight-light">
         {{ meta.description }}
       </v-row>
 
       <template v-for="(field, key) in extraFields">
-        <v-divider
-          :key="`${key}-divider`"
-          class="mt-4"
-        />
+        <v-divider :key="`${key}-divider`" />
         <v-row
           :key="`${key}-title`"
           :class="titleClasses"
@@ -64,7 +60,7 @@
         </v-row>
         <v-row
           :key="key"
-          class="mx-4"
+          class="mx-2 mb-4"
         >
           <v-col class="py-0">
             <ListingComponent
