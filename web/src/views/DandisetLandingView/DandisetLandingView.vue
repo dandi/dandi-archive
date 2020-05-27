@@ -28,10 +28,10 @@
         >
           <v-icon color="white">
             <template v-if="detailsPanel">
-              mdi-chevron-right
+              mdi-chevron-up
             </template>
             <template v-else>
-              mdi-chevron-left
+              mdi-chevron-down
             </template>
           </v-icon>
         </v-btn>
