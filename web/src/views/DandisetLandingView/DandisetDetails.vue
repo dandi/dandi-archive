@@ -60,18 +60,20 @@
                 </v-icon>
                 <span :class="itemClasses">Draft</span>
               </v-col>
-              <v-tooltip top>
-                <template v-slot:activator="{ on }">
-                  <v-icon
-                    small
-                    color="grey darken-1"
-                    v-on="on"
-                  >
-                    mdi-help-circle
-                  </v-icon>
-                </template>
-                <span>This is a version of your dandiset that contains unpublished changes.</span>
-              </v-tooltip>
+              <v-col>
+                <v-tooltip top>
+                  <template v-slot:activator="{ on }">
+                    <v-icon
+                      small
+                      color="grey darken-1"
+                      v-on="on"
+                    >
+                      mdi-help-circle
+                    </v-icon>
+                  </template>
+                  <span>This is a version of your dandiset that contains unpublished changes.</span>
+                </v-tooltip>
+              </v-col>
             </v-row>
           </v-card>
         </v-col>

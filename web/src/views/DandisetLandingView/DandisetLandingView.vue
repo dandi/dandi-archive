@@ -45,6 +45,14 @@
         fluid
         class="grey lighten-4"
       >
+        <v-row v-if="$vuetify.breakpoint.smAndDown">
+          <v-col
+            v-if="detailsPanel"
+            cols="12"
+          >
+            <DandisetDetails />
+          </v-col>
+        </v-row>
         <v-row>
           <v-col>
             <DandisetMain
@@ -54,7 +62,7 @@
             />
           </v-col>
           <v-col
-            v-if="detailsPanel"
+            v-if="detailsPanel && !$vuetify.breakpoint.smAndDown"
             cols="auto"
           >
             <DandisetDetails />
