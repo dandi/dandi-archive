@@ -6,6 +6,7 @@ export default {
     browseLocation: null,
     selected: [],
     currentDandiset: null,
+    currentDandisetOwners: null,
   },
   getters: {
     loggedIn,
@@ -16,6 +17,9 @@ export default {
     },
     setCurrentDandiset(state, dandiset) {
       state.currentDandiset = dandiset;
+    },
+    setCurrentDandisetOwners(state, owners) {
+      state.currentDandisetOwners = owners;
     },
     setBrowseLocation(state, location) {
       state.browseLocation = location;

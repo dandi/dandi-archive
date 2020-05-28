@@ -78,6 +78,59 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <v-divider class="my-2 px-0 mx-0" />
+
+      <v-row
+        no-gutters
+        :class="rowClasses"
+      >
+        <v-col>
+          <span :class="labelClasses">Ownership</span>
+        </v-col>
+        <v-col cols="auto">
+          <v-dialog
+            v-model="ownerDialog"
+            width="50%"
+          >
+            <template v-slot:activator="{ on }">
+              <v-btn
+                color="primary"
+                x-small
+                text
+                v-on="on"
+              >
+                <v-icon
+                  x-small
+                  class="pr-1"
+                >
+                  mdi-lock
+                </v-icon>
+                Manage
+              </v-btn>
+            </template>
+            <DandisetOwnersDialog
+              :key="Math.random().toString(36).substring(2)"
+              :owners="owners"
+              @close="ownerDialog = false"
+            />
+          </v-dialog>
+        </v-col>
+      </v-row>
+      <!-- TODO: Make chips wrap, instead of pushing whole card wide -->
+      <v-row :class="rowClasses">
+        <v-col cols="12">
+          <v-chip
+            v-for="owner in owners"
+            :key="owner.id"
+            color="light-blue lighten-4"
+            text-color="light-blue darken-3"
+            class="font-weight-medium mx-1"
+          >
+            {{ owner.login }}
+          </v-chip>
+        </v-col>
+      </v-row>
       <!-- TODO: Uncomment this once the versions API is accessible -->
       <!-- <v-row>
         <v-col class="pa-0">
@@ -116,17 +169,24 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
+import girderRest from '@/rest';
 import moment from 'moment';
+
+import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
 
 export default {
   name: 'DandisetDetails',
+  components: {
+    DandisetOwnersDialog,
+  },
   data() {
     return {
       rowClasses: 'my-1',
       labelClasses: 'mx-2 text--secondary',
       itemClasses: 'font-weight-medium',
+      ownerDialog: false,
     };
   },
   computed: {
@@ -153,7 +213,25 @@ export default {
     },
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
+      owners: (state) => state.currentDandisetOwners,
+      // owners: (state) => [
+      //   ...state.currentDandisetOwners,
+      //   ...state.currentDandisetOwners,
+      //   ...state.currentDandisetOwners,
+      //   ...state.currentDandisetOwners,
+      //   ...state.currentDandisetOwners,
+      // ],
     }),
+  },
+  watch: {
+    currentDandiset: {
+      immediate: true,
+      async handler(val) {
+        const { identifier } = val.meta.dandiset;
+        const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
+        this.setCurrentDandisetOwners(data);
+      },
+    },
   },
   methods: {
     formatDateTime(datetimeStr) {
@@ -163,6 +241,7 @@ export default {
 
       return `${date} at ${time}`;
     },
+    ...mapMutations('girder', ['setCurrentDandisetOwners']),
   },
 };
 </script>
