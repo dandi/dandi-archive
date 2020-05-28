@@ -1,7 +1,16 @@
-import 'expect-puppeteer';
+import { expect } from '@jest/globals';
+// The "jest" package transitively depends on "@jest/globals". However,
+// end users typically install "jest", so we depend on that as a
+// "peerDependencies", to avoid the burden of end users having to explicitly
+// install "@jest/globals".
+// The fact that this package's depends on "*" version of "@jest/globals"
+// and the fact that other test-ecosystem packages are unlikely to pull in
+// conflicting versions of "@jest/globals" should still ensure that the
+// version of "@jest/globals" implicitly installed by users resolves to the
+// same one as what's imported / depended upon by this package.
 
 // Some extensions to the Jest expect API to better support XPaths
-global.expect.extend({
+expect.extend({
   async toContainXPath(page, xpath) {
     try {
       await page.waitForXPath(xpath);
