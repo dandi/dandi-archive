@@ -2,9 +2,12 @@ boto3
 celery
 dandi==0.4.5
 django
+django-admin-display
 django-configurations[database]
 django-cors-headers
+django-extensions
 djangorestframework
+drf-extensions
 httpx
 psycopg2
 pyyaml
