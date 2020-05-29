@@ -2,8 +2,6 @@ import {
   vBtn,
   vTextField,
   vTextarea,
-  vCard,
-  vChip,
 } from 'jest-puppeteer-vuetify';
 import { CLIENT_URL, uniqueId, registerNewUser } from '../util';
 
