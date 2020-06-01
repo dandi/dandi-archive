@@ -94,21 +94,35 @@
             width="50%"
           >
             <template v-slot:activator="{ on }">
-              <v-btn
-                color="primary"
-                x-small
-                text
-                v-on="on"
+              <v-tooltip
+                :disabled="loggedIn"
+                left
               >
-                <v-icon
-                  x-small
-                  class="pr-1"
+                <template
+                  v-slot:activator="{ on: tooltipOn }"
                 >
-                  mdi-lock
-                </v-icon>
-                Manage
-              </v-btn>
+                  <div v-on="tooltipOn">
+                    <v-btn
+                      color="primary"
+                      x-small
+                      text
+                      :disabled="!loggedIn"
+                      v-on="on"
+                    >
+                      <v-icon
+                        x-small
+                        class="pr-1"
+                      >
+                        mdi-lock
+                      </v-icon>
+                      Manage
+                    </v-btn>
+                  </div>
+                </template>
+                You must be logged in to manage/view permissions.
+              </v-tooltip>
             </template>
+            <!-- Key set randomly to force re-render of manage dialog -->
             <DandisetOwnersDialog
               :key="Math.random().toString(36).substring(2)"
               :owners="owners"
@@ -170,7 +184,7 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import girderRest from '@/rest';
+import girderRest, { loggedIn } from '@/rest';
 import moment from 'moment';
 
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
@@ -190,6 +204,7 @@ export default {
     };
   },
   computed: {
+    loggedIn,
     created() {
       return this.formatDateTime(this.currentDandiset.created);
     },

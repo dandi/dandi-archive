@@ -19,6 +19,7 @@
           v-model="selection"
           :items="items"
           :loading="loadingUsers"
+          :disabled="editDisabled"
           :search-input.sync="search"
           hide-no-data
           clearable
@@ -77,6 +78,7 @@
         tile
         text
         color="primary"
+        :disabled="editDisabled"
         @click="save"
       >
         Save Changes
@@ -86,7 +88,7 @@
 </template>
 
 <script>
-import girderRest from '@/rest';
+import girderRest, { user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
 // import _ from 'lodash';
 // const listToObject = (list) => (list.reduce((acc, owner) => ({ [owner.id]: owner, ...acc }), {}));
@@ -117,6 +119,11 @@ export default {
     };
   },
   computed: {
+    user,
+    editDisabled() {
+      if (!this.user) return true;
+      return !this.owners.find((owner) => owner.id === this.user._id);
+    },
     ...mapState('girder', ['currentDandiset']),
   },
   watch: {
