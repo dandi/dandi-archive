@@ -36,14 +36,18 @@
         />
       </template>
       <template v-else>
-        <b>{{ schema.title }}</b>: {{ data.join(', ') }}
+        <template v-if="!root">
+          <b>{{ schema.title }}</b>:
+        </template>
+        {{ data.join(', ') }}
       </template>
     </template>
     <template v-else-if="schema.type === 'object'">
-      <v-list>
+      <v-list dense>
         <v-list-item
           v-for="(value, key) in data"
           :key="key"
+          dense
         >
           <ListingComponent
             :schema="schema.properties[key]"
@@ -54,7 +58,10 @@
     </template>
     <template v-else>
       <!-- Base Case -->
-      <b>{{ schema.title }}</b>: {{ data }}
+      <template v-if="!root">
+        <b>{{ schema.title }}</b>:
+      </template>
+      {{ data }}
     </template>
   </div>
 </template>
@@ -72,6 +79,10 @@ export default {
       // The data at the matching level of schema
       type: [Object, Number, String, Array],
       required: true,
+    },
+    root: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {
