@@ -135,14 +135,20 @@
       <v-row :class="rowClasses">
         <v-col cols="12">
           <v-chip
-            v-for="owner in owners"
+            v-for="owner in limitedOwners"
             :key="owner.id"
             color="light-blue lighten-4"
             text-color="light-blue darken-3"
-            class="font-weight-medium mx-1"
+            class="font-weight-medium ma-1"
           >
             {{ owner.login }}
           </v-chip>
+          <span
+            v-if="numExtraOwners"
+            class="ml-1 text--secondary"
+          >
+            +{{ numExtraOwners }} more...
+          </span>
         </v-col>
       </v-row>
       <!-- TODO: Uncomment this once the versions API is accessible -->
@@ -226,16 +232,15 @@ export default {
 
       return null;
     },
+    limitedOwners() {
+      return this.owners.slice(0, 5);
+    },
+    numExtraOwners() {
+      return this.owners.length - this.limitedOwners.length;
+    },
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
       owners: (state) => state.currentDandisetOwners,
-      // owners: (state) => [
-      //   ...state.currentDandisetOwners,
-      //   ...state.currentDandisetOwners,
-      //   ...state.currentDandisetOwners,
-      //   ...state.currentDandisetOwners,
-      //   ...state.currentDandisetOwners,
-      // ],
     }),
   },
   watch: {
