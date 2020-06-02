@@ -1,8 +1,6 @@
-<!-- TODO: Fix card to put buttons at the bottom -->
-<!-- TODO: Make only the v-list scroll, keep height of everything else -->
 <!-- TODO: Find way to clear v-autocomplete once selected-->
 <template>
-  <v-card height="500px">
+  <v-card height="70vh">
     <v-card-title>Manage Ownership</v-card-title>
     <template v-if="!owners || !owners.length">
       <v-row
@@ -36,7 +34,8 @@
       <v-row class="mx-1">
         <v-list
           width="100%"
-          height="100%"
+          height="49vh"
+          style="overflow-y: auto;"
           class="px-6"
         >
           <template
@@ -65,7 +64,7 @@
     <v-row
       justify="end"
       align="end"
-      class="mx-1"
+      class="mx-1 mt-2"
     >
       <v-btn
         tile
