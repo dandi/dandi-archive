@@ -15,6 +15,14 @@
             {{ permalink }}
           </a>
         </v-col>
+        <v-btn
+          icon
+          :to="fileBrowserLink"
+        >
+          <v-icon color="primary">
+            mdi-file-tree
+          </v-icon>
+        </v-btn>
         <v-tooltip
           left
           :disabled="editDisabledMessage === null"
@@ -123,6 +131,12 @@ export default {
       }
 
       return null;
+    },
+    fileBrowserLink() {
+      if (!this.currentDandiset) return null;
+
+      const { _modelType, _id } = this.currentDandiset;
+      return { name: 'file-browser', params: { _modelType, _id } };
     },
     permalink() {
       return `${dandiUrl}/dandiset/${this.meta.identifier}/draft`;
