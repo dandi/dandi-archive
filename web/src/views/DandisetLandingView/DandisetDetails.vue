@@ -233,9 +233,11 @@ export default {
       return null;
     },
     limitedOwners() {
+      if (!this.owners) return [];
       return this.owners.slice(0, 5);
     },
     numExtraOwners() {
+      if (!this.owners) return 0;
       return this.owners.length - this.limitedOwners.length;
     },
     ...mapState('girder', {
