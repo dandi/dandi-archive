@@ -22,15 +22,14 @@
           hide-no-data
           clearable
           auto-select-first
-          item-text="name"
+          item-text="result"
           placeholder="Search by name or username"
-          solo
           outlined
           flat
           return-object
+          @update:search-input="throttledUpdate"
         />
       </v-row>
-      <v-divider />
       <v-row class="mx-1">
         <v-list
           width="100%"
@@ -89,8 +88,7 @@
 <script>
 import girderRest, { user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
-// import _ from 'lodash';
-// const listToObject = (list) => (list.reduce((acc, owner) => ({ [owner.id]: owner, ...acc }), {}));
+import _ from 'lodash';
 
 
 const userFormatConversion = (users) => users.map(({
@@ -99,6 +97,7 @@ const userFormatConversion = (users) => users.map(({
   id: _id, level: _accessLevel, login, name: `${firstName} ${lastName}`,
 }));
 
+const addResult = (users) => users.map((u) => ({ ...u, result: `${u.name} (${u.login})` }));
 
 export default {
   name: 'DandisetOwnersDialog',
@@ -113,8 +112,9 @@ export default {
       search: null,
       loadingUsers: false,
       selection: null,
-      newOwners: [...this.owners],
+      newOwners: addResult(this.owners),
       items: [],
+      throttledUpdate: _.debounce(this.updateItems, 200),
     };
   },
   computed: {
@@ -126,26 +126,23 @@ export default {
     ...mapState('girder', ['currentDandiset']),
   },
   watch: {
-    async search(val, oldVal) {
-      if (!this.search || this.loadingUsers || val === oldVal) return;
+    selection(val) {
+      if (!val || this.newOwners.find((x) => x.id === val.id)) return;
+      this.newOwners.push(val);
+    },
+  },
+  methods: {
+    async updateItems() {
+      if (!this.search) return;
 
       this.loadingUsers = true;
       const { data } = await girderRest.get('/user/', { params: { text: this.search } });
 
       // Needed to match existing owner document schema
-      this.items = userFormatConversion(data);
+      this.items = addResult(userFormatConversion(data));
 
       this.loadingUsers = false;
     },
-    selection(val) {
-      if (!val || this.newOwners.find((x) => x.id === val.id)) return;
-
-      this.newOwners.push(val);
-      this.search = null;
-      this.selection = null;
-    },
-  },
-  methods: {
     removeOwner(index) {
       this.newOwners.splice(index, 1);
     },
