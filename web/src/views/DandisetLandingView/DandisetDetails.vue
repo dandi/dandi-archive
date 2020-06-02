@@ -6,6 +6,7 @@
   >
     <template>
       <v-row
+        v-if="contactName"
         no-gutters
         :class="rowClasses"
       >
@@ -218,7 +219,7 @@ export default {
       return this.formatDateTime(this.currentDandiset.updated);
     },
     contactName() {
-      if (!this.currentDandiset) {
+      if (!this.currentDandiset || !this.currentDandiset.meta.dandiset.contributors) {
         return null;
       }
 
