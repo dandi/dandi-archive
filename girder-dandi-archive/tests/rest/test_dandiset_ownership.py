@@ -28,7 +28,7 @@ def multi_owner_dandiset(server, admin, user):
         server.request(
             path=f"/dandi/{identifier}/owners",
             method="PUT",
-            body=json.dumps([user], default=str),
+            body=json.dumps([admin, user], default=str),
             user=admin,
             type="application/json",
         )
@@ -65,7 +65,18 @@ def test_add_dandiset_owners(server, admin, user, admin_created_dandiset):
     )
 
     identifier = admin_created_dandiset["meta"]["dandiset"]["identifier"]
-    request_body = json.dumps([user], default=str)
+
+    resp = server.request(path=f"/dandi/{identifier}/owners", method="GET", user=admin)
+    assertStatusOk(resp)
+    existing_owners = resp.json
+
+    # Assert user isn't in list of existing owners
+    assert not [u for u in existing_owners if u["id"] == str(user["_id"])]
+
+    # Transform data to be accepted by the backend
+    existing_owners = [{**owner, "_id": owner["id"]} for owner in existing_owners]
+
+    request_body = json.dumps([*existing_owners, user], default=str)
     resp = server.request(
         path=f"/dandi/{identifier}/owners",
         method="PUT",
@@ -99,15 +110,29 @@ def test_remove_dandiset_owners(server, admin, user, multi_owner_dandiset):
     )
 
     identifier = multi_owner_dandiset["meta"]["dandiset"]["identifier"]
-    request_body = json.dumps([user], default=str)
+
+    resp = server.request(path=f"/dandi/{identifier}/owners", method="GET", user=admin)
+    assertStatusOk(resp)
+    existing_owners = resp.json
+
+    # Assert user is in list of existing owners
+    user_indices = [i for i, u in enumerate(existing_owners) if u["id"] == str(user["_id"])]
+    assert len(user_indices) == 1
+
+    # Remove user from list and transform data to be accepted by the backend
+    existing_owners.pop(user_indices[0])
+    existing_owners = [{**owner, "_id": owner["id"]} for owner in existing_owners]
+
+    request_body = json.dumps(existing_owners, default=str)
     resp = server.request(
         path=f"/dandi/{identifier}/owners",
-        method="DELETE",
+        method="PUT",
         body=request_body,
         user=admin,
         type="application/json",
     )
 
+    assertStatusOk(resp)
     assert len(resp.json) == 1
     assert resp.json[0]["id"] != str(user["_id"])
 
