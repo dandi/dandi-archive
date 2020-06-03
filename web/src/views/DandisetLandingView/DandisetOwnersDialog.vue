@@ -1,6 +1,6 @@
 <!-- TODO: Find way to clear v-autocomplete once selected-->
 <template>
-  <v-card height="70vh">
+  <v-card class="flex-grow-0">
     <v-card-title>Manage Ownership</v-card-title>
     <template v-if="!owners || !owners.length">
       <v-row
@@ -32,9 +32,9 @@
       <v-row class="mx-1">
         <v-list
           width="100%"
-          height="49vh"
           style="overflow-y: auto;"
           class="px-6"
+          max-height="50vh"
         >
           <template
             v-for="(owner, i) in newOwners"
@@ -62,7 +62,7 @@
     <v-row
       justify="end"
       align="end"
-      class="mx-1 mt-2"
+      class="mx-1 pt-4 pb-2"
     >
       <v-btn
         tile
