@@ -128,9 +128,8 @@
                 </template>
               </v-tooltip>
             </template>
-            <!-- Key set randomly to force re-render of manage dialog -->
             <DandisetOwnersDialog
-              :key="Math.random().toString(36).substring(2)"
+              :key="ownerDialogKey"
               :owners="owners"
               @close="ownerDialog = false"
             />
@@ -213,6 +212,7 @@ export default {
       labelClasses: 'mx-2 text--secondary',
       itemClasses: 'font-weight-medium',
       ownerDialog: false,
+      ownerDialogKey: 0,
     };
   },
   computed: {
@@ -263,6 +263,10 @@ export default {
         const { identifier } = val.meta.dandiset;
         this.fetchDandisetOwners(identifier);
       },
+    },
+    ownerDialog() {
+      // This is incremented to force re-render of the owner dialog
+      this.ownerDialogKey += 1;
     },
   },
   methods: {
