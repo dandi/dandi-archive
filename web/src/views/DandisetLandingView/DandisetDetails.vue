@@ -188,10 +188,10 @@ export default {
     },
     formattedSize() {
       const { stats } = this;
-      if (!stats) return undefined;
-
-      const a = filesize(stats.bytes);
-      return a;
+      if (!stats) {
+        return undefined;
+      }
+      return filesize(stats.bytes);
     },
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
