@@ -17,7 +17,6 @@
           v-model="selection"
           :items="items"
           :loading="loadingUsers"
-          :disabled="editDisabled"
           :search-input.sync="search"
           hide-no-data
           clearable
@@ -76,7 +75,6 @@
         tile
         text
         color="primary"
-        :disabled="editDisabled"
         @click="save"
       >
         Save Changes
@@ -119,10 +117,6 @@ export default {
   },
   computed: {
     user,
-    editDisabled() {
-      if (!this.user) return true;
-      return !this.owners.find((owner) => owner.id === this.user._id);
-    },
     ...mapState('girder', ['currentDandiset']),
   },
   watch: {

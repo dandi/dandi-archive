@@ -96,7 +96,7 @@
           >
             <template v-slot:activator="{ on }">
               <v-tooltip
-                :disabled="loggedIn"
+                :disabled="!manageOwnersDisabled"
                 left
               >
                 <template
@@ -107,7 +107,7 @@
                       color="primary"
                       x-small
                       text
-                      :disabled="!loggedIn"
+                      :disabled="manageOwnersDisabled"
                       v-on="on"
                     >
                       <v-icon
@@ -120,7 +120,12 @@
                     </v-btn>
                   </div>
                 </template>
-                You must be logged in to manage/view permissions.
+                <template v-if="loggedIn">
+                  You must be an owner to manage ownership.
+                </template>
+                <template v-else>
+                  You must be logged in to manage ownership.
+                </template>
               </v-tooltip>
             </template>
             <!-- Key set randomly to force re-render of manage dialog -->
@@ -191,7 +196,7 @@
 
 <script>
 import { mapState, mapMutations } from 'vuex';
-import girderRest, { loggedIn } from '@/rest';
+import girderRest, { loggedIn, user } from '@/rest';
 import moment from 'moment';
 
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
@@ -211,6 +216,7 @@ export default {
     };
   },
   computed: {
+    user,
     loggedIn,
     created() {
       return this.formatDateTime(this.currentDandiset.created);
@@ -232,6 +238,10 @@ export default {
       }
 
       return null;
+    },
+    manageOwnersDisabled() {
+      if (!this.loggedIn || !this.owners) return true;
+      return !this.owners.find((owner) => owner.id === this.user._id);
     },
     limitedOwners() {
       if (!this.owners) return [];
