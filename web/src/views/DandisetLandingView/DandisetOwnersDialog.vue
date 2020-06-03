@@ -67,7 +67,7 @@
       <v-btn
         tile
         text
-        @click="cancel"
+        @click="close"
       >
         Cancel
       </v-btn>
@@ -140,7 +140,7 @@ export default {
     removeOwner(index) {
       this.newOwners.splice(index, 1);
     },
-    cancel() {
+    close() {
       this.$emit('close');
     },
     async save() {
@@ -149,7 +149,7 @@ export default {
 
       const { data } = await girderRest.put(`/dandi/${identifier}/owners`, formattedOwners);
       this.setCurrentDandisetOwners(data);
-      this.cancel();
+      this.close();
     },
     ...mapMutations('girder', ['setCurrentDandisetOwners']),
   },
