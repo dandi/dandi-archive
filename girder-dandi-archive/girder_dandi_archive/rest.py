@@ -108,22 +108,20 @@ class DandiResource(Resource):
         dandiset = find_dandiset_by_identifier(identifier)
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
-        users = []
-        owner_ids = set()
+        users = {}
         for owner in owners:
-            if owner["_id"] in owner_ids:
+            if owner["_id"] in users:
                 continue
 
             if not validate_user(owner):
                 raise ValidationException("All owners must be valid user objects.")
 
-            owner_ids.add(owner["_id"])
-            users.append({"id": owner["_id"], "level": AccessType.ADMIN})
+            users[owner["_id"]] = {"id": owner["_id"], "level": AccessType.ADMIN}
 
         # Assumes there is at least one admin
         admin = next(User().getAdmins())
         doc = Folder().setAccessList(
-            dandiset, {"users": users}, save=True, recurse=True, user=admin
+            dandiset, {"users": list(users.values())}, save=True, recurse=True, user=admin
         )
         return get_dandiset_owners(doc)
 
