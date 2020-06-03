@@ -143,8 +143,9 @@ import VueJsonPretty from 'vue-json-pretty';
 import jsYaml from 'js-yaml';
 import Ajv from 'ajv';
 
-import MetaNode from '@/components/MetaNode.vue';
 import { girderRest } from '@/rest';
+
+import MetaNode from './MetaNode.vue';
 
 const ajv = new Ajv({ allErrors: true });
 
