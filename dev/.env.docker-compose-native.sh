@@ -8,5 +8,6 @@ DJANGO_MINIO_STORAGE_ACCESS_KEY=djangoAccessKey
 DJANGO_MINIO_STORAGE_SECRET_KEY=djangoSecretKey
 DJANGO_STORAGE_BUCKET_NAME=dandi-files
 DJANGO_DANDI_DANDISETS_BUCKET_NAME=dandi-dandisets
+DJANGO_DANDI_GIRDER_API_URL=https://girder.dandiarchive.org/api/v1
 '
 for var in $vars; do export "${var}"; done

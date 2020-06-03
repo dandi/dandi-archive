@@ -13,20 +13,16 @@ echo " done"
 
 # Use the MinIO Client (mc) tool to:
 # * Connect to the running Minio server
-# * Make a bucket
 # * Add an ordinary user, for use by Django
-# * Grant the user read-write access to the bucket
+# * Grant the user read-write access to resources on the server
 #
 # Use "docker run -t" for color output
 # Run "mc" once with no output to suppress confusing mc initialization
 docker run --rm -t --network dandi-publish_default --entrypoint /bin/sh minio/mc -c '
 /usr/bin/mc > /dev/null \
 && /usr/bin/mc config host add minio http://minio:9000 minioAdminAccessKey minioAdminSecretKey \
-&& /usr/bin/mc mb -ignore-existing minio/dandi-files \
-&& /usr/bin/mc mb -ignore-existing minio/dandi-dandisets \
 && /usr/bin/mc admin user add minio djangoAccessKey djangoSecretKey \
 && /usr/bin/mc admin policy set minio readwrite user=djangoAccessKey'
 # TODO: The name of the Docker Compose network is defined by the name of the parent directory
-# TODO: Make the bucket name a parameter, so this script is reusable
 
 docker-compose stop minio

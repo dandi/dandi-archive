@@ -5,12 +5,18 @@
 This is the simplest configuration for developers to start with.
 ### Initial Setup
 1. Run `./dev/init-minio.sh`
-2. Run `docker-compose run web ./manage.py migrate`
-3. Run `docker-compose run web ./manage.py createsuperuser` and follow the prompts to create your own user
+2. Run `docker-compose run --rm web ./manage.py migrate`
+3. Run `docker-compose run --rm web ./manage.py createsuperuser` and follow the prompts to create your own user
 
 ### Run Application
 1. Run `docker-compose up`
 2. When finished, use `Ctrl+C`
+
+### Application Maintenance
+Occasionally, new package dependencies or schema changes will necessitate
+maintenance. To non-destructively update your development stack at any time:
+1. Run `docker-compose build`
+2. Run `docker-compose run --rm web ./manage.py migrate`
 
 ## Develop natively (advanced)
 This configuration still uses Docker to run attached services in the background,

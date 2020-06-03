@@ -271,21 +271,31 @@ class MinioStorageConfig(StorageConfig):
     DEFAULT_FILE_STORAGE = 'minio_storage.storage.MinioMediaStorage'
     MINIO_STORAGE_ENDPOINT = values.Value('localhost:9000')
     MINIO_STORAGE_USE_HTTPS = False
+    MINIO_STORAGE_ACCESS_KEY = values.SecretValue()
+    MINIO_STORAGE_SECRET_KEY = values.SecretValue()
     MINIO_STORAGE_MEDIA_BUCKET_NAME = values.Value(
         environ_name='STORAGE_BUCKET_NAME', environ_required=True
     )
-    MINIO_STORAGE_ACCESS_KEY = values.SecretValue()
-    MINIO_STORAGE_SECRET_KEY = values.SecretValue()
+    MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+    MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = 'READ_WRITE'
     MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
     # TODO: Boto config for minio?
 
 
 class S3StorageConfig(StorageConfig):
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
     # This exact environ_name is important, as direct use of Boto will also use it
     AWS_S3_REGION_NAME = values.Value(
         environ_prefix=None, environ_name='AWS_DEFAULT_REGION', environ_required=True
-    )  # TODO: this is also used by Boto directly
+    )
+    AWS_S3_ACCESS_KEY_ID = values.Value(
+        environ_prefix=None, environ_name='AWS_ACCESS_KEY_ID', environ_required=True
+    )
+    AWS_S3_SECRET_ACCESS_KEY = values.Value(
+        environ_prefix=None, environ_name='AWS_SECRET_ACCESS_KEY', environ_required=True
+    )
+
     AWS_STORAGE_BUCKET_NAME = values.Value(
         environ_name='STORAGE_BUCKET_NAME', environ_required=True
     )
@@ -315,6 +325,7 @@ class DandiConfig(Config):
         configuration.INSTALLED_APPS += ['publish']
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
+    DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
 
 
 class BaseConfiguration(
@@ -334,12 +345,14 @@ class BaseConfiguration(
     pass
 
 
-class DevelopmentConfiguration(DebugToolbarConfig, MinioStorageConfig, BaseConfiguration):
+class DevelopmentConfiguration(
+    DebugToolbarConfig, MinioStorageConfig, BaseConfiguration,
+):
     DEBUG = True
     SECRET_KEY = 'insecuresecret'
     ALLOWED_HOSTS = values.ListValue(['localhost', '127.0.0.1'])
     CORS_ORIGIN_REGEX_WHITELIST = values.ListValue(
-        [r'http://localhost:\d+', r'http://127\.0\.0\.1:\d+']
+        [r'^http://localhost:\d+$', r'^http://127\.0\.0\.1:\d+$']
     )
 
     # INTERNAL_IPS does not work properly when this is run within Docker, since the bridge
