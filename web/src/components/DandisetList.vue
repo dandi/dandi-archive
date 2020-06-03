@@ -7,7 +7,7 @@
       v-for="item in items"
       :key="item._id"
       selectable
-      :to="{ name: 'dandisetLanding', params: { id: item._id } }"
+      :to="{ name: 'dandisetLanding', params: { id: item._id, origin } }"
     >
       <v-row
         no-gutters
@@ -88,6 +88,10 @@ export default {
       // TODO: Uncomment this once backend detail issue is sorted
       // return this.dandisets.map((item, i) => ({ ...item, details: this.dandisetDetails[i] }));
       return this.dandisets;
+    },
+    origin() {
+      const { name, params, query } = this.$route;
+      return { name, params, query };
     },
   },
   methods: {
