@@ -195,8 +195,8 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex';
-import girderRest, { loggedIn, user } from '@/rest';
+import { mapState, mapActions } from 'vuex';
+import { loggedIn, user } from '@/rest';
 import moment from 'moment';
 
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
@@ -261,8 +261,7 @@ export default {
       immediate: true,
       async handler(val) {
         const { identifier } = val.meta.dandiset;
-        const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
-        this.setCurrentDandisetOwners(data);
+        this.fetchDandisetOwners(identifier);
       },
     },
   },
@@ -274,7 +273,7 @@ export default {
 
       return `${date} at ${time}`;
     },
-    ...mapMutations('girder', ['setCurrentDandisetOwners']),
+    ...mapActions('girder', ['fetchDandisetOwners']),
   },
 };
 </script>

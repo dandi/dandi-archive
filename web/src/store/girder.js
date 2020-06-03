@@ -36,6 +36,10 @@ export default {
         }
       }
     },
+    async fetchDandisetOwners({ commit }, identifier) {
+      const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
+      commit('setCurrentDandisetOwners', data);
+    },
     async logout() {
       await girderRest.logout();
     },
