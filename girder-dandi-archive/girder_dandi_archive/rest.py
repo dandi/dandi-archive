@@ -1,4 +1,5 @@
 import re
+from urllib.parse import urljoin
 
 import requests
 from requests.exceptions import ConnectionError, HTTPError
@@ -237,11 +238,12 @@ class DandiResource(Resource):
     # TODO this is restricted to site admins for now
     @access.admin
     # @access.user
-    @autoDescribeRoute(
+    @describeRoute(
         Description("Publish Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
     )
-    def publish_dandiset(self, identifier):
-        dandiset_folder = self.get_dandiset(identifier, None)
+    @dandiset_identifier
+    def publish_dandiset(self, identifier, params):
+        dandiset_folder = find_dandiset_by_identifier(identifier)
         Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.ADMIN),
 
         publish_api_url = Setting().get(PUBLISH_API_URL)
@@ -249,9 +251,8 @@ class DandiResource(Resource):
 
         try:
             response = requests.post(
-                publish_api_url,
+                urljoin(publish_api_url, f"dandisets/{identifier}/versions/publish/"),
                 headers={"Authorization": f"Token {publish_api_key}"},
-                data={"girder_id": dandiset_folder["_id"]},
             )
             response.raise_for_status()
         except HTTPError:

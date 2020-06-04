@@ -39,6 +39,16 @@
                 </v-icon>
                 Edit metadata
               </v-btn>
+              <v-btn
+                text
+                :disabled="!user || !user.admin"
+                @click="publish"
+              >
+                <v-icon class="mr-3">
+                  mdi-publish
+                </v-icon>
+                Publish
+              </v-btn>
             </div>
           </template>
           {{ editDisabledMessage }}
@@ -87,7 +97,7 @@
 import { mapState } from 'vuex';
 
 import { dandiUrl } from '@/utils';
-import { loggedIn } from '@/rest';
+import { girderRest, loggedIn, user } from '@/rest';
 
 import ListingComponent from './ListingComponent.vue';
 
@@ -117,6 +127,7 @@ export default {
   },
   computed: {
     loggedIn,
+    user,
     editDisabledMessage() {
       if (!this.loggedIn) {
         return 'You must be logged in to edit.';
@@ -151,6 +162,11 @@ export default {
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
     }),
+  },
+  methods: {
+    async publish() {
+      await girderRest.post(`/dandi/${this.currentDandiset.meta.dandiset.identifier}`);
+    },
   },
 };
 </script>

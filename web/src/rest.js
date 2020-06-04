@@ -27,19 +27,8 @@ const publishRest = axios.create({ baseURL: publishApiRoot });
 Object.assign(publishRest, {
   async versions(identifier) {
     try {
-      const response = await publishRest.get(`dandisets/${identifier}/versions/`);
-      return response.data;
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        return [];
-      }
-      throw error;
-    }
-  },
-  async mostRecentVersion(identifier, girderId) {
-    try {
-      const response = await publishRest.get(`dandisets/${identifier}/`);
-      return girderize(response.data, girderId);
+      const { data } = await publishRest.get(`dandisets/${identifier}/versions/`);
+      return data;
     } catch (error) {
       if (error.response && error.response.status === 404) {
         return null;
@@ -49,14 +38,22 @@ Object.assign(publishRest, {
   },
   async specificVersion(identifier, version, girderId) {
     try {
-      const response = await publishRest.get(`dandisets/${identifier}/${version}/`);
-      return girderize(response.data, girderId);
+      const { data } = await publishRest.get(`dandisets/${identifier}/versions/${version}/`);
+      return girderize(data, girderId);
     } catch (error) {
       if (error.response && error.response.status === 404) {
         return null;
       }
       throw error;
     }
+  },
+  async mostRecentVersion(identifier, girderId) {
+    const { count, results } = await publishRest.versions(identifier);
+    if (count === 0) {
+      return null;
+    }
+    const { version } = results[0];
+    return publishRest.specificVersion(identifier, version, girderId);
   },
 });
 
