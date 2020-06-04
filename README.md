@@ -18,7 +18,7 @@ maintenance. To non-destructively update your development stack at any time:
 1. Run `docker-compose build`
 2. Run `docker-compose run --rm web ./manage.py migrate`
 
-## Develop natively (advanced)
+## Develop Natively (advanced)
 This configuration still uses Docker to run attached services in the background,
 but allows developers to run the Python code on their native system.
 
@@ -44,7 +44,7 @@ but allows developers to run the Python code on their native system.
 Tox is required to execute all tests.
 It may be installed with `pip install tox`.
 
-### Running tests
+### Running Tests
 Run `tox` to launch the full test suite.
 
 Individual test environments may be selectively run.
@@ -56,3 +56,19 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+## API Authentication
+Read-only API endpoints (i.e. `GET`, `HEAD`) do not require any
+authentication. All other endpoints require token authentication
+to call.
+
+### Creating a Token
+Visit the URL `/admin/authtoken/token/add/` with a web browser, logging
+in with the credentials entered during the `createsuperuser` setup step.
+Select your user from the drop-down, and click SAVE. Copy the token value
+from the KEY column in the token listing.
+
+### Supplying the Token
+In API endpoint calls, add the `Authorization` HTTP header with a value of
+`Token <token_value>`. For example, for a token `1234`, include the header:
+`Authorization: Token 1234`.

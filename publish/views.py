@@ -2,7 +2,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -56,12 +56,11 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @action(detail=False, methods=['POST'])
     def sync(self, request):
         if 'folder-id' not in request.query_params:
-            raise APIException(
-                detail='Missing query parameter "folder-id"', code=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError('Missing query parameter "folder-id"')
         draft_folder_id = request.query_params['folder-id']
 
         sync_dandiset.delay(draft_folder_id)
+        return Response('', status=status.HTTP_202_ACCEPTED)
 
 
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
@@ -88,7 +87,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     queryset = Asset.objects.all().select_related('version__dandiset')
     queryset_detail = queryset
 
-    # permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
     pagination_class = DandiPagination
