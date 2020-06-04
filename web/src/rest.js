@@ -33,6 +33,9 @@ Object.assign(publishRest, {
       if (error.response && error.response.status === 404) {
         return null;
       }
+      if (error.message === 'Network Error') {
+        return null;
+      }
       throw error;
     }
   },
@@ -48,7 +51,11 @@ Object.assign(publishRest, {
     }
   },
   async mostRecentVersion(identifier, girderId) {
-    const { count, results } = await publishRest.versions(identifier);
+    const versions = await publishRest.versions(identifier);
+    if (versions === null) {
+      return null;
+    }
+    const { count, results } = versions;
     if (count === 0) {
       return null;
     }
