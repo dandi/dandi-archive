@@ -1,4 +1,8 @@
 import re
+from urllib.parse import urljoin
+
+import requests
+from requests.exceptions import ConnectionError, HTTPError
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, describeRoute, Description
@@ -10,6 +14,7 @@ from girder.models.folder import Folder
 from girder.models.setting import Setting
 from girder.models.user import User
 
+from .settings import PUBLISH_API_KEY, PUBLISH_API_URL
 from .util import (
     dandiset_find,
     dandiset_identifier,
@@ -35,6 +40,7 @@ class DandiResource(Resource):
         self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
         self.route("POST", (), self.create_dandiset)
+        self.route("POST", (":identifier",), self.publish_dandiset)
         self.route("GET", ("stats",), self.stats)
 
     @access.user(scope=TokenScope.DATA_WRITE)
@@ -228,6 +234,31 @@ class DandiResource(Resource):
             offset=offset,
             sort=sort,
         )
+
+    # TODO this is restricted to site admins for now
+    @access.admin
+    # @access.user
+    @describeRoute(
+        Description("Publish Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
+    )
+    @dandiset_identifier
+    def publish_dandiset(self, identifier, params):
+        dandiset_folder = find_dandiset_by_identifier(identifier)
+        Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.ADMIN),
+
+        publish_api_url = Setting().get(PUBLISH_API_URL)
+        publish_api_key = Setting().get(PUBLISH_API_KEY)
+
+        try:
+            response = requests.post(
+                urljoin(publish_api_url, f"dandisets/{identifier}/versions/publish/"),
+                headers={"Authorization": f"Token {publish_api_key}"},
+            )
+            response.raise_for_status()
+        except HTTPError:
+            raise RestException(message="Failed to publish")
+        except ConnectionError:
+            raise RestException(message="Failed to contact publish API")
 
     @access.public
     @describeRoute(Description("Global Dandiset Statistics"))
