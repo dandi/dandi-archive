@@ -200,14 +200,14 @@ class Asset(models.Model):  # TODO: was NwbFile
             logger.info(f'Downloaded file {girder_file.girder_id}')
 
             local_stream.seek(0)
-            local_path = Path(local_stream.name)
+            #local_path = Path(local_stream.name)
             sha256 = sha256_hasher.hexdigest()
 
-            try:
-                subprocess.check_call(['dandi', 'validate', str(local_path)])
-            except subprocess.CalledProcessError:
-                # TODO: No validation enforcement now
-                pass
+            # try:
+            #     subprocess.check_call(['dandi', 'validate', str(local_path)])
+            # except subprocess.CalledProcessError:
+            #     # TODO: No validation enforcement now
+            #     pass
 
             blob = File(file=local_stream, name=girder_file.path.lstrip('/'),)
             # content_type is not part of the base File class (it on some other subclasses),
