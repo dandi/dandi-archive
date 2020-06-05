@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Type
 
@@ -311,6 +312,27 @@ class EmailConfig(Config):
     # TODO: Production
 
 
+class SentryConfig(Config):
+    SENTRY_DSN = values.Value(environ_required=True)
+
+    @staticmethod
+    def after_binding(configuration: Type[ComposedConfiguration]) -> None:
+        import sentry_sdk
+        from sentry_sdk.integrations.celery import CeleryIntegration
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+
+        sentry_sdk.init(
+            dsn=configuration.SENTRY_DSN,
+            integrations=[
+                DjangoIntegration(),
+                CeleryIntegration(),
+                LoggingIntegration(level=logging.INFO, event_level=logging.WARNING),
+            ],
+            send_default_pii=True,
+        )
+
+
 class DebugToolbarConfig(Config):
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
@@ -365,7 +387,7 @@ class DevelopmentConfiguration(
     }
 
 
-class ProductionConfiguration(S3StorageConfig, BaseConfiguration):
+class ProductionConfiguration(SentryConfig, S3StorageConfig, BaseConfiguration):
     pass
 
 
