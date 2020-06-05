@@ -15,15 +15,17 @@
             {{ permalink }}
           </a>
         </v-col>
-        <v-btn
-          icon
-          :to="fileBrowserLink"
-        >
-          <v-icon color="primary">
-            mdi-file-tree
-          </v-icon>
-          View data
-        </v-btn>
+        <div style="padding-right: 40px">
+          <v-btn
+            icon
+            :to="fileBrowserLink"
+          >
+            <v-icon color="primary" style="padding-right:20px">
+              mdi-file-tree
+            </v-icon>
+            View data
+          </v-btn>
+        </div>
         <v-tooltip
           left
           :disabled="editDisabledMessage === null"
