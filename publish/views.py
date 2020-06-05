@@ -64,7 +64,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
 
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
-    queryset = Version.objects.all().select_related('dandiset').order_by('-version')
+    queryset = Version.objects.all().select_related('dandiset')
     queryset_detail = queryset
 
     permission_classes = [IsAuthenticatedOrReadOnly]
