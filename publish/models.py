@@ -106,7 +106,7 @@ class Version(models.Model):
     class Meta:
         unique_together = [['dandiset', 'version']]
         get_latest_by = 'created'
-        ordering = ['dandiset', 'version']
+        ordering = ['dandiset', '-version']
         indexes = [
             models.Index(fields=['dandiset', 'version']),
         ]
