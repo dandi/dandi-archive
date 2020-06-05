@@ -20,6 +20,7 @@ mypy-boto3-s3
 # Production-only
 django-storages
 gunicorn
+sentry-sdk
 
 # Development-only
 django-debug-toolbar
