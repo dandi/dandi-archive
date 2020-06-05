@@ -22,6 +22,7 @@
           <v-icon color="primary">
             mdi-file-tree
           </v-icon>
+          View data
         </v-btn>
         <v-tooltip
           left
