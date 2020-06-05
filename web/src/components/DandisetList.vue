@@ -17,9 +17,6 @@
           <v-list-item-content>
             <v-list-item-title>
               {{ item.meta.dandiset.name }}
-              <div :data-version="item.version" />
-              <!--
-              TODO this is concealed to avoid scaring users
               <v-chip
                 v-if="item.version"
                 small
@@ -36,7 +33,6 @@
               >
                 <b>DRAFT</b>
               </v-chip>
-              -->
             </v-list-item-title>
             <v-list-item-subtitle>
               Contact <b>{{ getDandisetContact(item) }}</b>
