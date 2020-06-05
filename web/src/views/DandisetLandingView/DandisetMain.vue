@@ -15,17 +15,18 @@
             {{ permalink }}
           </a>
         </v-col>
-        <div style="padding-right: 40px">
-          <v-btn
-            icon
-            :to="fileBrowserLink"
+        <v-btn
+          :to="fileBrowserLink"
+          text
+        >
+          <v-icon
+            color="primary"
+            class="mr-2"
           >
-            <v-icon color="primary" style="padding-right:20px">
-              mdi-file-tree
-            </v-icon>
-            View data
-          </v-btn>
-        </div>
+            mdi-file-tree
+          </v-icon>
+          View data
+        </v-btn>
         <v-tooltip
           left
           :disabled="editDisabledMessage === null"
@@ -37,7 +38,7 @@
                 :disabled="editDisabledMessage !== null"
                 @click="$emit('edit')"
               >
-                <v-icon class="mr-3">
+                <v-icon class="mr-2">
                   mdi-pencil
                 </v-icon>
                 Edit metadata
