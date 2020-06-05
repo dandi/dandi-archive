@@ -19,7 +19,7 @@ describe('dandiset search page', () => {
     // there should only be one result, the dandiset we just created
     const results = await searchPage.getSearchResults();
     expect(results).toHaveLength(1);
-    expect(results[0].name).toStrictEqual(name);
+    expect(results[0].name).toContain(name);
   });
 
   it('does not find a dandiset that does not exist', async () => {
@@ -36,6 +36,6 @@ describe('dandiset search page', () => {
 
     const results = await searchPage.getSearchResults();
     expect(results).toHaveLength(1);
-    expect(results[0].name).toStrictEqual(name);
+    expect(results[0].name).toContain(name);
   });
 });
