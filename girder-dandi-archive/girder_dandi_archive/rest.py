@@ -33,6 +33,7 @@ class DandiResource(Resource):
 
         self.resourceName = "dandi"
         self.route("GET", (":identifier",), self.get_dandiset)
+        self.route("GET", (":identifier", "stats"), self.get_dandiset_stats)
         self.route("GET", (":identifier", "owners"), self.get_dandiset_owners)
         self.route("PUT", (":identifier", "owners"), self.add_dandiset_owners)
         self.route("DELETE", (":identifier", "owners"), self.remove_dandiset_owners)
@@ -88,6 +89,31 @@ class DandiResource(Resource):
         if not doc:
             raise RestException("No such dandiset found.")
         return doc
+
+    @access.public
+    @describeRoute(
+        Description("Get Dandiset Stats").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
+    )
+    @dandiset_identifier
+    def get_dandiset_stats(self, identifier, params):
+        doc = find_dandiset_by_identifier(identifier)
+        if not doc:
+            raise RestException("No such dandiset found.")
+
+        size = Folder().getSizeRecursive(doc)
+
+        # Subtract one from subtreeCount to exclude the root folder
+        subtree_count = Folder().subtreeCount(doc) - 1
+        num_folders = Folder().subtreeCount(doc, includeItems=False) - 1
+        num_items = subtree_count - num_folders
+
+        return {
+            "bytes": size,
+            "items": num_items,
+            "folders": num_folders,
+        }
 
     @access.public
     @describeRoute(

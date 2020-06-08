@@ -4,7 +4,7 @@
     subheader
   >
     <v-list-item
-      v-for="item in items"
+      v-for="(item, i) in items"
       :key="item._id"
       selectable
       :to="{ name: 'dandisetLanding', params: { id: item._id, origin } }"
@@ -13,7 +13,9 @@
         no-gutters
         align="center"
       >
-        <v-col cols="12">
+        <v-col
+          cols="10"
+        >
           <v-list-item-content>
             <v-list-item-title>
               <template v-if="item.meta.dandiset.version">
@@ -45,19 +47,24 @@
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>
-        <!-- TODO: Uncomment this once backend detail issue is sorted -->
-        <!-- <v-col cols="1">
-          <v-icon color="primary">
-            mdi-file
-          </v-icon>
-          {{ item.details.nItems }}
-        </v-col>
-        <v-col cols="1">
-          <v-icon color="primary">
-            mdi-server
-          </v-icon>
-          {{ filesize(item.size) }}
-        </v-col> -->
+        <template v-if="dandisetStats">
+          <v-col
+            cols="1"
+          >
+            <v-icon color="primary">
+              mdi-file
+            </v-icon>
+            {{ dandisetStats[i].items }}
+          </v-col>
+          <v-col
+            cols="1"
+          >
+            <v-icon color="primary">
+              mdi-server
+            </v-icon>
+            {{ filesize(dandisetStats[i].bytes) }}
+          </v-col>
+        </template>
       </v-row>
     </v-list-item>
   </v-list>
@@ -68,6 +75,7 @@ import moment from 'moment';
 import filesize from 'filesize';
 
 import { getDandisetContact } from '@/utils';
+import girderRest from '@/rest';
 
 export default {
   props: {
@@ -76,22 +84,24 @@ export default {
       type: Array,
       required: true,
     },
-    // TODO: Uncomment this once backend detail issue is sorted
-    // dandisetDetails: {
-    //   // nFolders and nItems
-    //   type: Array,
-    //   required: true,
-    // },
   },
   computed: {
     items() {
-      // TODO: Uncomment this once backend detail issue is sorted
-      // return this.dandisets.map((item, i) => ({ ...item, details: this.dandisetDetails[i] }));
       return this.dandisets;
     },
     origin() {
       const { name, params, query } = this.$route;
       return { name, params, query };
+    },
+  },
+  asyncComputed: {
+    async dandisetStats() {
+      const { items } = this;
+      return Promise.all(items.map(async (item) => {
+        const { identifier } = item.meta.dandiset;
+        const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
+        return data;
+      }));
     },
   },
   methods: {

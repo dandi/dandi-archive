@@ -37,6 +37,37 @@
         <span :class="labelClasses">Identifier</span>
         <span :class="itemClasses">{{ currentDandiset.meta.dandiset.identifier }}</span>
       </v-row>
+      <template v-if="stats">
+        <v-row :class="`${rowClasses} px-2`">
+          <v-col
+            cols="auto"
+            class="text--secondary mx-2 pa-0 py-1"
+          >
+            <v-icon color="primary">
+              mdi-file
+            </v-icon>
+            {{ stats.items }}
+          </v-col>
+          <v-col
+            class="text--secondary mx-2 pa-0 py-1"
+            cols="auto"
+          >
+            <v-icon color="primary">
+              mdi-folder
+            </v-icon>
+            {{ stats.folders }}
+          </v-col>
+          <v-col
+            class="text--secondary mx-2 pa-0 py-1"
+            cols="auto"
+          >
+            <v-icon color="primary">
+              mdi-server
+            </v-icon>
+            {{ formattedSize }}
+          </v-col>
+        </v-row>
+      </template>
 
       <v-divider class="my-2 px-0 mx-0" />
 
@@ -119,6 +150,9 @@
 <script>
 import { mapState } from 'vuex';
 import moment from 'moment';
+import filesize from 'filesize';
+
+import girderRest from '@/rest';
 
 
 export default {
@@ -152,9 +186,23 @@ export default {
 
       return null;
     },
+    formattedSize() {
+      const { stats } = this;
+      if (!stats) {
+        return undefined;
+      }
+      return filesize(stats.bytes);
+    },
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
     }),
+  },
+  asyncComputed: {
+    async stats() {
+      const { identifier } = this.currentDandiset.meta.dandiset;
+      const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
+      return data;
+    },
   },
   methods: {
     formatDateTime(datetimeStr) {
