@@ -8,11 +8,12 @@ django-cors-headers
 django-extensions
 djangorestframework
 drf-extensions
+drf-yasg
+future
 httpx
 psycopg2
 pyyaml
 whitenoise[brotli]
-future
 
 django-stubs
 djangorestframework-stubs
