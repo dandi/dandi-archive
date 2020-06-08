@@ -5,18 +5,14 @@ import {
   vListItem,
   vIcon,
 } from 'jest-puppeteer-vuetify';
-import { CLIENT_URL, uniqueId } from '../util';
+import { uniqueId, registerNewUser } from '../util';
 
 describe('account management', () => {
-  const username = `user${uniqueId()}`;
-  const email = `${username}@dandi.test`;
-  const password = 'password'; // Top secret
-
-  beforeAll(async () => {
-    await page.goto(CLIENT_URL);
-  });
-
   it('registers a new user', async () => {
+    const username = `user${uniqueId()}`;
+    const email = `${username}@dandi.test`;
+    const password = 'password'; // Top secret
+
     await expect(page).toClickXPath(vBtn('Create Account'));
 
     await expect(page).toFillXPath(vTextField('Username'), username);
@@ -33,6 +29,8 @@ describe('account management', () => {
   });
 
   it('logs the user out', async () => {
+    await registerNewUser();
+
     await expect(page).toClickXPath(vAvatar('MR'));
     await page.waitFor(500);
     await expect(page).toClickXPath(vListItem({ content: 'Logout', action: vIcon('mdi-logout') }));
@@ -42,6 +40,14 @@ describe('account management', () => {
   });
 
   it('logs the user in', async () => {
+    const { username, password } = await registerNewUser();
+
+    // Logout
+    await expect(page).toClickXPath(vAvatar('MR'));
+    await page.waitFor(500);
+    await expect(page).toClickXPath(vListItem('Logout', { action: vIcon('mdi-logout') }));
+
+    // Test logging in
     await expect(page).toClickXPath(vBtn('Login'));
 
     await expect(page).toFillXPath(vTextField('Username or e-mail'), username);
