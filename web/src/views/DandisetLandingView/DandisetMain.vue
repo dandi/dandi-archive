@@ -16,12 +16,16 @@
           </a>
         </v-col>
         <v-btn
-          icon
           :to="fileBrowserLink"
+          text
         >
-          <v-icon color="primary">
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
             mdi-file-tree
           </v-icon>
+          View data
         </v-btn>
         <v-tooltip
           left
@@ -34,7 +38,7 @@
                 :disabled="editDisabledMessage !== null"
                 @click="$emit('edit')"
               >
-                <v-icon class="mr-3">
+                <v-icon class="mr-2">
                   mdi-pencil
                 </v-icon>
                 Edit metadata
