@@ -35,8 +35,7 @@ class DandiResource(Resource):
         self.route("GET", (":identifier",), self.get_dandiset)
         self.route("GET", (":identifier", "stats"), self.get_dandiset_stats)
         self.route("GET", (":identifier", "owners"), self.get_dandiset_owners)
-        self.route("PUT", (":identifier", "owners"), self.add_dandiset_owners)
-        self.route("DELETE", (":identifier", "owners"), self.remove_dandiset_owners)
+        self.route("PUT", (":identifier", "owners"), self.set_dandiset_owners)
         self.route("GET", ("user",), self.get_user_dandisets)
         self.route("GET", ("search",), self.search_dandisets)
         self.route("GET", (), self.list_dandisets)
@@ -127,81 +126,34 @@ class DandiResource(Resource):
 
     @access.user
     @autoDescribeRoute(
-        Description("Add Dandiset Owners")
+        Description("Set Dandiset Owners")
         .param("identifier", "Dandiset Identifier", paramType="path")
         .jsonParam(
             "owners",
-            "A JSON list of girder users to add as owners.",
+            "A JSON list of girder users to set as the owners.",
             paramType="body",
             requireArray=True,
         )
     )
     @dandiset_identifier
-    def add_dandiset_owners(self, identifier, owners, params):
+    def set_dandiset_owners(self, identifier, owners, params):
         dandiset = find_dandiset_by_identifier(identifier)
         Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
-        # Make sure the list doesn't contain duplicates
-        # Only work with admin level users, removing non-admins from the ACL
-        # This is done intentionally as a simplifying assumption of providing this API.
-        user_id_to_level = {
-            str(user["id"]): AccessType.ADMIN for user in get_dandiset_owners(dandiset)
-        }
-
+        users = {}
         for owner in owners:
+            if owner["_id"] in users:
+                continue
+
             if not validate_user(owner):
                 raise ValidationException("All owners must be valid user objects.")
 
-            user_id_to_level[owner["_id"]] = AccessType.ADMIN
-
-        final_users = [
-            {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()
-        ]
+            users[owner["_id"]] = {"id": owner["_id"], "level": AccessType.ADMIN}
 
         # Assumes there is at least one admin
         admin = next(User().getAdmins())
         doc = Folder().setAccessList(
-            dandiset, {"users": final_users}, save=True, recurse=True, user=admin
-        )
-        return get_dandiset_owners(doc)
-
-    @access.user
-    @autoDescribeRoute(
-        Description("Remove Dandiset Owners")
-        .param("identifier", "Dandiset Identifier", paramType="path")
-        .jsonParam(
-            "owners",
-            "A JSON list of girder users to remove from owners.",
-            paramType="body",
-            requireArray=True,
-        )
-    )
-    @dandiset_identifier
-    def remove_dandiset_owners(self, identifier, owners, params):
-        dandiset = find_dandiset_by_identifier(identifier)
-        Folder().requireAccess(dandiset, user=self.getCurrentUser(), level=AccessType.ADMIN)
-
-        # Only work with admin level users, removing non-admins from the ACL
-        # This is done intentionally as a simplifying assumption of providing this API.
-        user_id_to_level = {
-            str(user["id"]): AccessType.ADMIN for user in get_dandiset_owners(dandiset)
-        }
-
-        for owner in owners:
-            if not validate_user(owner):
-                raise ValidationException("All owners must be valid user objects.")
-
-            # Prevents a KeyError if owner isn't an existing owner
-            user_id_to_level.pop(owner["_id"], None)
-
-        final_users = [
-            {"id": user_id, "level": level} for user_id, level in user_id_to_level.items()
-        ]
-
-        # Assumes there is at least one admin
-        admin = next(User().getAdmins())
-        doc = Folder().setAccessList(
-            dandiset, {"users": final_users}, save=True, recurse=True, user=admin
+            dandiset, {"users": list(users.values())}, save=True, recurse=True, user=admin
         )
         return get_dandiset_owners(doc)
 

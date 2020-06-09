@@ -110,6 +110,83 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <v-divider class="my-2 px-0 mx-0" />
+
+      <v-row
+        no-gutters
+        :class="rowClasses"
+      >
+        <v-col>
+          <span :class="labelClasses">Ownership</span>
+        </v-col>
+        <v-col cols="auto">
+          <v-dialog
+            v-model="ownerDialog"
+            width="50%"
+          >
+            <template v-slot:activator="{ on }">
+              <v-tooltip
+                :disabled="!manageOwnersDisabled"
+                left
+              >
+                <template
+                  v-slot:activator="{ on: tooltipOn }"
+                >
+                  <div v-on="tooltipOn">
+                    <v-btn
+                      color="primary"
+                      x-small
+                      text
+                      :disabled="manageOwnersDisabled"
+                      v-on="on"
+                    >
+                      <v-icon
+                        x-small
+                        class="pr-1"
+                      >
+                        mdi-lock
+                      </v-icon>
+                      Manage
+                    </v-btn>
+                  </div>
+                </template>
+                <template v-if="loggedIn">
+                  You must be an owner to manage ownership.
+                </template>
+                <template v-else>
+                  You must be logged in to manage ownership.
+                </template>
+              </v-tooltip>
+            </template>
+            <DandisetOwnersDialog
+              :key="ownerDialogKey"
+              :owners="owners"
+              @close="ownerDialog = false"
+            />
+          </v-dialog>
+        </v-col>
+      </v-row>
+      <!-- TODO: Make chips wrap, instead of pushing whole card wide -->
+      <v-row :class="rowClasses">
+        <v-col cols="12">
+          <v-chip
+            v-for="owner in limitedOwners"
+            :key="owner.id"
+            color="light-blue lighten-4"
+            text-color="light-blue darken-3"
+            class="font-weight-medium ma-1"
+          >
+            {{ owner.login }}
+          </v-chip>
+          <span
+            v-if="numExtraOwners"
+            class="ml-1 text--secondary"
+          >
+            +{{ numExtraOwners }} more...
+          </span>
+        </v-col>
+      </v-row>
       <!-- TODO: Uncomment this once the versions API is accessible -->
       <!-- <v-row>
         <v-col class="pa-0">
@@ -148,23 +225,32 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapActions } from 'vuex';
+import girderRest, { loggedIn, user } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
-import girderRest from '@/rest';
+
+import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
 
 export default {
   name: 'DandisetDetails',
+  components: {
+    DandisetOwnersDialog,
+  },
   data() {
     return {
       rowClasses: 'my-1',
       labelClasses: 'mx-2 text--secondary',
       itemClasses: 'font-weight-medium',
+      ownerDialog: false,
+      ownerDialogKey: 0,
     };
   },
   computed: {
+    user,
+    loggedIn,
     created() {
       return this.formatDateTime(this.currentDandiset.created);
     },
@@ -186,6 +272,18 @@ export default {
 
       return null;
     },
+    manageOwnersDisabled() {
+      if (!this.loggedIn || !this.owners) return true;
+      return !this.owners.find((owner) => owner.id === this.user._id);
+    },
+    limitedOwners() {
+      if (!this.owners) return [];
+      return this.owners.slice(0, 5);
+    },
+    numExtraOwners() {
+      if (!this.owners) return 0;
+      return this.owners.length - this.limitedOwners.length;
+    },
     formattedSize() {
       const { stats } = this;
       if (!stats) {
@@ -195,7 +293,21 @@ export default {
     },
     ...mapState('girder', {
       currentDandiset: (state) => state.currentDandiset,
+      owners: (state) => state.currentDandisetOwners,
     }),
+  },
+  watch: {
+    currentDandiset: {
+      immediate: true,
+      async handler(val) {
+        const { identifier } = val.meta.dandiset;
+        this.fetchDandisetOwners(identifier);
+      },
+    },
+    ownerDialog() {
+      // This is incremented to force re-render of the owner dialog
+      this.ownerDialogKey += 1;
+    },
   },
   asyncComputed: {
     async stats() {
@@ -212,6 +324,7 @@ export default {
 
       return `${date} at ${time}`;
     },
+    ...mapActions('girder', ['fetchDandisetOwners']),
   },
 };
 </script>
