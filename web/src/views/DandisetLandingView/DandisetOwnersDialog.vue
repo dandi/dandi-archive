@@ -22,7 +22,7 @@
           clearable
           auto-select-first
           item-text="result"
-          placeholder="Search by name or username"
+          placeholder="Search by first name, last name or username"
           outlined
           flat
           return-object
@@ -130,10 +130,17 @@ export default {
       if (!this.search) return;
 
       this.loadingUsers = true;
-      const { data } = await girderRest.get('/user/', { params: { text: this.search } });
+      const { data: { user: users } } = await girderRest.get('/resource/search', {
+        params: {
+          q: this.search,
+          mode: 'prefix',
+          types: JSON.stringify(['user']),
+          limit: 10,
+        },
+      });
 
       // Needed to match existing owner document schema
-      this.items = addResult(userFormatConversion(data));
+      this.items = addResult(userFormatConversion(users));
 
       this.loadingUsers = false;
     },
