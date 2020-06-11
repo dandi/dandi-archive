@@ -168,10 +168,8 @@ export default {
     //   const index = this.versions.findIndex((version) => this.publishDandiset.version === version);
     //   return index === -1 ? 0 : index;
     // },
-    ...mapState('girder', {
+    ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
-    }),
-    ...mapState('publish', {
       publishDandiset: (state) => state.publishDandiset,
     }),
   },
@@ -208,13 +206,13 @@ export default {
       const { version } = this.versions[index];
 
       if (version) {
-        this.$store.dispatch('publish/fetchPublishDandiset', {
+        this.$store.dispatch('dandiset/fetchPublishDandiset', {
           version,
           girderId: this.girderDandiset._id,
           identifier: this.girderDandiset.meta.dandiset.identifier,
         });
       } else {
-        this.$store.commit('publish/setPublishDandiset', null);
+        this.$store.commit('dandiset/setPublishDandiset', null);
       }
     },
     formatDateTime(datetimeStr) {

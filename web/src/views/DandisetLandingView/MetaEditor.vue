@@ -193,7 +193,7 @@ export default {
     output() {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
-    ...mapState('girder', {
+    ...mapState('dandiset', {
       id: (state) => (state.girderDandiset ? state.girderDandiset._id : null),
     }),
   },
@@ -261,7 +261,7 @@ export default {
       link.click();
       URL.revokeObjectURL(link.href);
     },
-    ...mapMutations('girder', ['setGirderDandiset']),
+    ...mapMutations('dandiset', ['setGirderDandiset']),
   },
 };
 </script>

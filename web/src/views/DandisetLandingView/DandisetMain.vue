@@ -159,7 +159,7 @@ export default {
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
-    ...mapState('girder', {
+    ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
     }),
   },

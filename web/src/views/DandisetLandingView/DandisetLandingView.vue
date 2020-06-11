@@ -76,8 +76,6 @@
 <script>
 import { mapState } from 'vuex';
 
-import { girderRest } from '@/rest';
-
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
@@ -142,10 +140,8 @@ export default {
 
       return { ...this.girderDandiset.meta.dandiset };
     },
-    ...mapState('girder', {
+    ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
-    }),
-    ...mapState('publish', {
       publishDandiset: (state) => state.publishDandiset,
     }),
   },
@@ -157,7 +153,7 @@ export default {
         // girder folder ID, this should be moved into the store
 
         if (!this.girderDandiset || !this.meta.length) {
-          await this.$store.dispatch('girder/fetchGirderDandiset', { girderId: value });
+          await this.$store.dispatch('dandiset/fetchGirderDandiset', { girderId: value });
         }
       },
     },
