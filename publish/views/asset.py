@@ -1,11 +1,34 @@
 from django_filters import rest_framework as filters
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from publish.models import Asset
-from publish.serializers import AssetDetailSerializer, AssetSerializer
 from publish.views.common import DandiPagination
+from publish.views.version import VersionSerializer
+
+
+class AssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = [
+            'version',
+            'uuid',
+            'path',
+            'size',
+            'sha256',
+            'created',
+            'updated',
+        ]
+        read_only_fields = ['created']
+
+    version = VersionSerializer()
+
+
+class AssetDetailSerializer(AssetSerializer):
+    class Meta(AssetSerializer.Meta):
+        fields = AssetSerializer.Meta.fields + ['metadata']
 
 
 class AssetFilter(filters.FilterSet):

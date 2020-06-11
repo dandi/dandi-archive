@@ -1,4 +1,5 @@
 from django.http import Http404
+from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -8,9 +9,24 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 
 from publish.models import Dandiset
-from publish.serializers import DandisetSerializer
 from publish.tasks import sync_dandiset
 from publish.views.common import DandiPagination
+
+
+class DandisetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dandiset
+        fields = [
+            'identifier',
+            'created',
+            'updated',
+        ]
+        read_only_fields = ['created']
+
+
+# class DandisetPublishSerializer(serializers.Serializer):
+#     girder_id = serializers.CharField()
+#     token = serializers.CharField(allow_blank=True, default='')
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):

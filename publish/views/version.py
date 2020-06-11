@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -8,12 +9,28 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 
 from publish.models import Dandiset, Version
-from publish.serializers import (
-    VersionDetailSerializer,
-    VersionSerializer,
-)
 from publish.tasks import publish_version
 from publish.views.common import DandiPagination
+from publish.views.dandiset import DandisetSerializer
+
+
+class VersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Version
+        fields = [
+            'dandiset',
+            'version',
+            'created',
+            'updated',
+        ]
+        read_only_fields = ['created']
+
+    dandiset = DandisetSerializer()
+
+
+class VersionDetailSerializer(VersionSerializer):
+    class Meta(VersionSerializer.Meta):
+        fields = VersionSerializer.Meta.fields + ['metadata']
 
 
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
