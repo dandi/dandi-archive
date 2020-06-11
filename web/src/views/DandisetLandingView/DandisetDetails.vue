@@ -79,8 +79,7 @@
           </v-card>
         </v-col>
       </v-row>
-      <!-- TODO: Uncomment this once the versions API is accessible -->
-      <!-- <v-row>
+      <v-row>
         <v-col class="pa-0">
           <v-card
             color="grey lighten-2"
@@ -95,23 +94,24 @@
       </v-row>
 
       <v-row>
-        <v-timeline>
+        <v-timeline dense>
           <v-timeline-item
+            v-for="(version, i) in versions"
+            :key="version.version || 'draft'"
             small
             right
+            :color="timelineVersionItemColor(i)"
           >
-            <template v-slot:opposite>
-              <span class="caption text--secondary">
-                02/26/19
-              </span>
-            </template>
-
-            <span class="font-weight-medium">
-              1.2.1
-            </span>
+            <v-btn
+              text
+              class="font-weight-medium"
+              @click="setVersion(i)"
+            >
+              {{ version.version || 'DRAFT' }}
+            </v-btn>
           </v-timeline-item>
         </v-timeline>
-      </v-row> -->
+      </v-row>
     </template>
   </v-card>
 </template>
@@ -119,6 +119,8 @@
 <script>
 import { mapState } from 'vuex';
 import moment from 'moment';
+
+import { publishRest } from '@/rest';
 
 
 export default {
@@ -128,6 +130,7 @@ export default {
       rowClasses: 'my-1',
       labelClasses: 'mx-2 text--secondary',
       itemClasses: 'font-weight-medium',
+      currentVersionIndex: 0,
     };
   },
   computed: {
@@ -152,17 +155,82 @@ export default {
 
       return null;
     },
+    currentDandiset() {
+      // Done this way because we'll want to add in
+      // fetching stats from the publish endpoint later on.
+      return this.girderDandiset;
+    },
+    // currentVersionIndex() {
+    //   if (!this.publishDandiset) {
+    //     return 0;
+    //   }
+
+    //   const index = this.versions.findIndex((version) => this.publishDandiset.version === version);
+    //   return index === -1 ? 0 : index;
+    // },
     ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+      girderDandiset: (state) => state.girderDandiset,
+    }),
+    ...mapState('publish', {
+      publishDandiset: (state) => state.publishDandiset,
     }),
   },
+  asyncComputed: {
+    async versions() {
+      const { identifier } = this.girderDandiset.meta.dandiset;
+
+      try {
+        const { results } = await publishRest.versions(identifier);
+        return [
+          // First entry is null as it represents the draft dandiset
+          { version: null },
+          ...results,
+        ];
+      } catch (err) {
+        return [];
+      }
+    },
+  },
+  watch: {
+    publishDandiset(val) {
+      // TODO: Figure out why the computed version of this doesn't work
+      if (!val) {
+        this.currentVersionIndex = 0;
+        return;
+      }
+
+      const index = this.versions.findIndex(({ version }) => val.version === version);
+      this.currentVersionIndex = index === -1 ? 0 : index;
+    },
+  },
   methods: {
+    setVersion(index) {
+      const { version } = this.versions[index];
+
+      if (version) {
+        this.$store.dispatch('publish/fetchPublishDandiset', {
+          version,
+          girderId: this.girderDandiset._id,
+          identifier: this.girderDandiset.meta.dandiset.identifier,
+        });
+      } else {
+        this.$store.commit('publish/setPublishDandiset', null);
+      }
+    },
     formatDateTime(datetimeStr) {
       const datetime = moment(datetimeStr);
       const date = datetime.format('LL');
       const time = datetime.format('hh:mm A');
 
       return `${date} at ${time}`;
+    },
+    timelineVersionItemColor(index) {
+      if (this.currentVersionIndex !== index) { return 'grey'; }
+      if (this.versions[index].version === null) {
+        return 'amber darken-4';
+      }
+
+      return 'primary';
     },
   },
 };

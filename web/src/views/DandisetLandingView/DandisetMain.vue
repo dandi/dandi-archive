@@ -133,20 +133,20 @@ export default {
         return 'You must be logged in to edit.';
       }
 
-      if (!this.currentDandiset) {
+      if (!this.girderDandiset) {
         return null;
       }
 
-      if (this.currentDandiset._accessLevel < 1) {
+      if (this.girderDandiset._accessLevel < 1) {
         return 'You do not have permission to edit this dandiset.';
       }
 
       return null;
     },
     fileBrowserLink() {
-      if (!this.currentDandiset) return null;
+      if (!this.girderDandiset) return null;
 
-      const { _modelType, _id } = this.currentDandiset;
+      const { _modelType, _id } = this.girderDandiset;
       return { name: 'file-browser', params: { _modelType, _id } };
     },
     permalink() {
@@ -160,12 +160,12 @@ export default {
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
     ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+      girderDandiset: (state) => state.girderDandiset,
     }),
   },
   methods: {
     async publish() {
-      await girderRest.post(`/dandi/${this.currentDandiset.meta.dandiset.identifier}`);
+      await girderRest.post(`/dandi/${this.girderDandiset.meta.dandiset.identifier}`);
     },
   },
 };

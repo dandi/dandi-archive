@@ -37,7 +37,7 @@
         </v-btn>
       </v-toolbar>
       <v-progress-linear
-        v-if="!currentDandiset"
+        v-if="!girderDandiset"
         indeterminate
       />
       <v-container
@@ -128,18 +128,25 @@ export default {
       return { properties, required };
     },
     meta() {
+      if (this.publishDandiset) {
+        return { ...this.publishDandiset.meta.dandiset };
+      }
+
       if (
-        !this.currentDandiset
-        || !this.currentDandiset.meta
-        || !this.currentDandiset.meta.dandiset
+        !this.girderDandiset
+        || !this.girderDandiset.meta
+        || !this.girderDandiset.meta.dandiset
       ) {
         return {};
       }
 
-      return { ...this.currentDandiset.meta.dandiset };
+      return { ...this.girderDandiset.meta.dandiset };
     },
     ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+      girderDandiset: (state) => state.girderDandiset,
+    }),
+    ...mapState('publish', {
+      publishDandiset: (state) => state.publishDandiset,
     }),
   },
   watch: {
@@ -149,9 +156,8 @@ export default {
         // If we ever change the URL to contain the dandiset ID instead of the
         // girder folder ID, this should be moved into the store
 
-        if (!this.currentDandiset || !this.meta.length) {
-          const { data } = await girderRest.get(`folder/${value}`);
-          this.$store.commit('girder/setCurrentDandiset', data);
+        if (!this.girderDandiset || !this.meta.length) {
+          await this.$store.dispatch('girder/fetchGirderDandiset', { girderId: value });
         }
       },
     },

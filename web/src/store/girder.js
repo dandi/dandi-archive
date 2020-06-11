@@ -4,8 +4,8 @@ export default {
   namespaced: true,
   state: {
     browseLocation: null,
+    girderDandiset: null,
     selected: [],
-    currentDandiset: null,
   },
   getters: {
     loggedIn,
@@ -14,8 +14,8 @@ export default {
     setSelected(state, selected) {
       state.selected = selected;
     },
-    setCurrentDandiset(state, dandiset) {
-      state.currentDandiset = dandiset;
+    setGirderDandiset(state, dandiset) {
+      state.girderDandiset = dandiset;
     },
     setBrowseLocation(state, location) {
       state.browseLocation = location;
@@ -31,6 +31,10 @@ export default {
           commit('setBrowseLocation', data);
         }
       }
+    },
+    async fetchGirderDandiset({ commit }, { girderId }) {
+      const { data } = await girderRest.get(`folder/${girderId}`);
+      commit('setGirderDandiset', data);
     },
     async logout() {
       await girderRest.logout();
