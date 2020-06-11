@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 (
                     'version',
                     models.CharField(
-                        default=publish.models._get_default_version,
+                        default=publish.models.version._get_default_version,
                         max_length=13,
                         validators=[django.core.validators.RegexValidator('^0\\.\\d{6}\\.\\d{4}$')],
                     ),
@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
                         storage=publish.storage.create_s3_storage(
                             settings.DANDI_DANDISETS_BUCKET_NAME
                         ),
-                        upload_to=publish.models._get_asset_blob_prefix,
+                        upload_to=publish.models.asset._get_asset_blob_prefix,
                     ),
                 ),
                 ('created', models.DateTimeField(auto_now_add=True)),
