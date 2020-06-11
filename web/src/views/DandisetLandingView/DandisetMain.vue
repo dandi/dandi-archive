@@ -66,7 +66,7 @@
         {{ meta.description }}
       </v-row>
 
-      <template v-for="(field, key) in extraFields">
+      <template v-for="key in Object.keys(extraFields).sort()">
         <v-divider :key="`${key}-divider`" />
         <v-row
           :key="`${key}-title`"
@@ -83,7 +83,7 @@
           <v-col class="py-0">
             <ListingComponent
               :schema="schema.properties[key]"
-              :data="field"
+              :data="extraFields[key]"
               root
             />
           </v-col>
