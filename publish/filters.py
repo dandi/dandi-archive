@@ -8,4 +8,4 @@ class AssetFilter(filters.FilterSet):
 
     class Meta:
         model = Asset
-        fields = ['path', 'path_prefix']
+        fields = ['path_prefix']
