@@ -5,6 +5,7 @@ export default {
   state: {
     publishDandiset: null,
     girderDandiset: null,
+    loading: false,
   },
   mutations: {
     setGirderDandiset(state, dandiset) {
@@ -15,13 +16,21 @@ export default {
     },
   },
   actions: {
-    async fetchPublishDandiset({ commit }, { identifier, version, girderId }) {
+    async fetchPublishDandiset({ state, commit }, { identifier, version, girderId }) {
+      state.loading = true;
+
       const data = await publishRest.specificVersion(identifier, version, girderId);
       commit('setPublishDandiset', data);
+
+      state.loading = false;
     },
-    async fetchGirderDandiset({ commit }, { girderId }) {
+    async fetchGirderDandiset({ state, commit }, { girderId }) {
+      state.loading = true;
+
       const { data } = await girderRest.get(`folder/${girderId}`);
       commit('setGirderDandiset', data);
+
+      state.loading = false;
     },
   },
 };

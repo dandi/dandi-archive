@@ -37,11 +37,11 @@
         </v-btn>
       </v-toolbar>
       <v-progress-linear
-        v-if="!girderDandiset"
+        v-if="!girderDandiset || loading"
         indeterminate
       />
       <v-container
-        v-else
+        v-if="girderDandiset"
         fluid
         class="grey lighten-4"
       >
@@ -143,6 +143,7 @@ export default {
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
+      loading: (state) => state.loading,
     }),
   },
   watch: {
