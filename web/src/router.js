@@ -56,7 +56,7 @@ export default new Router({
       component: CreateDandisetView,
     },
     {
-      path: '/dandiset/:id',
+      path: '/dandiset/:id/:version?',
       name: 'dandisetLanding',
       props: true,
       component: DandisetLandingView,

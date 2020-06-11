@@ -57,11 +57,11 @@
                   class="mx-2"
                   color="primary"
                 >
-                  mdi-link
+                  mdi-source-branch
                 </v-icon>
-                <span :class="itemClasses">Draft</span>
+                <span :class="`${itemClasses} text-capitalize`"> {{ currentVersion }} </span>
               </v-col>
-              <v-col>
+              <v-col v-if="!validDandisetVersion(currentVersion)">
                 <v-tooltip top>
                   <template v-slot:activator="{ on }">
                     <v-icon
@@ -121,7 +121,7 @@ import { mapState } from 'vuex';
 import moment from 'moment';
 
 import { publishRest } from '@/rest';
-
+import { draftVersion, validDandisetVersion } from '@/utils';
 
 export default {
   name: 'DandisetDetails',
@@ -130,7 +130,6 @@ export default {
       rowClasses: 'my-1',
       labelClasses: 'mx-2 text--secondary',
       itemClasses: 'font-weight-medium',
-      currentVersionIndex: 0,
     };
   },
   computed: {
@@ -155,19 +154,26 @@ export default {
 
       return null;
     },
+    currentVersion() {
+      if (!this.versions) { return draftVersion; }
+      return this.versions[this.currentVersionIndex].version;
+    },
     currentDandiset() {
       // Done this way because we'll want to add in
       // fetching stats from the publish endpoint later on.
       return this.girderDandiset;
     },
-    // currentVersionIndex() {
-    //   if (!this.publishDandiset) {
-    //     return 0;
-    //   }
+    currentVersionIndex() {
+      if (!this.publishDandiset || !this.versions) {
+        return 0;
+      }
 
-    //   const index = this.versions.findIndex((version) => this.publishDandiset.version === version);
-    //   return index === -1 ? 0 : index;
-    // },
+      const index = this.versions.findIndex(
+        ({ version }) => this.publishDandiset.version === version,
+      );
+
+      return index === -1 ? 0 : index;
+    },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
@@ -181,7 +187,7 @@ export default {
         const { results } = await publishRest.versions(identifier);
         return [
           // First entry is null as it represents the draft dandiset
-          { version: null },
+          { version: draftVersion },
           ...results,
         ];
       } catch (err) {
@@ -190,29 +196,43 @@ export default {
     },
   },
   watch: {
-    publishDandiset(val) {
-      // TODO: Figure out why the computed version of this doesn't work
-      if (!val) {
-        this.currentVersionIndex = 0;
-        return;
-      }
-
-      const index = this.versions.findIndex(({ version }) => val.version === version);
-      this.currentVersionIndex = index === -1 ? 0 : index;
+    currentVersion: {
+      immediate: true,
+      handler(version) {
+        this.setRouteVersion(version);
+      },
     },
   },
   methods: {
+    validDandisetVersion,
     setVersion(index) {
       const { version } = this.versions[index];
 
-      if (version) {
-        this.$store.dispatch('dandiset/fetchPublishDandiset', {
-          version,
-          girderId: this.girderDandiset._id,
-          identifier: this.girderDandiset.meta.dandiset.identifier,
+      if (this.currentVersion !== version) {
+        if (validDandisetVersion(version)) {
+          this.$store.dispatch('dandiset/fetchPublishDandiset', {
+            version,
+            girderId: this.girderDandiset._id,
+            identifier: this.girderDandiset.meta.dandiset.identifier,
+          });
+        } else {
+          this.$store.commit('dandiset/setPublishDandiset', null);
+        }
+
+        this.setRouteVersion(version);
+      }
+    },
+    setRouteVersion(newVersion) {
+      const version = newVersion || draftVersion;
+
+      if (this.$route.params.version !== version) {
+        this.$router.replace({
+          ...this.$route,
+          params: {
+            ...this.$route.params,
+            version,
+          },
         });
-      } else {
-        this.$store.commit('dandiset/setPublishDandiset', null);
       }
     },
     formatDateTime(datetimeStr) {
@@ -224,7 +244,7 @@ export default {
     },
     timelineVersionItemColor(index) {
       if (this.currentVersionIndex !== index) { return 'grey'; }
-      if (this.versions[index].version === null) {
+      if (!validDandisetVersion(this.versions[index].version)) {
         return 'amber darken-4';
       }
 

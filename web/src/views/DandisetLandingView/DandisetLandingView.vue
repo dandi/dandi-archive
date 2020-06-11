@@ -82,9 +82,11 @@ import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import { validDandisetVersion } from '@/utils';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
+
 
 export default {
   name: 'DandisetLandingView',
@@ -98,6 +100,11 @@ export default {
     id: {
       type: String,
       required: true,
+    },
+    version: {
+      type: String,
+      required: false,
+      default: null,
     },
     create: {
       type: Boolean,
@@ -155,7 +162,17 @@ export default {
         // girder folder ID, this should be moved into the store
 
         if (!this.girderDandiset || !this.meta.length) {
-          await this.$store.dispatch('dandiset/fetchGirderDandiset', { girderId: value });
+          this.$store.dispatch('dandiset/fetchGirderDandiset', { girderId: value });
+        }
+      },
+    },
+    girderDandiset: {
+      immediate: true,
+      async handler(value) {
+        const { version } = this;
+        if (value && validDandisetVersion(version)) {
+          const { _id: girderId, meta: { dandiset: { identifier } } } = value;
+          this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, girderId, version });
         }
       },
     },
