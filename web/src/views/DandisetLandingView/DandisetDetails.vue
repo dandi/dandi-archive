@@ -38,7 +38,7 @@
         <span :class="itemClasses">{{ currentDandiset.meta.dandiset.identifier }}</span>
       </v-row>
 
-      <v-divider class="my-2 px-0 mx-0" />
+      <v-divider class="mt-2 px-0 mx-0" />
 
       <v-row>
         <v-col>
