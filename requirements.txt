@@ -6,6 +6,7 @@ django-admin-display
 django-configurations[database]
 django-cors-headers
 django-extensions
+django-filter
 djangorestframework
 drf-extensions
 httpx

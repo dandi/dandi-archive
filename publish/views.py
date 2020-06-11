@@ -1,5 +1,6 @@
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django_filters import rest_framework as filters
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -10,6 +11,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 
+from .filters import AssetFilter
 from .models import Asset, Dandiset, Version
 from .serializers import (
     AssetDetailSerializer,
@@ -94,3 +96,6 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     lookup_field = 'uuid'
     lookup_value_regex = Asset.UUID_REGEX
+
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = AssetFilter
