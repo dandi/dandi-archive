@@ -187,7 +187,6 @@ export default {
       try {
         const { results } = await publishRest.versions(identifier);
         return [
-          // First entry is null as it represents the draft dandiset
           { version: draftVersion },
           ...results,
         ];
