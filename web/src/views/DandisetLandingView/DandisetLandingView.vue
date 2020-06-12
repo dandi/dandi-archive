@@ -20,6 +20,11 @@
         <v-toolbar-title>
           Dandiset Dashboard
         </v-toolbar-title>
+        <v-progress-circular
+          v-if="!girderDandiset || loading"
+          indeterminate
+          class="ml-3"
+        />
         <v-spacer />
         <DandisetSearchField />
         <v-btn
@@ -36,10 +41,6 @@
           </v-icon>
         </v-btn>
       </v-toolbar>
-      <v-progress-linear
-        v-if="!girderDandiset || loading"
-        indeterminate
-      />
       <v-container
         v-if="girderDandiset"
         fluid
