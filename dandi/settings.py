@@ -78,6 +78,7 @@ class DjangoConfig(Config):
         'django.contrib.contenttypes',
         'django.contrib.sessions',
         'django.contrib.messages',
+        'django_filters',
     ]
 
     MIDDLEWARE = [
