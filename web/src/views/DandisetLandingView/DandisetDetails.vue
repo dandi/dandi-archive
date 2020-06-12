@@ -96,16 +96,16 @@
       <v-row>
         <v-timeline dense>
           <v-timeline-item
-            v-for="(version, i) in versions"
+            v-for="version in versions"
             :key="version.version"
             small
             right
-            :color="timelineVersionItemColor(i)"
+            :color="timelineVersionItemColor(version)"
           >
             <v-btn
               text
               class="font-weight-medium"
-              @click="setVersion(i)"
+              @click="setVersion(version)"
             >
               {{ version.version }}
             </v-btn>
@@ -155,25 +155,15 @@ export default {
       return null;
     },
     currentVersion() {
-      const { versions, currentVersionIndex } = this;
-      if (!versions) { return draftVersion; }
-      return versions[currentVersionIndex].version;
+      const { publishDandiset } = this;
+
+      if (publishDandiset) return publishDandiset.version;
+      return draftVersion;
     },
     currentDandiset() {
       // Done this way because we'll want to add in
       // fetching stats from the publish endpoint later on.
       return this.girderDandiset;
-    },
-    currentVersionIndex() {
-      if (!this.publishDandiset || !this.versions) {
-        return 0;
-      }
-
-      const index = this.versions.findIndex(
-        ({ version }) => this.publishDandiset.version === version,
-      );
-
-      return index === -1 ? 0 : index;
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
@@ -205,10 +195,10 @@ export default {
   },
   methods: {
     isPublishedVersion,
-    setVersion(index) {
-      const { version } = this.versions[index];
+    setVersion({ version }) {
+      const { currentVersion } = this;
 
-      if (this.currentVersion !== version) {
+      if (currentVersion !== version) {
         if (isPublishedVersion(version)) {
           this.$store.dispatch('dandiset/fetchPublishDandiset', {
             version,
@@ -242,13 +232,15 @@ export default {
 
       return `${date} at ${time}`;
     },
-    timelineVersionItemColor(index) {
-      if (this.currentVersionIndex !== index) { return 'grey'; }
-      if (!isPublishedVersion(this.versions[index].version)) {
+    timelineVersionItemColor({ version }) {
+      const { publishDandiset } = this;
+
+      if (publishDandiset && version === publishDandiset.version) { return 'primary'; }
+      if (!publishDandiset && version === draftVersion) {
         return 'amber darken-4';
       }
 
-      return 'primary';
+      return 'grey';
     },
   },
 };
