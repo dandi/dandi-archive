@@ -13,7 +13,7 @@ def _get_lock(identifier):
     If there is no lock, None is returned.
     """
     dandiset_folder = find_dandiset_by_identifier(identifier)
-    if "locked" not in dandiset_folder:
+    if dandiset_folder is None or "locked" not in dandiset_folder:
         return None
     return str(dandiset_folder["locked"])
 
