@@ -39,15 +39,33 @@
               {{ item.meta.dandiset.name }}
             </v-list-item-title>
             <v-list-item-subtitle>
+              DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
+              ·
               Contact <b>{{ getDandisetContact(item) }}</b>
               ·
-              Created on <b>{{ formatDate(item.created) }}</b>
-              ·
-              DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
+              Updated on <b>{{ formatDate(item.updated) }}</b>
+              <template v-if="$vuetify.breakpoint.mdAndDown">
+                ·
+                <v-icon
+                  small
+                  class="pb-1"
+                >
+                  mdi-file
+                </v-icon>
+                {{ dandisetStats[i].items }}
+                ·
+                <v-icon
+                  small
+                  class="pb-1"
+                >
+                  mdi-database
+                </v-icon>
+                {{ filesize(dandisetStats[i].bytes) }}
+              </template>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>
-        <template v-if="dandisetStats">
+        <template v-if="dandisetStats && !$vuetify.breakpoint.mdAndDown">
           <v-col
             cols="1"
           >
@@ -60,7 +78,7 @@
             cols="1"
           >
             <v-icon color="primary">
-              mdi-server
+              mdi-database
             </v-icon>
             {{ filesize(dandisetStats[i].bytes) }}
           </v-col>
