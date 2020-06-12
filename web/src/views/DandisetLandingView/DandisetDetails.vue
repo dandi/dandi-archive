@@ -97,7 +97,7 @@
         <v-timeline dense>
           <v-timeline-item
             v-for="(version, i) in versions"
-            :key="version.version || 'draft'"
+            :key="version.version"
             small
             right
             :color="timelineVersionItemColor(i)"
@@ -107,7 +107,7 @@
               class="font-weight-medium"
               @click="setVersion(i)"
             >
-              {{ version.version || 'DRAFT' }}
+              {{ version.version }}
             </v-btn>
           </v-timeline-item>
         </v-timeline>
