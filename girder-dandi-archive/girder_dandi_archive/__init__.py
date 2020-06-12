@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from girder import events
 from girder.models.folder import Folder
 from girder.models.setting import Setting
 from girder.plugin import GirderPlugin
 from girder.settings import SettingKey
 from girder_user_quota.settings import PluginSettings as UserQuotaPluginSettings
 
+from . import locking
 from .rest import DandiResource
 from .util import DANDISET_IDENTIFIER_COUNTER
 
@@ -28,3 +30,14 @@ class DandiArchivePlugin(GirderPlugin):
         Setting().set(UserQuotaPluginSettings.DEFAULT_USER_QUOTA, 0)
 
         info["apiRoot"].dandi = DandiResource()
+
+        events.bind("model.folder.save", "folder_save_listener", locking.folder_save_listener)
+        # TODO item save
+        # TODO file save
+        events.bind(
+            "model.upload.assetstore",
+            "upload_assetstore_listener",
+            locking.upload_assetstore_listener,
+        )
+        # TODO file delete
+        # TODO file move
