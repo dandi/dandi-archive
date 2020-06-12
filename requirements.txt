@@ -13,7 +13,6 @@ httpx
 psycopg2
 pyyaml
 whitenoise[brotli]
-future
 
 django-stubs
 djangorestframework-stubs
