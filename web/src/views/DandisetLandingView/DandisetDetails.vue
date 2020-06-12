@@ -61,7 +61,7 @@
                 </v-icon>
                 <span :class="`${itemClasses} text-capitalize`"> {{ currentVersion }} </span>
               </v-col>
-              <v-col v-if="!validDandisetVersion(currentVersion)">
+              <v-col v-if="!isPublishedVersion(currentVersion)">
                 <v-tooltip top>
                   <template v-slot:activator="{ on }">
                     <v-icon
@@ -121,7 +121,7 @@ import { mapState } from 'vuex';
 import moment from 'moment';
 
 import { publishRest } from '@/rest';
-import { draftVersion, validDandisetVersion } from '@/utils';
+import { draftVersion, isPublishedVersion } from '@/utils';
 
 export default {
   name: 'DandisetDetails',
@@ -204,12 +204,12 @@ export default {
     },
   },
   methods: {
-    validDandisetVersion,
+    isPublishedVersion,
     setVersion(index) {
       const { version } = this.versions[index];
 
       if (this.currentVersion !== version) {
-        if (validDandisetVersion(version)) {
+        if (isPublishedVersion(version)) {
           this.$store.dispatch('dandiset/fetchPublishDandiset', {
             version,
             girderId: this.girderDandiset._id,
@@ -244,7 +244,7 @@ export default {
     },
     timelineVersionItemColor(index) {
       if (this.currentVersionIndex !== index) { return 'grey'; }
-      if (!validDandisetVersion(this.versions[index].version)) {
+      if (!isPublishedVersion(this.versions[index].version)) {
         return 'amber darken-4';
       }
 

@@ -62,7 +62,7 @@ function getDandisetContact(dandiset) {
 }
 
 const draftVersion = 'draft';
-const validDandisetVersion = (version) => version && version !== draftVersion;
+const isPublishedVersion = (version) => version && version !== draftVersion;
 
 export {
   dandiUrl,
@@ -74,5 +74,5 @@ export {
   copyToClipboard,
   getDandisetContact,
   draftVersion,
-  validDandisetVersion,
+  isPublishedVersion,
 };
