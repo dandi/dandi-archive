@@ -155,8 +155,9 @@ export default {
       return null;
     },
     currentVersion() {
-      if (!this.versions) { return draftVersion; }
-      return this.versions[this.currentVersionIndex].version;
+      const { versions, currentVersionIndex } = this;
+      if (!versions) { return draftVersion; }
+      return versions[currentVersionIndex].version;
     },
     currentDandiset() {
       // Done this way because we'll want to add in
