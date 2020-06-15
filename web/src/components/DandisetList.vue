@@ -39,32 +39,30 @@
               {{ item.meta.dandiset.name }}
             </v-list-item-title>
             <v-list-item-subtitle>
+              DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
+              ·
               Contact <b>{{ getDandisetContact(item) }}</b>
               ·
-              Created on <b>{{ formatDate(item.created) }}</b>
+              Updated on <b>{{ formatDate(item.updated) }}</b>
               ·
-              DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
+              <v-icon
+                small
+                class="pb-1"
+              >
+                mdi-file
+              </v-icon>
+              {{ dandisetStats[i].items }}
+              ·
+              <v-icon
+                small
+                class="pb-1"
+              >
+                mdi-database
+              </v-icon>
+              {{ filesize(dandisetStats[i].bytes) }}
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>
-        <template v-if="dandisetStats">
-          <v-col
-            cols="1"
-          >
-            <v-icon color="primary">
-              mdi-file
-            </v-icon>
-            {{ dandisetStats[i].items }}
-          </v-col>
-          <v-col
-            cols="1"
-          >
-            <v-icon color="primary">
-              mdi-server
-            </v-icon>
-            {{ filesize(dandisetStats[i].bytes) }}
-          </v-col>
-        </template>
       </v-row>
     </v-list-item>
   </v-list>
