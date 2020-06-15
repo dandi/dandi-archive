@@ -1,7 +1,11 @@
+from bson.objectid import ObjectId
+
 from girder.api.describe import getCurrentUser
 from girder.constants import AccessType
 from girder.exceptions import AccessException
 from girder.models.folder import Folder
+from girder.models.user import User
+
 
 from .util import find_dandiset_by_identifier
 
@@ -57,9 +61,10 @@ def require_lock(identifier, user):
     Note the different between this method and require_access.
     """
     if not has_lock(identifier, user):
-        locked_by = _get_lock(identifier)
+        locked_by = get_lock_owner(identifier)
         if locked_by is not None:
-            raise AccessException(f"Dandiset {identifier} is currently locked by {locked_by}")
+            owner_str = f"{locked_by['firstName']} {locked_by['lastName']}"
+            raise AccessException(f"Dandiset {identifier} is currently locked by {owner_str}")
         else:
             raise AccessException(f"Dandiset {identifier} is currently unlocked")
 
@@ -71,8 +76,9 @@ def require_access(identifier, user):
     This method should be used to determine if a user can modify a dandiset.
     """
     if (not has_lock(identifier, None)) and (not has_lock(identifier, user)):
-        locked_by = _get_lock(identifier)
-        raise AccessException(f"Dandiset {identifier} is currently locked by {locked_by}")
+        locked_by = get_lock_owner(identifier)
+        owner_str = f"{locked_by['firstName']} {locked_by['lastName']}"
+        raise AccessException(f"Dandiset {identifier} is currently locked by {owner_str}")
 
 
 def lock(identifier, user):
@@ -93,6 +99,14 @@ def unlock(identifier, user):
     """
     require_lock(identifier, user)
     _remove_lock(identifier)
+
+
+def get_lock_owner(identifier):
+    """Return the user who currently has the lock on the resource, or None if there is no lock."""
+    lock_id = _get_lock(identifier)
+    if lock_id is None:
+        return None
+    return User().findOne(ObjectId(lock_id))
 
 
 def folder_save_listener(event):
