@@ -44,45 +44,25 @@
               Contact <b>{{ getDandisetContact(item) }}</b>
               ·
               Updated on <b>{{ formatDate(item.updated) }}</b>
-              <template v-if="$vuetify.breakpoint.mdAndDown">
-                ·
-                <v-icon
-                  small
-                  class="pb-1"
-                >
-                  mdi-file
-                </v-icon>
-                {{ dandisetStats[i].items }}
-                ·
-                <v-icon
-                  small
-                  class="pb-1"
-                >
-                  mdi-database
-                </v-icon>
-                {{ filesize(dandisetStats[i].bytes) }}
-              </template>
+              ·
+              <v-icon
+                small
+                class="pb-1"
+              >
+                mdi-file
+              </v-icon>
+              {{ dandisetStats[i].items }}
+              ·
+              <v-icon
+                small
+                class="pb-1"
+              >
+                mdi-database
+              </v-icon>
+              {{ filesize(dandisetStats[i].bytes) }}
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>
-        <template v-if="dandisetStats && !$vuetify.breakpoint.mdAndDown">
-          <v-col
-            cols="1"
-          >
-            <v-icon color="primary">
-              mdi-file
-            </v-icon>
-            {{ dandisetStats[i].items }}
-          </v-col>
-          <v-col
-            cols="1"
-          >
-            <v-icon color="primary">
-              mdi-database
-            </v-icon>
-            {{ filesize(dandisetStats[i].bytes) }}
-          </v-col>
-        </template>
       </v-row>
     </v-list-item>
   </v-list>
