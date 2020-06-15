@@ -31,12 +31,12 @@ router = ExtendedSimpleRouter()
 
 schema_view = get_schema_view(
     openapi.Info(
-        title='ABC',
+        title='DANDI Archive',
         default_version='v1',
-        description='abc123',
+        description='The BRAIN Initiative archive for publishing and sharing cellular neurophysiology data',
     ),
     public=True,
-    permission_classes=(permissions.AllowAny,)
+    permission_classes=[permissions.AllowAny]
 )
 
 urlpatterns = [
