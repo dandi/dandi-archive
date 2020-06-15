@@ -9,7 +9,6 @@ django-extensions
 djangorestframework
 drf-extensions
 drf-yasg
-future
 httpx
 psycopg2
 pyyaml
