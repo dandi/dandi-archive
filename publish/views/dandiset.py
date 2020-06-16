@@ -24,11 +24,6 @@ class DandisetSerializer(serializers.ModelSerializer):
         read_only_fields = ['created']
 
 
-# class DandisetPublishSerializer(serializers.Serializer):
-#     girder_id = serializers.CharField()
-#     token = serializers.CharField(allow_blank=True, default='')
-
-
 class DandisetViewSet(ReadOnlyModelViewSet):
     queryset = Dandiset.objects.all()
 
