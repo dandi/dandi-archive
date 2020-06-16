@@ -37,7 +37,7 @@ jobs:
           working_directory: test
       - run:
           name: Lint E2E tests
-          command: yarn run lint
+          command: yarn run lint --no-fix --max-warnings=0
           working_directory: test
 
   test-e2e:

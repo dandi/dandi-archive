@@ -218,7 +218,7 @@ export default {
       try {
         const { status, data } = await girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
         if (status === 200) {
-          this.setCurrentDandiset(data);
+          this.setGirderDandiset(data);
           this.closeEditor();
         }
       } catch (error) {

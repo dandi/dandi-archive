@@ -6,6 +6,7 @@ export default {
     publishDandiset: null,
     girderDandiset: null,
     loading: false,
+    owners: null,
   },
   mutations: {
     setGirderDandiset(state, dandiset) {
@@ -13,6 +14,9 @@ export default {
     },
     setPublishDandiset(state, dandiset) {
       state.publishDandiset = dandiset;
+    },
+    setOwners(state, owners) {
+      state.owners = owners;
     },
   },
   actions: {
@@ -31,6 +35,10 @@ export default {
       commit('setGirderDandiset', data);
 
       state.loading = false;
+    },
+    async fetchOwners({ commit }, identifier) {
+      const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
+      commit('setOwners', data);
     },
   },
 };

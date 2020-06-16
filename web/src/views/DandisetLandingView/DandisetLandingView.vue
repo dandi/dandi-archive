@@ -64,7 +64,7 @@
           </v-col>
           <v-col
             v-if="detailsPanel && !$vuetify.breakpoint.smAndDown"
-            cols="auto"
+            cols="3"
           >
             <DandisetDetails />
           </v-col>
