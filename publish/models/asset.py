@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+import hashlib
+import logging
+from tempfile import NamedTemporaryFile
+import uuid
+
+from django.conf import settings
+from django.contrib.postgres.fields import JSONField
+from django.core.files import File
+from django.core.validators import RegexValidator
+from django.db import models
+
+from publish.girder import GirderClient, GirderFile
+from publish.storage import create_s3_storage
+from .version import Version
+
+logger = logging.getLogger(__name__)
+
+
+def _get_asset_blob_prefix(instance: Asset, filename: str) -> str:
+    return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
+
+
+class Asset(models.Model):  # TODO: was NwbFile
+    UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+    SHA256_REGEX = r'[0-9a-f]{64}'
+
+    version = models.ForeignKey(
+        Version, related_name='assets', on_delete=models.CASCADE
+    )  # used to be called dandiset
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+
+    path = models.CharField(max_length=512)
+    size = models.BigIntegerField()
+    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')],)
+    metadata = JSONField(blank=True, default=dict)
+
+    blob = models.FileField(
+        blank=True,
+        storage=create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME),
+        upload_to=_get_asset_blob_prefix,
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['uuid']),
+            models.Index(fields=['version', 'path']),
+        ]
+
+    # objects = SelectRelatedManager('version__dandiset')
+
+    def __str__(self) -> str:
+        return self.path
+
+    @classmethod
+    def from_girder(cls, version: Version, girder_file: GirderFile, client: GirderClient) -> Asset:
+        sha256_hasher = hashlib.sha256()
+        blob_size = 0
+
+        with NamedTemporaryFile('r+b') as local_stream:
+
+            logger.info(f'Downloading file {girder_file.girder_id}')
+            with client.iter_file_content(girder_file.girder_id) as file_content_iter:
+                for chunk in file_content_iter:
+                    sha256_hasher.update(chunk)
+                    blob_size += len(chunk)
+                    local_stream.write(chunk)
+            logger.info(f'Downloaded file {girder_file.girder_id}')
+
+            local_stream.seek(0)
+            # local_path = Path(local_stream.name)
+            sha256 = sha256_hasher.hexdigest()
+
+            # try:
+            #     subprocess.check_call(['dandi', 'validate', str(local_path)])
+            # except subprocess.CalledProcessError:
+            #     # TODO: No validation enforcement now
+            #     pass
+
+            blob = File(file=local_stream, name=girder_file.path.lstrip('/'),)
+            # content_type is not part of the base File class (it on some other subclasses),
+            # but regardless S3Boto3Storage will respect and use it, if it's set
+            blob.content_type = 'application/octet-stream'
+
+            # s3.put_object(
+            #     Bucket=S3_BUCKET,
+            #     Key=f'{prefix}/dandiset.yaml',
+            #     Body=dump(self.metadata['dandiset']).encode(),
+            #     ACL='public-read',
+            # )
+
+            asset = Asset(
+                version=version,
+                path=girder_file.path,
+                size=blob_size,
+                sha256=sha256,
+                metadata=girder_file.metadata,
+                blob=blob,
+            )
+            # The actual upload of blob occurs when the asset is saved
+            asset.save()
+        return asset
