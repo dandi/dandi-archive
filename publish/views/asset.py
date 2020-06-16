@@ -1,6 +1,8 @@
 from django_filters import rest_framework as filters
 from rest_framework import serializers
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
@@ -53,3 +55,30 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    @action(detail=False, methods=['GET'])
+    def paths(self, request, **kwargs):
+        """
+        Return the unique files/directories that directly reside under the specified path.
+
+        The specified path must be a folder (must end with a slash).
+        """
+        path_prefix: str = self.request.query_params.get('path_prefix', '/')
+        qs = self.get_queryset().filter(path__startswith=path_prefix).values()
+
+        paths = set()
+        for asset in qs:
+            path_parts = [part for part in asset['path'].split('/') if part]
+            prefix_parts = [part for part in path_prefix.split('/') if part]
+
+            # If the prefix is the exact path of this asset, or the prefix parts aren't a strict
+            # subset of the asset path parts (a folder which doesn't exist), skip this asset
+            if path_prefix == asset['path'] or (set(prefix_parts) - set(path_parts)):
+                continue
+
+            # Pivot index is -1 (include all path parts) if prefix is '/'
+            pivot_index = path_parts.index(prefix_parts[-1]) if len(prefix_parts) else -1
+            base_path, *remainder = path_parts[pivot_index + 1 :]
+            paths.add(f'{base_path}/' if len(remainder) else base_path)
+
+        return Response(sorted(paths))
