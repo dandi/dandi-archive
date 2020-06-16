@@ -43,21 +43,23 @@
               ·
               Updated on <b>{{ formatDate(item.updated) }}</b>
               ·
-              <v-icon
-                small
-                class="pb-1"
-              >
-                mdi-file
-              </v-icon>
-              {{ dandisetStats[i].items }}
-              ·
-              <v-icon
-                small
-                class="pb-1"
-              >
-                mdi-database
-              </v-icon>
-              {{ filesize(dandisetStats[i].bytes) }}
+              <template v-if="dandisetStats">
+                <v-icon
+                  small
+                  class="pb-1"
+                >
+                  mdi-file
+                </v-icon>
+                {{ dandisetStats[i].items }}
+                ·
+                <v-icon
+                  small
+                  class="pb-1"
+                >
+                  mdi-database
+                </v-icon>
+                {{ filesize(dandisetStats[i].bytes) }}
+              </template>
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-col>
