@@ -8,18 +8,10 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 from publish.girder import GirderClient
+from .common import SelectRelatedManager
 from .dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
-
-
-class SelectRelatedManager(models.Manager):
-    def __init__(self, *related_fields):
-        self.related_fields = related_fields
-        super().__init__()
-
-    def get_queryset(self):
-        return super().get_queryset().select_related(*self.related_fields)
 
 
 def _get_default_version() -> str:
