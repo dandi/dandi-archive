@@ -193,8 +193,8 @@ export default {
     output() {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
-    ...mapState('girder', {
-      id: (state) => (state.currentDandiset ? state.currentDandiset._id : null),
+    ...mapState('dandiset', {
+      id: (state) => (state.girderDandiset ? state.girderDandiset._id : null),
     }),
   },
   watch: {
@@ -261,7 +261,7 @@ export default {
       link.click();
       URL.revokeObjectURL(link.href);
     },
-    ...mapMutations('girder', ['setCurrentDandiset']),
+    ...mapMutations('dandiset', ['setGirderDandiset']),
   },
 };
 </script>

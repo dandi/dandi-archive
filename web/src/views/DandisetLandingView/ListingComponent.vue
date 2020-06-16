@@ -12,13 +12,13 @@
             <v-expansion-panel-content>
               <v-list>
                 <v-list-item
-                  v-for="(value, key) in item"
+                  v-for="key in Object.keys(item).sort()"
                   :key="key"
                 >
                   <!-- value's type matches that specified at schema.items.properties[key].type -->
                   <ListingComponent
                     :schema="schema.items.properties[key]"
-                    :data="value"
+                    :data="item[key]"
                   />
                 </v-list-item>
               </v-list>
@@ -45,13 +45,13 @@
     <template v-else-if="schema.type === 'object'">
       <v-list dense>
         <v-list-item
-          v-for="(value, key) in data"
+          v-for="key in Object.keys(data).sort()"
           :key="key"
           dense
         >
           <ListingComponent
             :schema="schema.properties[key]"
-            :data="value"
+            :data="data[key]"
           />
         </v-list-item>
       </v-list>

@@ -20,6 +20,11 @@
         <v-toolbar-title>
           Dandiset Dashboard
         </v-toolbar-title>
+        <v-progress-circular
+          v-if="!girderDandiset || loading"
+          indeterminate
+          class="ml-3"
+        />
         <v-spacer />
         <DandisetSearchField />
         <v-btn
@@ -36,12 +41,8 @@
           </v-icon>
         </v-btn>
       </v-toolbar>
-      <v-progress-linear
-        v-if="!currentDandiset"
-        indeterminate
-      />
       <v-container
-        v-else
+        v-if="girderDandiset"
         fluid
         class="grey lighten-4"
       >
@@ -76,16 +77,16 @@
 <script>
 import { mapState } from 'vuex';
 
-import { girderRest } from '@/rest';
-
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import { isPublishedVersion } from '@/utils';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
+
 
 export default {
   name: 'DandisetLandingView',
@@ -99,6 +100,11 @@ export default {
     id: {
       type: String,
       required: true,
+    },
+    version: {
+      type: String,
+      required: false,
+      default: null,
     },
     create: {
       type: Boolean,
@@ -128,18 +134,24 @@ export default {
       return { properties, required };
     },
     meta() {
+      if (this.publishDandiset) {
+        return { ...this.publishDandiset.meta.dandiset };
+      }
+
       if (
-        !this.currentDandiset
-        || !this.currentDandiset.meta
-        || !this.currentDandiset.meta.dandiset
+        !this.girderDandiset
+        || !this.girderDandiset.meta
+        || !this.girderDandiset.meta.dandiset
       ) {
         return {};
       }
 
-      return { ...this.currentDandiset.meta.dandiset };
+      return { ...this.girderDandiset.meta.dandiset };
     },
-    ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+    ...mapState('dandiset', {
+      girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
+      loading: (state) => state.loading,
     }),
   },
   watch: {
@@ -149,9 +161,18 @@ export default {
         // If we ever change the URL to contain the dandiset ID instead of the
         // girder folder ID, this should be moved into the store
 
-        if (!this.currentDandiset || !this.meta.length) {
-          const { data } = await girderRest.get(`folder/${value}`);
-          this.$store.commit('girder/setCurrentDandiset', data);
+        if (!this.girderDandiset || !this.meta.length) {
+          this.$store.dispatch('dandiset/fetchGirderDandiset', { girderId: value });
+        }
+      },
+    },
+    girderDandiset: {
+      immediate: true,
+      async handler(value) {
+        const { version } = this;
+        if (value && isPublishedVersion(version)) {
+          const { _id: girderId, meta: { dandiset: { identifier } } } = value;
+          this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, girderId, version });
         }
       },
     },

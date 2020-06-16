@@ -5,7 +5,6 @@ export default {
   state: {
     browseLocation: null,
     selected: [],
-    currentDandiset: null,
   },
   getters: {
     loggedIn,
@@ -13,9 +12,6 @@ export default {
   mutations: {
     setSelected(state, selected) {
       state.selected = selected;
-    },
-    setCurrentDandiset(state, dandiset) {
-      state.currentDandiset = dandiset;
     },
     setBrowseLocation(state, location) {
       state.browseLocation = location;

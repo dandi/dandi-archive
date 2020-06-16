@@ -16,43 +16,49 @@
           </a>
         </v-col>
         <v-btn
-          icon
           :to="fileBrowserLink"
+          text
         >
-          <v-icon color="primary">
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
             mdi-file-tree
           </v-icon>
+          View Data
         </v-btn>
-        <v-tooltip
-          left
-          :disabled="editDisabledMessage === null"
-        >
-          <template v-slot:activator="{ on }">
-            <div v-on="on">
-              <v-btn
-                text
-                :disabled="editDisabledMessage !== null"
-                @click="$emit('edit')"
-              >
-                <v-icon class="mr-3">
-                  mdi-pencil
-                </v-icon>
-                Edit metadata
-              </v-btn>
-              <v-btn
-                text
-                :disabled="!user || !user.admin"
-                @click="publish"
-              >
-                <v-icon class="mr-3">
-                  mdi-publish
-                </v-icon>
-                Publish
-              </v-btn>
-            </div>
-          </template>
-          {{ editDisabledMessage }}
-        </v-tooltip>
+        <template v-if="publishDandiset === null">
+          <v-tooltip
+            left
+            :disabled="editDisabledMessage === null"
+          >
+            <template v-slot:activator="{ on }">
+              <div v-on="on">
+                <v-btn
+                  text
+                  :disabled="editDisabledMessage !== null"
+                  @click="$emit('edit')"
+                >
+                  <v-icon class="mr-3">
+                    mdi-pencil
+                  </v-icon>
+                  Edit metadata
+                </v-btn>
+                <v-btn
+                  text
+                  :disabled="!user || !user.admin"
+                  @click="publish"
+                >
+                  <v-icon class="mr-3">
+                    mdi-publish
+                  </v-icon>
+                  Publish
+                </v-btn>
+              </div>
+            </template>
+            {{ editDisabledMessage }}
+          </v-tooltip>
+        </template>
       </v-row>
 
       <v-divider />
@@ -66,7 +72,7 @@
         {{ meta.description }}
       </v-row>
 
-      <template v-for="(field, key) in extraFields">
+      <template v-for="key in Object.keys(extraFields).sort()">
         <v-divider :key="`${key}-divider`" />
         <v-row
           :key="`${key}-title`"
@@ -83,7 +89,7 @@
           <v-col class="py-0">
             <ListingComponent
               :schema="schema.properties[key]"
-              :data="field"
+              :data="extraFields[key]"
               root
             />
           </v-col>
@@ -133,20 +139,20 @@ export default {
         return 'You must be logged in to edit.';
       }
 
-      if (!this.currentDandiset) {
+      if (!this.girderDandiset) {
         return null;
       }
 
-      if (this.currentDandiset._accessLevel < 1) {
+      if (this.girderDandiset._accessLevel < 1) {
         return 'You do not have permission to edit this dandiset.';
       }
 
       return null;
     },
     fileBrowserLink() {
-      if (!this.currentDandiset) return null;
+      if (!this.girderDandiset) return null;
 
-      const { _modelType, _id } = this.currentDandiset;
+      const { _modelType, _id } = this.girderDandiset;
       return { name: 'file-browser', params: { _modelType, _id } };
     },
     permalink() {
@@ -159,13 +165,14 @@ export default {
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
-    ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+    ...mapState('dandiset', {
+      girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
     }),
   },
   methods: {
     async publish() {
-      await girderRest.post(`/dandi/${this.currentDandiset.meta.dandiset.identifier}`);
+      await girderRest.post(`/dandi/${this.girderDandiset.meta.dandiset.identifier}`);
     },
   },
 };

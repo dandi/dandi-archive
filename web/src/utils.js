@@ -61,6 +61,9 @@ function getDandisetContact(dandiset) {
   return null;
 }
 
+const draftVersion = 'draft';
+const isPublishedVersion = (version) => version && version !== draftVersion;
+
 export {
   dandiUrl,
   dandiAboutUrl,
@@ -70,4 +73,6 @@ export {
   getPathFromSelected,
   copyToClipboard,
   getDandisetContact,
+  draftVersion,
+  isPublishedVersion,
 };

@@ -38,7 +38,7 @@
         <span :class="itemClasses">{{ currentDandiset.meta.dandiset.identifier }}</span>
       </v-row>
 
-      <v-divider class="my-2 px-0 mx-0" />
+      <v-divider class="mt-2 px-0 mx-0" />
 
       <v-row>
         <v-col>
@@ -57,11 +57,11 @@
                   class="mx-2"
                   color="primary"
                 >
-                  mdi-link
+                  mdi-source-branch
                 </v-icon>
-                <span :class="itemClasses">Draft</span>
+                <span :class="`${itemClasses} text-capitalize`"> {{ currentVersion }} </span>
               </v-col>
-              <v-col>
+              <v-col v-if="!isPublishedVersion(currentVersion)">
                 <v-tooltip top>
                   <template v-slot:activator="{ on }">
                     <v-icon
@@ -79,8 +79,7 @@
           </v-card>
         </v-col>
       </v-row>
-      <!-- TODO: Uncomment this once the versions API is accessible -->
-      <!-- <v-row>
+      <v-row>
         <v-col class="pa-0">
           <v-card
             color="grey lighten-2"
@@ -95,23 +94,24 @@
       </v-row>
 
       <v-row>
-        <v-timeline>
+        <v-timeline dense>
           <v-timeline-item
+            v-for="version in versions"
+            :key="version.version"
             small
             right
+            :color="timelineVersionItemColor(version)"
           >
-            <template v-slot:opposite>
-              <span class="caption text--secondary">
-                02/26/19
-              </span>
-            </template>
-
-            <span class="font-weight-medium">
-              1.2.1
-            </span>
+            <v-btn
+              text
+              class="font-weight-medium"
+              @click="setVersion(version)"
+            >
+              {{ version.version }}
+            </v-btn>
           </v-timeline-item>
         </v-timeline>
-      </v-row> -->
+      </v-row>
     </template>
   </v-card>
 </template>
@@ -120,6 +120,8 @@
 import { mapState } from 'vuex';
 import moment from 'moment';
 
+import { publishRest } from '@/rest';
+import { draftVersion, isPublishedVersion } from '@/utils';
 
 export default {
   name: 'DandisetDetails',
@@ -152,17 +154,93 @@ export default {
 
       return null;
     },
-    ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+    currentVersion() {
+      const { publishDandiset } = this;
+
+      if (publishDandiset) return publishDandiset.version;
+      return draftVersion;
+    },
+    currentDandiset() {
+      // Done this way because we'll want to add in
+      // fetching stats from the publish endpoint later on.
+      return this.girderDandiset;
+    },
+    ...mapState('dandiset', {
+      girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
     }),
   },
+  asyncComputed: {
+    async versions() {
+      const { identifier } = this.girderDandiset.meta.dandiset;
+
+      try {
+        const { results } = await publishRest.versions(identifier);
+        return [
+          { version: draftVersion },
+          ...results,
+        ];
+      } catch (err) {
+        return [];
+      }
+    },
+  },
+  watch: {
+    currentVersion: {
+      immediate: true,
+      handler(version) {
+        this.setRouteVersion(version);
+      },
+    },
+  },
   methods: {
+    isPublishedVersion,
+    setVersion({ version }) {
+      const { currentVersion } = this;
+
+      if (currentVersion !== version) {
+        if (isPublishedVersion(version)) {
+          this.$store.dispatch('dandiset/fetchPublishDandiset', {
+            version,
+            girderId: this.girderDandiset._id,
+            identifier: this.girderDandiset.meta.dandiset.identifier,
+          });
+        } else {
+          this.$store.commit('dandiset/setPublishDandiset', null);
+        }
+
+        this.setRouteVersion(version);
+      }
+    },
+    setRouteVersion(newVersion) {
+      const version = newVersion || draftVersion;
+
+      if (this.$route.params.version !== version) {
+        this.$router.replace({
+          ...this.$route,
+          params: {
+            ...this.$route.params,
+            version,
+          },
+        });
+      }
+    },
     formatDateTime(datetimeStr) {
       const datetime = moment(datetimeStr);
       const date = datetime.format('LL');
       const time = datetime.format('hh:mm A');
 
       return `${date} at ${time}`;
+    },
+    timelineVersionItemColor({ version }) {
+      const { publishDandiset } = this;
+
+      if (publishDandiset && version === publishDandiset.version) { return 'primary'; }
+      if (!publishDandiset && version === draftVersion) {
+        return 'amber darken-4';
+      }
+
+      return 'grey';
     },
   },
 };
