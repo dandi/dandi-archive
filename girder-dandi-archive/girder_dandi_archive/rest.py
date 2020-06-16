@@ -14,6 +14,7 @@ from girder.models.folder import Folder
 from girder.models.setting import Setting
 from girder.models.user import User
 
+from . import locking
 from .settings import PUBLISH_API_KEY, PUBLISH_API_URL
 from .util import (
     dandiset_find,
@@ -42,6 +43,10 @@ class DandiResource(Resource):
         self.route("POST", (), self.create_dandiset)
         self.route("POST", (":identifier",), self.publish_dandiset)
         self.route("GET", ("stats",), self.stats)
+        self.route("POST", (":identifier", "lock"), self.lock_dandiset)
+        self.route("POST", (":identifier", "unlock"), self.unlock_dandiset)
+        self.route("GET", (":identifier", "lock", "owner"), self.get_dandiset_lock_owner)
+        # TODO add a way for admins to remove dead locks
 
     @access.user(scope=TokenScope.DATA_WRITE)
     @describeRoute(
@@ -244,7 +249,7 @@ class DandiResource(Resource):
     @dandiset_identifier
     def publish_dandiset(self, identifier, params):
         dandiset_folder = find_dandiset_by_identifier(identifier)
-        Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.ADMIN),
+        Folder().requireAccess(dandiset_folder, user=self.getCurrentUser(), level=AccessType.ADMIN)
 
         publish_api_url = Setting().get(PUBLISH_API_URL)
         publish_api_key = Setting().get(PUBLISH_API_KEY)
@@ -326,3 +331,34 @@ class DandiResource(Resource):
             "cell_count": cell_count,
             "size": drafts["size"],
         }
+
+    @access.user
+    @autoDescribeRoute(
+        Description("Lock a Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
+    )
+    @dandiset_identifier
+    def lock_dandiset(self, identifier, params):
+        locking.lock(identifier, self.getCurrentUser())
+
+    @access.user
+    @autoDescribeRoute(
+        Description("Unlock a Dandiset").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
+    )
+    @dandiset_identifier
+    def unlock_dandiset(self, identifier, params):
+        locking.unlock(identifier, self.getCurrentUser())
+
+    @access.public
+    @autoDescribeRoute(
+        Description("The owner of the lock on a Dandiset").param(
+            "identifier", "Dandiset Identifier", paramType="path"
+        )
+    )
+    @dandiset_identifier
+    def get_dandiset_lock_owner(self, identifier, params):
+        owner = locking.get_lock_owner(identifier)
+        if owner is None:
+            return None
+        return {key: owner[key] for key in ("firstName", "lastName", "email")}
