@@ -39,7 +39,10 @@
                   :disabled="editDisabledMessage !== null"
                   @click="$emit('edit')"
                 >
-                  <v-icon class="mr-3">
+                  <v-icon
+                    color="primary"
+                    class="mr-2"
+                  >
                     mdi-pencil
                   </v-icon>
                   Edit metadata
@@ -49,7 +52,10 @@
                   :disabled="!user || !user.admin"
                   @click="publish"
                 >
-                  <v-icon class="mr-3">
+                  <v-icon
+                    color="success"
+                    class="mr-2"
+                  >
                     mdi-publish
                   </v-icon>
                   Publish
