@@ -126,7 +126,9 @@ def folder_save_listener(event):
 
 def _get_dandiset_for_file(resource):
     """Get the root dandiset folder which the given file belongs to."""
-    # TODO assuming that the file being uploaded is in a folder
+    if "folderId" not in resource:
+        # the resource is top level under a collection, so it can't be in a dandiset
+        return None
     subfolder = Folder().findOne(resource["folderId"])
     # Dandisets are always top level folders.
     # Ascend the file tree until the subfolder is the root collection.
@@ -146,6 +148,8 @@ def upload_assetstore_listener(event):
     """
     resource = event.info["resource"]
     folder = _get_dandiset_for_file(resource)
+    if folder is None:
+        return
     identifier = folder["meta"]["dandiset"]["identifier"]
     require_access(identifier, getCurrentUser())
 
@@ -154,6 +158,8 @@ def item_save_listener(event):
     """Listen to item save events to enforce locking."""
     resource = event.info
     folder = _get_dandiset_for_file(resource)
+    if folder is None:
+        return
     identifier = folder["meta"]["dandiset"]["identifier"]
     require_access(identifier, getCurrentUser())
 
@@ -162,5 +168,7 @@ def item_remove_listener(event):
     """Listen to item remove events to enforce locking."""
     resource = event.info
     folder = _get_dandiset_for_file(resource)
+    if folder is None:
+        return
     identifier = folder["meta"]["dandiset"]["identifier"]
     require_access(identifier, getCurrentUser())
