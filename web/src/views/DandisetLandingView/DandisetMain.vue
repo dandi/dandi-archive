@@ -16,43 +16,49 @@
           </a>
         </v-col>
         <v-btn
-          icon
           :to="fileBrowserLink"
+          text
         >
-          <v-icon color="primary">
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
             mdi-file-tree
           </v-icon>
+          View Data
         </v-btn>
-        <v-tooltip
-          left
-          :disabled="editDisabledMessage === null"
-        >
-          <template v-slot:activator="{ on }">
-            <div v-on="on">
-              <v-btn
-                text
-                :disabled="editDisabledMessage !== null"
-                @click="$emit('edit')"
-              >
-                <v-icon class="mr-3">
-                  mdi-pencil
-                </v-icon>
-                Edit metadata
-              </v-btn>
-              <v-btn
-                text
-                :disabled="!user || !user.admin"
-                @click="publish"
-              >
-                <v-icon class="mr-3">
-                  mdi-publish
-                </v-icon>
-                Publish
-              </v-btn>
-            </div>
-          </template>
-          {{ editDisabledMessage }}
-        </v-tooltip>
+        <template v-if="publishDandiset === null">
+          <v-tooltip
+            left
+            :disabled="editDisabledMessage === null"
+          >
+            <template v-slot:activator="{ on }">
+              <div v-on="on">
+                <v-btn
+                  text
+                  :disabled="editDisabledMessage !== null"
+                  @click="$emit('edit')"
+                >
+                  <v-icon class="mr-3">
+                    mdi-pencil
+                  </v-icon>
+                  Edit metadata
+                </v-btn>
+                <v-btn
+                  text
+                  :disabled="!user || !user.admin"
+                  @click="publish"
+                >
+                  <v-icon class="mr-3">
+                    mdi-publish
+                  </v-icon>
+                  Publish
+                </v-btn>
+              </div>
+            </template>
+            {{ editDisabledMessage }}
+          </v-tooltip>
+        </template>
       </v-row>
 
       <v-divider />
@@ -161,6 +167,7 @@ export default {
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
     }),
   },
   methods: {
