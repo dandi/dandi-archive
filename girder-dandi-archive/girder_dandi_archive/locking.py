@@ -124,14 +124,14 @@ def folder_save_listener(event):
         pass
 
 
-def _get_dandiset_for_file(resource):
-    """Get the root dandiset folder which the given file belongs to."""
-    if "folderId" not in resource:
+def _get_dandiset_for_item(item):
+    """Get the root dandiset folder which the given item belongs to."""
+    if "folderId" not in item:
         # the resource is top level under a collection, so it can't be in a dandiset
         return None
-    subfolder = Folder().findOne(resource["folderId"])
+    subfolder = Folder().findOne(item["folderId"])
     # Dandisets are always top level folders.
-    # Ascend the file tree until the subfolder is the root collection.
+    # Ascend the file tree until the parent of the subfolder is the root collection.
     # After the loop completes, subfolder will be the dandiset containing the resource.
     while subfolder["parentCollection"] != "collection":
         subfolder = Folder().findOne(subfolder["parentId"])
@@ -146,8 +146,8 @@ def upload_assetstore_listener(event):
     If the root dandiset folder has been locked by someone other than the current user,
     an exception is thrown.
     """
-    resource = event.info["resource"]
-    folder = _get_dandiset_for_file(resource)
+    item = event.info["resource"]
+    folder = _get_dandiset_for_item(item)
     if folder is None:
         return
     identifier = folder["meta"]["dandiset"]["identifier"]
@@ -156,8 +156,8 @@ def upload_assetstore_listener(event):
 
 def item_save_listener(event):
     """Listen to item save events to enforce locking."""
-    resource = event.info
-    folder = _get_dandiset_for_file(resource)
+    item = event.info
+    folder = _get_dandiset_for_item(item)
     if folder is None:
         return
     identifier = folder["meta"]["dandiset"]["identifier"]
@@ -166,8 +166,8 @@ def item_save_listener(event):
 
 def item_remove_listener(event):
     """Listen to item remove events to enforce locking."""
-    resource = event.info
-    folder = _get_dandiset_for_file(resource)
+    item = event.info
+    folder = _get_dandiset_for_item(item)
     if folder is None:
         return
     identifier = folder["meta"]["dandiset"]["identifier"]
