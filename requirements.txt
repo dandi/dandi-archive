@@ -9,6 +9,7 @@ django-extensions
 django-filter
 djangorestframework
 drf-extensions
+drf-yasg
 httpx
 psycopg2
 pyyaml
