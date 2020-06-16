@@ -32,12 +32,13 @@ class DandiArchivePlugin(GirderPlugin):
         info["apiRoot"].dandi = DandiResource()
 
         events.bind("model.folder.save", "folder_save_listener", locking.folder_save_listener)
-        # TODO item save
-        # TODO file save
+        events.bind("model.item.save", "item_save_listener", locking.item_save_listener)
+        events.bind("model.item.remove", "item_remove_listener", locking.item_remove_listener)
         events.bind(
             "model.upload.assetstore",
             "upload_assetstore_listener",
             locking.upload_assetstore_listener,
         )
-        # TODO file delete
+        # TODO file save
+        # TODO file remove
         # TODO file move

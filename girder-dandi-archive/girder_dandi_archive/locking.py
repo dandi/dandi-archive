@@ -124,6 +124,18 @@ def folder_save_listener(event):
         pass
 
 
+def _get_dandiset_for_file(resource):
+    """Get the root dandiset folder which the given file belongs to."""
+    # TODO assuming that the file being uploaded is in a folder
+    subfolder = Folder().findOne(resource["folderId"])
+    # Dandisets are always top level folders.
+    # Ascend the file tree until the subfolder is the root collection.
+    # After the loop completes, subfolder will be the dandiset containing the resource.
+    while subfolder["parentCollection"] != "collection":
+        subfolder = Folder().findOne(subfolder["parentId"])
+    return subfolder
+
+
 def upload_assetstore_listener(event):
     """
     Listen to upload assetstore events to enforce locking.
@@ -132,12 +144,23 @@ def upload_assetstore_listener(event):
     If the root dandiset folder has been locked by someone other than the current user,
     an exception is thrown.
     """
-    thing = event.info["resource"]
-    while thing["parentCollection"] != "collection":
-        thing = Folder().findOne(thing["parentId"])
-    try:
-        identifier = thing["meta"]["dandiset"]["identifier"]
-        require_access(identifier, getCurrentUser())
-    except KeyError:
-        # This event is on a non-dandiset folder, no locking is required
-        pass
+    resource = event.info["resource"]
+    folder = _get_dandiset_for_file(resource)
+    identifier = folder["meta"]["dandiset"]["identifier"]
+    require_access(identifier, getCurrentUser())
+
+
+def item_save_listener(event):
+    """Listen to item save events to enforce locking."""
+    resource = event.info
+    folder = _get_dandiset_for_file(resource)
+    identifier = folder["meta"]["dandiset"]["identifier"]
+    require_access(identifier, getCurrentUser())
+
+
+def item_remove_listener(event):
+    """Listen to item remove events to enforce locking."""
+    resource = event.info
+    folder = _get_dandiset_for_file(resource)
+    identifier = folder["meta"]["dandiset"]["identifier"]
+    require_access(identifier, getCurrentUser())

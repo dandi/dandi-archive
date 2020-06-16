@@ -360,6 +360,5 @@ class DandiResource(Resource):
     def get_dandiset_lock_owner(self, identifier, params):
         owner = locking.get_lock_owner(identifier)
         if owner is None:
-            return
-        print("lock owned by", owner)
+            return None
         return {key: owner[key] for key in ("firstName", "lastName", "email")}
