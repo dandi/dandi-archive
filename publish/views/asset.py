@@ -63,18 +63,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         The specified path must be a folder (must end with a slash).
         """
-        path_prefix: str = self.request.query_params.get('path_prefix', '/')
+        path_prefix: str = self.request.query_params.get('path_prefix') or '/'
+
+        # Enfore trailing slash
+        path_prefix = f'{path_prefix}/' if path_prefix[-1] != '/' else path_prefix
+        prefix_parts = [part for part in path_prefix.split('/') if part]
+
         qs = self.get_queryset().filter(path__startswith=path_prefix).values()
 
         paths = set()
         for asset in qs:
             path_parts = [part for part in asset['path'].split('/') if part]
-            prefix_parts = [part for part in path_prefix.split('/') if part]
-
-            # If the prefix is the exact path of this asset, or the prefix parts aren't a strict
-            # subset of the asset path parts (a folder which doesn't exist), skip this asset
-            if path_prefix == asset['path'] or (set(prefix_parts) - set(path_parts)):
-                continue
 
             # Pivot index is -1 (include all path parts) if prefix is '/'
             pivot_index = path_parts.index(prefix_parts[-1]) if len(prefix_parts) else -1
