@@ -19,15 +19,26 @@ class GirderFile:
 
 
 class GirderClient(Client):
-    def __init__(self, token=None, **kwargs):
+    def __init__(self, authenticate=False, **kwargs):
         girder_api_url = settings.DANDI_GIRDER_API_URL
+        girder_api_key = settings.DANDI_GIRDER_API_KEY
         if not girder_api_url.endswith('/'):
             girder_api_url += '/'
 
         kwargs.setdefault('base_url', girder_api_url)
-        if token:
-            kwargs.setdefault('headers', {'Girder-Token': token})
         super().__init__(**kwargs)
+
+        if not authenticate:
+            return
+
+        # Fetch the token using the API key
+        resp = self.post('api_key/token', params={'key': girder_api_key})
+        if resp.status_code != 200:
+            raise GirderError('Failed to authenticate with Girder')
+        token = resp.json()['authToken']['token']
+
+        # Include the token header for all subsequent requests
+        self.headers = {'Girder-Token': token}
 
     def get_json(self, *args, **kwargs) -> Any:
         resp = self.get(*args, **kwargs)
@@ -62,3 +73,16 @@ class GirderClient(Client):
         with self.stream('GET', f'file/{file_id}/download') as resp:
             resp.raise_for_status()
             yield resp.iter_bytes()
+
+
+@contextlib.contextmanager
+def dandiset_lock(dandiset_id, client: GirderClient):
+    resp = client.post(f'dandi/{dandiset_id}/lock')
+    if (resp.status_code != 200):
+        raise GirderError(f'Failed to lock dandiset {dandiset_id}')
+    try:
+        yield
+    finally:
+        resp = client.post(f'dandi/{dandiset_id}/unlock')
+        if (resp.status_code != 200):
+            raise GirderError(f'Failed to unlock dandiset {dandiset_id}')

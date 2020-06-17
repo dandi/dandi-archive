@@ -351,6 +351,7 @@ class DandiConfig(Config):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
+    DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
 
 
 class BaseConfiguration(
