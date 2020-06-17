@@ -13,12 +13,12 @@
         no-gutters
         align="center"
       >
-        <v-col
-          cols="10"
-        >
+        <v-col cols="10">
           <v-list-item-content>
             <v-list-item-title>
               {{ item.meta.dandiset.name }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
               <v-chip
                 v-if="item.version"
                 small
@@ -35,8 +35,6 @@
               >
                 <b>DRAFT</b>
               </v-chip>
-            </v-list-item-title>
-            <v-list-item-subtitle>
               DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
               ·
               Contact <b>{{ getDandisetContact(item) }}</b>
