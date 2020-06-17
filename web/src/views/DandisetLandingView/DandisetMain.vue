@@ -49,7 +49,7 @@
                 </v-btn>
                 <v-btn
                   text
-                  :disabled="!user || !user.admin"
+                  :disabled="editDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
                 >
                   <v-icon
@@ -153,6 +153,13 @@ export default {
         return 'You do not have permission to edit this dandiset.';
       }
 
+      if (this.lockOwner != null) {
+        if (this.lockOwner.email === 'publish@dandiarchive.org') {
+          return 'A publish is currently in progress';
+        }
+        return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
+      }
+
       return null;
     },
     fileBrowserLink() {
@@ -175,6 +182,19 @@ export default {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
     }),
+  },
+  asyncComputed: {
+    lockOwner: {
+      async get() {
+        const { data: owner } = await girderRest.get(`/dandi/${this.girderDandiset.meta.dandiset.identifier}/lock/owner`);
+        if (!owner) {
+          return null;
+        }
+        return owner;
+      },
+      // default to the publish lock message until the actual lock owner can be fetched
+      default: { email: 'publish@dandiarchive.org' },
+    },
   },
   methods: {
     async publish() {
