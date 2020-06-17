@@ -227,7 +227,7 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions, mapGetters } from 'vuex';
 import {
   loggedIn, user, girderRest, publishRest,
 } from '@/rest';
@@ -277,12 +277,6 @@ export default {
 
       return null;
     },
-    currentVersion() {
-      const { publishDandiset } = this;
-
-      if (publishDandiset) return publishDandiset.version;
-      return draftVersion;
-    },
     currentDandiset() {
       // Done this way because we'll want to add in
       // fetching stats from the publish endpoint later on.
@@ -311,6 +305,9 @@ export default {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       owners: (state) => state.owners,
+    }),
+    ...mapGetters('dandiset', {
+      currentVersion: 'version',
     }),
   },
   asyncComputed: {

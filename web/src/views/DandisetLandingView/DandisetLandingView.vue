@@ -97,7 +97,7 @@ export default {
     DandisetDetails,
   },
   props: {
-    id: {
+    identifier: {
       type: String,
       required: true,
     },
@@ -155,14 +155,11 @@ export default {
     }),
   },
   watch: {
-    id: {
+    identifier: {
       immediate: true,
-      async handler(value) {
-        // If we ever change the URL to contain the dandiset ID instead of the
-        // girder folder ID, this should be moved into the store
-
-        if (!this.girderDandiset || !this.meta.length) {
-          this.$store.dispatch('dandiset/fetchGirderDandiset', { girderId: value });
+      async handler(identifier) {
+        if (!this.girderDandiset) {
+          this.$store.dispatch('dandiset/fetchGirderDandiset', { identifier });
         }
       },
     },

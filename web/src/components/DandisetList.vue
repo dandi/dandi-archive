@@ -7,7 +7,7 @@
       v-for="(item, i) in items"
       :key="item._id"
       selectable
-      :to="{ name: 'dandisetLanding', params: { id: item._id, origin } }"
+      :to="{ name: 'dandisetLanding', params: { identifier: item.meta.dandiset.identifier, origin } }"
     >
       <v-row
         no-gutters

@@ -1,4 +1,5 @@
 import { girderRest, publishRest } from '@/rest';
+import { draftVersion } from '@/utils';
 
 export default {
   namespaced: true,
@@ -7,6 +8,11 @@ export default {
     girderDandiset: null,
     loading: false,
     owners: null,
+  },
+  getters: {
+    version(state) {
+      return state.publishDandiset ? state.publishDandiset.version : draftVersion;
+    },
   },
   mutations: {
     setGirderDandiset(state, dandiset) {
@@ -28,10 +34,10 @@ export default {
 
       state.loading = false;
     },
-    async fetchGirderDandiset({ state, commit }, { girderId }) {
+    async fetchGirderDandiset({ state, commit }, { identifier }) {
       state.loading = true;
 
-      const { data } = await girderRest.get(`folder/${girderId}`);
+      const { data } = await girderRest.get(`dandi/${identifier}`);
       commit('setGirderDandiset', data);
 
       state.loading = false;
