@@ -158,9 +158,7 @@ export default {
     identifier: {
       immediate: true,
       async handler(identifier) {
-        if (!this.girderDandiset) {
-          this.$store.dispatch('dandiset/fetchGirderDandiset', { identifier });
-        }
+        this.$store.dispatch('dandiset/fetchGirderDandiset', { identifier });
       },
     },
     girderDandiset: {
