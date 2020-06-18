@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 
+from publish.girder import GirderClient
 from publish.models import Dandiset
-from publish.tasks import sync_dandiset
 from publish.views.common import DandiPagination
 
 
@@ -56,5 +56,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise ValidationError('Missing query parameter "folder-id"')
         draft_folder_id = request.query_params['folder-id']
 
-        sync_dandiset.delay(draft_folder_id)
+        with GirderClient() as client:
+            Dandiset.from_girder(draft_folder_id, client)
         return Response('', status=status.HTTP_202_ACCEPTED)

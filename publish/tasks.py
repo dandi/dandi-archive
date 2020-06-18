@@ -10,12 +10,6 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def sync_dandiset(draft_folder_id: str) -> None:
-    with GirderClient() as client:
-        Dandiset.from_girder(draft_folder_id, client)
-
-
-@shared_task
 @atomic
 def publish_version(dandiset_id: int) -> None:
     with GirderClient() as client:
