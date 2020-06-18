@@ -122,9 +122,12 @@ export default {
         this.location = rootDirectory;
       }
     },
-  },
-  created() {
-    this.location = this.$route.query.location || rootDirectory;
+    $route: {
+      immediate: true,
+      handler(route) {
+        this.location = route.query.location || rootDirectory;
+      },
+    },
   },
   methods: {
     selectPath(item) {
