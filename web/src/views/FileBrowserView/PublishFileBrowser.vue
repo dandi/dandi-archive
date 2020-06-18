@@ -18,7 +18,26 @@
               vertical
               class="ml-2 mr-3"
             />
-            {{ location }}
+            <router-link
+              :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
+              style="text-decoration: none;"
+            >
+              {{ rootDirectory }}
+            </router-link>
+
+            <template v-for="(part, i) in splitLocation">
+              <template v-if="part">
+                <router-link
+                  :key="part"
+                  :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
+                  style="text-decoration: none;"
+                  class="mx-2"
+                >
+                  {{ part }}
+                </router-link>
+                {{ i === splitLocation.length - 1 ? '' : '/' }}
+              </template>
+            </template>
           </v-card-title>
           <v-progress-linear
             v-if="loading"
@@ -74,11 +93,15 @@ export default {
   },
   data() {
     return {
+      rootDirectory,
       location: rootDirectory,
       loading: false,
     };
   },
   computed: {
+    splitLocation() {
+      return this.location.split('/');
+    },
     ...mapState('dandiset', ['publishDandiset']),
   },
   asyncComputed: {
@@ -130,6 +153,9 @@ export default {
     },
   },
   methods: {
+    locationSlice(index) {
+      return `${this.splitLocation.slice(0, index + 1).join('/')}/`;
+    },
     selectPath(item) {
       const { name, folder } = item;
 
