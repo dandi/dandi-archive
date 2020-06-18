@@ -18,6 +18,7 @@
           >
             <v-btn
               icon
+              exact
               color="primary"
               :to="{
                 name: 'dandisetLanding',
