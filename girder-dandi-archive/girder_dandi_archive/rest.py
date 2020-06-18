@@ -232,6 +232,20 @@ class DandiResource(Resource):
         publish_api_url = Setting().get(PUBLISH_API_URL)
         publish_api_key = Setting().get(PUBLISH_API_KEY)
 
+        # Sync the dandiset with the publish service
+        try:
+            response = requests.post(
+                urljoin(publish_api_url, "dandisets/sync/"),
+                params={"folder-id": dandiset_folder["_id"]},
+                headers={"Authorization": f"Token {publish_api_key}"},
+            )
+            response.raise_for_status()
+        except HTTPError:
+            raise RestException(message=f"Failed to sync {identifier}")
+        except ConnectionError:
+            raise RestException(message="Failed to contact publish API")
+
+        # Publish the new version
         try:
             response = requests.post(
                 urljoin(publish_api_url, f"dandisets/{identifier}/versions/publish/"),
@@ -239,7 +253,7 @@ class DandiResource(Resource):
             )
             response.raise_for_status()
         except HTTPError:
-            raise RestException(message="Failed to publish")
+            raise RestException(message=f"Failed to publish {identifier}")
         except ConnectionError:
             raise RestException(message="Failed to contact publish API")
 
