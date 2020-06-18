@@ -12,7 +12,7 @@
                 params: { identifier },
               }"
             >
-              <v-icon>mdi-home</v-icon>
+              <v-icon>mdi-jellyfish</v-icon>
             </v-btn>
             <v-divider
               vertical
