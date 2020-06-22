@@ -3,7 +3,7 @@ from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
 
 from publish.models import Asset, Dandiset, Version
-from .girder import GirderClient, dandiset_lock
+from .girder import GirderClient
 
 
 logger = get_task_logger(__name__)
