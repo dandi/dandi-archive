@@ -75,14 +75,14 @@ class GirderClient(Client):
             yield resp.iter_bytes()
 
 
-@contextlib.contextmanager
-def dandiset_lock(dandiset_id, client: GirderClient):
-    resp = client.post(f'dandi/{dandiset_id}/lock')
-    if (resp.status_code != 200):
-        raise GirderError(f'Failed to lock dandiset {dandiset_id}')
-    try:
-        yield
-    finally:
-        resp = client.post(f'dandi/{dandiset_id}/unlock')
-        if (resp.status_code != 200):
-            raise GirderError(f'Failed to unlock dandiset {dandiset_id}')
+    @contextlib.contextmanager
+    def dandiset_lock(self, dandiset_identifier: str):
+        resp = self.post(f'dandi/{dandiset_identifier}/lock')
+        if resp.status_code != 200:
+            raise GirderError(f'Failed to lock dandiset {dandiset_identifier}')
+        try:
+            yield
+        finally:
+            resp = self.post(f'dandi/{dandiset_identifier}/unlock')
+            if resp.status_code != 200:
+                raise GirderError(f'Failed to unlock dandiset {dandiset_identifier}')

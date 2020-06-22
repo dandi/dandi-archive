@@ -14,7 +14,7 @@ logger = get_task_logger(__name__)
 def publish_version(dandiset_id: int) -> None:
     with GirderClient(authenticate=True) as client:
         dandiset = Dandiset.objects.get(pk=dandiset_id)
-        with dandiset_lock(dandiset.identifier, client):
+        with client.dandiset_lock(dandiset.identifier):
             version = Version.from_girder(dandiset, client)
 
             for girder_file in client.files_in_folder(dandiset.draft_folder_id):
