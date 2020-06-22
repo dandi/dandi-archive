@@ -74,7 +74,6 @@ class GirderClient(Client):
             resp.raise_for_status()
             yield resp.iter_bytes()
 
-
     @contextlib.contextmanager
     def dandiset_lock(self, dandiset_identifier: str):
         resp = self.post(f'dandi/{dandiset_identifier}/lock')
