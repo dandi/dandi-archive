@@ -23,7 +23,7 @@ export default {
 </script>
 
 <template>
-  <v-footer class="body-2">
+  <v-footer class="text-body-2">
     <v-container>
       <v-row>
         <v-col offset="2">
