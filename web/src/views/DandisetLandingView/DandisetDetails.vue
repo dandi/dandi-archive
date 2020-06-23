@@ -209,7 +209,7 @@
             right
           >
             <template v-slot:opposite>
-              <span class="caption text--secondary">
+              <span class="text-caption text--secondary">
                 02/26/19
               </span>
             </template>

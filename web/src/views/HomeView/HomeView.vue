@@ -34,10 +34,10 @@
             align="center"
           >
             <v-col class="splash-text my-12">
-              <div class="display-3 font-weight-thin text-center light-blue--text text--darken-1">
+              <div class="text-h2 font-weight-thin text-center light-blue--text text--darken-1">
                 The DANDI Archive
               </div>
-              <div class="title font-weight-light text-center">
+              <div class="text-h6 font-weight-light text-center">
                 The BRAIN Initiative archive for publishing and sharing
                 cellular neurophysiology data
               </div>
