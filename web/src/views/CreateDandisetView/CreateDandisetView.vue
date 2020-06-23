@@ -1,7 +1,7 @@
 <template>
   <v-card v-page-title="'Create Dandiset'">
     <v-card-title>
-      <span class="headline">Register a new dataset</span>
+      <span class="text-h5">Register a new dataset</span>
     </v-card-title>
     <v-card-text>
       <v-text-field
