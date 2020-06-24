@@ -5,13 +5,11 @@ import { RestClient } from '@girder/components/src';
 const apiRoot = process.env.VUE_APP_API_ROOT;
 const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT;
 
-// TODO remove the girderId if we can eliminate the girder ID from the URL
-function girderize(publishedDandiset, girderId) {
+function girderize(publishedDandiset) {
   const { // eslint-disable-next-line camelcase
     created, updated, dandi_id, version, metadata,
   } = publishedDandiset;
   return {
-    _id: girderId,
     created,
     updated,
     version,
@@ -39,10 +37,10 @@ Object.assign(publishRest, {
       throw error;
     }
   },
-  async specificVersion(identifier, version, girderId) {
+  async specificVersion(identifier, version) {
     try {
       const { data } = await publishRest.get(`dandisets/${identifier}/versions/${version}/`);
-      return girderize(data, girderId);
+      return girderize(data);
     } catch (error) {
       if (error.response && error.response.status === 404) {
         return null;
@@ -50,7 +48,7 @@ Object.assign(publishRest, {
       throw error;
     }
   },
-  async mostRecentVersion(identifier, girderId) {
+  async mostRecentVersion(identifier) {
     const versions = await publishRest.versions(identifier);
     if (versions === null) {
       return null;
@@ -60,7 +58,7 @@ Object.assign(publishRest, {
       return null;
     }
     const { version } = results[0];
-    return publishRest.specificVersion(identifier, version, girderId);
+    return publishRest.specificVersion(identifier, version);
   },
 });
 
