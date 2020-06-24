@@ -2,8 +2,8 @@ const dandiUrl = 'https://dandiarchive.org';
 const dandiAboutUrl = 'https://dandiarchive.org/about';
 
 function getLocationFromRoute(route) {
-  const { _modelType, _id } = route.params;
-  if (_modelType) {
+  const { _modelType, _id } = route.query;
+  if (_modelType && _id) {
     return { _modelType, _id };
   }
   return null;

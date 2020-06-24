@@ -106,7 +106,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 
 import { dandiUrl } from '@/utils';
 import { girderRest, loggedIn, user } from '@/rest';
@@ -163,10 +163,10 @@ export default {
       return null;
     },
     fileBrowserLink() {
-      if (!this.girderDandiset) return null;
+      const { version } = this;
+      const { identifier } = this.girderDandiset.meta.dandiset;
 
-      const { _modelType, _id } = this.girderDandiset;
-      return { name: 'file-browser', params: { _modelType, _id } };
+      return { name: 'fileBrowser', params: { identifier, version } };
     },
     permalink() {
       return `${dandiUrl}/dandiset/${this.meta.identifier}/draft`;
@@ -182,6 +182,7 @@ export default {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
     }),
+    ...mapGetters('dandiset', ['version']),
   },
   asyncComputed: {
     lockOwner: {
