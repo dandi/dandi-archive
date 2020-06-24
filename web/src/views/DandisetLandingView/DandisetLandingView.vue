@@ -75,14 +75,14 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { isPublishedVersion } from '@/utils';
+import { draftVersion, isPublishedVersion } from '@/utils';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
@@ -152,30 +152,41 @@ export default {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       loading: (state) => state.loading,
+      dandisetVersions: (state) => state.versions,
     }),
   },
   watch: {
     identifier: {
       immediate: true,
       async handler(identifier) {
-        this.$store.dispatch('dandiset/fetchGirderDandiset', { identifier });
+        const { version } = this;
+        this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
       },
     },
-    girderDandiset: {
-      immediate: true,
-      async handler(value) {
-        const { version } = this;
-        if (value && isPublishedVersion(version)) {
-          const { _id: girderId, meta: { dandiset: { identifier } } } = value;
-          this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, girderId, version });
-        }
-      },
+    dandisetVersions(versions) {
+      // Set default version to most recent if this dandiset has versions
+      // Otherwise set it to draft
+
+      // Only do this if no version was specified
+      if (isPublishedVersion(this.version)) { return; }
+
+      let version = draftVersion;
+      if (versions && versions.length) { version = versions[0].version; }
+      const route = {
+        ...this.$route,
+        params: {
+          ...this.$route.params,
+          version,
+        },
+      };
+      this.$router.replace(route);
     },
   },
   methods: {
     navigateBack() {
       const route = this.$route.params.origin || { name: 'publicDandisets' };
       this.$router.push(route);
+      this.$store.dispatch('dandiset/uninitializeDandisets');
     },
   },
 };
