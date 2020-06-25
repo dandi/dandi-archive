@@ -75,14 +75,14 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex';
+import { mapState } from 'vuex';
 
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { draftVersion, isPublishedVersion } from '@/utils';
+import { draftVersion, dandisetHasVersion } from '@/utils';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
@@ -163,15 +163,39 @@ export default {
         this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
       },
     },
-    dandisetVersions(versions) {
+    async version(version) {
+      // On version change, fetch the new dandiset (not initial)
+      const { identifier } = this;
+      await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
+
+      // If the above await call didn't result in publishDandiset being set
+      if (!this.publishDandiset && version !== draftVersion) { this.navigateToLatestVersion(); }
+    },
+    dandisetVersions() {
+      this.navigateToLatestVersion();
+    },
+  },
+  methods: {
+    navigateToLatestVersion() {
       // Set default version to most recent if this dandiset has versions
       // Otherwise set it to draft
-
-      // Only do this if no version was specified
-      if (isPublishedVersion(this.version)) { return; }
-
       let version = draftVersion;
-      if (versions && versions.length) { version = versions[0].version; }
+      const { dandisetVersions: versions } = this;
+
+      if (versions && versions.length) {
+        if (dandisetHasVersion(versions, this.version)) { return; }
+        if (this.version !== draftVersion) {
+          // The version isn't 'draft', and isn't one of the known versions,
+          // thus it's not valid, so redirect to latest version
+          version = versions[0].version;
+        }
+      }
+
+      this.navigateToVersion(version);
+    },
+    navigateToVersion(version) {
+      if (this.$route.params.version === version) return;
+
       const route = {
         ...this.$route,
         params: {
@@ -181,8 +205,6 @@ export default {
       };
       this.$router.replace(route);
     },
-  },
-  methods: {
     navigateBack() {
       const route = this.$route.params.origin || { name: 'publicDandisets' };
       this.$router.push(route);
