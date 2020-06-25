@@ -331,20 +331,7 @@ export default {
   },
   methods: {
     setVersion({ version }) {
-      const { currentVersion, girderDandiset: { meta: { dandiset: { identifier } } } } = this;
-
-      if (currentVersion !== version) {
-        if (version && version !== draftVersion) {
-          this.$store.dispatch('dandiset/fetchPublishDandiset', {
-            version,
-            identifier,
-          });
-        } else {
-          this.$store.commit('dandiset/setPublishDandiset', null);
-        }
-
-        this.setRouteVersion(version);
-      }
+      this.setRouteVersion(version);
     },
     setRouteVersion(newVersion) {
       const version = newVersion || draftVersion;
