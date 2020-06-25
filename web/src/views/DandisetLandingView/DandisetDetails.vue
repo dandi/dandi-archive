@@ -93,7 +93,7 @@
                 </v-icon>
                 <span :class="`${itemClasses} text-capitalize`"> {{ currentVersion }} </span>
               </v-col>
-              <v-col v-if="!isPublishedVersion(currentVersion)">
+              <v-col v-if="draftDandiset">
                 <v-tooltip top>
                   <template v-slot:activator="{ on }">
                     <v-icon
@@ -227,13 +227,13 @@
 </template>
 
 <script>
-import { mapState, mapActions, mapGetters } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 import { loggedIn, user, girderRest } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
 
-import { draftVersion, isPublishedVersion } from '@/utils';
+import { draftVersion } from '@/utils';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
 
@@ -279,6 +279,9 @@ export default {
       // Done this way because we'll want to add in
       // fetching stats from the publish endpoint later on.
       return this.girderDandiset;
+    },
+    draftDandiset() {
+      return this.currentVersion === draftVersion;
     },
     manageOwnersDisabled() {
       if (!this.loggedIn || !this.owners) return true;
@@ -327,12 +330,11 @@ export default {
     },
   },
   methods: {
-    isPublishedVersion,
     setVersion({ version }) {
       const { currentVersion, girderDandiset: { meta: { dandiset: { identifier } } } } = this;
 
       if (currentVersion !== version) {
-        if (isPublishedVersion(version)) {
+        if (version && version !== draftVersion) {
           this.$store.dispatch('dandiset/fetchPublishDandiset', {
             version,
             identifier,

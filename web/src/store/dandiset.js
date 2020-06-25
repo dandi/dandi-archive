@@ -1,5 +1,5 @@
 import { girderRest, publishRest } from '@/rest';
-import { draftVersion, isPublishedVersion } from '@/utils';
+import { draftVersion, dandisetHasVersion } from '@/utils';
 
 export default {
   namespaced: true,
@@ -44,8 +44,7 @@ export default {
       // Required below
       await dispatch('fetchDandisetVersions', { identifier });
 
-      // If neither of these conditions are met, it's a drafts
-      if (isPublishedVersion(version)) {
+      if (dandisetHasVersion(state.versions, version)) {
         dispatch('fetchPublishDandiset', { identifier, version });
       } else if (!version) {
         if (state.versions.length) {

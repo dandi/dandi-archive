@@ -4,7 +4,7 @@
     indeterminate
   />
   <PublishFileBrowser
-    v-else-if="isPublishedVersion(version)"
+    v-else-if="version !== draftVersion"
     :identifier="identifier"
     :version="version"
   />
@@ -17,7 +17,7 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import { draftVersion, isPublishedVersion } from '@/utils';
+import { draftVersion } from '@/utils';
 import GirderFileBrowser from './GirderFileBrowser.vue';
 import PublishFileBrowser from './PublishFileBrowser.vue';
 
@@ -55,7 +55,6 @@ export default {
     }
   },
   methods: {
-    isPublishedVersion,
     ...mapActions('dandiset', ['fetchPublishDandiset', 'fetchGirderDandiset']),
   },
 };
