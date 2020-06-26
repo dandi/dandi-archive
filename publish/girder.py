@@ -53,6 +53,9 @@ class GirderClient(Client):
                 raise GirderError(f'Found {len(file_list)} files in item {item["_id"]}')
 
             f = file_list[0]
+            if f['size'] == 0:
+                raise GirderError(f'Found empty file {f["_id"]}')
+
             yield GirderFile(
                 girder_id=f['_id'],
                 # Use item name instead of file name, since it's more likely to reflect an
