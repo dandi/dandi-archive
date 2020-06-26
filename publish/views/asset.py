@@ -59,7 +59,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
-        """Return a redirect to the file download in S3."""
+        """Return a redirect to the file download in the object store."""
         return HttpResponseRedirect(redirect_to=self.get_object().blob.url)
 
     @action(detail=False, methods=['GET'])
