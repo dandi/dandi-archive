@@ -34,11 +34,11 @@ class AssetDetailSerializer(AssetSerializer):
 
 
 class AssetFilter(filters.FilterSet):
-    path_prefix = filters.CharFilter(lookup_expr='startswith', field_name='path')
+    path = filters.CharFilter(lookup_expr='exact', field_name='path')
 
     class Meta:
         model = Asset
-        fields = ['path_prefix']
+        fields = ['path']
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
