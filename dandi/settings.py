@@ -221,9 +221,7 @@ class CorsConfig(Config):
 class RestFrameworkConfig(Config):
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.INSTALLED_APPS += ['rest_framework',
-                                         'rest_framework.authtoken',
-                                         'drf_yasg']
+        configuration.INSTALLED_APPS += ['rest_framework', 'rest_framework.authtoken', 'drf_yasg']
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.TokenAuthentication']
@@ -351,6 +349,7 @@ class DandiConfig(Config):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
+    DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
 
 
 class BaseConfiguration(
