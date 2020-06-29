@@ -38,6 +38,11 @@ export default {
       required: true,
     },
   },
+  data() {
+    return {
+      draftVersion,
+    };
+  },
   computed: {
     ...mapState('dandiset', ['publishDandiset', 'girderDandiset']),
   },
