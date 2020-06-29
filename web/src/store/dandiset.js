@@ -38,6 +38,8 @@ export default {
       state.loading = false;
     },
     async initializeDandisets({ state, dispatch }, { identifier, version }) {
+      await dispatch('uninitializeDandisets');
+
       dispatch('fetchGirderDandiset', { identifier });
       dispatch('fetchOwners', identifier);
 
@@ -45,12 +47,8 @@ export default {
       await dispatch('fetchDandisetVersions', { identifier });
 
       if (dandisetHasVersion(state.versions, version)) {
+        // Version is a valid dandiset version, load that version
         dispatch('fetchPublishDandiset', { identifier, version });
-      } else if (!version) {
-        if (state.versions.length) {
-          const { version: mostRecentVersion } = state.versions[0];
-          dispatch('fetchPublishDandiset', { identifier, version: mostRecentVersion });
-        }
       }
     },
     async fetchDandisetVersions({ state, commit }, { identifier }) {

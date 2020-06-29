@@ -160,23 +160,26 @@ export default {
       immediate: true,
       async handler(identifier) {
         const { version } = this;
-        this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
+        await this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
+        if (!this.publishDandiset) { this.navigateToDefaultDandiset(); }
       },
     },
     async version(version) {
       // On version change, fetch the new dandiset (not initial)
-      const { identifier } = this;
-      await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
 
-      // If the above await call didn't result in publishDandiset being set
-      if (!this.publishDandiset && version !== draftVersion) { this.navigateToLatestVersion(); }
-    },
-    dandisetVersions() {
-      this.navigateToLatestVersion();
+      const { identifier } = this;
+      if (version === draftVersion) {
+        this.$store.commit('dandiset/setPublishDandiset', null);
+      } else {
+        await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
+
+        // If the above await call didn't result in publishDandiset being set, navigate to a default
+        if (!this.publishDandiset) { this.navigateToDefaultDandiset(); }
+      }
     },
   },
   methods: {
-    navigateToLatestVersion() {
+    navigateToDefaultDandiset() {
       // Set default version to most recent if this dandiset has versions
       // Otherwise set it to draft
       let version = draftVersion;
@@ -190,7 +193,6 @@ export default {
           version = versions[0].version;
         }
       }
-
       this.navigateToVersion(version);
     },
     navigateToVersion(version) {
