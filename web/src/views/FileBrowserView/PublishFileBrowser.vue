@@ -162,18 +162,14 @@ export default {
       // Create the download link in itemDownloads for each item in items
       this.itemDownloads = {};
       const { identifier, version, location } = this;
-      const baseAssetPath = `${publishRest.defaults.baseURL}/dandisets`;
 
       items.filter((x) => !x.folder).map(async (item) => {
         const relativePath = `${location}${item.name}`;
-        const assetPath = `${baseAssetPath}/${identifier}/versions/${version}/assets/`;
         const {
-          data: {
-            results: [asset],
-          },
-        } = await publishRest.get(assetPath, { params: { path: relativePath } });
+          results: [asset],
+        } = await publishRest.assets(identifier, version, { params: { path: relativePath } });
 
-        this.$set(this.itemDownloads, item.name, `${assetPath}${asset.uuid}/download`);
+        this.$set(this.itemDownloads, item.name, publishRest.assetDownloadURI(asset));
       });
     },
     $route: {
