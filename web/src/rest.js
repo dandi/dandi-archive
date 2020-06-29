@@ -25,6 +25,21 @@ const girderRest = new RestClient({ apiRoot, setLocalCookie: true });
 const publishRest = axios.create({ baseURL: publishApiRoot });
 
 Object.assign(publishRest, {
+  assetDownloadURI(asset) {
+    const { uuid, version: { version, dandiset: { identifier } } } = asset;
+    return `${publishRest.defaults.baseURL}/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
+  },
+  async assets(identifier, version, config = {}) {
+    try {
+      const { data } = await publishRest.get(`dandisets/${identifier}/versions/${version}/assets`, config);
+      return data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
   async versions(identifier) {
     try {
       const { data } = await publishRest.get(`dandisets/${identifier}/versions/`);

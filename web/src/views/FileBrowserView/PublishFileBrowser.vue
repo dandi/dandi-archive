@@ -63,6 +63,17 @@
                 </template>
               </v-icon>
               {{ item.name }}
+              <v-spacer />
+              <v-list-item-action v-if="itemDownloads[item.name]">
+                <v-btn
+                  icon
+                  :href="itemDownloads[item.name]"
+                >
+                  <v-icon color="primary">
+                    mdi-download
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
             </v-list-item>
           </v-list>
         </v-card>
@@ -96,6 +107,7 @@ export default {
       rootDirectory,
       location: rootDirectory,
       loading: false,
+      itemDownloads: {},
     };
   },
   computed: {
@@ -142,8 +154,23 @@ export default {
     },
     items(items) {
       if (items && !items.length) {
+        // If the API call returns no items, go back to the root (shouldn't normally happen)
         this.location = rootDirectory;
+        return;
       }
+
+      // Create the download link in itemDownloads for each item in items
+      this.itemDownloads = {};
+      const { identifier, version, location } = this;
+
+      items.filter((x) => !x.folder).map(async (item) => {
+        const relativePath = `${location}${item.name}`;
+        const {
+          results: [asset],
+        } = await publishRest.assets(identifier, version, { params: { path: relativePath } });
+
+        this.$set(this.itemDownloads, item.name, publishRest.assetDownloadURI(asset));
+      });
     },
     $route: {
       immediate: true,
