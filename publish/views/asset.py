@@ -1,3 +1,4 @@
+from django.http import HttpResponseRedirect
 from django_filters import rest_framework as filters
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -34,11 +35,9 @@ class AssetDetailSerializer(AssetSerializer):
 
 
 class AssetFilter(filters.FilterSet):
-    path_prefix = filters.CharFilter(lookup_expr='startswith', field_name='path')
-
     class Meta:
         model = Asset
-        fields = ['path_prefix']
+        fields = ['path']
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
@@ -55,6 +54,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    @action(detail=True, methods=['GET'])
+    def download(self, request, **kwargs):
+        """Return a redirect to the file download in the object store."""
+        return HttpResponseRedirect(redirect_to=self.get_object().blob.url)
 
     @action(detail=False, methods=['GET'])
     def paths(self, request, **kwargs):
