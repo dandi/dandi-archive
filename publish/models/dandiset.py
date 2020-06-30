@@ -30,7 +30,8 @@ class Dandiset(models.Model):
 
     @property
     def identifier(self) -> Optional[str]:
-        return f'{self.id:06}' if self.id else ''
+        # Compare against None, to allow id 0
+        return f'{self.id:06}' if self.id is not None else ''
 
     def __str__(self) -> str:
         return self.identifier
