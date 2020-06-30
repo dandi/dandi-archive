@@ -15,10 +15,6 @@ psycopg2
 pyyaml
 whitenoise[brotli]
 
-django-stubs
-djangorestframework-stubs
-mypy-boto3-s3
-
 # Production-only
 django-storages
 gunicorn
