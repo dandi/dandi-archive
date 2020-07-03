@@ -103,8 +103,8 @@ When the provision container finishes, it will exit. The other three containers 
 
 After docker-compose up succeeds and the provision container finishes, you should have:
 
-1) Girder up and running on port 8091
-2) Web client up and running on port 8092
+1) Girder up and running on port 8080
+2) Web client up and running on port 8085
 3) MongoDB container up and running, and only visible to the other docker containers
 
 ## Publish
