@@ -39,6 +39,18 @@ but allows developers to run the Python code on their native system.
    2. `celery worker --app dandi.celery --loglevel info --without-heartbeat`
 2. When finished, run `docker-compose stop`
 
+## Connecting to `dandiarchive`
+`dandiarchive` is another application and will need to be setup and run separately. 
+1. Login to the `dandiarchive` Girder client using the `publish` admin account. If 
+you followed the README it will be located at `http://localhost:8080/`.
+   * **NOTE**: the username of the Girder admin account used here must be `publish` for publishing to work properly. If an admin account with that username doesn't exist, it must be created.
+2. Navigate to account settings, click on the 'API keys' tab, and generate an API key.
+3. Save this API key and the Girder client URL in environment variables named `DJANGO_DANDI_GIRDER_API_KEY`
+   and `DJANGO_DANDI_GIRDER_API_URL`.
+4. Run `dandi-publish` as described above.
+
+**NOTE**: `dandiarchive` also needs to be configured to connect to `dandi-publish`. See its README for instructions.
+
 ## Testing
 ### Initial Setup
 Tox is required to execute all tests.
