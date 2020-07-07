@@ -5,6 +5,10 @@ jobs:
     docker:
       - image: circleci/python:3.8
       - image: circleci/postgres:12-alpine-ram
+      - image: minio/minio
+        environment:
+          MINIO_ACCESS_KEY: djangoAccessKey
+          MINIO_SECRET_KEY: djangoSecretKey
     steps:
       - checkout
       - run:
