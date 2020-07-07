@@ -3,7 +3,7 @@ import re
 
 class Re:
     def __init__(self, pattern):
-        if isinstance(pattern, type(re.compile(""))):
+        if isinstance(pattern, type(re.compile(''))):
             self.pattern = pattern
         else:
             self.pattern = re.compile(pattern)
@@ -20,4 +20,4 @@ class Re:
 
 class Timestamp(Re):
     def __init__(self):
-        super().__init__(r"\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}\.\d{6}Z")
+        super().__init__(r'\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}\.\d{6}Z')

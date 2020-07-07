@@ -1,8 +1,10 @@
-import pytest
-from publish.models import Dandiset, Version, Asset
 from tempfile import NamedTemporaryFile
-from fuzzy import Timestamp
+
 from django.core.files import File
+from fuzzy import Timestamp
+import pytest
+
+from publish.models import Asset, Dandiset, Version
 
 
 @pytest.fixture
@@ -45,13 +47,7 @@ def test_dandisets_list(client, dandiset):
         'count': 1,
         'next': None,
         'previous': None,
-        'results': [
-            {
-                'identifier': '000001',
-                'created': Timestamp(),
-                'updated': Timestamp(),
-            }
-        ]
+        'results': [{'identifier': '000001', 'created': Timestamp(), 'updated': Timestamp()}],
     }
 
 
@@ -81,7 +77,7 @@ def test_dandisets_versions_list(client, dandiset, version):
                 'created': Timestamp(),
                 'updated': Timestamp(),
             }
-        ]
+        ],
     }
 
 
@@ -125,13 +121,15 @@ def test_dandisets_versions_assets_list(client, dandiset, version, asset):
                 'created': Timestamp(),
                 'updated': Timestamp(),
             }
-        ]
+        ],
     }
 
 
 @pytest.mark.django_db
 def test_dandisets_versions_assets_read(client, dandiset, version, asset):
-    assert client.get(f'/api/dandisets/000001/versions/{version.version}/assets/{asset.uuid}/').json() == {
+    assert client.get(
+        f'/api/dandisets/000001/versions/{version.version}/assets/{asset.uuid}/'
+    ).json() == {
         'version': {
             'dandiset': {
                 'identifier': dandiset.identifier,
