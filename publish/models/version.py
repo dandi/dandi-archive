@@ -49,6 +49,14 @@ class Version(models.Model):
     def __str__(self) -> str:
         return f'{self.dandiset.identifier}: {self.version}'
 
+    @property
+    def count(self):
+        return self.assets.count()
+
+    @property
+    def size(self):
+        return self.assets.aggregate(total_size=models.Sum('size'))['total_size']
+
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
         return time.strftime('0.%y%m%d.%H%M')
