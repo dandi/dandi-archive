@@ -6,6 +6,7 @@ import { vIcon, vTextField } from 'jest-puppeteer-vuetify';
  * @param {String} stat the stat to check
  */
 export async function getStat(stat) {
+  await page.waitFor(1000);
   return page.$eval(`[data-id="stat"][data-name="${stat}"] [data-id="value"]`, (element) => Number(element.innerText));
 }
 

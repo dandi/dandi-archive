@@ -179,9 +179,7 @@ export default {
         return null;
       }
       return Promise.all(this.girderDandisetRequest.data.map(
-        async (dandiset) => publishRest.mostRecentVersion(
-          dandiset.meta.dandiset.identifier, dandiset._id,
-        ),
+        async (dandiset) => publishRest.mostRecentVersion(dandiset.meta.dandiset.identifier),
       ));
     },
   },

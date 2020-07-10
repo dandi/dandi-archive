@@ -93,7 +93,7 @@
                 </v-icon>
                 <span :class="`${itemClasses} text-capitalize`"> {{ currentVersion }} </span>
               </v-col>
-              <v-col v-if="!isPublishedVersion(currentVersion)">
+              <v-col v-if="draftDandiset">
                 <v-tooltip top>
                   <template v-slot:activator="{ on }">
                     <v-icon
@@ -227,15 +227,13 @@
 </template>
 
 <script>
-import { mapState, mapActions, mapGetters } from 'vuex';
-import {
-  loggedIn, user, girderRest, publishRest,
-} from '@/rest';
+import { mapState, mapGetters } from 'vuex';
+import { loggedIn, user, girderRest } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
 
-import { draftVersion, isPublishedVersion } from '@/utils';
+import { draftVersion } from '@/utils';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
 
@@ -282,6 +280,9 @@ export default {
       // fetching stats from the publish endpoint later on.
       return this.girderDandiset;
     },
+    draftDandiset() {
+      return this.currentVersion === draftVersion;
+    },
     manageOwnersDisabled() {
       if (!this.loggedIn || !this.owners) return true;
       return !this.owners.find((owner) => owner.id === this.user._id);
@@ -301,29 +302,21 @@ export default {
       }
       return filesize(stats.bytes);
     },
+    versions() {
+      const versions = this.publishedVersions || [];
+      return [{ version: draftVersion }, ...versions];
+    },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       owners: (state) => state.owners,
+      publishedVersions: (state) => state.versions,
     }),
     ...mapGetters('dandiset', {
       currentVersion: 'version',
     }),
   },
   asyncComputed: {
-    async versions() {
-      const { identifier } = this.girderDandiset.meta.dandiset;
-
-      try {
-        const { results } = await publishRest.versions(identifier);
-        return [
-          { version: draftVersion },
-          ...results,
-        ];
-      } catch (err) {
-        return [];
-      }
-    },
     async stats() {
       const { identifier } = this.currentDandiset.meta.dandiset;
       const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
@@ -331,42 +324,14 @@ export default {
     },
   },
   watch: {
-    currentVersion: {
-      immediate: true,
-      handler(version) {
-        this.setRouteVersion(version);
-      },
-    },
-    currentDandiset: {
-      immediate: true,
-      async handler(val) {
-        const { identifier } = val.meta.dandiset;
-        this.fetchOwners(identifier);
-      },
-    },
     ownerDialog() {
       // This is incremented to force re-render of the owner dialog
       this.ownerDialogKey += 1;
     },
   },
   methods: {
-    isPublishedVersion,
     setVersion({ version }) {
-      const { currentVersion } = this;
-
-      if (currentVersion !== version) {
-        if (isPublishedVersion(version)) {
-          this.$store.dispatch('dandiset/fetchPublishDandiset', {
-            version,
-            girderId: this.girderDandiset._id,
-            identifier: this.girderDandiset.meta.dandiset.identifier,
-          });
-        } else {
-          this.$store.commit('dandiset/setPublishDandiset', null);
-        }
-
-        this.setRouteVersion(version);
-      }
+      this.setRouteVersion(version);
     },
     setRouteVersion(newVersion) {
       const version = newVersion || draftVersion;
@@ -398,7 +363,6 @@ export default {
 
       return 'grey';
     },
-    ...mapActions('dandiset', ['fetchOwners']),
   },
 };
 </script>
