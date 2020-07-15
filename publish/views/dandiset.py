@@ -35,7 +35,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     # This is not strictly necessary (it defaults to 'pk'), but it clarifies
     # that the 'identifier' property should be used when forming URLs
     # TODO: Test how reverse URLs are created
-    lookup_url_kwarg = 'identifier'
+    lookup_url_kwarg = 'dandiset__pk'
 
     def get_object(self):
         # Alternative to path converters, which DRF doesn't support
