@@ -226,9 +226,7 @@ class RestFrameworkConfig(Config):
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.TokenAuthentication']
     }
-    REST_FRAMEWORK_EXTENSIONS = {
-        'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''
-    }
+    REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
 
 class DatabaseConfig(Config):
