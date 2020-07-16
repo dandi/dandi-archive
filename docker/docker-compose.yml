@@ -16,7 +16,7 @@ services:
     depends_on:
       - mongo
     ports:
-      - "8091:8080"
+      - "8080:8080"
 
   client:
     build:
@@ -26,7 +26,7 @@ services:
     depends_on:
       - girder
     ports:
-      - "8092:80"
+      - "8085:80"
 
   provision:
     build:
