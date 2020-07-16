@@ -32,9 +32,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     pagination_class = DandiPagination
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
-    # This is not strictly necessary (it defaults to 'pk'), but it clarifies
-    # that the 'identifier' property should be used when forming URLs
-    # TODO: Test how reverse URLs are created
+    # This is to maintain consistency with the auto-generated names shown in swagger.
     lookup_url_kwarg = 'dandiset__pk'
 
     def get_object(self):
