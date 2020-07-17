@@ -4,8 +4,8 @@ jobs:
   test:
     docker:
       - image: circleci/python:3.8
-      - image: circleci/postgres:12-alpine-ram
-      - image: minio/minio
+      - image: circleci/postgres:12-ram
+      - image: minio/minio:latest
         command: server /data
         environment:
           MINIO_ACCESS_KEY: djangoAccessKey
