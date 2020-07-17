@@ -9,7 +9,7 @@ RUN apt-get update && \
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-COPY ./requirements.txt /opt/dandi-publish/requirements.txt
-RUN pip install --requirement /opt/dandi-publish/requirements.txt
+COPY ./setup.py /opt/django/setup.py
+RUN pip install --editable /opt/django/
 
 WORKDIR /opt/dandi-publish
