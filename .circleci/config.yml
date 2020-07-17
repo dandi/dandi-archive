@@ -5,11 +5,14 @@ jobs:
     docker:
       - image: circleci/python:3.8
       - image: circleci/postgres:12-ram
+        environment:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
       - image: minio/minio:latest
         command: server /data
         environment:
-          MINIO_ACCESS_KEY: djangoAccessKey
-          MINIO_SECRET_KEY: djangoSecretKey
+          MINIO_ACCESS_KEY: minioAdminAccessKey
+          MINIO_SECRET_KEY: minioAdminSecretKey
     steps:
       - checkout
       - run:
@@ -19,11 +22,10 @@ jobs:
           name: Run tests
           command: tox
           environment:
-            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/dandi
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
             DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-            DJANGO_MINIO_STORAGE_ACCESS_KEY: djangoAccessKey
-            DJANGO_MINIO_STORAGE_SECRET_KEY: djangoSecretKey
-
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAdminAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioAdminSecretKey
 workflows:
   version: 2
   ci:
