@@ -18,6 +18,12 @@ jobs:
       - run:
           name: Run tests
           command: tox
+          environment:
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/dandi
+            DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: djangoAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: djangoSecretKey
+
 workflows:
   version: 2
   ci:
