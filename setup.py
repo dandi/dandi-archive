@@ -36,7 +36,6 @@ setup(
     python_requires='>=3.8',
     packages=find_packages(),
     install_requires=[
-        'boto3',
         'celery',
         'dandi==0.4.5',
         'django',
@@ -51,7 +50,6 @@ setup(
         'drf-yasg',
         'httpx',
         'psycopg2',
-        'pyyaml',
         'rich',
         'whitenoise[brotli]',
         # Production-only
