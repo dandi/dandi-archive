@@ -3,23 +3,16 @@ import os
 import sys
 
 import configurations.importer
+from django.core.management import execute_from_command_line
 
 
-def main():
+def main() -> None:
     os.environ['DJANGO_SETTINGS_MODULE'] = 'dandi.settings'
     # Production usage runs manage.py for tasks like collectstatic,
     # so DJANGO_CONFIGURATION should always be explicitly set in production
     os.environ.setdefault('DJANGO_CONFIGURATION', 'DevelopmentConfiguration')
     configurations.importer.install(check_options=True)
 
-    try:
-        from django.core.management import execute_from_command_line
-    except ImportError as exc:
-        raise ImportError(
-            "Couldn't import Django. Are you sure it's installed and "
-            'available on your PYTHONPATH environment variable? Did you '
-            'forget to activate a virtual environment?'
-        ) from exc
     execute_from_command_line(sys.argv)
 
 
