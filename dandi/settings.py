@@ -52,6 +52,14 @@ class DevelopmentConfiguration(DandiConfig, DevelopmentBaseConfiguration):
     pass
 
 
+class TestingConfiguration(DevelopmentConfiguration):
+    MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
+
+    DANDI_DANDISETS_BUCKET_NAME = 'test-dandi-dandisets'
+    DANDI_GIRDER_API_KEY = 'testkey'
+    DANDI_GIRDER_API_URL = 'http://localhost:8080/'
+
+
 class ProductionConfiguration(DandiConfig, SentryConfig, ProductionBaseConfiguration):
     pass
 
