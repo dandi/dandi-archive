@@ -1,3 +1,6 @@
+from urllib.parse import urlsplit, urlunsplit
+
+from django.conf import settings
 from django.core.files.storage import get_storage_class, Storage
 from minio_storage.policy import Policy
 from minio_storage.storage import create_minio_client_from_settings, MinioStorage
@@ -44,12 +47,29 @@ def create_s3_storage(bucket_name: str) -> Storage:
     if issubclass(default_storage_class, S3Boto3Storage):
         storage = VerbatimNameS3Storage(bucket_name=bucket_name)
     elif issubclass(default_storage_class, MinioStorage):
+        base_url = None
+        if getattr(settings, 'MINIO_STORAGE_MEDIA_URL', None):
+            # If a new base_url is set for the media storage, it's safe to assume one should be
+            # set for this storage too.
+            base_url_parts = urlsplit(settings.MINIO_STORAGE_MEDIA_URL)
+            # Reconstruct the URL with an updated path
+            base_url = urlunsplit(
+                (
+                    base_url_parts.scheme,
+                    base_url_parts.netloc,
+                    f'/{bucket_name}',
+                    base_url_parts.query,
+                    base_url_parts.fragment,
+                )
+            )
+
         # The MinioMediaStorage used as the default storage is cannot be used
         # as an ad-hoc non-default storage, as it does not allow bucket_name to be
         # explicitly set.
         storage = VerbatimNameMinioStorage(
             minio_client=create_minio_client_from_settings(),
             bucket_name=bucket_name,
+            base_url=base_url,
             # All S3Boto3Storage URLs are presigned, and the bucket typically is not public
             presign_urls=True,
             auto_create_bucket=True,
