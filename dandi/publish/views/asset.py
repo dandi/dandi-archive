@@ -62,20 +62,8 @@ class AssetViewSet(NestedViewSetMixin, ReadOnlyModelViewSet):
         The specified path must be a folder (must end with a slash).
         """
         path_prefix: str = self.request.query_params.get('path_prefix') or '/'
-
         # Enfore trailing slash
         path_prefix = f'{path_prefix}/' if path_prefix[-1] != '/' else path_prefix
-        prefix_parts = [part for part in path_prefix.split('/') if part]
-
         qs = self.get_queryset().filter(path__startswith=path_prefix).values()
 
-        paths = set()
-        for asset in qs:
-            path_parts = [part for part in asset['path'].split('/') if part]
-
-            # Pivot index is -1 (include all path parts) if prefix is '/'
-            pivot_index = path_parts.index(prefix_parts[-1]) if len(prefix_parts) else -1
-            base_path, *remainder = path_parts[pivot_index + 1 :]
-            paths.add(f'{base_path}/' if len(remainder) else base_path)
-
-        return Response(sorted(paths))
+        return Response(Asset.get_path(path_prefix, qs))

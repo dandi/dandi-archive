@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from tempfile import NamedTemporaryFile
+from typing import List, Set
 import uuid
 
 from django.conf import settings
@@ -92,3 +93,22 @@ class Asset(models.Model):  # TODO: was NwbFile
             # The actual upload of blob occurs when the asset is saved
             asset.save()
         return asset
+
+    @classmethod
+    def get_path(cls, path_prefix: str, qs: List[str]) -> Set:
+        """
+        Return the unique files/directories that directly reside under the specified path.
+
+        The specified path must be a folder (must end with a slash).
+        """
+        prefix_parts = [part for part in path_prefix.split('/') if part]
+        paths = set()
+        for asset in qs:
+            path_parts = [part for part in asset['path'].split('/') if part]
+
+            # Pivot index is -1 (include all path parts) if prefix is '/'
+            pivot_index = path_parts.index(prefix_parts[-1]) if len(prefix_parts) else -1
+            base_path, *remainder = path_parts[pivot_index + 1 :]
+            paths.add(f'{base_path}/' if len(remainder) else base_path)
+
+        return sorted(paths)
