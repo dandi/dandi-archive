@@ -8,11 +8,7 @@ jobs:
         environment:
           POSTGRES_DB: django
           POSTGRES_PASSWORD: postgres
-      - image: minio/minio:latest
-        command: server /data
-        environment:
-          MINIO_ACCESS_KEY: minioAdminAccessKey
-          MINIO_SECRET_KEY: minioAdminSecretKey
+      - image: girder/minio-nonroot:latest
     steps:
       - checkout
       - run:
@@ -24,8 +20,8 @@ jobs:
           environment:
             DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
             DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAdminAccessKey
-            DJANGO_MINIO_STORAGE_SECRET_KEY: minioAdminSecretKey
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioUserAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioUserSecretKey
 workflows:
   version: 2
   ci:
