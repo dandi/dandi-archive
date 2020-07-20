@@ -9,6 +9,7 @@ from django_girders.configuration import (
     DevelopmentBaseConfiguration,
     HerokuProductionBaseConfiguration,
     ProductionBaseConfiguration,
+    TestingBaseConfiguration,
 )
 
 
@@ -52,7 +53,7 @@ class DevelopmentConfiguration(DandiConfig, DevelopmentBaseConfiguration):
     pass
 
 
-class TestingConfiguration(DevelopmentConfiguration):
+class TestingConfiguration(DandiConfig, TestingBaseConfiguration):
     MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandi-dandisets'
