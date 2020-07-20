@@ -22,6 +22,8 @@ class VersionSerializer(serializers.ModelSerializer):
             'version',
             'created',
             'updated',
+            'count',
+            'size',
         ]
         read_only_fields = ['created']
 
