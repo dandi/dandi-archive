@@ -46,8 +46,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     lookup_value_regex = Version.VERSION_REGEX
 
     @action(detail=False, methods=['POST'])
-    def publish(self, request, parent_lookup_dandiset__pk):
-        # TODO: parent_lookup_dandiset__pk is a string with leading stuff....
-        dandiset = get_object_or_404(Dandiset, pk=parent_lookup_dandiset__pk)
+    def publish(self, request, dandiset__pk):
+        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
         publish_version.delay(dandiset.id)
         return Response('', status=status.HTTP_202_ACCEPTED)

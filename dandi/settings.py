@@ -40,6 +40,8 @@ class DandiConfig(ConfigMixin):
 
     BASE_DIR = str(Path(__file__).absolute().parent.parent)
 
+    REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
+
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
         configuration.INSTALLED_APPS += ['publish.apps.PublishConfig']
