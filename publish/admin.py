@@ -12,6 +12,7 @@ class DandisetAdmin(admin.ModelAdmin):
 class VersionAdmin(admin.ModelAdmin):
     list_display = ['id', 'dandiset', 'version']
     list_display_links = ['id', 'version']
+    filter_horizontal = ('contributors',)
 
 
 @admin.register(Asset)

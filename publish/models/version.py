@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import JSONField, ArrayField
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -19,6 +19,53 @@ def _get_default_version() -> str:
     return Version.make_version()
 
 
+class Contributor(models.Model):
+    class RoleType(models.TextChoices):
+        Author = "Author"
+        Conceptualization = "Conceptualization"
+        ContactPerson = "ContactPerson"
+        DataCollector = "DataCollector"
+        DataCurator = "DataCurator"
+        DataManager = "DataManager"
+        FormalAnalysis = "FormalAnalysis"
+        FundingAcquisition = "FundingAcquisition"
+        Investigation = "Investigation"
+        Maintainer = "Maintainer"
+        Methodology = "Methodology"
+        Producer = "Producer"
+        ProjectLeader = "ProjectLeader"
+        ProjectManager = "ProjectManager"
+        ProjectMember = "ProjectMember"
+        ProjectAdministration = "ProjectAdministration"
+        Researcher = "Researcher"
+        Resources = "Resources"
+        Software = "Software"
+        Supervision = "Supervision"
+        Validation = "Validation"
+        Visualization = "Visualization"
+        Funder = "Funder"
+        Sponsor = "Sponsor"
+        StudyParticipant = "StudyParticipant"
+        Other = "Other"
+
+    name = models.TextField(default=str)
+    email = models.TextField(default=str)
+    orcid = models.TextField(default=str)
+    roles = ArrayField(
+        models.CharField(max_length=21, choices=RoleType.choices, default=RoleType.Other),
+        default=list
+    )
+    affiliations = ArrayField(
+        models.TextField(default=str), default=list
+    )
+
+    def __str__(self) -> str:
+        return f'name: {self.name}, email: {self.email}, orcid: {self.orcid}, roles: {self.roles}), affiliations: {self.affiliations}'
+
+    class Meta:
+        ordering = ['id']
+
+
 class Version(models.Model):
     VERSION_REGEX = r'0\.\d{6}\.\d{4}'
 
@@ -28,6 +75,11 @@ class Version(models.Model):
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
         default=_get_default_version,
     )  # TODO: rename this?
+
+    name = models.TextField(default=str)
+    description = models.TextField(default=str)
+
+    contributors = models.ManyToManyField(Contributor)
 
     metadata = JSONField(blank=True, default=dict)
 
@@ -80,6 +132,25 @@ class Version(models.Model):
     def from_girder(cls, dandiset: Dandiset, client: GirderClient) -> Version:
         draft_folder = client.get_json(f'folder/{dandiset.draft_folder_id}')
 
-        version = Version(dandiset=dandiset, metadata=draft_folder['meta'])
+        metadata = draft_folder['meta']
+        name = metadata['dandiset'].pop('name')
+        description = metadata['dandiset'].pop('description')
+        contributors = metadata['dandiset'].pop('contributors')
+
+        version = Version(dandiset=dandiset,
+                          name=name,
+                          description=description,
+                          metadata=metadata)
         version.save()
+
+        for contributor in contributors:
+            new_contributor, succeeded = Contributor.objects.get_or_create(
+                name=contributor.get('name'),
+                email=contributor.get('email'),
+                affiliations=contributor.get('affiliations'),
+                orcid=contributor.get('orcid'),
+                roles=contributor.get('roles')
+            )
+            version.contributors.add(new_contributor)
+
         return version
