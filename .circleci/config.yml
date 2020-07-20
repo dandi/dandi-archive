@@ -4,7 +4,11 @@ jobs:
   test:
     docker:
       - image: circleci/python:3.8
-      - image: circleci/postgres:12-alpine-ram
+      - image: circleci/postgres:12-ram
+        environment:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+      - image: girder/minio-nonroot:latest
     steps:
       - checkout
       - run:
@@ -13,6 +17,11 @@ jobs:
       - run:
           name: Run tests
           command: tox
+          environment:
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+            DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioUserAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioUserSecretKey
 workflows:
   version: 2
   ci:
