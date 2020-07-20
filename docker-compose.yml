@@ -5,8 +5,6 @@ services:
     environment:
       POSTGRES_DB: django
       POSTGRES_PASSWORD: postgres
-    volumes:
-      - /var/lib/postgresql/data
     ports:
       - ${DOCKER_POSTGRES_PORT-5432}:5432
 
@@ -16,20 +14,6 @@ services:
       - ${DOCKER_RABBITMQ_PORT-5672}:5672
 
   minio:
-    build:
-      context: .
-      dockerfile: ./dev/minio.Dockerfile
-      args:
-        MINIO_BACKEND_DIR: /var/lib/minio
-        MINIO_ACCESS_KEY: minioAdminAccessKey
-        MINIO_SECRET_KEY: minioAdminSecretKey
-        MINIO_USER_ACCESS_KEY: djangoAccessKey
-        MINIO_USER_SECRET_KEY: djangoSecretKey
-    command: ["server", "/var/lib/minio"]
-    environment:
-      MINIO_ACCESS_KEY: minioAdminAccessKey
-      MINIO_SECRET_KEY: minioAdminSecretKey
-    volumes:
-      - /var/lib/minio
+    image: girder/minio-nonroot:latest
     ports:
       - ${DOCKER_MINIO_PORT-9000}:9000
