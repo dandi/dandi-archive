@@ -7,8 +7,8 @@ import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
 
-import publish.models
-import publish.storage
+import dandi.publish.models
+import dandi.publish.storage
 
 
 class Migration(migrations.Migration):
@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 (
                     'version',
                     models.CharField(
-                        default=publish.models.version._get_default_version,
+                        default=dandi.publish.models.version._get_default_version,
                         max_length=13,
                         validators=[django.core.validators.RegexValidator('^0\\.\\d{6}\\.\\d{4}$')],
                     ),
@@ -100,10 +100,10 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=publish.storage.create_s3_storage(
+                        storage=dandi.publish.storage.create_s3_storage(
                             settings.DANDI_DANDISETS_BUCKET_NAME
                         ),
-                        upload_to=publish.models.asset._get_asset_blob_prefix,
+                        upload_to=dandi.publish.models.asset._get_asset_blob_prefix,
                     ),
                 ),
                 ('created', models.DateTimeField(auto_now_add=True)),
