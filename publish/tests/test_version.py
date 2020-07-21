@@ -1,6 +1,23 @@
 import pytest
 
+from publish.models import Version
 from .fuzzy import DandisetIdentifierRe, TimestampRe, VersionRe
+
+
+@pytest.mark.django_db
+def test_version_make_version_nosave(dandiset, version_factory):
+    # Without saving, the output should be reproducable
+    version_str_1 = Version.make_version(dandiset)
+    version_str_2 = Version.make_version(dandiset)
+    assert version_str_1 == version_str_2
+
+
+@pytest.mark.django_db
+def test_version_make_version_save(dandiset, version_factory):
+    # Given an existing version at the current time, a different one should be allocated
+    version_1 = version_factory(dandiset=dandiset)
+    version_str_2 = Version.make_version(dandiset)
+    assert version_1.version != version_str_2
 
 
 @pytest.mark.django_db
