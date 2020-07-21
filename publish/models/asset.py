@@ -50,6 +50,7 @@ class Asset(models.Model):  # TODO: was NwbFile
             models.Index(fields=['uuid']),
             models.Index(fields=['version', 'path']),
         ]
+        ordering = ['version', 'path']
 
     # objects = SelectRelatedManager('version__dandiset')
 
