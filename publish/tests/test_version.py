@@ -13,9 +13,12 @@ def test_version_make_version_nosave(dandiset, version_factory):
 
 
 @pytest.mark.django_db
-def test_version_make_version_save(dandiset, version_factory):
+def test_version_make_version_save(mocker, dandiset, version_factory):
     # Given an existing version at the current time, a different one should be allocated
+    make_version_spy = mocker.spy(Version, 'make_version')
     version_1 = version_factory(dandiset=dandiset)
+    make_version_spy.assert_called_once()
+
     version_str_2 = Version.make_version(dandiset)
     assert version_1.version != version_str_2
 
