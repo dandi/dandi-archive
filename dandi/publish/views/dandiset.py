@@ -8,9 +8,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 
-from publish.girder import GirderClient
-from publish.models import Dandiset
-from publish.views.common import DandiPagination
+from dandi.publish.girder import GirderClient
+from dandi.publish.models import Dandiset
+from dandi.publish.views.common import DandiPagination
 
 
 class DandisetSerializer(serializers.ModelSerializer):

@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db import models
 
-from publish.girder import GirderClient, GirderError
+from dandi.publish.girder import GirderClient, GirderError
 
 
 logger = logging.getLogger(__name__)

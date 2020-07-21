@@ -8,10 +8,10 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 
-from publish.models import Dandiset, Version
-from publish.tasks import publish_version
-from publish.views.common import DandiPagination
-from publish.views.dandiset import DandisetSerializer
+from dandi.publish.models import Dandiset, Version
+from dandi.publish.tasks import publish_version
+from dandi.publish.views.common import DandiPagination
+from dandi.publish.views.dandiset import DandisetSerializer
 
 
 class VersionSerializer(serializers.ModelSerializer):

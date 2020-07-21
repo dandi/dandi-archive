@@ -44,7 +44,7 @@ class DandiConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.INSTALLED_APPS += ['publish.apps.PublishConfig']
+        configuration.INSTALLED_APPS += ['dandi.publish.apps.PublishConfig']
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
