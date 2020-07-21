@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 
-from django.contrib.postgres.fields import JSONField, ArrayField
+from django.contrib.postgres.fields import JSONField
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -29,8 +29,8 @@ class Version(models.Model):
         default=_get_default_version,
     )  # TODO: rename this?
 
-    name = models.TextField(default=str)
-    description = models.TextField(default=str)
+    name = models.TextField()
+    description = models.TextField()
 
     metadata = JSONField(blank=True, default=dict)
 
@@ -87,9 +87,6 @@ class Version(models.Model):
         name = metadata['dandiset'].pop('name')
         description = metadata['dandiset'].pop('description')
 
-        version = Version(dandiset=dandiset,
-                          name=name,
-                          description=description,
-                          metadata=metadata)
+        version = Version(dandiset=dandiset, name=name, description=description, metadata=metadata)
         version.save()
         return version
