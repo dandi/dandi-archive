@@ -5,8 +5,8 @@ from .fuzzy import DandisetIdentifierRe, TimestampRe, VersionRe
 
 
 @pytest.mark.django_db
-def test_version_make_version_nosave(dandiset, version_factory):
-    # Without saving, the output should be reproducable
+def test_version_make_version_nosave(dandiset):
+    # Without saving, the output should be reproducible
     version_str_1 = Version.make_version(dandiset)
     version_str_2 = Version.make_version(dandiset)
     assert version_str_1 == version_str_2
