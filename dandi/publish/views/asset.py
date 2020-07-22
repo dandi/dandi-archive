@@ -31,6 +31,8 @@ class AssetSerializer(serializers.ModelSerializer):
 
 
 class AssetFilter(filters.FilterSet):
+    path = filters.CharFilter(lookup_expr='istartswith', field_name='path')
+
     class Meta:
         model = Asset
         fields = ['path']
