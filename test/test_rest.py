@@ -76,6 +76,8 @@ def test_dandisets_versions_list(client, dandiset, version):
                 'version': version.version,
                 'created': Timestamp(),
                 'updated': Timestamp(),
+                'count': version.count,
+                'size': version.size,
             }
         ],
     }
@@ -92,6 +94,8 @@ def test_dandisets_versions_read(client, dandiset, version, asset):
         'version': version.version,
         'created': Timestamp(),
         'updated': Timestamp(),
+        'count': version.count,
+        'size': version.size,
         'metadata': version.metadata,
     }
 
@@ -113,6 +117,8 @@ def test_dandisets_versions_assets_list(client, dandiset, version, asset):
                     'version': version.version,
                     'created': Timestamp(),
                     'updated': Timestamp(),
+                    'count': version.count,
+                    'size': version.size,
                 },
                 'uuid': str(asset.uuid),
                 'path': asset.path,
@@ -120,6 +126,7 @@ def test_dandisets_versions_assets_list(client, dandiset, version, asset):
                 'sha256': asset.sha256,
                 'created': Timestamp(),
                 'updated': Timestamp(),
+                'metadata': asset.metadata,
             }
         ],
     }
@@ -139,6 +146,8 @@ def test_dandisets_versions_assets_read(client, dandiset, version, asset):
             'version': version.version,
             'created': Timestamp(),
             'updated': Timestamp(),
+            'count': version.count,
+            'size': version.size,
         },
         'uuid': str(asset.uuid),
         'path': asset.path,
