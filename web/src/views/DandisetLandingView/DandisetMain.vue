@@ -169,7 +169,7 @@ export default {
       return { name: 'fileBrowser', params: { identifier, version } };
     },
     permalink() {
-      return `${dandiUrl}/dandiset/${this.meta.identifier}/draft`;
+      return `${dandiUrl}/dandiset/${this.meta.identifier}/${this.version}`;
     },
     extraFields() {
       const { meta, mainFields } = this;
