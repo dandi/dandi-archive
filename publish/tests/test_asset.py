@@ -1,6 +1,6 @@
 import pytest
 
-from .fuzzy import DandisetIdentifierRe, TimestampRe, VersionRe
+from .fuzzy import DandisetIdentifierRe, DescriptionRe, NameRe, TimestampRe, VersionRe
 
 
 @pytest.mark.django_db
@@ -21,6 +21,8 @@ def test_asset_rest_list(api_client, asset):
                         'updated': TimestampRe(),
                     },
                     'version': VersionRe(),
+                    'name': NameRe(),
+                    'description': DescriptionRe(),
                     'created': TimestampRe(),
                     'updated': TimestampRe(),
                     'count': 1,
@@ -49,6 +51,8 @@ def test_asset_rest_retrieve(api_client, asset):
                 'updated': TimestampRe(),
             },
             'version': VersionRe(),
+            'name': NameRe(),
+            'description': DescriptionRe(),
             'created': TimestampRe(),
             'updated': TimestampRe(),
             'count': 1,

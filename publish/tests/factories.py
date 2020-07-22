@@ -31,6 +31,8 @@ class VersionFactory(factory.django.DjangoModelFactory):
 
     dandiset = factory.SubFactory(DandisetFactory)
     metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+    name = factory.Faker('pystr')
+    description = factory.Faker('pystr')
 
 
 @register

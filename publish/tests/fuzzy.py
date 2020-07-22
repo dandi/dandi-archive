@@ -33,3 +33,15 @@ class DandisetIdentifierRe(Re):
 class VersionRe(Re):
     def __init__(self):
         super().__init__(Version.VERSION_REGEX)
+
+
+# TODO: Right now these only validate that the name and description
+# contain at least one non-whitespace character.
+class NameRe(Re):
+    def __init__(self):
+        super().__init__(r'^(?!\s*$).+')
+
+
+class DescriptionRe(Re):
+    def __init__(self):
+        super().__init__(r'^(?!\s*$).+')
