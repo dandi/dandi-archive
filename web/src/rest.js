@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { RestClient } from '@girder/components/src';
 
@@ -25,7 +24,8 @@ const publishRest = axios.create({ baseURL: publishApiRoot });
 Object.assign(publishRest, {
   assetDownloadURI(asset) {
     const { uuid, version: { version, dandiset: { identifier } } } = asset;
-    return `${publishRest.defaults.baseURL}/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
+    const baseURL = publishRest.defaults.baseURL.endsWith('/') ? publishRest.defaults.baseURL.slice(0, -1) : publishRest.defaults.baseURL;
+    return `${baseURL}/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
   },
   async assets(identifier, version, config = {}) {
     try {
