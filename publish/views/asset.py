@@ -23,15 +23,11 @@ class AssetSerializer(serializers.ModelSerializer):
             'sha256',
             'created',
             'updated',
+            'metadata',
         ]
         read_only_fields = ['created']
 
     version = VersionSerializer()
-
-
-class AssetDetailSerializer(AssetSerializer):
-    class Meta(AssetSerializer.Meta):
-        fields = AssetSerializer.Meta.fields + ['metadata']
 
 
 class AssetFilter(filters.FilterSet):
@@ -46,7 +42,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
-    serializer_detail_class = AssetDetailSerializer
+    serializer_detail_class = AssetSerializer
     pagination_class = DandiPagination
 
     lookup_field = 'uuid'
