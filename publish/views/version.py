@@ -20,6 +20,8 @@ class VersionSerializer(serializers.ModelSerializer):
         fields = [
             'dandiset',
             'version',
+            'name',
+            'description',
             'created',
             'updated',
             'count',
