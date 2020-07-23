@@ -324,7 +324,7 @@ class DandiResource(Resource):
             "size": drafts["size"],
         }
 
-    @access.user(scope=TokenScope.DATA_OWN)
+    @access.user
     @autoDescribeRoute(
         Description("Lock a Dandiset").param("identifier", "Dandiset Identifier", paramType="path")
     )
@@ -332,7 +332,7 @@ class DandiResource(Resource):
     def lock_dandiset(self, identifier, params):
         locking.lock(identifier, self.getCurrentUser())
 
-    @access.user(scope=TokenScope.DATA_OWN)
+    @access.user
     @autoDescribeRoute(
         Description("Unlock a Dandiset").param(
             "identifier", "Dandiset Identifier", paramType="path"
