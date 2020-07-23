@@ -13,13 +13,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='version',
             name='description',
-            field=models.TextField(default=''),
+            field=models.TextField(max_length=3000, default=''),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='version',
             name='name',
-            field=models.TextField(default=''),
+            field=models.CharField(max_length=150, default=''),
             preserve_default=False,
         ),
     ]

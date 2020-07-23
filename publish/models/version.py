@@ -29,8 +29,8 @@ class Version(models.Model):
         default=_get_default_version,
     )  # TODO: rename this?
 
-    name = models.TextField()
-    description = models.TextField()
+    name = models.CharField(max_length=150)
+    description = models.TextField(max_length=3000)
 
     metadata = JSONField(blank=True, default=dict)
 
