@@ -39,9 +39,9 @@ class VersionRe(Re):
 # contain at least one non-whitespace character.
 class NameRe(Re):
     def __init__(self):
-        super().__init__(r'^(?!\s*$).+')
+        super().__init__(r'[\s\S]*')
 
 
 class DescriptionRe(Re):
     def __init__(self):
-        super().__init__(r'^(?!\s*$).+')
+        super().__init__(r'[\s\S]*')
