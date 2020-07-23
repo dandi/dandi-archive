@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
+from rest_framework_extensions.mixins import NestedViewSetMixin
 
 from publish.models import Asset
 from publish.views.common import DandiPagination
@@ -36,13 +36,11 @@ class AssetFilter(filters.FilterSet):
         fields = ['path']
 
 
-class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
+class AssetViewSet(NestedViewSetMixin, ReadOnlyModelViewSet):
     queryset = Asset.objects.all().select_related('version__dandiset')
-    queryset_detail = queryset
 
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
-    serializer_detail_class = AssetSerializer
     pagination_class = DandiPagination
 
     lookup_field = 'uuid'
