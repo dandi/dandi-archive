@@ -1,6 +1,6 @@
 import pytest
 
-from .fuzzy import DandisetIdentifierRe, TimestampRe
+from .fuzzy import TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -21,11 +21,7 @@ def test_dandiset_rest_list(api_client, dandiset):
         'next': None,
         'previous': None,
         'results': [
-            {
-                'identifier': DandisetIdentifierRe(),
-                'created': TimestampRe(),
-                'updated': TimestampRe(),
-            }
+            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'updated': TIMESTAMP_RE}
         ],
     }
 
@@ -33,7 +29,7 @@ def test_dandiset_rest_list(api_client, dandiset):
 @pytest.mark.django_db
 def test_dandiset_rest_retrieve(api_client, dandiset):
     assert api_client.get(f'/api/dandisets/{dandiset.identifier}/').data == {
-        'identifier': DandisetIdentifierRe(),
-        'created': TimestampRe(),
-        'updated': TimestampRe(),
+        'identifier': dandiset.identifier,
+        'created': TIMESTAMP_RE,
+        'updated': TIMESTAMP_RE,
     }

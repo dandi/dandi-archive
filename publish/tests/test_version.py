@@ -1,7 +1,7 @@
 import pytest
 
 from publish.models import Version
-from .fuzzy import DandisetIdentifierRe, TimestampRe, VersionRe
+from .fuzzy import TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -32,13 +32,13 @@ def test_version_rest_list(api_client, version):
         'results': [
             {
                 'dandiset': {
-                    'identifier': DandisetIdentifierRe(),
-                    'created': TimestampRe(),
-                    'updated': TimestampRe(),
+                    'identifier': version.dandiset.identifier,
+                    'created': TIMESTAMP_RE,
+                    'updated': TIMESTAMP_RE,
                 },
-                'version': VersionRe(),
-                'created': TimestampRe(),
-                'updated': TimestampRe(),
+                'version': version.version,
+                'created': TIMESTAMP_RE,
+                'updated': TIMESTAMP_RE,
                 'count': 0,
             }
         ],
@@ -51,13 +51,13 @@ def test_version_rest_retrieve(api_client, version):
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
     ).data == {
         'dandiset': {
-            'identifier': DandisetIdentifierRe(),
-            'created': TimestampRe(),
-            'updated': TimestampRe(),
+            'identifier': version.dandiset.identifier,
+            'created': TIMESTAMP_RE,
+            'updated': TIMESTAMP_RE,
         },
-        'version': VersionRe(),
-        'created': TimestampRe(),
-        'updated': TimestampRe(),
+        'version': version.version,
+        'created': TIMESTAMP_RE,
+        'updated': TIMESTAMP_RE,
         'count': 0,
         'metadata': version.metadata,
     }
