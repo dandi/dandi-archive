@@ -22,7 +22,7 @@
               color="primary"
               :to="{
                 name: 'dandisetLanding',
-                params: { identifier: location.meta.dandiset.identifier },
+                params: { identifier: location.meta.dandiset.identifier, version: draftVersion },
               }"
             >
               <v-icon>mdi-eye</v-icon>
@@ -57,6 +57,7 @@ import { FileManager as GirderFileManager } from '@girder/components/src/compone
 
 import {
   getLocationFromRoute,
+  draftVersion,
 } from '@/utils';
 
 // redirect to "Open JupyterLab"
@@ -89,6 +90,11 @@ export default {
       type: String,
       required: true,
     },
+  },
+  data() {
+    return {
+      draftVersion,
+    };
   },
   computed: {
     isDandiset() {

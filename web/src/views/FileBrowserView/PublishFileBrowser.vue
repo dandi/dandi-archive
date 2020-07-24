@@ -9,7 +9,7 @@
               exact
               :to="{
                 name: 'dandisetLanding',
-                params: { identifier },
+                params: { identifier, version },
               }"
             >
               <v-icon>mdi-jellyfish</v-icon>
