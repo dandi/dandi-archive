@@ -24,6 +24,19 @@
               <v-icon>mdi-eye</v-icon>
             </v-btn>
           </template>
+          <template
+            v-slot:row-widget="{ item }"
+          >
+            <v-btn
+              v-if="item._modelType === 'item'"
+              icon
+              small
+              color="primary"
+              :href="itemDownloadLink(item)"
+            >
+              <v-icon>mdi-download</v-icon>
+            </v-btn>
+          </template>
         </girder-file-manager>
       </v-col>
       <v-col
@@ -54,6 +67,8 @@ import { FileManager as GirderFileManager } from '@girder/components/src/compone
 import {
   getLocationFromRoute,
 } from '@/utils';
+
+import { girderRest } from '@/rest';
 
 // redirect to "Open JupyterLab"
 const JUPYTER_ROOT = 'https://hub.dandiarchive.org';
@@ -140,6 +155,9 @@ export default {
     this.fetchFullLocation(location);
   },
   methods: {
+    itemDownloadLink(item) {
+      return `${girderRest.apiRoot}/item/${item._id}/download`;
+    },
     async handleAction(action) {
       if (action.name === 'Delete') {
         await this.$refs.girderFileManager.refresh();
