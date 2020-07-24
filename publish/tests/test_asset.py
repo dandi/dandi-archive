@@ -31,6 +31,7 @@ def test_asset_rest_list(api_client, asset):
                 'sha256': asset.sha256,
                 'created': TimestampRe(),
                 'updated': TimestampRe(),
+                'metadata': asset.metadata,
             }
         ],
     }
