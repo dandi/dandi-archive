@@ -1,6 +1,13 @@
 import pytest
 
+from publish.models import Asset
 from .fuzzy import TIMESTAMP_RE
+
+
+@pytest.mark.django_db
+def test_asset_from_girder(version, girder_file, mock_girder_client):
+    asset = Asset.from_girder(version, girder_file, mock_girder_client)
+    assert asset
 
 
 @pytest.mark.django_db
