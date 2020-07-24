@@ -37,13 +37,13 @@ class Dandiset(models.Model):
         return self.identifier
 
     @classmethod
-    def from_girder(cls, draft_folder_id: str, client: GirderClient):
+    def from_girder(cls, draft_folder_id: str, client: GirderClient) -> Dandiset:
         """
         Return the Dandiset corresponding to a Girder `draft_folder_id`.
 
         Creates the Dandiset if it does not exist.
         """
-        draft_folder = client.get_json(f'folder/{draft_folder_id}')
+        draft_folder = client.get_folder(draft_folder_id)
 
         dandiset_identifier = draft_folder['name']
         try:

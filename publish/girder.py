@@ -1,6 +1,6 @@
 import contextlib
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator
+from typing import Any, Dict, Iterator, List
 
 from django.conf import settings
 from httpx import Client
@@ -45,10 +45,41 @@ class GirderClient(Client):
         resp.raise_for_status()
         return resp.json()
 
+    def get_folder(self, folder_id: str) -> Dict:
+        return self.get_json(f'folder/{folder_id}')
+
+    def get_subfolders(self, folder_id: str) -> List[Dict]:
+        return self.get_json(
+            'folder', params={'parentId': folder_id, 'parentType': 'folder', 'limit': 0}
+        )
+
+    def get_items(self, folder_id: str) -> List[Dict]:
+        return self.get_json('item', params={'folderId': folder_id, 'limit': 0})
+
+    def get_item_files(self, item_id: str) -> List[Dict]:
+        return self.get_json(f'item/{item_id}/files')
+
+    @contextlib.contextmanager
+    def iter_file_content(self, file_id: str) -> Iterator[bytes]:
+        with self.stream('GET', f'file/{file_id}/download') as resp:
+            resp.raise_for_status()
+            yield resp.iter_bytes()
+
+    @contextlib.contextmanager
+    def dandiset_lock(self, dandiset_identifier: str) -> None:
+        resp = self.post(f'dandi/{dandiset_identifier}/lock')
+        if resp.status_code != 200:
+            raise GirderError(f'Failed to lock dandiset {dandiset_identifier}')
+        try:
+            yield
+        finally:
+            resp = self.post(f'dandi/{dandiset_identifier}/unlock')
+            if resp.status_code != 200:
+                raise GirderError(f'Failed to unlock dandiset {dandiset_identifier}')
+
     def files_in_folder(self, folder_id: str, current_path: str = '/') -> Iterator[GirderFile]:
-        items = self.get_json('item', params={'folderId': str(folder_id), 'limit': 0})
-        for item in items:
-            file_list = self.get_json(f'item/{item["_id"]}/files')
+        for item in self.get_items(folder_id):
+            file_list = self.get_item_files(item['_id'])
             if len(file_list) != 1:
                 raise GirderError(f'Found {len(file_list)} files in item {item["_id"]}')
 
@@ -65,26 +96,5 @@ class GirderClient(Client):
                 size=f['size'],
             )
 
-        subfolders = self.get_json(
-            'folder', params={'parentId': str(folder_id), 'parentType': 'folder', 'limit': 0}
-        )
-        for subfolder in subfolders:
+        for subfolder in self.get_subfolders(folder_id):
             yield from self.files_in_folder(subfolder['_id'], f'{current_path}{subfolder["name"]}/')
-
-    @contextlib.contextmanager
-    def iter_file_content(self, file_id: str) -> Iterator[bytes]:
-        with self.stream('GET', f'file/{file_id}/download') as resp:
-            resp.raise_for_status()
-            yield resp.iter_bytes()
-
-    @contextlib.contextmanager
-    def dandiset_lock(self, dandiset_identifier: str):
-        resp = self.post(f'dandi/{dandiset_identifier}/lock')
-        if resp.status_code != 200:
-            raise GirderError(f'Failed to lock dandiset {dandiset_identifier}')
-        try:
-            yield
-        finally:
-            resp = self.post(f'dandi/{dandiset_identifier}/unlock')
-            if resp.status_code != 200:
-                raise GirderError(f'Failed to unlock dandiset {dandiset_identifier}')
