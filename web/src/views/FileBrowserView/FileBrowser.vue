@@ -68,7 +68,7 @@ import {
   getLocationFromRoute,
 } from '@/utils';
 
-import { girderRest } from '@/rest';
+import girderRest from '@/rest';
 
 // redirect to "Open JupyterLab"
 const JUPYTER_ROOT = 'https://hub.dandiarchive.org';
