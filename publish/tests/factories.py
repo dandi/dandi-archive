@@ -1,11 +1,9 @@
 from django.contrib.auth.models import User
 import factory.django
-from pytest_factoryboy import register
 
 from publish.models import Asset, Dandiset, Version
 
 
-@register
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
@@ -16,7 +14,6 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
 
 
-@register
 class DandisetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dandiset
@@ -24,7 +21,6 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     draft_folder_id = factory.Faker('hexify', text='^' * 24)
 
 
-@register
 class VersionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Version
@@ -33,7 +29,6 @@ class VersionFactory(factory.django.DjangoModelFactory):
     metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
 
 
-@register
 class AssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset

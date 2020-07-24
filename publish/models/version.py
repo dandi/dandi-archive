@@ -78,7 +78,7 @@ class Version(models.Model):
 
     @classmethod
     def from_girder(cls, dandiset: Dandiset, client: GirderClient) -> Version:
-        draft_folder = client.get_json(f'folder/{dandiset.draft_folder_id}')
+        draft_folder = client.get_folder(dandiset.draft_folder_id)
 
         version = Version(dandiset=dandiset, metadata=draft_folder['meta'])
         version.save()

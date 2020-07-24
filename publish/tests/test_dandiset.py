@@ -1,5 +1,6 @@
 import pytest
 
+from publish.models import Dandiset
 from .fuzzy import TIMESTAMP_RE
 
 
@@ -12,6 +13,12 @@ def test_dandiset_identifer_missing(dandiset_factory):
     dandiset = dandiset_factory.build()
     # This should have a sane fallback
     assert dandiset.identifier == ''
+
+
+@pytest.mark.django_db
+def test_dandiset_from_girder(mock_girder_client):
+    dandiset = Dandiset.from_girder('magic_draft_folder_id', mock_girder_client)
+    assert dandiset
 
 
 @pytest.mark.django_db
