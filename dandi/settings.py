@@ -60,7 +60,7 @@ class TestingConfiguration(DandiConfig, TestingBaseConfiguration):
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandi-dandisets'
     DANDI_GIRDER_API_KEY = 'testkey'
-    DANDI_GIRDER_API_URL = 'http://localhost:8080/'
+    DANDI_GIRDER_API_URL = 'http://girder.test/api/v1'
 
 
 class ProductionConfiguration(DandiConfig, SentryConfig, ProductionBaseConfiguration):

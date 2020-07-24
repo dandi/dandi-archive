@@ -24,6 +24,13 @@ def test_version_make_version_save(mocker, dandiset, version_factory):
 
 
 @pytest.mark.django_db
+def test_version_from_girder(dandiset_factory, mock_girder_client):
+    dandiset = dandiset_factory(draft_folder_id='magic_draft_folder_id')
+    version = Version.from_girder(dandiset, mock_girder_client)
+    assert version
+
+
+@pytest.mark.django_db
 def test_version_rest_list(api_client, version):
     assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
         'count': 1,
