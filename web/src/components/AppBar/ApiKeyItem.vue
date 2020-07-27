@@ -66,7 +66,7 @@ export default {
         ({ data } = await girderRest.post('api_key', null, {
           params: {
             name: 'dandicli',
-            scope: JSON.stringify(['core.data.read', 'core.data.write']),
+            scope: null,
             // days
             tokenDuration: 30,
             active: true,
