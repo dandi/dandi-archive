@@ -4,6 +4,7 @@ import datetime
 import logging
 
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -86,6 +87,9 @@ class Version(models.Model):
         metadata = draft_folder['meta']
         name = metadata['dandiset'].pop('name')
         description = metadata['dandiset'].pop('description')
+
+        if len(description) > 3000:
+            raise ValidationError('Description length is greater than 3000.')
 
         version = Version(dandiset=dandiset, name=name, description=description, metadata=metadata)
         version.save()
