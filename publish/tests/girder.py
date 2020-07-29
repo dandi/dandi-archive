@@ -22,6 +22,16 @@ class _GirderClientDraftFolderFactory(_GirderClientFolderFactory):
     )
 
 
+class _GirderClientInvalidDraftFolderFactory(_GirderClientDraftFolderFactory):
+    meta = factory.Dict(
+        {
+            'dandiset': factory.Dict(
+                {'name': factory.Faker('random_int'), 'description': factory.Faker('pydict')}
+            )
+        }
+    )
+
+
 class _GirderClientItemFactory(factory.DictFactory):
     _id = factory.Faker('hexify', text='^' * 24)
     name = factory.Faker('file_name', extension='nwb')
@@ -43,6 +53,8 @@ class MockGirderClient(GirderClient):
     def get_folder(self, folder_id: str) -> Dict:
         if folder_id == 'magic_draft_folder_id':
             return _GirderClientDraftFolderFactory()
+        elif folder_id == 'nonstring_meta_folder_id':
+            return _GirderClientInvalidDraftFolderFactory()
         else:
             return _GirderClientFolderFactory()
 
