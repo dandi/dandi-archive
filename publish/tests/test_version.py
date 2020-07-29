@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 import pytest
 
 from publish.models import Version
@@ -28,6 +29,17 @@ def test_version_from_girder(dandiset_factory, mock_girder_client):
     dandiset = dandiset_factory(draft_folder_id='magic_draft_folder_id')
     version = Version.from_girder(dandiset, mock_girder_client)
     assert version
+
+
+@pytest.mark.django_db
+def test_version_from_girder_invalid_metadata(dandiset_factory, mock_girder_client):
+    dandiset = dandiset_factory()
+    with pytest.raises(ValidationError) as excinfo:
+        Version.from_girder(dandiset, mock_girder_client)
+    assert (
+        f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
+        in str(excinfo.value)
+    )
 
 
 @pytest.mark.django_db

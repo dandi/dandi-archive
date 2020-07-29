@@ -13,7 +13,13 @@ class _GirderClientFolderFactory(factory.DictFactory):
 
 class _GirderClientDraftFolderFactory(_GirderClientFolderFactory):
     name = factory.Faker('numerify', text='#' * 6)
-    meta = factory.Dict({})
+    meta = factory.Dict(
+        {
+            'dandiset': factory.Dict(
+                {'name': factory.Faker('sentence'), 'description': factory.Faker('paragraph')}
+            )
+        }
+    )
 
 
 class _GirderClientItemFactory(factory.DictFactory):
