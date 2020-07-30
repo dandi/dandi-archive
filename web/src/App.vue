@@ -1,10 +1,10 @@
 <template>
   <v-app class="dandi-app">
     <AppBar />
-    <v-content>
+    <v-main>
       <router-view />
       <DandiFooter />
-    </v-content>
+    </v-main>
   </v-app>
 </template>
 

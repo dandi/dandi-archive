@@ -9,11 +9,6 @@ module.exports = {
     './jest.setup.js',
   ],
 
-  transformIgnorePatterns: [
-    // Apply Babel transformation to jest-puppeteer-vuetify
-    'node_modules/(?!jest-puppeteer-vuetify/)',
-  ],
-
   // extend test timeout to 1 hour when debugging
   testTimeout: (process.env.DEBUG === 'true') ? 3600000 : 180000,
 };

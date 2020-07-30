@@ -5,7 +5,7 @@
     data-id="stat"
     :data-name="name"
   >
-    <v-row class="display-2 font-weight-thin text-center white--text">
+    <v-row class="text-h3 font-weight-thin text-center white--text">
       <v-col
         class="pa-0"
         data-id="value"
@@ -13,7 +13,7 @@
         {{ value }}
       </v-col>
     </v-row>
-    <v-row class="title font-weight-light text-center light-blue--text text--lighten-1">
+    <v-row class="text-h6 font-weight-light text-center light-blue--text text--lighten-1">
       <v-col
         class="pa-0"
         data-id="name"

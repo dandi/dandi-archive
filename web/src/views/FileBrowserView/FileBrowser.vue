@@ -21,7 +21,6 @@ import { draftVersion } from '@/utils';
 import GirderFileBrowser from './GirderFileBrowser.vue';
 import PublishFileBrowser from './PublishFileBrowser.vue';
 
-
 export default {
   name: 'FileBrowser',
   components: {
