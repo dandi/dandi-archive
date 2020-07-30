@@ -48,10 +48,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Create a virtualenv for installation
-          command: |
-            python3 -m venv install_env
-            . install_env/bin/activate
+          name: Create virtual environment
+          command: python3 -m venv install_env
+      - run:
+          name: Activate virtual environment
+          command: echo ". $CIRCLE_WORKING_DIRECTORY/install_env/bin/activate" >> $BASH_ENV
       - run:
           name: Upgrade pip
           command: pip install -U pip
