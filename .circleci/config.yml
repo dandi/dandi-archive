@@ -93,19 +93,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Create a virtualenv for deployment
-          command: |
-            python3 -m venv deployment_env
-            . deployment_env/bin/activate
-      - run:
-          name: Activate virtual environment
-          command: echo ". $CIRCLE_WORKING_DIRECTORY/deployment_env/bin/activate" >> $BASH_ENV
-      - run:
-          name: Upgrade pip
-          command: pip install -U pip
-      - run:
-          name: Install ansible
-          command: pip install ansible
+          name: Install Ansible
+          command: sudo pip install ansible
       - run:
           name: Echo key to a file
           command: echo -e "$DEPLOYKEY" > "$HOME/girder-dandi-server.pem"
