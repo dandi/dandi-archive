@@ -34,12 +34,8 @@ def test_version_from_girder(dandiset_factory, mock_girder_client):
 @pytest.mark.django_db
 def test_version_from_girder_no_metadata(dandiset_factory, mock_girder_client):
     dandiset = dandiset_factory()
-    with pytest.raises(ValidationError) as excinfo:
+    with pytest.raises(ValidationError, match='has no "meta" field.'):
         Version.from_girder(dandiset, mock_girder_client)
-    assert (
-        f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
-        in str(excinfo.value)
-    )
 
 
 @pytest.mark.django_db
