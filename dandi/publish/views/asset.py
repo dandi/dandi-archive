@@ -7,9 +7,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
-from publish.models import Asset
-from publish.views.common import DandiPagination
-from publish.views.version import VersionSerializer
+from dandi.publish.models import Asset
+from dandi.publish.views.common import DandiPagination
+from dandi.publish.views.version import VersionSerializer
 
 
 class AssetSerializer(serializers.ModelSerializer):

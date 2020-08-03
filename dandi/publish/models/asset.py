@@ -11,8 +11,8 @@ from django.core.files import File
 from django.core.validators import RegexValidator
 from django.db import models
 
-from publish.girder import GirderClient, GirderFile
-from publish.storage import create_s3_storage
+from dandi.publish.girder import GirderClient, GirderFile
+from dandi.publish.storage import create_s3_storage
 from .version import Version
 
 logger = logging.getLogger(__name__)

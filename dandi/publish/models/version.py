@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
-from publish.girder import GirderClient
+from dandi.publish.girder import GirderClient
 from .common import SelectRelatedManager
 from .dandiset import Dandiset
 

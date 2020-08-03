@@ -6,7 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-from publish.views import AssetViewSet, DandisetViewSet, VersionViewSet
+from dandi.publish.views import AssetViewSet, DandisetViewSet, VersionViewSet
 
 
 router = ExtendedSimpleRouter()

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 import factory.django
 
-from publish.models import Asset, Dandiset, Version
+from dandi.publish.models import Asset, Dandiset, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):

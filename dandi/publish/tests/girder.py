@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List
 
 import factory
 
-from publish.girder import GirderClient, GirderFile
+from dandi.publish.girder import GirderClient, GirderFile
 
 
 class _GirderClientFolderFactory(factory.DictFactory):

@@ -1,6 +1,6 @@
 import pytest
 
-from publish.models import Asset
+from dandi.publish.models import Asset
 from .fuzzy import TIMESTAMP_RE
 
 
