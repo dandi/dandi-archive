@@ -4,6 +4,7 @@ import datetime
 import logging
 
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -28,6 +29,9 @@ class Version(models.Model):
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
         default=_get_default_version,
     )  # TODO: rename this?
+
+    name = models.CharField(max_length=150)
+    description = models.TextField(max_length=3000)
 
     metadata = JSONField(blank=True, default=dict)
 
@@ -80,6 +84,21 @@ class Version(models.Model):
     def from_girder(cls, dandiset: Dandiset, client: GirderClient) -> Version:
         draft_folder = client.get_folder(dandiset.draft_folder_id)
 
-        version = Version(dandiset=dandiset, metadata=draft_folder['meta'])
+        metadata = draft_folder.get('meta')
+
+        if metadata is None:
+            raise ValidationError(
+                f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
+            )
+
+        name = metadata['dandiset'].pop('name')
+        description = metadata['dandiset'].pop('description')
+
+        if len(description) > 3000:
+            raise ValidationError(
+                f'Description length is greater than 3000 for dandiset {dandiset.draft_folder_id}.'
+            )
+
+        version = Version(dandiset=dandiset, name=name, description=description, metadata=metadata)
         version.save()
         return version

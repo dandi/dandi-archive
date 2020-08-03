@@ -27,6 +27,8 @@ class VersionFactory(factory.django.DjangoModelFactory):
 
     dandiset = factory.SubFactory(DandisetFactory)
     metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+    name = factory.Faker('sentence')
+    description = factory.Faker('paragraph')
 
 
 class AssetFactory(factory.django.DjangoModelFactory):
