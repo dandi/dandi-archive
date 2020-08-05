@@ -13,28 +13,6 @@ export function uniqueId() {
 }
 
 /**
- * Register a new user with a random username.
- *
- * @returns {object} { username, email, password }
- */
-export async function registerNewUser() {
-  const username = `user${uniqueId()}`;
-  const email = `${username}@dandi.test`;
-  const password = 'password'; // Top secret
-
-  // there is no way to register a new user without using OAuth
-  // use the girder API to create the user instead
-  await page.evaluate(({ username, email, password, GIRDER_URL }) => {
-    const params = `login=${username}&email=${email}&firstName=Mister&lastName=Roboto&password=${password}&admin=false`;
-    return fetch(`${GIRDER_URL}/api/v1/user?${params}`, { method: 'POST' })
-  }, { username, email, password, GIRDER_URL });
-
-  await login(username, password);
-
-  return { username, email, password };
-}
-
-/**
  * Logs in.
  *
  * @param {string} username
@@ -50,6 +28,35 @@ export async function login(username, password) {
     expect(page).toClickXPath(vBtn(['Login', vIcon('mdi-login')])),
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]);
+}
+
+/**
+ * Register a new user with a random username.
+ *
+ * @returns {object} { username, email, password }
+ */
+export async function registerNewUser() {
+  const username = `user${uniqueId()}`;
+  const email = `${username}@dandi.test`;
+  const password = 'password'; // Top secret
+
+  // there is no way to register a new user without using OAuth
+  // use the girder API to create the user instead
+  await page.evaluate(({
+    username, email, password, GIRDER_URL, // eslint-disable-line no-shadow
+  }) => {
+    // fetch is only available in the browser
+    // this function is run in the page context, so fetch is available
+    const params = `login=${username}&email=${email}&firstName=Mister&lastName=Roboto&password=${password}&admin=false`;
+    // eslint-disable-next-line no-undef
+    return fetch(`${GIRDER_URL}/api/v1/user?${params}`, { method: 'POST' });
+  }, {
+    username, email, password, GIRDER_URL,
+  });
+
+  await login(username, password);
+
+  return { username, email, password };
 }
 
 /**
