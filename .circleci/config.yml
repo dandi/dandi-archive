@@ -84,6 +84,7 @@ jobs:
           working_directory: test
           environment:
             CLIENT_URL: http://localhost:8085
+            GIRDER_URL: http://localhost:8080
 
   provision:
     docker:
