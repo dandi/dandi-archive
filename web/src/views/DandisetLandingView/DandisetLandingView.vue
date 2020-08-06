@@ -135,7 +135,11 @@ export default {
     },
     meta() {
       if (this.publishDandiset) {
-        return { ...this.publishDandiset.meta.dandiset };
+        return {
+          name: this.publishDandiset.name,
+          description: this.publishDandiset.description,
+          ...this.publishDandiset.meta.dandiset,
+        };
       }
 
       if (
