@@ -76,23 +76,10 @@ class Asset(models.Model):  # TODO: was NwbFile
             # local_path = Path(local_stream.name)
             sha256 = sha256_hasher.hexdigest()
 
-            # try:
-            #     subprocess.check_call(['dandi', 'validate', str(local_path)])
-            # except subprocess.CalledProcessError:
-            #     # TODO: No validation enforcement now
-            #     pass
-
             blob = File(file=local_stream, name=girder_file.path.lstrip('/'),)
             # content_type is not part of the base File class (it on some other subclasses),
             # but regardless S3Boto3Storage will respect and use it, if it's set
             blob.content_type = 'application/octet-stream'
-
-            # s3.put_object(
-            #     Bucket=S3_BUCKET,
-            #     Key=f'{prefix}/dandiset.yaml',
-            #     Body=dump(self.metadata['dandiset']).encode(),
-            #     ACL='public-read',
-            # )
 
             asset = Asset(
                 version=version,
