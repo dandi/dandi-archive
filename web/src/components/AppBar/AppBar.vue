@@ -46,6 +46,18 @@
         mdi-open-in-new
       </v-icon>
     </v-btn>
+    <v-btn
+      :href="dandiDocumentationUrl"
+      target="_blank"
+      rel="noopener"
+      text
+    >
+      Documentation
+      <v-icon class="ml-1">
+        mdi-open-in-new
+      </v-icon>
+    </v-btn>
+
 
     <v-spacer />
 
@@ -88,7 +100,7 @@
 
 <script>
 import { loggedIn } from '@/rest';
-import { dandiAboutUrl } from '@/utils';
+import { dandiAboutUrl, dandiDocumentationUrl } from '@/utils';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
 export default {
@@ -99,6 +111,7 @@ export default {
   data() {
     return {
       dandiAboutUrl,
+      dandiDocumentationUrl,
     };
   },
   computed: {
