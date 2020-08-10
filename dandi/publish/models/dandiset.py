@@ -9,7 +9,6 @@ from django.db import models
 
 from dandi.publish.girder import GirderClient, GirderError
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -55,6 +54,13 @@ class Dandiset(models.Model):
         except ObjectDoesNotExist:
             dandiset = Dandiset(id=dandiset_id, draft_folder_id=draft_folder_id)
             dandiset.save()
+            meta = draft_folder['meta']['dandiset']
+            from .draft import Draft
+
+            draft = Draft(
+                dandiset=dandiset, name=meta['name'], description=meta['description'], metadata=meta
+            )
+            draft.save()
         else:
             # If the Dandiset existed, sync the draft_folder_id
             if dandiset.draft_folder_id != draft_folder_id:
