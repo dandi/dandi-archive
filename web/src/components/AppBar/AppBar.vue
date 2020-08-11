@@ -1,7 +1,47 @@
 <template>
-  <v-app-bar
-    app
-  >
+  <v-app-bar app>
+    <v-menu
+      open-on-hover
+      offset-y
+    >
+      <template v-slot:activator="{on}">
+        <v-icon
+          class="d-md-none mr-4"
+          v-on="on"
+        >
+          mdi-menu
+        </v-icon>
+      </template>
+      <v-list>
+        <template v-for="navItem in navItems">
+          <v-list-item
+            v-if="!navItem.if || navItem.if()"
+            :key="navItem.text"
+          >
+            <v-btn
+              v-if="!navItem.external"
+              :to="{name: navItem.to}"
+              exact
+              text
+            >
+              {{ navItem.text }}
+            </v-btn>
+            <v-btn
+              v-if="navItem.external"
+              :href="navItem.to"
+              target="_blank"
+              rel="noopener"
+              text
+            >
+              {{ navItem.text }}
+              <v-icon class="ml-1">
+                mdi-open-in-new
+              </v-icon>
+            </v-btn>
+          </v-list-item>
+        </template>
+      </v-list>
+    </v-menu>
     <v-toolbar-title>
       <v-img
         alt="DANDI logo"
@@ -9,55 +49,35 @@
         max-height="48px"
         max-width="120px"
         src="@/assets/logo.svg"
+        class="mr-2"
       />
     </v-toolbar-title>
-
-    <v-btn
-      :to="{ name: 'home' }"
-      class="ml-2"
-      exact
-      text
-    >
-      Welcome
-    </v-btn>
-    <v-btn
-      :to="{ name: 'publicDandisets' }"
-      exact
-      text
-    >
-      Public Dandisets
-    </v-btn>
-    <v-btn
-      v-if="loggedIn"
-      :to="{ name: 'myDandisets' }"
-      exact
-      text
-    >
-      My Dandisets
-    </v-btn>
-    <v-btn
-      :href="dandiAboutUrl"
-      target="_blank"
-      rel="noopener"
-      text
-    >
-      About
-      <v-icon class="ml-1">
-        mdi-open-in-new
-      </v-icon>
-    </v-btn>
-    <v-btn
-      :href="dandiDocumentationUrl"
-      target="_blank"
-      rel="noopener"
-      text
-    >
-      Documentation
-      <v-icon class="ml-1">
-        mdi-open-in-new
-      </v-icon>
-    </v-btn>
-
+    <span class="d-none d-md-flex">
+      <template v-for="navItem in navItems">
+        <v-btn
+          v-if="!navItem.external && (!navItem.if || navItem.if())"
+          :key="navItem.text"
+          :to="{name: navItem.to}"
+          exact
+          text
+        >
+          {{ navItem.text }}
+        </v-btn>
+        <v-btn
+          v-if="navItem.external && (!navItem.if || navItem.if())"
+          :key="navItem.text"
+          :href="navItem.to"
+          target="_blank"
+          rel="noopener"
+          text
+        >
+          {{ navItem.text }}
+          <v-icon class="ml-1">
+            mdi-open-in-new
+          </v-icon>
+        </v-btn>
+      </template>
+    </span>
 
     <v-spacer />
 
@@ -112,6 +132,31 @@ export default {
     return {
       dandiAboutUrl,
       dandiDocumentationUrl,
+      navItems: [
+        {
+          text: 'Welcome',
+          to: 'home',
+        },
+        {
+          text: 'Public Dandisets',
+          to: 'publicDandisets',
+        },
+        {
+          text: 'My Dandisets',
+          to: 'myDandisets',
+          if: loggedIn,
+        },
+        {
+          text: 'About',
+          to: dandiAboutUrl,
+          external: true,
+        },
+        {
+          text: 'Documentation',
+          to: dandiDocumentationUrl,
+          external: true,
+        },
+      ],
     };
   },
   computed: {
