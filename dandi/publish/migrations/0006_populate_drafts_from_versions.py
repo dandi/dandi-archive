@@ -6,13 +6,13 @@ from django.db import migrations
 def populate_drafts(apps, schema_editor):
     Dandiset = apps.get_model('publish', 'Dandiset')  # noqa: N806
     Version = apps.get_model('publish', 'Version')  # noqa: N806
-    Draft = apps.get_model('publish', 'Draft')  # noqa: N806
+    DraftVersion = apps.get_model('publish', 'DraftVersion')  # noqa: N806
 
     for dandiset in Dandiset.objects.all():
-        if Draft.objects.filter(dandiset=dandiset).exists():
+        if DraftVersion.objects.filter(dandiset=dandiset).exists():
             continue
         latest_version = Version.objects.filter(dandiset=dandiset).order_by('-version')[0]
-        draft = Draft(
+        draft = DraftVersion(
             dandiset=dandiset,
             name=latest_version.name,
             description=latest_version.description,

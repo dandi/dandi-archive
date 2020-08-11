@@ -54,12 +54,9 @@ class Dandiset(models.Model):
         except ObjectDoesNotExist:
             dandiset = Dandiset(id=dandiset_id, draft_folder_id=draft_folder_id)
             dandiset.save()
-            meta = draft_folder['meta']['dandiset']
-            from .draft import Draft
+            from .draft_version import DraftVersion
 
-            draft = Draft(
-                dandiset=dandiset, name=meta['name'], description=meta['description'], metadata=meta
-            )
+            draft = DraftVersion.from_girder_metadata(dandiset, draft_folder['meta'])
             draft.save()
         else:
             # If the Dandiset existed, sync the draft_folder_id

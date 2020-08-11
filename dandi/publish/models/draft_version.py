@@ -2,9 +2,10 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 
 from .dandiset import Dandiset
+from .version import BaseVersion
 
 
-class Draft(models.Model):
+class DraftVersion(BaseVersion):
     dandiset = models.OneToOneField(Dandiset, on_delete=models.CASCADE, primary_key=True)
 
     name = models.CharField(max_length=150)
