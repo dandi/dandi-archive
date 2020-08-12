@@ -2,32 +2,22 @@
   <!-- maybe...
     :close-on-content-click="false"
   -->
-  <v-menu
-    offset-y
-  >
+  <v-menu offset-y>
     <template #activator="{ on }">
       <v-btn
         icon
         v-on="on"
       >
-        <v-avatar
-          color="light-blue lighten-4"
-        >
-          <span
-            class="primary--text"
-          >
+        <v-avatar color="light-blue lighten-4">
+          <span class="primary--text">
             {{ userInitials }}
           </span>
         </v-avatar>
       </v-btn>
     </template>
-    <v-list
-      dense
-    >
+    <v-list dense>
       <ApiKeyItem />
-      <v-list-item
-        @click="logout"
-      >
+      <v-list-item @click="logout">
         <v-list-item-content>
           Logout
         </v-list-item-content>
@@ -43,7 +33,7 @@
 import { mapActions } from 'vuex';
 
 import { user } from '@/rest';
-import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
+import ApiKeyItem from '@/components/ApiKeyItem.vue';
 
 export default {
   name: 'UserMenu',
