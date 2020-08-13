@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
 
 import App from '@/App.vue';
+import '@/featureToggle';
 import router from '@/router';
 import store from '@/store';
 import { girderRest } from '@/rest';

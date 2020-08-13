@@ -27,8 +27,8 @@
               Help
               <v-icon
                 color="primary"
-                v-on="on"
                 small
+                v-on="on"
               >
                 mdi-help-circle
               </v-icon>
