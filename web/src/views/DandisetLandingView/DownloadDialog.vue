@@ -101,11 +101,11 @@
             <v-expansion-panel-content>
               <v-list>
                 <v-list-item>
-                  <div>
-                    Install the Python client (DANDI CLI)
-                    in a Python 3.6+ environment using command:
-                    <kbd>pip install dandi>=0.6.0</kbd>
-                  </div>
+                  Install the Python client (DANDI CLI)
+                  in a Python 3.6+ environment using command:
+                </v-list-item>
+                <v-list-item>
+                  <kbd>pip install dandi>=0.6.0</kbd>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-content>
