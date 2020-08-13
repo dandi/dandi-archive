@@ -33,7 +33,7 @@
 import { mapActions } from 'vuex';
 
 import { user } from '@/rest';
-import ApiKeyItem from '@/components/ApiKeyItem.vue';
+import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
 export default {
   name: 'UserMenu',

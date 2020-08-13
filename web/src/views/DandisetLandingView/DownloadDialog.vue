@@ -15,17 +15,20 @@
     <v-card>
       <v-card-title>
         Download full dandiset
+        <v-spacer />
         <v-tooltip right>
           <template v-slot:activator="{ on }">
             <v-btn
               href="https://www.dandiarchive.org/handbook/10_using_dandi/#downloading-from-dandi"
               target="_blank"
               rel="noopener"
-              icon
+              text
             >
+              Help
               <v-icon
                 color="primary"
                 v-on="on"
+                small
               >
                 mdi-help-circle
               </v-icon>
@@ -50,7 +53,7 @@
         <v-expansion-panels>
           <v-expansion-panel v-if="availableVersions.length > 0">
             <v-expansion-panel-header>
-              Download a different version
+              Download a different version?
             </v-expansion-panel-header>
             <v-expansion-panel-content>
               <v-list class="pa-0">
@@ -101,10 +104,9 @@
                   <div>
                     Install the Python client (DANDI CLI)
                     in a Python 3.6+ environment using command:
-                    <kbd>pip install dandi</kbd>
+                    <kbd>pip install dandi>=0.6.0</kbd>
                   </div>
                 </v-list-item>
-                <ApiKeyItem />
               </v-list>
             </v-expansion-panel-content>
           </v-expansion-panel>
@@ -115,7 +117,6 @@
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex';
-import ApiKeyItem from '@/components/ApiKeyItem.vue';
 import CopyText from '@/components/CopyText.vue';
 
 function formatDownloadCommand(identifier, version) {
@@ -131,7 +132,6 @@ function formatDownloadCommand(identifier, version) {
 export default {
   name: 'DownloadDialog',
   components: {
-    ApiKeyItem,
     CopyText,
   },
   data() {
