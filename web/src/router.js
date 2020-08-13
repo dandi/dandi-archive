@@ -21,11 +21,6 @@ export default new Router({
       component: HomeView,
     },
     {
-      path: '/file-browser/:_modelType?/:_id?',
-      name: 'file-browser',
-      component: FileBrowser,
-    },
-    {
       path: '/user/login',
       name: 'userLogin',
       component: UserLoginView,
@@ -56,7 +51,13 @@ export default new Router({
       component: CreateDandisetView,
     },
     {
-      path: '/dandiset/:id',
+      path: '/dandiset/:identifier/:version/files',
+      name: 'fileBrowser',
+      props: true,
+      component: FileBrowser,
+    },
+    {
+      path: '/dandiset/:identifier/:version?',
       name: 'dandisetLanding',
       props: true,
       component: DandisetLandingView,

@@ -143,7 +143,7 @@ import VueJsonPretty from 'vue-json-pretty';
 import jsYaml from 'js-yaml';
 import Ajv from 'ajv';
 
-import girderRest from '@/rest';
+import { girderRest } from '@/rest';
 
 import MetaNode from './MetaNode.vue';
 
@@ -193,8 +193,8 @@ export default {
     output() {
       return this.yamlOutput ? jsYaml.dump(this.meta) : JSON.stringify(this.meta, null, 2);
     },
-    ...mapState('girder', {
-      id: (state) => (state.currentDandiset ? state.currentDandiset._id : null),
+    ...mapState('dandiset', {
+      id: (state) => (state.girderDandiset ? state.girderDandiset._id : null),
     }),
   },
   watch: {
@@ -218,7 +218,7 @@ export default {
       try {
         const { status, data } = await girderRest.put(`folder/${this.id}/metadata`, { dandiset: this.meta });
         if (status === 200) {
-          this.setCurrentDandiset(data);
+          this.setGirderDandiset(data);
           this.closeEditor();
         }
       } catch (error) {
@@ -261,7 +261,7 @@ export default {
       link.click();
       URL.revokeObjectURL(link.href);
     },
-    ...mapMutations('girder', ['setCurrentDandiset']),
+    ...mapMutations('dandiset', ['setGirderDandiset']),
   },
 };
 </script>

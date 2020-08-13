@@ -15,6 +15,23 @@
             {{ permalink }}
           </a>
         </v-col>
+        <DownloadDialog>
+          <template v-slot:activator="{ on }">
+            <v-btn
+              text
+              v-on="on"
+            >
+              <v-icon
+                color="primary"
+                class="mr-2"
+              >
+                mdi-download
+              </v-icon>
+              Download
+              <v-icon>mdi-menu-down</v-icon>
+            </v-btn>
+          </template>
+        </DownloadDialog>
         <v-btn
           :to="fileBrowserLink"
           text
@@ -25,28 +42,46 @@
           >
             mdi-file-tree
           </v-icon>
-          View data
+          View Data
         </v-btn>
-        <v-tooltip
-          left
-          :disabled="editDisabledMessage === null"
-        >
-          <template v-slot:activator="{ on }">
-            <div v-on="on">
-              <v-btn
-                text
-                :disabled="editDisabledMessage !== null"
-                @click="$emit('edit')"
-              >
-                <v-icon class="mr-2">
-                  mdi-pencil
-                </v-icon>
-                Edit metadata
-              </v-btn>
-            </div>
-          </template>
-          {{ editDisabledMessage }}
-        </v-tooltip>
+        <template v-if="publishDandiset === null">
+          <v-tooltip
+            left
+            :disabled="editDisabledMessage === null"
+          >
+            <template v-slot:activator="{ on }">
+              <div v-on="on">
+                <v-btn
+                  text
+                  :disabled="editDisabledMessage !== null"
+                  @click="$emit('edit')"
+                >
+                  <v-icon
+                    color="primary"
+                    class="mr-2"
+                  >
+                    mdi-pencil
+                  </v-icon>
+                  Edit metadata
+                </v-btn>
+                <v-btn
+                  text
+                  :disabled="editDisabledMessage !== null || !user || !user.admin"
+                  @click="publish"
+                >
+                  <v-icon
+                    color="success"
+                    class="mr-2"
+                  >
+                    mdi-publish
+                  </v-icon>
+                  Publish
+                </v-btn>
+              </div>
+            </template>
+            {{ editDisabledMessage }}
+          </v-tooltip>
+        </template>
       </v-row>
 
       <v-divider />
@@ -60,7 +95,7 @@
         {{ meta.description }}
       </v-row>
 
-      <template v-for="(field, key) in extraFields">
+      <template v-for="key in Object.keys(extraFields).sort()">
         <v-divider :key="`${key}-divider`" />
         <v-row
           :key="`${key}-title`"
@@ -77,7 +112,7 @@
           <v-col class="py-0">
             <ListingComponent
               :schema="schema.properties[key]"
-              :data="field"
+              :data="extraFields[key]"
               root
             />
           </v-col>
@@ -88,16 +123,18 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapGetters } from 'vuex';
 
 import { dandiUrl } from '@/utils';
-import { loggedIn } from '@/rest';
+import { girderRest, loggedIn, user } from '@/rest';
 
+import DownloadDialog from './DownloadDialog.vue';
 import ListingComponent from './ListingComponent.vue';
 
 export default {
   name: 'DandisetMain',
   components: {
+    DownloadDialog,
     ListingComponent,
   },
   props: {
@@ -121,29 +158,37 @@ export default {
   },
   computed: {
     loggedIn,
+    user,
     editDisabledMessage() {
       if (!this.loggedIn) {
         return 'You must be logged in to edit.';
       }
 
-      if (!this.currentDandiset) {
+      if (!this.girderDandiset) {
         return null;
       }
 
-      if (this.currentDandiset._accessLevel < 1) {
+      if (this.girderDandiset._accessLevel < 1) {
         return 'You do not have permission to edit this dandiset.';
+      }
+
+      if (this.lockOwner != null) {
+        if (this.lockOwner.email === 'publish@dandiarchive.org') {
+          return 'A publish is currently in progress';
+        }
+        return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
       }
 
       return null;
     },
     fileBrowserLink() {
-      if (!this.currentDandiset) return null;
+      const { version } = this;
+      const { identifier } = this.girderDandiset.meta.dandiset;
 
-      const { _modelType, _id } = this.currentDandiset;
-      return { name: 'file-browser', params: { _modelType, _id } };
+      return { name: 'fileBrowser', params: { identifier, version } };
     },
     permalink() {
-      return `${dandiUrl}/dandiset/${this.meta.identifier}/draft`;
+      return `${dandiUrl}/dandiset/${this.meta.identifier}/${this.version}`;
     },
     extraFields() {
       const { meta, mainFields } = this;
@@ -152,9 +197,29 @@ export default {
       );
       return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
     },
-    ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+    ...mapState('dandiset', {
+      girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
     }),
+    ...mapGetters('dandiset', ['version']),
+  },
+  asyncComputed: {
+    lockOwner: {
+      async get() {
+        const { data: owner } = await girderRest.get(`/dandi/${this.girderDandiset.meta.dandiset.identifier}/lock/owner`);
+        if (!owner) {
+          return null;
+        }
+        return owner;
+      },
+      // default to the publish lock message until the actual lock owner can be fetched
+      default: { email: 'publish@dandiarchive.org' },
+    },
+  },
+  methods: {
+    async publish() {
+      await girderRest.post(`/dandi/${this.girderDandiset.meta.dandiset.identifier}`);
+    },
   },
 };
 </script>

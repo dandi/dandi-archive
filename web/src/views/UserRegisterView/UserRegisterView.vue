@@ -19,7 +19,7 @@
 
 <script>
 import { OauthTokenPrefix, OauthTokenSuffix } from '@girder/components/src/rest';
-import girderRest, { loggedIn } from '@/rest';
+import { girderRest, loggedIn } from '@/rest';
 
 // Copied from https://github.com/girder/girder_web_components Authentication/OAuth.vue
 const iconMap = {

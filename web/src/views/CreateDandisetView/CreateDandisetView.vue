@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import girderRest, { loggedIn } from '@/rest';
+import { girderRest, loggedIn } from '@/rest';
 
 export default {
   name: 'CreateDandisetView',
@@ -70,9 +70,11 @@ export default {
         },
       });
 
+
+      const { identifier } = data.meta.dandiset;
       this.$router.push({
         name: 'dandisetLanding',
-        params: { id: data._id },
+        params: { identifier },
       });
     },
   },

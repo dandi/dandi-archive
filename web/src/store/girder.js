@@ -1,12 +1,10 @@
-import girderRest, { loggedIn } from '@/rest';
+import { girderRest, loggedIn } from '@/rest';
 
 export default {
   namespaced: true,
   state: {
     browseLocation: null,
     selected: [],
-    currentDandiset: null,
-    currentDandisetOwners: null,
   },
   getters: {
     loggedIn,
@@ -14,12 +12,6 @@ export default {
   mutations: {
     setSelected(state, selected) {
       state.selected = selected;
-    },
-    setCurrentDandiset(state, dandiset) {
-      state.currentDandiset = dandiset;
-    },
-    setCurrentDandisetOwners(state, owners) {
-      state.currentDandisetOwners = owners;
     },
     setBrowseLocation(state, location) {
       state.browseLocation = location;
@@ -35,10 +27,6 @@ export default {
           commit('setBrowseLocation', data);
         }
       }
-    },
-    async fetchDandisetOwners({ commit }, identifier) {
-      const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
-      commit('setCurrentDandisetOwners', data);
     },
     async logout() {
       await girderRest.logout();

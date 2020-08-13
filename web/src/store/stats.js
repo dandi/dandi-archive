@@ -1,4 +1,4 @@
-import girderRest from '@/rest';
+import { girderRest } from '@/rest';
 
 export default {
   namespaced: true,

@@ -37,6 +37,7 @@
         <span :class="labelClasses">Identifier</span>
         <span :class="itemClasses">{{ currentDandiset.meta.dandiset.identifier }}</span>
       </v-row>
+
       <template v-if="stats">
         <v-row :class="`${rowClasses} px-2`">
           <v-col
@@ -69,7 +70,7 @@
         </v-row>
       </template>
 
-      <v-divider class="my-2 px-0 mx-0" />
+      <v-divider class="mt-2 px-0 mx-0" />
 
       <v-row>
         <v-col>
@@ -88,11 +89,11 @@
                   class="mx-2"
                   color="primary"
                 >
-                  mdi-link
+                  mdi-source-branch
                 </v-icon>
-                <span :class="itemClasses">Draft</span>
+                <span :class="`${itemClasses} text-capitalize`"> {{ currentVersion }} </span>
               </v-col>
-              <v-col>
+              <v-col v-if="draftDandiset">
                 <v-tooltip top>
                   <template v-slot:activator="{ on }">
                     <v-icon
@@ -167,6 +168,7 @@
           </v-dialog>
         </v-col>
       </v-row>
+
       <!-- TODO: Make chips wrap, instead of pushing whole card wide -->
       <v-row :class="rowClasses">
         <v-col cols="12">
@@ -187,8 +189,8 @@
           </span>
         </v-col>
       </v-row>
-      <!-- TODO: Uncomment this once the versions API is accessible -->
-      <!-- <v-row>
+
+      <v-row>
         <v-col class="pa-0">
           <v-card
             color="grey lighten-2"
@@ -201,36 +203,37 @@
           </v-card>
         </v-col>
       </v-row>
-
       <v-row>
-        <v-timeline>
+        <v-timeline dense>
           <v-timeline-item
+            v-for="version in versions"
+            :key="version.version"
             small
             right
+            :color="timelineVersionItemColor(version)"
           >
-            <template v-slot:opposite>
-              <span class="text-caption text--secondary">
-                02/26/19
-              </span>
-            </template>
-
-            <span class="font-weight-medium">
-              1.2.1
-            </span>
+            <v-btn
+              text
+              class="font-weight-medium"
+              @click="setVersion(version)"
+            >
+              {{ version.version }}
+            </v-btn>
           </v-timeline-item>
         </v-timeline>
-      </v-row> -->
+      </v-row>
     </template>
   </v-card>
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
-import girderRest, { loggedIn, user } from '@/rest';
+import { mapState, mapGetters } from 'vuex';
+import { loggedIn, user, girderRest } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
 
+import { draftVersion } from '@/utils';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
 
@@ -272,6 +275,14 @@ export default {
 
       return null;
     },
+    currentDandiset() {
+      // Done this way because we'll want to add in
+      // fetching stats from the publish endpoint later on.
+      return this.girderDandiset;
+    },
+    draftDandiset() {
+      return this.currentVersion === draftVersion;
+    },
     manageOwnersDisabled() {
       if (!this.loggedIn || !this.owners) return true;
       return !this.owners.find((owner) => owner.id === this.user._id);
@@ -291,23 +302,19 @@ export default {
       }
       return filesize(stats.bytes);
     },
-    ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
-      owners: (state) => state.currentDandisetOwners,
+    versions() {
+      const versions = this.publishedVersions || [];
+      return [{ version: draftVersion }, ...versions];
+    },
+    ...mapState('dandiset', {
+      girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
+      owners: (state) => state.owners,
+      publishedVersions: (state) => state.versions,
     }),
-  },
-  watch: {
-    currentDandiset: {
-      immediate: true,
-      async handler(val) {
-        const { identifier } = val.meta.dandiset;
-        this.fetchDandisetOwners(identifier);
-      },
-    },
-    ownerDialog() {
-      // This is incremented to force re-render of the owner dialog
-      this.ownerDialogKey += 1;
-    },
+    ...mapGetters('dandiset', {
+      currentVersion: 'version',
+    }),
   },
   asyncComputed: {
     async stats() {
@@ -316,7 +323,29 @@ export default {
       return data;
     },
   },
+  watch: {
+    ownerDialog() {
+      // This is incremented to force re-render of the owner dialog
+      this.ownerDialogKey += 1;
+    },
+  },
   methods: {
+    setVersion({ version }) {
+      this.setRouteVersion(version);
+    },
+    setRouteVersion(newVersion) {
+      const version = newVersion || draftVersion;
+
+      if (this.$route.params.version !== version) {
+        this.$router.replace({
+          ...this.$route,
+          params: {
+            ...this.$route.params,
+            version,
+          },
+        });
+      }
+    },
     formatDateTime(datetimeStr) {
       const datetime = moment(datetimeStr);
       const date = datetime.format('LL');
@@ -324,7 +353,16 @@ export default {
 
       return `${date} at ${time}`;
     },
-    ...mapActions('girder', ['fetchDandisetOwners']),
+    timelineVersionItemColor({ version }) {
+      const { publishDandiset } = this;
+
+      if (publishDandiset && version === publishDandiset.version) { return 'primary'; }
+      if (!publishDandiset && version === draftVersion) {
+        return 'amber darken-4';
+      }
+
+      return 'grey';
+    },
   },
 };
 </script>

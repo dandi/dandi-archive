@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import girderRest, { user } from '@/rest';
+import { girderRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
 import _ from 'lodash';
 
@@ -117,7 +117,7 @@ export default {
   },
   computed: {
     user,
-    ...mapState('girder', ['currentDandiset']),
+    ...mapState('dandiset', ['girderDandiset']),
   },
   watch: {
     selection(val) {
@@ -151,14 +151,14 @@ export default {
       this.$emit('close');
     },
     async save() {
-      const { identifier } = this.currentDandiset.meta.dandiset;
+      const { identifier } = this.girderDandiset.meta.dandiset;
       const formattedOwners = this.newOwners.map((owner) => ({ _id: owner.id }));
 
       const { data } = await girderRest.put(`/dandi/${identifier}/owners`, formattedOwners);
-      this.setCurrentDandisetOwners(data);
+      this.setOwners(data);
       this.close();
     },
-    ...mapMutations('girder', ['setCurrentDandisetOwners']),
+    ...mapMutations('dandiset', ['setOwners']),
   },
 };
 </script>

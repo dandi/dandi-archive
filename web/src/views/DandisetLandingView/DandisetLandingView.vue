@@ -20,6 +20,11 @@
         <v-toolbar-title>
           Dandiset Dashboard
         </v-toolbar-title>
+        <v-progress-circular
+          v-if="!girderDandiset || loading"
+          indeterminate
+          class="ml-3"
+        />
         <v-spacer />
         <DandisetSearchField />
         <v-btn
@@ -36,12 +41,8 @@
           </v-icon>
         </v-btn>
       </v-toolbar>
-      <v-progress-linear
-        v-if="!currentDandiset"
-        indeterminate
-      />
       <v-container
-        v-else
+        v-if="girderDandiset"
         fluid
         class="grey lighten-4"
       >
@@ -76,16 +77,16 @@
 <script>
 import { mapState } from 'vuex';
 
-import girderRest from '@/rest';
-
 import SCHEMA from '@/assets/schema/dandiset.json';
 import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import { draftVersion, dandisetHasVersion } from '@/utils';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
+
 
 export default {
   name: 'DandisetLandingView',
@@ -96,9 +97,14 @@ export default {
     DandisetDetails,
   },
   props: {
-    id: {
+    identifier: {
       type: String,
       required: true,
+    },
+    version: {
+      type: String,
+      required: false,
+      default: null,
     },
     create: {
       type: Boolean,
@@ -128,38 +134,87 @@ export default {
       return { properties, required };
     },
     meta() {
+      if (this.publishDandiset) {
+        return {
+          name: this.publishDandiset.name,
+          description: this.publishDandiset.description,
+          ...this.publishDandiset.meta.dandiset,
+        };
+      }
+
       if (
-        !this.currentDandiset
-        || !this.currentDandiset.meta
-        || !this.currentDandiset.meta.dandiset
+        !this.girderDandiset
+        || !this.girderDandiset.meta
+        || !this.girderDandiset.meta.dandiset
       ) {
         return {};
       }
 
-      return { ...this.currentDandiset.meta.dandiset };
+      return { ...this.girderDandiset.meta.dandiset };
     },
-    ...mapState('girder', {
-      currentDandiset: (state) => state.currentDandiset,
+    ...mapState('dandiset', {
+      girderDandiset: (state) => state.girderDandiset,
+      publishDandiset: (state) => state.publishDandiset,
+      loading: (state) => state.loading,
+      dandisetVersions: (state) => state.versions,
     }),
   },
   watch: {
-    id: {
+    identifier: {
       immediate: true,
-      async handler(value) {
-        // If we ever change the URL to contain the dandiset ID instead of the
-        // girder folder ID, this should be moved into the store
-
-        if (!this.currentDandiset || !this.meta.length) {
-          const { data } = await girderRest.get(`folder/${value}`);
-          this.$store.commit('girder/setCurrentDandiset', data);
-        }
+      async handler(identifier) {
+        const { version } = this;
+        await this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
+        if (!this.publishDandiset) { this.navigateToDefaultDandiset(); }
       },
+    },
+    async version(version) {
+      // On version change, fetch the new dandiset (not initial)
+
+      const { identifier } = this;
+      if (version === draftVersion) {
+        this.$store.commit('dandiset/setPublishDandiset', null);
+      } else {
+        await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
+
+        // If the above await call didn't result in publishDandiset being set, navigate to a default
+        if (!this.publishDandiset) { this.navigateToDefaultDandiset(); }
+      }
     },
   },
   methods: {
+    navigateToDefaultDandiset() {
+      // Set default version to most recent if this dandiset has versions
+      // Otherwise set it to draft
+      let version = draftVersion;
+      const { dandisetVersions: versions } = this;
+
+      if (versions && versions.length) {
+        if (dandisetHasVersion(versions, this.version)) { return; }
+        if (this.version !== draftVersion) {
+          // The version isn't 'draft', and isn't one of the known versions,
+          // thus it's not valid, so redirect to latest version
+          version = versions[0].version;
+        }
+      }
+      this.navigateToVersion(version);
+    },
+    navigateToVersion(version) {
+      if (this.$route.params.version === version) return;
+
+      const route = {
+        ...this.$route,
+        params: {
+          ...this.$route.params,
+          version,
+        },
+      };
+      this.$router.replace(route);
+    },
     navigateBack() {
       const route = this.$route.params.origin || { name: 'publicDandisets' };
       this.$router.push(route);
+      this.$store.dispatch('dandiset/uninitializeDandisets');
     },
   },
 };

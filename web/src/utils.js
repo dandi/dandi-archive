@@ -3,8 +3,8 @@ const dandiAboutUrl = 'https://dandiarchive.org/about';
 const dandiDocumentationUrl = 'https://www.dandiarchive.org/handbook/10_using_dandi/';
 
 function getLocationFromRoute(route) {
-  const { _modelType, _id } = route.params;
-  if (_modelType) {
+  const { _modelType, _id } = route.query;
+  if (_modelType && _id) {
     return { _modelType, _id };
   }
   return null;
@@ -62,6 +62,12 @@ function getDandisetContact(dandiset) {
   return null;
 }
 
+const draftVersion = 'draft';
+const dandisetHasVersion = (versions, version) => {
+  const versionNumbers = versions.map((v) => v.version);
+  return versionNumbers.includes(version);
+};
+
 export {
   dandiUrl,
   dandiAboutUrl,
@@ -72,4 +78,6 @@ export {
   getPathFromSelected,
   copyToClipboard,
   getDandisetContact,
+  draftVersion,
+  dandisetHasVersion,
 };

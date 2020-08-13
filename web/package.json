@@ -12,6 +12,7 @@
     "@sentry/browser": "^5.20.1",
     "@sentry/integrations": "^5.20.1",
     "ajv": "^6.12.3",
+    "axios": "^0.19.2",
     "core-js": "^3.6.5",
     "filesize": "^6.1.0",
     "js-yaml": "^3.14.0",
