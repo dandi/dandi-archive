@@ -10,23 +10,24 @@
       </v-btn>
     </v-list-item-action>
     <v-list-item-content>
-      <v-text-field
-        ref="apiKey"
-        v-model="apiKey"
+      <CopyText
+        :text="apiKey"
         label="API Key"
-        readonly
-        append-outer-icon="mdi-content-copy"
-        @click:append-outer="copyToClipboard"
+        icon-hover-text="Copy API key to clipboard"
       />
     </v-list-item-content>
   </v-list-item>
 </template>
 
 <script>
+import CopyText from '@/components/CopyText.vue';
 import { girderRest } from '@/rest';
 
 export default {
   name: 'ApiKeyItem',
+  components: {
+    CopyText,
+  },
   data() {
     return {
       apiKey: null,
@@ -36,23 +37,13 @@ export default {
     this.fetch();
   },
   methods: {
-    copyToClipboard() {
-      const vTextFieldComponent = this.$refs.apiKey;
-      // v-text-field provides some internal refs that we can use
-      // one is "input", which is the actual <input> DOM element that it uses
-      const inputElement = vTextFieldComponent.$refs.input;
-      inputElement.focus();
-      document.execCommand('selectAll');
-      inputElement.select();
-      document.execCommand('copy');
-    },
     async fetch() {
       let data;
       // parentheses required for using the destructure assignment
       ({ data } = await girderRest.get(
         'api_key', {
           params: {
-            // eslint-disable-next-line import/no-named-as-default-member
+          // eslint-disable-next-line import/no-named-as-default-member
             userId: girderRest.user._id,
             limit: 50,
             sort: 'name',
