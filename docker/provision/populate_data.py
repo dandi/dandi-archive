@@ -40,15 +40,13 @@ with open(meta_filepath, "r") as meta_file:
     for nwb in nwb_meta:
         lab_folder_path = nwb["lab"]
         # create a folder structure based on path value in nwb file, which may be nested
-        lab_folder = girder_folders.get(
-            lab_folder_path,
-            gc.createFolder(
-                labs_collection["_id"],
-                lab_folder_path,
-                parentType="collection",
-                reuseExisting=True,
-            ),
-        )
+        try:
+            lab_folder = girder_folders[lab_folder_path]
+        except KeyError:
+            lab_folder = girder_folders[lab_folder_path] = gc.post(
+                'dandi',
+                {"name": lab_folder_path, "description": "A Dandiset"},
+            )
         path_parts = nwb["path"].split("/")
         parent_folder = lab_folder
         folder_prefix = lab_folder_path

@@ -14,10 +14,10 @@ Be aware of this when setting up CI or Docker images though.
 
 ## Running Tests
 You will need a running instance of the app, both the `web` and `girder` components.
-Assuming the web app is running at `http://localhost:8085`:
+Assuming the web app is running at `http://localhost:8085` and girder is running at `http://localhost:8080`:
 ```bash
 # within "test"
-CLIENT_URL=http://localhost:8085 yarn run test
+CLIENT_URL=http://localhost:8085 GIRDER_URL=http://localhost:8080 yarn run test
 ```
 
 ## Debugging Tests
@@ -26,7 +26,7 @@ For browser based tests, it is very helpful to be able to see the state of the b
 Use this command to run the browser in headful mode and extend the Jest test timeout to 1 hour:
 ```bash
 # within "test"
-CLIENT_URL=http://localhost:8085 yarn run test-debug
+CLIENT_URL=http://localhost:8085 GIRDER_URL=http://localhost:8080 yarn run test-debug
 ```
 You can also include `await jestPuppeteer.debug();` at any point in the test to create a manual breakpoint.
 

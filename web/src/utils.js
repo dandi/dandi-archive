@@ -1,5 +1,6 @@
 const dandiUrl = 'https://dandiarchive.org';
 const dandiAboutUrl = 'https://dandiarchive.org/about';
+const dandiDocumentationUrl = 'https://www.dandiarchive.org/handbook/10_using_dandi/';
 
 function getLocationFromRoute(route) {
   const { _modelType, _id } = route.query;
@@ -70,6 +71,7 @@ const dandisetHasVersion = (versions, version) => {
 export {
   dandiUrl,
   dandiAboutUrl,
+  dandiDocumentationUrl,
   getLocationFromRoute,
   getPathFromLocation,
   getSelectedFromRoute,
