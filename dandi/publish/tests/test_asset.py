@@ -106,3 +106,19 @@ def test_invalid_asset_path(api_client, asset):
     )
 
     assert res.data == []
+
+
+@pytest.mark.django_db
+def test_asset_path_no_prefix(api_client, asset):
+    path = os.path.split(asset.path)
+
+    # remove leading slash and append trailing slash
+    root_directory = f'{path[0].replace("/", "")}/'
+
+    # make sure not providing 'path_prefix' defaults to '/'
+    res = api_client.get(
+        f'/api/dandisets/{asset.version.dandiset.identifier}/'
+        f'versions/{asset.version.version}/assets/paths/'
+    )
+
+    assert root_directory in res.data
