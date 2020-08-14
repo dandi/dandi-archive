@@ -15,20 +15,10 @@ from .dandiset import Dandiset
 logger = logging.getLogger(__name__)
 
 
-def _get_default_version() -> str:
-    # This cannot be a lambda, as migrations cannot serialize those
-    return Version.make_version()
-
-
-class Version(models.Model):
-    VERSION_REGEX = r'0\.\d{6}\.\d{4}'
+class BaseVersion(models.Model):
+    """Mixin for fields and methods common to Version and DraftVersion."""
 
     dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
-    version = models.CharField(
-        max_length=13,
-        validators=[RegexValidator(f'^{VERSION_REGEX}$')],
-        default=_get_default_version,
-    )  # TODO: rename this?
 
     name = models.CharField(max_length=150)
     description = models.TextField(max_length=3000)
@@ -37,6 +27,41 @@ class Version(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def from_girder_metadata(cls, dandiset, metadata) -> Version:
+        if metadata is None:
+            raise ValidationError(
+                f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
+            )
+
+        name = metadata['dandiset'].pop('name')
+        description = metadata['dandiset'].pop('description')
+
+        if len(description) > 3000:
+            raise ValidationError(
+                f'Description length is greater than 3000 for dandiset {dandiset.draft_folder_id}.'
+            )
+
+        return cls(dandiset=dandiset, name=name, description=description, metadata=metadata)
+
+
+def _get_default_version() -> str:
+    # This cannot be a lambda, as migrations cannot serialize those
+    return Version.make_version()
+
+
+class Version(BaseVersion):
+    VERSION_REGEX = r'0\.\d{6}\.\d{4}'
+
+    version = models.CharField(
+        max_length=13,
+        validators=[RegexValidator(f'^{VERSION_REGEX}$')],
+        default=_get_default_version,
+    )  # TODO: rename this?
 
     class Meta:
         unique_together = [['dandiset', 'version']]
@@ -86,19 +111,6 @@ class Version(models.Model):
 
         metadata = draft_folder.get('meta')
 
-        if metadata is None:
-            raise ValidationError(
-                f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
-            )
-
-        name = metadata['dandiset'].pop('name')
-        description = metadata['dandiset'].pop('description')
-
-        if len(description) > 3000:
-            raise ValidationError(
-                f'Description length is greater than 3000 for dandiset {dandiset.draft_folder_id}.'
-            )
-
-        version = Version(dandiset=dandiset, name=name, description=description, metadata=metadata)
+        version = cls.from_girder_metadata(dandiset, metadata)
         version.save()
         return version

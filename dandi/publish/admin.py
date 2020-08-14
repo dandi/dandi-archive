@@ -1,11 +1,17 @@
 from django.contrib import admin
 
-from .models import Asset, Dandiset, Version
+from .models import Asset, Dandiset, DraftVersion, Version
 
 
 @admin.register(Dandiset)
 class DandisetAdmin(admin.ModelAdmin):
     readonly_fields = ['identifier']
+
+
+@admin.register(DraftVersion)
+class DraftVersionAdmin(admin.ModelAdmin):
+    list_display = ['dandiset', 'name']
+    list_display_links = ['dandiset', 'name']
 
 
 @admin.register(Version)
