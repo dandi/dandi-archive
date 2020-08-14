@@ -105,7 +105,7 @@
                   in a Python 3.6+ environment using command:
                 </v-list-item>
                 <v-list-item>
-                  <kbd>pip install dandi>=0.6.0</kbd>
+                  <kbd>pip install "dandi>=0.6.0"</kbd>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-content>
