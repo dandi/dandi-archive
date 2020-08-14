@@ -90,3 +90,20 @@ def test_asset_path(api_client, asset):
     )
 
     assert asset_filename in res.data
+
+
+@pytest.mark.django_db
+def test_invalid_asset_path(api_client, asset):
+    path = os.path.split(asset.path)
+
+    # trailing slashes shouldn't have any effect
+    asset_directory = f'invalid_path//{path[: len(path) - 1]}///'
+    asset_filename = path[len(path) - 1]
+
+    res = api_client.get(
+        f'/api/dandisets/{asset.version.dandiset.identifier}/'
+        f'versions/{asset.version.version}/assets/paths/',
+        {'path_prefix': asset_directory},
+    )
+
+    assert res.data == []
