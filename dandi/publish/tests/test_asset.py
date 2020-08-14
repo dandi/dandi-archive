@@ -98,7 +98,6 @@ def test_invalid_asset_path(api_client, asset):
 
     # trailing slashes shouldn't have any effect
     asset_directory = f'invalid_path//{path[: len(path) - 1]}///'
-    asset_filename = path[len(path) - 1]
 
     res = api_client.get(
         f'/api/dandisets/{asset.version.dandiset.identifier}/'
