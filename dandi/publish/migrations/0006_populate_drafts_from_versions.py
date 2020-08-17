@@ -12,7 +12,7 @@ def populate_drafts(apps, schema_editor):
         if DraftVersion.objects.filter(dandiset=dandiset).exists():
             continue
         versions = Version.objects.filter(dandiset=dandiset).order_by('-version')
-        if len(versions == 0):
+        if len(versions) == 0:
             continue
         latest_version = versions[0]
         draft = DraftVersion(
