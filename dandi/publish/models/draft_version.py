@@ -5,7 +5,9 @@ from .version import BaseVersion
 
 
 class DraftVersion(BaseVersion):
-    dandiset = models.OneToOneField(Dandiset, on_delete=models.CASCADE, primary_key=True)
+    dandiset = models.OneToOneField(
+        Dandiset, related_name='draft_version', on_delete=models.CASCADE, primary_key=True
+    )
 
     class Meta(BaseVersion.Meta):
         indexes = [
