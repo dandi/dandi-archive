@@ -58,6 +58,6 @@ setup(
         # Development-only
         'django-debug-toolbar',
         'django-minio-storage',
-        'ipython',
     ],
+    extras_require={'dev': ['ipython', 'tox']},
 )
