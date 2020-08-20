@@ -101,6 +101,8 @@ class Asset(models.Model):  # TODO: was NwbFile
 
         The specified path must be a folder (must end with a slash).
         """
+        if not path_prefix:
+            path_prefix = '/'
         prefix_parts = [part for part in path_prefix.split('/') if part]
         paths = set()
         for asset in qs:

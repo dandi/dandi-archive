@@ -62,7 +62,7 @@ class AssetViewSet(NestedViewSetMixin, ReadOnlyModelViewSet):
         The specified path must be a folder (must end with a slash).
         """
         path_prefix: str = self.request.query_params.get('path_prefix') or '/'
-        # Enfore trailing slash
+        # Enforce trailing slash
         path_prefix = f'{path_prefix}/' if path_prefix[-1] != '/' else path_prefix
         qs = self.get_queryset().filter(path__startswith=path_prefix).values()
 
