@@ -5,22 +5,20 @@ from django.db import migrations
 
 def populate_drafts(apps, schema_editor):
     Dandiset = apps.get_model('publish', 'Dandiset')  # noqa: N806
-    Version = apps.get_model('publish', 'Version')  # noqa: N806
     DraftVersion = apps.get_model('publish', 'DraftVersion')  # noqa: N806
 
     for dandiset in Dandiset.objects.all():
-        if DraftVersion.objects.filter(dandiset=dandiset).exists():
-            continue
-        latest_version = Version.objects.filter(dandiset=dandiset).order_by('-version').first()
-        if not latest_version:
-            continue
-        draft = DraftVersion(
-            dandiset=dandiset,
-            name=latest_version.name,
-            description=latest_version.description,
-            metadata=latest_version.metadata,
-        )
-        draft.save()
+        try:
+            dandiset.draft_version
+        except DraftVersion.DoesNotExist:
+            latest_version = dandiset.versions.order_by('-version').first()
+            if latest_version:
+                DraftVersion.objects.create(
+                    dandiset=dandiset,
+                    name=latest_version.name,
+                    description=latest_version.description,
+                    metadata=latest_version.metadata,
+                )
 
 
 class Migration(migrations.Migration):
