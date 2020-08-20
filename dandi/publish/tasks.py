@@ -2,8 +2,8 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
 
+from dandi.publish.girder import GirderClient
 from dandi.publish.models import Asset, Dandiset, Version
-from .girder import GirderClient
 
 
 logger = get_task_logger(__name__)

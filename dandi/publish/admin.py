@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Asset, Dandiset, DraftVersion, Version
+from dandi.publish.models import Asset, Dandiset, DraftVersion, Version
 
 
 @admin.register(Dandiset)
