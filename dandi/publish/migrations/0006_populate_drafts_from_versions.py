@@ -11,10 +11,9 @@ def populate_drafts(apps, schema_editor):
     for dandiset in Dandiset.objects.all():
         if DraftVersion.objects.filter(dandiset=dandiset).exists():
             continue
-        versions = Version.objects.filter(dandiset=dandiset).order_by('-version')
-        if len(versions) == 0:
+        latest_version = Version.objects.filter(dandiset=dandiset).order_by('-version').first()
+        if not latest_version:
             continue
-        latest_version = versions[0]
         draft = DraftVersion(
             dandiset=dandiset,
             name=latest_version.name,
