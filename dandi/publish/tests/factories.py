@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 import factory.django
 
-from dandi.publish.models import Asset, Dandiset, Version
+from dandi.publish.models import Asset, Dandiset, DraftVersion, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -20,15 +20,38 @@ class DandisetFactory(factory.django.DjangoModelFactory):
 
     draft_folder_id = factory.Faker('hexify', text='^' * 24)
 
+    # Pass in 'dandiset' to link the generated DraftVersionFactory to our just-generated
+    # DandisetFactory. This will call DraftVersionFactory(dandiset=our_new_dandiset), thus skipping
+    # the SubFactory.
+    draft_version = factory.RelatedFactory(
+        'dandi.publish.tests.factories.DraftVersionFactory', factory_related_name='dandiset',
+    )
 
-class VersionFactory(factory.django.DjangoModelFactory):
+
+class BaseVersionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        abstract = True
+
+    name = factory.Faker('sentence')
+    description = factory.Faker('paragraph')
+
+    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+
+
+class VersionFactory(BaseVersionFactory):
     class Meta:
         model = Version
 
     dandiset = factory.SubFactory(DandisetFactory)
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
-    name = factory.Faker('sentence')
-    description = factory.Faker('paragraph')
+
+
+class DraftVersionFactory(BaseVersionFactory):
+    class Meta:
+        model = DraftVersion
+
+    # Pass in draft_version=None to prevent DandisetFactory from creating another DraftVersion
+    # (this disables the RelatedFactory).
+    dandiset = factory.SubFactory(DandisetFactory, draft_version=None,)
 
 
 class AssetFactory(factory.django.DjangoModelFactory):

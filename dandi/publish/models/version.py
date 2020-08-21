@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+from typing import Dict, Optional
 
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
@@ -17,9 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class BaseVersion(models.Model):
-    """Mixin for fields and methods common to Version and DraftVersion."""
+    """Base class for fields and methods common to Version and DraftVersion."""
 
-    dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
+    # Must be provided by subclasses
+    dandiset = None
 
     name = models.CharField(max_length=150)
     description = models.TextField(max_length=3000)
@@ -31,9 +33,10 @@ class BaseVersion(models.Model):
 
     class Meta:
         abstract = True
+        get_latest_by = 'created'
 
     @classmethod
-    def from_girder_metadata(cls, dandiset, metadata) -> Version:
+    def from_girder_metadata(cls, dandiset: Dandiset, metadata: Optional[Dict]) -> BaseVersion:
         if metadata is None:
             raise ValidationError(
                 f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
@@ -58,15 +61,15 @@ def _get_default_version() -> str:
 class Version(BaseVersion):
     VERSION_REGEX = r'0\.\d{6}\.\d{4}'
 
+    dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
     version = models.CharField(
         max_length=13,
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
         default=_get_default_version,
     )  # TODO: rename this?
 
-    class Meta:
+    class Meta(BaseVersion.Meta):
         unique_together = [['dandiset', 'version']]
-        get_latest_by = 'created'
         ordering = ['dandiset', '-version']
         indexes = [
             models.Index(fields=['dandiset', 'version']),

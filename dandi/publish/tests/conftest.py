@@ -2,11 +2,18 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
-from .factories import AssetFactory, DandisetFactory, UserFactory, VersionFactory
+from .factories import (
+    AssetFactory,
+    DandisetFactory,
+    DraftVersionFactory,
+    UserFactory,
+    VersionFactory,
+)
 from .girder import GirderFileFactory, MockGirderClient
 
 register(AssetFactory)
 register(DandisetFactory)
+register(DraftVersionFactory)
 register(GirderFileFactory)
 register(UserFactory)
 register(VersionFactory)
