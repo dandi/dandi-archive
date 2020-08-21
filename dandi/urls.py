@@ -37,7 +37,7 @@ schema_view = get_schema_view(
         'cellular neurophysiology data',
     ),
     public=True,
-    permission_classes=[permissions.AllowAny],
+    permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [

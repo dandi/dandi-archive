@@ -5,7 +5,7 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
-2. Run `docker-compose run --rm django ./manage.py createsuperuser` 
+2. Run `docker-compose run --rm django ./manage.py createsuperuser`
    and follow the prompts to create your own user
 
 ### Run Application
