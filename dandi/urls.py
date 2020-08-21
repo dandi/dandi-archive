@@ -6,7 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-from dandi.publish.views import AssetViewSet, DandisetViewSet, VersionViewSet
+from dandi.publish.views import AssetViewSet, DandisetViewSet, VersionViewSet, StatsViewSet
 
 router = ExtendedSimpleRouter()
 (
@@ -27,6 +27,7 @@ router = ExtendedSimpleRouter()
         ],
     )
 )
+router.register(r'stats', StatsViewSet, basename='stat')
 
 schema_view = get_schema_view(
     openapi.Info(
