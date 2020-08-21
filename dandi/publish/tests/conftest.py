@@ -5,7 +5,6 @@ from rest_framework.test import APIClient
 from .factories import AssetFactory, DandisetFactory, UserFactory, VersionFactory
 from .girder import GirderFileFactory, MockGirderClient
 
-
 register(AssetFactory)
 register(DandisetFactory)
 register(GirderFileFactory)

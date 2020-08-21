@@ -1,9 +1,9 @@
 from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
-from django.core.files.storage import get_storage_class, Storage
+from django.core.files.storage import Storage, get_storage_class
 from minio_storage.policy import Policy
-from minio_storage.storage import create_minio_client_from_settings, MinioStorage
+from minio_storage.storage import MinioStorage, create_minio_client_from_settings
 from storages.backends.s3boto3 import S3Boto3Storage
 
 

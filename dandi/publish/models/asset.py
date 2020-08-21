@@ -14,6 +14,7 @@ from django.db import models
 
 from dandi.publish.girder import GirderClient, GirderFile
 from dandi.publish.storage import create_s3_storage
+
 from .version import Version
 
 logger = logging.getLogger(__name__)

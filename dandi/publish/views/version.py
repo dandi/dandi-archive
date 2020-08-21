@@ -1,12 +1,10 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
-
 
 from dandi.publish.models import Dandiset, Version
 from dandi.publish.tasks import publish_version
