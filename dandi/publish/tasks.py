@@ -5,7 +5,6 @@ from django.db.transaction import atomic
 from dandi.publish.girder import GirderClient
 from dandi.publish.models import Asset, Dandiset, Version
 
-
 logger = get_task_logger(__name__)
 
 

@@ -8,7 +8,6 @@ from rest_framework_extensions.routers import ExtendedSimpleRouter
 
 from dandi.publish.views import AssetViewSet, DandisetViewSet, VersionViewSet
 
-
 router = ExtendedSimpleRouter()
 (
     router.register(r'dandisets', DandisetViewSet, basename='dandiset')

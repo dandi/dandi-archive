@@ -3,8 +3,8 @@ import os
 import pytest
 
 from dandi.publish.models import Asset
-from .fuzzy import TIMESTAMP_RE
 
+from .fuzzy import TIMESTAMP_RE
 
 # Model tests
 

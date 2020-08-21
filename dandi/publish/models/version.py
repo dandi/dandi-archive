@@ -9,6 +9,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 from dandi.publish.girder import GirderClient
+
 from .common import SelectRelatedManager
 from .dandiset import Dandiset
 
