@@ -3,7 +3,7 @@ from django.db.models import Sum
 from django.http import JsonResponse
 from rest_framework.viewsets import ViewSet
 
-from dandi.publish.models import Asset, Dandiset, DraftVersion, Version
+from dandi.publish.models import Asset, DraftVersion, Version
 
 
 class StatsViewSet(ViewSet):
@@ -15,12 +15,14 @@ class StatsViewSet(ViewSet):
         subject_count = 0  # TODO this needs to be added to the Version model
         cell_count = 0  # TODO this needs to be added to the Version model
         size = Asset.objects.aggregate(size=Sum('size'))['size'] or 0
-        return JsonResponse({
-            "draft_count": draft_count,
-            "published_count": published_count,
-            "user_count": user_count,
-            "species_count": species_count,
-            "subject_count": subject_count,
-            "cell_count": cell_count,
-            "size": size,
-        })
+        return JsonResponse(
+            {
+                'draft_count': draft_count,
+                'published_count': published_count,
+                'user_count': user_count,
+                'species_count': species_count,
+                'subject_count': subject_count,
+                'cell_count': cell_count,
+                'size': size,
+            }
+        )

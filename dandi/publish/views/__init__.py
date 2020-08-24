@@ -1,6 +1,6 @@
 from .asset import AssetViewSet
 from .dandiset import DandisetViewSet
-from .version import VersionViewSet
 from .stats import StatsViewSet
+from .version import VersionViewSet
 
 __all__ = ['AssetViewSet', 'DandisetViewSet', 'VersionViewSet', 'StatsViewSet']
