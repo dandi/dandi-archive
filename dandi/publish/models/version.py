@@ -118,3 +118,7 @@ class Version(BaseVersion):
         version = cls.from_girder_metadata(dandiset, metadata)
         version.save()
         return version
+
+    @classmethod
+    def published_count(cls):
+        return cls.objects.values('dandiset').distinct().count()
