@@ -3,8 +3,7 @@ import pytest
 
 @pytest.mark.django_db
 def test_stats_none(api_client):
-    resp = api_client.get('/api/stats/')
-    assert resp.json() == {
+    assert api_client.get('/api/stats/').data == {
         'draft_count': 0,
         'published_count': 0,
         'user_count': 0,
@@ -17,8 +16,7 @@ def test_stats_none(api_client):
 
 @pytest.mark.django_db
 def test_stats_draft_count(api_client, draft_version):
-    resp = api_client.get('/api/stats/')
-    assert resp.json() == {
+    assert api_client.get('/api/stats/').data == {
         'draft_count': 1,
         'published_count': 0,
         'user_count': 0,
@@ -31,8 +29,7 @@ def test_stats_draft_count(api_client, draft_version):
 
 @pytest.mark.django_db
 def test_stats_published_count(api_client, version):
-    resp = api_client.get('/api/stats/')
-    assert resp.json() == {
+    assert api_client.get('/api/stats/').data == {
         'draft_count': 1,
         'published_count': 1,
         'user_count': 0,
@@ -45,8 +42,7 @@ def test_stats_published_count(api_client, version):
 
 @pytest.mark.django_db
 def test_stats_user_count(api_client, user):
-    resp = api_client.get('/api/stats/')
-    assert resp.json() == {
+    assert api_client.get('/api/stats/').data == {
         'draft_count': 0,
         'published_count': 0,
         'user_count': 1,
@@ -59,8 +55,7 @@ def test_stats_user_count(api_client, user):
 
 @pytest.mark.django_db
 def test_stats_size(api_client, asset):
-    resp = api_client.get('/api/stats/')
-    assert resp.json() == {
+    assert api_client.get('/api/stats/').data == {
         'draft_count': 1,
         'published_count': 1,
         'user_count': 0,
