@@ -13,14 +13,13 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
 
 function girderize(publishedDandiset) {
   const { // eslint-disable-next-line camelcase
-    created, modified, dandi_id, version, metadata, name, description,
+    created, modified, dandi_id, version, metadata, name,
   } = publishedDandiset;
   return {
     created,
     updated: modified,
     version,
     name,
-    description,
     lowerName: dandi_id,
     meta: metadata,
   };
