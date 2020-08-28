@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
@@ -24,7 +24,6 @@ class BaseVersion(models.Model):
     dandiset = None
 
     name = models.CharField(max_length=150)
-    description = models.TextField(max_length=3000)
 
     metadata = JSONField(blank=True, default=dict)
 
@@ -36,21 +35,19 @@ class BaseVersion(models.Model):
         get_latest_by = 'created'
 
     @classmethod
-    def from_girder_metadata(cls, dandiset: Dandiset, metadata: Optional[Dict]) -> BaseVersion:
-        if metadata is None:
+    def from_girder_metadata(cls, dandiset: Dandiset, metadata: Dict) -> BaseVersion:
+        if 'dandiset' not in metadata:
             raise ValidationError(
-                f'Girder draft folder for dandiset {dandiset.draft_folder_id} has no "meta" field.'
+                f'Girder draft folder for dandiset {dandiset.draft_folder_id} '
+                f'has no "meta.dandiset" field.'
             )
+        dandiset_metadata = metadata['dandiset']
 
-        name = metadata['dandiset'].pop('name')
-        description = metadata['dandiset'].pop('description')
+        # If 'name' (or other future metadata values) are missing, don't raise an error, as it
+        # can be handled during model validation
+        name = dandiset_metadata.get('name', '')
 
-        if len(description) > 3000:
-            raise ValidationError(
-                f'Description length is greater than 3000 for dandiset {dandiset.draft_folder_id}.'
-            )
-
-        return cls(dandiset=dandiset, name=name, description=description, metadata=metadata)
+        return cls(dandiset=dandiset, name=name, metadata=dandiset_metadata)
 
 
 def _get_default_version() -> str:
@@ -113,8 +110,9 @@ class Version(BaseVersion):
     def from_girder(cls, dandiset: Dandiset, client: GirderClient) -> Version:
         draft_folder = client.get_folder(dandiset.draft_folder_id)
 
-        metadata = draft_folder.get('meta')
+        metadata = draft_folder['meta']
 
         version = cls.from_girder_metadata(dandiset, metadata)
+        version.full_clean()
         version.save()
         return version

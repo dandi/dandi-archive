@@ -19,7 +19,6 @@ class VersionSerializer(serializers.ModelSerializer):
             'dandiset',
             'version',
             'name',
-            'description',
             'created',
             'updated',
             'count',

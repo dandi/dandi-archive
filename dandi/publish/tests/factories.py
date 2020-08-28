@@ -33,7 +33,6 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
         abstract = True
 
     name = factory.Faker('sentence')
-    description = factory.Faker('paragraph')
 
     metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
 
