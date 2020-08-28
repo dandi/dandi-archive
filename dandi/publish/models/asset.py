@@ -9,16 +9,21 @@ import uuid
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.core.files import File
+from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Sum
 
 from dandi.publish.girder import GirderClient, GirderFile
-from dandi.publish.storage import create_s3_storage
+from dandi.publish.storage import DeconstructableFileField, create_s3_storage
 
 from .version import Version
 
 logger = logging.getLogger(__name__)
+
+
+def _get_asset_blob_storage() -> Storage:
+    return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
 def _get_asset_blob_prefix(instance: Asset, filename: str) -> str:
@@ -36,13 +41,11 @@ class Asset(models.Model):  # TODO: was NwbFile
 
     path = models.CharField(max_length=512)
     size = models.BigIntegerField()
-    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')],)
+    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
     metadata = JSONField(blank=True, default=dict)
 
-    blob = models.FileField(
-        blank=True,
-        storage=create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME),
-        upload_to=_get_asset_blob_prefix,
+    blob = DeconstructableFileField(
+        blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
     )
 
     created = models.DateTimeField(auto_now_add=True)
@@ -79,7 +82,7 @@ class Asset(models.Model):  # TODO: was NwbFile
             # local_path = Path(local_stream.name)
             sha256 = sha256_hasher.hexdigest()
 
-            blob = File(file=local_stream, name=girder_file.path.lstrip('/'),)
+            blob = File(file=local_stream, name=girder_file.path.lstrip('/'))
             # content_type is not part of the base File class (it on some other subclasses),
             # but regardless S3Boto3Storage will respect and use it, if it's set
             blob.content_type = 'application/octet-stream'

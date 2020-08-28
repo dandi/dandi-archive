@@ -124,7 +124,7 @@ class Migration(migrations.Migration):
                 fields=['dandiset', 'version'], name='publish_ver_dandise_5d36c6_idx'
             ),
         ),
-        migrations.AlterUniqueTogether(name='version', unique_together={('dandiset', 'version')},),
+        migrations.AlterUniqueTogether(name='version', unique_together={('dandiset', 'version')}),
         migrations.AddIndex(
             model_name='asset',
             index=models.Index(fields=['uuid'], name='publish_ass_uuid_94d83f_idx'),
