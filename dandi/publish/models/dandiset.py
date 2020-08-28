@@ -18,7 +18,7 @@ class Dandiset(models.Model):
     GIRDER_ID_REGEX = r'[0-9a-f]{24}'
 
     draft_folder_id = models.CharField(
-        max_length=24, validators=[RegexValidator(f'^{GIRDER_ID_REGEX}$')],
+        max_length=24, validators=[RegexValidator(f'^{GIRDER_ID_REGEX}$')]
     )
 
     created = models.DateTimeField(auto_now_add=True)
