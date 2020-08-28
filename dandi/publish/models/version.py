@@ -83,7 +83,7 @@ class Version(BaseVersion):
         return f'{self.dandiset.identifier}: {self.version}'
 
     @property
-    def count(self):
+    def assets_count(self):
         return self.assets.count()
 
     @property
