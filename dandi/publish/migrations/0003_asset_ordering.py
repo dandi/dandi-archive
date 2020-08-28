@@ -10,5 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(name='asset', options={'ordering': ['version', 'path']},)
+        migrations.AlterModelOptions(name='asset', options={'ordering': ['version', 'path']})
     ]

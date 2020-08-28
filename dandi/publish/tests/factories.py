@@ -24,7 +24,7 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     # DandisetFactory. This will call DraftVersionFactory(dandiset=our_new_dandiset), thus skipping
     # the SubFactory.
     draft_version = factory.RelatedFactory(
-        'dandi.publish.tests.factories.DraftVersionFactory', factory_related_name='dandiset',
+        'dandi.publish.tests.factories.DraftVersionFactory', factory_related_name='dandiset'
     )
 
 
@@ -51,7 +51,7 @@ class DraftVersionFactory(BaseVersionFactory):
 
     # Pass in draft_version=None to prevent DandisetFactory from creating another DraftVersion
     # (this disables the RelatedFactory).
-    dandiset = factory.SubFactory(DandisetFactory, draft_version=None,)
+    dandiset = factory.SubFactory(DandisetFactory, draft_version=None)
 
 
 class AssetFactory(factory.django.DjangoModelFactory):
