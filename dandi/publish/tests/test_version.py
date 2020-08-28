@@ -59,7 +59,7 @@ def test_version_rest_list(api_client, version):
                 'description': version.description,
                 'created': TIMESTAMP_RE,
                 'updated': TIMESTAMP_RE,
-                'count': 0,
+                'assets_count': 0,
             }
         ],
     }
@@ -80,6 +80,6 @@ def test_version_rest_retrieve(api_client, version):
         'description': version.description,
         'created': TIMESTAMP_RE,
         'updated': TIMESTAMP_RE,
-        'count': 0,
+        'assets_count': 0,
         'metadata': version.metadata,
     }
