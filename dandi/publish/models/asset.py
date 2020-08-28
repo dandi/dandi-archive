@@ -48,7 +48,7 @@ class Asset(models.Model):  # TODO: was NwbFile
     )
 
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [

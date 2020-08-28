@@ -17,7 +17,7 @@ class DandisetSerializer(serializers.ModelSerializer):
         fields = [
             'identifier',
             'created',
-            'updated',
+            'modified',
         ]
         read_only_fields = ['created']
 

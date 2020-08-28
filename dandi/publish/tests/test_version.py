@@ -52,13 +52,13 @@ def test_version_rest_list(api_client, version):
                 'dandiset': {
                     'identifier': version.dandiset.identifier,
                     'created': TIMESTAMP_RE,
-                    'updated': TIMESTAMP_RE,
+                    'modified': TIMESTAMP_RE,
                 },
                 'version': version.version,
                 'name': version.name,
                 'description': version.description,
                 'created': TIMESTAMP_RE,
-                'updated': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
                 'assets_count': 0,
             }
         ],
@@ -73,13 +73,13 @@ def test_version_rest_retrieve(api_client, version):
         'dandiset': {
             'identifier': version.dandiset.identifier,
             'created': TIMESTAMP_RE,
-            'updated': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
         },
         'version': version.version,
         'name': version.name,
         'description': version.description,
         'created': TIMESTAMP_RE,
-        'updated': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
         'assets_count': 0,
         'metadata': version.metadata,
     }

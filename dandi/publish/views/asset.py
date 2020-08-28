@@ -22,7 +22,7 @@ class AssetSerializer(serializers.ModelSerializer):
             'size',
             'sha256',
             'created',
-            'updated',
+            'modified',
             'metadata',
         ]
         read_only_fields = ['created']

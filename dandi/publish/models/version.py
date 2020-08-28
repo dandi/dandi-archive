@@ -29,7 +29,7 @@ class BaseVersion(models.Model):
     metadata = JSONField(blank=True, default=dict)
 
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
+    modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
