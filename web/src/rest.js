@@ -21,7 +21,9 @@ function girderize(publishedDandiset) {
     version,
     name,
     lowerName: dandi_id,
-    meta: metadata,
+    meta: {
+      dandiset: metadata,
+    },
   };
 }
 
