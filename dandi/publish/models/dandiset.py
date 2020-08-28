@@ -6,13 +6,14 @@ from typing import Optional
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db import models
+from django_extensions.db.models import TimeStampedModel
 
 from dandi.publish.girder import GirderClient, GirderError
 
 logger = logging.getLogger(__name__)
 
 
-class Dandiset(models.Model):
+class Dandiset(TimeStampedModel):
     # Don't add beginning and end markers, so this can be embedded in larger regexes
     IDENTIFIER_REGEX = r'\d{6}'
     GIRDER_ID_REGEX = r'[0-9a-f]{24}'
@@ -20,9 +21,6 @@ class Dandiset(models.Model):
     draft_folder_id = models.CharField(
         max_length=24, validators=[RegexValidator(f'^{GIRDER_ID_REGEX}$')]
     )
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['id']

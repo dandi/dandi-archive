@@ -8,6 +8,7 @@ from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+from django_extensions.db.models import TimeStampedModel
 
 from dandi.publish.girder import GirderClient
 
@@ -17,7 +18,7 @@ from .dandiset import Dandiset
 logger = logging.getLogger(__name__)
 
 
-class BaseVersion(models.Model):
+class BaseVersion(TimeStampedModel):
     """Base class for fields and methods common to Version and DraftVersion."""
 
     # Must be provided by subclasses
@@ -27,9 +28,6 @@ class BaseVersion(models.Model):
     description = models.TextField(max_length=3000)
 
     metadata = JSONField(blank=True, default=dict)
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
