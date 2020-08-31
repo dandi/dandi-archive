@@ -30,14 +30,15 @@ def test_version_from_girder(dandiset_factory, mock_girder_client):
     dandiset = dandiset_factory(draft_folder_id='magic_draft_folder_id')
     version = Version.from_girder(dandiset, mock_girder_client)
     assert version
+    assert 'description' in version.metadata
 
 
 @pytest.mark.django_db
-def test_version_from_girder_no_metadata(dandiset, mock_girder_client):
-    # this test relies on DandisetFactory producing a dandiset with a draft_folder_id
-    # that is considered invalid when used with Version.from_girder and the mocked
-    # girder client.
-    with pytest.raises(ValidationError, match='has no "meta" field.'):
+def test_version_from_girder_no_metadata(dandiset_factory, mock_girder_client):
+    # This draft_folder_id points to a mocked folder without dandiset metadata
+    dandiset = dandiset_factory(draft_folder_id='nondraft_folder_id')
+
+    with pytest.raises(ValidationError, match='has no "meta.dandiset" field.'):
         Version.from_girder(dandiset, mock_girder_client)
 
 
@@ -56,7 +57,6 @@ def test_version_rest_list(api_client, version):
                 },
                 'version': version.version,
                 'name': version.name,
-                'description': version.description,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'assets_count': 0,
@@ -77,7 +77,6 @@ def test_version_rest_retrieve(api_client, version):
         },
         'version': version.version,
         'name': version.name,
-        'description': version.description,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'assets_count': 0,

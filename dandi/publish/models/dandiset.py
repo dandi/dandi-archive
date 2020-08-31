@@ -65,6 +65,7 @@ class Dandiset(TimeStampedModel):
             from .draft_version import DraftVersion
 
             draft = DraftVersion.from_girder_metadata(dandiset, draft_folder['meta'])
+            draft.full_clean()
             draft.save()
         else:
             # If the Dandiset existed, sync the draft_folder_id
