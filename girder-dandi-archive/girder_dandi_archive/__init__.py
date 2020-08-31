@@ -22,7 +22,7 @@ class DandiArchivePlugin(GirderPlugin):
         Folder().ensureIndex(([("meta.dandiset.identifier", 1), ("parentId", 1)], {}))
 
         Setting().collection.update_one(
-            {"key": DANDISET_IDENTIFIER_COUNTER}, {"$setOnInsert": {"value": 1}}, upsert=True,
+            {"key": DANDISET_IDENTIFIER_COUNTER}, {"$setOnInsert": {"value": 1}}, upsert=True
         )
         # Allow the client and netlify to access the girder server
         Setting().set(SettingKey.CORS_ALLOW_ORIGIN, "*")

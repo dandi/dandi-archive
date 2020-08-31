@@ -19,7 +19,7 @@ def mkfolder(server, request_auth, name, parent_id):
 
 def mkitem(server, request_auth, name, folder_id):
     resp = server.request(
-        "/item", method="POST", params={"folderId": folder_id, "name": name}, **request_auth,
+        "/item", method="POST", params={"folderId": folder_id, "name": name}, **request_auth
     )
     assertStatusOk(resp)
     return resp.json["_id"]

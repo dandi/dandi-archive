@@ -86,7 +86,7 @@ def test_create_two_dandisets(server, request_auth, drafts_collection, user, dan
 
 def test_create_dandiset_no_name(server, request_auth):
     resp = server.request(
-        path=path, method="POST", params={"description": DESCRIPTION_1}, **request_auth,
+        path=path, method="POST", params={"description": DESCRIPTION_1}, **request_auth
     )
     assertStatus(resp, 400)
 
@@ -98,13 +98,13 @@ def test_create_dandiset_no_description(server, request_auth):
 
 def test_create_dandiset_empty_name(server, request_auth):
     resp = server.request(
-        path=path, method="POST", params={"name": "", "description": DESCRIPTION_1}, **request_auth,
+        path=path, method="POST", params={"name": "", "description": DESCRIPTION_1}, **request_auth
     )
     assertStatus(resp, 400)
 
 
 def test_create_dandiset_empty_description(server, request_auth):
     resp = server.request(
-        path=path, method="POST", params={"name": NAME_1, "description": ""}, **request_auth,
+        path=path, method="POST", params={"name": NAME_1, "description": ""}, **request_auth
     )
     assertStatus(resp, 400)
