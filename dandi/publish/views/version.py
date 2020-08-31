@@ -21,7 +21,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'created',
-            'updated',
+            'modified',
             'assets_count',
             # 'size',
         ]

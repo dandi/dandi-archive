@@ -39,7 +39,7 @@ def test_dandiset_rest_list(api_client, dandiset):
         'next': None,
         'previous': None,
         'results': [
-            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'updated': TIMESTAMP_RE}
+            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'modified': TIMESTAMP_RE}
         ],
     }
 
@@ -49,5 +49,5 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
     assert api_client.get(f'/api/dandisets/{dandiset.identifier}/').data == {
         'identifier': dandiset.identifier,
         'created': TIMESTAMP_RE,
-        'updated': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
     }

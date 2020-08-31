@@ -13,6 +13,7 @@ from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Sum
+from django_extensions.db.models import TimeStampedModel
 
 from dandi.publish.girder import GirderClient, GirderFile
 from dandi.publish.storage import DeconstructableFileField, create_s3_storage
@@ -30,7 +31,7 @@ def _get_asset_blob_prefix(instance: Asset, filename: str) -> str:
     return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
 
 
-class Asset(models.Model):  # TODO: was NwbFile
+class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     SHA256_REGEX = r'[0-9a-f]{64}'
 
@@ -47,9 +48,6 @@ class Asset(models.Model):  # TODO: was NwbFile
     blob = DeconstructableFileField(
         blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
     )
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [
