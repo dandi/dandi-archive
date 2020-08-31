@@ -78,7 +78,7 @@ class DandiResource(Resource):
 
         drafts = get_or_create_drafts_collection()
         folder = Folder().createFolder(
-            drafts, padded_identifier, parentType="collection", creator=self.getCurrentUser(),
+            drafts, padded_identifier, parentType="collection", creator=self.getCurrentUser()
         )
         folder = Folder().setMetadata(folder, {"dandiset": meta})
         return folder

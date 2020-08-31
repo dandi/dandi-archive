@@ -159,7 +159,7 @@ def test_user_removed_from_owners(server, user, user_2, admin, admin_created_dan
     )
 
     resp = server.request(
-        path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=admin,
+        path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=admin
     )
     assertStatusOk(resp)
     assert len(resp.json["users"]) == 1
@@ -181,7 +181,7 @@ def test_user_removed_from_owners(server, user, user_2, admin, admin_created_dan
     assert resp.json[0]["id"] == str(user_2["_id"])
     assertStatus(
         server.request(
-            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user,
+            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user
         ),
         403,
     )
@@ -201,7 +201,7 @@ def test_user_promoted_to_owner(server, user, user_2, admin, admin_created_dandi
     )
 
     resp = server.request(
-        path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=admin,
+        path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=admin
     )
     assertStatusOk(resp)
     assert len(resp.json["users"]) == 1
@@ -223,6 +223,6 @@ def test_user_promoted_to_owner(server, user, user_2, admin, admin_created_dandi
     assert resp.json[0]["level"] == AccessType.ADMIN
     assertStatusOk(
         server.request(
-            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user,
+            path=f"/folder/{admin_created_dandiset['_id']}/access", method="GET", user=user
         ),
     )

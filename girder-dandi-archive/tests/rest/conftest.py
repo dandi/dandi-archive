@@ -30,7 +30,7 @@ def drafts_collection(db):
     )
     # A folder that matches dandiset metadata, but not in drafts collection.
     red_herring_dandiset_000001_folder = Folder().createFolder(
-        parent=red_herring_collection, parentType="collection", name="000001", public=True,
+        parent=red_herring_collection, parentType="collection", name="000001", public=True
     )
     meta = {"dandiset": {"name": "red", "description": "herring", "identifier": "000001"}}
     Folder().setMetadata(red_herring_dandiset_000001_folder, meta)
