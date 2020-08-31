@@ -137,7 +137,6 @@ export default {
       if (this.publishDandiset) {
         return {
           name: this.publishDandiset.name,
-          description: this.publishDandiset.description,
           ...this.publishDandiset.meta.dandiset,
         };
       }
