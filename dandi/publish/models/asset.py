@@ -12,6 +12,7 @@ from django.core.files import File
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import Sum
 
 from dandi.publish.girder import GirderClient, GirderFile
 from dandi.publish.storage import DeconstructableFileField, create_s3_storage
@@ -118,3 +119,7 @@ class Asset(models.Model):  # TODO: was NwbFile
             paths.add(f'{base_path}/' if len(remainder) else base_path)
 
         return sorted(paths)
+
+    @classmethod
+    def total_size(cls):
+        return cls.objects.aggregate(size=Sum('size'))['size'] or 0
