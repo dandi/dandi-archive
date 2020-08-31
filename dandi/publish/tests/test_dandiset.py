@@ -17,6 +17,16 @@ def test_dandiset_identifer_missing(dandiset_factory):
 
 
 @pytest.mark.django_db
+def test_dandiset_published_count(dandiset_factory, version_factory):
+    # empty dandiset
+    dandiset_factory()
+    # populated dandiset
+    version_factory(dandiset=dandiset_factory())
+
+    assert Dandiset.published_count() == 1
+
+
+@pytest.mark.django_db
 def test_dandiset_from_girder(mock_girder_client):
     dandiset = Dandiset.from_girder('magic_draft_folder_id', mock_girder_client)
     assert dandiset

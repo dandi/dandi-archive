@@ -30,6 +30,16 @@ class Dandiset(TimeStampedModel):
         # Compare against None, to allow id 0
         return f'{self.id:06}' if self.id is not None else ''
 
+    @classmethod
+    def published_count(cls):
+        """Return the number of Dandisets with published Versions."""
+        # Prevent circular import
+        from .version import Version
+
+        # It's not possible to efficiently filter by a reverse relation (.versions),
+        # so this is an efficient alternative
+        return Version.objects.values('dandiset').distinct().count()
+
     def __str__(self) -> str:
         return self.identifier
 
