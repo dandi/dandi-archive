@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.8-slim
 # Install system librarires for Python packages:
 # * psycopg2
 RUN apt-get update && \
