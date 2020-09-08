@@ -29,6 +29,7 @@
             </template>
             <v-card>
               <CopyText
+                class="mx-2"
                 :text="permalink"
                 icon-hover-text="Copy permalink to clipboard"
               />
