@@ -88,7 +88,6 @@ import { girderRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
 import _ from 'lodash';
 
-
 const userFormatConversion = (users) => users.map(({
   _id, _accessLevel, login, firstName, lastName,
 }) => ({

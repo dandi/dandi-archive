@@ -87,7 +87,6 @@ import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
 
-
 export default {
   name: 'DandisetLandingView',
   components: {
