@@ -232,10 +232,8 @@ import { loggedIn, user, girderRest } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
-
 import { draftVersion } from '@/utils';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
-
 
 export default {
   name: 'DandisetDetails',

@@ -7,7 +7,6 @@ import stats from '@/store/stats';
 
 Vue.use(Vuex);
 
-
 export default new Vuex.Store({
   modules: {
     dandiset,

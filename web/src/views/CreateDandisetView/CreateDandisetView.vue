@@ -70,7 +70,6 @@ export default {
         },
       });
 
-
       const { identifier } = data.meta.dandiset;
       this.$router.push({
         name: 'dandisetLanding',
