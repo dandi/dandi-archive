@@ -6,18 +6,31 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-from dandi.publish.views import AssetViewSet, DandisetViewSet, VersionViewSet, stats_view
+from dandi.publish.views import (
+    AssetViewSet,
+    DandisetViewSet,
+    DraftVersionViewSet,
+    VersionViewSet,
+    stats_view,
+)
 
 router = ExtendedSimpleRouter()
+dandiset_router = router.register(r'dandisets', DandisetViewSet, basename='dandiset')
 (
-    router.register(r'dandisets', DandisetViewSet, basename='dandiset')
-    .register(
+    dandiset_router.register(
+        r'draft',
+        DraftVersionViewSet,
+        basename='draft',
+        parents_query_lookups=[f'dandiset__{DandisetViewSet.lookup_field}'],
+    )
+)
+(
+    dandiset_router.register(
         r'versions',
         VersionViewSet,
         basename='version',
         parents_query_lookups=[f'dandiset__{DandisetViewSet.lookup_field}'],
-    )
-    .register(
+    ).register(
         r'assets',
         AssetViewSet,
         basename='asset',

@@ -1,0 +1,70 @@
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
+
+from dandi.publish.models import Dandiset, DraftVersion
+from dandi.publish.views.dandiset import DandisetSerializer
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'email',
+            'username',
+        ]
+
+
+class DraftVersionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DraftVersion
+        fields = [
+            'dandiset',
+            'name',
+            'created',
+            'modified',
+            'locked',
+            'locked_by',
+        ]
+        read_only_fields = ['created']
+
+    dandiset = DandisetSerializer()
+    locked_by = UserSerializer()
+
+
+class DraftVersionDetailSerializer(DraftVersionSerializer):
+    class Meta(DraftVersionSerializer.Meta):
+        fields = DraftVersionSerializer.Meta.fields + ['metadata']
+
+
+class DraftVersionViewSet(NestedViewSetMixin, DetailSerializerMixin, GenericViewSet):
+    queryset = DraftVersion.objects.all().select_related('dandiset')
+    queryset_detail = queryset
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = DraftVersionSerializer
+    serializer_detail_class = DraftVersionDetailSerializer
+
+    def list(self, request, dandiset__pk):
+        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        serializer = DraftVersionSerializer(dandiset.draft_version)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['POST'])
+    def lock(self, request, dandiset__pk):
+        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        dandiset.draft_version.lock(request.user)
+        serializer = DraftVersionSerializer(dandiset.draft_version)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['POST'])
+    def unlock(self, request, dandiset__pk):
+        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        dandiset.draft_version.unlock(request.user)
+        serializer = DraftVersionSerializer(dandiset.draft_version)
+        return Response(serializer.data)
