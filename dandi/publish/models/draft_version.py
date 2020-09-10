@@ -16,6 +16,7 @@ class DraftVersion(BaseVersion):
         indexes = [
             models.Index(fields=['dandiset']),
         ]
+        permissions = (('owner', 'Owns the draft version'),)
 
     @property
     def locked(self):

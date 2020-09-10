@@ -1,4 +1,5 @@
 from django.contrib import admin
+from guardian.admin import GuardedModelAdmin
 
 from dandi.publish.models import Asset, Dandiset, DraftVersion, Version
 
@@ -9,7 +10,7 @@ class DandisetAdmin(admin.ModelAdmin):
 
 
 @admin.register(DraftVersion)
-class DraftVersionAdmin(admin.ModelAdmin):
+class DraftVersionAdmin(GuardedModelAdmin):
     list_display = ['dandiset', 'name']
     list_display_links = ['dandiset', 'name']
 
