@@ -8,6 +8,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandi.publish.models import Dandiset, DraftVersion
+from dandi.publish.tasks import publish_version
 from dandi.publish.views.dandiset import DandisetSerializer
 
 
@@ -68,3 +69,12 @@ class DraftVersionViewSet(NestedViewSetMixin, DetailSerializerMixin, GenericView
         dandiset.draft_version.unlock(request.user)
         serializer = DraftVersionSerializer(dandiset.draft_version)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['POST'])
+    def publish(self, request, dandiset__pk):
+        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        # Locking will fail if the draft is currently locked
+        # We want the draft to stay locked until publish completes or fails
+        dandiset.draft_version.lock(request.user)
+        publish_version.delay(dandiset.id, request.user)
+        return Response('', status=status.HTTP_202_ACCEPTED)
