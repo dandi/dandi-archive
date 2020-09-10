@@ -76,5 +76,5 @@ class DraftVersionViewSet(NestedViewSetMixin, DetailSerializerMixin, GenericView
         # Locking will fail if the draft is currently locked
         # We want the draft to stay locked until publish completes or fails
         dandiset.draft_version.lock(request.user)
-        publish_version.delay(dandiset.id, request.user)
+        publish_version.delay(dandiset.id, request.user.id)
         return Response('', status=status.HTTP_202_ACCEPTED)
