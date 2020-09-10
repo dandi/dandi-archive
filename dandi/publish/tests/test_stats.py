@@ -6,7 +6,8 @@ def test_stats_baseline(api_client):
     assert api_client.get('/api/stats/').data == {
         'dandiset_count': 0,
         'published_dandiset_count': 0,
-        'user_count': 0,
+        # django-guardian automatically creates an AnonymousUser
+        'user_count': 1,
         'size': 0,
     }
 
@@ -31,7 +32,8 @@ def test_stats_published(api_client, version):
 def test_stats_user(api_client, user):
     stats = api_client.get('/api/stats/').data
 
-    assert stats['user_count'] == 1
+    # django-guardian automatically creates an AnonymousUser
+    assert stats['user_count'] == 2
 
 
 @pytest.mark.django_db
