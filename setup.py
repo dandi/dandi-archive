@@ -43,6 +43,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-girders',
+        'django-guardian',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
