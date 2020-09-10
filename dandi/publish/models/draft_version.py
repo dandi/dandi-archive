@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 from .dandiset import Dandiset
@@ -8,8 +9,28 @@ class DraftVersion(BaseVersion):
     dandiset = models.OneToOneField(
         Dandiset, related_name='draft_version', on_delete=models.CASCADE, primary_key=True
     )
+    locked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta(BaseVersion.Meta):
         indexes = [
             models.Index(fields=['dandiset']),
         ]
+
+    @property
+    def locked(self):
+        return self.locked_by is not None
+
+    def lock(self, user: User):
+        # TODO permissions/ownership
+        if self.locked:
+            raise Exception('Draft is locked')
+        self.locked_by = user
+        self.save()
+
+    def unlock(self, user: User):
+        if not self.locked:
+            raise Exception('Cannot unlock a draft that is not locked')
+        if self.locked_by != user:
+            raise Exception('Cannot unlock a draft locked by another user')
+        self.locked_by = None
+        self.save()
