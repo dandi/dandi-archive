@@ -1,10 +1,28 @@
 <template>
   <v-container v-page-title="'Log In'">
     <GirderAuth
+      v-if="!UNIFIED_API"
       :force-otp="false"
       :show-forgot-password="false"
       :oauth="true"
     />
+    <div v-else>
+      <p>
+        TODO: Implement OAuth
+      </p>
+      <p>
+        For now, you can "log in" to a Django account with a username/password with this console command:
+        <code>
+          setTokenHack('django_auth_token_for_user')
+        </code>
+      </p>
+      <p>
+        You can create a bookmark with this URL to make this quicker:
+        <code>
+          javascript:setTokenHack('django_auth_token_for_user')
+        </code>
+      </p>
+    </div>
   </v-container>
 </template>
 
