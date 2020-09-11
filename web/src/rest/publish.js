@@ -50,6 +50,12 @@ const publishRest = new Vue({
     };
   },
   methods: {
+    // TODO proper OAuth login
+    async logout() {
+      // TODO proper session logout
+      this.token = null;
+      this.user = null;
+    },
     async assets(identifier, version, config = {}) {
       try {
         const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
@@ -110,10 +116,10 @@ const publishRest = new Vue({
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
       return `${publishApiRoot}api/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
-  }
+  },
 });
 
-export { publishRest }
+export { publishRest };
 
 // This is a hack to allow username/password logins to django
 window.setTokenHack = (token) => {
@@ -124,4 +130,4 @@ window.setTokenHack = (token) => {
   } else {
     console.log('UNIFIED_API is not enabled');
   }
-}
+};
