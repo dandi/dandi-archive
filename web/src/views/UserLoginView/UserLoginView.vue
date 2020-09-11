@@ -11,7 +11,8 @@
         TODO: Implement OAuth
       </p>
       <p>
-        For now, you can "log in" to a Django account with a username/password with this console command:
+        For now, you can "log in" to a Django account with a username/password
+        using this console command:
         <code>
           setTokenHack('django_auth_token_for_user')
         </code>

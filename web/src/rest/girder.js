@@ -7,4 +7,4 @@ const apiRoot = process.env.VUE_APP_API_ROOT.endsWith('/')
 
 const girderRest = new RestClient({ apiRoot, setLocalCookie: true });
 
-export { girderRest }
+export default girderRest;

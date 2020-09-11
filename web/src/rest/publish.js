@@ -24,22 +24,6 @@ function girderize(publishedDandiset) {
 }
 
 const client = axios.create({ baseURL: publishApiRoot });
-// This has to be done with an interceptor because
-// the value of publishRest.token changes over time.
-// Using client.defaults.headers.common.Authorization = ...
-// would not update when the token does.
-client.interceptors.request.use((config) => {
-  if (!publishRest.token) {
-    return config;
-  }
-  return {
-    ...config,
-    headers: {
-      Authorization: `Token ${publishRest.token}`,
-      ...config.headers,
-    },
-  };
-});
 
 const publishRest = new Vue({
   data() {
@@ -119,7 +103,24 @@ const publishRest = new Vue({
   },
 });
 
-export { publishRest };
+// This has to be done with an interceptor because
+// the value of publishRest.token changes over time.
+// Using client.defaults.headers.common.Authorization = ...
+// would not update when the token does.
+client.interceptors.request.use((config) => {
+  if (!publishRest.token) {
+    return config;
+  }
+  return {
+    ...config,
+    headers: {
+      Authorization: `Token ${publishRest.token}`,
+      ...config.headers,
+    },
+  };
+});
+
+export default publishRest;
 
 // This is a hack to allow username/password logins to django
 window.setTokenHack = (token) => {
