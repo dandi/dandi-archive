@@ -22,7 +22,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'assets_count',
-            # 'size',
+            'size',
         ]
         read_only_fields = ['created']
 
