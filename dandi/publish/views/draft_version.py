@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -12,13 +12,13 @@ from dandi.publish.tasks import publish_version
 from dandi.publish.views.dandiset import DandisetSerializer
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            'email',
-            'username',
-        ]
+class UserSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        min_length=1,
+        max_length=150,
+        help_text=('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+        validators=[UnicodeUsernameValidator()],
+    )
 
 
 class DraftVersionSerializer(serializers.ModelSerializer):
