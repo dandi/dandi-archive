@@ -23,7 +23,6 @@ class DraftVersion(BaseVersion):
         return self.locked_by is not None
 
     def lock(self, user: User):
-        # TODO permissions/ownership
         if self.locked:
             raise ValidationError('Draft is locked')
         self.locked_by = user
