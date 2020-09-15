@@ -96,7 +96,9 @@ def test_draft_rest_delete_all_owners_fails(api_client, draft_version, user):
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/draft/owners/', [], format='json',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/draft/owners/',
+        [],
+        format='json',
     )
     assert resp.status_code == 400
     assert resp.data == 'Cannot remove all draft owners'

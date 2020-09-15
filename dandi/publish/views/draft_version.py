@@ -91,7 +91,8 @@ def draft_publish_view(request, dandiset__pk):
 
 
 @swagger_auto_schema(
-    method='POST', request_body=UserSerializer(many=True),
+    method='POST',
+    request_body=UserSerializer(many=True),
 )
 @api_view(['POST'])
 @permission_required_or_403('owner', (DraftVersion, 'dandiset__pk', 'dandiset__pk'))
