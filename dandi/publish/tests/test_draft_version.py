@@ -79,6 +79,18 @@ def test_draft_rest_remove_owner(api_client, draft_version, user_factory):
 
 
 @pytest.mark.django_db
+def test_draft_rest_not_an_owner(api_client, draft_version, user):
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/draft/owners/',
+        [{'username': user.username}],
+        format='json',
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
 def test_draft_rest_delete_all_owners_fails(api_client, draft_version, user):
     assign_perm('owner', user, draft_version)
     api_client.force_authenticate(user=user)

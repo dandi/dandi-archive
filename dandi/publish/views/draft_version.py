@@ -94,12 +94,10 @@ def draft_publish_view(request, dandiset__pk):
     method='POST', request_body=UserSerializer(many=True),
 )
 @api_view(['POST'])
+@permission_required_or_403('owner', (DraftVersion, 'dandiset__pk', 'dandiset__pk'))
 @permission_classes([IsAuthenticatedOrReadOnly])
 def draft_owners_view(request, dandiset__pk):
     draft_version = get_object_or_404(Dandiset, pk=dandiset__pk).draft_version
-    # the permission_required_or_403 decorator does not work with viewsets
-    if not request.user.has_perm('owner', draft_version):
-        return Response('', status=status.HTTP_403_FORBIDDEN)
 
     new_owners_serializer = UserSerializer(data=request.data, many=True)
     if not new_owners_serializer.is_valid():
