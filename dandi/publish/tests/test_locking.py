@@ -61,10 +61,15 @@ def test_lock_rest(api_client, dandiset, user):
 
     resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/draft/lock/').data
 
-    print(resp)
     assert resp['locked']
     assert resp['locked_by'] == {
-        'email': user.email,
+        'username': user.username,
+    }
+
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/draft/').data
+
+    assert resp['locked']
+    assert resp['locked_by'] == {
         'username': user.username,
     }
 
@@ -72,10 +77,15 @@ def test_lock_rest(api_client, dandiset, user):
 @pytest.mark.django_db
 def test_unlock_rest(api_client, dandiset, user):
     dandiset.draft_version.lock(user)
+    dandiset.draft_version.save()
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/draft/unlock/').data
 
-    print(resp)
+    assert not resp['locked']
+    assert resp['locked_by'] is None
+
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/draft/').data
+
     assert not resp['locked']
     assert resp['locked_by'] is None

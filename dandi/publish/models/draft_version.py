@@ -26,7 +26,6 @@ class DraftVersion(BaseVersion):
         if self.locked:
             raise ValidationError('Draft is locked')
         self.locked_by = user
-        self.save()
 
     def unlock(self, user: User):
         if not self.locked:
@@ -34,4 +33,3 @@ class DraftVersion(BaseVersion):
         if self.locked_by != user:
             raise ValidationError('Cannot unlock a draft locked by another user')
         self.locked_by = None
-        self.save()
