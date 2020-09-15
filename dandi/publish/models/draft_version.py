@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from guardian.shortcuts import get_users_with_perms
 
 from .dandiset import Dandiset
 from .version import BaseVersion
@@ -17,6 +18,10 @@ class DraftVersion(BaseVersion):
             models.Index(fields=['dandiset']),
         ]
         permissions = [('owner', 'Owns the draft version')]
+
+    @property
+    def owners(self):
+        return get_users_with_perms(self, only_with_perms_in=['owner'])
 
     @property
     def locked(self):
