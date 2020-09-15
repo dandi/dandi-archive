@@ -1,6 +1,9 @@
+from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -30,11 +33,13 @@ class DraftVersionSerializer(serializers.ModelSerializer):
             'modified',
             'locked',
             'locked_by',
+            'owners',
         ]
         read_only_fields = ['created']
 
     dandiset = DandisetSerializer()
     locked_by = UserSerializer()
+    owners = UserSerializer(many=True)
 
 
 class DraftVersionDetailSerializer(DraftVersionSerializer):
@@ -83,3 +88,37 @@ def draft_publish_view(request, dandiset__pk):
     dandiset.draft_version.lock(request.user)
     publish_version.delay(dandiset.id, request.user.id)
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(
+    method='POST', request_body=UserSerializer(many=True),
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticatedOrReadOnly])
+def draft_owners_view(request, dandiset__pk):
+    draft_version = get_object_or_404(Dandiset, pk=dandiset__pk).draft_version
+    # the permission_required_or_403 decorator does not work with viewsets
+    if not request.user.has_perm('owner', draft_version):
+        return Response('', status=status.HTTP_403_FORBIDDEN)
+
+    new_owners_serializer = UserSerializer(data=request.data, many=True)
+    if not new_owners_serializer.is_valid():
+        return Response(new_owners_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    new_owners = [
+        get_object_or_404(User, username=owner['username'])
+        for owner in new_owners_serializer.validated_data
+    ]
+    if len(new_owners) < 1:
+        return Response('Cannot remove all draft owners', status=status.HTTP_400_BAD_REQUEST)
+    old_owners = get_users_with_perms(draft_version, only_with_perms_in=['owner'])
+
+    # Remove old owners
+    for old_owner in old_owners:
+        if old_owner not in new_owners:
+            remove_perm('owner', old_owner, draft_version)
+    # Add new owners
+    for new_owner in new_owners:
+        if new_owner not in old_owners:
+            assign_perm('owner', new_owner, draft_version)
+
+    return Response('', status=status.HTTP_204_NO_CONTENT)
