@@ -11,7 +11,7 @@ else:
     long_description = ''
 
 setup(
-    name='dandi-archive',
+    name='dandiapi',
     version='0.1.0',
     description='',
     long_description=long_description,

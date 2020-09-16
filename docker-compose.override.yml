@@ -21,7 +21,7 @@ services:
       dockerfile: ./dev/django.Dockerfile
     command: [
       "celery", "worker",
-      "--app", "dandi.celery",
+      "--app", "dandiapi.celery",
       "--loglevel", "info",
       "--without-heartbeat"
     ]
