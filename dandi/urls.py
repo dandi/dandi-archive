@@ -14,6 +14,7 @@ from dandi.publish.views import (
     draft_publish_view,
     draft_unlock_view,
     draft_view,
+    search_view,
     stats_view,
 )
 
@@ -62,6 +63,7 @@ class DandisetIDConverter:
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('api/search/', search_view),
     path('api/stats/', stats_view),
     path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/', draft_view),
     path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/lock/', draft_lock_view),

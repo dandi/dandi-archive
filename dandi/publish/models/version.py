@@ -83,7 +83,10 @@ class Version(BaseVersion):
 
     @property
     def size(self):
-        return self.assets.aggregate(total_size=models.Sum('size'))['total_size']
+        size = self.assets.aggregate(total_size=models.Sum('size'))['total_size']
+        if size is None:
+            return 0
+        return size
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
