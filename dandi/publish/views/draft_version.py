@@ -3,7 +3,6 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -101,8 +100,8 @@ def draft_publish_view(request, dandiset__pk):
 def draft_owners_view(request, dandiset__pk):
     draft_version = get_object_or_404(Dandiset, pk=dandiset__pk).draft_version
 
-    new_owners_serializer = UserSerializer(data=request.data, many=True)
-    new_owners_serializer.is_valid(raise_exception=True)
+    owners_serializer = UserSerializer(data=request.data, many=True)
+    owners_serializer.is_valid(raise_exception=True)
 
     def get_user_or_400(username):
         try:
@@ -110,21 +109,12 @@ def draft_owners_view(request, dandiset__pk):
         except User.DoesNotExist:
             raise serializers.ValidationError(f'User {username} not found')
 
-    new_owners = [
-        get_user_or_400(username=owner['username'])
-        for owner in new_owners_serializer.validated_data
+    owners = [
+        get_user_or_400(username=owner['username']) for owner in owners_serializer.validated_data
     ]
-    if len(new_owners) < 1:
+    if len(owners) < 1:
         raise ValidationError('Cannot remove all draft owners')
-    old_owners = get_users_with_perms(draft_version, only_with_perms_in=['owner'])
 
-    # Remove old owners
-    for old_owner in old_owners:
-        if old_owner not in new_owners:
-            remove_perm('owner', old_owner, draft_version)
-    # Add new owners
-    for new_owner in new_owners:
-        if new_owner not in old_owners:
-            assign_perm('owner', new_owner, draft_version)
+    draft_version.set_owners(owners)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
