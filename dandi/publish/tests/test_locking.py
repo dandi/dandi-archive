@@ -72,17 +72,18 @@ def test_lock_rest(api_client, dandiset, user):
     assign_perm('owner', user, dandiset.draft_version)
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/draft/lock/').data
+    resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/draft/lock/')
 
-    assert resp['locked']
-    assert resp['locked_by'] == {
+    assert resp.status_code == 200
+    assert resp.data['locked']
+    assert resp.data['locked_by'] == {
         'username': user.username,
     }
 
-    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/draft/').data
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/draft/')
 
-    assert resp['locked']
-    assert resp['locked_by'] == {
+    assert resp.data['locked']
+    assert resp.data['locked_by'] == {
         'username': user.username,
     }
 
@@ -103,12 +104,13 @@ def test_unlock_rest(api_client, dandiset, user):
     dandiset.draft_version.save()
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/draft/unlock/').data
+    resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/draft/unlock/')
 
-    assert not resp['locked']
-    assert resp['locked_by'] is None
+    assert resp.status_code == 200
+    assert not resp.data['locked']
+    assert resp.data['locked_by'] is None
 
-    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/draft/').data
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/draft/')
 
-    assert not resp['locked']
-    assert resp['locked_by'] is None
+    assert not resp.data['locked']
+    assert resp.data['locked_by'] is None

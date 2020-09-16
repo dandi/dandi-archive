@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
 from .dandiset import Dandiset
 from .version import BaseVersion
@@ -17,6 +18,22 @@ class DraftVersion(BaseVersion):
             models.Index(fields=['dandiset']),
         ]
         permissions = [('owner', 'Owns the draft version')]
+
+    @property
+    def owners(self):
+        return get_users_with_perms(self, only_with_perms_in=['owner'])
+
+    def set_owners(self, new_owners):
+        old_owners = get_users_with_perms(self, only_with_perms_in=['owner'])
+
+        # Remove old owners
+        for old_owner in old_owners:
+            if old_owner not in new_owners:
+                remove_perm('owner', old_owner, self)
+        # Add new owners
+        for new_owner in new_owners:
+            if new_owner not in old_owners:
+                assign_perm('owner', new_owner, self)
 
     @property
     def locked(self):

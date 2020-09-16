@@ -1,10 +1,13 @@
+from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from dandi.publish.models import Dandiset, DraftVersion
 from dandi.publish.tasks import publish_version
@@ -30,11 +33,13 @@ class DraftVersionSerializer(serializers.ModelSerializer):
             'modified',
             'locked',
             'locked_by',
+            'owners',
         ]
         read_only_fields = ['created']
 
     dandiset = DandisetSerializer()
     locked_by = UserSerializer()
+    owners = UserSerializer(many=True)
 
 
 class DraftVersionDetailSerializer(DraftVersionSerializer):
@@ -82,4 +87,34 @@ def draft_publish_view(request, dandiset__pk):
     # We want the draft to stay locked until publish completes or fails
     dandiset.draft_version.lock(request.user)
     publish_version.delay(dandiset.id, request.user.id)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(
+    method='POST',
+    request_body=UserSerializer(many=True),
+)
+@api_view(['POST'])
+@permission_required_or_403('owner', (DraftVersion, 'dandiset__pk', 'dandiset__pk'))
+@permission_classes([IsAuthenticatedOrReadOnly])
+def draft_owners_view(request, dandiset__pk):
+    draft_version = get_object_or_404(Dandiset, pk=dandiset__pk).draft_version
+
+    owners_serializer = UserSerializer(data=request.data, many=True)
+    owners_serializer.is_valid(raise_exception=True)
+
+    def get_user_or_400(username):
+        try:
+            return User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f'User {username} not found')
+
+    owners = [
+        get_user_or_400(username=owner['username']) for owner in owners_serializer.validated_data
+    ]
+    if len(owners) < 1:
+        raise ValidationError('Cannot remove all draft owners')
+
+    draft_version.set_owners(owners)
+
     return Response(status=status.HTTP_204_NO_CONTENT)
