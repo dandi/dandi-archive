@@ -1,5 +1,6 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
+from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -50,6 +51,7 @@ def draft_view(request, dandiset__pk):
 
 
 @api_view(['POST'])
+@permission_required_or_403('owner', (DraftVersion, 'dandiset__pk', 'dandiset__pk'))
 @permission_classes([IsAuthenticatedOrReadOnly])
 def draft_lock_view(request, dandiset__pk):
     dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
@@ -59,6 +61,8 @@ def draft_lock_view(request, dandiset__pk):
     return Response(serializer.data)
 
 
+# Ownership is not required to unlock
+# A user might be removed from the owners list while still having the lock
 @api_view(['POST'])
 @permission_classes([IsAuthenticatedOrReadOnly])
 def draft_unlock_view(request, dandiset__pk):
@@ -70,6 +74,7 @@ def draft_unlock_view(request, dandiset__pk):
 
 
 @api_view(['POST'])
+@permission_required_or_403('owner', (DraftVersion, 'dandiset__pk', 'dandiset__pk'))
 @permission_classes([IsAuthenticatedOrReadOnly])
 def draft_publish_view(request, dandiset__pk):
     dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)

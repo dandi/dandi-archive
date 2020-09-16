@@ -16,13 +16,13 @@ class DraftVersion(BaseVersion):
         indexes = [
             models.Index(fields=['dandiset']),
         ]
+        permissions = [('owner', 'Owns the draft version')]
 
     @property
     def locked(self):
         return self.locked_by is not None
 
     def lock(self, user: User):
-        # TODO permissions/ownership
         if self.locked:
             raise ValidationError('Draft is locked')
         self.locked_by = user
