@@ -8,9 +8,9 @@ from .fuzzy import TIMESTAMP_RE
 def test_draft_rest(api_client, draft_version, user):
     assign_perm('owner', user, draft_version)
 
-    resp = api_client.get(f'/api/dandisets/{draft_version.dandiset.identifier}/draft/').data
+    resp = api_client.get(f'/api/dandisets/{draft_version.dandiset.identifier}/draft/')
 
-    assert resp == {
+    assert resp.data == {
         'dandiset': {
             'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
