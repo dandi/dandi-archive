@@ -101,20 +101,22 @@ def test_draft_rest_delete_all_owners_fails(api_client, draft_version, user):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'Cannot remove all draft owners'
+    assert resp.data == ['Cannot remove all draft owners']
 
 
 @pytest.mark.django_db
 def test_draft_rest_add_owner_does_not_exist(api_client, draft_version, user):
     assign_perm('owner', user, draft_version)
     api_client.force_authenticate(user=user)
+    fake_name = user.username + 'butnotreally'
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}/draft/owners/',
-        [{'username': user.username + 'butnotreally'}],
+        [{'username': fake_name}],
         format='json',
     )
-    assert resp.status_code == 404
+    assert resp.status_code == 400
+    assert resp.data == [f'User {fake_name} not found']
 
 
 @pytest.mark.django_db
@@ -128,3 +130,4 @@ def test_draft_rest_add_malformed(api_client, draft_version, user):
         format='json',
     )
     assert resp.status_code == 400
+    assert resp.data == [{'username': ['This field is required.']}]

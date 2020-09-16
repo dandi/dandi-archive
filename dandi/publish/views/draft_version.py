@@ -8,6 +8,7 @@ from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
 from dandi.publish.models import Dandiset, DraftVersion
 from dandi.publish.tasks import publish_version
@@ -101,14 +102,20 @@ def draft_owners_view(request, dandiset__pk):
     draft_version = get_object_or_404(Dandiset, pk=dandiset__pk).draft_version
 
     new_owners_serializer = UserSerializer(data=request.data, many=True)
-    if not new_owners_serializer.is_valid():
-        return Response(new_owners_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    new_owners_serializer.is_valid(raise_exception=True)
+
+    def get_user_or_400(username):
+        try:
+            return User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f'User {username} not found')
+
     new_owners = [
-        get_object_or_404(User, username=owner['username'])
+        get_user_or_400(username=owner['username'])
         for owner in new_owners_serializer.validated_data
     ]
     if len(new_owners) < 1:
-        return Response('Cannot remove all draft owners', status=status.HTTP_400_BAD_REQUEST)
+        raise ValidationError('Cannot remove all draft owners')
     old_owners = get_users_with_perms(draft_version, only_with_perms_in=['owner'])
 
     # Remove old owners
@@ -120,4 +127,4 @@ def draft_owners_view(request, dandiset__pk):
         if new_owner not in old_owners:
             assign_perm('owner', new_owner, draft_version)
 
-    return Response('', status=status.HTTP_204_NO_CONTENT)
+    return Response(status=status.HTTP_204_NO_CONTENT)
