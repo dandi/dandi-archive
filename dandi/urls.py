@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, register_converter
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -10,6 +10,10 @@ from dandi.publish.views import (
     AssetViewSet,
     DandisetViewSet,
     VersionViewSet,
+    draft_lock_view,
+    draft_publish_view,
+    draft_unlock_view,
+    draft_view,
     search_view,
     stats_view,
 )
@@ -45,10 +49,26 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+
+class DandisetIDConverter:
+    regex = r'\d{6}'
+
+    def to_python(self, value):
+        return value
+
+    def to_url(self, value):
+        return value
+
+
+register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/search/', search_view),
     path('api/stats/', stats_view),
+    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/', draft_view),
+    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/lock/', draft_lock_view),
+    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/unlock/', draft_unlock_view),
+    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/publish/', draft_publish_view),
     path('admin/', admin.site.urls),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

@@ -10,12 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='draftversion',
-            name='description',
-        ),
-        migrations.RemoveField(
-            model_name='version',
-            name='description',
-        ),
+        migrations.RemoveField(model_name='draftversion', name='description'),
+        migrations.RemoveField(model_name='version', name='description'),
     ]
