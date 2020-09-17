@@ -46,7 +46,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         return super().get_object()
 
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=['POST'], serializer_class=None)
     def sync(self, request):
         if 'folder-id' not in request.query_params:
             raise ValidationError('Missing query parameter "folder-id"')
