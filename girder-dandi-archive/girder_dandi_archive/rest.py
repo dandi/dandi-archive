@@ -248,7 +248,7 @@ class DandiResource(Resource):
         # Publish the new version
         try:
             response = requests.post(
-                urljoin(publish_api_url, f"dandisets/{identifier}/versions/publish/"),
+                urljoin(publish_api_url, f"dandisets/{identifier}/draft/publish/"),
                 headers={"Authorization": f"Token {publish_api_key}"},
             )
             response.raise_for_status()
