@@ -96,6 +96,10 @@ const publishRest = new Vue({
       const { version } = results[0];
       return this.specificVersion(identifier, version);
     },
+    async stats() {
+      const { data } = await client.get('api/stats/');
+      return data;
+    },
     assetDownloadURI(asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
       return `${publishApiRoot}api/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;

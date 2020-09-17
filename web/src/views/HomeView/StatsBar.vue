@@ -8,9 +8,9 @@
         <v-col
           :key="stat.name"
           class="py-0 flex-grow-1"
-          md="2"
-          sm="4"
-          cols="6"
+          :md="(UNIFIED_API) ? 4 : 2"
+          :sm="(UNIFIED_API) ? 4 : 4"
+          :cols="(UNIFIED_API) ? 12 : 6"
         >
           <SingleStat
             :name="stat.name"
@@ -31,9 +31,10 @@
 </template>
 
 <script>
-import { girderRest } from '@/rest';
+import { girderRest, publishRest } from '@/rest';
 import filesize from 'filesize';
 import SingleStat from '@/views/HomeView/SingleStat.vue';
+import toggles from '@/featureToggle';
 
 export default {
   name: 'StatsBar',
@@ -42,32 +43,48 @@ export default {
     return {
       dandisets: 0,
       users: 0,
+      size: 0,
+      // Girder only
       species: 0,
       subjects: 0,
       cells: 0,
-      size: 0,
     };
   },
   computed: {
     stats() {
-      return [
-        { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
-        { name: 'users', value: this.users },
-        { name: 'species', value: this.species },
-        { name: 'subjects', value: this.subjects },
-        { name: 'cells', value: this.cells },
-        { name: 'total data size', value: filesize(this.size, { round: 0 }) },
-      ]
+      if (toggles.UNIFIED_API) {
+        return [
+          { name: 'published dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
+          { name: 'users', value: this.users },
+          { name: 'total data size', value: filesize(this.size, { round: 0 }) },
+        ]
+      } else {
+        return [
+          { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
+          { name: 'users', value: this.users },
+          { name: 'species', value: this.species },
+          { name: 'subjects', value: this.subjects },
+          { name: 'cells', value: this.cells },
+          { name: 'total data size', value: filesize(this.size, { round: 0 }) },
+        ];
+      }
     },
   },
   async created() {
-    const { data } = await girderRest.get('dandi/stats');
-    this.dandisets = data.draft_count;
-    this.users = data.user_count;
-    this.species = data.species_count;
-    this.subjects = data.subject_count;
-    this.cells = data.cell_count;
-    this.size = data.size;
+    if (toggles.UNIFIED_API) {
+      const data = await publishRest.stats();
+      this.dandisets = data.dandiset_count;
+      this.users = data.user_count;
+      this.size = data.size;
+    } else {
+      const { data } = await girderRest.get('dandi/stats');
+      this.dandisets = data.draft_count;
+      this.users = data.user_count;
+      this.species = data.species_count;
+      this.subjects = data.subject_count;
+      this.cells = data.cell_count;
+      this.size = data.size;
+    }
   }
 };
 </script>
