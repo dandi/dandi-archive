@@ -30,10 +30,9 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex';
-
-import { user } from '@/rest';
+import { girderRest, publishRest, user } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
+import toggles from '@/featureToggle';
 
 export default {
   name: 'UserMenu',
@@ -64,7 +63,13 @@ export default {
     },
   },
   methods: {
-    ...mapActions('girder', ['logout']),
+    async logout() {
+      if (toggles.UNIFIED_API) {
+        await publishRest.logout();
+      } else {
+        await girderRest.logout();
+      }
+    },
   },
 };
 </script>

@@ -28,8 +28,5 @@ export default {
         }
       }
     },
-    async logout() {
-      await girderRest.logout();
-    },
   },
 };

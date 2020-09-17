@@ -122,11 +122,7 @@ export default {
         const { version, identifier, location } = this;
 
         this.loading = true;
-        const { data } = await publishRest.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
-          params: {
-            path_prefix: location,
-          },
-        });
+        const data = await publishRest.assetPaths(identifier, version, location);
 
         let mapped = data.map((x) => ({ name: x, folder: isFolder(x) }));
         if (location !== rootDirectory && mapped.length) {
