@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from dandi.publish.models import Asset
@@ -104,31 +102,30 @@ def test_asset_rest_retrieve(api_client, asset):
 
 
 @pytest.mark.django_db
-def test_asset_path(api_client, asset):
-    split_path = os.path.split(asset.path)
-    asset_directory = split_path[0]
-    asset_filename = split_path[1]
-
-    res = api_client.get(
+@pytest.mark.parametrize(
+    'new_path,expected',
+    [
+        # Partial
+        (lambda path: path[: int(len(path) / 2)], True),
+        # Full
+        (lambda path: path, True),
+        # Extra at beginning
+        (lambda path: 'extra-string' + path, False),
+        # Extra at end
+        (lambda path: path + 'extra-string', False),
+        # Case insensitive 1
+        (lambda path: path.upper(), True),
+        # Case insensitive 2
+        (lambda path: path.lower(), True),
+    ],
+)
+def test_asset_path_filter(api_client, asset, new_path, expected):
+    path = new_path(asset.path)
+    partial_path_assets = api_client.get(
         f'/api/dandisets/{asset.version.dandiset.identifier}/'
-        f'versions/{asset.version.version}/assets/paths/',
-        {'path_prefix': asset_directory},
-    )
+        f'versions/{asset.version.version}/assets/',
+        {'path': path},
+    ).data['results']
 
-    assert asset_filename in res.data
-
-
-@pytest.mark.django_db
-def test_asset_path_no_prefix(api_client, asset):
-    path = os.path.split(asset.path)
-
-    # remove leading slash and append trailing slash
-    root_directory = f'{path[0].replace("/", "")}/'
-
-    # make sure not providing 'path_prefix' defaults to '/'
-    res = api_client.get(
-        f'/api/dandisets/{asset.version.dandiset.identifier}/'
-        f'versions/{asset.version.version}/assets/paths/'
-    )
-
-    assert root_directory in res.data
+    matching_results = [res for res in partial_path_assets if res['uuid'] == str(asset.uuid)]
+    assert bool(matching_results) is expected
