@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from dandi.publish.models import Asset
