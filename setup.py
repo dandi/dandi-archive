@@ -2,7 +2,6 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
     with readme_file.open() as f:
@@ -37,14 +36,14 @@ setup(
     packages=find_packages(),
     install_requires=[
         'celery',
-        'dandi==0.4.5',
-        'django',
+        'django==3.0.9',
         'django-admin-display',
         'django-configurations[database,email]',
         'django-cors-headers',
         'django-extensions',
         'django-filter',
         'django-girders',
+        'django-guardian',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
@@ -59,6 +58,6 @@ setup(
         # Development-only
         'django-debug-toolbar',
         'django-minio-storage',
-        'ipython',
     ],
+    extras_require={'dev': ['ipython', 'tox']},
 )

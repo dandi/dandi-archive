@@ -9,6 +9,8 @@ from dandi.publish.girder import GirderClient, GirderFile
 class _GirderClientFolderFactory(factory.DictFactory):
     _id = factory.Faker('hexify', text='^' * 24)
     name = factory.Faker('bothify', text='sub-????????##')
+    # A basic folder has a 'meta' key with no content
+    meta = factory.Dict({})
 
 
 class _GirderClientDraftFolderFactory(_GirderClientFolderFactory):

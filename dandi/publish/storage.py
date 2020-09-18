@@ -1,10 +1,60 @@
 from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
-from django.core.files.storage import get_storage_class, Storage
+from django.core.files.storage import Storage, get_storage_class
+from django.db import models
 from minio_storage.policy import Policy
-from minio_storage.storage import create_minio_client_from_settings, MinioStorage
+from minio_storage.storage import MinioStorage, create_minio_client_from_settings
 from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class CallableStorageFileField(models.FileField):
+    """A FileField backporting the Django 3.1 feature to allow a callable "storage" argument."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if callable(self.storage):
+            self.storage = self.storage()
+            if not isinstance(self.storage, Storage):
+                raise TypeError(
+                    '%s.storage must be a subclass/instance of %s.%s'
+                    % (self.__class__.__qualname__, Storage.__module__, Storage.__qualname__)
+                )
+
+
+class DeconstructableFileField(CallableStorageFileField):
+    """
+    A FileField which preserves a callable "storage" argument during deconstruction.
+
+    This fixes a known bug in Django 3.1.
+    """
+
+    def __init__(self, *args, **kwargs):
+        if 'storage' in kwargs and callable(kwargs['storage']):
+            self._storage_callable = kwargs['storage']
+        super().__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        if hasattr(self, '_storage_callable'):
+            kwargs['storage'] = self._storage_callable
+        return name, path, args, kwargs
+
+
+class DeconstructableMinioStorage(MinioStorage):
+    """
+    A MinioStorage which is deconstructable by Django.
+
+    This does not require a minio_client argument to the constructor.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # A minio.api.Minio instance cannot be serialized by Django. Since all constructor
+        # arguments are serialized by the @deconstructible decorator, passing a Minio client as a
+        # constructor argument causes makemigrations to fail.
+        kwargs['minio_client'] = create_minio_client_from_settings()
+        super().__init__(*args, **kwargs)
 
 
 class VerbatimNameStorageMixin:
@@ -29,7 +79,7 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
     pass
 
 
-class VerbatimNameMinioStorage(VerbatimNameStorageMixin, MinioStorage):
+class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioStorage):
     pass
 
 
@@ -67,7 +117,6 @@ def create_s3_storage(bucket_name: str) -> Storage:
         # as an ad-hoc non-default storage, as it does not allow bucket_name to be
         # explicitly set.
         storage = VerbatimNameMinioStorage(
-            minio_client=create_minio_client_from_settings(),
             bucket_name=bucket_name,
             base_url=base_url,
             # All S3Boto3Storage URLs are presigned, and the bucket typically is not public

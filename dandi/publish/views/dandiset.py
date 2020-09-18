@@ -1,12 +1,10 @@
 from django.http import Http404
-from rest_framework import serializers
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-
 
 from dandi.publish.girder import GirderClient
 from dandi.publish.models import Dandiset
@@ -19,7 +17,7 @@ class DandisetSerializer(serializers.ModelSerializer):
         fields = [
             'identifier',
             'created',
-            'updated',
+            'modified',
         ]
         read_only_fields = ['created']
 
@@ -48,7 +46,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         return super().get_object()
 
-    @action(detail=False, methods=['POST'])
+    @action(detail=False, methods=['POST'], serializer_class=None)
     def sync(self, request):
         if 'folder-id' not in request.query_params:
             raise ValidationError('Missing query parameter "folder-id"')
