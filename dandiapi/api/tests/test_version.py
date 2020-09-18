@@ -60,6 +60,7 @@ def test_version_rest_list(api_client, version):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'assets_count': 0,
+                'size': 0,
             }
         ],
     }
@@ -80,5 +81,6 @@ def test_version_rest_retrieve(api_client, version):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'assets_count': 0,
+        'size': 0,
         'metadata': version.metadata,
     }
