@@ -10,24 +10,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='asset',
-            old_name='updated',
-            new_name='modified',
-        ),
-        migrations.RenameField(
-            model_name='dandiset',
-            old_name='updated',
-            new_name='modified',
-        ),
-        migrations.RenameField(
-            model_name='draftversion',
-            old_name='updated',
-            new_name='modified',
-        ),
-        migrations.RenameField(
-            model_name='version',
-            old_name='updated',
-            new_name='modified',
-        ),
+        migrations.RenameField(model_name='asset', old_name='updated', new_name='modified'),
+        migrations.RenameField(model_name='dandiset', old_name='updated', new_name='modified'),
+        migrations.RenameField(model_name='draftversion', old_name='updated', new_name='modified'),
+        migrations.RenameField(model_name='version', old_name='updated', new_name='modified'),
     ]
