@@ -6,8 +6,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from dandi.publish.models import Version
-from dandi.publish.views.version import VersionSerializer
+from dandiapi.api.models import Version
+from dandiapi.api.views.version import VersionSerializer
 
 
 @swagger_auto_schema(
