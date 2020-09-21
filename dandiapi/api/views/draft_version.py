@@ -86,6 +86,7 @@ def draft_publish_view(request, dandiset__pk):
     # Locking will fail if the draft is currently locked
     # We want the draft to stay locked until publish completes or fails
     dandiset.draft_version.lock(request.user)
+    dandiset.draft_version.save()
     publish_version.delay(dandiset.id, request.user.id)
     return Response(status=status.HTTP_204_NO_CONTENT)
 
