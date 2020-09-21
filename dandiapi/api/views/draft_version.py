@@ -9,9 +9,9 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 
-from dandi.publish.models import Dandiset, DraftVersion
-from dandi.publish.tasks import publish_version
-from dandi.publish.views.dandiset import DandisetSerializer
+from dandiapi.api.models import Dandiset, DraftVersion
+from dandiapi.api.tasks import publish_version
+from dandiapi.api.views.dandiset import DandisetSerializer
 
 
 class UserSerializer(serializers.Serializer):
