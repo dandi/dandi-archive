@@ -21,7 +21,8 @@ def test_stats_draft(api_client, dandiset):
 
 
 @pytest.mark.django_db
-def test_stats_published(api_client, version):
+def test_stats_published(api_client, published_version_factory):
+    published_version_factory()
     stats = api_client.get('/api/stats/').data
 
     assert stats['dandiset_count'] == 1
