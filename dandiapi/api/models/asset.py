@@ -1,101 +1,100 @@
 from __future__ import annotations
 
-import hashlib
-import logging
-from tempfile import NamedTemporaryFile
 from typing import List, Set
 import uuid
 
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
-from django.core.files import File
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import Sum
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.girder import GirderClient, GirderFile
 from dandiapi.api.storage import DeconstructableFileField, create_s3_storage
 
 from .version import Version
-
-logger = logging.getLogger(__name__)
 
 
 def _get_asset_blob_storage() -> Storage:
     return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
-def _get_asset_blob_prefix(instance: Asset, filename: str) -> str:
-    return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
+def _get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
+    # return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
+    return filename
+
+
+class AssetBlob(TimeStampedModel):
+    SHA256_REGEX = r'[0-9a-f]{64}'
+
+    blob = DeconstructableFileField(
+        blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
+    )
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    path = models.CharField(max_length=512)
+    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
+
+    @property
+    def size(self):
+        return self.blob.size
+
+    @property
+    def references(self) -> int:
+        return self.assets.count()
+
+    def __str__(self) -> str:
+        return self.blob.name
+
+
+class AssetMetadata(TimeStampedModel):
+    metadata = JSONField(blank=True, default=dict)
+
+    @property
+    def references(self) -> int:
+        return self.assets.count()
+
+    def __str__(self) -> str:
+        return str(self.metadata)
+
+    @classmethod
+    def create_or_find(cls, metadata):
+        try:
+            return cls.objects.get(metadata=metadata)
+        except ObjectDoesNotExist:
+            return cls(metadata=metadata)
 
 
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     SHA256_REGEX = r'[0-9a-f]{64}'
 
-    version = models.ForeignKey(
-        Version, related_name='assets', on_delete=models.CASCADE
-    )  # used to be called dandiset
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
+    metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
+    version = models.ForeignKey(Version, related_name='assets', on_delete=models.CASCADE)
 
-    path = models.CharField(max_length=512)
-    size = models.BigIntegerField()
-    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
-    metadata = JSONField(blank=True, default=dict)
+    @property
+    def uuid(self):
+        return self.blob.uuid
 
-    blob = DeconstructableFileField(
-        blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
-    )
+    @property
+    def size(self):
+        return self.blob.size
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['uuid']),
-            models.Index(fields=['version', 'path']),
-        ]
-        ordering = ['version', 'path']
+    @property
+    def path(self):
+        return self.blob.path
 
-    # objects = SelectRelatedManager('version__dandiset')
+    @property
+    def sha256(self):
+        return self.blob.sha256
 
     def __str__(self) -> str:
         return self.path
 
     @classmethod
-    def from_girder(cls, version: Version, girder_file: GirderFile, client: GirderClient) -> Asset:
-        sha256_hasher = hashlib.sha256()
-        blob_size = 0
-
-        with NamedTemporaryFile('r+b') as local_stream:
-
-            logger.info(f'Downloading file {girder_file.girder_id}')
-            with client.iter_file_content(girder_file.girder_id) as file_content_iter:
-                for chunk in file_content_iter:
-                    sha256_hasher.update(chunk)
-                    blob_size += len(chunk)
-                    local_stream.write(chunk)
-            logger.info(f'Downloaded file {girder_file.girder_id}')
-
-            local_stream.seek(0)
-            # local_path = Path(local_stream.name)
-            sha256 = sha256_hasher.hexdigest()
-
-            blob = File(file=local_stream, name=girder_file.path.lstrip('/'))
-            # content_type is not part of the base File class (it on some other subclasses),
-            # but regardless S3Boto3Storage will respect and use it, if it's set
-            blob.content_type = 'application/octet-stream'
-
-            asset = Asset(
-                version=version,
-                path=girder_file.path,
-                size=blob_size,
-                sha256=sha256,
-                metadata=girder_file.metadata,
-                blob=blob,
-            )
-            # The actual upload of blob occurs when the asset is saved
-            asset.save()
-        return asset
+    def copy(cls, asset, version):
+        return Asset(blob=asset.blob, metadata=asset.metadata, version=version)
 
     @classmethod
     def get_path(cls, path_prefix: str, qs: List[str]) -> Set:
@@ -120,4 +119,6 @@ class Asset(TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        return cls.objects.aggregate(size=Sum('size'))['size'] or 0
+        return sum([asset.size for asset in cls.objects.all()])
+        return cls.objects.values('size')
+        return cls.objects.aggregate(size=models.Sum('blob__blob__size'))['size'] or 0
