@@ -1,25 +1,23 @@
+from django.contrib.auth.models import User
 from django.http import Http404
-from rest_framework import serializers, status
+from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
+from guardian.shortcuts import assign_perm
+from guardian.utils import get_40x_or_None
+from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.girder import GirderClient
-from dandiapi.api.models import Dandiset
+from dandiapi.api.models import Dandiset, Version, VersionMetadata
 from dandiapi.api.views.common import DandiPagination
-
-
-class DandisetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Dandiset
-        fields = [
-            'identifier',
-            'created',
-            'modified',
-        ]
-        read_only_fields = ['created']
+from dandiapi.api.views.serializers import (
+    DandisetSerializer,
+    UserSerializer,
+    VersionMetadataSerializer,
+)
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
@@ -46,12 +44,47 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         return super().get_object()
 
-    @action(detail=False, methods=['POST'], serializer_class=None)
-    def sync(self, request):
-        if 'folder-id' not in request.query_params:
-            raise ValidationError('Missing query parameter "folder-id"')
-        draft_folder_id = request.query_params['folder-id']
+    @swagger_auto_schema(request_body=VersionMetadataSerializer())
+    def create(self, request):
+        serializer = VersionMetadataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        version_metadata = VersionMetadata.create_or_find(**serializer.validated_data)
+        version_metadata.save()
+        dandiset = Dandiset()
+        dandiset.save()
+        assign_perm('owner', request.user, dandiset)
+        version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
+        version.save()
 
-        with GirderClient() as client:
-            Dandiset.from_girder(draft_folder_id, client)
-        return Response('', status=status.HTTP_202_ACCEPTED)
+        serializer = DandisetSerializer(instance=dandiset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # TODO move these into a viewset
+    @action(methods=['GET', 'PUT'], detail=True)
+    def users(self, request, dandiset__pk):
+        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        if request.method == 'PUT':
+            # Verify that the user is currently an owner
+            response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
+            if response:
+                return response
+
+            serializer = UserSerializer(data=request.data, many=True)
+            serializer.is_valid(raise_exception=True)
+
+            def get_user_or_400(username):
+                try:
+                    return User.objects.get(username=username)
+                except User.DoesNotExist:
+                    raise ValidationError(f'User {username} not found')
+
+            owners = [
+                get_user_or_400(username=owner['username']) for owner in serializer.validated_data
+            ]
+            if len(owners) < 1:
+                raise ValidationError('Cannot remove all draft owners')
+
+            dandiset.set_owners(owners)
+            dandiset.save()
+        serializer = UserSerializer(dandiset.owners, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

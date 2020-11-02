@@ -10,11 +10,6 @@ from dandiapi.api.views import (
     AssetViewSet,
     DandisetViewSet,
     VersionViewSet,
-    draft_lock_view,
-    draft_owners_view,
-    draft_publish_view,
-    draft_unlock_view,
-    draft_view,
     search_view,
     stats_view,
 )
@@ -38,6 +33,7 @@ router = ExtendedSimpleRouter()
         ],
     )
 )
+
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -66,11 +62,11 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/search/', search_view),
     path('api/stats/', stats_view),
-    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/', draft_view),
-    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/lock/', draft_lock_view),
-    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/unlock/', draft_unlock_view),
-    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/publish/', draft_publish_view),
-    path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/owners/', draft_owners_view),
+    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/', draft_view),
+    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/lock/', draft_lock_view),
+    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/unlock/', draft_unlock_view),
+    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/publish/', draft_publish_view),
+    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/owners/', draft_owners_view),
     path('admin/', admin.site.urls),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
