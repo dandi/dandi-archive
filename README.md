@@ -1,4 +1,4 @@
-# dandi-publish
+# dandi-api
 
 ## Develop with Docker (recommended quickstart)
 This is the simplest configuration for developers to start with.
@@ -42,7 +42,7 @@ but allows developers to run Python code on their native system.
    2. `./manage.py runserver`
 3. Run in a separate terminal:
    1. `source ./dev/source-native-env.sh`
-   2. `celery worker --app dandi.celery --loglevel info --without-heartbeat`
+   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat`
 4. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
@@ -87,8 +87,8 @@ To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
 
 ## Connecting to `dandiarchive`
-`dandiarchive` is another application and will need to be setup and run separately. 
-1. Login to the `dandiarchive` Girder client using the `publish` admin account. If 
+`dandiarchive` is another application and will need to be setup and run separately.
+1. Login to the `dandiarchive` Girder client using the `publish` admin account. If
 you followed the README it will be located at `http://localhost:8080/`.
    * **NOTE**: the username of the Girder admin account used here must be `publish` for publishing to work properly. If an admin account with that username doesn't exist, it must be created.
 2. Navigate to account settings, click on the 'API keys' tab, and generate an API key.
