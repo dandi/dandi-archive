@@ -1,6 +1,6 @@
 from django.http import HttpResponseRedirect
 from django_filters import rest_framework as filters
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg2.utils import swagger_auto_schema
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action

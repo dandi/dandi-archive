@@ -46,7 +46,7 @@ setup(
         'django-guardian',
         'djangorestframework',
         'drf-extensions',
-        'drf-yasg',
+        'drf-yasg2',
         'httpx',
         'psycopg2',
         'rich',
