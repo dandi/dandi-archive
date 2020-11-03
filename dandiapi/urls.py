@@ -67,6 +67,7 @@ urlpatterns = [
     # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/unlock/', draft_unlock_view),
     # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/publish/', draft_publish_view),
     # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/owners/', draft_owners_view),
+    path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
