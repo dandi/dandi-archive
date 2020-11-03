@@ -42,7 +42,7 @@ class DandiConfig(ConfigMixin):
 
     REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
-    ACCOUNT_EMAIL_VERIFICATION = "none"
+    ACCOUNT_EMAIL_VERIFICATION = 'none'
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
