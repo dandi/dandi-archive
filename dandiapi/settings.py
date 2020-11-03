@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 from typing import Type
 
-from configurations import values
-from django_girders.configuration import (
+from composed_configuration import (
     ComposedConfiguration,
     ConfigMixin,
     DevelopmentBaseConfiguration,
@@ -11,6 +10,7 @@ from django_girders.configuration import (
     ProductionBaseConfiguration,
     TestingBaseConfiguration,
 )
+from configurations import values
 
 
 class SentryConfig(ConfigMixin):
@@ -38,7 +38,7 @@ class DandiConfig(ConfigMixin):
     WSGI_APPLICATION = 'dandiapi.wsgi.application'
     ROOT_URLCONF = 'dandiapi.urls'
 
-    BASE_DIR = str(Path(__file__).absolute().parent.parent)
+    BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
     REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
