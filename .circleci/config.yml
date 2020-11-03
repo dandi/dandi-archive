@@ -4,7 +4,7 @@ jobs:
   test:
     docker:
       - image: circleci/python:3.8
-      - image: circleci/postgres:12-ram
+      - image: circleci/postgres:latest-ram
         environment:
           POSTGRES_DB: django
           POSTGRES_PASSWORD: postgres
