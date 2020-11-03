@@ -1,8 +1,8 @@
 from django.contrib.postgres.search import SearchVector
 from django.db.models import TextField
 from django.db.models.functions import Cast
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg2 import openapi
+from drf_yasg2.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
