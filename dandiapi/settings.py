@@ -53,7 +53,7 @@ class DandiConfig(ConfigMixin):
         configuration.INSTALLED_APPS += [
             'dandiapi.api.apps.PublishConfig',
             'guardian',
-            'allauth.socialaccount.providers.github'
+            'allauth.socialaccount.providers.github',
         ]
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
