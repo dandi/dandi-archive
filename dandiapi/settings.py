@@ -46,8 +46,19 @@ class DandiConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.INSTALLED_APPS += ['dandiapi.api.apps.PublishConfig', 'guardian']
+        # TODO django-composed-configuration still refers to drf_yasg2,
+        # but we need the changes introduced in drf_yasg, so we need to patch it.
+        configuration.INSTALLED_APPS[configuration.INSTALLED_APPS.index('drf_yasg2')] = 'drf_yasg'
+
+        configuration.INSTALLED_APPS += [
+            'dandiapi.api.apps.PublishConfig',
+            'guardian',
+            'allauth.socialaccount.providers.github',
+        ]
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
+            'rest_framework.authentication.SessionAuthentication'
+        ]
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)

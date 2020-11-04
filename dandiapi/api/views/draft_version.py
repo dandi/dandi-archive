@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
-from drf_yasg2.utils import swagger_auto_schema
+from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
