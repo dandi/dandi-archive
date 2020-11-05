@@ -57,6 +57,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         return super().get_object()
 
     @swagger_auto_schema(request_body=AssetMetadataSerializer())
+    # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
     def update(self, request, **kwargs):
         """Update the metadata of an asset."""
         asset = self.get_object()
@@ -73,6 +74,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         asset_metadata.save()
 
         asset.metadata = asset_metadata
+        asset.save()
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
