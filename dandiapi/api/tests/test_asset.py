@@ -101,8 +101,8 @@ def test_asset_rest_update(api_client, user, asset):
     assign_perm('owner', user, asset.version.dandiset)
     api_client.force_authenticate(user=user)
 
-    new_metadata = asset.metadata.metadata
-    new_metadata['new_field'] = 'new_value'
+    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+
     assert api_client.put(
         f'/api/dandisets/{asset.version.dandiset.identifier}/'
         f'versions/{asset.version.version}/assets/{asset.path}/',
@@ -130,6 +130,9 @@ def test_asset_rest_update(api_client, user, asset):
         },
         'metadata': new_metadata,
     }
+
+    asset.refresh_from_db()
+    assert asset.metadata.metadata == new_metadata
 
 
 @pytest.mark.django_db

@@ -24,6 +24,10 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
     class Meta:
         model = VersionMetadata
         fields = ['metadata', 'name']
+        # By default, validators contains a single UniqueTogether constraint.
+        # This will fail serialization if the version metadata already exists,
+        # which we do not want.
+        validators = []
 
 
 class VersionSerializer(serializers.ModelSerializer):
