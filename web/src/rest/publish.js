@@ -42,8 +42,10 @@ const publishRest = new Vue({
     },
     async assets(identifier, version, config = {}) {
       try {
-        const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
-        return data;
+        // TODO temporarily skipping requests to django API
+        return null;
+        // const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
+        // return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
           return null;
@@ -52,17 +54,21 @@ const publishRest = new Vue({
       }
     },
     async assetPaths(identifier, version, location) {
-      const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets/paths/`, {
-        params: {
-          path_prefix: location,
-        },
-      });
-      return data;
+      // TODO temporarily skipping requests to django API
+      return [];
+      // const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets/paths/`, {
+      //   params: {
+      //     path_prefix: location,
+      //   },
+      // });
+      // return data;
     },
     async versions(identifier) {
       try {
-        const { data } = await client.get(`api/dandisets/${identifier}/versions/`);
-        return data;
+        // TODO temporarily skipping requests to django API
+        return null;
+        // const { data } = await client.get(`api/dandisets/${identifier}/versions/`);
+        // return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
           return null;
@@ -75,8 +81,10 @@ const publishRest = new Vue({
     },
     async specificVersion(identifier, version) {
       try {
-        const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/`);
-        return girderize(data);
+        // TODO temporarily skipping requests to django API
+        return null;
+        // const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/`);
+        // return girderize(data);
       } catch (error) {
         if (error.response && error.response.status === 404) {
           return null;
