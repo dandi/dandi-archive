@@ -12,6 +12,10 @@ from dandiapi.api.views import (
     VersionViewSet,
     search_view,
     stats_view,
+    upload_complete_view,
+    upload_get_validation_view,
+    upload_initialize_view,
+    upload_validate_view,
 )
 
 router = ExtendedSimpleRouter()
@@ -62,11 +66,14 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/search/', search_view),
     path('api/stats/', stats_view),
-    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/', draft_view),
-    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/lock/', draft_lock_view),
-    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/unlock/', draft_unlock_view),
-    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/publish/', draft_publish_view),
-    # path(r'api/dandisets/<dandiset_id:dandiset__pk>/draft/owners/', draft_owners_view),
+    path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
+    path('api/uploads/complete/', upload_complete_view, name='upload-complete'),
+    path('api/uploads/validate/', upload_validate_view, name='upload-validate'),
+    path(
+        'api/uploads/validations/<slug:sha256>/',
+        upload_get_validation_view,
+        name='upload-get-validation',
+    ),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

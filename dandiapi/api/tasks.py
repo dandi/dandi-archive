@@ -1,27 +1,23 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.contrib.auth.models import User
 from django.db.transaction import atomic
 
-from dandiapi.api.girder import GirderClient
-from dandiapi.api.models import Asset, Dandiset, Version
+from dandiapi.api.models import Validation
 
 logger = get_task_logger(__name__)
 
 
 @shared_task
 @atomic
-def publish_version(dandiset_id: int, user_id) -> None:
-    dandiset = Dandiset.objects.get(pk=dandiset_id)
-    try:
-        with GirderClient(authenticate=True) as client:
-            with client.dandiset_lock(dandiset.identifier):
-                version = Version.from_girder(dandiset, client)
+def validate(validation_id: int) -> None:
+    validation: Validation = Validation.objects.get(pk=validation_id)
+    # TODO: Verify sha256 checksum
+    # TODO: Run dandi-cli validation
 
-                for girder_file in client.files_in_folder(dandiset.draft_folder_id):
-                    Asset.from_girder(version, girder_file, client)
-    finally:
-        # The draft was locked in django by the publish action
-        # We need to unlock it now
-        dandiset.draft_version.unlock(User.objects.get(id=user_id))
-        dandiset.draft_version.save()
+    # For now we just wait 10 seconds to simulate some latency
+    import time
+
+    time.sleep(10)
+
+    validation.state = Validation.State.SUCCEEDED
+    validation.save()

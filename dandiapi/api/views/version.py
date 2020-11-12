@@ -40,8 +40,6 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         if response:
             return response
 
-        print(VersionMetadata.objects.all())
-        print(request.data)
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         version_metadata = VersionMetadata.create_or_find(**serializer.validated_data)
