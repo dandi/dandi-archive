@@ -28,8 +28,6 @@ from dandiapi.api.views.serializers import ValidationSerializer
 class UploadInitializationRequestSerializer(serializers.Serializer):
     file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
-    sha256 = serializers.CharField(trim_whitespace=False)
-    # part_size = serializers.IntegerField(min_value=1)
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -72,15 +70,8 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
 
 
 class UploadValidationRequestSerializer(serializers.Serializer):
-    object_key = serializers.CharField(trim_whitespace=False)
+    object_key = serializers.CharField(trim_whitespace=False, required=False)
     sha256 = serializers.CharField(trim_whitespace=False)
-
-    def create(self, validated_data) -> Validation:
-        return Validation(
-            blob=validated_data['object_key'],
-            sha256=validated_data['sha256'],
-            state=Validation.State.IN_PROGRESS,
-        )
 
 
 @swagger_auto_schema(
@@ -166,20 +157,29 @@ def upload_validate_view(request: Request) -> HttpResponseBase:
     The validation process checks that the given sha256 checksum matches the checksum calculated on
     the uploaded object, and that Dandi CLI validation succeeds. Validation must succeed before an
     asset can be registered.
+    If the object_key is not specified, it will be looked up using the sha256 checksum if a valid
+    object has been validated before. This allows clients to check if blobs have already been
+    uploaded before uploading it themselves.
     """
     request_serializer = UploadValidationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    validation: Validation = request_serializer.save()
+    # validation: Validation = request_serializer.save()
 
     # Use the validation from the DB if it already exists
     try:
-        validation = Validation.objects.get(sha256=validation.sha256)
+        validation = Validation.objects.get(sha256=request_serializer.validated_data['sha256'])
         # Concurrent validation creates a race condition in celery, so avoid it if possible
         if validation.state == Validation.State.IN_PROGRESS:
             raise ValidationError('Validation already in progress.')
         validation.state = Validation.State.IN_PROGRESS
     except Validation.DoesNotExist:
-        pass
+        if 'object_key' not in request_serializer.validated_data:
+            raise ValidationError('A validation for an object with that checksum does not exist.')
+        validation = Validation(
+            blob=request_serializer.validated_data['object_key'],
+            sha256=request_serializer.validated_data['sha256'],
+            state=Validation.State.IN_PROGRESS,
+        )
 
     if not validation.object_key_exists():
         raise ValidationError('Object does not exist.')

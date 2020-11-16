@@ -42,7 +42,7 @@ def test_validate(api_client, user):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('state', [Validation.State.SUCCEEDED, Validation.State.FAILED])
-def test_validate_old_validation(api_client, user, state):
+def test_validate_no_object_key(api_client, user, state):
     api_client.force_authenticate(user=user)
 
     object_key = 'test.txt'
@@ -61,7 +61,6 @@ def test_validate_old_validation(api_client, user, state):
         api_client.post(
             '/api/uploads/validate/',
             {
-                'object_key': object_key,
                 'sha256': sha256,
             },
             format='json',
@@ -72,6 +71,21 @@ def test_validate_old_validation(api_client, user, state):
     validation = Validation.objects.get(sha256=sha256)
     assert validation.blob.name == object_key
     assert validation.state == Validation.State.IN_PROGRESS
+
+
+@pytest.mark.django_db
+def test_validate_no_object_key_wrong_sha256(api_client, user):
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        '/api/uploads/validate/',
+        {
+            'sha256': 'wrong-sha256',
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.data == ['A validation for an object with that checksum does not exist.']
 
 
 @pytest.mark.django_db

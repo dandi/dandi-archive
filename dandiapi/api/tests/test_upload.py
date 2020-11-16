@@ -19,7 +19,7 @@ def test_upload_initialize(api_client, user):
 
     assert api_client.post(
         '/api/uploads/initialize/',
-        {'file_name': file_name, 'file_size': file_size, 'sha256': 'test-sha256'},
+        {'file_name': file_name, 'file_size': file_size},
         format='json',
     ).data == {
         'object_key': file_name,
@@ -89,7 +89,7 @@ def test_upload_initialize_and_complete(api_client, user, file_size):
     # Get the presigned upload URL
     initialization = api_client.post(
         '/api/uploads/initialize/',
-        {'file_name': file_name, 'file_size': file_size, 'sha256': 'test-sha256'},
+        {'file_name': file_name, 'file_size': file_size},
         format='json',
     ).data
 
