@@ -26,6 +26,9 @@ class Validation(TimeStampedModel):
         SUCCEEDED = 'SUCCEEDED', 'Succeeded'
         FAILED = 'FAILED', 'Failed'
 
+    class Meta:
+        indexes = [models.Index(fields=['sha256'])]
+
     blob = DeconstructableFileField(
         blank=True, storage=_get_validation_blob_storage, upload_to=_get_validation_blob_prefix
     )
