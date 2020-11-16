@@ -62,8 +62,5 @@ class AssetAdmin(admin.ModelAdmin):
 
 @admin.register(Validation)
 class ValidationAdmin(admin.ModelAdmin):
-    # list_display = ['id', 'uuid', 'path']
-    # list_display_links = ['id', 'uuid']
     list_display = ['id', 'blob', 'state', 'sha256', 'error', 'modified', 'created']
     list_display_links = ['id', 'blob', 'sha256']
-    # inlines = [AssetBlobInline]
