@@ -99,7 +99,7 @@ def test_validate_in_progress_validation(api_client, user):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == ['Validation already in progress']
+    assert resp.data == ['Validation already in progress.']
 
 
 @pytest.mark.django_db
@@ -122,7 +122,7 @@ def test_validate_object_does_not_exist(api_client, user):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == ['Object does not exist']
+    assert resp.data == ['Object does not exist.']
 
 
 @pytest.mark.django_db

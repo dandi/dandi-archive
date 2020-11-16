@@ -176,13 +176,13 @@ def upload_validate_view(request: Request) -> HttpResponseBase:
         validation = Validation.objects.get(sha256=validation.sha256)
         # Concurrent validation creates a race condition in celery, so avoid it if possible
         if validation.state == Validation.State.IN_PROGRESS:
-            raise ValidationError('Validation already in progress')
+            raise ValidationError('Validation already in progress.')
         validation.state = Validation.State.IN_PROGRESS
     except Validation.DoesNotExist:
         pass
 
     if not validation.object_key_exists():
-        raise ValidationError('Object does not exist')
+        raise ValidationError('Object does not exist.')
 
     validation.save()
 
