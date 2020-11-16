@@ -1,7 +1,7 @@
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.models import Asset
+from dandiapi.api.models import Asset, Validation
 
 from .fuzzy import TIMESTAMP_RE
 
@@ -185,6 +185,43 @@ def test_asset_create(api_client, user, version, validation):
 
     asset = Asset.objects.get(blob__sha256=validation.sha256, version=version)
     assert asset.metadata.metadata == metadata
+
+
+@pytest.mark.django_db
+def test_asset_create_no_validation(api_client, user, version):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    sha256 = 'sha256'
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {'metadata': metadata, 'sha256': sha256},
+            format='json',
+        ).data
+        == {'detail': 'Not found.'}
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('state', [Validation.State.IN_PROGRESS, Validation.State.FAILED])
+def test_asset_create_no_succesful_validation(api_client, user, version, validation_factory, state):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    validation = validation_factory(state=state)
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {'metadata': metadata, 'sha256': validation.sha256},
+            format='json',
+        ).data
+        == ['Validation has not succeeded.']
+    )
 
 
 @pytest.mark.django_db

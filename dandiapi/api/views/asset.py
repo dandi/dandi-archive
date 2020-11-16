@@ -112,7 +112,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             sha256=serializer.validated_data['sha256'],
         )
         if validation.state != Validation.State.SUCCEEDED:
-            raise ValidationError('Validation has not succeeded')
+            raise ValidationError('Validation has not succeeded.')
         # TODO: Check that the validation is not too old
 
         asset_blob = AssetBlob.from_validation(validation)
