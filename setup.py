@@ -45,7 +45,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-guardian',
-        'django-s3-file-field>=0.0.15',
+        'django-s3-file-field>=0.0.17',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
