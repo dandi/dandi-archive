@@ -167,6 +167,40 @@ def test_asset_rest_update_not_an_owner(api_client, user, asset):
     )
 
 
+@pytest.mark.django_db
+def test_asset_create(api_client, user, version, validation):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {'metadata': metadata, 'sha256': validation.sha256},
+            format='json',
+        ).status_code
+        == 201
+    )
+
+    asset = Asset.objects.get(blob__sha256=validation.sha256, version=version)
+    assert asset.metadata.metadata == metadata
+
+
+@pytest.mark.django_db
+def test_asset_create_not_an_owner(api_client, user, version):
+    api_client.force_authenticate(user=user)
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {},
+            format='json',
+        ).status_code
+        == 403
+    )
+
+
 # @pytest.mark.django_db
 # @pytest.mark.parametrize(
 #     'new_path,expected',
