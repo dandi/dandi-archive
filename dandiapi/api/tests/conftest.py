@@ -10,6 +10,7 @@ from .factories import (
     DraftVersionFactory,
     PublishedVersionFactory,
     UserFactory,
+    ValidationFactory,
     VersionMetadataFactory,
 )
 
@@ -22,6 +23,7 @@ register(DraftVersionFactory)
 # registering DraftVersionFactory after PublishedVersionFactory means
 # the fixture `version` will always be a draft
 register(UserFactory)
+register(ValidationFactory)
 register(VersionMetadataFactory)
 
 

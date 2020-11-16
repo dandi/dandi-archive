@@ -13,6 +13,7 @@ from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.storage import DeconstructableFileField, create_s3_storage
 
+from .validation import Validation
 from .version import Version
 
 
@@ -45,6 +46,10 @@ class AssetBlob(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob.name
+
+    @classmethod
+    def from_validation(cls, validation: Validation):
+        return AssetBlob(blob=validation.blob, path=validation.blob.name, sha256=validation.sha256)
 
 
 class AssetMetadata(TimeStampedModel):

@@ -1,7 +1,15 @@
 from django.contrib import admin
 from guardian.admin import GuardedModelAdmin
 
-from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
+from dandiapi.api.models import (
+    Asset,
+    AssetBlob,
+    AssetMetadata,
+    Dandiset,
+    Validation,
+    Version,
+    VersionMetadata,
+)
 
 
 @admin.register(Dandiset)
@@ -50,3 +58,9 @@ class AssetAdmin(admin.ModelAdmin):
     list_display = ['id', 'path', 'version', 'blob', 'metadata', 'modified', 'created']
     list_display_links = ['id', 'path']
     # inlines = [AssetBlobInline]
+
+
+@admin.register(Validation)
+class ValidationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'blob', 'state', 'sha256', 'error', 'modified', 'created']
+    list_display_links = ['id', 'blob', 'sha256']

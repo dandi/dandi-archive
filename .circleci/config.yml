@@ -13,6 +13,8 @@ jobs:
         environment:
           MINIO_ACCESS_KEY: minioAccessKey
           MINIO_SECRET_KEY: minioSecretKey
+      - image: rabbitmq:management
+        name: rabbitmq
     steps:
       - checkout
       - run:
@@ -26,6 +28,7 @@ jobs:
             DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
             DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
 workflows:
   version: 2
   ci:

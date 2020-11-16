@@ -1,7 +1,15 @@
 from django.contrib.auth.models import User
-import factory.django
+import factory
 
-from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
+from dandiapi.api.models import (
+    Asset,
+    AssetBlob,
+    AssetMetadata,
+    Dandiset,
+    Validation,
+    Version,
+    VersionMetadata,
+)
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -69,7 +77,8 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     blob = factory.django.FileField(data=b'somefilebytes')
     path = factory.Faker('file_path', extension='nwb')
-    sha256 = factory.Faker('hexify', text='^' * 64)
+    # TODO: This sha256 is technically invalid for the blob
+    sha256 = factory.Faker('sha256')
 
 
 class AssetMetadataFactory(factory.django.DjangoModelFactory):
@@ -84,10 +93,16 @@ class AssetFactory(factory.django.DjangoModelFactory):
         model = Asset
 
     version = factory.SubFactory(DraftVersionFactory)
-    # path = factory.Faker('file_path', extension='nwb')
-    # # size = factory.LazyAttribute(lambda asset: asset.blob.size)
-    # size = factory.SelfAttribute('blob.size')
-    # TODO: This sha256 is technically invalid for the blob
-    # sha256 = factory.Faker('hexify', text='^' * 64)
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
+
+
+class ValidationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Validation
+
+    blob = factory.django.FileField(data=b'validationbytes')
+    # TODO: This sha256 is technically invalid for the blob
+    sha256 = factory.Faker('sha256')
+    state = 'SUCCEEDED'
+    error = factory.Faker('sentence')
