@@ -77,7 +77,8 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     blob = factory.django.FileField(data=b'somefilebytes')
     path = factory.Faker('file_path', extension='nwb')
-    sha256 = factory.Faker('hexify', text='^' * 64)
+    # TODO: This sha256 is technically invalid for the blob
+    sha256 = factory.Faker('sha256')
 
 
 class AssetMetadataFactory(factory.django.DjangoModelFactory):
@@ -92,11 +93,6 @@ class AssetFactory(factory.django.DjangoModelFactory):
         model = Asset
 
     version = factory.SubFactory(DraftVersionFactory)
-    # path = factory.Faker('file_path', extension='nwb')
-    # # size = factory.LazyAttribute(lambda asset: asset.blob.size)
-    # size = factory.SelfAttribute('blob.size')
-    # TODO: This sha256 is technically invalid for the blob
-    # sha256 = factory.Faker('hexify', text='^' * 64)
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
 
