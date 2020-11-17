@@ -17,4 +17,4 @@ COPY ./setup.py /opt/django-project/setup.py
 RUN pip install --editable /opt/django-project[dev]
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
-WORKDIR /opt/django
+WORKDIR /opt/django-project
