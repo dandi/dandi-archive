@@ -1,9 +1,9 @@
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.models import Asset, Validation
+from dandiapi.api.models import Asset
 
-from .fuzzy import TIMESTAMP_RE
+from .fuzzy import TIMESTAMP_RE, UUID_RE
 
 # Model tests
 
@@ -42,7 +42,7 @@ def test_asset_rest_list(api_client, asset):
         'previous': None,
         'results': [
             {
-                'uuid': asset.uuid,
+                'uuid': str(asset.uuid),
                 'path': asset.path,
                 'size': asset.size,
                 'sha256': asset.sha256,
@@ -71,9 +71,9 @@ def test_asset_rest_list(api_client, asset):
 def test_asset_rest_retrieve(api_client, asset):
     assert api_client.get(
         f'/api/dandisets/{asset.version.dandiset.identifier}/'
-        f'versions/{asset.version.version}/assets/{asset.path}/'
+        f'versions/{asset.version.version}/assets/{asset.uuid}/'
     ).data == {
-        'uuid': asset.uuid,
+        'uuid': str(asset.uuid),
         'path': asset.path,
         'size': asset.size,
         'sha256': asset.sha256,
@@ -97,22 +97,96 @@ def test_asset_rest_retrieve(api_client, asset):
 
 
 @pytest.mark.django_db
-def test_asset_rest_update(api_client, user, asset):
+def test_asset_create(api_client, user, version, asset_blob):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+
+    assert api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'path': path, 'metadata': metadata, 'sha256': asset_blob.sha256},
+        format='json',
+    ).data == {
+        'uuid': UUID_RE,
+        'path': path,
+        'sha256': asset_blob.sha256,
+        'size': asset_blob.size,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'version': {
+            'dandiset': {
+                'identifier': version.dandiset.identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            },
+            'version': version.version,
+            'name': version.name,
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+            'asset_count': 1,
+            'size': asset_blob.size,
+        },
+        'metadata': metadata,
+    }
+
+    asset = Asset.objects.get(blob__sha256=asset_blob.sha256, version=version)
+    assert asset.metadata.metadata == metadata
+
+
+@pytest.mark.django_db
+def test_asset_create_no_valid_blob(api_client, user, version):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/no/valid/blob.txt'
+    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    sha256 = 'f' * 64
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {'path': path, 'metadata': metadata, 'sha256': sha256},
+            format='json',
+        ).data
+        == {'detail': 'Not found.'}
+    )
+
+
+@pytest.mark.django_db
+def test_asset_create_not_an_owner(api_client, user, version):
+    api_client.force_authenticate(user=user)
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {},
+            format='json',
+        ).status_code
+        == 403
+    )
+
+
+@pytest.mark.django_db
+def test_asset_rest_update(api_client, user, asset, asset_blob):
     assign_perm('owner', user, asset.version.dandiset)
     api_client.force_authenticate(user=user)
 
+    new_path = 'test/asset/rest/update.txt'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    new_sha256 = asset_blob.sha256
 
     assert api_client.put(
         f'/api/dandisets/{asset.version.dandiset.identifier}/'
-        f'versions/{asset.version.version}/assets/{asset.path}/',
-        {'metadata': new_metadata},
+        f'versions/{asset.version.version}/assets/{asset.uuid}/',
+        {'path': new_path, 'metadata': new_metadata, 'sha256': new_sha256},
         format='json',
     ).data == {
-        'uuid': asset.uuid,
-        'path': asset.path,
-        'size': asset.size,
-        'sha256': asset.sha256,
+        'uuid': str(asset.uuid),
+        'path': new_path,
+        'size': asset_blob.size,
+        'sha256': new_sha256,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'version': {
@@ -126,7 +200,7 @@ def test_asset_rest_update(api_client, user, asset):
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
             'asset_count': 1,
-            'size': asset.size,
+            'size': asset_blob.size,
         },
         'metadata': new_metadata,
     }
@@ -142,7 +216,7 @@ def test_asset_rest_update_unauthorized(api_client, asset):
     assert (
         api_client.put(
             f'/api/dandisets/{asset.version.dandiset.identifier}/'
-            f'versions/{asset.version.version}/assets/{asset.path}/',
+            f'versions/{asset.version.version}/assets/{asset.uuid}/',
             {'metadata': new_metadata},
             format='json',
         ).status_code
@@ -159,79 +233,8 @@ def test_asset_rest_update_not_an_owner(api_client, user, asset):
     assert (
         api_client.put(
             f'/api/dandisets/{asset.version.dandiset.identifier}/'
-            f'versions/{asset.version.version}/assets/{asset.path}/',
+            f'versions/{asset.version.version}/assets/{asset.uuid}/',
             {'metadata': new_metadata},
-            format='json',
-        ).status_code
-        == 403
-    )
-
-
-@pytest.mark.django_db
-def test_asset_create(api_client, user, version, validation):
-    assign_perm('owner', user, version.dandiset)
-    api_client.force_authenticate(user=user)
-
-    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
-
-    assert (
-        api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {'metadata': metadata, 'sha256': validation.sha256},
-            format='json',
-        ).status_code
-        == 201
-    )
-
-    asset = Asset.objects.get(blob__sha256=validation.sha256, version=version)
-    assert asset.metadata.metadata == metadata
-
-
-@pytest.mark.django_db
-def test_asset_create_no_validation(api_client, user, version):
-    assign_perm('owner', user, version.dandiset)
-    api_client.force_authenticate(user=user)
-
-    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
-    sha256 = 'sha256'
-
-    assert (
-        api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {'metadata': metadata, 'sha256': sha256},
-            format='json',
-        ).data
-        == {'detail': 'Not found.'}
-    )
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize('state', [Validation.State.IN_PROGRESS, Validation.State.FAILED])
-def test_asset_create_no_succesful_validation(api_client, user, version, validation_factory, state):
-    assign_perm('owner', user, version.dandiset)
-    api_client.force_authenticate(user=user)
-
-    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
-    validation = validation_factory(state=state)
-
-    assert (
-        api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {'metadata': metadata, 'sha256': validation.sha256},
-            format='json',
-        ).data
-        == ['Validation has not succeeded.']
-    )
-
-
-@pytest.mark.django_db
-def test_asset_create_not_an_owner(api_client, user, version):
-    api_client.force_authenticate(user=user)
-
-    assert (
-        api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {},
             format='json',
         ).status_code
         == 403
