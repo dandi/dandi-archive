@@ -28,7 +28,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     lookup_field = 'version'
     lookup_value_regex = Version.VERSION_REGEX
 
-    @swagger_auto_schema(request_body=VersionMetadataSerializer())
+    @swagger_auto_schema(
+        request_body=VersionMetadataSerializer(),
+        responses={200: VersionDetailSerializer()},
+    )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
@@ -55,7 +58,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['POST'], serializer_class=None)
+    @swagger_auto_schema(request_body=None, responses={200: VersionSerializer()})
+    @action(detail=True, methods=['POST'])
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def publish(self, request, **kwargs):
         old_version = self.get_object()
