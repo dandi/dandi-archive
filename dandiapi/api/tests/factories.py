@@ -76,7 +76,6 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         model = AssetBlob
 
     blob = factory.django.FileField(data=b'somefilebytes')
-    path = factory.Faker('file_path', extension='nwb')
     # TODO: This sha256 is technically invalid for the blob
     sha256 = factory.Faker('sha256')
 
@@ -92,6 +91,7 @@ class AssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
 
+    path = factory.Faker('file_path', extension='nwb')
     version = factory.SubFactory(DraftVersionFactory)
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
