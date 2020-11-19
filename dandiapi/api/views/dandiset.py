@@ -48,8 +48,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     def create(self, request):
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        version_metadata = VersionMetadata.create_or_find(**serializer.validated_data)
-        version_metadata.save()
+
+        version_metadata, created = VersionMetadata.objects.get_or_create(
+            name=serializer.validated_data['name'],
+            metadata=serializer.validated_data['metadata'],
+        )
+        if created:
+            version_metadata.save()
+
         dandiset = Dandiset()
         dandiset.save()
         assign_perm('owner', request.user, dandiset)

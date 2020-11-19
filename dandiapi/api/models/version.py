@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 
 from django.contrib.postgres.fields import JSONField
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -24,13 +23,6 @@ class VersionMetadata(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
-
-    @classmethod
-    def create_or_find(cls, metadata, name):
-        try:
-            return cls.objects.get(metadata=metadata, name=name)
-        except ObjectDoesNotExist:
-            return cls(metadata=metadata, name=name)
 
 
 def _get_default_version() -> str:
