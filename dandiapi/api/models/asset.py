@@ -5,7 +5,6 @@ import uuid
 
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
@@ -32,9 +31,10 @@ class AssetBlob(TimeStampedModel):
     blob = DeconstructableFileField(
         blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
     )
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512)
     sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
+
+    class Meta:
+        indexes = [models.Index(fields=['sha256'])]
 
     @property
     def size(self):
@@ -49,11 +49,11 @@ class AssetBlob(TimeStampedModel):
 
     @classmethod
     def from_validation(cls, validation: Validation):
-        return AssetBlob(blob=validation.blob, path=validation.blob.name, sha256=validation.sha256)
+        return cls.objects.get_or_create(blob=validation.blob, sha256=validation.sha256)
 
 
 class AssetMetadata(TimeStampedModel):
-    metadata = JSONField(blank=True, default=dict)
+    metadata = JSONField(blank=True, unique=True, default=dict)
 
     @property
     def references(self) -> int:
@@ -62,33 +62,22 @@ class AssetMetadata(TimeStampedModel):
     def __str__(self) -> str:
         return str(self.metadata)
 
-    @classmethod
-    def create_or_find(cls, metadata):
-        try:
-            return cls.objects.get(metadata=metadata)
-        except ObjectDoesNotExist:
-            return cls(metadata=metadata)
-
 
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
-    SHA256_REGEX = r'[0-9a-f]{64}'
 
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
     version = models.ForeignKey(Version, related_name='assets', on_delete=models.CASCADE)
 
-    @property
-    def uuid(self):
-        return self.blob.uuid
+    class Meta:
+        unique_together = ['path', 'version']
 
     @property
     def size(self):
         return self.blob.size
-
-    @property
-    def path(self):
-        return self.blob.path
 
     @property
     def sha256(self):
