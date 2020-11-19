@@ -2,7 +2,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
 
-from dandiapi.api.models import Validation
+from dandiapi.api.models import AssetBlob, Validation
 
 logger = get_task_logger(__name__)
 
@@ -21,3 +21,8 @@ def validate(validation_id: int) -> None:
 
     validation.state = Validation.State.SUCCEEDED
     validation.save()
+
+    # TODO separate storages for Validations and Assets require a copy at this point
+    asset_blob, created = AssetBlob.from_validation(validation)
+    if created:
+        asset_blob.save()
