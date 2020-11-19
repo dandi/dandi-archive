@@ -42,8 +42,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        version_metadata = VersionMetadata.create_or_find(**serializer.validated_data)
-        version_metadata.save()
+        version_metadata, created = VersionMetadata.objects.get_or_create(
+            name=serializer.validated_data['name'],
+            metadata=serializer.validated_data['metadata'],
+        )
+        if created:
+            version_metadata.save()
 
         version.metadata = version_metadata
         version.save()
