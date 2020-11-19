@@ -144,7 +144,9 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
 
 
 @swagger_auto_schema(
-    method='POST', request_body=UploadValidationRequestSerializer(), responses={204: 'No content'}
+    method='POST',
+    request_body=UploadValidationRequestSerializer(),
+    responses={204: 'No content'},
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])

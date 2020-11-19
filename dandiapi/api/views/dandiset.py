@@ -44,7 +44,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         return super().get_object()
 
-    @swagger_auto_schema(request_body=VersionMetadataSerializer())
+    @swagger_auto_schema(
+        request_body=VersionMetadataSerializer(),
+        responses={200: DandisetSerializer()},
+    )
     def create(self, request):
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -65,6 +68,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = DandisetSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(method='GET', responses={200: UserSerializer(many=True)})
+    @swagger_auto_schema(
+        method='PUT',
+        request_body=UserSerializer(many=True),
+        responses={200: UserSerializer(many=True)},
+    )
     # TODO move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):

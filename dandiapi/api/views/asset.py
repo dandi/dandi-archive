@@ -2,6 +2,7 @@ from django.core.validators import RegexValidator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from guardian.utils import get_40x_or_None
 from rest_framework import serializers, status
@@ -46,7 +47,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
 
-    @swagger_auto_schema(request_body=AssetRequestSerializer())
+    @swagger_auto_schema(
+        request_body=AssetRequestSerializer(),
+        responses={200: AssetDetailSerializer()},
+    )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
     def create(self, request, version__dandiset__pk, version__version):
         version: Version = get_object_or_404(
@@ -83,7 +87,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=AssetRequestSerializer())
+    @swagger_auto_schema(
+        request_body=AssetRequestSerializer(),
+        responses={200: AssetDetailSerializer()},
+    )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
     def update(self, request, **kwargs):
         """Update the metadata of an asset."""
@@ -114,11 +121,28 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        responses={
+            200: None,  # This disables the auto-generated 200 response
+            301: 'Redirect to object store',
+        }
+    )
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
         """Return a redirect to the file download in the object store."""
         return HttpResponseRedirect(redirect_to=self.get_object().blob.blob.url)
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING)
+        ],
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(type=openapi.TYPE_STRING),
+            )
+        },
+    )
     @action(detail=False, methods=['GET'])
     def paths(self, request, **kwargs):
         """
