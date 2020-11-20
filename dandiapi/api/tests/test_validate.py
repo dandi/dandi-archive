@@ -81,7 +81,7 @@ def test_validate_no_object_key_wrong_sha256(api_client, user):
     resp = api_client.post(
         '/api/uploads/validate/',
         {
-            'sha256': 'wrong-sha256',
+            'sha256': 'f' * 64,
         },
         format='json',
     )
