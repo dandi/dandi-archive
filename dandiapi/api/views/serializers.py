@@ -113,3 +113,8 @@ class ValidationSerializer(serializers.ModelSerializer):
             'created',
             'modified',
         ]
+
+
+class ValidationErrorSerializer(serializers.ModelSerializer):
+    class Meta(ValidationSerializer.Meta):
+        fields = ValidationSerializer.Meta.fields + ['error']
