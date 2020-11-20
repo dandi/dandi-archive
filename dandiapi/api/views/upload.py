@@ -22,7 +22,7 @@ from s3_file_field._multipart import MultipartManager, TransferredPart, Transfer
 
 from dandiapi.api.models import Validation
 from dandiapi.api.tasks import validate
-from dandiapi.api.views.serializers import ValidationSerializer
+from dandiapi.api.views.serializers import ValidationSerializer, ValidationErrorSerializer
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
@@ -192,7 +192,13 @@ def upload_validate_view(request: Request) -> HttpResponseBase:
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@swagger_auto_schema(method='GET', responses={200: ValidationSerializer()})
+@swagger_auto_schema(
+    method='GET',
+    responses={
+        200: ValidationSerializer(),
+        200: ValidationErrorSerializer(),
+    },
+)
 @api_view(['GET'])
 @parser_classes([JSONParser])
 @authentication_classes([SessionAuthentication])
@@ -201,5 +207,8 @@ def upload_get_validation_view(request: Request, sha256: str) -> HttpResponseBas
     """Get the status of a validation."""
     validation = get_object_or_404(Validation, sha256=sha256)
 
-    response_serializer = ValidationSerializer(validation)
+    if validation.state == Validation.State.FAILED:
+        response_serializer = ValidationErrorSerializer(validation)
+    else:
+        response_serializer = ValidationSerializer(validation)
     return Response(response_serializer.data)
