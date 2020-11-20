@@ -1,5 +1,4 @@
 import hashlib
-import sys
 from urllib.request import urlopen
 
 from celery import shared_task
@@ -17,7 +16,10 @@ class ChecksumMismatch(Exception):
         self.actual_sha256 = actual_sha256
 
     def __str__(self):
-        return f'Given checksum {self.expected_sha256} did not match calculated checksum {self.actual_sha256}.'
+        return (
+            f'Given checksum {self.expected_sha256} did not match '
+            f'calculated checksum {self.actual_sha256}.'
+        )
 
 
 @shared_task
@@ -26,15 +28,15 @@ def validate(validation_id: int) -> None:
     validation: Validation = Validation.objects.get(pk=validation_id)
 
     try:
-        BUFFER_SIZE = 4096
+        buffer_size = 4096
         h = hashlib.sha256()
 
         with urlopen(validation.blob.url) as stream:
             # html = f.read().decode('utf-8')
-            buffer = stream.read(BUFFER_SIZE)
+            buffer = stream.read(buffer_size)
             while buffer != b'':
                 h.update(buffer)
-                buffer = stream.read(BUFFER_SIZE)
+                buffer = stream.read(buffer_size)
 
         sha256 = h.hexdigest()
         logger.info('Calculated sha256 %s', sha256)

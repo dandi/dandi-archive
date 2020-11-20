@@ -203,7 +203,7 @@ def test_validation_task():
     validation.refresh_from_db()
 
     assert validation.state == Validation.State.SUCCEEDED
-    assert validation.error == None
+    assert validation.error is None
 
     # Successful validations also write an AssetBlob
     assert AssetBlob.objects.get(sha256=sha256)
