@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, register_converter
+from django.urls import include, path, re_path, register_converter
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -69,8 +69,8 @@ urlpatterns = [
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     path('api/uploads/complete/', upload_complete_view, name='upload-complete'),
     path('api/uploads/validate/', upload_validate_view, name='upload-validate'),
-    path(
-        'api/uploads/validations/<slug:sha256>/',
+    re_path(
+        r'^api/uploads/validations/(?P<sha256>[0-9a-f]{64})/$',
         upload_get_validation_view,
         name='upload-get-validation',
     ),

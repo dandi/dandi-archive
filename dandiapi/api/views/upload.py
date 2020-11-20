@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
+from django.core.validators import RegexValidator
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -71,7 +72,10 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
 
 class UploadValidationRequestSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False, required=False)
-    sha256 = serializers.CharField(trim_whitespace=False)
+    sha256 = serializers.CharField(
+        trim_whitespace=False,
+        validators=[RegexValidator(Validation.SHA256_REGEX)],
+    )
 
 
 @swagger_auto_schema(
