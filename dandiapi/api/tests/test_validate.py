@@ -3,7 +3,8 @@ import hashlib
 from django.core.files.base import ContentFile
 import pytest
 
-from dandiapi.api.models import Validation
+from dandiapi.api import tasks
+from dandiapi.api.models import AssetBlob, Validation
 
 from .fuzzy import TIMESTAMP_RE
 
@@ -148,27 +149,89 @@ def test_get_validation(api_client, user, state):
 
     object_key = 'does-not-exist.txt'
     contents = b'test content'
+    error = 'Serious errors encountered'
 
     h = hashlib.sha256()
     h.update(contents)
     sha256 = h.hexdigest()
 
     # Save an existing Validation that will be updated
-    Validation(blob=object_key, sha256=sha256, state=state).save()
+    Validation(blob=object_key, sha256=sha256, state=state, error=error).save()
 
-    assert api_client.get(
-        f'/api/uploads/validations/{sha256}/',
-        {
-            'object_key': object_key,
+    assert (
+        api_client.get(
+            f'/api/uploads/validations/{sha256}/',
+            {
+                'object_key': object_key,
+                'sha256': sha256,
+            },
+            format='json',
+        ).data
+        == {
+            'state': str(state),
             'sha256': sha256,
-        },
-        format='json',
-    ).data == {
-        'state': str(state),
-        'sha256': sha256,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-    }
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        }
+        if state != Validation.State.FAILED
+        else {
+            'state': str(state),
+            'sha256': sha256,
+            'error': error,
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        }
+    )
 
 
-# TODO: Test the celery task
+@pytest.mark.django_db
+def test_validation_task():
+    object_key = 'test.txt'
+    contents = b'test content'
+
+    h = hashlib.sha256()
+    h.update(contents)
+    sha256 = h.hexdigest()
+
+    Validation.blob.field.storage.save(object_key, ContentFile(contents))
+
+    validation = Validation(blob=object_key, state=Validation.State.IN_PROGRESS, sha256=sha256)
+    validation.save()
+
+    tasks.validate(validation.id)
+
+    validation.refresh_from_db()
+
+    assert validation.state == Validation.State.SUCCEEDED
+    assert validation.error == None
+
+    # Successful validations also write an AssetBlob
+    assert AssetBlob.objects.get(sha256=sha256)
+
+
+@pytest.mark.django_db
+def test_validation_task_incorrect_checksum():
+    object_key = 'test.txt'
+    contents = b'test content'
+
+    h = hashlib.sha256()
+    h.update(contents)
+    correct_sha256 = h.hexdigest()
+    # This will make the checksum incorrect
+    h.update(b'bad data')
+    sha256 = h.hexdigest()
+
+    Validation.blob.field.storage.save(object_key, ContentFile(contents))
+
+    validation = Validation(blob=object_key, state=Validation.State.IN_PROGRESS, sha256=sha256)
+    validation.save()
+
+    tasks.validate(validation.id)
+
+    validation.refresh_from_db()
+
+    assert validation.state == Validation.State.FAILED
+    assert (
+        validation.error
+        == f'Given checksum {sha256} did not match calculated checksum {correct_sha256}.'
+    )
