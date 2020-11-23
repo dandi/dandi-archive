@@ -7,22 +7,21 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-// TODO temporarily skipping requests to django API
-// function girderize(publishedDandiset) {
-//   const { // eslint-disable-next-line camelcase
-//     created, modified, dandi_id, version, metadata, name,
-//   } = publishedDandiset;
-//   return {
-//     created,
-//     updated: modified,
-//     version,
-//     name,
-//     lowerName: dandi_id,
-//     meta: {
-//       dandiset: metadata,
-//     },
-//   };
-// }
+function girderize(publishedDandiset) {
+  const { // eslint-disable-next-line camelcase
+    created, modified, dandi_id, version, metadata, name,
+  } = publishedDandiset;
+  return {
+    created,
+    updated: modified,
+    version,
+    name,
+    lowerName: dandi_id,
+    meta: {
+      dandiset: metadata,
+    },
+  };
+}
 
 const client = axios.create({ baseURL: publishApiRoot });
 
@@ -44,7 +43,7 @@ const publishRest = new Vue({
     async assets(identifier, version, config = {}) {
       try {
         const {
-          data
+          data,
         } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
         return data;
       } catch (error) {
@@ -56,7 +55,7 @@ const publishRest = new Vue({
     },
     async assetPaths(identifier, version, location) {
       const {
-        data
+        data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
         params: {
           path_prefix: location,
