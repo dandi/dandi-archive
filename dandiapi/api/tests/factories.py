@@ -26,15 +26,6 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dandiset
 
-    # draft_folder_id = factory.Faker('hexify', text='^' * 24)
-
-    # Pass in 'dandiset' to link the generated DraftVersionFactory to our just-generated
-    # DandisetFactory. This will call DraftVersionFactory(dandiset=our_new_dandiset), thus skipping
-    # the SubFactory.
-    # draft_version = factory.RelatedFactory(
-    #    'dandiapi.api.tests.factories.DraftVersionFactory', factory_related_name='dandiset'
-    # )
-
 
 class VersionMetadataFactory(factory.django.DjangoModelFactory):
     class Meta:
