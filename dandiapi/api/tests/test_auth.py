@@ -4,9 +4,7 @@ from rest_framework.authtoken.models import Token
 
 @pytest.fixture
 def token(user) -> Token:
-    token = Token(user=user)
-    token.save()
-    return token
+    return Token.objects.get(user=user)
 
 
 @pytest.mark.django_db

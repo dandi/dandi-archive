@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -8,6 +11,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+
+# TODO: put this somewhere more appropriate
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
 
 
 @swagger_auto_schema(
