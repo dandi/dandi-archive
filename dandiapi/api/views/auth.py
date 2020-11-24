@@ -15,7 +15,6 @@ from rest_framework.response import Response
     responses={200: 'The user token'},
 )
 @api_view(['GET', 'POST'])
-# @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
 def auth_token_view(request: Request) -> HttpResponseBase:
     if request.method == 'GET':
