@@ -42,7 +42,7 @@ def test_upload_initialize_unauthorized(api_client):
             {},
             format='json',
         ).status_code
-        == 403
+        == 401
     )
 
 
@@ -75,7 +75,7 @@ def test_upload_complete_unauthorized(api_client):
             {},
             format='json',
         ).status_code
-        == 403
+        == 401
     )
 
 
