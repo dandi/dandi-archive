@@ -7,7 +7,7 @@ import Vue from 'vue';
 const featureToggles = new Vue({
   data() {
     return {
-      UNIFIED_API: false,
+      DJANGO_API: false,
     };
   },
 });
@@ -16,8 +16,8 @@ const featureToggles = new Vue({
 // Now feature toggles are available on all components and templates without any imports
 Vue.mixin({
   computed: {
-    UNIFIED_API() {
-      return featureToggles.UNIFIED_API;
+    DJANGO_API() {
+      return featureToggles.DJANGO_API;
     },
   },
 });

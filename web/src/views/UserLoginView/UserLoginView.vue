@@ -1,7 +1,7 @@
 <template>
   <v-container v-page-title="'Log In'">
     <GirderAuth
-      v-if="!UNIFIED_API"
+      v-if="!DJANGO_API"
       :force-otp="false"
       :show-forgot-password="false"
       :oauth="true"

@@ -128,11 +128,11 @@ export default publishRest;
 
 // This is a hack to allow username/password logins to django
 window.setTokenHack = (token) => {
-  if (toggles.UNIFIED_API) {
+  if (toggles.DJANGO_API) {
     publishRest.token = token;
     publishRest.user = {};
     console.log(`Token set to ${token}`);
   } else {
-    console.log('UNIFIED_API is not enabled');
+    console.log('DJANGO_API is not enabled');
   }
 };
