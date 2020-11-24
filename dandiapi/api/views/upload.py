@@ -7,13 +7,7 @@ from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers, status
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.decorators import (
-    api_view,
-    authentication_classes,
-    parser_classes,
-    permission_classes,
-)
+from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
@@ -85,7 +79,6 @@ class UploadValidationRequestSerializer(serializers.Serializer):
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def upload_initialize_view(request: Request) -> HttpResponseBase:
     """
@@ -120,7 +113,6 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def upload_complete_view(request: Request) -> HttpResponseBase:
     """
@@ -154,7 +146,6 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def upload_validate_view(request: Request) -> HttpResponseBase:
     """
@@ -199,7 +190,6 @@ def upload_validate_view(request: Request) -> HttpResponseBase:
 @swagger_auto_schema(method='GET', responses={200: ValidationErrorSerializer()})
 @api_view(['GET'])
 @parser_classes([JSONParser])
-@authentication_classes([SessionAuthentication])
 @permission_classes([IsAuthenticated])
 def upload_get_validation_view(request: Request, sha256: str) -> HttpResponseBase:
     """Get the status of a validation."""
