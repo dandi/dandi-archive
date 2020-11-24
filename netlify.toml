@@ -5,5 +5,5 @@ command = "yarn run build"
 
   [build.environment]
   VUE_APP_API_ROOT = "https://girder.dandiarchive.org/api/v1"
-  VUE_APP_PUBLISH_API_ROOT = "https://publish.dandiarchive.org/api/"
+  VUE_APP_PUBLISH_API_ROOT = "https://api.dandiarchive.org/api/"
   VUE_APP_SENTRY_DSN = "https://425b9a012300493d867e97785fae7b88@o308436.ingest.sentry.io/5196549"

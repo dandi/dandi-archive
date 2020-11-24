@@ -7,22 +7,21 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-// TODO temporarily skipping requests to django API
-// function girderize(publishedDandiset) {
-//   const { // eslint-disable-next-line camelcase
-//     created, modified, dandi_id, version, metadata, name,
-//   } = publishedDandiset;
-//   return {
-//     created,
-//     updated: modified,
-//     version,
-//     name,
-//     lowerName: dandi_id,
-//     meta: {
-//       dandiset: metadata,
-//     },
-//   };
-// }
+function girderize(publishedDandiset) {
+  const { // eslint-disable-next-line camelcase
+    created, modified, dandi_id, version, metadata, name,
+  } = publishedDandiset;
+  return {
+    created,
+    updated: modified,
+    version,
+    name,
+    lowerName: dandi_id,
+    meta: {
+      dandiset: metadata,
+    },
+  };
+}
 
 const client = axios.create({ baseURL: publishApiRoot });
 
@@ -41,65 +40,53 @@ const publishRest = new Vue({
       this.token = null;
       this.user = null;
     },
-    async assets() {
-      // TODO temporarily skipping requests to django API
-      return null;
-      // async assets(identifier, version, config = {}) {
-      // try {
-      // const {
-      // data
-      // } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
-      //   return data;
-      // } catch (error) {
-      //   if (error.response && error.response.status === 404) {
-      //     return null;
-      //   }
-      //   throw error;
-      // }
+    async assets(identifier, version, config = {}) {
+      try {
+        const {
+          data,
+        } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
+        return data;
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
-    async assetPaths() {
-      // TODO temporarily skipping requests to django API
-      // async assetPaths(identifier, version, location) {
-      return [];
-      // const {
-      // data
-      // } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets/paths/`, {
-      //   params: {
-      //     path_prefix: location,
-      //   },
-      // });
-      // return data;
+    async assetPaths(identifier, version, location) {
+      const {
+        data,
+      } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
+        params: {
+          path_prefix: location,
+        },
+      });
+      return data;
     },
-    async versions() {
-      // TODO temporarily skipping requests to django API
-      // async versions(identifier) {
-      return null;
-      // try {
-      //   const { data } = await client.get(`api/dandisets/${identifier}/versions/`);
-      //   return data;
-      // } catch (error) {
-      //   if (error.response && error.response.status === 404) {
-      //     return null;
-      //   }
-      //   if (error.message === 'Network Error') {
-      //     return null;
-      //   }
-      //   throw error;
-      // }
+    async versions(identifier) {
+      try {
+        const { data } = await client.get(`dandisets/${identifier}/versions/`);
+        return data;
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          return null;
+        }
+        if (error.message === 'Network Error') {
+          return null;
+        }
+        throw error;
+      }
     },
-    async specificVersion() {
-      // TODO temporarily skipping requests to django API
-      // async specificVersion(identifier, version) {
-      return null;
-      // try {
-      // const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/`);
-      //   return girderize(data);
-      // } catch (error) {
-      //   if (error.response && error.response.status === 404) {
-      //     return null;
-      //   }
-      //   throw error;
-      // }
+    async specificVersion(identifier, version) {
+      try {
+        const { data } = await client.get(`dandisets/${identifier}/versions/${version}/`);
+        return girderize(data);
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          return null;
+        }
+        throw error;
+      }
     },
     async mostRecentVersion(identifier) {
       const versions = await this.versions(identifier);
@@ -115,7 +102,7 @@ const publishRest = new Vue({
     },
     assetDownloadURI(asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
-      return `${publishApiRoot}api/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
+      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
   },
 });
