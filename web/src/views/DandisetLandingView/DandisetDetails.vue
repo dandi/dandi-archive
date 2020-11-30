@@ -131,9 +131,7 @@
                 :disabled="!manageOwnersDisabled"
                 left
               >
-                <template
-                  v-slot:activator="{ on: tooltipOn }"
-                >
+                <template v-slot:activator="{ on: tooltipOn }">
                   <div v-on="tooltipOn">
                     <v-btn
                       color="primary"
@@ -301,7 +299,9 @@ export default {
       return filesize(stats.bytes);
     },
     versions() {
-      const versions = this.publishedVersions || [];
+      // const versions = this.publishedVersions || [];
+      // TODO: properly render all versions
+      const versions = [];
       return [{ version: draftVersion }, ...versions];
     },
     ...mapState('dandiset', {
