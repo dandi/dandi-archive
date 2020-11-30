@@ -69,9 +69,9 @@ const publishRest = new Vue({
       });
       return data;
     },
-    async versions(identifier) {
+    async versions(identifier, params) {
       try {
-        const { data } = await client.get(`dandisets/${identifier}/versions/`);
+        const { data } = await client.get(`dandisets/${identifier}/versions/`, { params });
         return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -95,16 +95,17 @@ const publishRest = new Vue({
       }
     },
     async mostRecentVersion(identifier) {
-      const versions = await this.versions(identifier);
-      if (versions === null) {
+      // TODO: find a way to do this with fewer requests
+      const count = (await this.versions(identifier))?.count;
+      if (!count) {
         return null;
       }
-      const { count, results } = versions;
-      if (count === 0) {
-        return null;
-      }
-      const { version } = results[0];
-      return this.specificVersion(identifier, version);
+      // Look up the last version using page filters
+      const version = (await this.versions(identifier, { page: count, page_size: 1 })).results[0];
+      return girderize(version);
+    },
+    async dandisets(params) {
+      return client.get('dandisets/', { params });
     },
     assetDownloadURI(asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
