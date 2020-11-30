@@ -64,7 +64,7 @@ export default {
   },
   methods: {
     async logout() {
-      if (toggles.UNIFIED_API) {
+      if (toggles.DJANGO_API) {
         await publishRest.logout();
       } else {
         await girderRest.logout();
