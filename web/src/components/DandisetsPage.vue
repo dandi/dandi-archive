@@ -139,9 +139,7 @@ export default {
       if (this.girderDandisetRequest === null || this.publishedVersions === null) {
         return null;
       }
-      return this.girderDandisetRequest.data.map(
-        (dandiset, i) => (this.publishedVersions[i] || dandiset),
-      );
+      return this.girderDandisetRequest.data;
     },
     totalDandisets() {
       return this.girderDandisetRequest ? this.girderDandisetRequest.headers['girder-total-count'] : 0;
