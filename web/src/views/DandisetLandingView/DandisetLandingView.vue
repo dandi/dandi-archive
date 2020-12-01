@@ -83,11 +83,10 @@ import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { draftVersion } from '@/utils';
+import toggles from '@/featureToggle';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
-import { publishRest } from '@/rest';
-import toggles from '@/featureToggle';
 
 export default {
   name: 'DandisetLandingView',
@@ -137,9 +136,8 @@ export default {
     currentDandiset() {
       if (toggles.DJANGO_API) {
         return this.publishDandiset;
-      } else {
-        return this.girderDandiset;
       }
+      return this.girderDandiset;
     },
     meta() {
       if (this.publishDandiset) {
@@ -188,12 +186,13 @@ export default {
         }
       } else {
         // With girder there is only two permissible versions, null and 'draft'
+        // eslint-disable-next-line no-lonely-if
         if (version) {
-          version = draftVersion;
+          this.navigateToVersion(draftVersion);
+        } else {
+          this.navigateToVersion(version);
         }
-        this.navigateToVersion(version);
       }
-
     },
   },
   methods: {

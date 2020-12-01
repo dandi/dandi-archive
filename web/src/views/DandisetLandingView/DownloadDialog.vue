@@ -169,9 +169,8 @@ export default {
     identifier() {
       if (toggles.DJANGO_API) {
         return this.publishDandiset.identifier;
-      } else {
-        return this.girderDandiset.meta.dandiset.identifier;
       }
+      return this.girderDandiset.meta.dandiset.identifier;
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,

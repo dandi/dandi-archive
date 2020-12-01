@@ -211,12 +211,11 @@ export default {
         const { identifier } = this.publishDandiset.meta.dandiset;
         // TODO: this probably does not work correctly yet
         return { name: 'fileBrowser', params: { identifier, version } };
-      } else {
-        const { version } = this;
-        const { identifier } = this.girderDandiset.meta.dandiset;
-
-        return { name: 'fileBrowser', params: { identifier, version } };
       }
+      const { version } = this;
+      const { identifier } = this.girderDandiset.meta.dandiset;
+
+      return { name: 'fileBrowser', params: { identifier, version } };
     },
     permalink() {
       return `${dandiUrl}/dandiset/${this.meta.identifier}/${this.version}`;

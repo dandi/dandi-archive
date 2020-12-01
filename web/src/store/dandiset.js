@@ -38,7 +38,7 @@ export default {
       commit('setOwners', null);
       state.loading = false;
     },
-    async initializeDandisets({ state, dispatch }, { identifier, version }) {
+    async initializeDandisets({ dispatch }, { identifier, version }) {
       await dispatch('uninitializeDandisets');
 
       if (toggles.DJANGO_API) {
@@ -65,12 +65,10 @@ export default {
     async fetchPublishDandiset({ state, commit }, { identifier, version }) {
       state.loading = true;
 
-      if (!version) {
-        version = (await publishRest.mostRecentVersion(identifier)).version;
-      }
+      const sanitizedVersion = version || (await publishRest.mostRecentVersion(identifier)).version;
 
       try {
-        const data = await publishRest.specificVersion(identifier, version);
+        const data = await publishRest.specificVersion(identifier, sanitizedVersion);
         commit('setPublishDandiset', data);
       } catch (err) {
         commit('setPublishDandiset', null);

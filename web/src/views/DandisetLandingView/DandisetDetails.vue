@@ -276,9 +276,8 @@ export default {
     currentDandiset() {
       if (toggles.DJANGO_API) {
         return this.publishDandiset;
-      } else {
-        return this.girderDandiset;
       }
+      return this.girderDandiset;
     },
     draftDandiset() {
       return this.currentVersion === draftVersion;
@@ -305,10 +304,9 @@ export default {
     versions() {
       if (toggles.DJANGO_API) {
         return this.publishedVersions || [];
-      } else {
-        // Girder only has the draft version
-        return [{ version: draftVersion }];
       }
+      // Girder only has the draft version
+      return [{ version: draftVersion }];
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
@@ -325,11 +323,10 @@ export default {
       if (toggles.DJANGO_API) {
         const { items, folders, bytes } = this.currentDandiset;
         return { items, folders, bytes };
-      } else {
-        const { identifier } = this.currentDandiset.meta.dandiset;
-        const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
-        return data;
       }
+      const { identifier } = this.currentDandiset.meta.dandiset;
+      const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
+      return data;
     },
   },
   watch: {
