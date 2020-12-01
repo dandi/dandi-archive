@@ -148,6 +148,7 @@ import { mapState, mapGetters } from 'vuex';
 
 import { dandiUrl } from '@/utils';
 import { girderRest, loggedIn, user } from '@/rest';
+import toggles from '@/featureToggle';
 
 import CopyText from '@/components/CopyText.vue';
 import DownloadDialog from './DownloadDialog.vue';
@@ -205,10 +206,17 @@ export default {
       return null;
     },
     fileBrowserLink() {
-      const { version } = this;
-      const { identifier } = this.girderDandiset.meta.dandiset;
+      if (toggles.DJANGO_API) {
+        const { version } = this;
+        const { identifier } = this.publishDandiset.meta.dandiset;
+        // TODO: this probably does not work correctly yet
+        return { name: 'fileBrowser', params: { identifier, version } };
+      } else {
+        const { version } = this;
+        const { identifier } = this.girderDandiset.meta.dandiset;
 
-      return { name: 'fileBrowser', params: { identifier, version } };
+        return { name: 'fileBrowser', params: { identifier, version } };
+      }
     },
     permalink() {
       return `${dandiUrl}/dandiset/${this.meta.identifier}/${this.version}`;
@@ -229,6 +237,9 @@ export default {
   asyncComputed: {
     lockOwner: {
       async get() {
+        if (toggles.DJANGO_API) {
+          return null;
+        }
         const { data: owner } = await girderRest.get(`/dandi/${this.girderDandiset.meta.dandiset.identifier}/lock/owner`);
         if (!owner) {
           return null;
