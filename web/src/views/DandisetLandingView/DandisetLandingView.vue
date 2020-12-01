@@ -21,7 +21,7 @@
           Dandiset Dashboard
         </v-toolbar-title>
         <v-progress-circular
-          v-if="!girderDandiset || loading"
+          v-if="!currentDandiset || loading"
           indeterminate
           class="ml-3"
         />
