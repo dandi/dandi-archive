@@ -43,11 +43,13 @@ def test_validate(api_client, user):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('state', [Validation.State.SUCCEEDED, Validation.State.FAILED])
-def test_validate_no_object_key(api_client, user, state):
+@pytest.mark.parametrize(
+    'contents', [b'Very little content!', b'X' * 1024, b'X' * 1024 * 16], ids=['20B', '1KB', '16KB']
+)
+def test_validate_no_object_key(api_client, user, state, contents):
     api_client.force_authenticate(user=user)
 
     object_key = 'test.txt'
-    contents = b'test content'
 
     h = hashlib.sha256()
     h.update(contents)
