@@ -60,7 +60,7 @@ def validate(validation_id: int) -> None:
         validation.save()
     except Exception as e:
         validation.state = Validation.State.FAILED
-        validation.error = 'Internal error'
+        validation.error = f'Internal error: {e}'
         validation.save()
         # TODO: Can celery recover from a task error?
-        raise e
+        # raise e
