@@ -23,7 +23,7 @@
             </v-list-item-title>
             <v-list-item-subtitle>
               <v-chip
-                v-if="item.version"
+                v-if="item.version && item.version !== 'draft'"
                 small
                 color="light-blue lighten-4"
                 text-color="light-blue darken-3"
@@ -74,6 +74,7 @@ import moment from 'moment';
 import filesize from 'filesize';
 
 import { getDandisetContact } from '@/utils';
+import toggles from '@/featureToggle';
 import { girderRest } from '@/rest';
 
 export default {
@@ -95,6 +96,9 @@ export default {
   },
   asyncComputed: {
     async dandisetStats() {
+      if (toggles.DJANGO_API) {
+        return this.dandisets;
+      }
       const { items } = this;
       return Promise.all(items.map(async (item) => {
         const { identifier } = item.meta.dandiset;
