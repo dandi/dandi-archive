@@ -1,5 +1,7 @@
 import Vue from 'vue';
 import { sync } from 'vuex-router-sync';
+
+// @ts-ignore missing definitions
 import Girder, { vuetify } from '@girder/components/src';
 import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
@@ -26,6 +28,7 @@ girderRest.fetchUser().then(() => {
     router,
     render: (h) => h(App),
     store,
+    // @ts-ignore: missing definitions because Vue.use(Vuetify) is in a .js file
     vuetify,
   }).$mount('#app');
 });
