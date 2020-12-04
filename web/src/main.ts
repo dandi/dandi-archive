@@ -1,4 +1,5 @@
 import Vue from 'vue';
+import VueCompositionAPI from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
 
 // @ts-ignore missing definitions
@@ -14,6 +15,7 @@ import { girderRest } from '@/rest';
 import '@/title';
 
 Vue.use(Girder);
+Vue.use(VueCompositionAPI);
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
