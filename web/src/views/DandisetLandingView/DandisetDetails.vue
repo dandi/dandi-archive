@@ -321,8 +321,8 @@ export default {
   asyncComputed: {
     async stats() {
       if (toggles.DJANGO_API) {
-        const { items, folders, bytes } = this.currentDandiset;
-        return { items, folders, bytes };
+        const { items, bytes } = this.currentDandiset;
+        return { items, bytes };
       }
       const { identifier } = this.currentDandiset.meta.dandiset;
       const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
