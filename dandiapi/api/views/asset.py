@@ -49,7 +49,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),
-        responses={200: AssetDetailSerializer()},
+        responses={
+            200: AssetDetailSerializer(),
+            404: 'If a blob with the given checksum has not been validated',
+        },
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
     def create(self, request, version__dandiset__pk, version__version):

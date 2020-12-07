@@ -142,7 +142,12 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
 @swagger_auto_schema(
     method='POST',
     request_body=UploadValidationRequestSerializer(),
-    responses={204: 'No content'},
+    responses={
+        204: 'No content',
+        400: 'Validation already in progress, '
+        'no existing validation for the given checksum, '
+        'or the specified object key does not exist',
+    },
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])

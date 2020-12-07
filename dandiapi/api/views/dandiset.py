@@ -72,7 +72,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         method='PUT',
         request_body=UserSerializer(many=True),
-        responses={200: UserSerializer(many=True)},
+        responses={
+            200: UserSerializer(many=True),
+            400: 'User not found, or cannot remove all owners',
+        },
     )
     # TODO move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
