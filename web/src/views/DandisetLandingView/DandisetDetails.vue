@@ -173,12 +173,12 @@
         <v-col cols="12">
           <v-chip
             v-for="owner in limitedOwners"
-            :key="owner.id"
+            :key="owner.id /* TODO remove this */ || owner.username"
             color="light-blue lighten-4"
             text-color="light-blue darken-3"
             class="font-weight-medium ma-1"
           >
-            {{ owner.login }}
+            {{ owner.login /* TODO remove this */ || owner.username }}
           </v-chip>
           <span
             v-if="numExtraOwners"

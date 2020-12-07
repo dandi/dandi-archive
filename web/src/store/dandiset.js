@@ -47,8 +47,8 @@ export default {
         await dispatch('fetchPublishDandiset', { identifier, version });
       } else {
         await dispatch('fetchGirderDandiset', { identifier });
-        await dispatch('fetchOwners', identifier);
       }
+      await dispatch('fetchOwners', identifier);
     },
     async fetchDandisetVersions({ state, commit }, { identifier }) {
       state.loading = true;
@@ -87,8 +87,13 @@ export default {
     async fetchOwners({ state, commit }, identifier) {
       state.loading = true;
 
-      const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
-      commit('setOwners', data);
+      if (toggles.DJANGO_API) {
+        const { data } = await publishRest.owners(identifier);
+        commit('setOwners', data);
+      } else {
+        const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
+        commit('setOwners', data);
+      }
 
       state.loading = false;
     },
