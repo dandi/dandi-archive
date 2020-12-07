@@ -9,10 +9,10 @@
       vars:
         mongodb_data_path: /var/lib/mongodb
     - role: girder.girder
-    - role: girder.nginx
-      vars:
-        nginx_hostname: "girder.dandiarchive.org"
-        nginx_registration_email: "michael.grauer@kitware.com"
+#    - role: girder.nginx
+#      vars:
+#        nginx_hostname: "girder.dandiarchive.org"
+#        nginx_registration_email: "michael.grauer@kitware.com"
 
   tasks:
     - name: Install awscli
