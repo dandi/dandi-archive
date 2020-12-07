@@ -183,7 +183,7 @@ export default {
       if (!toggles.DJANGO_API) {
         return null;
       }
-      return publishRest.dandisets({ page: this.page, page_size: DANDISETS_PER_PAGE });
+      return publishRest.dandisets({ page: this.page, page_size: DANDISETS_PER_PAGE, user: this.user ? 'me' : null });
     },
     async mostRecentDandisetVersions() {
       if (this.djangoDandisetRequest === null) {
