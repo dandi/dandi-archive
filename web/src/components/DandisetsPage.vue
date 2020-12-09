@@ -68,6 +68,7 @@
 <script>
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import toggles from '@/featureToggle';
 import { girderRest, publishRest } from '@/rest';
 
 const DANDISETS_PER_PAGE = 8;
@@ -136,17 +137,23 @@ export default {
       return { page, sortOption, sortDir };
     },
     dandisets() {
-      if (this.girderDandisetRequest === null || this.publishedVersions === null) {
-        return null;
+      if (toggles.DJANGO_API) {
+        return this.mostRecentDandisetVersions || [];
       }
-      return this.girderDandisetRequest.data;
+      return this.girderDandisetRequest?.data || [];
     },
     totalDandisets() {
+      if (toggles.DJANGO_API) {
+        return this.djangoDandisetRequest ? this.djangoDandisetRequest.data.count : 0;
+      }
       return this.girderDandisetRequest ? this.girderDandisetRequest.headers['girder-total-count'] : 0;
     },
   },
   asyncComputed: {
     async girderDandisetRequest() {
+      if (toggles.DJANGO_API) {
+        return null;
+      }
       const {
         listingUrl, page, sortField, sortDir,
         $route: {
@@ -172,12 +179,18 @@ export default {
         data, headers, status, statusText,
       };
     },
-    async publishedVersions() {
-      if (!this.girderDandisetRequest) {
+    async djangoDandisetRequest() {
+      if (!toggles.DJANGO_API) {
         return null;
       }
-      return Promise.all(this.girderDandisetRequest.data.map(
-        async (dandiset) => publishRest.mostRecentVersion(dandiset.meta.dandiset.identifier),
+      return publishRest.dandisets({ page: this.page, page_size: DANDISETS_PER_PAGE });
+    },
+    async mostRecentDandisetVersions() {
+      if (this.djangoDandisetRequest === null) {
+        return null;
+      }
+      return Promise.all(this.djangoDandisetRequest.data.results.map(
+        (dandiset) => publishRest.mostRecentVersion(dandiset.identifier),
       ));
     },
   },
