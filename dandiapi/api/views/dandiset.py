@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from guardian.shortcuts import assign_perm
+from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
@@ -21,8 +21,6 @@ from dandiapi.api.views.serializers import (
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
-    queryset = Dandiset.objects.all()
-
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = DandisetSerializer
     pagination_class = DandiPagination
@@ -30,6 +28,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
     lookup_url_kwarg = 'dandiset__pk'
+
+    def get_queryset(self):
+        # TODO: This will filter the dandisets list if there is a query parameter user=me.
+        # This is not a great solution but it is needed for the My Dandisets page.
+        queryset = Dandiset.objects.all().order_by('created')
+        user_kwarg = self.request.query_params.get('user', None)
+        if user_kwarg == 'me':
+            return get_objects_for_user(self.request.user, 'owner', queryset)
+        return queryset
 
     def get_object(self):
         # Alternative to path converters, which DRF doesn't support

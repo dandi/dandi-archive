@@ -44,6 +44,23 @@ def test_dandiset_rest_list(api_client, dandiset):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
+    dandiset = dandiset_factory()
+    # Create an extra dandiset that should not be included in the response
+    dandiset_factory()
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
+    assert api_client.get('/api/dandisets/?user=me').data == {
+        'count': 1,
+        'next': None,
+        'previous': None,
+        'results': [
+            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'modified': TIMESTAMP_RE}
+        ],
+    }
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_retrieve(api_client, dandiset):
     assert api_client.get(f'/api/dandisets/{dandiset.identifier}/').data == {
         'identifier': dandiset.identifier,
