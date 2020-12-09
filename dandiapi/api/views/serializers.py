@@ -17,6 +17,12 @@ class UserSerializer(serializers.Serializer):
     username = serializers.CharField(validators=[UnicodeUsernameValidator()])
 
 
+class UserDetailSerializer(serializers.Serializer):
+    username = serializers.CharField(validators=[UnicodeUsernameValidator()])
+    first_name = serializers.CharField(validators=[UnicodeUsernameValidator()])
+    last_name = serializers.CharField(validators=[UnicodeUsernameValidator()])
+
+
 class DandisetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dandiset
