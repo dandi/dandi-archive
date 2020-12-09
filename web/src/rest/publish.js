@@ -110,6 +110,9 @@ const publishRest = new Vue({
     async owners(identifier) {
       return client.get(`dandisets/${identifier}/users/`);
     },
+    async setOwners(identifier, owners) {
+      return client.put(`dandisets/${identifier}/users/`, owners);
+    },
     async searchUsers(username) {
       const { data } = await client.get('users/search/?', { params: { username } });
       return data;
