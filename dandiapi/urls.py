@@ -17,6 +17,7 @@ from dandiapi.api.views import (
     upload_get_validation_view,
     upload_initialize_view,
     upload_validate_view,
+    users_search_view,
 )
 
 router = ExtendedSimpleRouter()
@@ -76,6 +77,7 @@ urlpatterns = [
         upload_get_validation_view,
         name='upload-get-validation',
     ),
+    path('api/users/search/', users_search_view),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
