@@ -1,5 +1,8 @@
 import Vue from 'vue';
+import VueCompositionAPI from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
+
+// @ts-ignore missing definitions
 import Girder, { vuetify } from '@girder/components/src';
 import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
@@ -12,6 +15,7 @@ import { girderRest } from '@/rest';
 import '@/title';
 
 Vue.use(Girder);
+Vue.use(VueCompositionAPI);
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
@@ -26,6 +30,7 @@ girderRest.fetchUser().then(() => {
     router,
     render: (h) => h(App),
     store,
+    // @ts-ignore: missing definitions because Vue.use(Vuetify) is in a .js file
     vuetify,
   }).$mount('#app');
 });
