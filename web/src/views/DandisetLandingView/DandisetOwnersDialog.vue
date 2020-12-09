@@ -39,7 +39,7 @@
           <template v-for="(owner, i) in newOwners">
             <v-list-item :key="owner._id || owner.id">
               <v-list-item-title>
-                {{ owner.name }} ({{ owner.login }})
+                {{ owner.result }}
               </v-list-item-title>
               <v-list-item-action>
                 <v-btn
@@ -97,10 +97,10 @@ const girderize = (users) => users.map(({ username, first_name, last_name }) => 
   login: username,
   username,
   // eslint-disable-next-line camelcase
-  name: `${first_name} ${last_name}`,
+  name: (first_name && last_name) ? `${first_name} ${last_name}` : null,
 }));
 
-const addResult = (users) => users.map((u) => ({ ...u, result: `${u.name} (${u.login})` }));
+const addResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.login})` : u.login }));
 
 export default {
   name: 'DandisetOwnersDialog',
@@ -115,7 +115,7 @@ export default {
       search: null,
       loadingUsers: false,
       selection: null,
-      newOwners: addResult(this.owners),
+      newOwners: addResult((toggles.DJANGO_API) ? girderize(this.owners) : this.owners),
       items: [],
       throttledUpdate: _.debounce(this.updateItems, 200),
     };
