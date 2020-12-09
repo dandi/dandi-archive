@@ -35,7 +35,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         queryset = Dandiset.objects.all().order_by('created')
         user_kwarg = self.request.query_params.get('user', None)
         if user_kwarg == 'me':
-            return get_objects_for_user(self.request.user, 'owner', queryset)
+            return get_objects_for_user(self.request.user, 'owner', queryset, with_superuser=False)
         return queryset
 
     def get_object(self):
