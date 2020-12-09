@@ -36,12 +36,8 @@
           class="px-6"
           max-height="50vh"
         >
-          <template
-            v-for="(owner, i) in newOwners"
-          >
-            <v-list-item
-              :key="owner._id"
-            >
+          <template v-for="(owner, i) in newOwners">
+            <v-list-item :key="owner._id">
               <v-list-item-title>
                 {{ owner.name }} ({{ owner.login }})
               </v-list-item-title>
@@ -84,8 +80,9 @@
 </template>
 
 <script>
-import { girderRest, user } from '@/rest';
+import { girderRest, publishRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
+import toggles from '@/featureToggle';
 import _ from 'lodash';
 
 const userFormatConversion = (users) => users.map(({
@@ -129,17 +126,27 @@ export default {
       if (!this.search) return;
 
       this.loadingUsers = true;
-      const { data: { user: users } } = await girderRest.get('/resource/search', {
-        params: {
-          q: this.search,
-          mode: 'prefix',
-          types: JSON.stringify(['user']),
-          limit: 10,
-        },
-      });
+      if (toggles.DJANGO_API) {
+        const users = await publishRest.searchUsers(this.search);
+        this.items = addResult(users.map((u) => ({
+          login: u.username,
+          firstName: u.first_name,
+          lastName: u.last_name,
+          name: `${u.first_name} ${u.last_name}`,
+        })));
+      } else {
+        const { data: { user: users } } = await girderRest.get('/resource/search', {
+          params: {
+            q: this.search,
+            mode: 'prefix',
+            types: JSON.stringify(['user']),
+            limit: 10,
+          },
+        });
 
-      // Needed to match existing owner document schema
-      this.items = addResult(userFormatConversion(users));
+        // Needed to match existing owner document schema
+        this.items = addResult(userFormatConversion(users));
+      }
 
       this.loadingUsers = false;
     },
