@@ -168,7 +168,6 @@ export default {
     },
     identifier() {
       if (toggles.DJANGO_API) {
-        console.log(this.publishDandiset);
         return this.publishDandiset.meta.dandiset.identifier;
       }
       return this.girderDandiset.meta.dandiset.identifier;
