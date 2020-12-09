@@ -1,11 +1,15 @@
 import pytest
 
 
-@pytest.mark.django_db
-def test_user_search(api_client, user_factory):
+def serialize(user):
+    return {'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name}
 
-    user = user_factory()
-    # Create more users to filter out
+
+@pytest.mark.django_db
+def test_user_search(api_client, user, user_factory):
+    api_client.force_authenticate(user=user)
+
+    # Create more users to be filtered out
     user_factory()
     user_factory()
     user_factory()
@@ -16,12 +20,13 @@ def test_user_search(api_client, user_factory):
             {'username': user.username},
             format='json',
         ).data
-        == [{'username': user.username}]
+        == [serialize(user)]
     )
 
 
 @pytest.mark.django_db
 def test_user_search_blank_username(api_client, user):
+    api_client.force_authenticate(user=user)
 
     assert (
         api_client.get(
@@ -35,6 +40,7 @@ def test_user_search_blank_username(api_client, user):
 
 @pytest.mark.django_db
 def test_user_search_no_matches(api_client, user):
+    api_client.force_authenticate(user=user)
 
     assert (
         api_client.get(
@@ -47,21 +53,19 @@ def test_user_search_no_matches(api_client, user):
 
 
 @pytest.mark.django_db
-def test_user_search_multiple_matches(api_client, user_factory):
+def test_user_search_multiple_matches(api_client, user, user_factory):
+    api_client.force_authenticate(user=user)
 
     usernames = [
+        'jane_bar',
         'jane_doe',
         'jane_foo',
-        'jane_bar',
+        # Some extra users to be filtered out
+        'john_bar',
         'john_doe',
         'john_foo',
-        'john_bar',
     ]
-    for username in usernames:
-        user_factory(username=username)
-
-    expected_usernames = usernames[:3]
-    expected_usernames.sort()
+    users = [user_factory(username=username) for username in usernames]
 
     assert (
         api_client.get(
@@ -69,16 +73,17 @@ def test_user_search_multiple_matches(api_client, user_factory):
             {'username': 'jane'},
             format='json',
         ).data
-        == [{'username': username} for username in expected_usernames]
+        == [serialize(user) for user in users[:3]]
     )
 
 
 @pytest.mark.django_db
-def test_user_search_limit_enforced(api_client, user_factory):
+def test_user_search_alphabetical(api_client, user, user_factory):
+    api_client.force_authenticate(user=user)
 
-    usernames = [f'jane_{i:02}' for i in range(0, 100)]
-    for username in usernames:
-        user_factory(username=username)
+    # Create the users in reverse alphabetical order
+    user_z = user_factory(username='jane_z')
+    user_a = user_factory(username='jane_a')
 
     assert (
         api_client.get(
@@ -86,5 +91,22 @@ def test_user_search_limit_enforced(api_client, user_factory):
             {'username': 'jane'},
             format='json',
         ).data
-        == [{'username': username} for username in usernames[:10]]
+        == [serialize(user_a), serialize(user_z)]
+    )
+
+
+@pytest.mark.django_db
+def test_user_search_limit_enforced(api_client, user, user_factory):
+    api_client.force_authenticate(user=user)
+
+    usernames = [f'jane_{i:02}' for i in range(0, 100)]
+    users = [user_factory(username=username) for username in usernames]
+
+    assert (
+        api_client.get(
+            '/api/users/search/?',
+            {'username': 'jane'},
+            format='json',
+        ).data
+        == [serialize(user) for user in users[:10]]
     )
