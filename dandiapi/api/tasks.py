@@ -31,7 +31,7 @@ def validate(validation_id: int) -> None:
         buffer_size = 4096
         h = hashlib.sha256()
 
-        with urlopen(validation.blob.url) as stream:
+        with validation.blob.open() as stream:
             # html = f.read().decode('utf-8')
             buffer = stream.read(buffer_size)
             while buffer != b'':
