@@ -168,7 +168,7 @@ export default {
     },
     identifier() {
       if (toggles.DJANGO_API) {
-        return this.publishDandiset.identifier;
+        return this.publishDandiset.meta.dandiset.identifier;
       }
       return this.girderDandiset.meta.dandiset.identifier;
     },
