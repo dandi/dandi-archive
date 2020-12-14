@@ -91,16 +91,17 @@ const userFormatConversion = (users) => users.map(({
   id: _id, level: _accessLevel, login, name: `${firstName} ${lastName}`,
 }));
 
-// eslint-disable-next-line camelcase
-const girderize = (users) => users.map(({ username, first_name, last_name }) => ({
-  id: username,
-  login: username,
-  username,
-  // eslint-disable-next-line camelcase
-  name: (first_name && last_name) ? `${first_name} ${last_name}` : null,
-}));
+const girderize = (users) => users.map(
+  ({ username, first_name: firstName, last_name: lastName }) => ({
+    id: username,
+    login: username,
+    username,
+    name: (firstName && lastName) ? `${firstName} ${lastName}` : null,
+  }),
+);
 
-const addResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.login})` : u.login }));
+// Includes a field `result` on each user which is the value displayed in the UI
+const appendResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.login})` : u.login }));
 
 export default {
   name: 'DandisetOwnersDialog',
@@ -115,7 +116,7 @@ export default {
       search: null,
       loadingUsers: false,
       selection: null,
-      newOwners: addResult((toggles.DJANGO_API) ? girderize(this.owners) : this.owners),
+      newOwners: appendResult((toggles.DJANGO_API) ? girderize(this.owners) : this.owners),
       items: [],
       throttledUpdate: _.debounce(this.updateItems, 200),
     };
@@ -137,7 +138,7 @@ export default {
       this.loadingUsers = true;
       if (toggles.DJANGO_API) {
         const users = await publishRest.searchUsers(this.search);
-        this.items = addResult(girderize(users));
+        this.items = appendResult(girderize(users));
       } else {
         const { data: { user: users } } = await girderRest.get('/resource/search', {
           params: {
@@ -149,7 +150,7 @@ export default {
         });
 
         // Needed to match existing owner document schema
-        this.items = addResult(userFormatConversion(users));
+        this.items = appendResult(userFormatConversion(users));
       }
 
       this.loadingUsers = false;
