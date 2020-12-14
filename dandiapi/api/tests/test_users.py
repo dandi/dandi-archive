@@ -11,6 +11,32 @@ def serialize(user):
 
 
 @pytest.mark.django_db
+def test_user_me(api_client, user):
+    api_client.force_authenticate(user=user)
+
+    assert (
+        api_client.get(
+            '/api/users/me/',
+            format='json',
+        ).data
+        == serialize(user)
+    )
+
+
+@pytest.mark.django_db
+def test_user_me_admin(api_client, admin_user):
+    api_client.force_authenticate(user=admin_user)
+
+    assert (
+        api_client.get(
+            '/api/users/me/',
+            format='json',
+        ).data
+        == serialize(admin_user)
+    )
+
+
+@pytest.mark.django_db
 def test_user_search(api_client, user, user_factory):
     api_client.force_authenticate(user=user)
 
