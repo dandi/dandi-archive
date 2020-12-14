@@ -9,7 +9,7 @@ from .upload import (
     upload_initialize_view,
     upload_validate_view,
 )
-from .users import users_search_view
+from .users import users_me_view, users_search_view
 from .version import VersionViewSet
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     'upload_complete_view',
     'upload_validate_view',
     'upload_get_validation_view',
+    'users_me_view',
     'users_search_view',
     'search_view',
     'stats_view',

@@ -15,6 +15,21 @@ from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
 @swagger_auto_schema(
     method='GET',
+    responses={200: UserDetailSerializer},
+)
+@api_view(['GET'])
+@parser_classes([JSONParser])
+@permission_classes([IsAuthenticated])
+def users_me_view(request: Request) -> HttpResponseBase:
+    """Get the currently authenticated user."""
+    user_dict = {'admin': request.user.is_superuser, **model_to_dict(request.user)}
+
+    response_serializer = UserDetailSerializer(user_dict)
+    return Response(response_serializer.data)
+
+
+@swagger_auto_schema(
+    method='GET',
     query_serializer=UserSerializer,
     responses={200: UserDetailSerializer(many=True)},
 )
