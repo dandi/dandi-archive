@@ -2,7 +2,12 @@ import pytest
 
 
 def serialize(user):
-    return {'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name}
+    return {
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'admin': user.is_superuser,
+    }
 
 
 @pytest.mark.django_db

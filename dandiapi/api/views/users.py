@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib.auth.models import User
+from django.forms.models import model_to_dict
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
@@ -26,7 +27,8 @@ def users_search_view(request: Request) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     username: str = request_serializer.validated_data['username']
 
-    options = User.objects.filter(username__startswith=username).order_by('username')[:10]
+    results = User.objects.filter(username__startswith=username).order_by('username')[:10]
+    dict_results = [{'admin': user.is_superuser, **model_to_dict(user)} for user in results]
 
-    response_serializer = UserDetailSerializer(options, many=True)
+    response_serializer = UserDetailSerializer(dict_results, many=True)
     return Response(response_serializer.data)
