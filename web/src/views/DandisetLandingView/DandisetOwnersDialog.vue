@@ -91,14 +91,14 @@ const userFormatConversion = (users) => users.map(({
   id: _id, level: _accessLevel, login, name: `${firstName} ${lastName}`,
 }));
 
-// eslint-disable-next-line camelcase
-const girderize = (users) => users.map(({ username, first_name, last_name }) => ({
-  id: username,
-  login: username,
-  username,
-  // eslint-disable-next-line camelcase
-  name: (first_name && last_name) ? `${first_name} ${last_name}` : null,
-}));
+const girderize = (users) => users.map(
+  ({ username, first_name: firstName, last_name: lastName }) => ({
+    id: username,
+    login: username,
+    username,
+    name: (firstName && lastName) ? `${firstName} ${lastName}` : null,
+  }),
+);
 
 const addResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.login})` : u.login }));
 
