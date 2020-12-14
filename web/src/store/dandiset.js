@@ -1,5 +1,6 @@
 import { girderRest, publishRest } from '@/rest';
-import { draftVersion, dandisetHasVersion } from '@/utils';
+import { draftVersion } from '@/utils';
+import toggles from '@/featureToggle';
 
 export default {
   namespaced: true,
@@ -37,18 +38,16 @@ export default {
       commit('setOwners', null);
       state.loading = false;
     },
-    async initializeDandisets({ state, dispatch }, { identifier, version }) {
+    async initializeDandisets({ dispatch }, { identifier, version }) {
       await dispatch('uninitializeDandisets');
 
-      dispatch('fetchGirderDandiset', { identifier });
-      dispatch('fetchOwners', identifier);
-
-      // Required below
-      await dispatch('fetchDandisetVersions', { identifier });
-
-      if (dandisetHasVersion(state.versions, version)) {
-        // Version is a valid dandiset version, load that version
-        dispatch('fetchPublishDandiset', { identifier, version });
+      if (toggles.DJANGO_API) {
+        // this can be done concurrently, don't await
+        dispatch('fetchDandisetVersions', { identifier });
+        await dispatch('fetchPublishDandiset', { identifier, version });
+      } else {
+        await dispatch('fetchGirderDandiset', { identifier });
+        await dispatch('fetchOwners', identifier);
       }
     },
     async fetchDandisetVersions({ state, commit }, { identifier }) {
@@ -66,8 +65,10 @@ export default {
     async fetchPublishDandiset({ state, commit }, { identifier, version }) {
       state.loading = true;
 
+      const sanitizedVersion = version || (await publishRest.mostRecentVersion(identifier)).version;
+
       try {
-        const data = await publishRest.specificVersion(identifier, version);
+        const data = await publishRest.specificVersion(identifier, sanitizedVersion);
         commit('setPublishDandiset', data);
       } catch (err) {
         commit('setPublishDandiset', null);

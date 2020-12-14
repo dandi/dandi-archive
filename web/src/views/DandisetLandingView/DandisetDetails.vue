@@ -50,6 +50,7 @@
             {{ stats.items }}
           </v-col>
           <v-col
+            v-if="!DJANGO_API"
             class="text--secondary mx-2 pa-0 py-1"
             cols="auto"
           >
@@ -230,6 +231,7 @@ import { loggedIn, user, girderRest } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
+import toggles from '@/featureToggle';
 import { draftVersion } from '@/utils';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
@@ -272,8 +274,9 @@ export default {
       return null;
     },
     currentDandiset() {
-      // Done this way because we'll want to add in
-      // fetching stats from the publish endpoint later on.
+      if (toggles.DJANGO_API) {
+        return this.publishDandiset;
+      }
       return this.girderDandiset;
     },
     draftDandiset() {
@@ -299,10 +302,11 @@ export default {
       return filesize(stats.bytes);
     },
     versions() {
-      // const versions = this.publishedVersions || [];
-      // TODO: properly render all versions
-      const versions = [];
-      return [{ version: draftVersion }, ...versions];
+      if (toggles.DJANGO_API) {
+        return this.publishedVersions || [];
+      }
+      // Girder only has the draft version
+      return [{ version: draftVersion }];
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
@@ -316,6 +320,10 @@ export default {
   },
   asyncComputed: {
     async stats() {
+      if (toggles.DJANGO_API) {
+        const { items, bytes } = this.currentDandiset;
+        return { items, bytes };
+      }
       const { identifier } = this.currentDandiset.meta.dandiset;
       const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
       return data;

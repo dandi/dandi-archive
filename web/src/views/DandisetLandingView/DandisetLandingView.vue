@@ -21,7 +21,7 @@
           Dandiset Dashboard
         </v-toolbar-title>
         <v-progress-circular
-          v-if="!girderDandiset || loading"
+          v-if="!currentDandiset || loading"
           indeterminate
           class="ml-3"
         />
@@ -42,7 +42,7 @@
         </v-btn>
       </v-toolbar>
       <v-container
-        v-if="girderDandiset"
+        v-if="currentDandiset"
         fluid
         class="grey lighten-4"
       >
@@ -82,7 +82,8 @@ import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
 import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { draftVersion, dandisetHasVersion } from '@/utils';
+import { draftVersion } from '@/utils';
+import toggles from '@/featureToggle';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
@@ -132,6 +133,12 @@ export default {
 
       return { properties, required };
     },
+    currentDandiset() {
+      if (toggles.DJANGO_API) {
+        return this.publishDandiset;
+      }
+      return this.girderDandiset;
+    },
     meta() {
       if (this.publishDandiset) {
         return {
@@ -163,40 +170,32 @@ export default {
       async handler(identifier) {
         const { version } = this;
         await this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
-        if (!this.publishDandiset) { this.navigateToDefaultDandiset(); }
+        // TODO: check for invalid versions here
       },
     },
     async version(version) {
       // On version change, fetch the new dandiset (not initial)
-
-      const { identifier } = this;
-      if (version === draftVersion) {
-        this.$store.commit('dandiset/setPublishDandiset', null);
-      } else {
+      if (toggles.DJANGO_API) {
+        const { identifier } = this;
         await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
-
         // If the above await call didn't result in publishDandiset being set, navigate to a default
-        if (!this.publishDandiset) { this.navigateToDefaultDandiset(); }
+        if (!this.publishDandiset) {
+          // Omitting version will fetch the most recent version instead
+          await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier });
+          this.navigateToVersion(this.publishDandiset.version);
+        }
+      } else {
+        // With girder there is only two permissible versions, null and 'draft'
+        // eslint-disable-next-line no-lonely-if
+        if (version) {
+          this.navigateToVersion(draftVersion);
+        } else {
+          this.navigateToVersion(version);
+        }
       }
     },
   },
   methods: {
-    navigateToDefaultDandiset() {
-      // Set default version to most recent if this dandiset has versions
-      // Otherwise set it to draft
-      let version = draftVersion;
-      const { dandisetVersions: versions } = this;
-
-      if (versions && versions.length) {
-        if (dandisetHasVersion(versions, this.version)) { return; }
-        if (this.version !== draftVersion) {
-          // The version isn't 'draft', and isn't one of the known versions,
-          // thus it's not valid, so redirect to latest version
-          version = versions[0].version;
-        }
-      }
-      this.navigateToVersion(version);
-    },
     navigateToVersion(version) {
       if (this.$route.params.version === version) return;
 

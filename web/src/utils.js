@@ -63,10 +63,6 @@ function getDandisetContact(dandiset) {
 }
 
 const draftVersion = 'draft';
-const dandisetHasVersion = (versions, version) => {
-  const versionNumbers = versions.map((v) => v.version);
-  return versionNumbers.includes(version);
-};
 
 export {
   dandiUrl,
@@ -79,5 +75,4 @@ export {
   copyToClipboard,
   getDandisetContact,
   draftVersion,
-  dandisetHasVersion,
 };
