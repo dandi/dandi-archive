@@ -3,11 +3,12 @@ from bson.objectid import ObjectId
 from girder.api.describe import getCurrentUser
 from girder.constants import AccessType
 from girder.exceptions import AccessException
+from girder.models.collection import Collection
 from girder.models.folder import Folder
 from girder.models.user import User
 
 
-from .util import find_dandiset_by_identifier
+from .util import find_dandiset_by_identifier, get_or_create_drafts_collection
 
 
 def _get_lock(identifier):
@@ -129,6 +130,18 @@ def _get_dandiset_for_item(item):
     if "folderId" not in item:
         # the resource is top level under a collection, so it can't be in a dandiset
         return None
+
+    # We're not in a collection, so this is not a dandiset item and should be ignored.
+    if item["baseParentType"] != "collection":
+        return None
+
+    drafts_collection = get_or_create_drafts_collection()
+    item_collection = Collection().findOne(item["baseParentId"])
+
+    # This item resides under a different collection, ignore.
+    if item_collection is None or item_collection["_id"] != drafts_collection["_id"]:
+        return None
+
     subfolder = Folder().findOne(item["folderId"])
     # Dandisets are always top level folders.
     # Ascend the file tree until the parent of the subfolder is the root collection.
