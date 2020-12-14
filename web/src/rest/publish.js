@@ -107,6 +107,16 @@ const publishRest = new Vue({
     async dandisets(params) {
       return client.get('dandisets/', { params });
     },
+    async owners(identifier) {
+      return client.get(`dandisets/${identifier}/users/`);
+    },
+    async setOwners(identifier, owners) {
+      return client.put(`dandisets/${identifier}/users/`, owners);
+    },
+    async searchUsers(username) {
+      const { data } = await client.get('users/search/?', { params: { username } });
+      return data;
+    },
     assetDownloadURI(asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
       return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
