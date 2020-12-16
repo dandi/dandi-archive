@@ -2,7 +2,38 @@ import pytest
 
 
 def serialize(user):
-    return {'username': user.username, 'first_name': user.first_name, 'last_name': user.last_name}
+    return {
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'admin': user.is_superuser,
+    }
+
+
+@pytest.mark.django_db
+def test_user_me(api_client, user):
+    api_client.force_authenticate(user=user)
+
+    assert (
+        api_client.get(
+            '/api/users/me/',
+            format='json',
+        ).data
+        == serialize(user)
+    )
+
+
+@pytest.mark.django_db
+def test_user_me_admin(api_client, admin_user):
+    api_client.force_authenticate(user=admin_user)
+
+    assert (
+        api_client.get(
+            '/api/users/me/',
+            format='json',
+        ).data
+        == serialize(admin_user)
+    )
 
 
 @pytest.mark.django_db

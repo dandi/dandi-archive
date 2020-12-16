@@ -17,6 +17,7 @@ from dandiapi.api.views import (
     upload_get_validation_view,
     upload_initialize_view,
     upload_validate_view,
+    users_me_view,
     users_search_view,
 )
 
@@ -77,6 +78,7 @@ urlpatterns = [
         upload_get_validation_view,
         name='upload-get-validation',
     ),
+    path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
