@@ -82,6 +82,7 @@ urlpatterns = [
     path('api/users/search/', users_search_view),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
+    path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
