@@ -108,10 +108,10 @@
       </v-btn>
       <v-btn
         :to="DJANGO_API ? undefined : { name: 'userLogin', query: { returnTo: returnObject } }"
-        @click="login"
         class="mx-1"
         color="primary"
         rounded
+        @click="login"
       >
         Login
       </v-btn>
@@ -173,7 +173,7 @@ export default {
       if (toggles.DJANGO_API) {
         publishRest.login();
       }
-    }
+    },
   },
 };
 </script>

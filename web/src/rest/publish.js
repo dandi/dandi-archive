@@ -1,6 +1,5 @@
 import axios from 'axios';
 import Vue from 'vue';
-import toggles from '@/featureToggle';
 import OAuthClient from '@girder/oauth-client';
 
 // Ensure contains trailing slash
