@@ -30,8 +30,6 @@ function girderize(publishedDandiset) {
 }
 
 const client = axios.create({ baseURL: publishApiRoot });
-console.log(process.env);
-console.log(process.env);
 const oauthClient = new OAuthClient(
   process.env.VUE_APP_OAUTH_API_ROOT,
   process.env.VUE_APP_OAUTH_CLIENT_ID,
