@@ -11,7 +11,7 @@ import App from '@/App.vue';
 import '@/featureToggle';
 import router from '@/router';
 import store from '@/store';
-import { girderRest } from '@/rest';
+import { girderRest, publishRest } from '@/rest';
 import '@/title';
 
 Vue.use(Girder);
@@ -24,7 +24,7 @@ Sentry.init({
 
 sync(store, router);
 
-girderRest.fetchUser().then(() => {
+Promise.all([publishRest.restoreLogin(), girderRest.fetchUser()]).then(() => {
   new Vue({
     provide: { girderRest },
     router,
