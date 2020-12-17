@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Vue from 'vue';
 import toggles from '@/featureToggle';
+import OAuthClient from '@girder/oauth-client';
 
 // Ensure contains trailing slash
 const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
@@ -30,6 +31,12 @@ function girderize(publishedDandiset) {
 }
 
 const client = axios.create({ baseURL: publishApiRoot });
+console.log(process.env);
+console.log(process.env);
+const oauthClient = new OAuthClient(
+  process.env.VUE_APP_OAUTH_API_ROOT,
+  process.env.VUE_APP_OAUTH_CLIENT_ID,
+);
 
 const publishRest = new Vue({
   data() {
@@ -40,9 +47,18 @@ const publishRest = new Vue({
     };
   },
   methods: {
-    // TODO proper OAuth login
+    async restoreLogin() {
+      await oauthClient.maybeRestoreLogin();
+      if (oauthClient.isLoggedIn) {
+        this.token = oauthClient.token;
+        this.user = {};
+      }
+    },
+    async login() {
+      await oauthClient.redirectToLogin();
+    },
     async logout() {
-      // TODO proper session logout
+      await oauthClient.logout();
       this.token = null;
       this.user = null;
     },
@@ -129,27 +145,16 @@ const publishRest = new Vue({
 // Using client.defaults.headers.common.Authorization = ...
 // would not update when the token does.
 client.interceptors.request.use((config) => {
-  if (!publishRest.token) {
+  if (!oauthClient.authHeaders) {
     return config;
   }
   return {
     ...config,
     headers: {
-      Authorization: `Token ${publishRest.token}`,
+      ...oauthClient.authHeaders,
       ...config.headers,
     },
   };
 });
 
 export default publishRest;
-
-// This is a hack to allow username/password logins to django
-window.setTokenHack = (token) => {
-  if (toggles.DJANGO_API) {
-    publishRest.token = token;
-    publishRest.user = {};
-    console.log(`Token set to ${token}`);
-  } else {
-    console.log('DJANGO_API is not enabled');
-  }
-};
