@@ -107,7 +107,8 @@
         Create Account
       </v-btn>
       <v-btn
-        :to="{ name: 'userLogin', query: { returnTo: returnObject } }"
+        :to="DJANGO_API ? undefined : { name: 'userLogin', query: { returnTo: returnObject } }"
+        @click="login"
         class="mx-1"
         color="primary"
         rounded
@@ -119,9 +120,10 @@
 </template>
 
 <script>
-import { loggedIn } from '@/rest';
+import { loggedIn, publishRest } from '@/rest';
 import { dandiAboutUrl, dandiDocumentationUrl } from '@/utils';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
+import toggles from '@/featureToggle';
 
 export default {
   name: 'AppBar',
@@ -165,6 +167,13 @@ export default {
       const { name, query, params } = this.$route;
       return JSON.stringify({ name, query, params });
     },
+  },
+  methods: {
+    login() {
+      if (toggles.DJANGO_API) {
+        publishRest.login();
+      }
+    }
   },
 };
 </script>
