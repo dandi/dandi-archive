@@ -137,8 +137,9 @@ const publishRest = new Vue({
   },
 });
 
-// This has to be done with an interceptor because
-// the value of publishRest.token changes over time.
+// This is done with an interceptor because the value of
+// oauthClient.authHeaders is initialized asynchronously,
+// and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
 // would not update when the token does.
 client.interceptors.request.use((config) => {
