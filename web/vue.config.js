@@ -6,6 +6,7 @@ module.exports = {
   lintOnSave: false,
   transpileDependencies: [
     'vuetify',
+    '@girder/oauth-client',
   ],
   devServer: {
     // The default port 8080 conflicts with Girder
