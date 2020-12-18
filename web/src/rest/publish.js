@@ -39,7 +39,6 @@ const publishRest = new Vue({
   data() {
     return {
       client,
-      token: null,
       user: null,
     };
   },
@@ -47,7 +46,6 @@ const publishRest = new Vue({
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
-        this.token = oauthClient.token;
         this.user = {};
       }
     },
@@ -56,7 +54,6 @@ const publishRest = new Vue({
     },
     async logout() {
       await oauthClient.logout();
-      this.token = null;
       this.user = null;
     },
     async assets(identifier, version, config = {}) {
@@ -141,11 +138,8 @@ const publishRest = new Vue({
 // oauthClient.authHeaders is initialized asynchronously,
 // and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
-// would not update when the token does.
+// would not update when the headers do.
 client.interceptors.request.use((config) => {
-  if (!oauthClient.authHeaders) {
-    return config;
-  }
   return {
     ...config,
     headers: {
