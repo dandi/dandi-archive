@@ -63,6 +63,9 @@ class DandiConfig(ConfigMixin):
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]
+        configuration.REST_FRAMEWORK[
+            'DEFAULT_PAGINATION_CLASS'
+        ] = 'dandiapi.api.views.common.DandiPagination'
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
