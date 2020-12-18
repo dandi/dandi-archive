@@ -7,7 +7,7 @@ from django.db.models import Q
 
 def create_application(apps, schema_editor):
     Application = apps.get_model('oauth2_provider', 'Application')
-    name = 'Frontend Provider'
+    name = 'DANDI GUI'
     # This is specified so it matches the default value used in the frontend.
     client_id = 'Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl'
     if not Application.objects.filter(Q(name=name) | Q(client_id=client_id)).exists():
