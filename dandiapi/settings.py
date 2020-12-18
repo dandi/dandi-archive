@@ -59,7 +59,8 @@ class DandiConfig(ConfigMixin):
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             # Required for swagger logins
             'rest_framework.authentication.SessionAuthentication',
-            # TODO remove TokenAuthentication, it is only here to support the setTokenHack login workaround
+            # TODO remove TokenAuthentication, it is only here to support
+            # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]
 
