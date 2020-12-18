@@ -11,13 +11,9 @@ def create_application(apps, schema_editor):
     # This is specified so it matches the default value used in the frontend.
     client_id = 'Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl'
     if not Application.objects.filter(Q(name=name) | Q(client_id=client_id)).exists():
-        # Use the first admin user
-        User = apps.get_model('auth', 'User')
-        user = User.objects.filter(is_superuser=True).order_by('id')[0]
         application = Application(
             # Production instances should change this.
             client_id='Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl',
-            user=user,
             # Production instances must change this.
             redirect_uris='http://localhost:8085/',
             # These values should not be modified.
