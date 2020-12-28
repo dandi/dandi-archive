@@ -117,6 +117,10 @@ const publishRest = new Vue({
     async dandisets(params) {
       return client.get('dandisets/', { params });
     },
+    async createDandiset(name, description) {
+      const metadata = { name, description };
+      return client.post('dandisets/', { name, metadata });
+    },
     async owners(identifier) {
       return client.get(`dandisets/${identifier}/users/`);
     },
