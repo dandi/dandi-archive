@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@girder/components": "^2.2.5",
-    "@girder/oauth-client": "^0.6.3",
+    "@girder/oauth-client": "^0.7.2",
     "@sentry/browser": "^5.20.1",
     "@sentry/integrations": "^5.20.1",
     "@vue/composition-api": "^1.0.0-beta.20",

@@ -835,10 +835,10 @@
     vue-async-computed "^3.4.1"
     vuetify "^2.3.1"
 
-"@girder/oauth-client@^0.6.3":
-  version "0.6.3"
-  resolved "https://registry.yarnpkg.com/@girder/oauth-client/-/oauth-client-0.6.3.tgz#0dd64345bf4753a61a6e9d39b9218b87833c7bde"
-  integrity sha512-SNgIeSvuwqWUnsW9j/sMXzt8Db1K3b7RNMvcjqEfsHaQbcsu9Ida7EnNuipVoPhfGd9/YOzBrkt2z8F01dmWLw==
+"@girder/oauth-client@^0.7.2":
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/@girder/oauth-client/-/oauth-client-0.7.2.tgz#5153d5b7ebfb520d3af5a24840f0d708582ba953"
+  integrity sha512-a7JiTxCoIjdLVqBDBb7aDiiE/gyA12MbP+H+74B1mNwFXPjm1QGBpfx30miSisIDf21zyZ9LBOHgrGcnnTANMA==
   dependencies:
     "@openid/appauth" "^1.3.0"
 
