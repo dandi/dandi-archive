@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Vue from 'vue';
-import toggles from '@/featureToggle';
+import OAuthClient from '@girder/oauth-client';
 
 // Ensure contains trailing slash
 const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
@@ -30,20 +30,30 @@ function girderize(publishedDandiset) {
 }
 
 const client = axios.create({ baseURL: publishApiRoot });
+const oauthClient = new OAuthClient(
+  process.env.VUE_APP_OAUTH_API_ROOT,
+  process.env.VUE_APP_OAUTH_CLIENT_ID,
+);
 
 const publishRest = new Vue({
   data() {
     return {
       client,
-      token: null,
       user: null,
     };
   },
   methods: {
-    // TODO proper OAuth login
+    async restoreLogin() {
+      await oauthClient.maybeRestoreLogin();
+      if (oauthClient.isLoggedIn) {
+        this.user = {};
+      }
+    },
+    async login() {
+      await oauthClient.redirectToLogin();
+    },
     async logout() {
-      // TODO proper session logout
-      this.token = null;
+      await oauthClient.logout();
       this.user = null;
     },
     async assets(identifier, version, config = {}) {
@@ -128,32 +138,19 @@ const publishRest = new Vue({
   },
 });
 
-// This has to be done with an interceptor because
-// the value of publishRest.token changes over time.
+// This is done with an interceptor because the value of
+// oauthClient.authHeaders is initialized asynchronously,
+// and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
-// would not update when the token does.
+// would not update when the headers do.
 client.interceptors.request.use((config) => {
-  if (!publishRest.token) {
-    return config;
-  }
   return {
     ...config,
     headers: {
-      Authorization: `Token ${publishRest.token}`,
+      ...oauthClient.authHeaders,
       ...config.headers,
     },
   };
 });
 
 export default publishRest;
-
-// This is a hack to allow username/password logins to django
-window.setTokenHack = (token) => {
-  if (toggles.DJANGO_API) {
-    publishRest.token = token;
-    publishRest.user = {};
-    console.log(`Token set to ${token}`);
-  } else {
-    console.log('DJANGO_API is not enabled');
-  }
-};
