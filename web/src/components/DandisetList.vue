@@ -114,15 +114,14 @@ export default defineComponent({
 
       if (toggles.DJANGO_API) {
         dandisetStats.value = dandisets as DandisetStats[];
+      } else {
+        const res = await Promise.all(dandisets.map(async (dandiset: any) => {
+          const { identifier } = dandiset.meta.dandiset;
+          const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
+          return data;
+        }));
+        dandisetStats.value = res;
       }
-
-      const res = await Promise.all(dandisets.map(async (dandiset: any) => {
-        const { identifier } = dandiset.meta.dandiset;
-        const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
-        return data;
-      }));
-
-      dandisetStats.value = res;
     }
 
     // Fetching dandiset stats must be done this way since we don't have access to asyncComputed
