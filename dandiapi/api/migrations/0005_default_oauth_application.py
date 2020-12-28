@@ -37,6 +37,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('api', '0004_update_asset_model'),
+        ('oauth2_provider', '0002_auto_20190406_1805'),
     ]
 
     operations = [migrations.RunPython(create_application, reverse_create_application)]
