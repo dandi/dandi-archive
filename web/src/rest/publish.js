@@ -56,6 +56,20 @@ const publishRest = new Vue({
       await oauthClient.logout();
       this.user = null;
     },
+    async apiKey() {
+      try {
+        const { data } = await client.get('auth/token/');
+        return data;
+      } catch (e) {
+        // If the request returned 404, the user doesn't have an API key yet
+        if (e.message === 'Request failed with status code 404') {
+          // Create a new API key
+          const { data } = await client.post('auth/token/');
+          return data;
+        }
+        throw e;
+      }
+    },
     async assets(identifier, version, config = {}) {
       try {
         const {
@@ -143,14 +157,12 @@ const publishRest = new Vue({
 // and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
 // would not update when the headers do.
-client.interceptors.request.use((config) => {
-  return {
-    ...config,
-    headers: {
-      ...oauthClient.authHeaders,
-      ...config.headers,
-    },
-  };
-});
+client.interceptors.request.use((config) => ({
+  ...config,
+  headers: {
+    ...oauthClient.authHeaders,
+    ...config.headers,
+  },
+}));
 
 export default publishRest;

@@ -21,7 +21,8 @@
 
 <script>
 import CopyText from '@/components/CopyText.vue';
-import { girderRest } from '@/rest';
+import { girderRest, publishRest } from '@/rest';
+import toggles from '@/featureToggle';
 
 export default {
   name: 'ApiKeyItem',
@@ -38,35 +39,39 @@ export default {
   },
   methods: {
     async fetch() {
-      let data;
-      // parentheses required for using the destructure assignment
-      ({ data } = await girderRest.get(
-        'api_key', {
-          params: {
-          // eslint-disable-next-line import/no-named-as-default-member
-            userId: girderRest.user._id,
-            limit: 50,
-            sort: 'name',
-            sortdir: 1,
+      if (toggles.DJANGO_API) {
+        this.apiKey = await publishRest.apiKey();
+      } else {
+        let data;
+        // parentheses required for using the destructure assignment
+        ({ data } = await girderRest.get(
+          'api_key', {
+            params: {
+            // eslint-disable-next-line import/no-named-as-default-member
+              userId: girderRest.user._id,
+              limit: 50,
+              sort: 'name',
+              sortdir: 1,
+            },
           },
-        },
-      ));
-      let [dandiKey] = data.filter((key) => key.name === 'dandicli');
-      if (!dandiKey) {
-        // create a key
-        ({ data } = await girderRest.post('api_key', null, {
-          params: {
-            name: 'dandicli',
-            scope: null,
-            // days
-            tokenDuration: 30,
-            active: true,
-          },
-        }));
-        dandiKey = data;
-      }
+        ));
+        let [dandiKey] = data.filter((key) => key.name === 'dandicli');
+        if (!dandiKey) {
+          // create a key
+          ({ data } = await girderRest.post('api_key', null, {
+            params: {
+              name: 'dandicli',
+              scope: null,
+              // days
+              tokenDuration: 30,
+              active: true,
+            },
+          }));
+          dandiKey = data;
+        }
 
-      this.apiKey = dandiKey.key;
+        this.apiKey = dandiKey.key;
+      }
     },
   },
 };
