@@ -8,9 +8,9 @@
         <v-col
           :key="stat.name"
           class="py-0 flex-grow-1"
-          :md="(UNIFIED_API) ? 4 : 2"
-          :sm="(UNIFIED_API) ? 4 : 4"
-          :cols="(UNIFIED_API) ? 12 : 6"
+          :md="(DJANGO_API) ? 4 : 2"
+          :sm="(DJANGO_API) ? 4 : 4"
+          :cols="(DJANGO_API) ? 12 : 6"
         >
           <SingleStat
             :name="stat.name"
@@ -52,28 +52,27 @@ export default {
   },
   computed: {
     stats() {
-      if (toggles.UNIFIED_API) {
+      if (toggles.DJANGO_API) {
         return [
           { name: 'published dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
           { name: 'users', value: this.users },
           { name: 'total data size', value: filesize(this.size, { round: 0 }) },
-        ]
-      } else {
-        return [
-          { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
-          { name: 'users', value: this.users },
-          { name: 'species', value: this.species },
-          { name: 'subjects', value: this.subjects },
-          { name: 'cells', value: this.cells },
-          { name: 'total data size', value: filesize(this.size, { round: 0 }) },
         ];
       }
+      return [
+        { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
+        { name: 'users', value: this.users },
+        { name: 'species', value: this.species },
+        { name: 'subjects', value: this.subjects },
+        { name: 'cells', value: this.cells },
+        { name: 'total data size', value: filesize(this.size, { round: 0 }) },
+      ];
     },
   },
   async created() {
-    if (toggles.UNIFIED_API) {
+    if (toggles.DJANGO_API) {
       const data = await publishRest.stats();
-      this.dandisets = data.dandiset_count;
+      this.dandisets = data.published_dandiset_count;
       this.users = data.user_count;
       this.size = data.size;
     } else {
@@ -85,6 +84,6 @@ export default {
       this.cells = data.cell_count;
       this.size = data.size;
     }
-  }
+  },
 };
 </script>
