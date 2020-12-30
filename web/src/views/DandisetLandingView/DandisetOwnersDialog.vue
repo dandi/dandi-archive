@@ -36,14 +36,10 @@
           class="px-6"
           max-height="50vh"
         >
-          <template
-            v-for="(owner, i) in newOwners"
-          >
-            <v-list-item
-              :key="owner._id"
-            >
+          <template v-for="(owner, i) in newOwners">
+            <v-list-item :key="owner._id || owner.id">
               <v-list-item-title>
-                {{ owner.name }} ({{ owner.login }})
+                {{ owner.result }}
               </v-list-item-title>
               <v-list-item-action>
                 <v-btn
@@ -84,8 +80,9 @@
 </template>
 
 <script>
-import { girderRest, user } from '@/rest';
+import { girderRest, publishRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
+import toggles from '@/featureToggle';
 import _ from 'lodash';
 
 const userFormatConversion = (users) => users.map(({
@@ -94,7 +91,17 @@ const userFormatConversion = (users) => users.map(({
   id: _id, level: _accessLevel, login, name: `${firstName} ${lastName}`,
 }));
 
-const addResult = (users) => users.map((u) => ({ ...u, result: `${u.name} (${u.login})` }));
+const girderize = (users) => users.map(
+  ({ username, first_name: firstName, last_name: lastName }) => ({
+    id: username,
+    login: username,
+    username,
+    name: (firstName && lastName) ? `${firstName} ${lastName}` : null,
+  }),
+);
+
+// Includes a field `result` on each user which is the value displayed in the UI
+const appendResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.login})` : u.login }));
 
 export default {
   name: 'DandisetOwnersDialog',
@@ -109,14 +116,14 @@ export default {
       search: null,
       loadingUsers: false,
       selection: null,
-      newOwners: addResult(this.owners),
+      newOwners: appendResult((toggles.DJANGO_API) ? girderize(this.owners) : this.owners),
       items: [],
       throttledUpdate: _.debounce(this.updateItems, 200),
     };
   },
   computed: {
     user,
-    ...mapState('dandiset', ['girderDandiset']),
+    ...mapState('dandiset', ['girderDandiset', 'publishDandiset']),
   },
   watch: {
     selection(val) {
@@ -129,17 +136,22 @@ export default {
       if (!this.search) return;
 
       this.loadingUsers = true;
-      const { data: { user: users } } = await girderRest.get('/resource/search', {
-        params: {
-          q: this.search,
-          mode: 'prefix',
-          types: JSON.stringify(['user']),
-          limit: 10,
-        },
-      });
+      if (toggles.DJANGO_API) {
+        const users = await publishRest.searchUsers(this.search);
+        this.items = appendResult(girderize(users));
+      } else {
+        const { data: { user: users } } = await girderRest.get('/resource/search', {
+          params: {
+            q: this.search,
+            mode: 'prefix',
+            types: JSON.stringify(['user']),
+            limit: 10,
+          },
+        });
 
-      // Needed to match existing owner document schema
-      this.items = addResult(userFormatConversion(users));
+        // Needed to match existing owner document schema
+        this.items = appendResult(userFormatConversion(users));
+      }
 
       this.loadingUsers = false;
     },
@@ -150,11 +162,16 @@ export default {
       this.$emit('close');
     },
     async save() {
-      const { identifier } = this.girderDandiset.meta.dandiset;
-      const formattedOwners = this.newOwners.map((owner) => ({ _id: owner.id }));
-
-      const { data } = await girderRest.put(`/dandi/${identifier}/owners`, formattedOwners);
-      this.setOwners(data);
+      if (toggles.DJANGO_API) {
+        const { identifier } = this.publishDandiset.meta.dandiset;
+        const { data } = await publishRest.setOwners(identifier, this.newOwners);
+        this.setOwners(data);
+      } else {
+        const { identifier } = this.girderDandiset.meta.dandiset;
+        const formattedOwners = this.newOwners.map((owner) => ({ _id: owner.id }));
+        const { data } = await girderRest.put(`/dandi/${identifier}/owners`, formattedOwners);
+        this.setOwners(data);
+      }
       this.close();
     },
     ...mapMutations('dandiset', ['setOwners']),

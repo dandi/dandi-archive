@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Vue from 'vue';
-import toggles from '@/featureToggle';
+import OAuthClient from '@girder/oauth-client';
 
 // Ensure contains trailing slash
 const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
@@ -9,40 +9,58 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
 
 function girderize(publishedDandiset) {
   const { // eslint-disable-next-line camelcase
-    created, modified, dandi_id, version, metadata, name,
+    created, modified, dandiset, version, metadata, name, size, asset_count,
   } = publishedDandiset;
   return {
     created,
     updated: modified,
     version,
     name,
-    lowerName: dandi_id,
+    lowerName: name,
+    bytes: size,
+    items: asset_count,
     meta: {
-      dandiset: metadata,
+      dandiset: {
+        ...metadata,
+        name,
+        identifier: dandiset.identifier,
+      },
     },
   };
 }
 
 const client = axios.create({ baseURL: publishApiRoot });
+const oauthClient = new OAuthClient(
+  process.env.VUE_APP_OAUTH_API_ROOT,
+  process.env.VUE_APP_OAUTH_CLIENT_ID,
+);
 
 const publishRest = new Vue({
   data() {
     return {
       client,
-      token: null,
       user: null,
     };
   },
   methods: {
-    // TODO proper OAuth login
+    async restoreLogin() {
+      await oauthClient.maybeRestoreLogin();
+      if (oauthClient.isLoggedIn) {
+        this.user = {};
+      }
+    },
+    async login() {
+      await oauthClient.redirectToLogin();
+    },
     async logout() {
-      // TODO proper session logout
-      this.token = null;
+      await oauthClient.logout();
       this.user = null;
     },
     async assets(identifier, version, config = {}) {
       try {
-        const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
+        const {
+          data,
+        } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
         return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -52,16 +70,18 @@ const publishRest = new Vue({
       }
     },
     async assetPaths(identifier, version, location) {
-      const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets/paths/`, {
+      const {
+        data,
+      } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
         params: {
           path_prefix: location,
         },
       });
       return data;
     },
-    async versions(identifier) {
+    async versions(identifier, params) {
       try {
-        const { data } = await client.get(`api/dandisets/${identifier}/versions/`);
+        const { data } = await client.get(`dandisets/${identifier}/versions/`, { params });
         return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -75,7 +95,7 @@ const publishRest = new Vue({
     },
     async specificVersion(identifier, version) {
       try {
-        const { data } = await client.get(`api/dandisets/${identifier}/versions/${version}/`);
+        const { data } = await client.get(`dandisets/${identifier}/versions/${version}/`);
         return girderize(data);
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -85,16 +105,31 @@ const publishRest = new Vue({
       }
     },
     async mostRecentVersion(identifier) {
-      const versions = await this.versions(identifier);
-      if (versions === null) {
+      // TODO: find a way to do this with fewer requests
+      const count = (await this.versions(identifier))?.count;
+      if (!count) {
         return null;
       }
-      const { count, results } = versions;
-      if (count === 0) {
-        return null;
-      }
-      const { version } = results[0];
-      return this.specificVersion(identifier, version);
+      // Look up the last version using page filters
+      const version = (await this.versions(identifier, { page: count, page_size: 1 })).results[0];
+      return girderize(version);
+    },
+    async dandisets(params) {
+      return client.get('dandisets/', { params });
+    },
+    async createDandiset(name, description) {
+      const metadata = { name, description };
+      return client.post('dandisets/', { name, metadata });
+    },
+    async owners(identifier) {
+      return client.get(`dandisets/${identifier}/users/`);
+    },
+    async setOwners(identifier, owners) {
+      return client.put(`dandisets/${identifier}/users/`, owners);
+    },
+    async searchUsers(username) {
+      const { data } = await client.get('users/search/?', { params: { username } });
+      return data;
     },
     async stats() {
       const { data } = await client.get('api/stats/');
@@ -102,37 +137,24 @@ const publishRest = new Vue({
     },
     assetDownloadURI(asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
-      return `${publishApiRoot}api/dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
+      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
   },
 });
 
-// This has to be done with an interceptor because
-// the value of publishRest.token changes over time.
+// This is done with an interceptor because the value of
+// oauthClient.authHeaders is initialized asynchronously,
+// and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
-// would not update when the token does.
+// would not update when the headers do.
 client.interceptors.request.use((config) => {
-  if (!publishRest.token) {
-    return config;
-  }
   return {
     ...config,
     headers: {
-      Authorization: `Token ${publishRest.token}`,
+      ...oauthClient.authHeaders,
       ...config.headers,
     },
   };
 });
 
 export default publishRest;
-
-// This is a hack to allow username/password logins to django
-window.setTokenHack = (token) => {
-  if (toggles.UNIFIED_API) {
-    publishRest.token = token;
-    publishRest.user = {};
-    console.log(`Token set to ${token}`);
-  } else {
-    console.log('UNIFIED_API is not enabled');
-  }
-};
