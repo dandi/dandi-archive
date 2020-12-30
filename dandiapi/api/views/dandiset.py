@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
+from django.db.models import OuterRef, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
@@ -20,10 +21,36 @@ from dandiapi.api.views.serializers import (
 )
 
 
+class DandisetFilterBackend(filters.OrderingFilter):
+    ordering_fields = ['created', 'name']
+    ordering_description = (
+        'Which field to use when ordering the results. '
+        'Options are created, -created, name, and -name.'
+    )
+
+    def filter_queryset(self, request, queryset, view):
+        orderings = self.get_ordering(request, queryset, view)
+        if orderings:
+            ordering = orderings[0]
+            # ordering can be either 'created' or '-created', so test for both
+            if ordering[-7:] == 'created':
+                return queryset.order_by(ordering)
+            elif ordering[-4:] == 'name':
+                # name refers to the name of the most recent version, so a subquery is required
+                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
+                    '-created'
+                )[:1]
+                queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
+                return queryset.order_by(ordering)
+
+        return queryset
+
+
 class DandisetViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = DandisetSerializer
     pagination_class = DandiPagination
+    filter_backends = [DandisetFilterBackend]
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
