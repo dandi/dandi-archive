@@ -62,7 +62,7 @@ const publishRest = new Vue({
         return data;
       } catch (e) {
         // If the request returned 404, the user doesn't have an API key yet
-        if (e.message === 'Request failed with status code 404') {
+        if (e.response.status === 404) {
           // Create a new API key
           const { data } = await client.post('auth/token/');
           return data;
