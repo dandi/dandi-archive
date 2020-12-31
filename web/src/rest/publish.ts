@@ -7,7 +7,7 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-function girderize(publishedDandiset) {
+function girderize(publishedDandiset: any) {
   const { // eslint-disable-next-line camelcase
     created, modified, dandiset, version, metadata, name, size, asset_count,
   } = publishedDandiset;
@@ -36,7 +36,7 @@ const oauthClient = new OAuthClient(
 );
 
 const publishRest = new Vue({
-  data() {
+  data(): { client: any, user: any } {
     return {
       client,
       user: null,
@@ -70,7 +70,7 @@ const publishRest = new Vue({
         throw e;
       }
     },
-    async assets(identifier, version, config = {}) {
+    async assets(identifier: string, version: string, config = {}) {
       try {
         const {
           data,
@@ -83,7 +83,7 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async assetPaths(identifier, version, location) {
+    async assetPaths(identifier: string, version: string, location: string) {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
@@ -93,7 +93,7 @@ const publishRest = new Vue({
       });
       return data;
     },
-    async versions(identifier, params) {
+    async versions(identifier: string, params: any = undefined) {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/`, { params });
         return data;
@@ -107,7 +107,7 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async specificVersion(identifier, version) {
+    async specificVersion(identifier: string, version: string) {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/${version}/`);
         return girderize(data);
@@ -118,7 +118,7 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async mostRecentVersion(identifier) {
+    async mostRecentVersion(identifier: string) {
       // TODO: find a way to do this with fewer requests
       const count = (await this.versions(identifier))?.count;
       if (!count) {
@@ -128,24 +128,24 @@ const publishRest = new Vue({
       const version = (await this.versions(identifier, { page: count, page_size: 1 })).results[0];
       return girderize(version);
     },
-    async dandisets(params) {
+    async dandisets(params: any = undefined) {
       return client.get('dandisets/', { params });
     },
-    async createDandiset(name, description) {
+    async createDandiset(name: string, description: string) {
       const metadata = { name, description };
       return client.post('dandisets/', { name, metadata });
     },
-    async owners(identifier) {
+    async owners(identifier: string) {
       return client.get(`dandisets/${identifier}/users/`);
     },
-    async setOwners(identifier, owners) {
+    async setOwners(identifier: string, owners: [any]) {
       return client.put(`dandisets/${identifier}/users/`, owners);
     },
-    async searchUsers(username) {
+    async searchUsers(username: string) {
       const { data } = await client.get('users/search/?', { params: { username } });
       return data;
     },
-    assetDownloadURI(asset) {
+    assetDownloadURI(asset: any) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
       return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
