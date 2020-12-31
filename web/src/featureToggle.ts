@@ -28,23 +28,27 @@ export default featureToggles;
 // These functions are made available globally so they can be called from the console
 
 /** Enables a feature toggle. Only usable from the console. */
-function enable(featureToggle) {
+function enable(featureToggle: string) {
   if (!(featureToggle in featureToggles)) {
     throw `Feature toggle ${featureToggle} is not defined`;
   }
+  // @ts-ignore
   featureToggles[featureToggle] = true;
   console.log(`Feature toggle '${featureToggle}' enabled`);
 }
 
 /** Disables a feature toggle. Only usable from the console. */
-function disable(featureToggle) {
+function disable(featureToggle: string) {
   if (!(featureToggle in featureToggles)) {
     throw `Feature toggle ${featureToggle} is not defined`;
   }
+  // @ts-ignore
   featureToggles[featureToggle] = false;
   console.log(`Feature toggle '${featureToggle}' disabled`);
 }
 
 // Register enable and disable on the window object so they are accessible from the console
+// @ts-ignore
 window.enable = enable;
+// @ts-ignore
 window.disable = disable;
