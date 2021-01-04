@@ -18,7 +18,8 @@ const featureToggles = reactive({
 
 // Used to narrow string types
 function isToggle(toggle: string): toggle is keyof (typeof featureToggles) {
-  return Object.keys(featureToggles).includes(toggle);
+  // eslint-disable-next-line no-prototype-builtins
+  return featureToggles.hasOwnProperty(toggle);
 }
 
 // Register the feature toggles as computed properties on all components
