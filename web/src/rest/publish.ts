@@ -59,9 +59,13 @@ const publishRest = new Vue({
       await oauthClient.logout();
       this.user = null;
     },
-    async me(): Promise<User> {
-      const { data } = await client.get('users/me/');
-      return data;
+    async me(): Promise<User | null> {
+      try {
+        const { data } = await client.get('users/me/');
+        return data;
+      } catch {
+        return null;
+      }
     },
     async apiKey(): Promise<string> {
       try {
