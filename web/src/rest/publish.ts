@@ -1,13 +1,16 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import Vue from 'vue';
 import OAuthClient from '@girder/oauth-client';
+import {
+  Asset, Dandiset, Paginated, User, Version,
+} from '@/types';
 
 // Ensure contains trailing slash
 const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-function girderize(publishedDandiset: any) {
+function girderize(publishedDandiset: Version) {
   const { // eslint-disable-next-line camelcase
     created, modified, dandiset, version, metadata, name, size, asset_count,
   } = publishedDandiset;
@@ -36,7 +39,7 @@ const oauthClient = new OAuthClient(
 );
 
 const publishRest = new Vue({
-  data(): { client: any, user: any } {
+  data(): { client: AxiosInstance, user: User | null } {
     return {
       client,
       user: null,
@@ -74,7 +77,8 @@ const publishRest = new Vue({
         throw e;
       }
     },
-    async assets(identifier: string, version: string, config = {}) {
+    async assets(identifier: string, version: string, config?: AxiosRequestConfig)
+      : Promise<Paginated<Asset> | null> {
       try {
         const {
           data,
@@ -87,7 +91,7 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async assetPaths(identifier: string, version: string, location: string) {
+    async assetPaths(identifier: string, version: string, location: string): Promise<string[]> {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
@@ -97,7 +101,7 @@ const publishRest = new Vue({
       });
       return data;
     },
-    async versions(identifier: string, params: any = undefined) {
+    async versions(identifier: string, params?: any): Promise<Paginated<Version> | null> {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/`, { params });
         return data;
@@ -129,23 +133,26 @@ const publishRest = new Vue({
         return null;
       }
       // Look up the last version using page filters
-      const version = (await this.versions(identifier, { page: count, page_size: 1 })).results[0];
-      return girderize(version);
+      const versions = await this.versions(identifier, { page: count, page_size: 1 });
+      if (versions === null) {
+        return null;
+      }
+      return girderize(versions.results[0]);
     },
-    async dandisets(params: any = undefined) {
+    async dandisets(params?: any): Promise<AxiosResponse<Paginated<Dandiset>>> {
       return client.get('dandisets/', { params });
     },
-    async createDandiset(name: string, description: string) {
+    async createDandiset(name: string, description: string): Promise<AxiosResponse<Dandiset>> {
       const metadata = { name, description };
       return client.post('dandisets/', { name, metadata });
     },
-    async owners(identifier: string) {
+    async owners(identifier: string): Promise<AxiosResponse<User[]>> {
       return client.get(`dandisets/${identifier}/users/`);
     },
-    async setOwners(identifier: string, owners: [any]) {
+    async setOwners(identifier: string, owners: User[]) {
       return client.put(`dandisets/${identifier}/users/`, owners);
     },
-    async searchUsers(username: string) {
+    async searchUsers(username: string): Promise<User[]> {
       const { data } = await client.get('users/search/?', { params: { username } });
       return data;
     },
