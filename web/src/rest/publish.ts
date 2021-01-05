@@ -156,7 +156,7 @@ const publishRest = new Vue({
       const { data } = await client.get('users/search/?', { params: { username } });
       return data;
     },
-    assetDownloadURI(asset: any) {
+    assetDownloadURI(asset: Asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
       return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
