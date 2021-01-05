@@ -46,7 +46,7 @@ const publishRest = new Vue({
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
-        this.user = {};
+        this.user = await this.me();
       }
     },
     async login() {
@@ -56,7 +56,11 @@ const publishRest = new Vue({
       await oauthClient.logout();
       this.user = null;
     },
-    async apiKey() {
+    async me(): Promise<User> {
+      const { data } = await client.get('users/me/');
+      return data;
+    },
+    async apiKey(): Promise<string> {
       try {
         const { data } = await client.get('auth/token/');
         return data;
