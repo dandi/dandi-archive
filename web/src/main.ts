@@ -1,21 +1,25 @@
+// Import external packages
 import Vue from 'vue';
-import VueCompositionAPI from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
 
 // @ts-ignore missing definitions
-import Girder, { vuetify } from '@girder/components/src';
+import { vuetify } from '@girder/components/src';
 import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
 
-import App from '@/App.vue';
+// Import plugins first (order may matter)
+import '@/plugins/composition';
+import '@/plugins/girder';
+
+// Import custom behavior
 import '@/featureToggle';
+import '@/title';
+
+// Import internal items
+import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
 import { girderRest, publishRest } from '@/rest';
-import '@/title';
-
-Vue.use(Girder);
-Vue.use(VueCompositionAPI);
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
