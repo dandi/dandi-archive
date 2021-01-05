@@ -89,4 +89,5 @@ class ProductionConfiguration(DandiConfig, SentryConfig, ProductionBaseConfigura
 
 
 class HerokuProductionConfiguration(DandiConfig, SentryConfig, HerokuProductionBaseConfiguration):
-    pass
+    # All login attempts in production should go straight to GitHub
+    LOGIN_URL = '/accounts/github/login/'
