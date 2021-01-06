@@ -65,11 +65,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import {
+  defineComponent, ref, computed, watch, Ref, watchEffect,
+} from '@vue/composition-api';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import toggles from '@/featureToggle';
 import { girderRest, publishRest } from '@/rest';
+import { Dandiset, Paginated } from '@/types';
 
 const DANDISETS_PER_PAGE = 8;
 
@@ -77,14 +81,16 @@ const sortingOptions = [
   {
     name: 'Created',
     field: 'created',
+    djangoField: 'created',
   },
   {
     name: 'Name',
     field: 'meta.dandiset.name',
+    djangoField: 'name',
   },
 ];
 
-export default {
+export default defineComponent({
   name: 'DandisetsPage',
   components: { DandisetList, DandisetSearchField },
   props: {
@@ -103,120 +109,145 @@ export default {
       default: false,
     },
   },
-  data() {
-    return {
-      sortingOptions,
-      sortOption: Number(this.$route.query.sortOption) || 0,
-      sortDir: this.$route.query.sortDir || 1,
-      page: Number(this.$route.query.page) || 1,
-    };
-  },
-  computed: {
-    pageTitle() {
-      return (this.search) ? this.$route.query.search : this.title;
-    },
-    listingUrl() {
-      if (this.user) {
+  setup(props, ctx) {
+    // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
+    // https://next.router.vuejs.org/api/#useroute
+    const route = ctx.root.$route;
+
+    const sortOption = ref(Number(route.query.sortOption) || 0);
+    const sortDir = ref(Number(route.query.sortDir || 1));
+    const page = ref(Number(route.query.page) || 1);
+
+    const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
+    const sortField = computed(() => {
+      if (toggles.DJANGO_API) {
+        return sortingOptions[sortOption.value].djangoField;
+      }
+      return sortingOptions[sortOption.value].field;
+    });
+
+    // Django dandiset listing
+
+    const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
+    watchEffect(async () => {
+      if (!toggles.DJANGO_API) {
+        djangoDandisetRequest.value = null;
+      } else {
+        const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
+        const response = await publishRest.dandisets({
+          page: page.value, page_size: DANDISETS_PER_PAGE, ordering, user: props.user ? 'me' : null,
+        });
+        djangoDandisetRequest.value = response.data;
+      }
+    });
+
+    // TODO properly type this
+    // Currently it uses the girderized representation of a dandiset version, which is untyped
+    const mostRecentDandisetVersions: Ref<any | null> = ref(null);
+    watchEffect(async () => {
+      if (djangoDandisetRequest.value === null) {
+        mostRecentDandisetVersions.value = null;
+      } else {
+        mostRecentDandisetVersions.value = await Promise.all(djangoDandisetRequest.value.results.map(
+          (dandiset) => publishRest.mostRecentVersion(dandiset.identifier),
+        ));
+        console.log(mostRecentDandisetVersions.value);
+      }
+    });
+
+    // Girder dandiset listing
+
+    const listingUrl = computed(() => {
+      if (props.user) {
         return 'dandi/user';
       }
-      if (this.search) {
+      if (props.search) {
         return 'dandi/search';
       }
       return 'dandi';
-    },
-    pages() {
-      return Math.ceil(this.totalDandisets / DANDISETS_PER_PAGE) || 1;
-    },
-    sortField() {
-      return this.sortingOptions[this.sortOption].field;
-    },
-    queryParams() {
-      const {
-        page, sortOption, sortDir,
-      } = this;
-      return { page, sortOption, sortDir };
-    },
-    dandisets() {
+    });
+    const girderDandisetRequest: Ref<null | any> = ref(null);
+    watchEffect(async () => {
       if (toggles.DJANGO_API) {
-        return this.mostRecentDandisetVersions || [];
-      }
-      return this.girderDandisetRequest?.data || [];
-    },
-    totalDandisets() {
-      if (toggles.DJANGO_API) {
-        return this.djangoDandisetRequest ? this.djangoDandisetRequest.data.count : 0;
-      }
-      return this.girderDandisetRequest ? this.girderDandisetRequest.headers['girder-total-count'] : 0;
-    },
-  },
-  asyncComputed: {
-    async girderDandisetRequest() {
-      if (toggles.DJANGO_API) {
-        return null;
-      }
-      const {
-        listingUrl, page, sortField, sortDir,
-        $route: {
-          query: {
-            search,
+        girderDandisetRequest.value = null;
+      } else {
+        const {
+          data, headers, status, statusText,
+        } = await girderRest.get(listingUrl.value, {
+          params: {
+            limit: DANDISETS_PER_PAGE,
+            offset: (page.value - 1) * DANDISETS_PER_PAGE,
+            sort: sortField.value,
+            sortdir: sortDir.value,
+            search: route.query.search,
           },
-        },
-      } = this;
+        });
 
-      const {
-        data, headers, status, statusText,
-      } = await girderRest.get(listingUrl, {
-        params: {
-          limit: DANDISETS_PER_PAGE,
-          offset: (page - 1) * DANDISETS_PER_PAGE,
-          sort: sortField,
-          sortdir: sortDir,
-          search,
-        },
-      });
+        girderDandisetRequest.value = {
+          data, headers, status, statusText,
+        };
+      }
+    });
 
-      return {
-        data, headers, status, statusText,
-      };
-    },
-    async djangoDandisetRequest() {
-      if (!toggles.DJANGO_API) {
-        return null;
+    // Unified Django + Girder
+
+    const dandisets = computed(() => {
+      if (toggles.DJANGO_API) {
+        return mostRecentDandisetVersions.value || [];
       }
-      return publishRest.dandisets({ page: this.page, page_size: DANDISETS_PER_PAGE, user: this.user ? 'me' : null });
-    },
-    async mostRecentDandisetVersions() {
-      if (this.djangoDandisetRequest === null) {
-        return null;
+      return girderDandisetRequest.value?.data || [];
+    });
+
+    const pages = computed(() => {
+      let totalDandisets: number;
+      if (toggles.DJANGO_API) {
+        totalDandisets = djangoDandisetRequest.value?.count || 0;
+      } else {
+        totalDandisets = girderDandisetRequest.value?.headers['girder-total-count'] || 0;
       }
-      return Promise.all(this.djangoDandisetRequest.data.results.map(
-        (dandiset) => publishRest.mostRecentVersion(dandiset.identifier),
-      ));
-    },
-  },
-  watch: {
-    queryParams(params) {
-      this.$router.replace({
-        ...this.$route,
+      return Math.ceil(totalDandisets / DANDISETS_PER_PAGE) || 1;
+    });
+
+    const queryParams = computed(() => ({
+      page: String(page.value),
+      sortOption: String(sortOption.value),
+      sortDir: String(sortDir.value),
+    }));
+    watch(queryParams, (params) => {
+      ctx.root.$router.replace({
+        ...route,
+        // replace() takes a RawLocation, which has a name: string
+        // Route has a name: string | null, so we need to tweak this
+        name: route.name as string,
         query: {
           // do not override the search parameter, if present
-          ...this.$route.query,
+          ...route.query,
           ...params,
         },
       });
-    },
-  },
-  methods: {
-    changeSort(index) {
-      if (this.sortOption === index) {
-        this.sortDir *= -1;
+    });
+
+    function changeSort(index: number) {
+      if (sortOption.value === index) {
+        sortDir.value *= -1;
       } else {
-        this.sortOption = index;
-        this.sortDir = 1;
+        sortOption.value = index;
+        sortDir.value = 1;
       }
 
-      this.page = 1;
-    },
+      page.value = 1;
+    }
+
+    return {
+      sortingOptions,
+      sortOption,
+      sortDir,
+      page,
+      pages,
+      pageTitle,
+      dandisets,
+      changeSort,
+    };
   },
-};
+});
 </script>
