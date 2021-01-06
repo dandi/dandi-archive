@@ -148,10 +148,11 @@ export default defineComponent({
       if (djangoDandisetRequest.value === null) {
         mostRecentDandisetVersions.value = null;
       } else {
-        mostRecentDandisetVersions.value = await Promise.all(djangoDandisetRequest.value.results.map(
-          (dandiset) => publishRest.mostRecentVersion(dandiset.identifier),
-        ));
-        console.log(mostRecentDandisetVersions.value);
+        mostRecentDandisetVersions.value = await Promise.all(
+          djangoDandisetRequest.value.results.map(
+            (dandiset) => publishRest.mostRecentVersion(dandiset.identifier),
+          ),
+        );
       }
     });
 
