@@ -82,7 +82,7 @@ const publishRest = new Vue({
       try {
         const {
           data,
-        } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
+        } = await client.get(`dandisets/${identifier}/versions/${version}/assets`, config);
         return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
