@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Type
 
@@ -13,28 +12,7 @@ from composed_configuration import (
 from configurations import values
 
 
-class SentryConfig(ConfigMixin):
-    SENTRY_DSN = values.Value(environ_required=True)
-
-    @staticmethod
-    def after_binding(configuration: Type[ComposedConfiguration]) -> None:
-        import sentry_sdk
-        from sentry_sdk.integrations.celery import CeleryIntegration
-        from sentry_sdk.integrations.django import DjangoIntegration
-        from sentry_sdk.integrations.logging import LoggingIntegration
-
-        sentry_sdk.init(
-            dsn=configuration.SENTRY_DSN,
-            integrations=[
-                DjangoIntegration(),
-                CeleryIntegration(),
-                LoggingIntegration(level=logging.INFO, event_level=logging.WARNING),
-            ],
-            send_default_pii=True,
-        )
-
-
-class DandiConfig(ConfigMixin):
+class DandiMixin(ConfigMixin):
     WSGI_APPLICATION = 'dandiapi.wsgi.application'
     ROOT_URLCONF = 'dandiapi.urls'
 
@@ -46,10 +24,6 @@ class DandiConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        # TODO django-composed-configuration still refers to drf_yasg2,
-        # but we need the changes introduced in drf_yasg, so we need to patch it.
-        configuration.INSTALLED_APPS[configuration.INSTALLED_APPS.index('drf_yasg2')] = 'drf_yasg'
-
         configuration.INSTALLED_APPS += [
             'dandiapi.api.apps.PublishConfig',
             'guardian',
@@ -72,11 +46,11 @@ class DandiConfig(ConfigMixin):
     DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
 
 
-class DevelopmentConfiguration(DandiConfig, DevelopmentBaseConfiguration):
+class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     pass
 
 
-class TestingConfiguration(DandiConfig, TestingBaseConfiguration):
+class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
@@ -84,10 +58,10 @@ class TestingConfiguration(DandiConfig, TestingBaseConfiguration):
     DANDI_GIRDER_API_URL = 'http://girder.test/api/v1'
 
 
-class ProductionConfiguration(DandiConfig, SentryConfig, ProductionBaseConfiguration):
+class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
     pass
 
 
-class HerokuProductionConfiguration(DandiConfig, SentryConfig, HerokuProductionBaseConfiguration):
+class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
