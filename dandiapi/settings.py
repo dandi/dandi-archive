@@ -46,10 +46,6 @@ class DandiConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        # TODO django-composed-configuration still refers to drf_yasg2,
-        # but we need the changes introduced in drf_yasg, so we need to patch it.
-        configuration.INSTALLED_APPS[configuration.INSTALLED_APPS.index('drf_yasg2')] = 'drf_yasg'
-
         configuration.INSTALLED_APPS += [
             'dandiapi.api.apps.PublishConfig',
             'guardian',
