@@ -102,6 +102,19 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = DandisetSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # @permission_required_or_403('owner', (Dandiset, 'dandiset__pk'))
+    def destroy(self, request, dandiset__pk):
+        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+
+        # TODO @permission_required doesn't work on methods
+        # https://github.com/django-guardian/django-guardian/issues/723
+        response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
+        if response:
+            return response
+
+        dandiset.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
     @swagger_auto_schema(method='GET', responses={200: UserSerializer(many=True)})
     @swagger_auto_schema(
         method='PUT',
