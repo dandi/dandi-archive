@@ -98,6 +98,27 @@ def test_dandiset_rest_create(api_client, user):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_delete(api_client, dandiset, user):
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
+
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.status_code == 204
+
+    assert not Dandiset.objects.all()
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_delete_not_an_owner(api_client, dandiset, user):
+    api_client.force_authenticate(user=user)
+
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.status_code == 403
+
+    assert dandiset in Dandiset.objects.all()
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_get_owners(api_client, dandiset, user):
     assign_perm('owner', user, dandiset)
 
