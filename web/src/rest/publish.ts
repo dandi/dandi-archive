@@ -1,13 +1,16 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import Vue from 'vue';
 import OAuthClient from '@girder/oauth-client';
+import {
+  Asset, Dandiset, Paginated, User, Version,
+} from '@/types';
 
 // Ensure contains trailing slash
 const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-function girderize(publishedDandiset) {
+function girderize(publishedDandiset: Version) {
   const { // eslint-disable-next-line camelcase
     created, modified, dandiset, version, metadata, name, size, asset_count,
   } = publishedDandiset;
@@ -36,7 +39,7 @@ const oauthClient = new OAuthClient(
 );
 
 const publishRest = new Vue({
-  data() {
+  data(): { client: AxiosInstance, user: User | null } {
     return {
       client,
       user: null,
@@ -46,7 +49,7 @@ const publishRest = new Vue({
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
-        this.user = {};
+        this.user = await this.me();
       }
     },
     async login() {
@@ -56,7 +59,26 @@ const publishRest = new Vue({
       await oauthClient.logout();
       this.user = null;
     },
-    async assets(identifier, version, config = {}) {
+    async me(): Promise<User> {
+      const { data } = await client.get('users/me/');
+      return data;
+    },
+    async apiKey(): Promise<string> {
+      try {
+        const { data } = await client.get('auth/token/');
+        return data;
+      } catch (e) {
+        // If the request returned 404, the user doesn't have an API key yet
+        if (e.response.status === 404) {
+          // Create a new API key
+          const { data } = await client.post('auth/token/');
+          return data;
+        }
+        throw e;
+      }
+    },
+    async assets(identifier: string, version: string, config?: AxiosRequestConfig)
+      : Promise<Paginated<Asset> | null> {
       try {
         const {
           data,
@@ -69,7 +91,7 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async assetPaths(identifier, version, location) {
+    async assetPaths(identifier: string, version: string, location: string): Promise<string[]> {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
@@ -79,7 +101,7 @@ const publishRest = new Vue({
       });
       return data;
     },
-    async versions(identifier, params) {
+    async versions(identifier: string, params?: any): Promise<Paginated<Version> | null> {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/`, { params });
         return data;
@@ -93,7 +115,7 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async specificVersion(identifier, version) {
+    async specificVersion(identifier: string, version: string) {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/${version}/`);
         return girderize(data);
@@ -104,30 +126,33 @@ const publishRest = new Vue({
         throw error;
       }
     },
-    async mostRecentVersion(identifier) {
+    async mostRecentVersion(identifier: string) {
       // TODO: find a way to do this with fewer requests
       const count = (await this.versions(identifier))?.count;
       if (!count) {
         return null;
       }
       // Look up the last version using page filters
-      const version = (await this.versions(identifier, { page: count, page_size: 1 })).results[0];
-      return girderize(version);
+      const versions = await this.versions(identifier, { page: count, page_size: 1 });
+      if (versions === null) {
+        return null;
+      }
+      return girderize(versions.results[0]);
     },
-    async dandisets(params) {
+    async dandisets(params?: any): Promise<AxiosResponse<Paginated<Dandiset>>> {
       return client.get('dandisets/', { params });
     },
-    async createDandiset(name, description) {
+    async createDandiset(name: string, description: string): Promise<AxiosResponse<Dandiset>> {
       const metadata = { name, description };
       return client.post('dandisets/', { name, metadata });
     },
-    async owners(identifier) {
+    async owners(identifier: string): Promise<AxiosResponse<User[]>> {
       return client.get(`dandisets/${identifier}/users/`);
     },
-    async setOwners(identifier, owners) {
+    async setOwners(identifier: string, owners: User[]) {
       return client.put(`dandisets/${identifier}/users/`, owners);
     },
-    async searchUsers(username) {
+    async searchUsers(username: string): Promise<User[]> {
       const { data } = await client.get('users/search/?', { params: { username } });
       return data;
     },
@@ -135,7 +160,7 @@ const publishRest = new Vue({
       const { data } = await client.get('api/stats/');
       return data;
     },
-    assetDownloadURI(asset) {
+    assetDownloadURI(asset: Asset) {
       const { uuid, version: { version, dandiset: { identifier } } } = asset;
       return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
@@ -147,14 +172,12 @@ const publishRest = new Vue({
 // and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
 // would not update when the headers do.
-client.interceptors.request.use((config) => {
-  return {
-    ...config,
-    headers: {
-      ...oauthClient.authHeaders,
-      ...config.headers,
-    },
-  };
-});
+client.interceptors.request.use((config) => ({
+  ...config,
+  headers: {
+    ...oauthClient.authHeaders,
+    ...config.headers,
+  },
+}));
 
 export default publishRest;

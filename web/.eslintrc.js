@@ -13,6 +13,7 @@ module.exports = {
     '@vue/typescript',
   ],
   rules: {
+    camelcase: 'off',
     'vuetify/no-deprecated-classes': 'error',
     'vuetify/grid-unknown-attributes': 'error',
     'vuetify/no-legacy-grid': 'error',
