@@ -1,4 +1,6 @@
 """
+Maps the identifiers of all Dandisets to the identifier listed in their metadata.
+
 Run me:
 python manage.py runscript map_ids
 
@@ -19,13 +21,13 @@ def get_new_identifier(dandiset):
         identifier = int(metadata['identifier'])
     except ValueError:
         print(
-            f'Dandiset {dandiset.identifier} has a malformed metadata identifier {metadata["identifier"]}'
+            f'Dandiset {dandiset.identifier} has a bad metadata identifier {metadata["identifier"]}'
         )
         return None
 
     if 0 > identifier or identifier > 999999:
         print(
-            f'Dandiset {dandiset.identifier} has a malformed metadata identifier {metadata["identifier"]}'
+            f'Dandiset {dandiset.identifier} has a bad metadata identifier {metadata["identifier"]}'
         )
         return None
 
@@ -35,7 +37,7 @@ def get_new_identifier(dandiset):
 
     if Dandiset.objects.filter(id=identifier):
         print(
-            f'Dandiset {dandiset.identifier} cannot be copied because dandiset {identifier} already exists'
+            f'Dandiset {dandiset.identifier} cannot be copied because {identifier} already exists'
         )
         return None
 
