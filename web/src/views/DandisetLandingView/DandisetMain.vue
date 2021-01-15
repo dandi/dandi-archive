@@ -65,7 +65,7 @@
           </v-icon>
           View Data
         </v-btn>
-        <template v-if="publishDandiset === null">
+        <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
           <v-tooltip
             left
             :disabled="editDisabledMessage === null"
@@ -85,7 +85,9 @@
                   </v-icon>
                   Edit metadata
                 </v-btn>
+                <!-- TODO for now only admins can publish -->
                 <v-btn
+                  v-if="DJANGO_API"
                   text
                   :disabled="editDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
@@ -147,7 +149,9 @@
 import { mapState, mapGetters } from 'vuex';
 
 import { dandiUrl } from '@/utils';
-import { girderRest, loggedIn, user } from '@/rest';
+import {
+  girderRest, loggedIn, publishRest, user,
+} from '@/rest';
 import toggles from '@/featureToggle';
 
 import CopyText from '@/components/CopyText.vue';
@@ -251,7 +255,10 @@ export default {
   },
   methods: {
     async publish() {
-      await girderRest.post(`/dandi/${this.girderDandiset.meta.dandiset.identifier}`);
+      // TODO ungirderize
+      const version = await publishRest.publish(this.publishDandiset.meta.dandiset.identifier);
+      // re-initialize the dataset to load the newly published version
+      await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
     },
   },
 };
