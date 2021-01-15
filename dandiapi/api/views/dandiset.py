@@ -33,9 +33,9 @@ class DandisetFilterBackend(filters.OrderingFilter):
         if orderings:
             ordering = orderings[0]
             # ordering can be either 'created' or '-created', so test for both
-            if ordering[-7:] == 'created':
+            if ordering.endswith('created'):
                 return queryset.order_by(ordering)
-            elif ordering[-4:] == 'name':
+            elif ordering.endswith('name'):
                 # name refers to the name of the most recent version, so a subquery is required
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
                     '-created'
