@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -149,7 +150,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             if len(owners) < 1:
                 raise ValidationError('Cannot remove all draft owners')
 
-            dandiset.set_owners(owners)
+            removed_owners, added_owners = dandiset.set_owners(owners)
             dandiset.save()
+
+            send_ownership_change_emails(dandiset, removed_owners, added_owners)
+
         serializer = UserSerializer(dandiset.owners, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
