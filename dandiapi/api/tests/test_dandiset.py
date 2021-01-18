@@ -1,3 +1,4 @@
+from django.core import mail
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -145,6 +146,12 @@ def test_dandiset_rest_change_owner(api_client, dandiset, user_factory):
     assert resp.data == [{'username': user2.username}]
     assert list(dandiset.owners) == [user2]
 
+    assert len(mail.outbox) == 2
+    assert mail.outbox[0].subject == f'Removed from Dandiset {dandiset.identifier}'
+    assert mail.outbox[0].to == [user1.email]
+    assert mail.outbox[1].subject == f'Added to Dandiset {dandiset.identifier}'
+    assert mail.outbox[1].to == [user2.email]
+
 
 @pytest.mark.django_db
 def test_dandiset_rest_add_owner(api_client, dandiset, user_factory):
@@ -162,6 +169,10 @@ def test_dandiset_rest_add_owner(api_client, dandiset, user_factory):
     assert resp.status_code == 200
     assert resp.data == [{'username': user1.username}, {'username': user2.username}]
     assert list(dandiset.owners) == [user1, user2]
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].subject == f'Added to Dandiset {dandiset.identifier}'
+    assert mail.outbox[0].to == [user2.email]
 
 
 @pytest.mark.django_db
@@ -181,6 +192,10 @@ def test_dandiset_rest_remove_owner(api_client, dandiset, user_factory):
     assert resp.status_code == 200
     assert resp.data == [{'username': user1.username}]
     assert list(dandiset.owners) == [user1]
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].subject == f'Removed from Dandiset {dandiset.identifier}'
+    assert mail.outbox[0].to == [user2.email]
 
 
 @pytest.mark.django_db
