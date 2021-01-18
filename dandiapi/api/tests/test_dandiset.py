@@ -124,10 +124,9 @@ def test_dandiset_rest_create(api_client, user):
     assert list(dandiset.owners.all()) == [user]
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
-    version = dandiset.versions.get()
-    assert version.version == 'draft'
-    assert version.metadata.name == name
-    assert version.metadata.metadata == metadata
+    assert dandiset.most_recent_version.version == 'draft'
+    assert dandiset.most_recent_version.metadata.name == name
+    assert dandiset.most_recent_version.metadata.metadata == metadata
 
 
 @pytest.mark.django_db
