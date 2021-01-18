@@ -156,6 +156,10 @@ const publishRest = new Vue({
       const { data } = await client.get('users/search/?', { params: { username } });
       return data;
     },
+    async publish(identifier: string): Promise<Version> {
+      const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`);
+      return data;
+    },
     async stats() {
       const { data } = await client.get('api/stats/');
       return data;
