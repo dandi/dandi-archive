@@ -82,7 +82,7 @@ const publishRest = new Vue({
       try {
         const {
           data,
-        } = await client.get(`api/dandisets/${identifier}/versions/${version}/assets`, config);
+        } = await client.get(`dandisets/${identifier}/versions/${version}/assets`, config);
         return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
@@ -158,6 +158,10 @@ const publishRest = new Vue({
     },
     async publish(identifier: string): Promise<Version> {
       const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`);
+      return data;
+    },
+    async stats() {
+      const { data } = await client.get('api/stats/');
       return data;
     },
     assetDownloadURI(asset: Asset) {
