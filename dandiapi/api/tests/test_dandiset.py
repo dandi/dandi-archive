@@ -39,7 +39,12 @@ def test_dandiset_rest_list(api_client, dandiset):
         'next': None,
         'previous': None,
         'results': [
-            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'modified': TIMESTAMP_RE}
+            {
+                'identifier': dandiset.identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'most_recent_version': None,
+            }
         ],
     }
 
@@ -56,7 +61,12 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
         'next': None,
         'previous': None,
         'results': [
-            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'modified': TIMESTAMP_RE}
+            {
+                'identifier': dandiset.identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'most_recent_version': None,
+            }
         ],
     }
 
@@ -67,7 +77,20 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'identifier': dandiset.identifier,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
+        'most_recent_version': None,
     }
+
+
+"""
+
+                'most_recent_version': {
+                    'version': dandiset.most_recent_version.version,
+                    'name': dandiset.most_recent_version.name,
+                    'asset_count': dandiset.most_recent_version.asset_count,
+                    'size': dandiset.most_recent_version.size,
+                    'metadata': dandiset.most_recent_version.metadata,
+                },
+"""
 
 
 @pytest.mark.django_db
@@ -83,6 +106,15 @@ def test_dandiset_rest_create(api_client, user):
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
+        'most_recent_version': {
+            'version': 'draft',
+            'name': name,
+            'asset_count': 0,
+            'size': 0,
+            'metadata': metadata,
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        },
     }
     id = int(response.data['identifier'])
 
