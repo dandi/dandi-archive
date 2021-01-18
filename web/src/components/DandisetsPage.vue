@@ -77,10 +77,12 @@ const sortingOptions = [
   {
     name: 'Created',
     field: 'created',
+    djangoField: 'created',
   },
   {
     name: 'Name',
     field: 'meta.dandiset.name',
+    djangoField: 'name',
   },
 ];
 
@@ -128,6 +130,9 @@ export default {
       return Math.ceil(this.totalDandisets / DANDISETS_PER_PAGE) || 1;
     },
     sortField() {
+      if (toggles.DJANGO_API) {
+        return this.sortingOptions[this.sortOption].djangoField;
+      }
       return this.sortingOptions[this.sortOption].field;
     },
     queryParams() {
@@ -183,7 +188,10 @@ export default {
       if (!toggles.DJANGO_API) {
         return null;
       }
-      return publishRest.dandisets({ page: this.page, page_size: DANDISETS_PER_PAGE, user: this.user ? 'me' : null });
+      const ordering = ((this.sortDir === -1) ? '-' : '') + this.sortField;
+      return publishRest.dandisets({
+        page: this.page, page_size: DANDISETS_PER_PAGE, ordering, user: this.user ? 'me' : null,
+      });
     },
     async mostRecentDandisetVersions() {
       if (this.djangoDandisetRequest === null) {
