@@ -13,7 +13,7 @@ from dandiapi.api.models.dandiset import Dandiset
 
 
 def get_new_identifier(dandiset):
-    metadata = dandiset.versions.order_by('created').last().metadata.metadata
+    metadata = dandiset.most_recent_version.metadata.metadata
     if 'identifier' not in metadata:
         print(f'Dandiset {dandiset.identifier} does not specify an identifier')
         return None
