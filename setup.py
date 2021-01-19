@@ -57,6 +57,8 @@ setup(
         # Development-only
         'django-debug-toolbar',
         'django-minio-storage',
+        # Temporary dependency for user migration
+        'girder-client',
     ],
     extras_require={'dev': ['ipython', 'tox']},
 )
