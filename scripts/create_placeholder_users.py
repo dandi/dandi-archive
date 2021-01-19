@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Create placeholder Django users for as many dandiset owners in Girder as possible.
 
@@ -15,10 +16,11 @@ Once dandisets are matched, the script will do the following for each Girder own
 It will then assign ownership of the dandiset to the user.
 This prevents placeholders from being created for users who already exist or have already been placeholdered.
 """
+from django.contrib.auth.models import User
 from girder_client import GirderClient
 from guardian.shortcuts import assign_perm
+
 from dandiapi.api.models import Dandiset, Version
-from django.contrib.auth.models import User
 
 
 def get_girder_dandisets(gc):

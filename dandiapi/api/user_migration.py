@@ -4,8 +4,9 @@ from django.dispatch import receiver
 
 def copy_ownership(placeholder_user, user):
     """Copy dandiset ownership from a placeholder user to the real user."""
+    from guardian.shortcuts import assign_perm, get_objects_for_user, remove_perm
+
     from dandiapi.api.models import Dandiset
-    from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
 
     owned_dandisets = get_objects_for_user(placeholder_user, 'owner', Dandiset)
     print(f'{placeholder_user} owns {owned_dandisets}')
