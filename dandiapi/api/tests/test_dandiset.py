@@ -1,4 +1,3 @@
-from django.core import mail
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -161,7 +160,7 @@ def test_dandiset_rest_get_owners(api_client, dandiset, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_change_owner(api_client, version, user_factory):
+def test_dandiset_rest_change_owner(api_client, version, user_factory, mailoutbox):
     dandiset = version.dandiset
     user1 = user_factory()
     user2 = user_factory()
@@ -178,15 +177,15 @@ def test_dandiset_rest_change_owner(api_client, version, user_factory):
     assert resp.data == [{'username': user2.username}]
     assert list(dandiset.owners) == [user2]
 
-    assert len(mail.outbox) == 2
-    assert mail.outbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_version.name}"'
-    assert mail.outbox[0].to == [user1.email]
-    assert mail.outbox[1].subject == f'Added to Dandiset "{dandiset.most_recent_version.name}"'
-    assert mail.outbox[1].to == [user2.email]
+    assert len(mailoutbox) == 2
+    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[0].to == [user1.email]
+    assert mailoutbox[1].subject == f'Added to Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[1].to == [user2.email]
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_add_owner(api_client, version, user_factory):
+def test_dandiset_rest_add_owner(api_client, version, user_factory, mailoutbox):
     dandiset = version.dandiset
     user1 = user_factory()
     user2 = user_factory()
@@ -203,13 +202,13 @@ def test_dandiset_rest_add_owner(api_client, version, user_factory):
     assert resp.data == [{'username': user1.username}, {'username': user2.username}]
     assert list(dandiset.owners) == [user1, user2]
 
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].subject == f'Added to Dandiset "{dandiset.most_recent_version.name}"'
-    assert mail.outbox[0].to == [user2.email]
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == f'Added to Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[0].to == [user2.email]
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_remove_owner(api_client, version, user_factory):
+def test_dandiset_rest_remove_owner(api_client, version, user_factory, mailoutbox):
     dandiset = version.dandiset
     user1 = user_factory()
     user2 = user_factory()
@@ -227,9 +226,9 @@ def test_dandiset_rest_remove_owner(api_client, version, user_factory):
     assert resp.data == [{'username': user1.username}]
     assert list(dandiset.owners) == [user1]
 
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_version.name}"'
-    assert mail.outbox[0].to == [user2.email]
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[0].to == [user2.email]
 
 
 @pytest.mark.django_db
