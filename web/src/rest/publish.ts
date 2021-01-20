@@ -140,7 +140,18 @@ const publishRest = new Vue({
       return girderize(versions.results[0]);
     },
     async dandisets(params?: any): Promise<AxiosResponse<Paginated<Dandiset>>> {
-      return client.get('dandisets/', { params });
+      const response = await client.get('dandisets/', { params });
+      // girderize the most_recent_version field for consumption in DandisetsPage
+      response.data.results = response.data.results.map((dandiset: any) => {
+        return {
+          ...dandiset,
+          most_recent_version: girderize({
+            dandiset,
+            ...dandiset.most_recent_version
+          })
+        };
+      });
+      return response;
     },
     async createDandiset(name: string, description: string): Promise<AxiosResponse<Dandiset>> {
       const metadata = { name, description };
