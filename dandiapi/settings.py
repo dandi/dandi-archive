@@ -31,8 +31,6 @@ class DandiMixin(ConfigMixin):
         ]
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # Required for swagger logins
-            'rest_framework.authentication.SessionAuthentication',
             # TODO remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
