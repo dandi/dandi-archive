@@ -13,7 +13,7 @@ declare global {
 // Create a component to hold the feature toggles reactively
 // This object can be mutated at runtime to enable/disable feature toggles
 const featureToggles = reactive({
-  DJANGO_API: false,
+  DJANGO_API: true,
 });
 
 // Used to narrow string types
