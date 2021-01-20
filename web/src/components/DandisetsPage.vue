@@ -141,21 +141,6 @@ export default defineComponent({
       }
     });
 
-    // TODO properly type this
-    // Currently it uses the girderized representation of a dandiset version, which is untyped
-    const mostRecentDandisetVersions: Ref<any | null> = ref(null);
-    watchEffect(async () => {
-      if (djangoDandisetRequest.value === null) {
-        mostRecentDandisetVersions.value = null;
-      } else {
-        mostRecentDandisetVersions.value = await Promise.all(
-          djangoDandisetRequest.value.results.map(
-            (dandiset) => publishRest.mostRecentVersion(dandiset.identifier),
-          ),
-        );
-      }
-    });
-
     // Girder dandiset listing
 
     const listingUrl = computed(() => {
@@ -194,7 +179,7 @@ export default defineComponent({
 
     const dandisets = computed(() => {
       if (toggles.DJANGO_API) {
-        return mostRecentDandisetVersions.value || [];
+        return djangoDandisetRequest.value?.results.map((dandiset: Dandiset) => dandiset.most_recent_version);
       }
       return girderDandisetRequest.value?.data || [];
     });
