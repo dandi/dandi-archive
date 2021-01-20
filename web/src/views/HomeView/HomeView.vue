@@ -64,9 +64,6 @@ import DandisetSearchField from '@/components/DandisetSearchField.vue';
 export default {
   name: 'HomeView',
   components: { StatsBar, DandisetSearchField },
-  created() {
-    this.$store.dispatch('stats/reload');
-  },
 };
 </script>
 
