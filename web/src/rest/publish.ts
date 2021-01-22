@@ -170,7 +170,7 @@ const publishRest = new Vue({
       return data;
     },
     async stats() {
-      const { data } = await client.get('api/stats/');
+      const { data } = await client.get('stats/');
       return data;
     },
     assetDownloadURI(asset: Asset) {
