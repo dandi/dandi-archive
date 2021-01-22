@@ -24,25 +24,6 @@ class UserDetailSerializer(serializers.Serializer):
     admin = serializers.BooleanField()
 
 
-class MostRecentVersionSerializer(serializers.ModelSerializer):
-    """A Version serializer that does not include dandiset to prevent infinite loops."""
-
-    class Meta:
-        model = Version
-        fields = [
-            'version',
-            'name',
-            'asset_count',
-            'size',
-            'metadata',
-            'created',
-            'modified',
-        ]
-        read_only_fields = ['created', 'metadata']
-
-    metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
-
-
 class DandisetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dandiset
@@ -52,13 +33,6 @@ class DandisetSerializer(serializers.ModelSerializer):
             'modified',
         ]
         read_only_fields = ['created']
-
-
-class DandisetDetailSerializer(DandisetSerializer):
-    class Meta(DandisetSerializer.Meta):
-        fields = DandisetSerializer.Meta.fields + ['most_recent_version']
-
-    most_recent_version = MostRecentVersionSerializer(read_only=True)
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
@@ -87,6 +61,13 @@ class VersionSerializer(serializers.ModelSerializer):
 
     dandiset = DandisetSerializer()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
+
+class DandisetDetailSerializer(DandisetSerializer):
+    class Meta(DandisetSerializer.Meta):
+        fields = DandisetSerializer.Meta.fields + ['most_recent_version']
+
+    most_recent_version = VersionSerializer(read_only=True)
 
 
 class VersionDetailSerializer(VersionSerializer):
