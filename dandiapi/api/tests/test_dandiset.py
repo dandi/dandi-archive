@@ -110,7 +110,11 @@ def test_dandiset_rest_create(api_client, user):
             'name': name,
             'asset_count': 0,
             'size': 0,
-            'metadata': metadata,
+            'dandiset': {
+                'identifier': DANDISET_ID_RE,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            },
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
