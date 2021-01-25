@@ -20,7 +20,7 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
 )
-from dandiapi.api.views.temporary_hack import map_ids_view, map_id_view
+from dandiapi.api.views.temporary_hack import map_id_view, map_ids_view
 
 router = ExtendedSimpleRouter()
 (

@@ -9,8 +9,8 @@ If you have Dandiset 000001 with {"identifier":000002} and Dandiset 000002
 with {"identifier":000001}, manual intervention is required.
 """
 
-from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.dandiset_migration import move_if_necessary
+from dandiapi.api.models.dandiset import Dandiset
 
 
 def run():

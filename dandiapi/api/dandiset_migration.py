@@ -7,7 +7,6 @@ with {"identifier":000001}, manual intervention is required.
 """
 from dandiapi.api.models.dandiset import Dandiset
 
-
 # Track log messages instead of logs.appending so they can be output in rest response
 logs = []
 
