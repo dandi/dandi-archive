@@ -47,13 +47,21 @@ export default {
     user,
     userInitials() {
       if (this.user) {
+        // TODO Girder uses camelCase. Delete after Girder is deprecated.
         const { firstName, lastName } = this.user;
         if (firstName && lastName) {
           return (
             firstName.charAt(0).toLocaleUpperCase() + lastName.charAt(0).toLocaleUpperCase()
           );
         }
-
+        // Django uses snake_case
+        const { first_name, last_name } = this.user;
+        if (first_name && last_name) {
+          return (
+            first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase()
+          );
+        }
+        // If first name + last name aren't specified, try to use the login instead
         const { login } = this.user;
         if (login) {
           return login.slice(0, 2);
