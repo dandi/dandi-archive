@@ -32,7 +32,7 @@ def get_new_identifier(dandiset):
         return None
 
     if dandiset.id == identifier:
-        # The identifier already matches
+        logs.append(f'Dandiset {dandiset.identifier} already has the correct identifier')
         return None
 
     if Dandiset.objects.filter(id=identifier):
