@@ -54,7 +54,7 @@ export default {
     stats() {
       if (toggles.DJANGO_API) {
         return [
-          { name: 'published dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
+          { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
           { name: 'users', value: this.users },
           { name: 'total data size', value: filesize(this.size, { round: 0 }) },
         ];
@@ -72,7 +72,7 @@ export default {
   async created() {
     if (toggles.DJANGO_API) {
       const data = await publishRest.stats();
-      this.dandisets = data.published_dandiset_count;
+      this.dandisets = data.dandiset_count;
       this.users = data.user_count;
       this.size = data.size;
     } else {
