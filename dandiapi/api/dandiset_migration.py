@@ -8,21 +8,25 @@ with {"identifier":000001}, manual intervention is required.
 from dandiapi.api.models.dandiset import Dandiset
 
 
+# Track log messages instead of logs.appending so they can be output in rest response
+logs = []
+
+
 def get_new_identifier(dandiset):
     metadata = dandiset.most_recent_version.metadata.metadata
     if 'identifier' not in metadata:
-        print(f'Dandiset {dandiset.identifier} does not specify an identifier')
+        logs.append(f'Dandiset {dandiset.identifier} does not specify an identifier')
         return None
     try:
         identifier = int(metadata['identifier'])
     except ValueError:
-        print(
+        logs.append(
             f'Dandiset {dandiset.identifier} has a bad metadata identifier {metadata["identifier"]}'
         )
         return None
 
     if 0 > identifier or identifier > 999999:
-        print(
+        logs.append(
             f'Dandiset {dandiset.identifier} has a bad metadata identifier {metadata["identifier"]}'
         )
         return None
@@ -32,7 +36,7 @@ def get_new_identifier(dandiset):
         return None
 
     if Dandiset.objects.filter(id=identifier):
-        print(
+        logs.append(
             f'Dandiset {dandiset.identifier} cannot be copied because {identifier} already exists'
         )
         return None
@@ -63,7 +67,10 @@ def move(dandiset, new_id):
 
 
 def move_if_necessary(dandiset):
+    global logs
+    logs = []
     new_id = get_new_identifier(dandiset)
     if new_id:
-        print(f'Copying dandiset {dandiset.identifier} to {new_id}')
+        logs.append(f'Copying dandiset {dandiset.identifier} to {new_id}')
         move(dandiset, new_id)
+    return logs

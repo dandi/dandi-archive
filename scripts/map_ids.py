@@ -15,4 +15,6 @@ from dandiapi.api.dandiset_migration import move_if_necessary
 
 def run():
     for dandiset in Dandiset.objects.all():
-        move_if_necessary(dandiset)
+        logs = move_if_necessary(dandiset)
+        for line in logs:
+            print(line)

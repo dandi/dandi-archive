@@ -18,14 +18,15 @@ from dandiapi.api.models import Dandiset
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def map_ids_view(request: Request) -> HttpResponseBase:
+    logs = []
     for dandiset in Dandiset.objects.all():
-        move_if_necessary(dandiset)
-    return Response()
+        logs += move_if_necessary(dandiset)
+    return Response(logs)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def map_id_view(request: Request, dandiset_id) -> HttpResponseBase:
     dandiset = get_object_or_404(Dandiset, pk=dandiset_id)
-    move_if_necessary(dandiset)
-    return Response()
+    logs = move_if_necessary(dandiset)
+    return Response(logs)
