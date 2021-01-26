@@ -13,19 +13,16 @@ export function uniqueId() {
 }
 
 /**
- * Logs in.
- *
- * @param {string} username
- * @param {string} password
+ * Authorizes the user account.
  */
-export async function login(username, password) {
-  await expect(page).toClickXPath(vBtn('Login'));
-  await expect(page).toFillXPath(vTextField('Username or e-mail'), username);
-  await expect(page).toFillXPath(vTextField('Password'), password);
+export async function authorize() {
   await Promise.all([
-    // this button has the same text as the button in the app bar,
-    // but also contains a mdi-login icon
-    expect(page).toClickXPath(vBtn(['Login', vIcon('mdi-login')])),
+    expect(page).toClickXPath(vBtn('Login')),
+    page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  ]);
+
+  await Promise.all([
+    expect(page).toClickXPath('//input[@value="Authorize"]'),
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]);
 }
@@ -37,24 +34,27 @@ export async function login(username, password) {
  */
 export async function registerNewUser() {
   const username = `user${uniqueId()}`;
-  const email = `${username}@dandi.test`;
-  const password = 'password'; // Top secret
+  const email = `mr${username}@dandi.test`;
+  const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
-  // there is no way to register a new user without using OAuth
-  // use the girder API to create the user instead
-  await page.evaluate(({
-    username, email, password, GIRDER_URL, // eslint-disable-line no-shadow
-  }) => {
-    // fetch is only available in the browser
-    // this function is run in the page context, so fetch is available
-    const params = `login=${username}&email=${email}&firstName=Mister&lastName=Roboto&password=${password}&admin=false`;
-    // eslint-disable-next-line no-undef
-    return fetch(`${GIRDER_URL}/api/v1/user?${params}`, { method: 'POST' });
-  }, {
-    username, email, password, GIRDER_URL,
-  });
+  await expect(page).toClickXPath(vBtn('Login'));
+  // API pages are not styled with Vuetify, so we can't use the vHelpers
+  await expect(page).toClickXPath('//a[@href="/accounts/signup/"]');
+  await expect(page).toFillXPath('//input[@name="email"]', email);
+  await expect(page).toFillXPath('//input[@name="password1"]', password);
+  await expect(page).toFillXPath('//input[@name="password2"]', password);
 
-  await login(username, password);
+  await Promise.all([
+    expect(page).toClickXPath('//button[@type="submit"]'),
+    page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  ]);
+
+  await Promise.all([
+    page.goto(CLIENT_URL),
+    page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  ]);
+
+  await authorize(username, password);
 
   return { username, email, password };
 }
