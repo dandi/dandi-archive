@@ -1,0 +1,24 @@
+name: Update django-api
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync:
+    name: Update the django-api branch with changes from master
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: django-api
+
+      - run: git fetch
+      - run: git rebase origin/master
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: django-api
