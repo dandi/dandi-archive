@@ -247,7 +247,8 @@ def test_asset_rest_delete(api_client, user, asset):
     assign_perm('owner', user, asset.version.dandiset)
 
     response = api_client.delete(
-        f'/api/dandisets/{asset.version.dandiset.identifier}/versions/{asset.version.version}/assets/{asset.uuid}/'
+        f'/api/dandisets/{asset.version.dandiset.identifier}/'
+        f'versions/{asset.version.version}/assets/{asset.uuid}/'
     )
     assert response.status_code == 204
 
@@ -259,7 +260,8 @@ def test_asset_rest_delete_not_an_owner(api_client, user, asset):
     api_client.force_authenticate(user=user)
 
     response = api_client.delete(
-        f'/api/dandisets/{asset.version.dandiset.identifier}/versions/{asset.version.version}/assets/{asset.uuid}/'
+        f'/api/dandisets/{asset.version.dandiset.identifier}/'
+        f'versions/{asset.version.version}/assets/{asset.uuid}/'
     )
     assert response.status_code == 403
 
