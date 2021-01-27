@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_auto_schema, no_body
+from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
