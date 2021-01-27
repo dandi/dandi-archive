@@ -1,4 +1,5 @@
 from django.core.validators import RegexValidator
+from django.db.utils import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
@@ -85,7 +86,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             metadata=asset_metadata,
             version=version,
         )
-        asset.save()
+        try:
+            asset.save()
+        except IntegrityError:
+            return Response('asset already exists', status=status.HTTP_400_BAD_REQUEST)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
