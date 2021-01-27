@@ -241,6 +241,31 @@ def test_asset_rest_update_not_an_owner(api_client, user, asset):
     )
 
 
+@pytest.mark.django_db
+def test_asset_rest_delete(api_client, user, asset):
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, asset.version.dandiset)
+
+    response = api_client.delete(
+        f'/api/dandisets/{asset.version.dandiset.identifier}/versions/{asset.version.version}/assets/{asset.uuid}/'
+    )
+    assert response.status_code == 204
+
+    assert not Asset.objects.all()
+
+
+@pytest.mark.django_db
+def test_asset_rest_delete_not_an_owner(api_client, user, asset):
+    api_client.force_authenticate(user=user)
+
+    response = api_client.delete(
+        f'/api/dandisets/{asset.version.dandiset.identifier}/versions/{asset.version.version}/assets/{asset.uuid}/'
+    )
+    assert response.status_code == 403
+
+    assert asset in Asset.objects.all()
+
+
 # @pytest.mark.django_db
 # @pytest.mark.parametrize(
 #     'new_path,expected',
