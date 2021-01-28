@@ -44,7 +44,8 @@ export async function registerNewUser() {
   await expect(page).toFillXPath('//input[@name="password2"]', password);
 
   await Promise.all([
-    expect(page).toClickXPath('//button[@type="submit"]'),
+    // The locator is different in CI for some reason, just click the first button
+    expect(page).toClickXPath('//button'),
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]);
 

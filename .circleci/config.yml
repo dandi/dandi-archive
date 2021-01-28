@@ -115,7 +115,7 @@ jobs:
           working_directory: test
       - run:
           name: Run E2E tests
-          command: yarn run test stats
+          command: yarn run test
           working_directory: test
           environment:
             CLIENT_URL: http://localhost:8085
