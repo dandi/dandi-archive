@@ -1,7 +1,6 @@
 import {
   vBtn,
   vTextField,
-  vIcon,
   vTextarea,
 } from 'jest-puppeteer-vuetify';
 

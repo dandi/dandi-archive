@@ -1,7 +1,6 @@
 import {
   vAvatar,
   vBtn,
-  vTextField,
   vListItem,
   vIcon,
 } from 'jest-puppeteer-vuetify';
@@ -20,7 +19,7 @@ describe('account management', () => {
   });
 
   it('logs the user in', async () => {
-    const { username, password } = await registerNewUser();
+    await registerNewUser();
 
     // Logout
     await expect(page).toClickXPath(vAvatar('??'));
