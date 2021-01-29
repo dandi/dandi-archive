@@ -49,6 +49,8 @@ class DandiMixin(ConfigMixin):
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
     DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
 
+    DANDI_SCHEMA_VERSION = values.Value(environ_required=True)
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     pass
