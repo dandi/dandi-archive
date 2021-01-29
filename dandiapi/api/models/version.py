@@ -86,8 +86,8 @@ class Version(TimeStampedModel):
             metadata={
                 **self.metadata.metadata,
                 'name': self.metadata.name,
-                'identifier': f"DANDI:{self.dandiset.identifier}"
-            }
+                'identifier': f'DANDI:{self.dandiset.identifier}',
+            },
         )
 
         if created:

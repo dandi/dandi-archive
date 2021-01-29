@@ -48,8 +48,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         version_metadata: VersionMetadata
         version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'],
-            metadata=serializer.validated_data['metadata']
+            name=serializer.validated_data['name'], metadata=serializer.validated_data['metadata']
         )
 
         if created:
