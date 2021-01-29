@@ -35,7 +35,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
-        version = self.get_object()
+        version: Version = self.get_object()
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
@@ -45,10 +45,13 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        version_metadata: VersionMetadata
         version_metadata, created = VersionMetadata.objects.get_or_create(
             name=serializer.validated_data['name'],
-            metadata=serializer.validated_data['metadata'],
+            metadata=serializer.validated_data['metadata']
         )
+
         if created:
             version_metadata.save()
 

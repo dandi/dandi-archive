@@ -97,6 +97,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset = Dandiset()
         dandiset.save()
         assign_perm('owner', request.user, dandiset)
+
+        # Create new draft version
         version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
         version.save()
 
