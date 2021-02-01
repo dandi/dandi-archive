@@ -88,8 +88,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         )
         try:
             asset.save()
-        except IntegrityError:
-            return Response('asset already exists', status=status.HTTP_400_BAD_REQUEST)
+        except IntegrityError as e:
+            # https://stackoverflow.com/questions/25368020/django-deduce-duplicate-key-exception-from-integrityerror
+            # https://www.postgresql.org/docs/13/errcodes-appendix.html
+            # Postgres error code 23505 == unique_violation
+            if e.__cause__.pgcode == '23505':
+                return Response('asset already exists', status=status.HTTP_400_BAD_REQUEST)
+            raise e
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
