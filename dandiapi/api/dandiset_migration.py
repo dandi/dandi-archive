@@ -27,9 +27,9 @@ def get_new_identifier(dandiset):
         # Maybe the identifier is of format {'identifier': {'value':'...', 'propertyId': 'DANDI'}}
         try:
             identifier = int(metadata['identifier']['value'])
-        except:
+        except Exception:
             logs.append(
-                f'Dandiset {dandiset.identifier} has a bad metadata identifier {metadata["identifier"]}'
+                f'Dandiset {dandiset.identifier} has a bad identifier {metadata["identifier"]}'
             )
             return None
 
