@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
@@ -58,7 +58,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=None, responses={200: VersionSerializer()})
+    @swagger_auto_schema(request_body=no_body, responses={200: VersionSerializer()})
     @action(detail=True, methods=['POST'])
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def publish(self, request, **kwargs):
