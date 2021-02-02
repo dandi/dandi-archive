@@ -125,10 +125,13 @@ def test_dandiset_rest_create(api_client, user):
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=id)
     assert list(dandiset.owners.all()) == [user]
+
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_version.version == 'draft'
     assert dandiset.most_recent_version.metadata.name == name
+
+    # Verify that name and identifier were injected
     assert dandiset.most_recent_version.metadata.metadata == {
         **metadata,
         'name': name,
