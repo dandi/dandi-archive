@@ -25,6 +25,7 @@ def search_view(request):
     if 'search' not in request.query_params:
         return Response([])
 
+    # Currently only guaranteed on identifier search
     versions = Version.objects.annotate(
         text_metadata=Cast('metadata__metadata', TextField())
     ).filter(text_metadata__search=request.query_params['search'])
