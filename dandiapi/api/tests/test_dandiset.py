@@ -3,7 +3,7 @@ import pytest
 
 from dandiapi.api.models import Dandiset
 
-from .fuzzy import DANDISET_ID_RE, TIMESTAMP_RE
+from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -129,7 +129,11 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_version.version == 'draft'
     assert dandiset.most_recent_version.metadata.name == name
-    assert dandiset.most_recent_version.metadata.metadata == metadata
+    assert dandiset.most_recent_version.metadata.metadata == {
+        **metadata,
+        'name': name,
+        'identifier': DANDISET_SCHEMA_ID_RE,
+    }
 
 
 @pytest.mark.django_db

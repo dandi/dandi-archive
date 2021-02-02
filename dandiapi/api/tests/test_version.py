@@ -97,8 +97,13 @@ def test_version_rest_update(api_client, user, version):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)
 
-    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
     new_name = 'A unique and special name!'
+    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    saved_metadata = {
+        **new_metadata,
+        'name': new_name,
+        'identifier': f'DANDI:{version.dandiset.identifier}',
+    }
 
     assert api_client.put(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
@@ -115,12 +120,12 @@ def test_version_rest_update(api_client, user, version):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'asset_count': version.asset_count,
-        'metadata': new_metadata,
+        'metadata': saved_metadata,
         'size': version.size,
     }
 
     version.refresh_from_db()
-    assert version.metadata.metadata == new_metadata
+    assert version.metadata.metadata == saved_metadata
     assert version.metadata.name == new_name
 
 
