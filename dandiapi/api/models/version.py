@@ -79,5 +79,25 @@ class Version(TimeStampedModel):
     def copy(cls, version):
         return Version(dandiset=version.dandiset, metadata=version.metadata)
 
+    def _populate_metadata(self):
+        new: VersionMetadata
+        new, created = VersionMetadata.objects.get_or_create(
+            name=self.metadata.name,
+            metadata={
+                **self.metadata.metadata,
+                'name': self.metadata.name,
+                'identifier': f'DANDI:{self.dandiset.identifier}',
+            },
+        )
+
+        if created:
+            new.save()
+
+        self.metadata = new
+
+    def save(self, *args, **kwargs):
+        self._populate_metadata()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return f'{self.dandiset.identifier}/{self.version}'
