@@ -268,31 +268,25 @@ def test_asset_rest_delete_not_an_owner(api_client, user, asset):
     assert asset in Asset.objects.all()
 
 
-# @pytest.mark.django_db
-# @pytest.mark.parametrize(
-#     'new_path,expected',
-#     [
-#         # Partial
-#         (lambda path: path[: int(len(path) / 2)], True),
-#         # Full
-#         (lambda path: path, True),
-#         # Extra at beginning
-#         (lambda path: 'extra-string' + path, False),
-#         # Extra at end
-#         (lambda path: path + 'extra-string', False),
-#         # Case insensitive 1
-#         (lambda path: path.upper(), True),
-#         # Case insensitive 2
-#         (lambda path: path.lower(), True),
-#     ],
-# )
-# def test_asset_rest_path_filter(api_client, asset, new_path, expected):
-#     path = new_path(asset.path)
-#     partial_path_assets = api_client.get(
-#         f'/api/dandisets/{asset.version.dandiset.identifier}/'
-#         f'versions/{asset.version.version}/assets/paths/',
-#         {'path': path},
-#     ).data['results']
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'path_prefix,results',
+    [
+        ('', ['foo/', 'no-root.nwb', 'root.nwb']),
+        ('/', ['foo/', 'root.nwb']),
+        ('/foo', ['bar/', 'baz.nwb']),
+        ('/foo/', ['bar/', 'baz.nwb']),
+    ],
+)
+def test_asset_rest_path_filter(api_client, version, asset_factory, path_prefix, results):
+    asset_factory(version=version, path='/foo/bar/file.nwb')
+    asset_factory(version=version, path='/foo/baz.nwb')
+    asset_factory(version=version, path='/root.nwb')
+    asset_factory(version=version, path='no-root.nwb')
+    partial_path_assets = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/paths/',
+        {'path_prefix': path_prefix},
+    ).data
 
-#     matching_results = [res for res in partial_path_assets if res['uuid'] == str(asset.uuid)]
-#     assert bool(matching_results) is expected
+    assert partial_path_assets == results

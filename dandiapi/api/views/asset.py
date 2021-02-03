@@ -164,11 +164,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         """
         Return the unique files/directories that directly reside under the specified path.
 
-        The specified path must be a folder (must end with a slash).
+        The specified path must be a folder; it either must end in a slash or
+        (to refer to the root folder) must be the empty string.
         """
-        path_prefix: str = self.request.query_params.get('path_prefix') or '/'
+        path_prefix: str = self.request.query_params.get('path_prefix') or ''
         # Enforce trailing slash
-        path_prefix = f'{path_prefix}/' if path_prefix[-1] != '/' else path_prefix
+        if path_prefix and path_prefix[-1] != '/':
+            path_prefix = f'{path_prefix}/'
         qs = self.get_queryset().filter(path__startswith=path_prefix).values()
 
         return Response(Asset.get_path(path_prefix, qs))
