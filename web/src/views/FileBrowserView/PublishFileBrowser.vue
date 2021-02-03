@@ -22,11 +22,12 @@
               :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
               style="text-decoration: none;"
             >
-              {{ rootDirectory }}
+              <v-icon>mdi-home</v-icon>
             </router-link>
 
             <template v-for="(part, i) in splitLocation">
               <template v-if="part">
+                /
                 <router-link
                   :key="part"
                   :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
@@ -88,7 +89,7 @@ import { publishRest } from '@/rest';
 
 const isFolder = (pathName) => (pathName.slice(-1) === '/');
 const parentDirectory = '..';
-const rootDirectory = '/';
+const rootDirectory = '';
 
 export default {
   name: 'PublishFileBrowser',
