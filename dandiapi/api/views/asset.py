@@ -124,6 +124,19 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
+    def destroy(self, request, **kwargs):
+        asset = self.get_object()
+
+        # TODO @permission_required doesn't work on methods
+        # https://github.com/django-guardian/django-guardian/issues/723
+        response = get_40x_or_None(request, ['owner'], asset.version.dandiset, return_403=True)
+        if response:
+            return response
+
+        asset.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
     @swagger_auto_schema(
         responses={
             200: None,  # This disables the auto-generated 200 response

@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
@@ -35,7 +35,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
-        version = self.get_object()
+        version: Version = self.get_object()
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
@@ -45,10 +45,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        version_metadata: VersionMetadata
         version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'],
-            metadata=serializer.validated_data['metadata'],
+            name=serializer.validated_data['name'], metadata=serializer.validated_data['metadata']
         )
+
         if created:
             version_metadata.save()
 
@@ -58,7 +60,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=None, responses={200: VersionSerializer()})
+    @swagger_auto_schema(request_body=no_body, responses={200: VersionSerializer()})
     @action(detail=True, methods=['POST'])
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def publish(self, request, **kwargs):

@@ -3,7 +3,7 @@ import pytest
 
 from dandiapi.api.models import Dandiset
 
-from .fuzzy import DANDISET_ID_RE, TIMESTAMP_RE
+from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -38,7 +38,12 @@ def test_dandiset_rest_list(api_client, dandiset):
         'next': None,
         'previous': None,
         'results': [
-            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'modified': TIMESTAMP_RE}
+            {
+                'identifier': dandiset.identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'most_recent_version': None,
+            }
         ],
     }
 
@@ -55,7 +60,12 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
         'next': None,
         'previous': None,
         'results': [
-            {'identifier': dandiset.identifier, 'created': TIMESTAMP_RE, 'modified': TIMESTAMP_RE}
+            {
+                'identifier': dandiset.identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'most_recent_version': None,
+            }
         ],
     }
 
@@ -66,7 +76,20 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'identifier': dandiset.identifier,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
+        'most_recent_version': None,
     }
+
+
+"""
+
+                'most_recent_version': {
+                    'version': dandiset.most_recent_version.version,
+                    'name': dandiset.most_recent_version.name,
+                    'asset_count': dandiset.most_recent_version.asset_count,
+                    'size': dandiset.most_recent_version.size,
+                    'metadata': dandiset.most_recent_version.metadata,
+                },
+"""
 
 
 @pytest.mark.django_db
@@ -82,6 +105,19 @@ def test_dandiset_rest_create(api_client, user):
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
+        'most_recent_version': {
+            'version': 'draft',
+            'name': name,
+            'asset_count': 0,
+            'size': 0,
+            'dandiset': {
+                'identifier': DANDISET_ID_RE,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            },
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        },
     }
     id = int(response.data['identifier'])
 
@@ -89,12 +125,39 @@ def test_dandiset_rest_create(api_client, user):
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=id)
     assert list(dandiset.owners.all()) == [user]
+
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
-    version = dandiset.versions.get()
-    assert version.version == 'draft'
-    assert version.metadata.name == name
-    assert version.metadata.metadata == metadata
+    assert dandiset.most_recent_version.version == 'draft'
+    assert dandiset.most_recent_version.metadata.name == name
+
+    # Verify that name and identifier were injected
+    assert dandiset.most_recent_version.metadata.metadata == {
+        **metadata,
+        'name': name,
+        'identifier': DANDISET_SCHEMA_ID_RE,
+    }
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_delete(api_client, dandiset, user):
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
+
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.status_code == 204
+
+    assert not Dandiset.objects.all()
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_delete_not_an_owner(api_client, dandiset, user):
+    api_client.force_authenticate(user=user)
+
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.status_code == 403
+
+    assert dandiset in Dandiset.objects.all()
 
 
 @pytest.mark.django_db
@@ -108,7 +171,8 @@ def test_dandiset_rest_get_owners(api_client, dandiset, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_change_owner(api_client, dandiset, user_factory):
+def test_dandiset_rest_change_owner(api_client, version, user_factory, mailoutbox):
+    dandiset = version.dandiset
     user1 = user_factory()
     user2 = user_factory()
     assign_perm('owner', user1, dandiset)
@@ -124,9 +188,16 @@ def test_dandiset_rest_change_owner(api_client, dandiset, user_factory):
     assert resp.data == [{'username': user2.username}]
     assert list(dandiset.owners) == [user2]
 
+    assert len(mailoutbox) == 2
+    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[0].to == [user1.email]
+    assert mailoutbox[1].subject == f'Added to Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[1].to == [user2.email]
+
 
 @pytest.mark.django_db
-def test_dandiset_rest_add_owner(api_client, dandiset, user_factory):
+def test_dandiset_rest_add_owner(api_client, version, user_factory, mailoutbox):
+    dandiset = version.dandiset
     user1 = user_factory()
     user2 = user_factory()
     assign_perm('owner', user1, dandiset)
@@ -142,9 +213,14 @@ def test_dandiset_rest_add_owner(api_client, dandiset, user_factory):
     assert resp.data == [{'username': user1.username}, {'username': user2.username}]
     assert list(dandiset.owners) == [user1, user2]
 
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == f'Added to Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[0].to == [user2.email]
+
 
 @pytest.mark.django_db
-def test_dandiset_rest_remove_owner(api_client, dandiset, user_factory):
+def test_dandiset_rest_remove_owner(api_client, version, user_factory, mailoutbox):
+    dandiset = version.dandiset
     user1 = user_factory()
     user2 = user_factory()
     assign_perm('owner', user1, dandiset)
@@ -160,6 +236,10 @@ def test_dandiset_rest_remove_owner(api_client, dandiset, user_factory):
     assert resp.status_code == 200
     assert resp.data == [{'username': user1.username}]
     assert list(dandiset.owners) == [user1]
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_version.name}"'
+    assert mailoutbox[0].to == [user2.email]
 
 
 @pytest.mark.django_db

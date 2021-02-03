@@ -1,29 +1,57 @@
 from django.contrib.auth.models import User
+from django.db.models import OuterRef, Subquery
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
-    DandisetSerializer,
+    DandisetDetailSerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
 
 
+class DandisetFilterBackend(filters.OrderingFilter):
+    ordering_fields = ['created', 'name']
+    ordering_description = (
+        'Which field to use when ordering the results. '
+        'Options are created, -created, name, and -name.'
+    )
+
+    def filter_queryset(self, request, queryset, view):
+        orderings = self.get_ordering(request, queryset, view)
+        if orderings:
+            ordering = orderings[0]
+            # ordering can be either 'created' or '-created', so test for both
+            if ordering.endswith('created'):
+                return queryset.order_by(ordering)
+            elif ordering.endswith('name'):
+                # name refers to the name of the most recent version, so a subquery is required
+                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
+                    '-created'
+                )[:1]
+                queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
+                return queryset.order_by(ordering)
+
+        return queryset
+
+
 class DandisetViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
-    serializer_class = DandisetSerializer
+    serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
+    filter_backends = [DandisetFilterBackend]
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
@@ -53,7 +81,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
-        responses={200: DandisetSerializer()},
+        responses={200: DandisetDetailSerializer()},
     )
     def create(self, request):
         serializer = VersionMetadataSerializer(data=request.data)
@@ -69,11 +97,26 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset = Dandiset()
         dandiset.save()
         assign_perm('owner', request.user, dandiset)
+
+        # Create new draft version
         version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
         version.save()
 
-        serializer = DandisetSerializer(instance=dandiset)
+        serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # @permission_required_or_403('owner', (Dandiset, 'dandiset__pk'))
+    def destroy(self, request, dandiset__pk):
+        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+
+        # TODO @permission_required doesn't work on methods
+        # https://github.com/django-guardian/django-guardian/issues/723
+        response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
+        if response:
+            return response
+
+        dandiset.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(method='GET', responses={200: UserSerializer(many=True)})
     @swagger_auto_schema(
@@ -109,7 +152,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             if len(owners) < 1:
                 raise ValidationError('Cannot remove all draft owners')
 
-            dandiset.set_owners(owners)
+            removed_owners, added_owners = dandiset.set_owners(owners)
             dandiset.save()
+
+            send_ownership_change_emails(dandiset, removed_owners, added_owners)
+
         serializer = UserSerializer(dandiset.owners, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

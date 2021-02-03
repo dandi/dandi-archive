@@ -21,6 +21,7 @@ class UserDetailSerializer(serializers.Serializer):
     username = serializers.CharField(validators=[UnicodeUsernameValidator()])
     first_name = serializers.CharField(validators=[UnicodeUsernameValidator()])
     last_name = serializers.CharField(validators=[UnicodeUsernameValidator()])
+    admin = serializers.BooleanField()
 
 
 class DandisetSerializer(serializers.ModelSerializer):
@@ -60,6 +61,13 @@ class VersionSerializer(serializers.ModelSerializer):
 
     dandiset = DandisetSerializer()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
+
+
+class DandisetDetailSerializer(DandisetSerializer):
+    class Meta(DandisetSerializer.Meta):
+        fields = DandisetSerializer.Meta.fields + ['most_recent_version']
+
+    most_recent_version = VersionSerializer(read_only=True)
 
 
 class VersionDetailSerializer(VersionSerializer):

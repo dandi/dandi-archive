@@ -88,7 +88,7 @@ class Asset(TimeStampedModel):
 
     @classmethod
     def copy(cls, asset, version):
-        return Asset(blob=asset.blob, metadata=asset.metadata, version=version)
+        return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata, version=version)
 
     @classmethod
     def get_path(cls, path_prefix: str, qs: List[str]) -> Set:
