@@ -17,21 +17,15 @@ def get_new_identifier(dandiset):
         logs.append(f'Dandiset {dandiset.identifier} does not specify an identifier')
         return None
     try:
-        identifier = int(metadata['identifier'])
+        identifier = int(metadata['identifier'][-6:])
     except ValueError:
         logs.append(
             f'Dandiset {dandiset.identifier} has a non-integer identifier {metadata["identifier"]}'
         )
         return None
-    except TypeError:
-        # Maybe the identifier is of format {'identifier': {'value':'...', 'propertyId': 'DANDI'}}
-        try:
-            identifier = int(metadata['identifier']['value'])
-        except Exception:
-            logs.append(
-                f'Dandiset {dandiset.identifier} has a bad identifier {metadata["identifier"]}'
-            )
-            return None
+    except Exception:
+        logs.append(f'Dandiset {dandiset.identifier} has a bad identifier {metadata["identifier"]}')
+        return None
 
     if 0 > identifier or identifier > 999999:
         logs.append(
