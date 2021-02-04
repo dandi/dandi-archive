@@ -93,7 +93,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             # https://www.postgresql.org/docs/13/errcodes-appendix.html
             # Postgres error code 23505 == unique_violation
             if e.__cause__.pgcode == '23505':
-                return Response('asset already exists', status=status.HTTP_400_BAD_REQUEST)
+                return Response('Asset Already Exists', status=status.HTTP_400_BAD_REQUEST)
             raise e
 
         serializer = AssetDetailSerializer(instance=asset)
