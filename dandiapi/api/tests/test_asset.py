@@ -184,7 +184,7 @@ def test_asset_create_duplicate(api_client, user, asset):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'asset already exists'
+    assert resp.data == 'Asset Already Exists'
 
 
 @pytest.mark.django_db
