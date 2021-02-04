@@ -169,6 +169,25 @@ def test_asset_create_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.django_db
+def test_asset_create_duplicate(api_client, user, asset):
+    version = asset.version
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {
+            'path': asset.path,
+            'metadata': asset.metadata.metadata,
+            'sha256': asset.sha256,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.data == 'Asset Already Exists'
+
+
+@pytest.mark.django_db
 def test_asset_rest_update(api_client, user, asset, asset_blob):
     assign_perm('owner', user, asset.version.dandiset)
     api_client.force_authenticate(user=user)
