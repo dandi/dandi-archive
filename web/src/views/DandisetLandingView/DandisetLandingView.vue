@@ -119,6 +119,7 @@ export default {
     return {
       edit: false,
       detailsPanel: true,
+      toggles,
     };
   },
   computed: {

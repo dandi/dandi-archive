@@ -13,6 +13,8 @@ import Primitive from '@/components/schema/Primitive.vue';
 import SimpleArray from '@/components/schema/SimpleArray.vue';
 import DandisetStats from '@/components/schema/DandisetStats.vue';
 import ObjectArray from '@/components/schema/ObjectArray.vue';
+import ObjectComponent from '@/components/schema/Object.vue';
+import toggles from '@/featureToggle';
 
 export default {
   name: 'ListingComponent',
@@ -36,6 +38,22 @@ export default {
   computed: {
     renderComponent() {
       // Determines which component to render
+
+      // Temporary for Girder
+      if (!toggles.DJANGO_API) {
+        switch (this.field) {
+          case 'access':
+            return ObjectComponent;
+          case 'contributors':
+          case 'publications':
+          case 'associatedData':
+          case 'associated_anatomy':
+          case 'sponsors':
+            return ObjectArray;
+          default:
+            break;
+        }
+      }
 
       switch (this.field) {
         case 'about':
@@ -75,6 +93,17 @@ export default {
     },
     primaryKey() {
       // Doesn't apply to all components
+
+      // Temporary for Girder
+      if (!toggles.DJANGO_API) {
+        switch (this.field) {
+          case 'publications':
+            return 'url';
+          default:
+            break;
+        }
+      }
+
       switch (this.field) {
         case 'access':
           return 'status';

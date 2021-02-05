@@ -12,6 +12,7 @@ import {
   computeComplexSchema,
   filterModelWithSchema,
   writeSubModelToMaster,
+  populateEmptyArrays,
 } from './utils';
 
 /**
@@ -38,6 +39,8 @@ class EditorInterface {
   constructor(schema: JSONSchema7, model: DandiModel) {
     this.model = cloneDeep(model);
     this.schema = cloneDeep(schema);
+
+    populateEmptyArrays(this.schema, this.model);
 
     // Setup split schema
     this.basicSchema = computeBasicSchema(this.schema);

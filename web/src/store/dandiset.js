@@ -97,8 +97,8 @@ export default {
 
       if (toggles.DJANGO_API) {
         const res = await axios.get(dandisetSchemaUrl);
-        if (res.statusText !== 'OK') {
-          return;
+        if (res.status !== 200) {
+          throw new Error('Could not retrieve Dandiset Schema!');
         }
 
         schema = await RefParser.dereference(res.data);
