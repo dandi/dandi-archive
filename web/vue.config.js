@@ -6,6 +6,7 @@ module.exports = {
   lintOnSave: false,
   transpileDependencies: [
     'vuetify',
+    '@koumoul/vjsf',
     '@girder/oauth-client',
   ],
   devServer: {
