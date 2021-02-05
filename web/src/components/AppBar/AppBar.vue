@@ -121,7 +121,7 @@
 
 <script>
 import { loggedIn, publishRest } from '@/rest';
-import { dandiAboutUrl, dandiDocumentationUrl } from '@/utils';
+import { dandiAboutUrl, dandiDocumentationUrl } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 import toggles from '@/featureToggle';
 

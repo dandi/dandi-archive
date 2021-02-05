@@ -17,7 +17,7 @@
 
 <script>
 import { mapState, mapActions } from 'vuex';
-import { draftVersion } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
 import GirderFileBrowser from './GirderFileBrowser.vue';
 import PublishFileBrowser from './PublishFileBrowser.vue';

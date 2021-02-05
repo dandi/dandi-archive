@@ -232,7 +232,7 @@ import moment from 'moment';
 import filesize from 'filesize';
 
 import toggles from '@/featureToggle';
-import { draftVersion } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
 export default {

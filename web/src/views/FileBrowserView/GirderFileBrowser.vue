@@ -68,10 +68,8 @@ import { DataDetails as GirderDataDetails } from '@girder/components/src/compone
 import { DefaultActionKeys } from '@girder/components/src/components/DataDetails.vue';
 import { FileManager as GirderFileManager } from '@girder/components/src/components/Snippet';
 
-import {
-  getLocationFromRoute,
-  draftVersion,
-} from '@/utils';
+import { getLocationFromRoute } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 
 import { girderRest } from '@/rest';
 

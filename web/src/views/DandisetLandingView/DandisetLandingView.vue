@@ -78,7 +78,7 @@
 import { mapState } from 'vuex';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { draftVersion } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
 import MetaEditor from './MetaEditor.vue';
 import DandisetMain from './DandisetMain.vue';

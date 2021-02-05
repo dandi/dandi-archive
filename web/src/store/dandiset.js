@@ -1,5 +1,5 @@
 import { girderRest, publishRest } from '@/rest';
-import { draftVersion } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
 
 export default {

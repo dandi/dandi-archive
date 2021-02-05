@@ -148,7 +148,7 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
 
-import { dandiUrl } from '@/utils';
+import { dandiUrl } from '@/utils/constants';
 import {
   girderRest, loggedIn, publishRest, user,
 } from '@/rest';
