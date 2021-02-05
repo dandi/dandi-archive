@@ -119,27 +119,29 @@
       </v-row>
 
       <template v-for="key in Object.keys(extraFields).sort()">
-        <v-divider :key="`${key}-divider`" />
-        <v-row
-          :key="`${key}-title`"
-          :class="titleClasses"
-        >
-          <v-card-title class="font-weight-regular">
-            {{ schema.properties[key].title }}
-          </v-card-title>
-        </v-row>
-        <v-row
-          :key="key"
-          class="mx-2 mb-4"
-        >
-          <v-col class="py-0">
-            <ListingComponent
-              :schema="schema.properties[key]"
-              :data="extraFields[key]"
-              root
-            />
-          </v-col>
-        </v-row>
+        <template v-if="renderData(extraFields[key], schema.properties[key])">
+          <v-divider :key="`${key}-divider`" />
+          <v-row
+            :key="`${key}-title`"
+            :class="titleClasses"
+          >
+            <v-card-title class="font-weight-regular">
+              {{ schema.properties[key].title || key }}
+            </v-card-title>
+          </v-row>
+          <v-row
+            :key="key"
+            class="mx-2 mb-4"
+          >
+            <v-col class="py-0">
+              <ListingComponent
+                :field="key"
+                :schema="schema.properties[key]"
+                :data="extraFields[key]"
+              />
+            </v-col>
+          </v-row>
+        </template>
       </template>
     </v-card>
   </div>
@@ -181,6 +183,7 @@ export default {
       mainFields: [
         'name',
         'description',
+        'identifier',
       ],
     };
   },
@@ -259,6 +262,14 @@ export default {
       const version = await publishRest.publish(this.publishDandiset.meta.dandiset.identifier);
       // re-initialize the dataset to load the newly published version
       await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
+    },
+    renderData(data, schema) {
+      if (data === null) { return false; }
+      if (schema.type === 'array' && Array.isArray(data) && data.length === 0) {
+        return false;
+      }
+
+      return true;
     },
   },
 };
