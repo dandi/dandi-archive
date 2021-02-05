@@ -1,6 +1,7 @@
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
+import oldDandisetSchema from '@/assets/schema/old_dandiset.json';
 import { girderRest, publishRest } from '@/rest';
 import { draftVersion, dandisetSchemaUrl } from '@/utils/constants';
 import toggles from '@/featureToggle';
@@ -92,13 +93,19 @@ export default {
       state.loading = false;
     },
     async fetchSchema({ commit }) {
-      const res = await axios.get(dandisetSchemaUrl);
+      let schema;
 
-      if (res.statusText !== 'OK') {
-        return;
+      if (toggles.DJANGO_API) {
+        const res = await axios.get(dandisetSchemaUrl);
+        if (res.statusText !== 'OK') {
+          return;
+        }
+
+        schema = await RefParser.dereference(res.data);
+      } else {
+        schema = oldDandisetSchema;
       }
 
-      const schema = await RefParser.dereference(res.data);
       commit('setSchema', schema);
     },
     async fetchOwners({ state, commit }, identifier) {
