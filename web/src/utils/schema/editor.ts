@@ -14,8 +14,6 @@ import {
   writeSubModelToMaster,
 } from './utils';
 
-import { SchemaHandler } from './handler';
-
 /**
  * Manages the interface between the source data/schema, and the changes necessary for it to
  * operate correctly with the Meditor.
@@ -37,13 +35,9 @@ class EditorInterface {
   complexModelValid: ComputedRef<boolean>;
   complexModelValidation: Record<string, boolean> = {};
 
-  constructor(handler: SchemaHandler) {
-    if (handler.model === undefined) {
-      throw new Error('Cannot instantiate EditorInterface with undefined model.');
-    }
-
-    this.model = cloneDeep(handler.model);
-    this.schema = cloneDeep(handler.schema);
+  constructor(schema: JSONSchema7, model: DandiModel) {
+    this.model = cloneDeep(model);
+    this.schema = cloneDeep(schema);
 
     // Setup split schema
     this.basicSchema = computeBasicSchema(this.schema);
