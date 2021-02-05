@@ -1,5 +1,8 @@
+import axios from 'axios';
+import RefParser from '@apidevtools/json-schema-ref-parser';
+
 import { girderRest, publishRest } from '@/rest';
-import { draftVersion } from '@/utils/constants';
+import { draftVersion, dandisetSchemaUrl } from '@/utils/constants';
 import toggles from '@/featureToggle';
 
 export default {
@@ -10,6 +13,7 @@ export default {
     versions: null,
     loading: false, // No mutation, as we don't want this mutated by the user
     owners: null,
+    schema: null,
   },
   getters: {
     version(state) {
@@ -28,6 +32,9 @@ export default {
     },
     setOwners(state, owners) {
       state.owners = owners;
+    },
+    setSchema(state, schema) {
+      state.schema = schema;
     },
   },
   actions: {
@@ -83,6 +90,16 @@ export default {
       commit('setGirderDandiset', data);
 
       state.loading = false;
+    },
+    async fetchSchema({ commit }) {
+      const res = await axios.get(dandisetSchemaUrl);
+
+      if (res.statusText !== 'OK') {
+        return;
+      }
+
+      const schema = await RefParser.dereference(res.data);
+      commit('setSchema', schema);
     },
     async fetchOwners({ state, commit }, identifier) {
       state.loading = true;

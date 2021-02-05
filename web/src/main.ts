@@ -1,5 +1,6 @@
 // Import external packages
 import Vue from 'vue';
+import { provide } from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
 
 // @ts-ignore missing definitions
@@ -30,7 +31,10 @@ sync(store, router);
 
 Promise.all([publishRest.restoreLogin(), girderRest.fetchUser()]).then(() => {
   new Vue({
-    provide: { girderRest },
+    setup() {
+      provide('store', store);
+      provide('girderRest', girderRest);
+    },
     router,
     render: (h) => h(App),
     store,
