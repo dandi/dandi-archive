@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import OuterRef, Subquery
+from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -94,8 +95,21 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         if created:
             version_metadata.save()
 
-        dandiset = Dandiset()
-        dandiset.save()
+        if 'identifier' in serializer.validated_data['metadata']:
+            identifier = serializer.validated_data['metadata']['identifier']
+            if identifier.startswith('DANDI:'):
+                identifier = identifier[6:]
+            dandiset = Dandiset(id=int(identifier))
+        else:
+            dandiset = Dandiset()
+        try:
+            dandiset.save(force_insert=True)
+        except IntegrityError as e:
+            print(e.__cause__.pgcode)
+            if e.__cause__.pgcode == '23505':
+                return Response(f'Dandiset {dandiset.identifier} Already Exists', status=400)
+            raise e
+
         assign_perm('owner', request.user, dandiset)
 
         # Create new draft version
