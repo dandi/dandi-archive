@@ -159,7 +159,8 @@ import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 
-import { girderRest } from '@/rest';
+import { publishRest } from '@/rest';
+import { girderize } from '@/rest/publish';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
 
@@ -226,19 +227,23 @@ export default defineComponent({
       return undefined;
     }
 
-    const id = computed(() => store.state.dandiset.girderDandiset?._id || null);
-    function setGirderDandiset(payload: any) {
+    const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const id = computed(() => publishDandiset.value?.meta.dandiset.identifier || null);
+    function setDandiset(payload: any) {
       // TODO: Replace once direct-vuex is added
-      store.commit('dandiset/setGirderDandiset', payload);
+      store.commit('dandiset/setPublishDandiset', girderize(payload));
     }
 
     async function save() {
       const dandiset = editorInterface.getModel();
 
       try {
-        const { status, data } = await girderRest.put(`folder/${id}/metadata`, { dandiset });
+        const { status, data } = await publishRest.saveDandiset(
+          id.value, publishDandiset.value.version, dandiset,
+        );
+
         if (status === 200) {
-          setGirderDandiset(data);
+          setDandiset(data);
           closeEditor();
         }
       } catch (error) {

@@ -10,7 +10,7 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-function girderize(publishedDandiset: Version) {
+export function girderize(publishedDandiset: Version) {
   const { // eslint-disable-next-line camelcase
     created, modified, dandiset, version, metadata, name, size, asset_count,
   } = publishedDandiset;
@@ -154,6 +154,14 @@ const publishRest = new Vue({
     async createDandiset(name: string, description: string): Promise<AxiosResponse<Dandiset>> {
       const metadata = { name, description };
       return client.post('dandisets/', { name, metadata });
+    },
+    async saveDandiset(
+      identifier: string, version: string, metadata: any,
+    ): Promise<AxiosResponse<Dandiset>> {
+      return client.put(`dandisets/${identifier}/versions/${version}/`, {
+        name: metadata.name,
+        metadata,
+      });
     },
     async owners(identifier: string): Promise<AxiosResponse<User[]>> {
       return client.get(`dandisets/${identifier}/users/`);
