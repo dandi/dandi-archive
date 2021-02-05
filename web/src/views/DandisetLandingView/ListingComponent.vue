@@ -1,72 +1,19 @@
 <template>
-  <div>
-    <template v-if="schema.type === 'array'">
-      <template v-if="schema.items.type === 'object'">
-        <v-expansion-panels>
-          <v-expansion-panel
-            v-for="item in data"
-            :key="item[primaryKey]"
-          >
-            <!-- item is an object -->
-            <v-expansion-panel-header>{{ item[primaryKey] }}</v-expansion-panel-header>
-            <v-expansion-panel-content>
-              <v-list>
-                <v-list-item
-                  v-for="key in Object.keys(item).sort()"
-                  :key="key"
-                >
-                  <!-- value's type matches that specified at schema.items.properties[key].type -->
-                  <ListingComponent
-                    :schema="schema.items.properties[key]"
-                    :data="item[key]"
-                  />
-                </v-list-item>
-              </v-list>
-            </v-expansion-panel-content>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </template>
-      <template v-else-if="schema.items.type === 'array'">
-        <!-- May not work. Not tested in a real scenario. -->
-        <ListingComponent
-          v-for="item in data"
-          :key="item"
-          :schema="schema.items"
-          :data="item"
-        />
-      </template>
-      <template v-else>
-        <template v-if="!root">
-          <b>{{ schema.title }}</b>:
-        </template>
-        {{ data.join(', ') }}
-      </template>
-    </template>
-    <template v-else-if="schema.type === 'object'">
-      <v-list dense>
-        <v-list-item
-          v-for="key in Object.keys(data).sort()"
-          :key="key"
-          dense
-        >
-          <ListingComponent
-            :schema="schema.properties[key]"
-            :data="data[key]"
-          />
-        </v-list-item>
-      </v-list>
-    </template>
-    <template v-else>
-      <!-- Base Case -->
-      <template v-if="!root">
-        <b>{{ schema.title }}</b>:
-      </template>
-      {{ data }}
-    </template>
-  </div>
+  <component
+    :is="renderComponent"
+    :schema="schema"
+    :data="data"
+    :options="options"
+  />
 </template>
 
 <script>
+import Contributor from '@/components/schema/Contributor.vue';
+import Primitive from '@/components/schema/Primitive.vue';
+import SimpleArray from '@/components/schema/SimpleArray.vue';
+import DandisetStats from '@/components/schema/DandisetStats.vue';
+import ObjectArray from '@/components/schema/ObjectArray.vue';
+
 export default {
   name: 'ListingComponent',
   props: {
@@ -80,20 +27,59 @@ export default {
       type: [Object, Number, String, Array],
       required: true,
     },
-    root: {
-      type: Boolean,
-      default: false,
+    field: {
+      // The key in the parent object
+      type: String,
+      required: true,
     },
   },
   computed: {
+    renderComponent() {
+      // Determines which component to render
+
+      switch (this.field) {
+        case 'about':
+        case 'access':
+        case 'relatedResource':
+        case 'variableMeasured':
+          return ObjectArray;
+        case 'dandisetStats':
+          return DandisetStats;
+        case 'contributor':
+          return Contributor;
+        case 'keywords':
+          return SimpleArray;
+        default:
+          break;
+      }
+
+      switch (this.schema.type) {
+        case 'array':
+          if (this.schema.type.items && this.schema.type.items.type === 'object') {
+            return ObjectArray;
+          }
+          return SimpleArray;
+
+        default:
+          break;
+      }
+
+      return Primitive;
+    },
+    options() {
+      // General purpose options for different components
+      const { primaryKey } = this;
+      return {
+        primaryKey,
+      };
+    },
     primaryKey() {
-      switch (this.schema.title) {
-        case 'Access':
+      // Doesn't apply to all components
+      switch (this.field) {
+        case 'access':
           return 'status';
-        case 'Publications':
+        case 'relatedResource':
           return 'url';
-        case 'Organism':
-          return 'species';
         default:
           return 'name';
       }
