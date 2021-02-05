@@ -1,0 +1,460 @@
+{
+    "definitions": {},
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "The Base Dandiset Schema",
+    "required": [
+      "identifier",
+      "name",
+      "description",
+      "contributors",
+      "keywords"
+    ],
+    "properties": {
+      "identifier": {
+        "$id": "#/properties/identifier",
+        "type": "string",
+        "title": "Identifier",
+        "minLength": 1,
+        "readOnly": true
+      },
+      "name": {
+        "$id": "#/properties/name",
+        "type": "string",
+        "title": "Name",
+        "minLength": 1,
+        "long": true
+      },
+      "description": {
+        "$id": "#/properties/description",
+        "type": "string",
+        "title": "Description",
+        "minLength": 1,
+        "long": true
+      },
+      "contributors": {
+        "$id": "#/properties/contributors",
+        "type": "array",
+        "title": "Contributors",
+        "minItems": 1,
+        "items": {
+          "$id": "#/properties/contributors/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "orcid",
+            "roles"
+          ],
+          "properties": {
+            "orcid": {
+              "$id": "#/properties/contributors/items/properties/orcid",
+              "type": "string",
+              "title": "ORCID"
+            },
+            "roles": {
+              "$id": "#/properties/contributors/items/properties/roles",
+              "type": "array",
+              "title": "Roles",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Author",
+                  "Conceptualization",
+                  "ContactPerson",
+                  "Data Collector",
+                  "DataCurator",
+                  "DataManager",
+                  "Formal Analysis",
+                  "Funding acquisition",
+                  "Investigation",
+                  "Maintainer",
+                  "Methodology",
+                  "Producer",
+                  "ProjectLeader",
+                  "ProjectManager",
+                  "ProjectMember",
+                  "Project administration",
+                  "Researcher",
+                  "Resources",
+                  "Software",
+                  "Supervision",
+                  "Validation",
+                  "Visualization",
+                  "Other"
+                ]
+              }
+            },
+            "email": {
+              "$id": "#/properties/contributors/items/properties/email",
+              "type": "string",
+              "title": "Email"
+            },
+            "name": {
+              "$id": "#/properties/contributors/items/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "affiliations": {
+              "$id": "#/properties/contributors/items/properties/affiliations",
+              "type": "array",
+              "title": "Affiliations",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "contains": {
+              "properties": {
+                "roles": {
+                  "contains": {
+                    "const": "Author"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "contains": {
+              "properties": {
+                "roles": {
+                  "contains": {
+                    "const": "ContactPerson"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "sponsors": {
+        "$id": "#/properties/sponsors",
+        "type": "array",
+        "title": "Sponsors",
+        "items": {
+          "$id": "#/properties/sponsors/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "identifier": {
+              "$id": "#/properties/sponsors/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            },
+            "name": {
+              "$id": "#/properties/sponsors/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "url": {
+              "$id": "#/properties/sponsors/properties/url",
+              "type": "string",
+              "title": "Url"
+            },
+            "awardNumber": {
+              "$id": "#/properties/sponsors/properties/awardNumber",
+              "type": "string",
+              "title": "Award Number"
+            }
+          }
+        }
+      },
+      "license": {
+        "$id": "#/properties/license",
+        "type": "string",
+        "title": "License",
+        "enum": [
+          "CC0-1.0",
+          "CC-BY-4.0",
+          "CC-BY-NC-4.0",
+          "PDDL-1.0"
+        ]
+      },
+      "keywords": {
+        "$id": "#/properties/keywords",
+        "type": "array",
+        "title": "Keywords",
+        "minItems": 1,
+        "items": {
+          "$id": "#/properties/keywords/items",
+          "type": "string",
+          "title": "Items"
+        }
+      },
+      "project": {
+        "$id": "#/properties/project",
+        "type": "array",
+        "title": "Project/Consortium",
+        "items": {
+          "$id": "#/properties/project/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name",
+            "identifier"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/project/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "identifier": {
+              "$id": "#/properties/project/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        }
+      },
+      "conditions_studied": {
+        "$id": "#/properties/conditions_studied",
+        "type": "array",
+        "title": "Conditions Studied",
+        "items": {
+          "$id": "#/properties/conditions_studied/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name",
+            "identifier"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/conditions_studied/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "identifier": {
+              "$id": "#/properties/conditions_studied/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        }
+      },
+      "associated_anatomy": {
+        "$id": "#/properties/associated_anatomy",
+        "type": "array",
+        "title": "Associated Anatomy",
+        "items": {
+          "$id": "#/properties/associated_anatomy/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name",
+            "identifier"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/associated_anatomy/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "identifier": {
+              "$id": "#/properties/associated_anatomy/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        }
+      },
+      "protocols": {
+        "$id": "#/properties/protocols",
+        "type": "array",
+        "title": "Protocols",
+        "items": {
+          "$id": "#/properties/protocols/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name",
+            "identifier"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/protocols/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "identifier": {
+              "$id": "#/properties/protocols/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        }
+      },
+      "ethicsApprovals": {
+        "$id": "#/properties/ethicsApprovals",
+        "type": "array",
+        "title": "Ethics Approvals",
+        "items": {
+          "$id": "#/properties/ethicsApprovals/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name",
+            "country",
+            "identifier"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/ethics_approvals/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "country": {
+              "$id": "#/properties/ethics_approvals/properties/country",
+              "type": "string",
+              "title": "Country"
+            },
+            "identifier": {
+              "$id": "#/properties/ethics_approvals/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            }
+          }
+        }
+      },
+      "access": {
+        "$id": "#/properties/access",
+        "type": "object",
+        "title": "Access",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "$id": "#/properties/access/properties/status",
+            "type": "string",
+            "title": "Status",
+            "enum": [
+              "open",
+              "embargoed",
+              "restricted"
+            ]
+          },
+          "access_request_url": {
+            "$id": "#/properties/access/properties/access_request_url",
+            "type": "string",
+            "title": "Access Request Url"
+          },
+          "access_contact_email": {
+            "$id": "#/properties/access/properties/access_contact_email",
+            "type": "string",
+            "title": "Access Contact Email"
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "status": {
+                "const": "open"
+              }
+            }
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "embargoed"
+              }
+            },
+            "required": [
+              "access_request_url",
+              "access_contact_email"
+            ]
+          },
+          {
+            "properties": {
+              "status": {
+                "const": "restricted"
+              }
+            },
+            "required": [
+              "access_request_url",
+              "access_contact_email"
+            ]
+          }
+        ]
+      },
+      "language": {
+        "$id": "#/properties/language",
+        "type": "string",
+        "title": "Language"
+      },
+      "associatedData": {
+        "$id": "#/properties/associatedData",
+        "type": "array",
+        "title": "Associated Data",
+        "items": {
+          "$id": "#/properties/associatedData/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "name",
+            "identifier",
+            "repository",
+            "url"
+          ],
+          "properties": {
+            "name": {
+              "$id": "#/properties/associatedData/properties/name",
+              "type": "string",
+              "title": "Name"
+            },
+            "identifier": {
+              "$id": "#/properties/associatedData/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            },
+            "repository": {
+              "$id": "#/properties/associatedData/properties/repository",
+              "type": "string",
+              "title": "Repository"
+            },
+            "url": {
+              "$id": "#/properties/associatedData/properties/url",
+              "type": "string",
+              "title": "Url"
+            }
+          }
+        }
+      },
+      "publications": {
+        "$id": "#/properties/publications",
+        "type": "array",
+        "title": "Publications",
+        "items": {
+          "$id": "#/properties/publications/items",
+          "type": "object",
+          "title": "Items",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "url": {
+              "$id": "#/properties/associatedData/properties/url",
+              "type": "string",
+              "title": "Url"
+            },
+            "identifier": {
+              "$id": "#/properties/associatedData/properties/identifier",
+              "type": "string",
+              "title": "Identifier"
+            },
+            "relation": {
+              "$id": "#/properties/associatedData/properties/relation",
+              "type": "string",
+              "title": "Relation"
+            }
+          }
+        }
+      }
+    }
+  }

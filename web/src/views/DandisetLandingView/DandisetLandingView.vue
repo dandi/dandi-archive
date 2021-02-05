@@ -77,10 +77,6 @@
 <script>
 import { mapState } from 'vuex';
 
-import SCHEMA from '@/assets/schema/dandiset.json';
-import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
-import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
-
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { draftVersion } from '@/utils';
 import toggles from '@/featureToggle';
