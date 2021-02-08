@@ -4,6 +4,7 @@
     :schema="schema"
     :data="data"
     :options="options"
+    :class="componentClass"
   />
 </template>
 
@@ -112,6 +113,20 @@ export default {
         default:
           return 'name';
       }
+    },
+    componentClass() {
+      let className = '';
+
+      switch (this.renderComponent) {
+        case ObjectComponent:
+          className += 'ml-4';
+          break;
+
+        default:
+          break;
+      }
+
+      return className;
     },
   },
 };
