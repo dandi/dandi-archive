@@ -105,7 +105,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         try:
             dandiset.save(force_insert=True)
         except IntegrityError as e:
-            print(e.__cause__.pgcode)
             if e.__cause__.pgcode == '23505':
                 return Response(f'Dandiset {dandiset.identifier} Already Exists', status=400)
             raise e
