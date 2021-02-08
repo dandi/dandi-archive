@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from django.conf import settings
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
@@ -14,8 +16,7 @@ def _get_validation_blob_storage() -> Storage:
 
 
 def _get_validation_blob_prefix(instance: Validation, filename: str) -> str:
-    # return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
-    return filename
+    return f'{filename}/{uuid4()}'
 
 
 class Validation(TimeStampedModel):

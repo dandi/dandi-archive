@@ -22,7 +22,7 @@ def test_upload_initialize(api_client, user):
         {'file_name': file_name, 'file_size': file_size},
         format='json',
     ).data == {
-        'object_key': file_name,
+        'object_key': Re(f'{file_name}/[a-z0-9\\-]+'),
         'upload_id': UUID_RE,
         'parts': [
             {
