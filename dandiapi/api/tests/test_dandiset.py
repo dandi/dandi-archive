@@ -205,6 +205,22 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client, user, dandis
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_create_with_invalid_identifier(api_client, user):
+    api_client.force_authenticate(user=user)
+    name = 'Test Dandiset'
+    identifier = 'abc123'
+    metadata = {'foo': 'bar', 'identifier': identifier}
+
+    response = api_client.post(
+        '/api/dandisets/',
+        {'name': name, 'metadata': metadata},
+        format='json',
+    )
+    assert response.status_code == 400
+    assert response.data == f'Invalid Identifier {identifier}'
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_delete(api_client, dandiset, user):
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, dandiset)

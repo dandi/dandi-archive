@@ -99,12 +99,20 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             identifier = serializer.validated_data['metadata']['identifier']
             if identifier.startswith('DANDI:'):
                 identifier = identifier[6:]
-            dandiset = Dandiset(id=int(identifier))
+            try:
+                dandiset = Dandiset(id=int(identifier))
+            except ValueError:
+                return Response(f'Invalid Identifier {identifier}', status=400)
         else:
             dandiset = Dandiset()
         try:
+            # Without force_insert, Django will try to UPDATE an existing dandiset if one exists.
+            # We want to throw an error if a dandiset already exists.
             dandiset.save(force_insert=True)
         except IntegrityError as e:
+            # https://stackoverflow.com/questions/25368020/django-deduce-duplicate-key-exception-from-integrityerror
+            # https://www.postgresql.org/docs/13/errcodes-appendix.html
+            # Postgres error code 23505 == unique_violation
             if e.__cause__.pgcode == '23505':
                 return Response(f'Dandiset {dandiset.identifier} Already Exists', status=400)
             raise e
