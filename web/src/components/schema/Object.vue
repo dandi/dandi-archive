@@ -11,7 +11,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import type { JSONSchema7 } from 'json-schema';
+import type { JSONSchema7WithSubSchema } from '@/utils/schema/types';
+
 export default {
   name: 'Object',
   props: {
@@ -36,22 +39,43 @@ export default {
     omitEmpty() {
       return this.options.omitEmpty || true;
     },
+    subschema() {
+      const { schemaKey } = this.data;
+      const schema = this.schema as JSONSchema7;
+      const schemaItems = schema.items as JSONSchema7 | undefined;
+
+      const anyOrOneOf = (schema.anyOf || schema.oneOf) as JSONSchema7WithSubSchema[] | undefined;
+      const itemsAnyOrOneOf = (
+        schemaItems?.anyOf || schemaItems?.oneOf
+      ) as JSONSchema7WithSubSchema[] | undefined;
+
+      const subschemas = anyOrOneOf || itemsAnyOrOneOf;
+      if (!(schemaKey && subschemas)) { return undefined; }
+
+      return subschemas.find(
+        (subschema: JSONSchema7WithSubSchema) => subschema.properties.schemaKey.const === schemaKey,
+      );
+    },
   },
   methods: {
-    renderedValue(value) {
+    renderedValue(value: any) {
       if (Array.isArray(value)) {
         return value.join(', ');
       }
 
       return value;
     },
-    objectKey(itemKey) {
+    objectKey(itemKey: string) {
+      let key;
       const { schema } = this;
 
-      if (schema && schema.properties && itemKey in schema.properties) {
-        return schema.properties[itemKey].title;
+      if (this.subschema !== undefined) {
+        key = this.subschema.properties?.[itemKey]?.title;
+      } else if (schema && schema.properties) {
+        key = schema.properties[itemKey]?.title;
       }
-      return itemKey;
+
+      return key || itemKey;
     },
   },
 };

@@ -39,8 +39,17 @@ export interface BasicArraySchema extends JSONSchema7 {
   items: BasicSchema
 }
 
-export interface SingularAllOfSchema extends JSONSchema7 {
-  allOf: [JSONSchema7]
+type SchemaKeyPropertiesIntersection = {
+  [key: string]: JSONSchema7Definition;
+} & {
+  schemaKey: {
+    type: 'string';
+    const: string;
+  };
+};
+
+export interface JSONSchema7WithSubSchema extends JSONSchema7 {
+  properties: SchemaKeyPropertiesIntersection;
 }
 
 export const basicTypes = ['number', 'integer', 'string', 'boolean', 'null'];
