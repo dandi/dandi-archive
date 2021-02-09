@@ -188,6 +188,23 @@ def test_asset_create_duplicate(api_client, user, asset):
 
 
 @pytest.mark.django_db
+def test_asset_create_path_mismatch(api_client, user, version, asset_blob):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {'path': 'quiz/destroy/asset.dat', 'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+
+    resp = api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'path': path, 'metadata': metadata, 'sha256': asset_blob.sha256},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.data == 'Asset path conflicts with metadata path'
+
+
+@pytest.mark.django_db
 def test_asset_rest_update(api_client, user, asset, asset_blob):
     assign_perm('owner', user, asset.version.dandiset)
     api_client.force_authenticate(user=user)
@@ -258,6 +275,30 @@ def test_asset_rest_update_not_an_owner(api_client, user, asset):
         ).status_code
         == 403
     )
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_path_mismatch(api_client, user, asset, asset_blob):
+    assign_perm('owner', user, asset.version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_path = 'test/asset/rest/update.txt'
+    new_metadata = {
+        'path': 'quiz/destroy/asset.dat',
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+    }
+    new_sha256 = asset_blob.sha256
+
+    resp = api_client.put(
+        f'/api/dandisets/{asset.version.dandiset.identifier}/'
+        f'versions/{asset.version.version}/assets/{asset.uuid}/',
+        {'path': new_path, 'metadata': new_metadata, 'sha256': new_sha256},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.data == 'Asset path conflicts with metadata path'
 
 
 @pytest.mark.django_db
