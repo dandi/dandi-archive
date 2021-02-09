@@ -72,16 +72,21 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        path = serializer.validated_data['path']
+        metadata = serializer.validated_data['metadata']
+        if 'path' in metadata and metadata['path'] != path:
+            return Response(
+                'Asset path conflicts with metadata path', status=status.HTTP_400_BAD_REQUEST
+            )
+
         asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
 
-        asset_metadata, created = AssetMetadata.objects.get_or_create(
-            metadata=serializer.validated_data['metadata']
-        )
+        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
         asset = Asset(
-            path=serializer.validated_data['path'],
+            path=path,
             blob=asset_blob,
             metadata=asset_metadata,
             version=version,
@@ -117,17 +122,22 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        path = serializer.validated_data['path']
+        metadata = serializer.validated_data['metadata']
+        if 'path' in metadata and metadata['path'] != path:
+            return Response(
+                'Asset path conflicts with metadata path', status=status.HTTP_400_BAD_REQUEST
+            )
+
         asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
 
-        asset_metadata, created = AssetMetadata.objects.get_or_create(
-            metadata=serializer.validated_data['metadata']
-        )
+        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
         asset.blob = asset_blob
         asset.metadata = asset_metadata
-        asset.path = serializer.validated_data['path']
+        asset.path = path
         asset.save()
 
         serializer = AssetDetailSerializer(instance=asset)
