@@ -103,6 +103,7 @@
         <v-dialog
           v-if="renderField(complexSchema.properties[propKey])"
           :key="propKey"
+          eager
         >
           <template v-slot:activator="{ on }">
             <v-btn
