@@ -130,6 +130,48 @@ def test_version_rest_update(api_client, user, version):
 
 
 @pytest.mark.django_db
+def test_version_rest_update_large(api_client, user, version):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_name = 'A unique and special name!'
+    new_metadata = {
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+        'very_large': 'words' * 10000,
+    }
+    saved_metadata = {
+        **new_metadata,
+        'name': new_name,
+        'identifier': f'DANDI:{version.dandiset.identifier}',
+    }
+
+    assert api_client.put(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
+        {'metadata': new_metadata, 'name': new_name},
+        format='json',
+    ).data == {
+        'dandiset': {
+            'identifier': version.dandiset.identifier,
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        },
+        'version': version.version,
+        'name': new_name,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'asset_count': version.asset_count,
+        'metadata': saved_metadata,
+        'size': version.size,
+    }
+
+    version.refresh_from_db()
+    assert version.metadata.metadata == saved_metadata
+    assert version.metadata.name == new_name
+
+
+@pytest.mark.django_db
 def test_version_rest_publish(api_client, user, version, asset_factory):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 
 from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -15,7 +16,10 @@ class VersionMetadata(TimeStampedModel):
     name = models.CharField(max_length=300)
 
     class Meta:
-        unique_together = ['metadata', 'name']
+        indexes = [
+            HashIndex(fields=['metadata']),
+            HashIndex(fields=['name']),
+        ]
 
     @property
     def references(self) -> int:
