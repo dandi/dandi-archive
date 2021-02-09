@@ -20,7 +20,6 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
 )
-from dandiapi.api.views.temporary_hack import map_id_view, map_ids_view
 
 router = ExtendedSimpleRouter()
 (
@@ -81,9 +80,6 @@ urlpatterns = [
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),
-    # TODO remove these endpoints after migration
-    path('api/scripts/map_ids/', map_ids_view, name='map-ids'),
-    re_path(r'^api/scripts/map_ids/(?P<dandiset_id>[0-9]{6})/$', map_id_view, name='map-id'),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
