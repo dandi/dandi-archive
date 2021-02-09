@@ -5,6 +5,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
@@ -34,7 +35,7 @@ class AssetBlob(TimeStampedModel):
     sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
 
     class Meta:
-        indexes = [models.Index(fields=['sha256'])]
+        indexes = [HashIndex(fields=['sha256'])]
 
     @property
     def size(self):
