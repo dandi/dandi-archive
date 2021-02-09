@@ -12,36 +12,39 @@
 </template>
 
 <script lang="ts">
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import type { JSONSchema7 } from 'json-schema';
 import type { JSONSchema7WithSubSchema } from '@/utils/schema/types';
 
-export default {
+export default defineComponent({
   name: 'Object',
   props: {
     data: {
       // The data at the matching level of schema
-      type: Object,
+      type: Object as PropType<Record<string, any>>,
       required: true,
     },
     schema: {
       // The data at the matching level of schema
-      type: Object,
+      type: Object as PropType<JSONSchema7>,
       required: false,
       default: null,
     },
     options: {
-      type: Object,
+      type: Object as PropType<Record<string, any>>,
       required: false,
       default: () => ({}),
     },
   },
-  computed: {
-    omitEmpty() {
-      return this.options.omitEmpty || true;
-    },
-    subschema() {
-      const { schemaKey } = this.data;
-      const schema = this.schema as JSONSchema7;
+  setup(props) {
+    const omitEmpty = computed<boolean>(() => {
+      const { options: { omitEmpty: omitEmptyProp } } = props;
+      if (omitEmptyProp === undefined) { return true; }
+      return omitEmptyProp;
+    });
+
+    const subschema = computed(() => {
+      const { schema, data: { schemaKey } } = props;
       const schemaItems = schema.items as JSONSchema7 | undefined;
 
       const anyOrOneOf = (schema.anyOf || schema.oneOf) as JSONSchema7WithSubSchema[] | undefined;
@@ -53,32 +56,40 @@ export default {
       if (!(schemaKey && subschemas)) { return undefined; }
 
       return subschemas.find(
-        (subschema: JSONSchema7WithSubSchema) => subschema.properties.schemaKey.const === schemaKey,
+        (s: JSONSchema7WithSubSchema) => s.properties.schemaKey.const === schemaKey,
       );
-    },
-  },
-  methods: {
-    renderedValue(value: any) {
+    });
+
+    function renderedValue(value: unknown) {
       if (Array.isArray(value)) {
         return value.join(', ');
       }
 
       return value;
-    },
-    objectKey(itemKey: string) {
-      let key;
-      const { schema } = this;
+    }
 
-      if (this.subschema !== undefined) {
-        key = this.subschema.properties?.[itemKey]?.title;
+    function objectKey(itemKey: string): string {
+      let selectedSchema;
+      const { schema } = props;
+
+      if (subschema.value !== undefined) {
+        selectedSchema = subschema.value.properties?.[itemKey];
       } else if (schema && schema.properties) {
-        key = schema.properties[itemKey]?.title;
+        selectedSchema = schema.properties[itemKey];
       }
 
-      return key || itemKey;
-    },
+      selectedSchema = selectedSchema as JSONSchema7 | undefined;
+      return selectedSchema?.title || itemKey;
+    }
+
+    return {
+      omitEmpty,
+      subschema,
+      renderedValue,
+      objectKey,
+    };
   },
-};
+});
 </script>
 
 <style>
