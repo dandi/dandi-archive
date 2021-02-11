@@ -48,7 +48,6 @@ def validate(validation_id: int) -> None:
         validation.error = None
         validation.save()
 
-        # TODO separate storages for Validations and Assets require a copy at this point
         asset_blob, created = AssetBlob.from_validation(validation)
         if created:
             asset_blob.save()
