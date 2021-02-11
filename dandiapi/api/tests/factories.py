@@ -1,3 +1,5 @@
+import hashlib
+
 from django.contrib.auth.models import User
 import factory
 
@@ -67,8 +69,12 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         model = AssetBlob
 
     blob = factory.django.FileField(data=b'somefilebytes')
-    # TODO: This sha256 is technically invalid for the blob
-    sha256 = factory.Faker('sha256')
+
+    @factory.lazy_attribute
+    def sha256(self):
+        h = hashlib.sha256()
+        h.update(b'somefilebytes')
+        return h.hexdigest()
 
 
 class AssetMetadataFactory(factory.django.DjangoModelFactory):
@@ -93,7 +99,12 @@ class ValidationFactory(factory.django.DjangoModelFactory):
         model = Validation
 
     blob = factory.django.FileField(data=b'validationbytes')
-    # TODO: This sha256 is technically invalid for the blob
-    sha256 = factory.Faker('sha256')
+
+    @factory.lazy_attribute
+    def sha256(self):
+        h = hashlib.sha256()
+        h.update(b'validationbytes')
+        return h.hexdigest()
+
     state = 'SUCCEEDED'
     error = factory.Faker('sentence')
