@@ -15,7 +15,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
 
-from dandiapi.api.models import Validation
+from dandiapi.api.models import AssetBlob, Validation
 from dandiapi.api.tasks import validate
 from dandiapi.api.views.serializers import ValidationErrorSerializer, ValidationSerializer
 
@@ -169,18 +169,28 @@ def upload_validate_view(request: Request) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     # validation: Validation = request_serializer.save()
 
-    # Use the validation from the DB if it already exists
+    if 'object_key' in request_serializer.validated_data:
+        # Use uploaded data
+        blob = request_serializer.validated_data['object_key']
+    else:
+        # Use blob from an AssetBlob
+        try:
+            asset_blob = AssetBlob.objects.get(sha256=request_serializer.validated_data['sha256'])
+        except AssetBlob.DoesNotExist:
+            raise ValidationError('A validation for an object with that checksum does not exist.')
+        blob = asset_blob.blob
+
+    sha256 = request_serializer.validated_data['sha256']
+
     try:
-        validation = Validation.objects.get(sha256=request_serializer.validated_data['sha256'])
-        # Concurrent validation creates a race condition in celery, so avoid it if possible
+        validation = Validation.objects.get(sha256=sha256)
         if validation.state == Validation.State.IN_PROGRESS:
             raise ValidationError('Validation already in progress.')
+        validation.blob = blob
         validation.state = Validation.State.IN_PROGRESS
     except Validation.DoesNotExist:
-        if 'object_key' not in request_serializer.validated_data:
-            raise ValidationError('A validation for an object with that checksum does not exist.')
         validation = Validation(
-            blob=request_serializer.validated_data['object_key'],
+            blob=blob,
             sha256=request_serializer.validated_data['sha256'],
             state=Validation.State.IN_PROGRESS,
         )
