@@ -11,6 +11,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.copy import copy_object
 from dandiapi.api.storage import DeconstructableFileField, create_s3_storage
 
 from .validation import Validation
@@ -50,7 +51,22 @@ class AssetBlob(TimeStampedModel):
 
     @classmethod
     def from_validation(cls, validation: Validation):
-        return cls.objects.get_or_create(blob=validation.blob, sha256=validation.sha256)
+        """
+        Create an AssetBlob from a Validation if necessary.
+
+        This operation includes copying the object from the uploads zone to the blobs zone,
+        and deleting the blob from the uploads zone.
+        """
+        try:
+            # Use an existing AssetBlob if one already exists
+            # This should be preemptively checked in the /uploads/validate/ endpoint, but
+            # just in case a task gets run twice, we don't want to copy it twice.
+            return cls.objects.get(sha256=validation.sha256), False
+        except cls.DoesNotExist:
+            # Copy the data from the upload zone to the blob zone
+            destination = f'blobs/{validation.sha256}'
+            copy_object(validation, destination)
+            return cls(blob=destination, sha256=validation.sha256), True
 
 
 class AssetMetadata(TimeStampedModel):
