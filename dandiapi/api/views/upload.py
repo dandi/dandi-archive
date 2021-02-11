@@ -21,7 +21,6 @@ from dandiapi.api.views.serializers import ValidationErrorSerializer, Validation
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
-    file_name = serializers.CharField(trim_whitespace=False)
     file_size = serializers.IntegerField(min_value=1)
 
 
@@ -68,6 +67,7 @@ class UploadValidationRequestSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False, required=False)
     sha256 = serializers.CharField(
         trim_whitespace=False,
+        required=True,
         validators=[RegexValidator(Validation.SHA256_REGEX)],
     )
 
@@ -96,8 +96,10 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     # TODO The first argument to generate_filename() is an instance of the model.
     # We do not and will never have an instance of the model during field upload.
     # Maybe we need a different generate method/upload_to with a different signature?
+    # Since we are saving Validations with a UUID instead of a filename, we don't need
+    # any arguments at all.
     object_key = Validation.blob.field.storage.generate_filename(
-        Validation.blob.field.upload_to(None, upload_request['file_name'])
+        Validation.blob.field.upload_to(None, None)
     )
 
     initialization = MultipartManager.from_storage(Validation.blob.field.storage).initialize_upload(
