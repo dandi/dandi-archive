@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 
-from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
@@ -12,7 +11,7 @@ from .dandiset import Dandiset
 
 
 class VersionMetadata(TimeStampedModel):
-    metadata = JSONField(default=dict)
+    metadata = models.JSONField(default=dict)
     name = models.CharField(max_length=300)
 
     class Meta:

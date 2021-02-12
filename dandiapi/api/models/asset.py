@@ -4,7 +4,6 @@ from typing import List, Set
 import uuid
 
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
@@ -54,7 +53,7 @@ class AssetBlob(TimeStampedModel):
 
 
 class AssetMetadata(TimeStampedModel):
-    metadata = JSONField(blank=True, unique=True, default=dict)
+    metadata = models.JSONField(blank=True, unique=True, default=dict)
 
     @property
     def references(self) -> int:
