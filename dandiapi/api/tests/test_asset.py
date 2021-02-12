@@ -102,11 +102,11 @@ def test_asset_create(api_client, user, version, asset_blob):
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
-    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    metadata = {'path': path, 'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
 
     assert api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'path': path, 'metadata': metadata, 'sha256': asset_blob.sha256},
+        {'metadata': metadata, 'sha256': asset_blob.sha256},
         format='json',
     ).data == {
         'uuid': UUID_RE,
@@ -137,6 +137,25 @@ def test_asset_create(api_client, user, version, asset_blob):
 
 @pytest.mark.django_db
 def test_asset_create_no_valid_blob(api_client, user, version):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/no/valid/blob.txt'
+    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    sha256 = 'f' * 64
+
+    assert (
+        api_client.post(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+            {'path': path, 'metadata': metadata, 'sha256': sha256},
+            format='json',
+        ).data
+        == {'detail': 'Not found.'}
+    )
+
+
+@pytest.mark.django_db
+def test_asset_create_no_path(api_client, user, version):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)
 
@@ -193,13 +212,13 @@ def test_asset_rest_update(api_client, user, asset, asset_blob):
     api_client.force_authenticate(user=user)
 
     new_path = 'test/asset/rest/update.txt'
-    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    new_metadata = {'path': new_path, 'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
     new_sha256 = asset_blob.sha256
 
     assert api_client.put(
         f'/api/dandisets/{asset.version.dandiset.identifier}/'
         f'versions/{asset.version.version}/assets/{asset.uuid}/',
-        {'path': new_path, 'metadata': new_metadata, 'sha256': new_sha256},
+        {'metadata': new_metadata, 'sha256': new_sha256},
         format='json',
     ).data == {
         'uuid': str(asset.uuid),
