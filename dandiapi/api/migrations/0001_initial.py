@@ -10,7 +10,6 @@ import django_extensions.db.fields
 
 import dandiapi.api.models.asset
 import dandiapi.api.models.version
-import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
@@ -41,7 +40,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'blob',
-                    dandiapi.api.storage.DeconstructableFileField(
+                    models.FileField(
                         blank=True,
                         storage=dandiapi.api.models.asset._get_asset_blob_storage,
                         upload_to=dandiapi.api.models.asset._get_asset_blob_prefix,
