@@ -213,7 +213,7 @@ def test_validation_task():
 
     # Successful validations also write an AssetBlob
     asset_blob = AssetBlob.objects.get(sha256=sha256)
-    assert asset_blob.blob.name == f'blobs/{sha256}'
+    assert asset_blob.blob.name == f'blobs/{sha256[0:3]}/{sha256[3:6]}/{sha256[6:]}'
     assert asset_blob.blob.field.storage.exists(asset_blob.blob.name)
 
     # After copying the object, the original uploaded blob should be removed.
