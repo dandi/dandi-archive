@@ -24,11 +24,17 @@ class DandiMixin(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.INSTALLED_APPS += [
+        # Install local apps first, to ensure any overridden resources are found first
+        configuration.INSTALLED_APPS = [
             'dandiapi.api.apps.PublishConfig',
+        ] + configuration.INSTALLED_APPS
+
+        # Install additional apps
+        configuration.INSTALLED_APPS += [
             'guardian',
             'allauth.socialaccount.providers.github',
         ]
+
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             # TODO remove TokenAuthentication, it is only here to support
