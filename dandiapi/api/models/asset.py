@@ -84,6 +84,24 @@ class Asset(TimeStampedModel):
     def sha256(self):
         return self.blob.sha256
 
+    def _populate_metadata(self):
+        new: AssetMetadata
+        new, created = AssetMetadata.objects.get_or_create(
+            metadata={
+                **self.metadata.metadata,
+                'path': self.path,
+            },
+        )
+
+        if created:
+            new.save()
+
+        self.metadata = new
+
+    def save(self, *args, **kwargs):
+        self._populate_metadata()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return self.path
 

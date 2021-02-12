@@ -19,7 +19,6 @@ from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerialize
 
 
 class AssetRequestSerializer(serializers.Serializer):
-    path = serializers.CharField(max_length=512)
     metadata = serializers.JSONField()
     sha256 = serializers.CharField(
         max_length=64, validators=[RegexValidator(f'^{AssetBlob.SHA256_REGEX}$')]
@@ -74,14 +73,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
 
-        asset_metadata, created = AssetMetadata.objects.get_or_create(
-            metadata=serializer.validated_data['metadata']
-        )
+        metadata = serializer.validated_data['metadata']
+        if 'path' not in metadata:
+            return Response('No path specified in metadata', status=404)
+        path = metadata['path']
+        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
         asset = Asset(
-            path=serializer.validated_data['path'],
+            path=path,
             blob=asset_blob,
             metadata=asset_metadata,
             version=version,
@@ -119,15 +120,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
 
-        asset_metadata, created = AssetMetadata.objects.get_or_create(
-            metadata=serializer.validated_data['metadata']
-        )
+        metadata = serializer.validated_data['metadata']
+        if 'path' not in metadata:
+            return Response('No path specified in metadata', status=404)
+        path = metadata['path']
+        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
         asset.blob = asset_blob
         asset.metadata = asset_metadata
-        asset.path = serializer.validated_data['path']
+        asset.path = path
         asset.save()
 
         serializer = AssetDetailSerializer(instance=asset)
