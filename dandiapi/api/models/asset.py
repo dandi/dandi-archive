@@ -61,11 +61,12 @@ class AssetBlob(TimeStampedModel):
             return cls.objects.get(sha256=validation.sha256), False
         except cls.DoesNotExist:
             # Copy the data from the upload zone to the blob zone
+            size = validation.blob.size
             destination = (
                 f'blobs/{validation.sha256[0:3]}/{validation.sha256[3:6]}/{validation.sha256[6:]}'
             )
             copy_object(validation, destination)
-            return cls(blob=destination, sha256=validation.sha256, size=validation.blob.size), True
+            return cls(blob=destination, sha256=validation.sha256, size=size), True
 
 
 class AssetMetadata(TimeStampedModel):
