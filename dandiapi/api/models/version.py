@@ -58,7 +58,7 @@ class Version(TimeStampedModel):
 
     @property
     def size(self):
-        return sum([asset.size for asset in self.assets.all()])
+        return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
