@@ -200,7 +200,6 @@ def test_version_rest_publish(api_client, user, version, asset_factory):
     assert version.assets.count() == published_version.assets.count()
     draft_asset = version.assets.first()
     published_asset = published_version.assets.first()
-    print(draft_asset, published_asset)
     assert draft_asset.uuid != published_asset.uuid
     assert draft_asset.path == published_asset.path
     assert draft_asset.metadata == published_asset.metadata

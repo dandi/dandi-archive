@@ -16,7 +16,7 @@ def _get_validation_blob_storage() -> Storage:
 
 
 def _get_validation_blob_prefix(instance: Validation, filename: str) -> str:
-    return f'{filename}/{uuid4()}'
+    return f'uploads/{uuid4()}'
 
 
 class Validation(TimeStampedModel):
