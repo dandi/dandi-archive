@@ -37,7 +37,7 @@ class VersionAdmin(admin.ModelAdmin):
 
 @admin.register(AssetBlob)
 class AssetBlobAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob', 'references', 'modified', 'created']
+    list_display = ['id', 'blob', 'references', 'size', 'modified', 'created']
     list_display_links = ['id', 'blob']
 
 
@@ -55,7 +55,17 @@ class AssetBlobInline(admin.TabularInline):
 class AssetAdmin(admin.ModelAdmin):
     # list_display = ['id', 'uuid', 'path']
     # list_display_links = ['id', 'uuid']
-    list_display = ['id', 'uuid', 'path', 'version', 'blob', 'metadata', 'modified', 'created']
+    list_display = [
+        'id',
+        'uuid',
+        'path',
+        'version',
+        'blob',
+        'metadata',
+        'size',
+        'modified',
+        'created',
+    ]
     list_display_links = ['id', 'uuid', 'path']
     # inlines = [AssetBlobInline]
 
