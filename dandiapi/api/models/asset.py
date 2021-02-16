@@ -34,13 +34,10 @@ class AssetBlob(TimeStampedModel):
         blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
     )
     sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
+    size = models.BigIntegerField()
 
     class Meta:
         indexes = [HashIndex(fields=['sha256'])]
-
-    @property
-    def size(self):
-        return self.blob.size
 
     @property
     def references(self) -> int:
@@ -68,7 +65,7 @@ class AssetBlob(TimeStampedModel):
                 f'blobs/{validation.sha256[0:3]}/{validation.sha256[3:6]}/{validation.sha256[6:]}'
             )
             copy_object(validation, destination)
-            return cls(blob=destination, sha256=validation.sha256), True
+            return cls(blob=destination, sha256=validation.sha256, size=validation.blob.size), True
 
 
 class AssetMetadata(TimeStampedModel):
@@ -150,6 +147,4 @@ class Asset(TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        return sum([asset.size for asset in cls.objects.all()])
-        return cls.objects.values('size')
-        return cls.objects.aggregate(size=models.Sum('blob__blob__size'))['size'] or 0
+        return cls.objects.aggregate(size=models.Sum('blob__size'))['size']
