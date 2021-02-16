@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='assetblob',
             name='size',
-            field=models.BigIntegerField(default=0),
+            field=models.PositiveBigIntegerField(default=0),
             preserve_default=False,
         ),
         migrations.RunPython(set_asset_blob_size),

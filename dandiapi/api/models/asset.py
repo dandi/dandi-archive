@@ -34,7 +34,7 @@ class AssetBlob(TimeStampedModel):
         blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
     )
     sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
-    size = models.BigIntegerField()
+    size = models.PositiveBigIntegerField()
 
     class Meta:
         indexes = [HashIndex(fields=['sha256'])]
