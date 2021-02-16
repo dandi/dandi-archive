@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 def set_asset_blob_size(apps, schema_editor):
-    AssetBlob = apps.get_model('api', 'AssetBlob')
+    AssetBlob = apps.get_model('api', 'AssetBlob')  # noqa: N806
     db_alias = schema_editor.connection.alias
     for asset_blob in AssetBlob.objects.using(db_alias).all():
         asset_blob.size = asset_blob.blob.size
