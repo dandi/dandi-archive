@@ -69,6 +69,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         model = AssetBlob
 
     blob = factory.django.FileField(data=b'somefilebytes')
+    size = 13  # len(somefilebytes)
 
     @factory.lazy_attribute
     def sha256(self):
