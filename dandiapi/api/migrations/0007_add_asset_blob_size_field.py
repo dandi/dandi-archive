@@ -11,6 +11,11 @@ def set_asset_blob_size(apps, schema_editor):
         asset_blob.save()
 
 
+def reverse(apps, schema_editor):
+    # Nothing to do, the field is being deleted
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -24,5 +29,5 @@ class Migration(migrations.Migration):
             field=models.PositiveBigIntegerField(default=0),
             preserve_default=False,
         ),
-        migrations.RunPython(set_asset_blob_size),
+        migrations.RunPython(set_asset_blob_size, reverse),
     ]
