@@ -46,7 +46,7 @@ def test_validate(api_client, user):
 @pytest.mark.parametrize(
     'contents', [b'Very little content!', b'X' * 1024, b'X' * 1024 * 16], ids=['20B', '1KB', '16KB']
 )
-def test_validate_no_object_key(api_client, user, state, contents):
+def test_validate_no_object_key(api_client, user, asset_blob_factory, state, contents):
     api_client.force_authenticate(user=user)
 
     object_key = 'test.txt'
@@ -60,6 +60,10 @@ def test_validate_no_object_key(api_client, user, state, contents):
     # Save an existing Validation that will be updated
     Validation(blob=object_key, sha256=sha256, state=state).save()
 
+    # Save an existing AssetBlob with the same checksum
+    asset_blob = asset_blob_factory(sha256=sha256)
+    asset_blob.save()
+
     assert (
         api_client.post(
             '/api/uploads/validate/',
@@ -72,7 +76,7 @@ def test_validate_no_object_key(api_client, user, state, contents):
     )
 
     validation = Validation.objects.get(sha256=sha256)
-    assert validation.blob.name == object_key
+    assert validation.blob.name == asset_blob.blob.name
     assert validation.state == Validation.State.IN_PROGRESS
 
 
@@ -208,7 +212,12 @@ def test_validation_task():
     assert validation.error is None
 
     # Successful validations also write an AssetBlob
-    assert AssetBlob.objects.get(sha256=sha256)
+    asset_blob = AssetBlob.objects.get(sha256=sha256)
+    assert asset_blob.blob.name == f'blobs/{sha256[0:3]}/{sha256[3:6]}/{sha256[6:]}'
+    assert asset_blob.blob.field.storage.exists(asset_blob.blob.name)
+
+    # After copying the object, the original uploaded blob should be removed.
+    assert not asset_blob.blob.field.storage.exists(validation.blob.name)
 
 
 @pytest.mark.django_db

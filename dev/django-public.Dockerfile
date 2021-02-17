@@ -10,4 +10,4 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /opt/django
 COPY . /opt/django/
-RUN pip install -e .
+RUN pip install -e .[dev]

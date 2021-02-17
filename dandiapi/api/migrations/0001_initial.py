@@ -2,7 +2,6 @@
 
 import uuid
 
-import django.contrib.postgres.fields.jsonb
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
@@ -85,7 +84,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'metadata',
-                    django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=dict),
+                    models.JSONField(blank=True, default=dict),
                 ),
             ],
             options={
@@ -142,7 +141,7 @@ class Migration(migrations.Migration):
                         auto_now=True, verbose_name='modified'
                     ),
                 ),
-                ('metadata', django.contrib.postgres.fields.jsonb.JSONField(default=dict)),
+                ('metadata', models.JSONField(default=dict)),
                 ('name', models.CharField(max_length=300)),
             ],
             options={
