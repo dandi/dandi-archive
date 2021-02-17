@@ -8,7 +8,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.storage import DeconstructableFileField, create_s3_storage
+from dandiapi.api.storage import create_s3_storage
 
 
 def _get_validation_blob_storage() -> Storage:
@@ -30,7 +30,7 @@ class Validation(TimeStampedModel):
     class Meta:
         indexes = [models.Index(fields=['sha256'])]
 
-    blob = DeconstructableFileField(
+    blob = models.FileField(
         blank=True, storage=_get_validation_blob_storage, upload_to=_get_validation_blob_prefix
     )
     sha256 = models.CharField(
