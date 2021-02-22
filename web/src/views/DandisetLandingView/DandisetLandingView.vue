@@ -5,7 +5,7 @@
   >
     <template v-if="edit && Object.entries(meta).length">
       <meditor
-        v-if="toggles.DJANGO_API"
+        v-if="DJANGO_API"
         :schema="schema"
         :model="meta"
         @close="edit = false"
@@ -119,7 +119,6 @@ export default {
     return {
       edit: false,
       detailsPanel: true,
-      toggles,
     };
   },
   computed: {
