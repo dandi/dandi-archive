@@ -34,6 +34,7 @@ module.exports = {
         exceptAfterSingleLine: true,
       },
     ],
+    'import/prefer-default-export': 'off',
   },
   parserOptions: {
     parser: '@typescript-eslint/parser',
