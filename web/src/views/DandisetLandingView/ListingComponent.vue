@@ -1,6 +1,6 @@
 <template>
   <component
-    :is="renderComponent"
+    :is="renderedComponent"
     :schema="schema"
     :data="data"
     :options="options"
@@ -37,7 +37,7 @@ export default {
     },
   },
   computed: {
-    renderComponent() {
+    renderedComponent() {
       // Determines which component to render
 
       // Temporary for Girder
@@ -119,7 +119,7 @@ export default {
     componentClass() {
       let className = '';
 
-      switch (this.renderComponent) {
+      switch (this.renderedComponent) {
         case ObjectComponent:
           className += 'ml-4';
           break;
