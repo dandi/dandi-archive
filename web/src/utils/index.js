@@ -58,11 +58,6 @@ function getDandisetContact(dandiset) {
   return null;
 }
 
-const dandisetHasVersion = (versions, version) => {
-  const versionNumbers = versions.map((v) => v.version);
-  return versionNumbers.includes(version);
-};
-
 export {
   getLocationFromRoute,
   getPathFromLocation,
@@ -70,5 +65,4 @@ export {
   getPathFromSelected,
   copyToClipboard,
   getDandisetContact,
-  dandisetHasVersion,
 };
