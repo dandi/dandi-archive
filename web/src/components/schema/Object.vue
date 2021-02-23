@@ -15,6 +15,7 @@
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import type { JSONSchema7 } from 'json-schema';
 import type { JSONSchema7WithSubSchema } from '@/utils/schema/types';
+import type { RenderOptions } from './types';
 
 export default defineComponent({
   name: 'Object',
@@ -31,9 +32,9 @@ export default defineComponent({
       default: null,
     },
     options: {
-      type: Object as PropType<Record<string, any>>,
+      type: Object as PropType<RenderOptions>,
       required: false,
-      default: () => ({}),
+      default: () => ({} as RenderOptions),
     },
   },
   setup(props) {
