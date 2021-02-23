@@ -17,10 +17,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 import ObjectComponent from './Object.vue';
+import type { RenderOptions } from './types';
 
-export default {
+export default defineComponent({
   name: 'ObjectArray',
   components: {
     ObjectComponent,
@@ -28,7 +30,7 @@ export default {
   props: {
     schema: {
       // The root schema of the item to render
-      type: [Object],
+      type: Object,
       required: true,
     },
     data: {
@@ -37,24 +39,29 @@ export default {
       required: true,
     },
     options: {
-      type: Object,
+      type: Object as PropType<RenderOptions>,
       required: false,
-      default: () => ({}),
+      default: () => ({} as RenderOptions),
     },
   },
-  computed: {
-    primaryKey() {
-      return this.options.primaryKey;
-    },
-  },
-  methods: {
-    objectKey(item) {
-      if (this.primaryKey) { return item[this.primaryKey]; }
+  setup(props) {
+    const primaryKey = computed(() => props.options.primaryKey);
+
+    function objectKey(item: Record<string, unknown>) {
+      const pk = primaryKey.value;
+      if (pk && pk in item) {
+        return item[pk];
+      }
 
       return Object.values(item).join('|');
-    },
+    }
+
+    return {
+      primaryKey,
+      objectKey,
+    };
   },
-};
+});
 </script>
 
 <style>

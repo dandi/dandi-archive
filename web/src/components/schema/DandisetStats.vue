@@ -9,10 +9,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from '@vue/composition-api';
 import ObjectComponent from './Object.vue';
+import type { RenderOptions } from './types';
 
-export default {
+export default defineComponent({
   name: 'DandisetStats',
   components: {
     ObjectComponent,
@@ -25,16 +27,16 @@ export default {
     },
     schema: {
       // The root schema of the item to render
-      type: [Object],
+      type: Object,
       required: true,
     },
     options: {
-      type: Object,
+      type: Object as PropType<RenderOptions>,
       required: false,
-      default: () => ({}),
+      default: () => ({} as RenderOptions),
     },
   },
-};
+});
 </script>
 
 <style>
