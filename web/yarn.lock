@@ -938,17 +938,18 @@
   resolved "https://registry.yarnpkg.com/@jsdevtools/ono/-/ono-7.1.3.tgz#9df03bbd7c696a5c58885c34aa06da41c8543796"
   integrity sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==
 
-"@koumoul/vjsf@^1.15.0":
-  version "1.15.0"
-  resolved "https://registry.yarnpkg.com/@koumoul/vjsf/-/vjsf-1.15.0.tgz#a2b95703132e3771b0ea257747963748a8afe979"
-  integrity sha512-QZsKCZwukQ+biRQ6fu64eLfVXhVeMy5jIOxvhGyJe1v3IblZA7uiOhq4fG8TOZK3Xcb94voWx6pOC5WO93p89w==
+"@koumoul/vjsf@1.21.0":
+  version "1.21.0"
+  resolved "https://registry.yarnpkg.com/@koumoul/vjsf/-/vjsf-1.21.0.tgz#f281f967b296a9c8672ab9b04a7d03c3c55eae1f"
+  integrity sha512-Juq9QY1zuImkM4zInN3TuKwUC0Q79sZlZEcQM9ZMoHDdtzIu/Kk5927U/UGXv5MQSnnWkfTaTE5RePO1PYyR0g==
   dependencies:
     "@mdi/js" "^5.5.55"
+    ajv "^6.12.0"
     debounce "^1.2.0"
     markdown-it "^8.4.2"
     match-all "^1.2.5"
     property-expr "^1.5.1"
-    vuedraggable "^2.23.0"
+    vuedraggable "^2.24.3"
 
 "@mdi/font@^5.3.45":
   version "5.5.55"
@@ -1914,7 +1915,7 @@ ajv@^6.1.0, ajv@^6.10.0, ajv@^6.10.2, ajv@^6.12.3:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
-ajv@^6.12.2:
+ajv@^6.12.0, ajv@^6.12.2:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==
@@ -9284,7 +9285,7 @@ vue@^2.6.10, vue@^2.6.11:
   resolved "https://registry.yarnpkg.com/vue/-/vue-2.6.12.tgz#f5ebd4fa6bd2869403e29a896aed4904456c9123"
   integrity sha512-uhmLFETqPPNyuLLbsKz6ioJ4q7AZHzD8ZVFNATNyICSZouqP2Sz0rotWQC8UNBF6VGSCs5abnKJoStA6JbCbfg==
 
-vuedraggable@^2.23.0:
+vuedraggable@^2.24.3:
   version "2.24.3"
   resolved "https://registry.yarnpkg.com/vuedraggable/-/vuedraggable-2.24.3.tgz#43c93849b746a24ce503e123d5b259c701ba0d19"
   integrity sha512-6/HDXi92GzB+Hcs9fC6PAAozK1RLt1ewPTLjK0anTYguXLAeySDmcnqE8IC0xa7shvSzRjQXq3/+dsZ7ETGF3g==
