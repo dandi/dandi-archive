@@ -70,7 +70,7 @@ jobs:
           command: git clone https://github.com/dandi/dandi-api.git
       - run:
           name: Install dandi-api
-          command: pip install ./dandi-api
+          command: pip install ./dandi-api[dev]
       - run:
           name: Apply migrations to API server
           command: python manage.py migrate
