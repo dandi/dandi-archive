@@ -1,6 +1,7 @@
 import hashlib
 
 from django.core.files.base import ContentFile
+from django.core.files.storage import Storage
 import pytest
 
 from dandiapi.api import tasks
@@ -191,7 +192,10 @@ def test_get_validation(api_client, user, state):
 
 
 @pytest.mark.django_db
-def test_validation_task():
+def test_validation_task(storage: Storage):
+    # Pretend like Validation was defined with the given storage
+    Validation.blob.field.storage = storage
+
     object_key = 'test.txt'
     contents = b'test content'
 
@@ -199,7 +203,8 @@ def test_validation_task():
     h.update(contents)
     sha256 = h.hexdigest()
 
-    Validation.blob.field.storage.save(object_key, ContentFile(contents))
+    # Save the file in the backing storage
+    storage.save(object_key, ContentFile(contents))
 
     validation = Validation(blob=object_key, state=Validation.State.IN_PROGRESS, sha256=sha256)
     validation.save()
@@ -214,10 +219,10 @@ def test_validation_task():
     # Successful validations also write an AssetBlob
     asset_blob = AssetBlob.objects.get(sha256=sha256)
     assert asset_blob.blob.name == f'blobs/{sha256[0:3]}/{sha256[3:6]}/{sha256[6:]}'
-    assert asset_blob.blob.field.storage.exists(asset_blob.blob.name)
+    assert storage.exists(asset_blob.blob.name)
 
     # After copying the object, the original uploaded blob should be removed.
-    assert not asset_blob.blob.field.storage.exists(validation.blob.name)
+    assert not storage.exists(validation.blob.name)
 
 
 @pytest.mark.django_db
