@@ -1,9 +1,8 @@
-import hashlib
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
 
+from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.models import AssetBlob, Validation
 
 logger = get_task_logger(__name__)
@@ -28,17 +27,7 @@ def validate(validation_id: int) -> None:
     logger.info('Starting validation %s', validation.sha256)
 
     try:
-        buffer_size = 4096
-        h = hashlib.sha256()
-
-        with validation.blob.open() as stream:
-            # html = f.read().decode('utf-8')
-            buffer = stream.read(buffer_size)
-            while buffer != b'':
-                h.update(buffer)
-                buffer = stream.read(buffer_size)
-
-        sha256 = h.hexdigest()
+        sha256 = calculate_sha256_checksum(validation.blob.storage, validation.blob.name)
         logger.info('Calculated sha256 %s', sha256)
         if sha256 != validation.sha256:
             raise ChecksumMismatch(validation.sha256, sha256)
