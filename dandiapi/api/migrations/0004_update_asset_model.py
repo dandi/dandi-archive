@@ -2,7 +2,6 @@
 
 import uuid
 
-import django.contrib.postgres.fields.jsonb
 from django.db import migrations, models
 
 
@@ -43,9 +42,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='assetmetadata',
             name='metadata',
-            field=django.contrib.postgres.fields.jsonb.JSONField(
-                blank=True, default=dict, unique=True
-            ),
+            field=models.JSONField(blank=True, default=dict, unique=True),
         ),
         migrations.AlterUniqueTogether(
             name='asset',

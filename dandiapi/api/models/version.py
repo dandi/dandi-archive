@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
@@ -13,7 +12,7 @@ from .dandiset import Dandiset
 
 
 class VersionMetadata(TimeStampedModel):
-    metadata = JSONField(default=dict)
+    metadata = models.JSONField(default=dict)
     name = models.CharField(max_length=300)
 
     class Meta:
@@ -59,7 +58,7 @@ class Version(TimeStampedModel):
 
     @property
     def size(self):
-        return sum([asset.size for asset in self.assets.all()])
+        return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:

@@ -2,44 +2,9 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
-from django.db import models
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
 from storages.backends.s3boto3 import S3Boto3Storage
-
-
-class CallableStorageFileField(models.FileField):
-    """A FileField backporting the Django 3.1 feature to allow a callable "storage" argument."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if callable(self.storage):
-            self.storage = self.storage()
-            if not isinstance(self.storage, Storage):
-                raise TypeError(
-                    '%s.storage must be a subclass/instance of %s.%s'
-                    % (self.__class__.__qualname__, Storage.__module__, Storage.__qualname__)
-                )
-
-
-class DeconstructableFileField(CallableStorageFileField):
-    """
-    A FileField which preserves a callable "storage" argument during deconstruction.
-
-    This fixes a known bug in Django 3.1.
-    """
-
-    def __init__(self, *args, **kwargs):
-        if 'storage' in kwargs and callable(kwargs['storage']):
-            self._storage_callable = kwargs['storage']
-        super().__init__(*args, **kwargs)
-
-    def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
-        if hasattr(self, '_storage_callable'):
-            kwargs['storage'] = self._storage_callable
-        return name, path, args, kwargs
 
 
 class DeconstructableMinioStorage(MinioStorage):

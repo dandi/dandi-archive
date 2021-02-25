@@ -14,15 +14,14 @@ def mb(bytes_size: int) -> int:
 def test_upload_initialize(api_client, user):
     api_client.force_authenticate(user=user)
 
-    file_name = 'test.txt'
     file_size = 123
 
     assert api_client.post(
         '/api/uploads/initialize/',
-        {'file_name': file_name, 'file_size': file_size},
+        {'file_size': file_size},
         format='json',
     ).data == {
-        'object_key': Re(f'{file_name}/[a-z0-9\\-]+'),
+        'object_key': Re('uploads/[a-z0-9\\-]+'),
         'upload_id': UUID_RE,
         'parts': [
             {
@@ -84,12 +83,10 @@ def test_upload_complete_unauthorized(api_client):
 def test_upload_initialize_and_complete(api_client, user, file_size):
     api_client.force_authenticate(user=user)
 
-    file_name = 'upload-test.txt'
-
     # Get the presigned upload URL
     initialization = api_client.post(
         '/api/uploads/initialize/',
-        {'file_name': file_name, 'file_size': file_size},
+        {'file_size': file_size},
         format='json',
     ).data
 

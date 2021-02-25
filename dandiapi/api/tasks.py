@@ -1,9 +1,8 @@
-import hashlib
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
 
+from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.models import AssetBlob, Validation
 
 logger = get_task_logger(__name__)
@@ -25,30 +24,22 @@ class ChecksumMismatch(Exception):
 @atomic
 def validate(validation_id: int) -> None:
     validation: Validation = Validation.objects.get(pk=validation_id)
+    logger.info('Starting validation %s', validation.sha256)
 
     try:
-        buffer_size = 4096
-        h = hashlib.sha256()
-
-        with validation.blob.open() as stream:
-            # html = f.read().decode('utf-8')
-            buffer = stream.read(buffer_size)
-            while buffer != b'':
-                h.update(buffer)
-                buffer = stream.read(buffer_size)
-
-        sha256 = h.hexdigest()
+        sha256 = calculate_sha256_checksum(validation.blob.storage, validation.blob.name)
         logger.info('Calculated sha256 %s', sha256)
         if sha256 != validation.sha256:
             raise ChecksumMismatch(validation.sha256, sha256)
 
         # TODO: Run dandi-cli validation
 
+        logger.info('Saving successful validation %s', validation.sha256)
         validation.state = Validation.State.SUCCEEDED
         validation.error = None
         validation.save()
 
-        # TODO separate storages for Validations and Assets require a copy at this point
+        logger.info('Copying validated blob to asset storage')
         asset_blob, created = AssetBlob.from_validation(validation)
         if created:
             asset_blob.save()
@@ -58,6 +49,7 @@ def validate(validation_id: int) -> None:
         validation.error = str(e)
         validation.save()
     except Exception as e:
+        logger.error('Internal error', exc_info=True)
         validation.state = Validation.State.FAILED
         validation.error = f'Internal error: {e}'
         validation.save()

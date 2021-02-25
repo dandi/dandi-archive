@@ -5,7 +5,6 @@ from django.db import migrations, models
 import django_extensions.db.fields
 
 import dandiapi.api.models.validation
-import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
@@ -38,7 +37,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'blob',
-                    dandiapi.api.storage.DeconstructableFileField(
+                    models.FileField(
                         blank=True,
                         storage=dandiapi.api.models.validation._get_validation_blob_storage,
                         upload_to=dandiapi.api.models.validation._get_validation_blob_prefix,

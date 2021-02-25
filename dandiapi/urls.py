@@ -12,7 +12,6 @@ from dandiapi.api.views import (
     VersionViewSet,
     auth_token_view,
     info_view,
-    search_view,
     stats_view,
     upload_complete_view,
     upload_get_validation_view,
@@ -69,7 +68,6 @@ register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
-    path('api/search/', search_view),
     path('api/stats/', stats_view),
     path('api/info/', info_view),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),

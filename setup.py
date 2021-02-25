@@ -37,7 +37,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'django',
+        'django>=3.1.2',
         'django-admin-display',
         'django-allauth',
         'django-configurations[database,email]',

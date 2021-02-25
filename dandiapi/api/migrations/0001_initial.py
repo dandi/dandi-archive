@@ -2,7 +2,6 @@
 
 import uuid
 
-import django.contrib.postgres.fields.jsonb
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
@@ -10,7 +9,6 @@ import django_extensions.db.fields
 
 import dandiapi.api.models.asset
 import dandiapi.api.models.version
-import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
@@ -41,7 +39,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'blob',
-                    dandiapi.api.storage.DeconstructableFileField(
+                    models.FileField(
                         blank=True,
                         storage=dandiapi.api.models.asset._get_asset_blob_storage,
                         upload_to=dandiapi.api.models.asset._get_asset_blob_prefix,
@@ -86,7 +84,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'metadata',
-                    django.contrib.postgres.fields.jsonb.JSONField(blank=True, default=dict),
+                    models.JSONField(blank=True, default=dict),
                 ),
             ],
             options={
@@ -143,7 +141,7 @@ class Migration(migrations.Migration):
                         auto_now=True, verbose_name='modified'
                     ),
                 ),
-                ('metadata', django.contrib.postgres.fields.jsonb.JSONField(default=dict)),
+                ('metadata', models.JSONField(default=dict)),
                 ('name', models.CharField(max_length=300)),
             ],
             options={

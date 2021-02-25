@@ -379,3 +379,24 @@ def test_dandiset_rest_add_malformed(api_client, dandiset, user):
     )
     assert resp.status_code == 400
     assert resp.data == [{'username': ['This field is required.']}]
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_no_query(api_client):
+    assert api_client.get('/api/dandisets/').data['results'] == []
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_empty_query(api_client):
+    assert api_client.get('/api/dandisets/', {'search': ''}).data['results'] == []
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_identifier(api_client, version):
+    results = api_client.get('/api/dandisets/', {'search': version.dandiset.identifier}).data[
+        'results'
+    ]
+    assert len(results) == 1
+    assert results[0]['identifier'] == version.dandiset.identifier
+    assert results[0]['most_recent_version']['version'] == version.version
+    assert results[0]['most_recent_version']['name'] == version.name
