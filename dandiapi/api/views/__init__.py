@@ -1,6 +1,7 @@
 from .asset import AssetViewSet
 from .auth import auth_token_view
 from .dandiset import DandisetViewSet
+from .info import info_view
 from .stats import stats_view
 from .upload import (
     upload_complete_view,
@@ -23,4 +24,5 @@ __all__ = [
     'users_me_view',
     'users_search_view',
     'stats_view',
+    'info_view',
 ]

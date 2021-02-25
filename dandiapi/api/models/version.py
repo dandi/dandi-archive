@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 
+from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
@@ -90,6 +91,7 @@ class Version(TimeStampedModel):
                 **self.metadata.metadata,
                 'name': self.metadata.name,
                 'identifier': f'DANDI:{self.dandiset.identifier}',
+                'schema_version': settings.DANDI_SCHEMA_VERSION,
             },
         )
 
