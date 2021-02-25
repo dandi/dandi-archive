@@ -49,6 +49,9 @@ class DandiMixin(ConfigMixin):
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
     DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
 
+    # The CloudAMQP connection was dying, using the heartbeat should keep it alive
+    CELERY_BROKER_HEARTBEAT = 20
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     pass
