@@ -104,7 +104,7 @@ def test_version_rest_update(api_client, user, version):
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{version.dandiset.identifier}',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schema_version': settings.DANDI_SCHEMA_VERSION,
     }
 
     assert api_client.put(
@@ -147,7 +147,7 @@ def test_version_rest_update_large(api_client, user, version):
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{version.dandiset.identifier}',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schema_version': settings.DANDI_SCHEMA_VERSION,
     }
 
     assert api_client.put(

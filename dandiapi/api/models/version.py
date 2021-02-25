@@ -91,7 +91,7 @@ class Version(TimeStampedModel):
                 **self.metadata.metadata,
                 'name': self.metadata.name,
                 'identifier': f'DANDI:{self.dandiset.identifier}',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+                'schema_version': settings.DANDI_SCHEMA_VERSION,
             },
         )
 
