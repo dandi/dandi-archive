@@ -187,7 +187,7 @@ def upload_validate_view(request: Request) -> HttpResponseBase:
     try:
         validation = Validation.objects.get(sha256=sha256)
         if validation.state == Validation.State.IN_PROGRESS:
-            raise ValidationError('Validation already in progress.')
+            return Response('Validation already in progress.')
         validation.blob = blob
         validation.state = Validation.State.IN_PROGRESS
     except Validation.DoesNotExist:
