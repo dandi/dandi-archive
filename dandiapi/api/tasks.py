@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
+from django.utils import timezone
 
 from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.models import AssetBlob, Validation
@@ -55,3 +58,21 @@ def validate(validation_id: int) -> None:
         validation.save()
         # TODO: Can celery recover from a task error?
         # raise e
+
+
+@shared_task
+@atomic
+def clean_validations(hours=12):
+    now = timezone.now()
+    cutoff = now - timedelta(hours=hours)
+    logger.info(f'Starting cleanup of IN_PROGRESS validations older than {cutoff}')
+    logger.info(f'{ Validation.objects.filter(state=Validation.State.IN_PROGRESS)}')
+    stale_validations = Validation.objects.filter(state=Validation.State.IN_PROGRESS).filter(
+        modified__lt=cutoff
+    )
+    logger.info(f'Found {len(stale_validations)} stale validations')
+    for stale_validation in stale_validations:
+        logger.info(f'Marking validation of {stale_validation.sha256} as FAILED')
+        stale_validation.state = Validation.State.FAILED
+        stale_validation.error = 'Validation timed out'
+        stale_validation.save()
