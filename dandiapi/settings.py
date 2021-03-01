@@ -33,6 +33,7 @@ class DandiMixin(ConfigMixin):
         configuration.INSTALLED_APPS += [
             'guardian',
             'allauth.socialaccount.providers.github',
+            'django_celery_beat',
         ]
 
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']

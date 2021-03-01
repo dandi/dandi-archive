@@ -40,6 +40,7 @@ setup(
         'django>=3.1.2',
         'django-admin-display',
         'django-allauth',
+        'django-celery-beat',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
