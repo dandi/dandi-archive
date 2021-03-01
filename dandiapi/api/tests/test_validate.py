@@ -251,3 +251,31 @@ def test_validation_task_incorrect_checksum():
         validation.error
         == f'Given checksum {sha256} did not match calculated checksum {correct_sha256}.'
     )
+
+
+@pytest.mark.django_db
+def test_clean_validation_task():
+    blob = 'blob'
+    sha256 = 'x' * 64
+    Validation(blob=blob, state=Validation.State.IN_PROGRESS, sha256=sha256).save()
+
+    # Setting hours=0 means the task will clean IN_PROGRESS validations older than 0 hours
+    tasks.clean_validations(hours=0)
+
+    assert Validation.objects.filter(state=Validation.State.IN_PROGRESS).count() == 0
+    validation = Validation.objects.filter(state=Validation.State.FAILED).get()
+    assert validation.blob == blob
+    assert validation.sha256 == sha256
+    assert validation.error == 'Validation timed out'
+
+
+@pytest.mark.django_db
+def test_clean_validation_not_stale():
+    Validation(blob='a', state=Validation.State.SUCCEEDED, sha256='a' * 64).save()
+    Validation(blob='b', state=Validation.State.FAILED, sha256='b' * 64).save()
+    Validation(blob='c', state=Validation.State.IN_PROGRESS, sha256='c' * 64).save()
+
+    # Setting hours=1 means that the IN_PROGRESS validation should be too young
+    tasks.clean_validations(hours=1)
+
+    assert Validation.objects.filter(error='Validation timed out').count() == 0
