@@ -120,8 +120,8 @@ def test_validate_in_progress_validation(api_client, user):
         },
         format='json',
     )
-    assert resp.status_code == 400
-    assert resp.data == ['Validation already in progress.']
+    assert resp.status_code == 200
+    assert resp.data == 'Validation already in progress.'
 
 
 @pytest.mark.django_db
