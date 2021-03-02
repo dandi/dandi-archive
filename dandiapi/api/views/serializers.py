@@ -104,11 +104,8 @@ class AssetSerializer(serializers.ModelSerializer):
             'size',
             'created',
             'modified',
-            'version',
         ]
         read_only_fields = ['created']
-
-    version = VersionSerializer()
 
 
 class AssetDetailSerializer(AssetSerializer):
