@@ -200,10 +200,7 @@ def test_version_rest_publish(api_client, user, version, asset):
     assert published_version
     assert version.dandiset.versions.count() == 2
 
-    assert version.assets.count() == published_version.assets.count()
-    draft_asset = version.assets.first()
-    published_asset = published_version.assets.first()
-    assert draft_asset.uuid != published_asset.uuid
-    assert draft_asset.path == published_asset.path
-    assert draft_asset.metadata == published_asset.metadata
-    assert draft_asset.blob == published_asset.blob
+    # The original asset should now be in both versions
+    assert asset == version.assets.get()
+    assert asset == published_version.assets.get()
+    assert asset.versions.count() == 2
