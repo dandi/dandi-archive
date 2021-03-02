@@ -34,7 +34,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
-    queryset = Asset.objects.all().select_related('version')
+    queryset = Asset.objects.all()
 
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
@@ -55,11 +55,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         },
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def create(self, request, version__dandiset__pk, version__version):
+    def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
             Version,
-            dandiset=version__dandiset__pk,
-            version=version__version,
+            dandiset=versions__dandiset__pk,
+            version=versions__version,
         )
 
         # TODO @permission_required doesn't work on methods
@@ -105,13 +105,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         responses={200: AssetDetailSerializer()},
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def update(self, request, **kwargs):
+    def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
-        asset = self.get_object()
+        old_asset = self.get_object()
+        version = Version.objects.get(
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
+        )
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], asset.version.dandiset, return_403=True)
+        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
         if response:
             return response
 
@@ -137,12 +141,15 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def destroy(self, request, **kwargs):
+    def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         asset = self.get_object()
+        version = Version.objects.get(
+            dandiset__pk=versions__dandiset__pk, version=versions__version
+        )
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], asset.version.dandiset, return_403=True)
+        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
         if response:
             return response
 
