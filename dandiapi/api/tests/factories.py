@@ -90,7 +90,6 @@ class AssetFactory(factory.django.DjangoModelFactory):
         model = Asset
 
     path = factory.Faker('file_path', extension='nwb')
-    version = factory.SubFactory(DraftVersionFactory)
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
 
