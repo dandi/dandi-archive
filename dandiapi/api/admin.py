@@ -25,7 +25,7 @@ class VersionMetadataAdmin(admin.ModelAdmin):
 
 
 class AssetInline(admin.TabularInline):
-    model = Asset
+    model = Asset.versions.through
 
 
 @admin.register(Version)
@@ -59,7 +59,6 @@ class AssetAdmin(admin.ModelAdmin):
         'id',
         'uuid',
         'path',
-        'version',
         'blob',
         'metadata',
         'size',
