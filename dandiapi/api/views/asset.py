@@ -126,12 +126,24 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if created:
             asset_metadata.save()
 
-        asset.blob = asset_blob
-        asset.metadata = asset_metadata
-        asset.path = path
-        asset.save()
+        if asset_metadata == old_asset.metadata and asset_blob == old_asset.blob:
+            # No changes, don't create a new asset
+            new_asset = old_asset
+        else:
+            # Mint a new Asset whenever blob or metadata are modified
+            new_asset = Asset(
+                path=path,
+                blob=asset_blob,
+                metadata=asset_metadata,
+                previous=old_asset,
+            )
+            new_asset.save()
 
-        serializer = AssetDetailSerializer(instance=asset)
+            # Replace the old asset with the new one
+            version.assets.add(new_asset)
+            version.assets.remove(old_asset)
+
+        serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
