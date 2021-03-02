@@ -183,8 +183,9 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
         f'versions/{version.version}/assets/{asset.uuid}/',
         {'metadata': new_metadata, 'sha256': new_sha256},
         format='json',
-    ).data == {
-        'uuid': str(asset.uuid),
+    ).data
+    assert resp == {
+        'uuid': UUID_RE,
         'path': new_path,
         'size': asset_blob.size,
         'sha256': new_sha256,
@@ -193,8 +194,36 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
         'metadata': new_metadata,
     }
 
-    asset.refresh_from_db()
-    assert asset.metadata.metadata == new_metadata
+    # Updating an asset should leave it in the DB, but disconnect it from the version
+    assert asset not in version.assets.all()
+
+    # A new asset should be created that is associated with the version
+    new_asset = Asset.objects.get(uuid=resp['uuid'])
+    assert new_asset in version.assets.all()
+
+    # The new asset should have a reference to the old asset
+    assert new_asset.previous == asset
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_to_existing(api_client, user, version, asset_factory):
+    old_asset = asset_factory()
+    existing_asset = asset_factory()
+    version.assets.add(old_asset)
+    version.assets.add(existing_asset)
+
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.put(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{old_asset.uuid}/',
+        {'metadata': existing_asset.metadata.metadata, 'sha256': existing_asset.sha256},
+        format='json',
+    ).data
+
+    # Updating an Asset to be the same as an existing Asset should still mint a new Asset
+    assert resp['uuid'] != existing_asset.uuid
 
 
 @pytest.mark.django_db
