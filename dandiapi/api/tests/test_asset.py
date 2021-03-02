@@ -300,10 +300,9 @@ def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
     ],
 )
 def test_asset_rest_path_filter(api_client, version, asset_factory, path_prefix, results):
-    asset_factory(version=version, path='/foo/bar/file.nwb')
-    asset_factory(version=version, path='/foo/baz.nwb')
-    asset_factory(version=version, path='/root.nwb')
-    asset_factory(version=version, path='no-root.nwb')
+    paths = ['/foo/bar/file.nwb', '/foo/baz.nwb', '/root.nwb', 'no-root.nwb']
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
     partial_path_assets = api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/paths/',
