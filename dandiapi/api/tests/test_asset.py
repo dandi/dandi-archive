@@ -272,7 +272,8 @@ def test_asset_rest_delete(api_client, user, version, asset):
     )
     assert response.status_code == 204
 
-    assert not Asset.objects.all()
+    assert asset not in version.assets.all()
+    assert asset in Asset.objects.all()
 
 
 @pytest.mark.django_db

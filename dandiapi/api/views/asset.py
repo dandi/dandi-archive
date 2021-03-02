@@ -159,7 +159,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if response:
             return response
 
-        asset.delete()
+        version.assets.remove(asset)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
