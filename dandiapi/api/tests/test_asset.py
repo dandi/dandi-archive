@@ -48,20 +48,6 @@ def test_asset_rest_list(api_client, asset):
                 'sha256': asset.sha256,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                # 'metadata': asset.metadata,
-                'version': {
-                    'dandiset': {
-                        'identifier': asset.version.dandiset.identifier,
-                        'created': TIMESTAMP_RE,
-                        'modified': TIMESTAMP_RE,
-                    },
-                    'version': asset.version.version,
-                    'name': asset.version.name,
-                    'created': TIMESTAMP_RE,
-                    'modified': TIMESTAMP_RE,
-                    'asset_count': 1,
-                    'size': asset.size,
-                },
             }
         ],
     }
@@ -79,19 +65,6 @@ def test_asset_rest_retrieve(api_client, asset):
         'sha256': asset.sha256,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'version': {
-            'dandiset': {
-                'identifier': asset.version.dandiset.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-            },
-            'version': asset.version.version,
-            'name': asset.version.name,
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-            'asset_count': 1,
-            'size': asset.size,
-        },
         'metadata': asset.metadata.metadata,
     }
 
@@ -115,19 +88,6 @@ def test_asset_create(api_client, user, version, asset_blob):
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'version': {
-            'dandiset': {
-                'identifier': version.dandiset.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-            },
-            'version': version.version,
-            'name': version.name,
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-            'asset_count': 1,
-            'size': asset_blob.size,
-        },
         'metadata': metadata,
     }
 
@@ -227,19 +187,6 @@ def test_asset_rest_update(api_client, user, asset, asset_blob):
         'sha256': new_sha256,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'version': {
-            'dandiset': {
-                'identifier': asset.version.dandiset.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-            },
-            'version': asset.version.version,
-            'name': asset.version.name,
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-            'asset_count': 1,
-            'size': asset_blob.size,
-        },
         'metadata': new_metadata,
     }
 
