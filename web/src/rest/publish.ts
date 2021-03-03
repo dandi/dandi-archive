@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import Vue from 'vue';
 import OAuthClient from '@girder/oauth-client';
 import {
-  Asset, Dandiset, Paginated, User, Version,
+  Asset, Dandiset, Paginated, User, Version, Info,
 } from '@/types';
 
 // Ensure contains trailing slash
@@ -175,6 +175,10 @@ const publishRest = new Vue({
     },
     async publish(identifier: string): Promise<Version> {
       const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`);
+      return data;
+    },
+    async info(): Promise<Info> {
+      const { data } = await client.get('info/');
       return data;
     },
     async stats() {

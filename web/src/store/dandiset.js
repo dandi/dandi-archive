@@ -3,7 +3,7 @@ import RefParser from '@apidevtools/json-schema-ref-parser';
 
 import oldDandisetSchema from '@/assets/schema/old_dandiset.json';
 import { girderRest, publishRest } from '@/rest';
-import { draftVersion, dandisetSchemaUrl } from '@/utils/constants';
+import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
 
 export default {
@@ -96,7 +96,9 @@ export default {
       let schema;
 
       if (toggles.DJANGO_API) {
-        const res = await axios.get(dandisetSchemaUrl);
+        const { schema_url: schemaUrl } = await publishRest.info();
+        const res = await axios.get(schemaUrl);
+
         if (res.status !== 200) {
           throw new Error('Could not retrieve Dandiset Schema!');
         }

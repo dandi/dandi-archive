@@ -40,3 +40,8 @@ export interface Paginated<T> {
   previous: string,
   results: T[],
 }
+
+export interface Info {
+  schema_url: string;
+  schema_version: string;
+}
