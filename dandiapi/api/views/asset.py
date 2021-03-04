@@ -1,6 +1,7 @@
 from django.core.validators import RegexValidator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_filters import rest_framework as filters
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -45,6 +46,31 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    @swagger_auto_schema(
+        responses={
+            200: 'The asset metadata.',
+        },
+    )
+    def retrieve(self, request, versions__dandiset__pk, versions__version, uuid):
+        asset = self.get_object()
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
+            'asset-download',
+            kwargs={
+                'versions__dandiset__pk': versions__dandiset__pk,
+                'versions__version': versions__version,
+                'uuid': uuid,
+            },
+        )
+
+        blob_url = asset.blob.blob.url
+        metadata = {
+            **asset.metadata.metadata,
+            'identifier': uuid,
+            'contentUrl': [download_url, blob_url],
+        }
+        return Response(metadata, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),

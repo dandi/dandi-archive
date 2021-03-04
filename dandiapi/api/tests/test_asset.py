@@ -61,13 +61,13 @@ def test_asset_rest_retrieve(api_client, version, asset):
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.uuid}/'
     ).data == {
-        'uuid': str(asset.uuid),
-        'path': asset.path,
-        'size': asset.size,
-        'sha256': asset.sha256,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-        'metadata': asset.metadata.metadata,
+        **asset.metadata.metadata,
+        'identifier': str(asset.uuid),
+        'contentUrl': [
+            f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
+            f'/versions/{version.version}/assets/{asset.uuid}/download/',
+            asset.blob.blob.url,
+        ],
     }
 
 
