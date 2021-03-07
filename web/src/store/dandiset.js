@@ -1,5 +1,9 @@
+import axios from 'axios';
+import RefParser from '@apidevtools/json-schema-ref-parser';
+
+import oldDandisetSchema from '@/assets/schema/old_dandiset.json';
 import { girderRest, publishRest } from '@/rest';
-import { draftVersion } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
 
 export default {
@@ -10,6 +14,7 @@ export default {
     versions: null,
     loading: false, // No mutation, as we don't want this mutated by the user
     owners: null,
+    schema: null,
   },
   getters: {
     version(state) {
@@ -28,6 +33,9 @@ export default {
     },
     setOwners(state, owners) {
       state.owners = owners;
+    },
+    setSchema(state, schema) {
+      state.schema = schema;
     },
   },
   actions: {
@@ -83,6 +91,24 @@ export default {
       commit('setGirderDandiset', data);
 
       state.loading = false;
+    },
+    async fetchSchema({ commit }) {
+      let schema;
+
+      if (toggles.DJANGO_API) {
+        const { schema_url: schemaUrl } = await publishRest.info();
+        const res = await axios.get(schemaUrl);
+
+        if (res.status !== 200) {
+          throw new Error('Could not retrieve Dandiset Schema!');
+        }
+
+        schema = await RefParser.dereference(res.data);
+      } else {
+        schema = oldDandisetSchema;
+      }
+
+      commit('setSchema', schema);
     },
     async fetchOwners({ state, commit }, identifier) {
       state.loading = true;

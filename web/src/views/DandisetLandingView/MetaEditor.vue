@@ -63,7 +63,6 @@
                 <v-btn
                   icon
                   color="primary"
-                  :disabled="saveDisabled"
                   v-on="on"
                   @click="save"
                 >
@@ -74,18 +73,6 @@
               </template>
               <span>Save</span>
             </v-tooltip>
-            <!-- <v-spacer />
-            <v-btn
-              @click="publish"
-              color="success"
-              class="mr-2"
-              :disabled="publishedDisabled"
-            >
-              <v-icon left>
-                mdi-cloud-upload
-              </v-icon>
-              Publish
-            </v-btn> -->
           </v-card-actions>
         </v-card>
         <v-form>
@@ -163,11 +150,6 @@ export default {
       type: Object,
       required: true,
     },
-    create: {
-      type: Boolean,
-      required: false,
-      default: () => false,
-    },
   },
   data() {
     return {
@@ -178,12 +160,6 @@ export default {
     };
   },
   computed: {
-    saveDisabled() {
-      return this.create && !!this.errors;
-    },
-    publishedDisabled() {
-      return this.create || !!this.errors;
-    },
     validate() {
       return ajv.compile(this.schema);
     },

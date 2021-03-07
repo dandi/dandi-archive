@@ -1,12 +1,22 @@
 <template>
-  <div v-page-title="meta.name">
-    <meta-editor
-      v-if="edit && Object.entries(meta).length"
-      :schema="schema"
-      :model="meta"
-      :create="create"
-      @close="edit = false"
-    />
+  <div
+    v-if="schema"
+    v-page-title="meta.name"
+  >
+    <template v-if="edit && Object.entries(meta).length">
+      <meditor
+        v-if="DJANGO_API"
+        :schema="schema"
+        :model="meta"
+        @close="edit = false"
+      />
+      <meta-editor
+        v-else
+        :schema="schema"
+        :model="meta"
+        @close="edit = false"
+      />
+    </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
         <v-btn
@@ -77,20 +87,18 @@
 <script>
 import { mapState } from 'vuex';
 
-import SCHEMA from '@/assets/schema/dandiset.json';
-import NEW_SCHEMA from '@/assets/schema/dandiset_new.json';
-import NWB_SCHEMA from '@/assets/schema/dandiset_metanwb.json';
-
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { draftVersion } from '@/utils';
+import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
 import MetaEditor from './MetaEditor.vue';
+import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
 
 export default {
   name: 'DandisetLandingView',
   components: {
+    Meditor,
     MetaEditor,
     DandisetMain,
     DandisetSearchField,
@@ -106,11 +114,6 @@ export default {
       required: false,
       default: null,
     },
-    create: {
-      type: Boolean,
-      required: false,
-      default: () => false,
-    },
   },
   data() {
     return {
@@ -119,20 +122,6 @@ export default {
     };
   },
   computed: {
-    schema() {
-      if (this.create) {
-        return NEW_SCHEMA;
-      }
-
-      if (this.edit) {
-        return SCHEMA;
-      }
-
-      const properties = { ...SCHEMA.properties, ...NWB_SCHEMA.properties };
-      const required = [...SCHEMA.required, ...NWB_SCHEMA.required];
-
-      return { properties, required };
-    },
     currentDandiset() {
       if (toggles.DJANGO_API) {
         return this.publishDandiset;
@@ -162,6 +151,7 @@ export default {
       publishDandiset: (state) => state.publishDandiset,
       loading: (state) => state.loading,
       dandisetVersions: (state) => state.versions,
+      schema: (state) => state.schema,
     }),
   },
   watch: {

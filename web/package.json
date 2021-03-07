@@ -8,8 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^9.0.1",
     "@girder/components": "^2.2.5",
-    "@girder/oauth-client": "^0.7.2",
+    "@girder/oauth-client": "^0.7.6",
+    "@koumoul/vjsf": "1.21.0",
     "@sentry/browser": "^5.20.1",
     "@sentry/integrations": "^5.20.1",
     "@vue/composition-api": "^1.0.0-beta.20",
@@ -28,6 +30,9 @@
     "vuex-router-sync": "^5.0.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^3.12.5",
+    "@types/json-schema": "^7.0.6",
+    "@types/lodash": "^4.14.165",
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
     "@vue/cli-plugin-babel": "^4.4.6",

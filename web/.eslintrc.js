@@ -27,6 +27,14 @@ module.exports = {
         ],
       },
     ],
+    'lines-between-class-members': [
+      'error',
+      'always',
+      {
+        exceptAfterSingleLine: true,
+      },
+    ],
+    'import/prefer-default-export': 'off',
   },
   parserOptions: {
     parser: '@typescript-eslint/parser',
