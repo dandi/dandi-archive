@@ -166,7 +166,11 @@ export default {
           results: [asset],
         } = await publishRest.assets(identifier, version, { params: { path: relativePath } });
 
-        this.$set(this.itemDownloads, item.name, publishRest.assetDownloadURI(asset));
+        this.$set(
+          this.itemDownloads,
+          item.name,
+          publishRest.assetDownloadURI(identifier, version, asset),
+        );
       });
     },
     $route: {
