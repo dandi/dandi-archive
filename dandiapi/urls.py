@@ -35,8 +35,8 @@ router = ExtendedSimpleRouter()
         AssetViewSet,
         basename='asset',
         parents_query_lookups=[
-            f'version__dandiset__{DandisetViewSet.lookup_field}',
-            f'version__{VersionViewSet.lookup_field}',
+            f'versions__dandiset__{DandisetViewSet.lookup_field}',
+            f'versions__{VersionViewSet.lookup_field}',
         ],
     )
 )

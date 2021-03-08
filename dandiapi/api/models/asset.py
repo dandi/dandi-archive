@@ -86,10 +86,14 @@ class Asset(TimeStampedModel):
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
-    version = models.ForeignKey(Version, related_name='assets', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ['path', 'version']
+    versions = models.ManyToManyField(Version, related_name='assets')
+    previous = models.ForeignKey(
+        'Asset',
+        blank=True,
+        null=True,
+        default=None,
+        on_delete=models.PROTECT,
+    )
 
     @property
     def size(self):
@@ -121,8 +125,8 @@ class Asset(TimeStampedModel):
         return self.path
 
     @classmethod
-    def copy(cls, asset, version):
-        return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata, version=version)
+    def copy(cls, asset):
+        return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata)
 
     @classmethod
     def get_path(cls, path_prefix: str, qs: List[str]) -> Set:

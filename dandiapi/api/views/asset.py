@@ -1,5 +1,4 @@
 from django.core.validators import RegexValidator
-from django.db.utils import IntegrityError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -35,7 +34,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
-    queryset = Asset.objects.all().select_related('version')
+    queryset = Asset.objects.all()
 
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
@@ -53,14 +52,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             200: 'The asset metadata.',
         },
     )
-    def retrieve(self, request, version__dandiset__pk, version__version, uuid):
+    def retrieve(self, request, versions__dandiset__pk, versions__version, uuid):
         asset = self.get_object()
         # TODO use http://localhost:8000 for local deployments
         download_url = 'https://api.dandiarchive.org' + reverse(
             'asset-download',
             kwargs={
-                'version__dandiset__pk': version__dandiset__pk,
-                'version__version': version__version,
+                'versions__dandiset__pk': versions__dandiset__pk,
+                'versions__version': versions__version,
                 'uuid': uuid,
             },
         )
@@ -81,11 +80,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         },
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def create(self, request, version__dandiset__pk, version__version):
+    def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
             Version,
-            dandiset=version__dandiset__pk,
-            version=version__version,
+            dandiset=versions__dandiset__pk,
+            version=versions__version,
         )
 
         # TODO @permission_required doesn't work on methods
@@ -107,21 +106,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if created:
             asset_metadata.save()
 
+        if version.assets.filter(path=path, blob=asset_blob, metadata=asset_metadata).exists():
+            return Response('Asset Already Exists', status=status.HTTP_400_BAD_REQUEST)
+
         asset = Asset(
             path=path,
             blob=asset_blob,
             metadata=asset_metadata,
-            version=version,
         )
-        try:
-            asset.save()
-        except IntegrityError as e:
-            # https://stackoverflow.com/questions/25368020/django-deduce-duplicate-key-exception-from-integrityerror
-            # https://www.postgresql.org/docs/13/errcodes-appendix.html
-            # Postgres error code 23505 == unique_violation
-            if e.__cause__.pgcode == '23505':
-                return Response('Asset Already Exists', status=status.HTTP_400_BAD_REQUEST)
-            raise e
+        asset.save()
+        version.assets.add(asset)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -131,13 +125,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         responses={200: AssetDetailSerializer()},
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def update(self, request, **kwargs):
+    def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
-        asset = self.get_object()
+        old_asset = self.get_object()
+        version = Version.objects.get(
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
+        )
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], asset.version.dandiset, return_403=True)
+        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
         if response:
             return response
 
@@ -154,25 +152,40 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if created:
             asset_metadata.save()
 
-        asset.blob = asset_blob
-        asset.metadata = asset_metadata
-        asset.path = path
-        asset.save()
+        if asset_metadata == old_asset.metadata and asset_blob == old_asset.blob:
+            # No changes, don't create a new asset
+            new_asset = old_asset
+        else:
+            # Mint a new Asset whenever blob or metadata are modified
+            new_asset = Asset(
+                path=path,
+                blob=asset_blob,
+                metadata=asset_metadata,
+                previous=old_asset,
+            )
+            new_asset.save()
 
-        serializer = AssetDetailSerializer(instance=asset)
+            # Replace the old asset with the new one
+            version.assets.add(new_asset)
+            version.assets.remove(old_asset)
+
+        serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def destroy(self, request, **kwargs):
+    def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         asset = self.get_object()
+        version = Version.objects.get(
+            dandiset__pk=versions__dandiset__pk, version=versions__version
+        )
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], asset.version.dandiset, return_403=True)
+        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
         if response:
             return response
 
-        asset.delete()
+        version.assets.remove(asset)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(

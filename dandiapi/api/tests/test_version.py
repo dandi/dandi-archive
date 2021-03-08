@@ -72,8 +72,8 @@ def test_version_rest_retrieve(api_client, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_retrieve_with_asset(api_client, version, asset_factory):
-    asset_factory(version=version)
+def test_version_rest_retrieve_with_asset(api_client, version, asset):
+    version.assets.add(asset)
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
@@ -175,10 +175,10 @@ def test_version_rest_update_large(api_client, user, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_publish(api_client, user, version, asset_factory):
+def test_version_rest_publish(api_client, user, version, asset):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)
-    asset_factory(version=version)
+    version.assets.add(asset)
 
     resp = api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/publish/'
@@ -200,10 +200,7 @@ def test_version_rest_publish(api_client, user, version, asset_factory):
     assert published_version
     assert version.dandiset.versions.count() == 2
 
-    assert version.assets.count() == published_version.assets.count()
-    draft_asset = version.assets.first()
-    published_asset = published_version.assets.first()
-    assert draft_asset.uuid != published_asset.uuid
-    assert draft_asset.path == published_asset.path
-    assert draft_asset.metadata == published_asset.metadata
-    assert draft_asset.blob == published_asset.blob
+    # The original asset should now be in both versions
+    assert asset == version.assets.get()
+    assert asset == published_version.assets.get()
+    assert asset.versions.count() == 2

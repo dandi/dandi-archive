@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Asset, Version, VersionMetadata
+from dandiapi.api.models import Version, VersionMetadata
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -74,8 +74,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         new_version = Version.copy(old_version)
         new_version.save()
-        for old_asset in old_version.assets.all():
-            new_asset = Asset.copy(old_asset, new_version)
-            new_asset.save()
+        for asset in old_version.assets.all():
+            new_version.assets.add(asset)
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)

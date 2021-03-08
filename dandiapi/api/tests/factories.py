@@ -68,13 +68,13 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
 
-    blob = factory.django.FileField(data=b'somefilebytes')
+    blob = factory.django.FileField(data=factory.Faker('binary', length=100))
     size = 13  # len(somefilebytes)
 
     @factory.lazy_attribute
     def sha256(self):
         h = hashlib.sha256()
-        h.update(b'somefilebytes')
+        h.update(self.blob.read())
         return h.hexdigest()
 
 
@@ -90,7 +90,6 @@ class AssetFactory(factory.django.DjangoModelFactory):
         model = Asset
 
     path = factory.Faker('file_path', extension='nwb')
-    version = factory.SubFactory(DraftVersionFactory)
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
 
