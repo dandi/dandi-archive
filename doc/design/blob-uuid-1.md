@@ -2,35 +2,39 @@ A blob is referenced by a key generation function. the value of this key is used
 
 ** database table of identities **: indexed by the key and contains columns for as many types of checksums as we want. these checksums constitute identities of the blob and should use functions that will always return the same value.
 
-**key generation function**: the current suggestion (from satra) for this function is UUID4. 
+**key generation function**: the current suggestion (from satra) for this function is UUID4.
 
 **DANDI ETag generation function**: this is an agreement between API server and DANDI CLI for now to ensure there is an algorithm that consistently returns the correct number of parts given a `contentSize` in bytes. this should in theory also be the AWS ETag generation function.
 
-**upload process**:
+## Upload (from a CLI)
+
+### Check process (for de-duplication):
+1. CLI sends expected digest with digest type (e.g., ETag)
+2. API checks for existence of ETag in identity table.
+3. if exists, returns key, if not returns an error.
+
+### Blob upload process:
 1. CLI initiates upload sending contentSize
 2. generate key
 3. API returns presigned URLs
 4. CLI verifies that the number of URLs match the calculated number of parts (i.e. server and CLI are using the same ETag generation function)
 5. CLI uploads to presigned URL and checks ETag on return
 6. Completes upload and contacts API
-7. API validates size and ensures object prefix matches computed ETag. 
+7. API validates size and ensures object prefix matches computed ETag.
 8. Check for collision, since some other task could have finished by this time with the same object.
 9. API moves the object into `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<restofkey>` where key is returned by the key generation function. API returns this key to CLI.
 10. API adds key + ETag into db.
 11. API sends new key to trusted background process
 
-**check process**
-1. CLI sends expected digest with digest type (e.g., ETag)
-2. API checks for existence of ETag in identity table. 
-3. if exists, returns key, if not returns an error.
+## Garbage Collection process
 
-** garbage collection process **
 1. if dangling key's are found, API does garbage collection on keys that are older than 24 hours.
 2. sends background process info about deleted keys
 
-** out of band background process **
+## Out of band background process
+
 1. Receives key from API and queues up a job to process the blob
-2. performs a set of tasks on blob including multi checksum computation. 
+2. performs a set of tasks on blob including multi checksum computation.
 3. adds checksums to object metadata
 4. pings api that checksums are ready
 5. API adds checksums to row in blob db
