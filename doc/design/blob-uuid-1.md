@@ -36,9 +36,8 @@ A blob is referenced by a key generation function. the value of this key is used
 
 1. Receives key from API and queues up a job to process the blob
 2. performs a set of tasks on blob including multi checksum computation.
-3. adds checksums to object metadata
-4. pings api that checksums are ready
-5. API adds checksums to row in blob db
+3. adds checksums to the AssetBlob row in the DB (initially they are null or something)
+4. API injects checksums into metadata whenever it is requested: initially it won't be there while being calculated, but will magically appear after calculations finish.
 
 References:
 
