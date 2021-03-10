@@ -99,7 +99,7 @@
                       </v-btn>
                       <v-btn
                         color="error"
-                        @click="deleteAsset"
+                        @click="deleteAsset(item.name)"
                       >
                         Yes
                       </v-btn>
@@ -152,6 +152,7 @@ export default {
       location: rootDirectory,
       loading: false,
       itemDownloads: {},
+      itemDeletes: {},
       deleteConfirmationDialog: false,
     };
   },
@@ -200,8 +201,9 @@ export default {
         return;
       }
 
-      // Create the download link in itemDownloads for each item in items
+      // Create download and delete links in local data for each item in items
       this.itemDownloads = {};
+      this.itemDeletes = {};
       const { identifier, version, location } = this;
 
       items.filter((x) => !x.folder).map(async (item) => {
@@ -215,6 +217,12 @@ export default {
           item.name,
           publishRest.assetDownloadURI(identifier, version, asset),
         );
+
+        this.$set(this.itemDeletes, item.name, {
+          identifier,
+          version,
+          uuid: asset.uuid,
+        });
       });
     },
     $route: {
@@ -239,8 +247,11 @@ export default {
       }
     },
 
-    deleteAsset() {
-      console.log('delete button');
+    deleteAsset(name) {
+      const asset = this.itemDeletes[name];
+      if (asset !== undefined) {
+        console.log('deleteAsset:', asset);
+      }
       this.deleteConfirmationDialog = false;
     },
   },
