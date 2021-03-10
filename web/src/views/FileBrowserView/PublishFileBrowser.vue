@@ -65,6 +65,18 @@
               </v-icon>
               {{ item.name }}
               <v-spacer />
+
+              <v-list-item-action>
+                <v-btn
+                  icon
+                  @click="deleteAsset"
+                >
+                  <v-icon color="error">
+                    mdi-delete
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
+
               <v-list-item-action v-if="itemDownloads[item.name]">
                 <v-btn
                   icon
@@ -193,6 +205,10 @@ export default {
       } else {
         this.location = `${this.location}${name}`;
       }
+    },
+
+    deleteAsset() {
+      console.log('delete button');
     },
   },
 };
