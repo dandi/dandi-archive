@@ -24,7 +24,7 @@ A blob is referenced by a key generation function. the value of this key is used
 7. CLI completes upload and checks final ETag. Mismatch aborts the upload.
 8. API validates the size and that the initially reported ETag matches the actual ETag
 9. Check for collision, since some other task could have finished by this time with the same object
-10. API adds key + ETag to Asset table, delete from Upload table
+10. API adds key + ETag to AssetBlob table, delete from Upload table
 11. API kicks off background process to calculate checksums
 
 ## Garbage Collection process
