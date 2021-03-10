@@ -67,14 +67,45 @@
               <v-spacer />
 
               <v-list-item-action>
-                <v-btn
-                  icon
-                  @click="deleteAsset"
+                <v-dialog
+                  v-model="deleteConfirmationDialog"
+                  persistent
+                  max-width="60vh"
                 >
-                  <v-icon color="error">
-                    mdi-delete
-                  </v-icon>
-                </v-btn>
+                  <template v-slot:activator="{ on }">
+                    <v-btn
+                      icon
+                      v-on="on"
+                    >
+                      <v-icon color="error">
+                        mdi-delete
+                      </v-icon>
+                    </v-btn>
+                  </template>
+                  <v-card>
+                    <v-card-title class="headline">
+                      Really delete this asset?
+                    </v-card-title>
+                    <v-card-text>
+                      Are you sure you want to delete this asset? <strong>This
+                        action cannot be undone.</strong>
+                    </v-card-text>
+                    <v-card-actions>
+                      <v-spacer />
+                      <v-btn
+                        @click="deleteConfirmationDialog = false"
+                      >
+                        Cancel
+                      </v-btn>
+                      <v-btn
+                        color="error"
+                        @click="deleteAsset"
+                      >
+                        Yes
+                      </v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
               </v-list-item-action>
 
               <v-list-item-action v-if="itemDownloads[item.name]">
@@ -121,6 +152,7 @@ export default {
       location: rootDirectory,
       loading: false,
       itemDownloads: {},
+      deleteConfirmationDialog: false,
     };
   },
   computed: {
@@ -209,6 +241,7 @@ export default {
 
     deleteAsset() {
       console.log('delete button');
+      this.deleteConfirmationDialog = false;
     },
   },
 };
