@@ -20,7 +20,7 @@ A blob is referenced by a key generation function. the value of this key is used
 3. API returns presigned URLs
 4. CLI verifies that the number+size of parts match the calculated number of parts (i.e. server and CLI are using the same ETag generation function)
 5. CLI uploads to presigned URLs, and for each part checks ETag on return. Any part upload failure can be retried without involving API.
-6. CLI sends part info to API, API responds with presigned completion URL
+6. `/uploads/complete/`: CLI sends parts info to API, API responds with presigned completion URL
 7. CLI completes upload and checks final ETag. Mismatch aborts the upload.
 8. API validates the size and that the initially reported ETag matches the actual ETag
 9. Check for collision, since some other task could have finished by this time with the same object
