@@ -14,10 +14,10 @@ A blob is referenced by a key generation function. the value of this key is used
 3. if exists, returns key, if not returns an error.
 
 ### Blob upload process:
-1. CLI initiates upload sending contentSize + ETag
-2. API generates key, determines upload location `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<key>`
-4. API saves initial data (size, ETAG, key) to Upload table
-3. API returns presigned URLs
+1. CLI `/uploads/initialize` <-- `{contentSize , digests: { "dandi-s3-etag": "..." }`. API:
+   1. generates key, determines upload location `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<key>`
+   2. saves initial data (size, ETag, key) to Upload table
+   3. API returns presigned URLs
 4. CLI verifies that the number+size of parts match the calculated number of parts (i.e. server and CLI are using the same ETag generation function)
 5. CLI uploads to presigned URLs, and for each part checks ETag on return. Any part upload failure can be retried without involving API.
 6. `/uploads/complete/`: CLI sends parts info to API, API responds with presigned completion URL
