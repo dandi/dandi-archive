@@ -14,17 +14,18 @@ A blob is referenced by a key generation function. the value of this key is used
 3. if exists, returns key, if not returns an error.
 
 ### Blob upload process:
-1. CLI initiates upload sending contentSize
-2. generate key
+1. CLI initiates upload sending contentSize + ETag
+2. API generates key, determines upload location `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<key>`
+4. API saves initial data (size, ETAG, key) to Upload table
 3. API returns presigned URLs
-4. CLI verifies that the number of URLs match the calculated number of parts (i.e. server and CLI are using the same ETag generation function)
-5. CLI uploads to presigned URL and checks ETag on return
-6. Completes upload and contacts API
-7. API validates size and ensures object prefix matches computed ETag.
-8. Check for collision, since some other task could have finished by this time with the same object.
-9. API moves the object into `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<restofkey>` where key is returned by the key generation function. API returns this key to CLI.
-10. API adds key + ETag into db.
-11. API sends new key to trusted background process
+4. CLI verifies that the number+size of parts match the calculated number of parts (i.e. server and CLI are using the same ETag generation function)
+5. CLI uploads to presigned URL and checks part ETags on return. Any failures can be retried without involving API.
+6. CLI sends part info to API, API responds with presigned completion URL
+7. CLI completes upload and checks final ETag. Mismatch aborts the upload.
+8. API validates the size and that the initially reported ETag matches the actual ETag
+9. Check for collision, since some other task could have finished by this time with the same object
+10. API adds key + ETag to Asset table, delete from Upload table
+11. API kicks off background process to calculate checksums
 
 ## Garbage Collection process
 
