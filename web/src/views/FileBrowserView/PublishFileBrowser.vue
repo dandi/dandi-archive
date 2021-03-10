@@ -250,7 +250,8 @@ export default {
     deleteAsset(name) {
       const asset = this.itemDeletes[name];
       if (asset !== undefined) {
-        console.log('deleteAsset:', asset);
+        const { identifier, version, uuid } = asset;
+        publishRest.deleteAsset(identifier, version, uuid);
       }
       this.deleteConfirmationDialog = false;
     },
