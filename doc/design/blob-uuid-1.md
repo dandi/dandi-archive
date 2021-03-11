@@ -22,10 +22,12 @@ A blob is referenced by a key generation function. the value of this key is used
 5. CLI uploads to presigned URLs, and for each part checks ETag on return. Any part upload failure can be retried without involving API.
 6. `/uploads/complete/`: CLI sends parts info to API, API responds with presigned completion URL
 7. CLI completes upload and checks final ETag. Mismatch aborts the upload.
-8. API validates the size and that the initially reported ETag matches the actual ETag
-9. Check for collision, since some other task could have finished by this time with the same object
-10. API adds key + ETag to AssetBlob table, delete from Upload table
-11. API kicks off background process to calculate checksums
+8. CLI `/uploads/validate` <-- `uploads:upload_id` --> `blobs:key`. API
+    1. validates the size and that the initially reported ETag matches the actual ETag
+    2. checks for collision, since some other task could have finished by this time with the same object
+        1. no collision - adds key + ETag to AssetBlob table, delete from Upload table.
+        2. there is collision - delete key record and file in blob store, will return key of an existing record
+    4. kicks off background process to calculate checksums
 
 ## Garbage Collection process
 
