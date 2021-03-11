@@ -13,7 +13,7 @@ import '@/plugins/composition';
 import '@/plugins/girder';
 
 // Import custom behavior
-import '@/featureToggle';
+import toggles from '@/featureToggle';
 import '@/title';
 
 // Import internal items
@@ -29,7 +29,14 @@ Sentry.init({
 
 sync(store, router);
 
-Promise.all([publishRest.restoreLogin(), girderRest.fetchUser()]).then(() => {
+function loadUser() {
+  if (toggles.DJANGO_API) {
+    return publishRest.restoreLogin();
+  }
+  return girderRest.fetchUser();
+}
+
+loadUser().then(() => {
   new Vue({
     setup() {
       provide('store', store);
