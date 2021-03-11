@@ -32,7 +32,7 @@ A blob is referenced by a key generation function. the value of this key is used
 
 ## Garbage Collection process
 
-1. if dangling key's are found, API does garbage collection on keys that are older than 24 hours.
+1. if dangling keys (not used by any asset) are found, API does garbage collection on keys that are older than 24 hours.
 2. sends background process info about deleted keys
 
 ## Out of band background process
