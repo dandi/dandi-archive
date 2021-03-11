@@ -190,7 +190,7 @@ const publishRest = new Vue({
       return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download`;
     },
     async deleteAsset(identifier: string, version: string, uuid: string): Promise<AxiosResponse> {
-      return client.delete(`${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}`);
+      return client.delete(`${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`);
     },
   },
 });
