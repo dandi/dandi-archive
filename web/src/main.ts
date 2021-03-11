@@ -29,12 +29,11 @@ Sentry.init({
 
 sync(store, router);
 
-async function loadUser() {
+function loadUser() {
   if (toggles.DJANGO_API) {
     return publishRest.restoreLogin();
-  } else {
-    return girderRest.fetchUser()
   }
+  return girderRest.fetchUser();
 }
 
 loadUser().then(() => {
