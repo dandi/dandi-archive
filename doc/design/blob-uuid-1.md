@@ -26,7 +26,7 @@ A blob is referenced by a key generation function. the value of this key is used
     1. validates the size and that the initially reported ETag matches the actual ETag
     2. checks for collision, since some other task could have finished by this time with the same object
         1. no collision - adds key + ETag to AssetBlob table, delete from Upload table.
-        2. there is collision - delete key record and file in blob store, will return key of an existing record
+        2. there is collision - delete key record and file in uploads, will return key of an existing record
     4. kicks off background process to calculate checksums
 9. CLI calls `POST .../assets/` with the key to register the new asset.
 
