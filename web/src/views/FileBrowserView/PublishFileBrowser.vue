@@ -253,7 +253,10 @@ export default {
     },
 
     showDelete(item) {
-      return !item.folder && publishRest.user.admin || this.owners.includes(publishRest.user.username);
+      const isAdmin = publishRest.user && publishRest.user.admin;
+      const isOwner = publishRest.user && this.owners.map(x => x.username).includes(publishRest.user.username);
+
+      return !item.folder && (isAdmin || isOwner);
     },
 
     openDialog(name) {
