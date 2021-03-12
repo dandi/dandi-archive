@@ -12,8 +12,9 @@
 
         <v-card-text>
           Are you sure you want to delete asset <span
-          class="font-italic">{{dialog.name}}</span>?
-            <strong>This action cannot be undone.</strong>
+            class="font-italic"
+          >{{ dialog.name }}</span>?
+          <strong>This action cannot be undone.</strong>
         </v-card-text>
 
         <v-card-actions>
