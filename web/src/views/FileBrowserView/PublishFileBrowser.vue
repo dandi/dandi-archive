@@ -247,11 +247,15 @@ export default {
       }
     },
 
-    deleteAsset(name) {
+    async deleteAsset(name) {
       const asset = this.itemDeletes[name];
       if (asset !== undefined) {
+        // Delete the asset on the server.
         const { identifier, version, uuid } = asset;
-        publishRest.deleteAsset(identifier, version, uuid);
+        await publishRest.deleteAsset(identifier, version, uuid);
+
+        // Recompute the items to display in the browser.
+        this.$asyncComputed.items.update();
       }
       this.deleteConfirmationDialog = false;
     },
