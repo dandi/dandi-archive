@@ -74,7 +74,7 @@
             </template>
           </v-card-title>
           <v-progress-linear
-            v-if="loading"
+            v-if="$asyncComputed.items.updating"
             indeterminate
           />
           <v-divider v-else />
@@ -153,7 +153,6 @@ export default {
     return {
       rootDirectory,
       location: rootDirectory,
-      loading: false,
       itemDownloads: {},
       itemDeletes: {},
       dialog: {
@@ -173,7 +172,6 @@ export default {
       async get() {
         const { version, identifier, location } = this;
 
-        this.loading = true;
         const data = await publishRest.assetPaths(identifier, version, location);
 
         let mapped = data.map((x) => ({ name: x, folder: isFolder(x) }));
@@ -184,7 +182,6 @@ export default {
           ];
         }
 
-        this.loading = false;
         return mapped;
       },
       default: null,
