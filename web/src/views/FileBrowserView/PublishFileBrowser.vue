@@ -1,5 +1,38 @@
 <template>
   <v-container>
+    <v-dialog
+      v-model="dialog.active"
+      persistent
+      max-width="60vh"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          Really delete this asset?
+        </v-card-title>
+
+        <v-card-text>
+          Are you sure you want to delete asset <span
+          class="font-italic">{{dialog.name}}</span>?
+            <strong>This action cannot be undone.</strong>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            @click="dialog.active = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="error"
+            @click="deleteAsset(dialog.name)"
+          >
+            Yes
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-row>
       <v-col :cols="12">
         <v-card>
@@ -67,45 +100,14 @@
               <v-spacer />
 
               <v-list-item-action>
-                <v-dialog
-                  v-model="deleteConfirmationDialog"
-                  persistent
-                  max-width="60vh"
+                <v-btn
+                  icon
+                  @click="openDialog(item.name)"
                 >
-                  <template v-slot:activator="{ on }">
-                    <v-btn
-                      icon
-                      v-on="on"
-                    >
-                      <v-icon color="error">
-                        mdi-delete
-                      </v-icon>
-                    </v-btn>
-                  </template>
-                  <v-card>
-                    <v-card-title class="headline">
-                      Really delete this asset?
-                    </v-card-title>
-                    <v-card-text>
-                      Are you sure you want to delete this asset? <strong>This
-                        action cannot be undone.</strong>
-                    </v-card-text>
-                    <v-card-actions>
-                      <v-spacer />
-                      <v-btn
-                        @click="deleteConfirmationDialog = false"
-                      >
-                        Cancel
-                      </v-btn>
-                      <v-btn
-                        color="error"
-                        @click="deleteAsset(item.name)"
-                      >
-                        Yes
-                      </v-btn>
-                    </v-card-actions>
-                  </v-card>
-                </v-dialog>
+                  <v-icon color="error">
+                    mdi-delete
+                  </v-icon>
+                </v-btn>
               </v-list-item-action>
 
               <v-list-item-action v-if="itemDownloads[item.name]">
@@ -153,7 +155,10 @@ export default {
       loading: false,
       itemDownloads: {},
       itemDeletes: {},
-      deleteConfirmationDialog: false,
+      dialog: {
+        active: false,
+        name: '',
+      },
     };
   },
   computed: {
@@ -247,6 +252,11 @@ export default {
       }
     },
 
+    openDialog(name) {
+      this.dialog.name = name;
+      this.dialog.active = true;
+    },
+
     async deleteAsset(name) {
       const asset = this.itemDeletes[name];
       if (asset !== undefined) {
@@ -257,7 +267,7 @@ export default {
         // Recompute the items to display in the browser.
         this.$asyncComputed.items.update();
       }
-      this.deleteConfirmationDialog = false;
+      this.dialog.active = false;
     },
   },
 };
