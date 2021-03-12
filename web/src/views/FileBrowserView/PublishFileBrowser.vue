@@ -101,7 +101,7 @@
 
               <v-list-item-action>
                 <v-btn
-                  v-if="!item.folder"
+                  v-if="showDelete(item)"
                   icon
                   @click="openDialog(item.name)"
                 >
@@ -155,6 +155,7 @@ export default {
       location: rootDirectory,
       itemDownloads: {},
       itemDeletes: {},
+      owners: [],
       dialog: {
         active: false,
         name: '',
@@ -173,6 +174,7 @@ export default {
         const { version, identifier, location } = this;
 
         const data = await publishRest.assetPaths(identifier, version, location);
+        this.owners = (await publishRest.owners(identifier)).data;
 
         let mapped = data.map((x) => ({ name: x, folder: isFolder(x) }));
         if (location !== rootDirectory && mapped.length) {
@@ -248,6 +250,10 @@ export default {
       } else {
         this.location = `${this.location}${name}`;
       }
+    },
+
+    showDelete(item) {
+      return !item.folder && publishRest.user.admin || this.owners.includes(publishRest.user.username);
     },
 
     openDialog(name) {
