@@ -1,4 +1,4 @@
-A blob is referenced by a key generation function. the value of this key is used to index the blob in the database table of identities and on the s3 storage. `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<restofkey>`
+A blob is referenced by a key generation function. the value of this key is used to index the blob in the database table of identities and on the s3 storage. `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<key>`
 
 ** database table of identities **: indexed by the key and contains columns for as many types of checksums as we want. these checksums constitute identities of the blob and should use functions that will always return the same value.
 
