@@ -174,7 +174,8 @@ export default {
         const { version, identifier, location } = this;
 
         const data = await publishRest.assetPaths(identifier, version, location);
-        this.owners = (await publishRest.owners(identifier)).data;
+        this.owners = (await publishRest.owners(identifier)).data
+          .map((x) => x.username);
 
         let mapped = data.map((x) => ({ name: x, folder: isFolder(x) }));
         if (location !== rootDirectory && mapped.length) {
@@ -253,8 +254,10 @@ export default {
     },
 
     showDelete(item) {
-      const isAdmin = publishRest.user && publishRest.user.admin;
-      const isOwner = publishRest.user && this.owners.map(x => x.username).includes(publishRest.user.username);
+      const me = publishRest.user ? publishRest.user.username : null;
+
+      const isAdmin = me && publishRest.user.admin;
+      const isOwner = me && this.owners.includes(me);
 
       return !item.folder && (isAdmin || isOwner);
     },
