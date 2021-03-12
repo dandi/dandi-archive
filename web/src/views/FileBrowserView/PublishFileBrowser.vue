@@ -101,6 +101,7 @@
 
               <v-list-item-action>
                 <v-btn
+                  v-if="!item.folder"
                   icon
                   @click="openDialog(item.name)"
                 >
