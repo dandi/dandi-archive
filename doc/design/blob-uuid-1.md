@@ -9,9 +9,12 @@ A blob is referenced by a key generation function. the value of this key is used
 ## Upload (from a CLI)
 
 ### Check process (for de-duplication):
-1. CLI sends expected digest with digest type (e.g., ETag)
-2. API checks for existence of ETag in identity table.
-3. if exists, returns key, if not returns an error.
+1. CLI `GET /blobs/` <-- expected digest with digest type (e.g., ETag). API:
+    1. Looks for an existing AssetBlob with the given digest(s).
+    2. If it exists, return the key (UUID).
+    3. It it doesn't exist, return 404.
+2. If 404, start upload process.
+3. if key, call `POST .../assets/` with the key to register the new asset.
 
 ### Blob upload process:
 1. CLI `/uploads/initialize` <-- `{contentSize , digests: { "dandi-s3-etag": "..." }`. API:
