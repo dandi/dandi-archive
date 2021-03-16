@@ -1,4 +1,3 @@
-from django.core.validators import RegexValidator
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -20,9 +19,7 @@ from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerialize
 
 class AssetRequestSerializer(serializers.Serializer):
     metadata = serializers.JSONField()
-    sha256 = serializers.CharField(
-        max_length=64, validators=[RegexValidator(f'^{AssetBlob.SHA256_REGEX}$')]
-    )
+    uuid = serializers.UUIDField()
 
 
 class AssetFilter(filters.FilterSet):
@@ -96,18 +93,18 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
+        asset_blob = get_object_or_404(AssetBlob, uuid=serializer.validated_data['uuid'])
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:
-            return Response('No path specified in metadata', status=404)
+            return Response('No path specified in metadata.', status=400)
         path = metadata['path']
         asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
         if version.assets.filter(path=path, blob=asset_blob, metadata=asset_metadata).exists():
-            return Response('Asset Already Exists', status=status.HTTP_400_BAD_REQUEST)
+            return Response('Asset already exists.', status=status.HTTP_400_BAD_REQUEST)
 
         asset = Asset(
             path=path,
@@ -142,7 +139,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
+        asset_blob = get_object_or_404(AssetBlob, uuid=serializer.validated_data['uuid'])
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:
