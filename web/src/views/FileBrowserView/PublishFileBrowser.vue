@@ -167,6 +167,19 @@ export default {
     splitLocation() {
       return this.location.split('/');
     },
+
+    me() {
+      return publishRest.user ? publishRest.user.username : null;
+    },
+
+    isAdmin() {
+      return this.me && publishRest.user.admin;
+    },
+
+    isOwner() {
+      return this.me && this.owners.includes(this.me);
+    },
+
     ...mapState('dandiset', ['publishDandiset']),
   },
   asyncComputed: {
@@ -255,12 +268,7 @@ export default {
     },
 
     showDelete(item) {
-      const me = publishRest.user ? publishRest.user.username : null;
-
-      const isAdmin = me && publishRest.user.admin;
-      const isOwner = me && this.owners.includes(me);
-
-      return !item.folder && (isAdmin || isOwner);
+      return !item.folder && (this.isAdmin || this.isOwner);
     },
 
     openDialog(name) {
