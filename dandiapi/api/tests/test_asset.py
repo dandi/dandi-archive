@@ -1,9 +1,11 @@
+from uuid import uuid4
+
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import Asset
 
-from .fuzzy import TIMESTAMP_RE, UUID_RE
+from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, UUID_RE
 
 # Model tests
 
@@ -46,7 +48,6 @@ def test_asset_rest_list(api_client, version, asset):
                 'uuid': str(asset.uuid),
                 'path': asset.path,
                 'size': asset.size,
-                'sha256': asset.sha256,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
             }
@@ -57,6 +58,7 @@ def test_asset_rest_list(api_client, version, asset):
 @pytest.mark.django_db
 def test_asset_rest_retrieve(api_client, version, asset):
     version.assets.add(asset)
+
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.uuid}/'
@@ -66,7 +68,7 @@ def test_asset_rest_retrieve(api_client, version, asset):
         'contentUrl': [
             f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
             f'/versions/{version.version}/assets/{asset.uuid}/download/',
-            asset.blob.blob.url,
+            HTTP_URL_RE,
         ],
     }
 
@@ -81,12 +83,11 @@ def test_asset_create(api_client, user, version, asset_blob):
 
     assert api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'metadata': metadata, 'sha256': asset_blob.sha256},
+        {'metadata': metadata, 'uuid': asset_blob.uuid},
         format='json',
     ).data == {
         'uuid': UUID_RE,
         'path': path,
-        'sha256': asset_blob.sha256,
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
@@ -102,37 +103,31 @@ def test_asset_create_no_valid_blob(api_client, user, version):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)
 
-    path = 'test/create/no/valid/blob.txt'
     metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
-    sha256 = 'f' * 64
+    uuid = uuid4()
 
-    assert (
-        api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {'path': path, 'metadata': metadata, 'sha256': sha256},
-            format='json',
-        ).data
-        == {'detail': 'Not found.'}
+    resp = api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'metadata': metadata, 'uuid': uuid},
+        format='json',
     )
+    assert resp.status_code == 404
 
 
 @pytest.mark.django_db
-def test_asset_create_no_path(api_client, user, version):
+def test_asset_create_no_path(api_client, user, version, asset_blob):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)
 
-    path = 'test/create/no/valid/blob.txt'
     metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
-    sha256 = 'f' * 64
 
-    assert (
-        api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {'path': path, 'metadata': metadata, 'sha256': sha256},
-            format='json',
-        ).data
-        == {'detail': 'Not found.'}
+    resp = api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'metadata': metadata, 'uuid': asset_blob.uuid},
+        format='json',
     )
+    assert resp.status_code == 400
+    assert resp.data == 'No path specified in metadata.'
 
 
 @pytest.mark.django_db
@@ -158,14 +153,13 @@ def test_asset_create_duplicate(api_client, user, version, asset):
     resp = api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
         {
-            'path': asset.path,
             'metadata': asset.metadata.metadata,
-            'sha256': asset.sha256,
+            'uuid': asset.blob.uuid,
         },
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'Asset Already Exists'
+    assert resp.data == 'Asset already exists.'
 
 
 @pytest.mark.django_db
@@ -176,19 +170,17 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {'path': new_path, 'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
-    new_sha256 = asset_blob.sha256
 
     resp = api_client.put(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.uuid}/',
-        {'metadata': new_metadata, 'sha256': new_sha256},
+        {'metadata': new_metadata, 'uuid': asset_blob.uuid},
         format='json',
     ).data
     assert resp == {
         'uuid': UUID_RE,
         'path': new_path,
         'size': asset_blob.size,
-        'sha256': new_sha256,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'metadata': new_metadata,
