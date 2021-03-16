@@ -8,7 +8,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AssetMetadata,
     Dandiset,
-    Validation,
+    Upload,
     Version,
     VersionMetadata,
 )
@@ -68,6 +68,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
 
+    uuid = factory.Faker('uuid4')
     blob = factory.django.FileField(data=factory.Faker('binary', length=100))
     size = 13  # len(somefilebytes)
 
@@ -76,6 +77,16 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         h = hashlib.sha256()
         h.update(self.blob.read())
         return h.hexdigest()
+
+    @factory.lazy_attribute
+    def etag(self):
+        h = hashlib.md5()
+        h.update(self.blob.read())
+        return h.hexdigest()
+
+    @factory.lazy_attribute
+    def size(self):
+        return len(self.blob.read())
 
 
 class AssetMetadataFactory(factory.django.DjangoModelFactory):
@@ -94,17 +105,20 @@ class AssetFactory(factory.django.DjangoModelFactory):
     blob = factory.SubFactory(AssetBlobFactory)
 
 
-class ValidationFactory(factory.django.DjangoModelFactory):
+class UploadFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Validation
+        model = Upload
 
-    blob = factory.django.FileField(data=b'validationbytes')
+    uuid = factory.Faker('uuid4')
+    upload_id = factory.Faker('uuid4')
+    blob = factory.django.FileField(data=factory.Faker('binary', length=100))
 
     @factory.lazy_attribute
-    def sha256(self):
-        h = hashlib.sha256()
-        h.update(b'validationbytes')
-        return h.hexdigest()
+    def size(self):
+        return self.blob.size
 
-    state = 'SUCCEEDED'
-    error = factory.Faker('sentence')
+    @factory.lazy_attribute
+    def etag(self):
+        h = hashlib.md5()
+        h.update(self.blob.read())
+        return h.hexdigest()
