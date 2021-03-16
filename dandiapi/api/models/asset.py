@@ -10,33 +10,38 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.copy import copy_object
 from dandiapi.api.storage import create_s3_storage
 
-from .validation import Validation
 from .version import Version
 
 
-def _get_asset_blob_storage() -> Storage:
+def get_asset_blob_storage() -> Storage:
     return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
-def _get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
-    # return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
+def get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
     return filename
 
 
 class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
+    ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
+    uuid = models.UUIDField(unique=True)
     blob = models.FileField(
-        blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
+        blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
     )
-    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
+    sha256 = models.CharField(
+        null=True,
+        blank=True,
+        max_length=64,
+        validators=[RegexValidator(f'^{SHA256_REGEX}$')],
+    )
+    etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
     size = models.PositiveBigIntegerField()
 
     class Meta:
-        indexes = [HashIndex(fields=['sha256'])]
+        indexes = [HashIndex(fields=['etag'])]
 
     @property
     def references(self) -> int:
@@ -44,28 +49,6 @@ class AssetBlob(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob.name
-
-    @classmethod
-    def from_validation(cls, validation: Validation):
-        """
-        Create an AssetBlob from a Validation if necessary.
-
-        This operation includes copying the object from the uploads zone to the blobs zone,
-        and deleting the blob from the uploads zone.
-        """
-        try:
-            # Use an existing AssetBlob if one already exists
-            # This should be preemptively checked in the /uploads/validate/ endpoint, but
-            # just in case a task gets run twice, we don't want to copy it twice.
-            return cls.objects.get(sha256=validation.sha256), False
-        except cls.DoesNotExist:
-            # Copy the data from the upload zone to the blob zone
-            size = validation.blob.size
-            destination = (
-                f'blobs/{validation.sha256[0:3]}/{validation.sha256[3:6]}/{validation.sha256[6:]}'
-            )
-            copy_object(validation, destination)
-            return cls(blob=destination, sha256=validation.sha256, size=size), True
 
 
 class AssetMetadata(TimeStampedModel):
