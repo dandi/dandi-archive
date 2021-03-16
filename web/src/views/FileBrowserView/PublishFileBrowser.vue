@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-dialog
-      v-model="dialog.active"
+      v-model="dialogActive"
       persistent
       max-width="60vh"
     >
@@ -13,20 +13,20 @@
         <v-card-text>
           Are you sure you want to delete asset <span
             class="font-italic"
-          >{{ dialog.name }}</span>?
+          >{{ dialogName }}</span>?
           <strong>This action cannot be undone.</strong>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer />
           <v-btn
-            @click="dialog.active = false"
+            @click="dialogActive = false"
           >
             Cancel
           </v-btn>
           <v-btn
             color="error"
-            @click="deleteAsset(dialog.name)"
+            @click="deleteAsset(dialogName)"
           >
             Yes
           </v-btn>
@@ -157,10 +157,8 @@ export default {
       itemDownloads: {},
       itemDeletes: {},
       owners: [],
-      dialog: {
-        active: false,
-        name: '',
-      },
+      dialogActive: false,
+      dialogName: '',
     };
   },
   computed: {
@@ -272,8 +270,8 @@ export default {
     },
 
     openDialog(name) {
-      this.dialog.name = name;
-      this.dialog.active = true;
+      this.dialogName = name;
+      this.dialogActive = true;
     },
 
     async deleteAsset(name) {
@@ -286,7 +284,7 @@ export default {
         // Recompute the items to display in the browser.
         this.$asyncComputed.items.update();
       }
-      this.dialog.active = false;
+      this.dialogActive = false;
     },
   },
 };
