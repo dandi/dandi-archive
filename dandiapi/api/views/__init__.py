@@ -4,10 +4,10 @@ from .dandiset import DandisetViewSet
 from .info import info_view
 from .stats import stats_view
 from .upload import (
+    blob_read_view,
     upload_complete_view,
-    upload_get_validation_view,
     upload_initialize_view,
-    upload_validate_view,
+    upload_validation_view,
 )
 from .users import users_me_view, users_search_view
 from .version import VersionViewSet
@@ -17,10 +17,10 @@ __all__ = [
     'DandisetViewSet',
     'VersionViewSet',
     'auth_token_view',
+    'blob_read_view',
     'upload_initialize_view',
     'upload_complete_view',
-    'upload_validate_view',
-    'upload_get_validation_view',
+    'upload_validation_view',
     'users_me_view',
     'users_search_view',
     'stats_view',
