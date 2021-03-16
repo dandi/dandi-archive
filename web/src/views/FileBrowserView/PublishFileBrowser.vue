@@ -112,10 +112,10 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="itemDownloads[item.name]">
+              <v-list-item-action v-if="itemDownload(item.name)">
                 <v-btn
                   icon
-                  :href="itemDownloads[item.name]"
+                  :href="itemDownload(item.name)"
                 >
                   <v-icon color="primary">
                     mdi-download
@@ -154,8 +154,7 @@ export default {
     return {
       rootDirectory,
       location: rootDirectory,
-      itemDownloads: {},
-      itemDeletes: {},
+      itemData: {},
       owners: [],
       dialogActive: false,
       dialogName: '',
@@ -220,8 +219,6 @@ export default {
       }
 
       // Create download and delete links in local data for each item in items
-      this.itemDownloads = {};
-      this.itemDeletes = {};
       const { identifier, version, location } = this;
 
       items.filter((x) => !x.folder).map(async (item) => {
@@ -230,16 +227,13 @@ export default {
           results: [asset],
         } = await publishRest.assets(identifier, version, { params: { path: relativePath } });
 
-        this.$set(
-          this.itemDownloads,
-          item.name,
-          publishRest.assetDownloadURI(identifier, version, asset),
-        );
-
-        this.$set(this.itemDeletes, item.name, {
-          identifier,
-          version,
-          uuid: asset.uuid,
+        this.$set(this.itemData, item.name, {
+          download: publishRest.assetDownloadURI(identifier, version, asset),
+          delete: {
+            identifier,
+            version,
+            uuid: asset.uuid,
+          },
         });
       });
     },
@@ -274,8 +268,16 @@ export default {
       this.dialogActive = true;
     },
 
+    itemDownload(name) {
+      return this.itemData[name] && this.itemData[name].download;
+    },
+
+    itemDelete(name) {
+      return this.itemData[name] && this.itemData[name].delete;
+    },
+
     async deleteAsset(name) {
-      const asset = this.itemDeletes[name];
+      const asset = this.itemDelete(name);
       if (asset !== undefined) {
         // Delete the asset on the server.
         const { identifier, version, uuid } = asset;
