@@ -16,7 +16,7 @@ from dandiapi.api.views import (
     stats_view,
     upload_complete_view,
     upload_initialize_view,
-    upload_validation_view,
+    upload_validate_view,
     users_me_view,
     users_search_view,
 )
@@ -74,9 +74,9 @@ urlpatterns = [
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     path('api/uploads/complete/', upload_complete_view, name='upload-complete'),
     re_path(
-        r'^api/uploads/validations/(?P<uuid>[0-9a-f\-]{36})/$',
-        upload_validation_view,
-        name='upload-validation',
+        r'^api/uploads/validate/(?P<uuid>[0-9a-f\-]{36})/$',
+        upload_validate_view,
+        name='upload-validate',
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),

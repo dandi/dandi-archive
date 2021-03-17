@@ -175,7 +175,7 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def upload_validation_view(request: Request, uuid: str) -> HttpResponseBase:
+def upload_validate_view(request: Request, uuid: str) -> HttpResponseBase:
     """
     Verify that an upload completed successfully and mint a new AssetBlob.
 

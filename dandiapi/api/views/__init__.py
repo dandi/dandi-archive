@@ -7,7 +7,7 @@ from .upload import (
     blob_read_view,
     upload_complete_view,
     upload_initialize_view,
-    upload_validation_view,
+    upload_validate_view,
 )
 from .users import users_me_view, users_search_view
 from .version import VersionViewSet
@@ -20,7 +20,7 @@ __all__ = [
     'blob_read_view',
     'upload_initialize_view',
     'upload_complete_view',
-    'upload_validation_view',
+    'upload_validate_view',
     'users_me_view',
     'users_search_view',
     'stats_view',

@@ -197,7 +197,7 @@ def test_upload_initialize_and_complete(api_client, user, file_size):
 def test_upload_validate(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    assert api_client.post(f'/api/uploads/validations/{upload.uuid}/').status_code == 204
+    assert api_client.post(f'/api/uploads/validate/{upload.uuid}/').status_code == 204
 
     # Verify that a new AssetBlob was created
     asset_blob = AssetBlob.objects.get(uuid=upload.uuid)
@@ -213,7 +213,7 @@ def test_upload_validate_wrong_size(api_client, user, upload):
 
     upload.blob.save(upload.blob.name, ContentFile(b'not 100 bytes'))
 
-    resp = api_client.post(f'/api/uploads/validations/{upload.uuid}/')
+    resp = api_client.post(f'/api/uploads/validate/{upload.uuid}/')
     assert resp.status_code == 400
     assert resp.data == ['Size does not match.']
 
@@ -228,7 +228,7 @@ def test_upload_validate_wrong_etag(api_client, user, upload):
     upload.etag = uuid.uuid4()
     upload.save()
 
-    resp = api_client.post(f'/api/uploads/validations/{upload.uuid}/')
+    resp = api_client.post(f'/api/uploads/validate/{upload.uuid}/')
     assert resp.status_code == 400
     assert resp.data == ['ETag does not match.']
 
