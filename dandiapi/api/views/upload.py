@@ -83,7 +83,7 @@ def blob_read_view(request: Request) -> HttpResponseBase:
     """Fetch an existing asset blob by digest, if it exists."""
     request_serializer = DigestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    if request_serializer.validated_data['algorithm'] != 'dandi:dandi-s3-etag':
+    if request_serializer.validated_data['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Algorithm', status=400)
     etag = request_serializer.validated_data['value']
 
@@ -113,7 +113,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     file_size = request_serializer.validated_data['file_size']
     digest = request_serializer.validated_data['digest']
-    if digest['algorithm'] != 'dandi:dandi-s3-etag':
+    if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
 

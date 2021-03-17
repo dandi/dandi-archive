@@ -18,7 +18,7 @@ def test_blob_read(api_client, asset_blob):
 
     assert api_client.post(
         '/api/blobs/digest/',
-        {'algorithm': 'dandi:dandi-s3-etag', 'value': asset_blob.etag},
+        {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
         format='json',
     ).data == {
         'uuid': str(asset_blob.uuid),
@@ -45,7 +45,7 @@ def test_blob_read_does_not_exist(api_client):
 
     resp = api_client.post(
         '/api/blobs/digest/',
-        {'algorithm': 'dandi:dandi-s3-etag', 'value': 'not etag'},
+        {'algorithm': 'dandi:dandi-etag', 'value': 'not etag'},
         format='json',
     )
     assert resp.status_code == 404
@@ -61,7 +61,7 @@ def test_upload_initialize(api_client, user):
         '/api/uploads/initialize/',
         {
             'file_size': file_size,
-            'digest': {'algorithm': 'dandi:dandi-s3-etag', 'value': 'f' * 32 + '-1'},
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
         },
         format='json',
     )
@@ -91,7 +91,7 @@ def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
         '/api/uploads/initialize/',
         {
             'file_size': asset_blob.size,
-            'digest': {'algorithm': 'dandi:dandi-s3-etag', 'value': asset_blob.etag},
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
         },
         format='json',
     )
@@ -156,7 +156,7 @@ def test_upload_initialize_and_complete(api_client, user, file_size):
         '/api/uploads/initialize/',
         {
             'file_size': file_size,
-            'digest': {'algorithm': 'dandi:dandi-s3-etag', 'value': 'f' * 32 + '-1'},
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
         },
         format='json',
     ).data
