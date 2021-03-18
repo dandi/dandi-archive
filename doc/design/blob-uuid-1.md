@@ -9,7 +9,7 @@ A blob is referenced by a key generation function. the value of this key is used
 ## Upload (from a CLI)
 
 ### Check process (for de-duplication):
-1. CLI `POST /blobs/digests/` <-- `{"algorithm": "dandi:dandi-s3-etag", "value": "123etag123"}`. API:
+1. CLI `POST /blobs/digests/` <-- `{"algorithm": "dandi:dandi-etag", "value": "123etag123"}`. API:
     1. Looks for an existing AssetBlob with the given digest(s).
     2. If it exists, return the key (UUID).
     3. It it doesn't exist, return 404.
