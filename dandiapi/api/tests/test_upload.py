@@ -60,7 +60,7 @@ def test_upload_initialize(api_client, user):
     resp = api_client.post(
         '/api/uploads/initialize/',
         {
-            'content_size': content_size,
+            'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
         },
         format='json',
@@ -90,7 +90,7 @@ def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
     resp = api_client.post(
         '/api/uploads/initialize/',
         {
-            'content_size': asset_blob.size,
+            'contentSize': asset_blob.size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
         },
         format='json',
@@ -152,7 +152,7 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
     initialization = api_client.post(
         '/api/uploads/initialize/',
         {
-            'content_size': content_size,
+            'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
         },
         format='json',

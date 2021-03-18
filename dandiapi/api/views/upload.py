@@ -25,7 +25,7 @@ class DigestSerializer(serializers.Serializer):
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
-    content_size = serializers.IntegerField(min_value=1)  # TODO Content
+    contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
     digest = DigestSerializer()
 
 
@@ -110,7 +110,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     """
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    content_size = request_serializer.validated_data['content_size']
+    content_size = request_serializer.validated_data['contentSize']
     digest = request_serializer.validated_data['digest']
     if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
