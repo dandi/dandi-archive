@@ -55,12 +55,12 @@ def test_blob_read_does_not_exist(api_client):
 def test_upload_initialize(api_client, user):
     api_client.force_authenticate(user=user)
 
-    file_size = 123
+    content_size = 123
 
     resp = api_client.post(
         '/api/uploads/initialize/',
         {
-            'file_size': file_size,
+            'content_size': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
         },
         format='json',
@@ -73,7 +73,7 @@ def test_upload_initialize(api_client, user):
             'parts': [
                 {
                     'part_number': 1,
-                    'size': file_size,
+                    'size': content_size,
                     'upload_url': HTTP_URL_RE,
                 }
             ],
@@ -90,7 +90,7 @@ def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
     resp = api_client.post(
         '/api/uploads/initialize/',
         {
-            'file_size': asset_blob.size,
+            'content_size': asset_blob.size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
         },
         format='json',
@@ -117,12 +117,12 @@ def test_upload_initialize_unauthorized(api_client):
 def test_upload_complete(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    file_size = 123
+    content_size = 123
 
     assert api_client.post(
         f'/api/uploads/{upload.uuid}/complete/',
         {
-            'parts': [{'part_number': 1, 'size': file_size, 'etag': 'test-etag'}],
+            'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
         },
         format='json',
     ).data == {
@@ -144,15 +144,15 @@ def test_upload_complete_unauthorized(api_client, upload):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('file_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_upload_initialize_and_complete(api_client, user, file_size):
+@pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
+def test_upload_initialize_and_complete(api_client, user, content_size):
     api_client.force_authenticate(user=user)
 
     # Get the presigned upload URL
     initialization = api_client.post(
         '/api/uploads/initialize/',
         {
-            'file_size': file_size,
+            'content_size': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
         },
         format='json',
