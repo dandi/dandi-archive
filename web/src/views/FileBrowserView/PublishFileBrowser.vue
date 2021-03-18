@@ -229,11 +229,7 @@ export default {
 
         this.$set(this.itemData, item.name, {
           download: publishRest.assetDownloadURI(identifier, version, asset),
-          delete: {
-            identifier,
-            version,
-            uuid: asset.uuid,
-          },
+          uuid: asset.uuid,
         });
       });
     },
@@ -272,16 +268,11 @@ export default {
       return this.itemData[name] && this.itemData[name].download;
     },
 
-    itemDelete(name) {
-      return this.itemData[name] && this.itemData[name].delete;
-    },
-
     async deleteAsset(name) {
-      const asset = this.itemDelete(name);
-      if (asset !== undefined) {
+      const uuid = this.itemData[name] && this.itemData[name].uuid;
+      if (uuid !== undefined) {
         // Delete the asset on the server.
-        const { identifier, version, uuid } = asset;
-        await publishRest.deleteAsset(identifier, version, uuid);
+        await publishRest.deleteAsset(this.identifier, this.version, uuid);
 
         // Recompute the items to display in the browser.
         this.$asyncComputed.items.update();
