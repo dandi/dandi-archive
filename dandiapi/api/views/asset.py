@@ -31,7 +31,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
-    queryset = Asset.objects.all()
+    queryset = Asset.objects.all().order_by('created')
 
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
