@@ -17,7 +17,7 @@ A blob is referenced by a key generation function. the value of this key is used
 3. if key, call `POST .../assets/` with the key to register the new asset.
 
 ### Blob upload process:
-1. CLI `/uploads/initialize` <-- `{"content_size": 12345 , "digest": {"algorithm": "dandi:dandi-s3-etag", "value": "..."}`. API:
+1. CLI `/uploads/initialize` <-- `{"content_size": 12345 , "digest": {"algorithm": "dandi:dandi-etag", "value": "..."}`. API:
    1. Checks if there is already an asset blob with the given digest. If so, return 409 CONFLICT with the `blobs:key` in the header (`Location`?).
    2. generates key, determines upload location `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<key>`
    3. saves initial data (size, ETag, key) to Upload table
