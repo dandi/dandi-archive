@@ -114,17 +114,14 @@ def test_upload_initialize_unauthorized(api_client):
 
 
 @pytest.mark.django_db
-def test_upload_complete(api_client, user):
+def test_upload_complete(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    file_name = 'test.txt'
     file_size = 123
 
     assert api_client.post(
-        '/api/uploads/complete/',
+        f'/api/uploads/{upload.uuid}/complete/',
         {
-            'object_key': file_name,
-            'upload_id': 'test-uuid',
             'parts': [{'part_number': 1, 'size': file_size, 'etag': 'test-etag'}],
         },
         format='json',
@@ -135,10 +132,10 @@ def test_upload_complete(api_client, user):
 
 
 @pytest.mark.django_db
-def test_upload_complete_unauthorized(api_client):
+def test_upload_complete_unauthorized(api_client, upload):
     assert (
         api_client.post(
-            '/api/uploads/complete/',
+            f'/api/uploads/{upload.uuid}/complete/',
             {},
             format='json',
         ).status_code
@@ -161,8 +158,7 @@ def test_upload_initialize_and_complete(api_client, user, file_size):
         format='json',
     ).data
 
-    object_key = initialization['multipart_upload']['object_key']
-    upload_id = initialization['multipart_upload']['upload_id']
+    uuid = initialization['uuid']
     parts = initialization['multipart_upload']['parts']
 
     # Send the data directly to the object store
@@ -176,10 +172,8 @@ def test_upload_initialize_and_complete(api_client, user, file_size):
 
     # Get the presigned complete URL
     completion = api_client.post(
-        '/api/uploads/complete/',
+        f'/api/uploads/{uuid}/complete/',
         {
-            'object_key': object_key,
-            'upload_id': upload_id,
             'parts': transferred_parts,
         },
         format='json',
@@ -190,14 +184,15 @@ def test_upload_initialize_and_complete(api_client, user, file_size):
     assert completion_response.status_code == 200
 
     # Verify object was uploaded
-    assert AssetBlob.blob.field.storage.exists(object_key)
+    upload = Upload.objects.get(uuid=uuid)
+    assert AssetBlob.blob.field.storage.exists(upload.blob.name)
 
 
 @pytest.mark.django_db
 def test_upload_validate(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    assert api_client.post(f'/api/uploads/validate/{upload.uuid}/').status_code == 204
+    assert api_client.post(f'/api/uploads/{upload.uuid}/validate/').status_code == 204
 
     # Verify that a new AssetBlob was created
     asset_blob = AssetBlob.objects.get(uuid=upload.uuid)
@@ -213,7 +208,7 @@ def test_upload_validate_wrong_size(api_client, user, upload):
 
     upload.blob.save(upload.blob.name, ContentFile(b'not 100 bytes'))
 
-    resp = api_client.post(f'/api/uploads/validate/{upload.uuid}/')
+    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
     assert resp.status_code == 400
     assert resp.data == ['Size does not match.']
 
@@ -228,7 +223,7 @@ def test_upload_validate_wrong_etag(api_client, user, upload):
     upload.etag = uuid.uuid4()
     upload.save()
 
-    resp = api_client.post(f'/api/uploads/validate/{upload.uuid}/')
+    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
     assert resp.status_code == 400
     assert resp.data == ['ETag does not match.']
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -54,16 +56,13 @@ class PartCompletionRequestSerializer(serializers.Serializer):
 
 
 class UploadCompletionRequestSerializer(serializers.Serializer):
-    object_key = serializers.CharField(trim_whitespace=False)
-    upload_id = serializers.CharField()
     parts = PartCompletionRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> TransferredParts:
-        parts = [
+    def create(self, validated_data) -> List[TransferredPart]:
+        return [
             TransferredPart(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
-        return TransferredParts(parts=parts, **validated_data)
 
 
 class UploadCompletionResponseSerializer(serializers.Serializer):
@@ -140,7 +139,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def upload_complete_view(request: Request) -> HttpResponseBase:
+def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
 
@@ -150,7 +149,15 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
     """
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    completion: TransferredParts = request_serializer.save()
+    parts: List[TransferredPart] = request_serializer.save()
+
+    upload = get_object_or_404(Upload, uuid=uuid)
+
+    completion = TransferredParts(
+        object_key=upload.blob.name,
+        upload_id=str(upload.upload_id),
+        parts=parts,
+    )
 
     completed_upload = MultipartManager.from_storage(AssetBlob.blob.field.storage).complete_upload(
         completion
