@@ -17,8 +17,8 @@ from .factories import (
     DandisetFactory,
     DraftVersionFactory,
     PublishedVersionFactory,
+    UploadFactory,
     UserFactory,
-    ValidationFactory,
     VersionMetadataFactory,
 )
 
@@ -36,7 +36,7 @@ register(DraftVersionFactory)
 # registering DraftVersionFactory after PublishedVersionFactory means
 # the fixture `version` will always be a draft
 register(UserFactory)
-register(ValidationFactory)
+register(UploadFactory)
 register(VersionMetadataFactory)
 
 

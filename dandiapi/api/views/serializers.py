@@ -1,15 +1,7 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
-from dandiapi.api.models import (
-    Asset,
-    AssetBlob,
-    AssetMetadata,
-    Dandiset,
-    Validation,
-    Version,
-    VersionMetadata,
-)
+from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
 
 
 # The default ModelSerializer for User fails if the user already exists
@@ -82,7 +74,7 @@ class AssetBlobSerializer(serializers.ModelSerializer):
         model = AssetBlob
         fields = [
             'uuid',
-            'path',
+            'etag',
             'sha256',
             'size',
         ]
@@ -100,7 +92,6 @@ class AssetSerializer(serializers.ModelSerializer):
         fields = [
             'uuid',
             'path',
-            'sha256',
             'size',
             'created',
             'modified',
@@ -113,19 +104,3 @@ class AssetDetailSerializer(AssetSerializer):
         fields = AssetSerializer.Meta.fields + ['metadata']
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
-
-
-class ValidationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Validation
-        fields = [
-            'state',
-            'sha256',
-            'created',
-            'modified',
-        ]
-
-
-class ValidationErrorSerializer(serializers.ModelSerializer):
-    class Meta(ValidationSerializer.Meta):
-        fields = ValidationSerializer.Meta.fields + ['error']

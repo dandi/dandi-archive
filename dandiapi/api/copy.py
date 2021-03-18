@@ -1,5 +1,3 @@
-from dandiapi.api.models.validation import Validation
-
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
 except ImportError:
@@ -15,19 +13,17 @@ except ImportError:
 PART_SIZE = 500 * 1024 * 1024  # 500 MB
 
 
-def copy_object(validation: Validation, dest_key: str):
-    storage = Validation.blob.field.storage
+def copy_object(storage, source_key: str, dest_key: str):
     source_bucket = storage.bucket_name
     # TODO: we may eventually want different buckets
     dest_bucket = source_bucket
-    source_key = validation.blob.name
 
-    if isinstance(Validation.blob.field.storage, S3Boto3Storage):
+    if isinstance(storage, S3Boto3Storage):
         _copy_object_s3(storage, source_bucket, source_key, dest_bucket, dest_key)
-    elif isinstance(Validation.blob.field.storage, MinioStorage):
+    elif isinstance(storage, MinioStorage):
         _copy_object_minio(storage, source_bucket, source_key, dest_bucket, dest_key)
     else:
-        raise ValueError(f'Unknown Validation storage {Validation.blob.field.storage}')
+        raise ValueError(f'Unknown storage {storage}')
 
 
 def _copy_object_s3(

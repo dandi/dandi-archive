@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import List
 
-from django.core.validators import RegexValidator
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -15,13 +14,19 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
 
-from dandiapi.api.models import AssetBlob, Validation
-from dandiapi.api.tasks import validate
-from dandiapi.api.views.serializers import ValidationErrorSerializer, ValidationSerializer
+from dandiapi.api.models import AssetBlob, Upload
+from dandiapi.api.tasks import calculate_sha256
+from dandiapi.api.views.serializers import AssetBlobSerializer
+
+
+class DigestSerializer(serializers.Serializer):
+    algorithm = serializers.CharField()
+    value = serializers.CharField()
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
-    file_size = serializers.IntegerField(min_value=1)
+    contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
+    digest = DigestSerializer()
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -30,10 +35,15 @@ class PartInitializationResponseSerializer(serializers.Serializer):
     upload_url = serializers.URLField()
 
 
-class UploadInitializationResponseSerializer(serializers.Serializer):
+class MultipartInitializationResponseSerializer(serializers.Serializer):
     object_key = serializers.CharField(trim_whitespace=False)
     upload_id = serializers.CharField()
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
+
+
+class UploadInitializationResponseSerializer(serializers.Serializer):
+    uuid = serializers.CharField()
+    multipart_upload = MultipartInitializationResponseSerializer()
 
 
 class PartCompletionRequestSerializer(serializers.Serializer):
@@ -46,16 +56,13 @@ class PartCompletionRequestSerializer(serializers.Serializer):
 
 
 class UploadCompletionRequestSerializer(serializers.Serializer):
-    object_key = serializers.CharField(trim_whitespace=False)
-    upload_id = serializers.CharField()
     parts = PartCompletionRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> TransferredParts:
-        parts = [
+    def create(self, validated_data) -> List[TransferredPart]:
+        return [
             TransferredPart(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
         ]
-        return TransferredParts(parts=parts, **validated_data)
 
 
 class UploadCompletionResponseSerializer(serializers.Serializer):
@@ -63,13 +70,25 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
     body = serializers.CharField(trim_whitespace=False)
 
 
-class UploadValidationRequestSerializer(serializers.Serializer):
-    object_key = serializers.CharField(trim_whitespace=False, required=False)
-    sha256 = serializers.CharField(
-        trim_whitespace=False,
-        required=True,
-        validators=[RegexValidator(Validation.SHA256_REGEX)],
-    )
+@swagger_auto_schema(
+    method='POST',
+    request_body=DigestSerializer(),
+    responses={200: AssetBlobSerializer()},
+)
+@api_view(['POST'])
+@parser_classes([JSONParser])
+@permission_classes([])
+def blob_read_view(request: Request) -> HttpResponseBase:
+    """Fetch an existing asset blob by digest, if it exists."""
+    request_serializer = DigestSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+    if request_serializer.validated_data['algorithm'] != 'dandi:dandi-etag':
+        return Response('Unsupported Digest Algorithm', status=400)
+    etag = request_serializer.validated_data['value']
+
+    asset_blob = get_object_or_404(AssetBlob, etag=etag)
+    response_serializer = AssetBlobSerializer(asset_blob)
+    return Response(response_serializer.data)
 
 
 @swagger_auto_schema(
@@ -91,20 +110,22 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     """
     request_serializer = UploadInitializationRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    upload_request: Dict = request_serializer.validated_data
+    content_size = request_serializer.validated_data['contentSize']
+    digest = request_serializer.validated_data['digest']
+    if digest['algorithm'] != 'dandi:dandi-etag':
+        return Response('Unsupported Digest Type', status=400)
+    etag = digest['value']
 
-    # TODO The first argument to generate_filename() is an instance of the model.
-    # We do not and will never have an instance of the model during field upload.
-    # Maybe we need a different generate method/upload_to with a different signature?
-    # Since we are saving Validations with a UUID instead of a filename, we don't need
-    # any arguments at all.
-    object_key = Validation.blob.field.storage.generate_filename(
-        Validation.blob.field.upload_to(None, None)
-    )
+    assets = AssetBlob.objects.filter(etag=etag)
+    if assets.exists():
+        return Response(
+            'Blob already exists.',
+            status=409,
+            headers={'Location': assets.first().uuid},
+        )
 
-    initialization = MultipartManager.from_storage(Validation.blob.field.storage).initialize_upload(
-        object_key, upload_request['file_size']
-    )
+    upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
+    upload.save()
 
     response_serializer = UploadInitializationResponseSerializer(initialization)
     return Response(response_serializer.data)
@@ -118,7 +139,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def upload_complete_view(request: Request) -> HttpResponseBase:
+def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
 
@@ -128,9 +149,17 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
     """
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    completion: TransferredParts = request_serializer.save()
+    parts: List[TransferredPart] = request_serializer.save()
 
-    completed_upload = MultipartManager.from_storage(Validation.blob.field.storage).complete_upload(
+    upload = get_object_or_404(Upload, uuid=uuid)
+
+    completion = TransferredParts(
+        object_key=upload.blob.name,
+        upload_id=str(upload.upload_id),
+        parts=parts,
+    )
+
+    completed_upload = MultipartManager.from_storage(AssetBlob.blob.field.storage).complete_upload(
         completion
     )
 
@@ -145,77 +174,34 @@ def upload_complete_view(request: Request) -> HttpResponseBase:
 
 @swagger_auto_schema(
     method='POST',
-    request_body=UploadValidationRequestSerializer(),
     responses={
-        204: 'No content',
-        400: 'Validation already in progress, '
-        'no existing validation for the given checksum, '
-        'or the specified object key does not exist',
+        204: 'AssetBlob created with the same UUID',
+        400: 'The specified upload has not completed or has failed',
     },
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def upload_validate_view(request: Request) -> HttpResponseBase:
+def upload_validate_view(request: Request, uuid: str) -> HttpResponseBase:
     """
-    Start the validation process for an existing object.
+    Verify that an upload completed successfully and mint a new AssetBlob.
 
-    The validation process checks that the given sha256 checksum matches the checksum calculated on
-    the uploaded object, and that Dandi CLI validation succeeds. Validation must succeed before an
-    asset can be registered.
-    If the object_key is not specified, it will be looked up using the sha256 checksum if a valid
-    object has been validated before. This allows clients to check if blobs have already been
-    uploaded before uploading it themselves.
+    Also starts the asynchronous checksum calculation process.
     """
-    request_serializer = UploadValidationRequestSerializer(data=request.data)
-    request_serializer.is_valid(raise_exception=True)
-    # validation: Validation = request_serializer.save()
+    upload = get_object_or_404(Upload, uuid=uuid)
 
-    if 'object_key' in request_serializer.validated_data:
-        # Use uploaded data
-        blob = request_serializer.validated_data['object_key']
-    else:
-        # Use blob from an AssetBlob
-        try:
-            asset_blob = AssetBlob.objects.get(sha256=request_serializer.validated_data['sha256'])
-        except AssetBlob.DoesNotExist:
-            raise ValidationError('A validation for an object with that checksum does not exist.')
-        blob = asset_blob.blob
-
-    sha256 = request_serializer.validated_data['sha256']
-
-    try:
-        validation = Validation.objects.get(sha256=sha256)
-        if validation.state == Validation.State.IN_PROGRESS:
-            return Response('Validation already in progress.')
-        validation.blob = blob
-        validation.state = Validation.State.IN_PROGRESS
-    except Validation.DoesNotExist:
-        validation = Validation(
-            blob=blob,
-            sha256=request_serializer.validated_data['sha256'],
-            state=Validation.State.IN_PROGRESS,
-        )
-
-    if not validation.object_key_exists():
+    # Verify that the upload was successful
+    if not upload.object_key_exists():
         raise ValidationError('Object does not exist.')
+    if upload.size != upload.actual_size():
+        raise ValidationError('Size does not match.')
+    if upload.etag != upload.actual_etag():
+        raise ValidationError('ETag does not match.')
 
-    validation.save()
+    asset_blob = upload.to_asset_blob()
+    asset_blob.save()
+    # Clean up the upload
+    upload.delete()
 
-    validate.delay(validation.id)
+    calculate_sha256.delay(asset_blob.uuid)
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@swagger_auto_schema(method='GET', responses={200: ValidationErrorSerializer()})
-@api_view(['GET'])
-@parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
-def upload_get_validation_view(request: Request, sha256: str) -> HttpResponseBase:
-    """Get the status of a validation."""
-    validation = get_object_or_404(Validation, sha256=sha256)
-
-    if validation.state == Validation.State.FAILED:
-        response_serializer = ValidationErrorSerializer(validation)
-    else:
-        response_serializer = ValidationSerializer(validation)
-    return Response(response_serializer.data)

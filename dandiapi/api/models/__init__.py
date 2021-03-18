@@ -1,6 +1,6 @@
 from .asset import Asset, AssetBlob, AssetMetadata
 from .dandiset import Dandiset
-from .validation import Validation
+from .upload import Upload
 from .version import Version, VersionMetadata
 
 __all__ = [
@@ -8,7 +8,7 @@ __all__ = [
     'AssetBlob',
     'AssetMetadata',
     'Dandiset',
-    'Validation',
+    'Upload',
     'Version',
     'VersionMetadata',
 ]

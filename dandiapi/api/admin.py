@@ -6,7 +6,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AssetMetadata,
     Dandiset,
-    Validation,
+    Upload,
     Version,
     VersionMetadata,
 )
@@ -37,8 +37,8 @@ class VersionAdmin(admin.ModelAdmin):
 
 @admin.register(AssetBlob)
 class AssetBlobAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob', 'references', 'size', 'modified', 'created']
-    list_display_links = ['id', 'blob']
+    list_display = ['id', 'uuid', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
+    list_display_links = ['id', 'uuid']
 
 
 @admin.register(AssetMetadata)
@@ -69,7 +69,7 @@ class AssetAdmin(admin.ModelAdmin):
     # inlines = [AssetBlobInline]
 
 
-@admin.register(Validation)
-class ValidationAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob', 'state', 'sha256', 'error', 'modified', 'created']
-    list_display_links = ['id', 'blob', 'sha256']
+@admin.register(Upload)
+class UploadAdmin(admin.ModelAdmin):
+    list_display = ['id', 'uuid', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
+    list_display_links = ['id', 'uuid']
