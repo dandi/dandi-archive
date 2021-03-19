@@ -42,6 +42,12 @@ class AssetBlob(TimeStampedModel):
 
     class Meta:
         indexes = [HashIndex(fields=['etag'])]
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-etag-size',
+                fields=['etag', 'size'],
+            )
+        ]
 
     @property
     def references(self) -> int:
