@@ -192,7 +192,14 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
 def test_upload_validate(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    assert api_client.post(f'/api/uploads/{upload.uuid}/validate/').status_code == 204
+    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    assert resp.status_code == 200
+    assert resp.data == {
+        'uuid': str(upload.uuid),
+        'etag': upload.etag,
+        'sha256': None,
+        'size': upload.size,
+    }
 
     # Verify that a new AssetBlob was created
     asset_blob = AssetBlob.objects.get(uuid=upload.uuid)
@@ -200,6 +207,20 @@ def test_upload_validate(api_client, user, upload):
 
     # Verify that the Upload was deleted
     assert not Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_validate_upload_missing(api_client, user, upload):
+    api_client.force_authenticate(user=user)
+
+    upload.blob.delete(upload.blob.name)
+
+    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    assert resp.status_code == 400
+    assert resp.data == ['Object does not exist.']
+
+    assert not AssetBlob.objects.all().exists()
+    assert Upload.objects.all().exists()
 
 
 @pytest.mark.django_db
@@ -229,3 +250,22 @@ def test_upload_validate_wrong_etag(api_client, user, upload):
 
     assert not AssetBlob.objects.all().exists()
     assert Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob_factory):
+    api_client.force_authenticate(user=user)
+
+    asset_blob = asset_blob_factory(etag=upload.etag, size=upload.size)
+
+    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    assert resp.status_code == 200
+    assert resp.data == {
+        'uuid': str(asset_blob.uuid),
+        'etag': asset_blob.etag,
+        'sha256': asset_blob.sha256,
+        'size': asset_blob.size,
+    }
+
+    assert AssetBlob.objects.all().count() == 1
+    assert not Upload.objects.all().exists()
