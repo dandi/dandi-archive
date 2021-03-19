@@ -76,12 +76,14 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     def sha256(self):
         h = hashlib.sha256()
         h.update(self.blob.read())
+        self.blob.seek(0)
         return h.hexdigest()
 
     @factory.lazy_attribute
     def etag(self):
         h = hashlib.md5()
         h.update(self.blob.read())
+        self.blob.seek(0)
         return h.hexdigest()
 
     @factory.lazy_attribute
@@ -121,4 +123,5 @@ class UploadFactory(factory.django.DjangoModelFactory):
     def etag(self):
         h = hashlib.md5()
         h.update(self.blob.read())
+        self.blob.seek(0)
         return h.hexdigest()
