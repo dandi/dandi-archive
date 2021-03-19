@@ -179,7 +179,7 @@ def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
 @swagger_auto_schema(
     method='POST',
     responses={
-        200: 'The asset blob for the uploaded data.',
+        200: AssetBlobSerializer,
         400: 'The specified upload has not completed or has failed.',
     },
 )
