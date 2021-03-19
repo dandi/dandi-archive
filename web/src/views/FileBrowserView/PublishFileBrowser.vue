@@ -112,10 +112,10 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="itemDownload(item.name)">
+              <v-list-item-action v-if="itemData[item.name]">
                 <v-btn
                   icon
-                  :href="itemDownload(item.name)"
+                  :href="itemData[item.name].download"
                 >
                   <v-icon color="primary">
                     mdi-download
@@ -262,10 +262,6 @@ export default {
     openDialog(name) {
       this.dialogName = name;
       this.dialogActive = true;
-    },
-
-    itemDownload(name) {
-      return this.itemData[name] && this.itemData[name].download;
     },
 
     async deleteAsset(name) {
