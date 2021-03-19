@@ -124,7 +124,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     if assets.exists():
         return Response(
             'Blob already exists.',
-            status=409,
+            status=status.HTTP_409_CONFLICT,
             headers={'Location': assets.first().uuid},
         )
 
@@ -179,8 +179,8 @@ def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
 @swagger_auto_schema(
     method='POST',
     responses={
-        204: 'AssetBlob created with the same UUID',
-        400: 'The specified upload has not completed or has failed',
+        200: 'The asset blob for the uploaded data.',
+        400: 'The specified upload has not completed or has failed.',
     },
 )
 @api_view(['POST'])
@@ -202,10 +202,18 @@ def upload_validate_view(request: Request, uuid: str) -> HttpResponseBase:
     if upload.etag != upload.actual_etag():
         raise ValidationError('ETag does not match.')
 
-    asset_blob = upload.to_asset_blob()
-    asset_blob.save()
+    try:
+        # Perhaps another upload completed before this one and has already created an AssetBlob.
+        asset_blob = AssetBlob.objects.get(etag=upload.etag, size=upload.size)
+    except AssetBlob.DoesNotExist:
+        asset_blob = upload.to_asset_blob()
+        asset_blob.save()
+
     # Clean up the upload
     upload.delete()
 
+    # Start calculating the sha256 in the background
     calculate_sha256.delay(asset_blob.uuid)
-    return Response(status=status.HTTP_204_NO_CONTENT)
+
+    response_serializer = AssetBlobSerializer(asset_blob)
+    return Response(response_serializer.data, status=status.HTTP_200_OK)
