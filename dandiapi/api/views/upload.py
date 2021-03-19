@@ -94,7 +94,11 @@ def blob_read_view(request: Request) -> HttpResponseBase:
 @swagger_auto_schema(
     method='POST',
     request_body=UploadInitializationRequestSerializer(),
-    responses={200: UploadInitializationResponseSerializer()},
+    responses={
+        200: UploadInitializationResponseSerializer(),
+        409: 'Blob already exists. '
+        'The Location header will be set to the UUID of the existing asset blob.',
+    },
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
