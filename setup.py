@@ -46,6 +46,7 @@ setup(
         'django-guardian',
         'django-oauth-toolkit',
         'djangorestframework',
+        'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
         'httpx',
