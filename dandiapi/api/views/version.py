@@ -76,5 +76,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         new_version.save()
         for asset in old_version.assets.all():
             new_version.assets.add(asset)
+
+        new_version.write_yamls()
+
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
