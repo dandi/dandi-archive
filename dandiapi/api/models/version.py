@@ -49,6 +49,7 @@ class Version(TimeStampedModel):
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
         default=_get_default_version,
     )  # TODO: rename this?
+    doi = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
         unique_together = ['dandiset', 'version']

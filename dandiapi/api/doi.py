@@ -7,7 +7,7 @@ import requests
 from dandiapi.api.models import Version
 
 
-def _generate_doi_data(version: Version) -> Dict:
+def _generate_doi_data(version: Version):
     prefix = settings.DANDI_DOI_API_PREFIX
     dandiset_id = version.dandiset.identifier
     version_id = version.version
@@ -25,25 +25,28 @@ def _generate_doi_data(version: Version) -> Dict:
             {'name': contributor['name']}
             for contributor in version.metadata.metadata['contributor']
         ]
-    return {
-        'data': {
-            'id': doi,
-            'type': 'dois',
-            'attributes': {
-                'doi': doi,
-                'creators': creators,
-                'titles': [{'title': version.name}],
-                'publisher': 'DANDI Archive',
-                'publicationYear': datetime.now().year,
-                'contributors': contributors,
-                'types': {'resourceTypeGeneral': 'NWB'},
-                'url': url,
-            },
-        }
-    }
+    return (
+        doi,
+        {
+            'data': {
+                'id': doi,
+                'type': 'dois',
+                'attributes': {
+                    'doi': doi,
+                    'creators': creators,
+                    'titles': [{'title': version.name}],
+                    'publisher': 'DANDI Archive',
+                    'publicationYear': datetime.now().year,
+                    'contributors': contributors,
+                    'types': {'resourceTypeGeneral': 'NWB'},
+                    'url': url,
+                },
+            }
+        },
+    )
 
 
-def create_doi(version: Version):
+def create_doi(version: Version) -> str:
     # If DOI isn't configured, skip this step
     if (
         settings.DANDI_DOI_API_URL is None
@@ -52,7 +55,7 @@ def create_doi(version: Version):
         and settings.DANDI_DOI_API_PREFIX is None
     ):
         return
-    request_body = _generate_doi_data(version)
+    doi, request_body = _generate_doi_data(version)
     requests.post(
         settings.DANDI_DOI_API_URL,
         json=request_body,
@@ -61,3 +64,4 @@ def create_doi(version: Version):
             settings.DANDI_DOI_API_PASSWORD,
         ),
     ).raise_for_status()
+    return doi

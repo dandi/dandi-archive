@@ -75,7 +75,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         new_version = Version.copy(old_version)
 
-        doi.create_doi(new_version)
+        new_version.doi = doi.create_doi(new_version)
 
         new_version.save()
         for asset in old_version.assets.all():
