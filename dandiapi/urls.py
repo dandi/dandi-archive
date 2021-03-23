@@ -73,12 +73,12 @@ urlpatterns = [
     path('api/blobs/digest/', blob_read_view, name='blob-read'),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     re_path(
-        r'api/uploads/(?P<uuid>[0-9a-f\-]{36})/complete/',
+        r'api/uploads/(?P<upload_id>[0-9a-f\-]{36})/complete/',
         upload_complete_view,
         name='upload-complete',
     ),
     re_path(
-        r'^api/uploads/(?P<uuid>[0-9a-f\-]{36})/validate/$',
+        r'^api/uploads/(?P<upload_id>[0-9a-f\-]{36})/validate/$',
         upload_validate_view,
         name='upload-validate',
     ),

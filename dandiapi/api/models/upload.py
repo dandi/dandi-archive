@@ -28,7 +28,7 @@ class Upload(TimeStampedModel):
         indexes = [models.Index(fields=['etag'])]
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
-    uuid = models.UUIDField(unique=True, default=uuid4, db_index=True)
+    upload_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     blob = models.FileField(
         blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
     )
@@ -39,32 +39,32 @@ class Upload(TimeStampedModel):
         validators=[RegexValidator(f'^{ETAG_REGEX}$')],
         db_index=True,
     )
-    # This is the UUID the object store assigns to the multipart upload
-    upload_id = models.UUIDField(unique=True, db_index=True)
+    # This is the identifier the object store assigns to the multipart upload
+    multipart_upload_id = models.UUIDField(unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
 
     @classmethod
-    def object_key(cls, uuid):
-        uuid = str(uuid)
-        return f'blobs/{uuid[0:3]}/{uuid[3:6]}/{uuid}'
+    def object_key(cls, upload_id):
+        upload_id = str(upload_id)
+        return f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size):
-        uuid = uuid4()
-        object_key = cls.object_key(uuid)
+        upload_id = uuid4()
+        object_key = cls.object_key(upload_id)
         multipart_initialization = MultipartManager.from_storage(
             AssetBlob.blob.field.storage
         ).initialize_upload(object_key, size)
 
         upload = cls(
-            uuid=uuid,
+            upload_id=upload_id,
             blob=object_key,
             etag=etag,
             size=size,
-            upload_id=multipart_initialization.upload_id,
+            multipart_upload_id=multipart_initialization.upload_id,
         )
 
-        return upload, {'uuid': upload.uuid, 'multipart_upload': multipart_initialization}
+        return upload, {'upload_id': upload.upload_id, 'parts': multipart_initialization.parts}
 
     def object_key_exists(self):
         return self.blob.field.storage.exists(self.blob.name)
@@ -92,7 +92,7 @@ class Upload(TimeStampedModel):
     def to_asset_blob(self) -> AssetBlob:
         """Convert this upload into an AssetBlob."""
         return AssetBlob(
-            uuid=self.uuid,
+            blob_id=self.upload_id,
             blob=self.blob,
             etag=self.etag,
             size=self.size,

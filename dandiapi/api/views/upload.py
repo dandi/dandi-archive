@@ -35,15 +35,9 @@ class PartInitializationResponseSerializer(serializers.Serializer):
     upload_url = serializers.URLField()
 
 
-class MultipartInitializationResponseSerializer(serializers.Serializer):
-    object_key = serializers.CharField(trim_whitespace=False)
+class UploadInitializationResponseSerializer(serializers.Serializer):
     upload_id = serializers.CharField()
     parts = PartInitializationResponseSerializer(many=True, allow_empty=False)
-
-
-class UploadInitializationResponseSerializer(serializers.Serializer):
-    uuid = serializers.CharField()
-    multipart_upload = MultipartInitializationResponseSerializer()
 
 
 class PartCompletionRequestSerializer(serializers.Serializer):
@@ -120,12 +114,12 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
 
-    assets = AssetBlob.objects.filter(etag=etag)
-    if assets.exists():
+    asset_blobs = AssetBlob.objects.filter(etag=etag)
+    if asset_blobs.exists():
         return Response(
             'Blob already exists.',
             status=status.HTTP_409_CONFLICT,
-            headers={'Location': assets.first().uuid},
+            headers={'Location': asset_blobs.first().blob_id},
         )
 
     upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
@@ -143,7 +137,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
+def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
 
@@ -155,11 +149,11 @@ def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     parts: List[TransferredPart] = request_serializer.save()
 
-    upload = get_object_or_404(Upload, uuid=uuid)
+    upload = get_object_or_404(Upload, upload_id=upload_id)
 
     completion = TransferredParts(
         object_key=upload.blob.name,
-        upload_id=str(upload.upload_id),
+        upload_id=str(upload.multipart_upload_id),
         parts=parts,
     )
 
@@ -186,13 +180,13 @@ def upload_complete_view(request: Request, uuid: str) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def upload_validate_view(request: Request, uuid: str) -> HttpResponseBase:
+def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
     """
     Verify that an upload completed successfully and mint a new AssetBlob.
 
     Also starts the asynchronous checksum calculation process.
     """
-    upload = get_object_or_404(Upload, uuid=uuid)
+    upload = get_object_or_404(Upload, upload_id=upload_id)
 
     # Verify that the upload was successful
     if not upload.object_key_exists():
@@ -213,7 +207,7 @@ def upload_validate_view(request: Request, uuid: str) -> HttpResponseBase:
     upload.delete()
 
     # Start calculating the sha256 in the background
-    calculate_sha256.delay(asset_blob.uuid)
+    calculate_sha256.delay(asset_blob.blob_id)
 
     response_serializer = AssetBlobSerializer(asset_blob)
     return Response(response_serializer.data, status=status.HTTP_200_OK)

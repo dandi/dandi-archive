@@ -37,8 +37,8 @@ class VersionAdmin(admin.ModelAdmin):
 
 @admin.register(AssetBlob)
 class AssetBlobAdmin(admin.ModelAdmin):
-    list_display = ['id', 'uuid', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
-    list_display_links = ['id', 'uuid']
+    list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
+    list_display_links = ['id', 'blob_id']
 
 
 @admin.register(AssetMetadata)
@@ -57,7 +57,7 @@ class AssetAdmin(admin.ModelAdmin):
     # list_display_links = ['id', 'uuid']
     list_display = [
         'id',
-        'uuid',
+        'asset_id',
         'path',
         'blob',
         'metadata',
@@ -65,11 +65,11 @@ class AssetAdmin(admin.ModelAdmin):
         'modified',
         'created',
     ]
-    list_display_links = ['id', 'uuid', 'path']
+    list_display_links = ['id', 'asset_id', 'path']
     # inlines = [AssetBlobInline]
 
 
 @admin.register(Upload)
 class UploadAdmin(admin.ModelAdmin):
-    list_display = ['id', 'uuid', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
-    list_display_links = ['id', 'uuid']
+    list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
+    list_display_links = ['id', 'upload_id']

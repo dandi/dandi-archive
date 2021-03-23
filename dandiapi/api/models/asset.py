@@ -27,7 +27,7 @@ class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
-    uuid = models.UUIDField(unique=True)
+    blob_id = models.UUIDField(unique=True)
     blob = models.FileField(
         blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
     )
@@ -71,7 +71,7 @@ class AssetMetadata(TimeStampedModel):
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)

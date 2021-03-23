@@ -206,6 +206,10 @@ def test_version_rest_publish(api_client, user, version, asset):
     assert asset == published_version.assets.get()
     assert asset.versions.count() == 2
 
+    # TODO this will fail if the test is run twice in the same minute.
+    # The same version ID will be generated in the second test,
+    # but the dandiset.yaml will still be present from the first test, creating a mismatch.
+    # The solution is to remove the file if it already exists in models.Version.write_yamls().
     with published_version._yaml_storage.open(published_version._dandiset_yaml_path) as f:
         assert f.read() == YAMLRenderer().render(published_version.metadata.metadata)
     with published_version._yaml_storage.open(published_version._assets_yaml_path) as f:

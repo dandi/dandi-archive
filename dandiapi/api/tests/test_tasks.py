@@ -18,7 +18,7 @@ def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
     h.update(asset_blob.blob.read())
     sha256 = h.hexdigest()
 
-    tasks.calculate_sha256(asset_blob.uuid)
+    tasks.calculate_sha256(asset_blob.blob_id)
 
     asset_blob.refresh_from_db()
 
