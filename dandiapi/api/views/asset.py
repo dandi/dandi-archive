@@ -38,7 +38,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     serializer_detail_class = AssetDetailSerializer
     pagination_class = DandiPagination
 
-    lookup_field = 'uuid'
+    lookup_field = 'asset_id'
     lookup_value_regex = Asset.UUID_REGEX
 
     filter_backends = [filters.DjangoFilterBackend]
@@ -49,7 +49,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             200: 'The asset metadata.',
         },
     )
-    def retrieve(self, request, versions__dandiset__pk, versions__version, uuid):
+    def retrieve(self, request, versions__dandiset__pk, versions__version, asset_id):
         asset = self.get_object()
         # TODO use http://localhost:8000 for local deployments
         download_url = 'https://api.dandiarchive.org' + reverse(
@@ -57,14 +57,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             kwargs={
                 'versions__dandiset__pk': versions__dandiset__pk,
                 'versions__version': versions__version,
-                'uuid': uuid,
+                'asset_id': asset_id,
             },
         )
 
         blob_url = asset.blob.blob.url
         metadata = {
             **asset.metadata.metadata,
-            'identifier': uuid,
+            'identifier': asset_id,
             'contentUrl': [download_url, blob_url],
         }
         return Response(metadata, status=status.HTTP_200_OK)

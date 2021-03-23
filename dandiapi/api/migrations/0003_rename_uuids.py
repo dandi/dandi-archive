@@ -25,4 +25,9 @@ class Migration(migrations.Migration):
             old_name='uuid',
             new_name='blob_id',
         ),
+        migrations.RenameField(
+            model_name='asset',
+            old_name='uuid',
+            new_name='asset_id',
+        ),
     ]

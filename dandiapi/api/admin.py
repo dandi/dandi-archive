@@ -57,7 +57,7 @@ class AssetAdmin(admin.ModelAdmin):
     # list_display_links = ['id', 'uuid']
     list_display = [
         'id',
-        'uuid',
+        'asset_id',
         'path',
         'blob',
         'metadata',
@@ -65,7 +65,7 @@ class AssetAdmin(admin.ModelAdmin):
         'modified',
         'created',
     ]
-    list_display_links = ['id', 'uuid', 'path']
+    list_display_links = ['id', 'asset_id', 'path']
     # inlines = [AssetBlobInline]
 
 

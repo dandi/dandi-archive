@@ -45,7 +45,7 @@ def test_asset_rest_list(api_client, version, asset):
         'previous': None,
         'results': [
             {
-                'uuid': str(asset.uuid),
+                'asset_id': str(asset.asset_id),
                 'path': asset.path,
                 'size': asset.size,
                 'created': TIMESTAMP_RE,
@@ -61,13 +61,13 @@ def test_asset_rest_retrieve(api_client, version, asset):
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.uuid}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/'
     ).data == {
         **asset.metadata.metadata,
-        'identifier': str(asset.uuid),
+        'identifier': str(asset.asset_id),
         'contentUrl': [
             f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
-            f'/versions/{version.version}/assets/{asset.uuid}/download/',
+            f'/versions/{version.version}/assets/{asset.asset_id}/download/',
             HTTP_URL_RE,
         ],
     }
@@ -86,7 +86,7 @@ def test_asset_create(api_client, user, version, asset_blob):
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data == {
-        'uuid': UUID_RE,
+        'asset_id': UUID_RE,
         'path': path,
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
@@ -173,12 +173,12 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
 
     resp = api_client.put(
         f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.uuid}/',
+        f'versions/{version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data
     assert resp == {
-        'uuid': UUID_RE,
+        'asset_id': UUID_RE,
         'path': new_path,
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
@@ -190,7 +190,7 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
     assert asset not in version.assets.all()
 
     # A new asset should be created that is associated with the version
-    new_asset = Asset.objects.get(uuid=resp['uuid'])
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert new_asset in version.assets.all()
 
     # The new asset should have a reference to the old asset
@@ -209,13 +209,13 @@ def test_asset_rest_update_to_existing(api_client, user, version, asset_factory)
 
     resp = api_client.put(
         f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{old_asset.uuid}/',
+        f'versions/{version.version}/assets/{old_asset.asset_id}/',
         {'metadata': existing_asset.metadata.metadata, 'blob_id': existing_asset.blob.blob_id},
         format='json',
     ).data
 
     # Updating an Asset to be the same as an existing Asset should still mint a new Asset
-    assert resp['uuid'] != existing_asset.uuid
+    assert resp['asset_id'] != existing_asset.asset_id
 
 
 @pytest.mark.django_db
@@ -226,7 +226,7 @@ def test_asset_rest_update_unauthorized(api_client, version, asset):
     assert (
         api_client.put(
             f'/api/dandisets/{version.dandiset.identifier}/'
-            f'versions/{version.version}/assets/{asset.uuid}/',
+            f'versions/{version.version}/assets/{asset.asset_id}/',
             {'metadata': new_metadata},
             format='json',
         ).status_code
@@ -244,7 +244,7 @@ def test_asset_rest_update_not_an_owner(api_client, user, version, asset):
     assert (
         api_client.put(
             f'/api/dandisets/{version.dandiset.identifier}/'
-            f'versions/{version.version}/assets/{asset.uuid}/',
+            f'versions/{version.version}/assets/{asset.asset_id}/',
             {'metadata': new_metadata},
             format='json',
         ).status_code
@@ -260,7 +260,7 @@ def test_asset_rest_delete(api_client, user, version, asset):
 
     response = api_client.delete(
         f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.uuid}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/'
     )
     assert response.status_code == 204
 
@@ -275,7 +275,7 @@ def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
 
     response = api_client.delete(
         f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.uuid}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/'
     )
     assert response.status_code == 403
 

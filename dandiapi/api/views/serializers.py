@@ -90,7 +90,7 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = [
-            'uuid',
+            'asset_id',
             'path',
             'size',
             'created',
