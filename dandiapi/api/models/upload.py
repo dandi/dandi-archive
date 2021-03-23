@@ -81,7 +81,12 @@ class Upload(TimeStampedModel):
                 Bucket=storage.bucket_name,
                 Key=self.blob.name,
             )
-            return response['ETag']
+            etag = response['ETag']
+            # S3 wraps the ETag in double quotes, so we need to strip them
+            if etag[0] == '"' and etag[-1] == '"':
+                return etag[1:-1]
+            return etag
+
         elif isinstance(storage, MinioStorage):
             client = storage.client
             response = client.stat_object(storage.bucket_name, self.blob.name)
