@@ -25,7 +25,7 @@ class DigestSerializer(serializers.Serializer):
 
 
 class UploadInitializationRequestSerializer(serializers.Serializer):
-    contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
+    contentSize = serializers.IntegerField(min_value=0)  # noqa: N815
     digest = DigestSerializer()
 
 
