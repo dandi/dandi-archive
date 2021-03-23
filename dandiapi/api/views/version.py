@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
+from dandiapi.api import doi
 from dandiapi.api.models import Version, VersionMetadata
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -73,6 +74,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             return response
 
         new_version = Version.copy(old_version)
+
+        doi.create_doi(new_version)
+
         new_version.save()
         for asset in old_version.assets.all():
             new_version.assets.add(asset)
