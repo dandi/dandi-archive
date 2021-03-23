@@ -223,11 +223,12 @@ def test_upload_validate_upload_missing(api_client, user, upload):
 def test_upload_validate_wrong_size(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    upload.blob.save(upload.blob.name, ContentFile(b'not 100 bytes'))
+    wrong_content = b'not 100 bytes'
+    upload.blob.save(upload.blob.name, ContentFile(wrong_content))
 
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
-    assert resp.data == ['Size does not match.']
+    assert resp.data == [f'Size {upload.size} does not match actual size {len(wrong_content)}.']
 
     assert not AssetBlob.objects.all().exists()
     assert Upload.objects.all().exists()
@@ -237,12 +238,13 @@ def test_upload_validate_wrong_size(api_client, user, upload):
 def test_upload_validate_wrong_etag(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
+    actual_etag = upload.etag
     upload.etag = uuid.uuid4()
     upload.save()
 
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
-    assert resp.data == ['ETag does not match.']
+    assert resp.data == [f'ETag {upload.etag} does not match actual ETag {actual_etag}.']
 
     assert not AssetBlob.objects.all().exists()
     assert Upload.objects.all().exists()
