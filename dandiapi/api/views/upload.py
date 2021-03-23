@@ -192,9 +192,13 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
     if not upload.object_key_exists():
         raise ValidationError('Object does not exist.')
     if upload.size != upload.actual_size():
-        raise ValidationError('Size does not match.')
+        raise ValidationError(
+            f'Size {upload.size} does not match actual size {upload.actual_size()}.'
+        )
     if upload.etag != upload.actual_etag():
-        raise ValidationError('ETag does not match.')
+        raise ValidationError(
+            f'ETag {upload.etag} does not match actual ETag {upload.actual_etag()}.'
+        )
 
     try:
         # Perhaps another upload completed before this one and has already created an AssetBlob.
