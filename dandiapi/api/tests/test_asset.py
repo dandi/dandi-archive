@@ -83,7 +83,7 @@ def test_asset_create(api_client, user, version, asset_blob):
 
     assert api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'metadata': metadata, 'uuid': asset_blob.uuid},
+        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data == {
         'uuid': UUID_RE,
@@ -108,7 +108,7 @@ def test_asset_create_no_valid_blob(api_client, user, version):
 
     resp = api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'metadata': metadata, 'uuid': uuid},
+        {'metadata': metadata, 'blob_id': uuid},
         format='json',
     )
     assert resp.status_code == 404
@@ -123,7 +123,7 @@ def test_asset_create_no_path(api_client, user, version, asset_blob):
 
     resp = api_client.post(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'metadata': metadata, 'uuid': asset_blob.uuid},
+        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     )
     assert resp.status_code == 400
@@ -154,7 +154,7 @@ def test_asset_create_duplicate(api_client, user, version, asset):
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
         {
             'metadata': asset.metadata.metadata,
-            'uuid': asset.blob.uuid,
+            'blob_id': asset.blob.blob_id,
         },
         format='json',
     )
@@ -174,7 +174,7 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
     resp = api_client.put(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.uuid}/',
-        {'metadata': new_metadata, 'uuid': asset_blob.uuid},
+        {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data
     assert resp == {
@@ -210,7 +210,7 @@ def test_asset_rest_update_to_existing(api_client, user, version, asset_factory)
     resp = api_client.put(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{old_asset.uuid}/',
-        {'metadata': existing_asset.metadata.metadata, 'sha256': existing_asset.sha256},
+        {'metadata': existing_asset.metadata.metadata, 'blob_id': existing_asset.blob.blob_id},
         format='json',
     ).data
 

@@ -37,8 +37,8 @@ class VersionAdmin(admin.ModelAdmin):
 
 @admin.register(AssetBlob)
 class AssetBlobAdmin(admin.ModelAdmin):
-    list_display = ['id', 'uuid', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
-    list_display_links = ['id', 'uuid']
+    list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
+    list_display_links = ['id', 'blob_id']
 
 
 @admin.register(AssetMetadata)

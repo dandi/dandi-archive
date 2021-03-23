@@ -19,7 +19,7 @@ from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerialize
 
 class AssetRequestSerializer(serializers.Serializer):
     metadata = serializers.JSONField()
-    uuid = serializers.UUIDField()
+    blob_id = serializers.UUIDField()
 
 
 class AssetFilter(filters.FilterSet):
@@ -93,7 +93,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, uuid=serializer.validated_data['uuid'])
+        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:
@@ -139,7 +139,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, uuid=serializer.validated_data['uuid'])
+        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:

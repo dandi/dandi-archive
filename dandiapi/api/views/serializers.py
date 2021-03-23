@@ -73,7 +73,7 @@ class AssetBlobSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetBlob
         fields = [
-            'uuid',
+            'blob_id',
             'etag',
             'sha256',
             'size',

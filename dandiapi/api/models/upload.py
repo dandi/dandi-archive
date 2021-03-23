@@ -92,7 +92,7 @@ class Upload(TimeStampedModel):
     def to_asset_blob(self) -> AssetBlob:
         """Convert this upload into an AssetBlob."""
         return AssetBlob(
-            uuid=self.upload_id,
+            blob_id=self.upload_id,
             blob=self.blob,
             etag=self.etag,
             size=self.size,

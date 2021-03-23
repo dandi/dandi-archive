@@ -21,7 +21,7 @@ def test_blob_read(api_client, asset_blob):
         {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
         format='json',
     ).data == {
-        'uuid': str(asset_blob.uuid),
+        'blob_id': str(asset_blob.blob_id),
         'etag': asset_blob.etag,
         'sha256': asset_blob.sha256,
         'size': asset_blob.size,
@@ -93,7 +93,7 @@ def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
     )
     assert resp.status_code == 409
     assert resp.data == 'Blob already exists.'
-    assert resp.get('Location') == str(asset_blob.uuid)
+    assert resp.get('Location') == str(asset_blob.blob_id)
     assert not Upload.objects.all().exists()
 
 
@@ -191,14 +191,14 @@ def test_upload_validate(api_client, user, upload):
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 200
     assert resp.data == {
-        'uuid': str(upload.upload_id),
+        'blob_id': str(upload.upload_id),
         'etag': upload.etag,
         'sha256': None,
         'size': upload.size,
     }
 
     # Verify that a new AssetBlob was created
-    asset_blob = AssetBlob.objects.get(uuid=upload.upload_id)
+    asset_blob = AssetBlob.objects.get(blob_id=upload.upload_id)
     assert asset_blob.blob.name == upload.blob.name
 
     # Verify that the Upload was deleted
@@ -257,7 +257,7 @@ def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 200
     assert resp.data == {
-        'uuid': str(asset_blob.uuid),
+        'blob_id': str(asset_blob.blob_id),
         'etag': asset_blob.etag,
         'sha256': asset_blob.sha256,
         'size': asset_blob.size,

@@ -114,12 +114,12 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
 
-    assets = AssetBlob.objects.filter(etag=etag)
-    if assets.exists():
+    asset_blobs = AssetBlob.objects.filter(etag=etag)
+    if asset_blobs.exists():
         return Response(
             'Blob already exists.',
             status=status.HTTP_409_CONFLICT,
-            headers={'Location': assets.first().uuid},
+            headers={'Location': asset_blobs.first().blob_id},
         )
 
     upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
@@ -207,7 +207,7 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
     upload.delete()
 
     # Start calculating the sha256 in the background
-    calculate_sha256.delay(asset_blob.uuid)
+    calculate_sha256.delay(asset_blob.blob_id)
 
     response_serializer = AssetBlobSerializer(asset_blob)
     return Response(response_serializer.data, status=status.HTTP_200_OK)

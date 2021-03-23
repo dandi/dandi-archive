@@ -68,7 +68,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
 
-    uuid = factory.Faker('uuid4')
+    blob_id = factory.Faker('uuid4')
     blob = factory.django.FileField(data=factory.Faker('binary', length=100))
     size = 13  # len(somefilebytes)
 

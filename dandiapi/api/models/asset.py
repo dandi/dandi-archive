@@ -27,7 +27,7 @@ class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
-    uuid = models.UUIDField(unique=True)
+    blob_id = models.UUIDField(unique=True)
     blob = models.FileField(
         blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
     )
