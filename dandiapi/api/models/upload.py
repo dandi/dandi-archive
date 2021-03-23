@@ -40,7 +40,7 @@ class Upload(TimeStampedModel):
         db_index=True,
     )
     # This is the identifier the object store assigns to the multipart upload
-    multipart_upload_id = models.UUIDField(unique=True, db_index=True)
+    multipart_upload_id = models.CharField(max_length=128, unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
 
     @classmethod
