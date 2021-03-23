@@ -71,5 +71,5 @@ class AssetAdmin(admin.ModelAdmin):
 
 @admin.register(Upload)
 class UploadAdmin(admin.ModelAdmin):
-    list_display = ['id', 'uuid', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
-    list_display_links = ['id', 'uuid']
+    list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
+    list_display_links = ['id', 'upload_id']

@@ -111,8 +111,8 @@ class UploadFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Upload
 
-    uuid = factory.Faker('uuid4')
     upload_id = factory.Faker('uuid4')
+    multipart_upload_id = factory.Faker('uuid4')
     blob = factory.django.FileField(data=factory.Faker('binary', length=100))
 
     @factory.lazy_attribute

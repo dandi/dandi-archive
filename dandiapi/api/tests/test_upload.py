@@ -66,21 +66,17 @@ def test_upload_initialize(api_client, user):
         format='json',
     )
     assert resp.data == {
-        'uuid': UUID_RE,
-        'multipart_upload': {
-            'object_key': Re('blobs/[a-z0-9]{3}/[a-z0-9]{3}/[a-z0-9\\-]+'),
-            'upload_id': UUID_RE,
-            'parts': [
-                {
-                    'part_number': 1,
-                    'size': content_size,
-                    'upload_url': HTTP_URL_RE,
-                }
-            ],
-        },
+        'upload_id': UUID_RE,
+        'parts': [
+            {
+                'part_number': 1,
+                'size': content_size,
+                'upload_url': HTTP_URL_RE,
+            }
+        ],
     }
 
-    Upload.objects.get(uuid=resp.data['uuid'])
+    Upload.objects.get(upload_id=resp.data['upload_id'])
 
 
 @pytest.mark.django_db
@@ -120,7 +116,7 @@ def test_upload_complete(api_client, user, upload):
     content_size = 123
 
     assert api_client.post(
-        f'/api/uploads/{upload.uuid}/complete/',
+        f'/api/uploads/{upload.upload_id}/complete/',
         {
             'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
         },
@@ -135,7 +131,7 @@ def test_upload_complete(api_client, user, upload):
 def test_upload_complete_unauthorized(api_client, upload):
     assert (
         api_client.post(
-            f'/api/uploads/{upload.uuid}/complete/',
+            f'/api/uploads/{upload.upload_id}/complete/',
             {},
             format='json',
         ).status_code
@@ -158,8 +154,8 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
         format='json',
     ).data
 
-    uuid = initialization['uuid']
-    parts = initialization['multipart_upload']['parts']
+    upload_id = initialization['upload_id']
+    parts = initialization['parts']
 
     # Send the data directly to the object store
     transferred_parts = []
@@ -172,7 +168,7 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
 
     # Get the presigned complete URL
     completion = api_client.post(
-        f'/api/uploads/{uuid}/complete/',
+        f'/api/uploads/{upload_id}/complete/',
         {
             'parts': transferred_parts,
         },
@@ -184,7 +180,7 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
     assert completion_response.status_code == 200
 
     # Verify object was uploaded
-    upload = Upload.objects.get(uuid=uuid)
+    upload = Upload.objects.get(upload_id=upload_id)
     assert AssetBlob.blob.field.storage.exists(upload.blob.name)
 
 
@@ -192,17 +188,17 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
 def test_upload_validate(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 200
     assert resp.data == {
-        'uuid': str(upload.uuid),
+        'uuid': str(upload.upload_id),
         'etag': upload.etag,
         'sha256': None,
         'size': upload.size,
     }
 
     # Verify that a new AssetBlob was created
-    asset_blob = AssetBlob.objects.get(uuid=upload.uuid)
+    asset_blob = AssetBlob.objects.get(uuid=upload.upload_id)
     assert asset_blob.blob.name == upload.blob.name
 
     # Verify that the Upload was deleted
@@ -215,7 +211,7 @@ def test_upload_validate_upload_missing(api_client, user, upload):
 
     upload.blob.delete(upload.blob.name)
 
-    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
     assert resp.data == ['Object does not exist.']
 
@@ -229,7 +225,7 @@ def test_upload_validate_wrong_size(api_client, user, upload):
 
     upload.blob.save(upload.blob.name, ContentFile(b'not 100 bytes'))
 
-    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
     assert resp.data == ['Size does not match.']
 
@@ -244,7 +240,7 @@ def test_upload_validate_wrong_etag(api_client, user, upload):
     upload.etag = uuid.uuid4()
     upload.save()
 
-    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
     assert resp.data == ['ETag does not match.']
 
@@ -258,7 +254,7 @@ def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob
 
     asset_blob = asset_blob_factory(etag=upload.etag, size=upload.size)
 
-    resp = api_client.post(f'/api/uploads/{upload.uuid}/validate/')
+    resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 200
     assert resp.data == {
         'uuid': str(asset_blob.uuid),
