@@ -4,14 +4,9 @@ import datetime
 
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
-from django.core.files.base import ContentFile
-from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-from rest_framework_yaml.renderers import YAMLRenderer
-
-from dandiapi.api.storage import create_s3_storage
 
 from .dandiset import Dandiset
 
@@ -109,26 +104,6 @@ class Version(TimeStampedModel):
     def save(self, *args, **kwargs):
         self._populate_metadata()
         super().save(*args, **kwargs)
-
-    @property
-    def _yaml_storage(self) -> Storage:
-        return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
-
-    @property
-    def _dandiset_yaml_path(self) -> str:
-        return f'dandisets/{self.dandiset.identifier}/{self.version}/dandiset.yaml'
-
-    @property
-    def _assets_yaml_path(self) -> str:
-        return f'dandisets/{self.dandiset.identifier}/{self.version}/assets.yaml'
-
-    def write_yamls(self):
-        dandiset_yaml = YAMLRenderer().render(self.metadata.metadata)
-        self._yaml_storage.save(self._dandiset_yaml_path, ContentFile(dandiset_yaml))
-        assets_yaml = YAMLRenderer().render(
-            [asset.metadata.metadata for asset in self.assets.all()]
-        )
-        self._yaml_storage.save(self._assets_yaml_path, ContentFile(assets_yaml))
 
     def __str__(self) -> str:
         return f'{self.dandiset.identifier}/{self.version}'

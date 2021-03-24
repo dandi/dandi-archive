@@ -9,6 +9,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api import doi
 from dandiapi.api.models import Version, VersionMetadata
+from dandiapi.api.tasks import write_yamls
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -78,10 +79,16 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         new_version.doi = doi.create_doi(new_version)
 
         new_version.save()
-        for asset in old_version.assets.all():
-            new_version.assets.add(asset)
+        # Bulk create the join table rows to optimize linking assets to new_version
+        AssetVersions = Version.assets.through  # noqa: N806
+        AssetVersions.objects.bulk_create(
+            [
+                AssetVersions(asset_id=asset['id'], version_id=new_version.id)
+                for asset in old_version.assets.values('id')
+            ]
+        )
 
-        new_version.write_yamls()
+        write_yamls.delay(new_version.id)
 
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
