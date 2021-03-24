@@ -14,7 +14,7 @@ A blob is referenced by a key generation function. the value of this key is used
     2. If it exists, return the `blobs:blob_id`.
     3. It it doesn't exist, return 404.
 2. If 404, start upload process.
-3. if key, call `POST .../assets/` with the key to register the new asset.
+3. if `blob_id`, call `POST .../assets/` with the `blob_id` to register the new asset.
 
 ### Blob upload process:
 1. CLI `/uploads/initialize` <-- `{"content_size": 12345 , "digest": {"algorithm": "dandi:dandi-etag", "value": "..."}`. API:
