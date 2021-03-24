@@ -88,7 +88,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             ]
         )
 
-        write_yamls.delay(new_version.save())
+        write_yamls.delay(new_version.id)
 
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
