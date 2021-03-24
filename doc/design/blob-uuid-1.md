@@ -32,7 +32,7 @@ A blob is referenced by a key generation function. the value of this key is used
         1. no collision - adds key + ETag to AssetBlob table, delete from Upload table.
         2. there is collision - deletes `blobs:key` record, `uploads:upload_id` record, and `s3://dandiarchive/blob/<3digitskey>/<next3digitskey>/<key>`, will return key of an existing record
     4. kicks off background process to calculate checksums
-9. CLI calls `POST .../assets/` with the key to register the new asset.
+9. CLI calls `POST .../assets/` with the `blob_id` to register the new asset.
 
 ## Garbage Collection process
 
