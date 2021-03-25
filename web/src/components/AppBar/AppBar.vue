@@ -103,6 +103,7 @@
         color="primary"
         outlined
         rounded
+        v-if="!DJANGO_API"
       >
         Create Account
       </v-btn>
@@ -113,7 +114,7 @@
         rounded
         @click="login"
       >
-        Login
+        {{ DJANGO_API ? 'Login or Create Account' : 'Login' }}
       </v-btn>
     </template>
   </v-app-bar>
