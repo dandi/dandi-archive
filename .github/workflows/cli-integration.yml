@@ -58,5 +58,7 @@ jobs:
         run: pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
 
       - name: Run dandi-api tests in dandi-cli
-        run: python -m pytest -s -v --dandi-api --pyargs dandi
+        run: |
+          python -m pytest -s -v --dandi-api \
+            "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
         working-directory: /tmp
