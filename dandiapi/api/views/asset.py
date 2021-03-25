@@ -1,3 +1,14 @@
+try:
+    from storages.backends.s3boto3 import S3Boto3Storage
+except ImportError:
+    # This should only be used for type interrogation, never instantiation
+    S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
+try:
+    from minio_storage.storage import MinioStorage
+except ImportError:
+    # This should only be used for type interrogation, never instantiation
+    MinioStorage = type('FakeMinioStorage', (), {})
+
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -194,7 +205,32 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
         """Return a redirect to the file download in the object store."""
-        return HttpResponseRedirect(redirect_to=self.get_object().blob.blob.url)
+        storage = self.get_object().blob.blob.storage
+
+        if isinstance(storage, S3Boto3Storage):
+            client = storage.connection.meta.client
+            url = client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': storage.bucket_name,
+                    'Key': self.get_object().blob.blob.name,
+                    'ResponseContentDisposition': f'attachment; filename="{self.get_object().path}"',
+                },
+            )
+            return HttpResponseRedirect(url)
+        elif isinstance(storage, MinioStorage):
+            client = storage.base_url_client
+            bucket = storage.bucket_name
+            obj = self.get_object().blob.blob.name
+            path = self.get_object().path
+            url = client.presigned_get_object(
+                bucket,
+                obj,
+                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+            )
+            return HttpResponseRedirect(url)
+        else:
+            raise ValueError(f'Unknown storage {storage}')
 
     @swagger_auto_schema(
         manual_parameters=[
