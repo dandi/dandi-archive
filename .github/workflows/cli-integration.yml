@@ -25,7 +25,7 @@ jobs:
         run: |
           docker build \
             -t dandiarchive/dandiarchive-api \
-            -f dev/django.Dockerfile \
+            -f dev/django-public.Dockerfile \
             .
 
       - name: Set up Python ${{ matrix.python }}
