@@ -59,3 +59,4 @@ jobs:
 
       - name: Run dandi-api tests in dandi-cli
         run: python -m pytest -s -v --dandi-api --pyargs dandi
+        working-directory: /tmp
