@@ -60,7 +60,7 @@ def s3boto3_storage_factory() -> 'S3Boto3Storage':
         access_key=settings.MINIO_STORAGE_ACCESS_KEY,
         secret_key=settings.MINIO_STORAGE_SECRET_KEY,
         region_name='test-region',
-        bucket_name=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME,
+        bucket_name=settings.DANDI_DANDISETS_BUCKET_NAME,
         # For testing, connect to a local Minio instance
         endpoint_url=(
             f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
@@ -87,9 +87,10 @@ def minio_storage_factory() -> MinioStorage:
             secret_key=settings.MINIO_STORAGE_SECRET_KEY,
             # Don't use s3_connection_params.region, let Minio set its own value internally
         ),
-        bucket_name=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME,
+        bucket_name=settings.DANDI_DANDISETS_BUCKET_NAME,
         auto_create_bucket=True,
         presign_urls=True,
+        base_url=settings.MINIO_STORAGE_MEDIA_URL,
         # TODO: Test the case of an alternate base_url
         # base_url='http://minio:9000/bucket-name'
     )
