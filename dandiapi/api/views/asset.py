@@ -9,6 +9,8 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
 
+import os.path
+
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -209,12 +211,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         if isinstance(storage, S3Boto3Storage):
             client = storage.connection.meta.client
+            path = os.path.basename(self.get_object().path)
             url = client.generate_presigned_url(
                 'get_object',
                 Params={
                     'Bucket': storage.bucket_name,
                     'Key': self.get_object().blob.blob.name,
-                    'ResponseContentDisposition': f'attachment; filename="{self.get_object().path}"',
+                    'ResponseContentDisposition': f'attachment; filename="{path}"',
                 },
             )
             return HttpResponseRedirect(url)
@@ -222,7 +225,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             client = storage.base_url_client
             bucket = storage.bucket_name
             obj = self.get_object().blob.blob.name
-            path = self.get_object().path
+            path = os.path.basename(self.get_object().path)
             url = client.presigned_get_object(
                 bucket,
                 obj,

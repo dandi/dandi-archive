@@ -1,3 +1,4 @@
+import os.path
 from uuid import uuid4
 
 from guardian.shortcuts import assign_perm
@@ -303,7 +304,7 @@ def test_asset_download(api_client, storage, version, asset):
     download = requests.get(download_url)
     cd_header = download.headers.get('Content-Disposition')
 
-    assert cd_header == f'attachment; filename="{asset.path}"'
+    assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
 
     with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
