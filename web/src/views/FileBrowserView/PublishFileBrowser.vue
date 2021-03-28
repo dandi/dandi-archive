@@ -229,7 +229,7 @@ export default {
 
         this.$set(this.itemData, item.name, {
           download: publishRest.assetDownloadURI(identifier, version, asset),
-          uuid: asset.uuid,
+          uuid: asset.asset_id,
         });
       });
     },
