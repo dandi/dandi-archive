@@ -16,12 +16,19 @@ def _generate_doi_data(version: Version):
     contributors = []
     if 'contributor' in version.metadata.metadata:
         creators = [
-            {'name': contributor['name']}
+            {
+                'name': contributor['name'],
+                'nameType': 'Personal',
+            }
             for contributor in version.metadata.metadata['contributor']
             if 'dandi:Author' in contributor['roleName']
         ]
         contributors = [
-            {'name': contributor['name']}
+            {
+                'name': contributor['name'],
+                'nameType': 'Personal',
+                'contributorType': 'ContactPerson',
+            }
             for contributor in version.metadata.metadata['contributor']
         ]
     return (
@@ -31,13 +38,14 @@ def _generate_doi_data(version: Version):
                 'id': doi,
                 'type': 'dois',
                 'attributes': {
+                    'event': 'publish',
                     'doi': doi,
                     'creators': creators,
                     'titles': [{'title': version.name}],
                     'publisher': 'DANDI Archive',
                     'publicationYear': datetime.now().year,
                     'contributors': contributors,
-                    'types': {'resourceTypeGeneral': 'NWB'},
+                    'types': {'resourceTypeGeneral': 'Dataset'},
                     'url': url,
                 },
             }
