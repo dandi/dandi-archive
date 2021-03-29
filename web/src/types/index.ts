@@ -25,7 +25,7 @@ export interface Version {
 }
 
 export interface Asset {
-  uuid: string,
+  asset_id: string,
   path: string,
   sha256: string,
   size: number,
