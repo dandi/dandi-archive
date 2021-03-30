@@ -57,9 +57,9 @@ class VersionSerializer(serializers.ModelSerializer):
 
 class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
-        fields = DandisetSerializer.Meta.fields + ['most_recent_version']
+        fields = DandisetSerializer.Meta.fields + ['most_recent_published_version']
 
-    most_recent_version = VersionSerializer(read_only=True)
+    most_recent_published_version = VersionSerializer(read_only=True)
 
 
 class VersionDetailSerializer(VersionSerializer):
