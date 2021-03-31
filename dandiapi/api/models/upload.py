@@ -47,7 +47,7 @@ class Upload(TimeStampedModel):
     @classmethod
     def object_key(cls, upload_id):
         upload_id = str(upload_id)
-        return f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
+        return f'dev/blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size):
