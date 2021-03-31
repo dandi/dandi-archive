@@ -75,6 +75,10 @@ def test_upload_initialize(api_client, user):
             }
         ],
     }
+    # Verify that the URL won't expire for a week
+    upload_url = resp.data['parts'][0]['upload_url']
+    # 604800 seconds = 1 week
+    assert 'X-Amz-Expires=604800' in upload_url
 
     Upload.objects.get(upload_id=resp.data['upload_id'])
 
