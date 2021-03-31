@@ -5,7 +5,8 @@ from uuid import uuid4
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-from s3_file_field._multipart import MultipartManager
+
+from dandiapi.api.multipart import DandiMultipartManager
 
 from .asset import AssetBlob, get_asset_blob_prefix, get_asset_blob_storage
 
@@ -52,7 +53,7 @@ class Upload(TimeStampedModel):
     def initialize_multipart_upload(cls, etag, size):
         upload_id = uuid4()
         object_key = cls.object_key(upload_id)
-        multipart_initialization = MultipartManager.from_storage(
+        multipart_initialization = DandiMultipartManager.from_storage(
             AssetBlob.blob.field.storage
         ).initialize_upload(object_key, size)
 
