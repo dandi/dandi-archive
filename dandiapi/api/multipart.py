@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Iterator, Tuple
 
 from dandi.core.digests.dandietag import PartGenerator
@@ -13,19 +14,21 @@ class UnsupportedStorageException(Exception):
     pass
 
 
-class IterPartSizesMixin:
+class DandiMultipartMixin:
     @staticmethod
     def _iter_part_sizes(file_size: int, part_size: int = None) -> Iterator[Tuple[int, int]]:
         generator = PartGenerator.for_file_size(file_size)
         for part in generator:
             yield part.number, part.size
 
+    _url_expiration = timedelta(days=7)
 
-class DandiBoto3MultipartManager(IterPartSizesMixin, Boto3MultipartManager):
+
+class DandiBoto3MultipartManager(DandiMultipartMixin, Boto3MultipartManager):
     pass
 
 
-class DandiMinioMultipartManager(IterPartSizesMixin, MinioMultipartManager):
+class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
     pass
 
 
