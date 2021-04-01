@@ -36,7 +36,9 @@ def write_yamls(version_id: int) -> None:
     # Piggyback on the AssetBlob storage since we want to store .yamls in the same bucket
     storage = AssetBlob.blob.field.storage
 
-    dandiset_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
+    dandiset_yaml_path = (
+        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
+    )
     if storage.exists(dandiset_yaml_path):
         logger.info('%s already exists, deleting it', dandiset_yaml_path)
         storage.delete(dandiset_yaml_path)
@@ -44,7 +46,7 @@ def write_yamls(version_id: int) -> None:
     dandiset_yaml = YAMLRenderer().render(version.metadata.metadata)
     storage.save(dandiset_yaml_path, ContentFile(dandiset_yaml))
 
-    assets_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
     if storage.exists(assets_yaml_path):
         logger.info('%s already exists, deleting it', assets_yaml_path)
         storage.delete(assets_yaml_path)
