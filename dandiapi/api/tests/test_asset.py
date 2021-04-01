@@ -1,9 +1,11 @@
+import os.path
 from uuid import uuid4
 
 from guardian.shortcuts import assign_perm
 import pytest
+import requests
 
-from dandiapi.api.models import Asset
+from dandiapi.api.models import Asset, AssetBlob
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, UUID_RE
 
@@ -280,6 +282,32 @@ def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
     assert response.status_code == 403
 
     assert asset in Asset.objects.all()
+
+
+@pytest.mark.django_db
+def test_asset_download(api_client, storage, version, asset):
+    # Pretend like AssetBlob was defined with the given storage
+    AssetBlob.blob.field.storage = storage
+
+    version.assets.add(asset)
+
+    response = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/download/'
+    )
+
+    assert response.status_code == 302
+
+    download_url = response.get('Location')
+    assert download_url == HTTP_URL_RE
+
+    download = requests.get(download_url)
+    cd_header = download.headers.get('Content-Disposition')
+
+    assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
+
+    with asset.blob.blob.file.open('rb') as reader:
+        assert download.content == reader.read()
 
 
 @pytest.mark.django_db
