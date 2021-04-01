@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
@@ -89,9 +90,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        name = serializer.validated_data['name']
+        metadata = {
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            **serializer.validated_data['metadata'],
+        }
+
         version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'],
-            metadata=serializer.validated_data['metadata'],
+            name=name,
+            metadata=metadata,
         )
         if created:
             version_metadata.save()
