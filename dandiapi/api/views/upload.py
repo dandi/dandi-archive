@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import List
 
 from django.http.response import HttpResponseBase
@@ -113,6 +114,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
+    logging.info('Starting upload initialization of size %s, ETag %s', content_size, etag)
 
     asset_blobs = AssetBlob.objects.filter(etag=etag)
     if asset_blobs.exists():
@@ -121,11 +123,15 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             status=status.HTTP_409_CONFLICT,
             headers={'Location': asset_blobs.first().blob_id},
         )
+    logging.info('Blob with ETag %s does not yet exist', etag)
 
     upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
+    logging.info('Upload of ETag %s initialized', etag)
     upload.save()
+    logging.info('Upload of ETag %s saved', etag)
 
     response_serializer = UploadInitializationResponseSerializer(initialization)
+    logging.info('Upload of ETag %s serialized', etag)
     return Response(response_serializer.data)
 
 
