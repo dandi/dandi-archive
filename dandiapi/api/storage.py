@@ -61,6 +61,8 @@ def create_s3_storage(bucket_name: str) -> Storage:
 
     if issubclass(default_storage_class, S3Boto3Storage):
         storage = VerbatimNameS3Storage(bucket_name=bucket_name)
+        # Required to upload to the sponsored bucket
+        storage.default_acl = 'bucket-owner-full-control'
     elif issubclass(default_storage_class, MinioStorage):
         base_url = None
         if getattr(settings, 'MINIO_STORAGE_MEDIA_URL', None):
@@ -89,6 +91,8 @@ def create_s3_storage(bucket_name: str) -> Storage:
             auto_create_bucket=True,
             auto_create_policy=True,
             policy_type=Policy.read,
+            # Required to upload to the sponsored bucket
+            object_metadata={'x-amz-acl': 'bucket-owner-full-control'},
         )
         # TODO: generalize policy_type?
         # TODO: filename transforming?
