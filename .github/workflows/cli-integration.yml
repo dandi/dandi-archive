@@ -35,9 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         python:
-          - 3.7
           - 3.8
-          - 3.9
         dandi-version:
           - release
           - master
