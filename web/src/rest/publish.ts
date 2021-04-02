@@ -187,7 +187,7 @@ const publishRest = new Vue({
     },
     assetDownloadURI(identifier: string, version: string, asset: Asset) {
       const { asset_id } = asset;
-      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${asset_id}/download`;
+      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${asset_id}/download/`;
     },
     async deleteAsset(identifier: string, version: string, uuid: string): Promise<AxiosResponse> {
       return client.delete(`${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`);
