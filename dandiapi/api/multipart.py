@@ -25,11 +25,22 @@ class DandiMultipartMixin:
 
 
 class DandiBoto3MultipartManager(DandiMultipartMixin, Boto3MultipartManager):
-    pass
+    def _create_upload_id(self, object_key: str) -> str:
+        resp = self._client.create_multipart_upload(
+            Bucket=self._bucket_name,
+            Key=object_key,
+            ACL='bucket-owner-full-control',
+        )
+        return resp['UploadId']
 
 
 class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
-    pass
+    def _create_upload_id(self, object_key: str) -> str:
+        return self._client._new_multipart_upload(
+            bucket_name=self._bucket_name,
+            object_name=object_key,
+            metadata={'x-amz-acl': 'bucket-owner-full-control'},
+        )
 
 
 class DandiMultipartManager(MultipartManager):
