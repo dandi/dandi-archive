@@ -1,4 +1,4 @@
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
@@ -7,7 +7,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Asset, Version, VersionMetadata
+from dandiapi.api import doi
+from dandiapi.api.models import Version, VersionMetadata
+from dandiapi.api.tasks import write_yamls
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -35,7 +37,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
-        version = self.get_object()
+        version: Version = self.get_object()
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
@@ -45,10 +47,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        version_metadata: VersionMetadata
         version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'],
-            metadata=serializer.validated_data['metadata'],
+            name=serializer.validated_data['name'], metadata=serializer.validated_data['metadata']
         )
+
         if created:
             version_metadata.save()
 
@@ -58,7 +62,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=None, responses={200: VersionSerializer()})
+    @swagger_auto_schema(request_body=no_body, responses={200: VersionSerializer()})
     @action(detail=True, methods=['POST'])
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
     def publish(self, request, **kwargs):
@@ -71,9 +75,20 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             return response
 
         new_version = Version.copy(old_version)
+
+        new_version.doi = doi.create_doi(new_version)
+
         new_version.save()
-        for old_asset in old_version.assets.all():
-            new_asset = Asset.copy(old_asset, new_version)
-            new_asset.save()
+        # Bulk create the join table rows to optimize linking assets to new_version
+        AssetVersions = Version.assets.through  # noqa: N806
+        AssetVersions.objects.bulk_create(
+            [
+                AssetVersions(asset_id=asset['id'], version_id=new_version.id)
+                for asset in old_version.assets.values('id')
+            ]
+        )
+
+        write_yamls.delay(new_version.id)
+
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)

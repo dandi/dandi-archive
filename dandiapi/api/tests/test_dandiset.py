@@ -1,9 +1,10 @@
+from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import Dandiset
 
-from .fuzzy import DANDISET_ID_RE, TIMESTAMP_RE
+from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -110,7 +111,11 @@ def test_dandiset_rest_create(api_client, user):
             'name': name,
             'asset_count': 0,
             'size': 0,
-            'metadata': metadata,
+            'dandiset': {
+                'identifier': DANDISET_ID_RE,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            },
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
@@ -121,11 +126,101 @@ def test_dandiset_rest_create(api_client, user):
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=id)
     assert list(dandiset.owners.all()) == [user]
+
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_version.version == 'draft'
     assert dandiset.most_recent_version.metadata.name == name
-    assert dandiset.most_recent_version.metadata.metadata == metadata
+
+    # Verify that name and identifier were injected
+    assert dandiset.most_recent_version.metadata.metadata == {
+        **metadata,
+        'name': name,
+        'identifier': DANDISET_SCHEMA_ID_RE,
+        'schema_version': settings.DANDI_SCHEMA_VERSION,
+    }
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_with_identifier(api_client, user):
+    api_client.force_authenticate(user=user)
+    name = 'Test Dandiset'
+    identifier = '123456'
+    metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
+
+    response = api_client.post(
+        '/api/dandisets/',
+        {'name': name, 'metadata': metadata},
+        format='json',
+    )
+    assert response.data == {
+        'identifier': identifier,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'most_recent_version': {
+            'version': 'draft',
+            'name': name,
+            'asset_count': 0,
+            'size': 0,
+            'dandiset': {
+                'identifier': identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            },
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        },
+    }
+
+    # Creating a Dandiset has side affects.
+    # Verify that the user is the only owner.
+    dandiset = Dandiset.objects.get(id=identifier)
+    assert list(dandiset.owners.all()) == [user]
+
+    # Verify that a draft Version and VersionMetadata were also created.
+    assert dandiset.versions.count() == 1
+    assert dandiset.most_recent_version.version == 'draft'
+    assert dandiset.most_recent_version.metadata.name == name
+
+    # Verify that name and identifier were injected
+    assert dandiset.most_recent_version.metadata.metadata == {
+        **metadata,
+        'name': name,
+        'identifier': f'DANDI:{identifier}',
+        'schema_version': settings.DANDI_SCHEMA_VERSION,
+    }
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_with_duplicate_identifier(api_client, user, dandiset):
+    api_client.force_authenticate(user=user)
+    name = 'Test Dandiset'
+    identifier = dandiset.identifier
+    metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
+
+    response = api_client.post(
+        '/api/dandisets/',
+        {'name': name, 'metadata': metadata},
+        format='json',
+    )
+    assert response.status_code == 400
+    assert response.data == f'Dandiset {identifier} Already Exists'
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_with_invalid_identifier(api_client, user):
+    api_client.force_authenticate(user=user)
+    name = 'Test Dandiset'
+    identifier = 'abc123'
+    metadata = {'foo': 'bar', 'identifier': identifier}
+
+    response = api_client.post(
+        '/api/dandisets/',
+        {'name': name, 'metadata': metadata},
+        format='json',
+    )
+    assert response.status_code == 400
+    assert response.data == f'Invalid Identifier {identifier}'
 
 
 @pytest.mark.django_db
@@ -284,3 +379,24 @@ def test_dandiset_rest_add_malformed(api_client, dandiset, user):
     )
     assert resp.status_code == 400
     assert resp.data == [{'username': ['This field is required.']}]
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_no_query(api_client):
+    assert api_client.get('/api/dandisets/').data['results'] == []
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_empty_query(api_client):
+    assert api_client.get('/api/dandisets/', {'search': ''}).data['results'] == []
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_identifier(api_client, version):
+    results = api_client.get('/api/dandisets/', {'search': version.dandiset.identifier}).data[
+        'results'
+    ]
+    assert len(results) == 1
+    assert results[0]['identifier'] == version.dandiset.identifier
+    assert results[0]['most_recent_version']['version'] == version.version
+    assert results[0]['most_recent_version']['name'] == version.name

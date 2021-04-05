@@ -24,15 +24,19 @@ class DandiMixin(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
-        configuration.INSTALLED_APPS += [
+        # Install local apps first, to ensure any overridden resources are found first
+        configuration.INSTALLED_APPS = [
             'dandiapi.api.apps.PublishConfig',
+        ] + configuration.INSTALLED_APPS
+
+        # Install additional apps
+        configuration.INSTALLED_APPS += [
             'guardian',
             'allauth.socialaccount.providers.github',
         ]
+
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # Required for swagger logins
-            'rest_framework.authentication.SessionAuthentication',
             # TODO remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
@@ -44,6 +48,15 @@ class DandiMixin(ConfigMixin):
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
     DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
+    DANDI_SCHEMA_VERSION = values.Value(environ_required=True)
+
+    DANDI_DOI_API_URL = values.URLValue(environ=True)
+    DANDI_DOI_API_USER = values.Value(environ=True)
+    DANDI_DOI_API_PASSWORD = values.Value(environ=True)
+    DANDI_DOI_API_PREFIX = values.Value(environ=True)
+
+    # The CloudAMQP connection was dying, using the heartbeat should keep it alive
+    CELERY_BROKER_HEARTBEAT = 20
 
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
@@ -52,6 +65,7 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
+    MINIO_STORAGE_MEDIA_URL = 'http://localhost:9000/test-django-storage'
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_GIRDER_API_KEY = 'testkey'

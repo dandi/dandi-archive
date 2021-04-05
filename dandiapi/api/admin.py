@@ -6,7 +6,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AssetMetadata,
     Dandiset,
-    Validation,
+    Upload,
     Version,
     VersionMetadata,
 )
@@ -25,7 +25,7 @@ class VersionMetadataAdmin(admin.ModelAdmin):
 
 
 class AssetInline(admin.TabularInline):
-    model = Asset
+    model = Asset.versions.through
 
 
 @admin.register(Version)
@@ -37,8 +37,8 @@ class VersionAdmin(admin.ModelAdmin):
 
 @admin.register(AssetBlob)
 class AssetBlobAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob', 'references', 'modified', 'created']
-    list_display_links = ['id', 'blob']
+    list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
+    list_display_links = ['id', 'blob_id']
 
 
 @admin.register(AssetMetadata)
@@ -55,12 +55,21 @@ class AssetBlobInline(admin.TabularInline):
 class AssetAdmin(admin.ModelAdmin):
     # list_display = ['id', 'uuid', 'path']
     # list_display_links = ['id', 'uuid']
-    list_display = ['id', 'uuid', 'path', 'version', 'blob', 'metadata', 'modified', 'created']
-    list_display_links = ['id', 'uuid', 'path']
+    list_display = [
+        'id',
+        'asset_id',
+        'path',
+        'blob',
+        'metadata',
+        'size',
+        'modified',
+        'created',
+    ]
+    list_display_links = ['id', 'asset_id', 'path']
     # inlines = [AssetBlobInline]
 
 
-@admin.register(Validation)
-class ValidationAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob', 'state', 'sha256', 'error', 'modified', 'created']
-    list_display_links = ['id', 'blob', 'sha256']
+@admin.register(Upload)
+class UploadAdmin(admin.ModelAdmin):
+    list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
+    list_display_links = ['id', 'upload_id']

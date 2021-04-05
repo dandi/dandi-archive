@@ -1,11 +1,11 @@
 from .asset import AssetViewSet
 from .auth import auth_token_view
 from .dandiset import DandisetViewSet
-from .search import search_view
+from .info import info_view
 from .stats import stats_view
 from .upload import (
+    blob_read_view,
     upload_complete_view,
-    upload_get_validation_view,
     upload_initialize_view,
     upload_validate_view,
 )
@@ -17,12 +17,12 @@ __all__ = [
     'DandisetViewSet',
     'VersionViewSet',
     'auth_token_view',
+    'blob_read_view',
     'upload_initialize_view',
     'upload_complete_view',
     'upload_validate_view',
-    'upload_get_validation_view',
     'users_me_view',
     'users_search_view',
-    'search_view',
     'stats_view',
+    'info_view',
 ]

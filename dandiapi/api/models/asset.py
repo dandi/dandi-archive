@@ -4,41 +4,50 @@ from typing import List, Set
 import uuid
 
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.storage import DeconstructableFileField, create_s3_storage
+from dandiapi.api.storage import create_s3_storage
 
-from .validation import Validation
 from .version import Version
 
 
-def _get_asset_blob_storage() -> Storage:
+def get_asset_blob_storage() -> Storage:
     return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
-def _get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
-    # return f'{instance.version.dandiset.identifier}/{instance.version.version}/{filename}'
+def get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
     return filename
 
 
 class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
+    ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
-    blob = DeconstructableFileField(
-        blank=True, storage=_get_asset_blob_storage, upload_to=_get_asset_blob_prefix
+    blob_id = models.UUIDField(unique=True)
+    blob = models.FileField(
+        blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
     )
-    sha256 = models.CharField(max_length=64, validators=[RegexValidator(f'^{SHA256_REGEX}$')])
+    sha256 = models.CharField(
+        null=True,
+        blank=True,
+        max_length=64,
+        validators=[RegexValidator(f'^{SHA256_REGEX}$')],
+    )
+    etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
+    size = models.PositiveBigIntegerField()
 
     class Meta:
-        indexes = [models.Index(fields=['sha256'])]
-
-    @property
-    def size(self):
-        return self.blob.size
+        indexes = [HashIndex(fields=['etag'])]
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-etag-size',
+                fields=['etag', 'size'],
+            )
+        ]
 
     @property
     def references(self) -> int:
@@ -47,13 +56,9 @@ class AssetBlob(TimeStampedModel):
     def __str__(self) -> str:
         return self.blob.name
 
-    @classmethod
-    def from_validation(cls, validation: Validation):
-        return cls.objects.get_or_create(blob=validation.blob, sha256=validation.sha256)
-
 
 class AssetMetadata(TimeStampedModel):
-    metadata = JSONField(blank=True, unique=True, default=dict)
+    metadata = models.JSONField(blank=True, unique=True, default=dict)
 
     @property
     def references(self) -> int:
@@ -66,14 +71,18 @@ class AssetMetadata(TimeStampedModel):
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
-    version = models.ForeignKey(Version, related_name='assets', on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ['path', 'version']
+    versions = models.ManyToManyField(Version, related_name='assets')
+    previous = models.ForeignKey(
+        'Asset',
+        blank=True,
+        null=True,
+        default=None,
+        on_delete=models.PROTECT,
+    )
 
     @property
     def size(self):
@@ -83,12 +92,30 @@ class Asset(TimeStampedModel):
     def sha256(self):
         return self.blob.sha256
 
+    def _populate_metadata(self):
+        new: AssetMetadata
+        new, created = AssetMetadata.objects.get_or_create(
+            metadata={
+                **self.metadata.metadata,
+                'path': self.path,
+            },
+        )
+
+        if created:
+            new.save()
+
+        self.metadata = new
+
+    def save(self, *args, **kwargs):
+        self._populate_metadata()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return self.path
 
     @classmethod
-    def copy(cls, asset, version):
-        return Asset(blob=asset.blob, metadata=asset.metadata, version=version)
+    def copy(cls, asset):
+        return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata)
 
     @classmethod
     def get_path(cls, path_prefix: str, qs: List[str]) -> Set:
@@ -113,6 +140,4 @@ class Asset(TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        return sum([asset.size for asset in cls.objects.all()])
-        return cls.objects.values('size')
-        return cls.objects.aggregate(size=models.Sum('blob__blob__size'))['size'] or 0
+        return cls.objects.aggregate(size=models.Sum('blob__size'))['size'] or 0

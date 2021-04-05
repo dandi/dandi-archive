@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import datetime
 
-from django.contrib.postgres.fields import JSONField
+from django.conf import settings
+from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -11,11 +12,14 @@ from .dandiset import Dandiset
 
 
 class VersionMetadata(TimeStampedModel):
-    metadata = JSONField(default=dict)
+    metadata = models.JSONField(default=dict)
     name = models.CharField(max_length=300)
 
     class Meta:
-        unique_together = ['metadata', 'name']
+        indexes = [
+            HashIndex(fields=['metadata']),
+            HashIndex(fields=['name']),
+        ]
 
     @property
     def references(self) -> int:
@@ -40,6 +44,7 @@ class Version(TimeStampedModel):
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
         default=_get_default_version,
     )  # TODO: rename this?
+    doi = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
         unique_together = ['dandiset', 'version']
@@ -54,7 +59,7 @@ class Version(TimeStampedModel):
 
     @property
     def size(self):
-        return sum([asset.size for asset in self.assets.all()])
+        return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
@@ -78,6 +83,27 @@ class Version(TimeStampedModel):
     @classmethod
     def copy(cls, version):
         return Version(dandiset=version.dandiset, metadata=version.metadata)
+
+    def _populate_metadata(self):
+        new: VersionMetadata
+        new, created = VersionMetadata.objects.get_or_create(
+            name=self.metadata.name,
+            metadata={
+                **self.metadata.metadata,
+                'name': self.metadata.name,
+                'identifier': f'DANDI:{self.dandiset.identifier}',
+                'schema_version': settings.DANDI_SCHEMA_VERSION,
+            },
+        )
+
+        if created:
+            new.save()
+
+        self.metadata = new
+
+    def save(self, *args, **kwargs):
+        self._populate_metadata()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f'{self.dandiset.identifier}/{self.version}'

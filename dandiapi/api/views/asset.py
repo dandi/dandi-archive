@@ -1,6 +1,19 @@
-from django.core.validators import RegexValidator
+try:
+    from storages.backends.s3boto3 import S3Boto3Storage
+except ImportError:
+    # This should only be used for type interrogation, never instantiation
+    S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
+try:
+    from minio_storage.storage import MinioStorage
+except ImportError:
+    # This should only be used for type interrogation, never instantiation
+    MinioStorage = type('FakeMinioStorage', (), {})
+
+import os.path
+
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_filters import rest_framework as filters
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -18,11 +31,8 @@ from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerialize
 
 
 class AssetRequestSerializer(serializers.Serializer):
-    path = serializers.CharField(max_length=512)
     metadata = serializers.JSONField()
-    sha256 = serializers.CharField(
-        max_length=64, validators=[RegexValidator(f'^{AssetBlob.SHA256_REGEX}$')]
-    )
+    blob_id = serializers.UUIDField()
 
 
 class AssetFilter(filters.FilterSet):
@@ -34,18 +44,43 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
-    queryset = Asset.objects.all().select_related('version')
+    queryset = Asset.objects.all().order_by('created')
 
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
     pagination_class = DandiPagination
 
-    lookup_field = 'uuid'
+    lookup_field = 'asset_id'
     lookup_value_regex = Asset.UUID_REGEX
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    @swagger_auto_schema(
+        responses={
+            200: 'The asset metadata.',
+        },
+    )
+    def retrieve(self, request, versions__dandiset__pk, versions__version, asset_id):
+        asset = self.get_object()
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
+            'asset-download',
+            kwargs={
+                'versions__dandiset__pk': versions__dandiset__pk,
+                'versions__version': versions__version,
+                'asset_id': asset_id,
+            },
+        )
+
+        blob_url = asset.blob.blob.url
+        metadata = {
+            **asset.metadata.metadata,
+            'identifier': asset_id,
+            'contentUrl': [download_url, blob_url],
+        }
+        return Response(metadata, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),
@@ -55,11 +90,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         },
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def create(self, request, version__dandiset__pk, version__version):
+    def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
             Version,
-            dandiset=version__dandiset__pk,
-            version=version__version,
+            dandiset=versions__dandiset__pk,
+            version=versions__version,
         )
 
         # TODO @permission_required doesn't work on methods
@@ -71,21 +106,26 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
+        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
 
-        asset_metadata, created = AssetMetadata.objects.get_or_create(
-            metadata=serializer.validated_data['metadata']
-        )
+        metadata = serializer.validated_data['metadata']
+        if 'path' not in metadata:
+            return Response('No path specified in metadata.', status=400)
+        path = metadata['path']
+        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
+        if version.assets.filter(path=path, blob=asset_blob, metadata=asset_metadata).exists():
+            return Response('Asset already exists.', status=status.HTTP_400_BAD_REQUEST)
+
         asset = Asset(
-            path=serializer.validated_data['path'],
+            path=path,
             blob=asset_blob,
             metadata=asset_metadata,
-            version=version,
         )
         asset.save()
+        version.assets.add(asset)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -95,34 +135,68 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         responses={200: AssetDetailSerializer()},
     )
     # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
-    def update(self, request, **kwargs):
+    def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
-        asset = self.get_object()
+        old_asset = self.get_object()
+        version = Version.objects.get(
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
+        )
 
         # TODO @permission_required doesn't work on methods
         # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], asset.version.dandiset, return_403=True)
+        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
         if response:
             return response
 
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, sha256=serializer.validated_data['sha256'])
+        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
 
-        asset_metadata, created = AssetMetadata.objects.get_or_create(
-            metadata=serializer.validated_data['metadata']
-        )
+        metadata = serializer.validated_data['metadata']
+        if 'path' not in metadata:
+            return Response('No path specified in metadata', status=404)
+        path = metadata['path']
+        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
 
-        asset.blob = asset_blob
-        asset.metadata = asset_metadata
-        asset.path = serializer.validated_data['path']
-        asset.save()
+        if asset_metadata == old_asset.metadata and asset_blob == old_asset.blob:
+            # No changes, don't create a new asset
+            new_asset = old_asset
+        else:
+            # Mint a new Asset whenever blob or metadata are modified
+            new_asset = Asset(
+                path=path,
+                blob=asset_blob,
+                metadata=asset_metadata,
+                previous=old_asset,
+            )
+            new_asset.save()
 
-        serializer = AssetDetailSerializer(instance=asset)
+            # Replace the old asset with the new one
+            version.assets.add(new_asset)
+            version.assets.remove(old_asset)
+
+        serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
+    def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
+        asset = self.get_object()
+        version = Version.objects.get(
+            dandiset__pk=versions__dandiset__pk, version=versions__version
+        )
+
+        # TODO @permission_required doesn't work on methods
+        # https://github.com/django-guardian/django-guardian/issues/723
+        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
+        if response:
+            return response
+
+        version.assets.remove(asset)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
         responses={
@@ -133,7 +207,33 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
         """Return a redirect to the file download in the object store."""
-        return HttpResponseRedirect(redirect_to=self.get_object().blob.blob.url)
+        storage = self.get_object().blob.blob.storage
+
+        if isinstance(storage, S3Boto3Storage):
+            client = storage.connection.meta.client
+            path = os.path.basename(self.get_object().path)
+            url = client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': storage.bucket_name,
+                    'Key': self.get_object().blob.blob.name,
+                    'ResponseContentDisposition': f'attachment; filename="{path}"',
+                },
+            )
+            return HttpResponseRedirect(url)
+        elif isinstance(storage, MinioStorage):
+            client = storage.base_url_client
+            bucket = storage.bucket_name
+            obj = self.get_object().blob.blob.name
+            path = os.path.basename(self.get_object().path)
+            url = client.presigned_get_object(
+                bucket,
+                obj,
+                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+            )
+            return HttpResponseRedirect(url)
+        else:
+            raise ValueError(f'Unknown storage {storage}')
 
     @swagger_auto_schema(
         manual_parameters=[
@@ -151,11 +251,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         """
         Return the unique files/directories that directly reside under the specified path.
 
-        The specified path must be a folder (must end with a slash).
+        The specified path must be a folder; it either must end in a slash or
+        (to refer to the root folder) must be the empty string.
         """
-        path_prefix: str = self.request.query_params.get('path_prefix') or '/'
+        path_prefix: str = self.request.query_params.get('path_prefix') or ''
         # Enforce trailing slash
-        path_prefix = f'{path_prefix}/' if path_prefix[-1] != '/' else path_prefix
+        if path_prefix and path_prefix[-1] != '/':
+            path_prefix = f'{path_prefix}/'
         qs = self.get_queryset().filter(path__startswith=path_prefix).values()
 
         return Response(Asset.get_path(path_prefix, qs))

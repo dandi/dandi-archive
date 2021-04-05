@@ -1,3 +1,5 @@
+import hashlib
+
 from django.contrib.auth.models import User
 import factory
 
@@ -6,7 +8,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AssetMetadata,
     Dandiset,
-    Validation,
+    Upload,
     Version,
     VersionMetadata,
 )
@@ -66,9 +68,27 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
 
-    blob = factory.django.FileField(data=b'somefilebytes')
-    # TODO: This sha256 is technically invalid for the blob
-    sha256 = factory.Faker('sha256')
+    blob_id = factory.Faker('uuid4')
+    blob = factory.django.FileField(data=factory.Faker('binary', length=100))
+    size = 13  # len(somefilebytes)
+
+    @factory.lazy_attribute
+    def sha256(self):
+        h = hashlib.sha256()
+        h.update(self.blob.read())
+        self.blob.seek(0)
+        return h.hexdigest()
+
+    @factory.lazy_attribute
+    def etag(self):
+        h = hashlib.md5()
+        h.update(self.blob.read())
+        self.blob.seek(0)
+        return h.hexdigest()
+
+    @factory.lazy_attribute
+    def size(self):
+        return len(self.blob.read())
 
 
 class AssetMetadataFactory(factory.django.DjangoModelFactory):
@@ -83,17 +103,25 @@ class AssetFactory(factory.django.DjangoModelFactory):
         model = Asset
 
     path = factory.Faker('file_path', extension='nwb')
-    version = factory.SubFactory(DraftVersionFactory)
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
 
 
-class ValidationFactory(factory.django.DjangoModelFactory):
+class UploadFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Validation
+        model = Upload
 
-    blob = factory.django.FileField(data=b'validationbytes')
-    # TODO: This sha256 is technically invalid for the blob
-    sha256 = factory.Faker('sha256')
-    state = 'SUCCEEDED'
-    error = factory.Faker('sentence')
+    upload_id = factory.Faker('uuid4')
+    multipart_upload_id = factory.Faker('uuid4')
+    blob = factory.django.FileField(data=factory.Faker('binary', length=100))
+
+    @factory.lazy_attribute
+    def size(self):
+        return self.blob.size
+
+    @factory.lazy_attribute
+    def etag(self):
+        h = hashlib.md5()
+        h.update(self.blob.read())
+        self.blob.seek(0)
+        return h.hexdigest()

@@ -17,7 +17,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='Apache 2.0',
-    author='Kitware, Inc',
+    author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     keywords='',
     classifiers=[
@@ -37,28 +37,37 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'django==3.0.9',
+        'dandi>=0.12.0',
+        'django>=3.1.2',
         'django-admin-display',
         'django-allauth',
-        'django-composed-configuration[dev,prod]>=0.10.0',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
         'django-guardian',
-        'django-oauth-toolkit==1.3.2',
-        'django-s3-file-field[minio,boto3]',
+        'django-oauth-toolkit',
         'djangorestframework',
+        'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
         'httpx',
         # Production-only
+        'django-composed-configuration[prod]',
+        'django-s3-file-field[boto3]',
         'django-storages[boto3]',
         'gunicorn',
-        # Development-only
-        'django-debug-toolbar',
+        # Development-only, but required
         'django-minio-storage',
         # Temporary dependency for user migration
         'girder-client',
     ],
-    extras_require={'dev': ['ipython', 'tox']},
+    extras_require={
+        'dev': [
+            'django-composed-configuration[dev]',
+            'django-debug-toolbar',
+            'django-s3-file-field[minio]',
+            'ipython',
+            'tox',
+        ]
+    },
 )

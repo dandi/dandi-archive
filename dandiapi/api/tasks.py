@@ -1,65 +1,57 @@
-import hashlib
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.core.files.base import ContentFile
 from django.db.transaction import atomic
+from rest_framework_yaml.renderers import YAMLRenderer
 
-from dandiapi.api.models import AssetBlob, Validation
+from dandiapi.api.checksum import calculate_sha256_checksum
+from dandiapi.api.models import AssetBlob, Version
 
 logger = get_task_logger(__name__)
 
 
-class ChecksumMismatch(Exception):
-    def __init__(self, expected_sha256, actual_sha256):
-        self.expected_sha256 = expected_sha256
-        self.actual_sha256 = actual_sha256
+@shared_task
+@atomic
+def calculate_sha256(blob_id: int) -> None:
+    logger.info('Starting sha256 calculation for blob %s', blob_id)
+    asset_blob = AssetBlob.objects.get(blob_id=blob_id)
 
-    def __str__(self):
-        return (
-            f'Given checksum {self.expected_sha256} did not match '
-            f'calculated checksum {self.actual_sha256}.'
-        )
+    sha256 = calculate_sha256_checksum(asset_blob.blob.storage, asset_blob.blob.name)
+    logger.info('Calculated sha256 %s', sha256)
+
+    # TODO: Run dandi-cli validation
+
+    logger.info('Saving sha256 %s to blob %s', sha256, blob_id)
+
+    asset_blob.sha256 = sha256
+    asset_blob.save()
 
 
 @shared_task
 @atomic
-def validate(validation_id: int) -> None:
-    validation: Validation = Validation.objects.get(pk=validation_id)
+def write_yamls(version_id: int) -> None:
+    logger.info('Writing dandiset.yaml and assets.yaml for version %s', version_id)
+    version: Version = Version.objects.get(id=version_id)
 
-    try:
-        buffer_size = 4096
-        h = hashlib.sha256()
+    # Piggyback on the AssetBlob storage since we want to store .yamls in the same bucket
+    storage = AssetBlob.blob.field.storage
 
-        with validation.blob.open() as stream:
-            # html = f.read().decode('utf-8')
-            buffer = stream.read(buffer_size)
-            while buffer != b'':
-                h.update(buffer)
-                buffer = stream.read(buffer_size)
+    dandiset_yaml_path = (
+        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
+    )
+    if storage.exists(dandiset_yaml_path):
+        logger.info('%s already exists, deleting it', dandiset_yaml_path)
+        storage.delete(dandiset_yaml_path)
+    logger.info('Saving %s', dandiset_yaml_path)
+    dandiset_yaml = YAMLRenderer().render(version.metadata.metadata)
+    storage.save(dandiset_yaml_path, ContentFile(dandiset_yaml))
 
-        sha256 = h.hexdigest()
-        logger.info('Calculated sha256 %s', sha256)
-        if sha256 != validation.sha256:
-            raise ChecksumMismatch(validation.sha256, sha256)
+    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    if storage.exists(assets_yaml_path):
+        logger.info('%s already exists, deleting it', assets_yaml_path)
+        storage.delete(assets_yaml_path)
+    logger.info('Saving %s', assets_yaml_path)
+    assets_yaml = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
+    storage.save(assets_yaml_path, ContentFile(assets_yaml))
 
-        # TODO: Run dandi-cli validation
-
-        validation.state = Validation.State.SUCCEEDED
-        validation.error = None
-        validation.save()
-
-        # TODO separate storages for Validations and Assets require a copy at this point
-        asset_blob, created = AssetBlob.from_validation(validation)
-        if created:
-            asset_blob.save()
-    except ChecksumMismatch as e:
-        logger.info('Checksum mismatch: %s', str(e))
-        validation.state = Validation.State.FAILED
-        validation.error = str(e)
-        validation.save()
-    except Exception as e:
-        validation.state = Validation.State.FAILED
-        validation.error = f'Internal error: {e}'
-        validation.save()
-        # TODO: Can celery recover from a task error?
-        # raise e
+    logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
