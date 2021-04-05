@@ -58,6 +58,8 @@ setup(
         'gunicorn',
         # Development-only, but required
         'django-minio-storage',
+        # Temporary dependency for user migration
+        'girder-client',
     ],
     extras_require={
         'dev': [
