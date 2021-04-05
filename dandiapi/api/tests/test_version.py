@@ -175,6 +175,23 @@ def test_version_rest_update_large(api_client, user, version):
 
 
 @pytest.mark.django_db
+def test_version_rest_update_not_an_owner(api_client, user, version):
+    api_client.force_authenticate(user=user)
+
+    new_name = 'A unique and special name!'
+    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+
+    assert (
+        api_client.put(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
+            {'metadata': new_metadata, 'name': new_name},
+            format='json',
+        ).status_code
+        == 403
+    )
+
+
+@pytest.mark.django_db
 def test_version_rest_publish(api_client, user, version, asset):
     assign_perm('owner', user, version.dandiset)
     api_client.force_authenticate(user=user)
@@ -204,3 +221,14 @@ def test_version_rest_publish(api_client, user, version, asset):
     assert asset == version.assets.get()
     assert asset == published_version.assets.get()
     assert asset.versions.count() == 2
+
+
+@pytest.mark.django_db
+def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
+    api_client.force_authenticate(user=user)
+    version.assets.add(asset)
+
+    resp = api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/publish/'
+    )
+    assert resp.status_code == 403
