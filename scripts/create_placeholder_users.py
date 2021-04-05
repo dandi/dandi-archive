@@ -68,8 +68,8 @@ def migrate(gc):
         # Do not use the dandiset identifier, it is an autoincremented primary key
         # and cannot be trusted.
         # We are also assuming that no two dandisets will have metadata with the same identifier.
-        # TODO make sure this query works with all identifier formats
-        version = Version.objects.filter(metadata__metadata__identifier=dandiset_identifier).first()
+        dandi_id = f'DANDI:{dandiset_identifier}'
+        version = Version.objects.filter(metadata__metadata__identifier=dandi_id).first()
         if version is None:
             print(f'Dandiset {dandiset_identifier} does not exist in Django')
             continue
