@@ -3,7 +3,9 @@ from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
@@ -127,15 +129,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # @permission_required_or_403('owner', (Dandiset, 'dandiset__pk'))
+    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def destroy(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
-
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
-        if response:
-            return response
 
         dandiset.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
