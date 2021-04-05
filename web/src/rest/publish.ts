@@ -152,7 +152,8 @@ const publishRest = new Vue({
       return response;
     },
     async createDandiset(name: string, description: string): Promise<AxiosResponse<Dandiset>> {
-      const metadata = { name, description };
+      const { schema_version } = await this.info();
+      const metadata = { name, description, schemaVersion: schema_version };
       return client.post('dandisets/', { name, metadata });
     },
     async saveDandiset(
