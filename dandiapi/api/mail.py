@@ -10,18 +10,18 @@ def build_message(subject, message, to, html_message):
 
 
 def removed_subject(dandiset):
-    return f'Removed from Dandiset "{dandiset.most_recent_published_version.name}"'
+    return f'Removed from Dandiset "{dandiset.draft_version.name}"'
 
 
 def removed_message(dandiset):
-    return f'You have been removed as an owner of Dandiset "{dandiset.most_recent_published_version.name}".'
+    return f'You have been removed as an owner of Dandiset "{dandiset.draft_version.name}".'
 
 
 def removed_html_message(dandiset):
     return (
         'You have been removed as an owner of Dandiset '
         f'<a href="https://dandiarchive.org/dandiset/{dandiset.identifier}">'
-        f'{dandiset.most_recent_published_version.name}'
+        f'{dandiset.draft_version.name}'
         '</a>.'
     )
 
@@ -36,18 +36,18 @@ def build_removed_message(dandiset, removed_owner):
 
 
 def added_subject(dandiset):
-    return f'Added to Dandiset "{dandiset.most_recent_published_version.name}"'
+    return f'Added to Dandiset "{dandiset.draft_version.name}"'
 
 
 def added_message(dandiset):
-    return f'You have been made an owner of Dandiset "{dandiset.most_recent_published_version.name}".'
+    return f'You have been made an owner of Dandiset "{dandiset.draft_version.name}".'
 
 
 def added_html_message(dandiset):
     return (
         'You have been made an owner of Dandiset '
         f'<a href="https://dandiarchive.org/dandiset/{dandiset.identifier}">'
-        f'{dandiset.most_recent_published_version.name}'
+        f'{dandiset.draft_version.name}'
         '</a>.'
     )
 

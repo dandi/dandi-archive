@@ -21,7 +21,12 @@ class Dandiset(TimeStampedModel):
 
     @property
     def most_recent_published_version(self):
-        return self.versions.order_by('created').last()
+        version = self.versions.order_by('modified').last()
+        return None if version.version == 'draft' else version
+
+    @property
+    def draft_version(self):
+        return self.versions.order_by('modified').last()
 
     @property
     def owners(self):

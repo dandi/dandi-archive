@@ -42,7 +42,7 @@ def test_dandiset_rest_list(api_client, dandiset):
                 'identifier': dandiset.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                'most_recent_published_version': None,
+                'draft_version': None,
             }
         ],
     }
@@ -64,7 +64,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'identifier': dandiset.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                'most_recent_published_version': None,
+                'draft_version': None,
             }
         ],
     }
@@ -76,7 +76,7 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'identifier': dandiset.identifier,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'most_recent_published_version': None,
+        'draft_version': None,
     }
 
 
@@ -105,7 +105,7 @@ def test_dandiset_rest_create(api_client, user):
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'most_recent_published_version': {
+        'draft_version': {
             'version': 'draft',
             'name': name,
             'asset_count': 0,
@@ -118,6 +118,7 @@ def test_dandiset_rest_create(api_client, user):
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
+        'most_recent_published_version': None,
     }
     id = int(response.data['identifier'])
 
@@ -128,11 +129,12 @@ def test_dandiset_rest_create(api_client, user):
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
-    assert dandiset.most_recent_published_version.version == 'draft'
-    assert dandiset.most_recent_published_version.metadata.name == name
+    assert dandiset.most_recent_published_version == None
+    assert dandiset.draft_version.version == 'draft'
+    assert dandiset.draft_version.metadata.name == name
 
     # Verify that name and identifier were injected
-    assert dandiset.most_recent_published_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
@@ -155,7 +157,8 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
         'identifier': identifier,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'most_recent_published_version': {
+        'most_recent_published_version': None,
+        'draft_version': {
             'version': 'draft',
             'name': name,
             'asset_count': 0,
@@ -177,11 +180,12 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
-    assert dandiset.most_recent_published_version.version == 'draft'
-    assert dandiset.most_recent_published_version.metadata.name == name
+    assert dandiset.most_recent_published_version == None
+    assert dandiset.draft_version.version == 'draft'
+    assert dandiset.draft_version.metadata.name == name
 
     # Verify that name and identifier were injected
-    assert dandiset.most_recent_published_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -270,9 +274,9 @@ def test_dandiset_rest_change_owner(api_client, version, user_factory, mailoutbo
     assert list(dandiset.owners) == [user2]
 
     assert len(mailoutbox) == 2
-    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_published_version.name}"'
+    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.draft_version.name}"'
     assert mailoutbox[0].to == [user1.email]
-    assert mailoutbox[1].subject == f'Added to Dandiset "{dandiset.most_recent_published_version.name}"'
+    assert mailoutbox[1].subject == f'Added to Dandiset "{dandiset.draft_version.name}"'
     assert mailoutbox[1].to == [user2.email]
 
 
@@ -295,7 +299,7 @@ def test_dandiset_rest_add_owner(api_client, version, user_factory, mailoutbox):
     assert list(dandiset.owners) == [user1, user2]
 
     assert len(mailoutbox) == 1
-    assert mailoutbox[0].subject == f'Added to Dandiset "{dandiset.most_recent_published_version.name}"'
+    assert mailoutbox[0].subject == f'Added to Dandiset "{dandiset.draft_version.name}"'
     assert mailoutbox[0].to == [user2.email]
 
 
@@ -319,7 +323,7 @@ def test_dandiset_rest_remove_owner(api_client, version, user_factory, mailoutbo
     assert list(dandiset.owners) == [user1]
 
     assert len(mailoutbox) == 1
-    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.most_recent_published_version.name}"'
+    assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.draft_version.name}"'
     assert mailoutbox[0].to == [user2.email]
 
 
@@ -395,5 +399,8 @@ def test_dandiset_rest_search_identifier(api_client, version):
     ]
     assert len(results) == 1
     assert results[0]['identifier'] == version.dandiset.identifier
-    assert results[0]['most_recent_published_version']['version'] == version.version
-    assert results[0]['most_recent_published_version']['name'] == version.name
+
+    assert results[0]['most_recent_published_version'] == None
+
+    assert results[0]['draft_version']['version'] == version.version
+    assert results[0]['draft_version']['name'] == version.name
