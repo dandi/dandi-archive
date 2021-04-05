@@ -91,10 +91,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         name = serializer.validated_data['name']
-        metadata = {
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-            **serializer.validated_data['metadata'],
-        }
+        metadata = serializer.validated_data['metadata']
 
         version_metadata, created = VersionMetadata.objects.get_or_create(
             name=name,
