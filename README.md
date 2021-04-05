@@ -82,6 +82,9 @@ Useful sub-commands include:
 * `tox -e lint`: Run only the style checks
 * `tox -e type`: Run only the type checks
 * `tox -e test`: Run only the pytest-driven tests
+* `tox -e test -- -k test_file`: Run the pytest-driven tests that match the regular expression `test_file`
+* `tox -e test -- --cov=dandiapi`: Generate a test coverage report
+* `tox -e test -- --cov=dandiapi --cov-report=html`: Generate an HTML test coverage report in the `htmlcov` directory
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
