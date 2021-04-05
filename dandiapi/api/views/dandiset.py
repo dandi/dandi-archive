@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError

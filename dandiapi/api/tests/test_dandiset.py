@@ -137,7 +137,6 @@ def test_dandiset_rest_create(api_client, user):
         **metadata,
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
     }
 
 
@@ -187,7 +186,6 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
         **metadata,
         'name': name,
         'identifier': f'DANDI:{identifier}',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
     }
 
 
