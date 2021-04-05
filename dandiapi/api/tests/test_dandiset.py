@@ -1,4 +1,3 @@
-from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
 
