@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 
 from django.conf import settings
 import requests
@@ -63,12 +64,17 @@ def create_doi(version: Version) -> str:
     ):
         return
     doi, request_body = _generate_doi_data(version)
-    requests.post(
-        settings.DANDI_DOI_API_URL,
-        json=request_body,
-        auth=requests.auth.HTTPBasicAuth(
-            settings.DANDI_DOI_API_USER,
-            settings.DANDI_DOI_API_PASSWORD,
-        ),
-    ).raise_for_status()
+    try:
+        requests.post(
+            settings.DANDI_DOI_API_URL,
+            json=request_body,
+            auth=requests.auth.HTTPBasicAuth(
+                settings.DANDI_DOI_API_USER,
+                settings.DANDI_DOI_API_PASSWORD,
+            ),
+        ).raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logging.error('Failed to create DOI %s', doi)
+        logging.error(request_body)
+        raise e
     return doi
