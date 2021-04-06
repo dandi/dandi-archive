@@ -50,6 +50,55 @@ def test_dandiset_rest_list(api_client, dandiset):
 
 
 @pytest.mark.django_db
+def test_dandiset_versions(api_client, dandiset_factory, draft_version_factory, published_version_factory):
+    # Create some dandisets of different kinds.
+    #
+    # Empty dandiset.
+    empty = dandiset_factory()
+
+    # Dandiset with a draft version only.
+    draft = draft_version_factory().dandiset
+
+    # Dandiset with a draft version and a published version.
+    published = published_version_factory().dandiset
+
+    data = api_client.get('/api/dandisets/').data
+
+    assert data['count'] == 3
+    assert data['next'] == None
+    assert data['previous'] == None
+
+    result0 = data['results'][0]
+    assert result0['identifier'] == empty.identifier
+    assert result0['created'] == TIMESTAMP_RE
+    assert result0['modified'] == TIMESTAMP_RE
+    assert result0['draft_version'] == None
+    assert result0['most_recent_published_version'] == None
+
+    result1 = data['results'][1]
+    assert result1['identifier'] == draft.identifier
+    assert result1['created'] == TIMESTAMP_RE
+    assert result1['modified'] == TIMESTAMP_RE
+    assert result1['most_recent_published_version'] == None
+    result1_draft = result1['draft_version']
+    assert result1_draft['version'] == draft.draft_version.version
+    assert result1_draft['name'] == draft.draft_version.name
+    assert result1_draft['asset_count'] == draft.draft_version.asset_count
+    assert result1_draft['size'] == draft.draft_version.size
+
+    result2 = data['results'][2]
+    assert result2['identifier'] == published.identifier
+    assert result2['created'] == TIMESTAMP_RE
+    assert result2['modified'] == TIMESTAMP_RE
+    assert result2['draft_version'] == None
+    result2_published = result2['most_recent_published_version']
+    assert result2_published['version'] == published.most_recent_published_version.version
+    assert result2_published['name'] == published.most_recent_published_version.name
+    assert result2_published['asset_count'] == published.most_recent_published_version.asset_count
+    assert result2_published['size'] == published.most_recent_published_version.size
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
     dandiset = dandiset_factory()
     # Create an extra dandiset that should not be included in the response
