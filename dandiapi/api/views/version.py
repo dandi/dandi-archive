@@ -41,12 +41,6 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         """Update the metadata of a version."""
         version: Version = self.get_object()
 
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
-        if response:
-            return response
-
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
