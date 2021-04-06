@@ -1,4 +1,6 @@
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
+from guardian.decorators import permission_required_or_403
 from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
@@ -8,7 +10,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api import doi
-from dandiapi.api.models import Version, VersionMetadata
+from dandiapi.api.models import Dandiset, Version, VersionMetadata
 from dandiapi.api.tasks import write_yamls
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -34,7 +36,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         request_body=VersionMetadataSerializer(),
         responses={200: VersionDetailSerializer()},
     )
-    # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
+    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
         version: Version = self.get_object()
@@ -64,15 +66,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
     @swagger_auto_schema(request_body=no_body, responses={200: VersionSerializer()})
     @action(detail=True, methods=['POST'])
-    # @permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk'))
+    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
         old_version = self.get_object()
-
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], old_version.dandiset, return_403=True)
-        if response:
-            return response
 
         new_version = Version.copy(old_version)
 

@@ -14,10 +14,11 @@ import os.path
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from guardian.utils import get_40x_or_None
+from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -25,7 +26,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Version
+from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerializer
 
@@ -89,19 +90,15 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             404: 'If a blob with the given checksum has not been validated',
         },
     )
-    # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
+    @method_decorator(
+        permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
+    )
     def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
             Version,
             dandiset=versions__dandiset__pk,
             version=versions__version,
         )
-
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
-        if response:
-            return response
 
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -134,7 +131,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         request_body=AssetRequestSerializer(),
         responses={200: AssetDetailSerializer()},
     )
-    # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
+    @method_decorator(
+        permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
+    )
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
         old_asset = self.get_object()
@@ -142,12 +141,6 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
-
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
-        if response:
-            return response
 
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -182,18 +175,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # @permission_required_or_403('owner', (Dandiset, 'pk', 'version__dandiset__pk'))
+    @method_decorator(
+        permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
+    )
     def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         asset = self.get_object()
         version = Version.objects.get(
             dandiset__pk=versions__dandiset__pk, version=versions__version
         )
-
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
-        if response:
-            return response
 
         version.assets.remove(asset)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
