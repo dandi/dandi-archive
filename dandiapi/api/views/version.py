@@ -63,6 +63,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
         old_version = self.get_object()
+        if old_version.version != 'draft':
+            return Response(
+                'Only draft versions can be published',
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         new_version = Version.copy(old_version)
 
