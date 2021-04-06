@@ -1,7 +1,6 @@
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from guardian.utils import get_40x_or_None
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -41,12 +40,6 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         """Update the metadata of a version."""
         version: Version = self.get_object()
 
-        # TODO @permission_required doesn't work on methods
-        # https://github.com/django-guardian/django-guardian/issues/723
-        response = get_40x_or_None(request, ['owner'], version.dandiset, return_403=True)
-        if response:
-            return response
-
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -68,7 +61,16 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     @action(detail=True, methods=['POST'])
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
+        # TODO remove this check once publish is allowed
+        if not request.user.is_superuser:
+            return Response('Must be an admin to publish', status=status.HTTP_403_FORBIDDEN)
+
         old_version = self.get_object()
+        if old_version.version != 'draft':
+            return Response(
+                'Only draft versions can be published',
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         new_version = Version.copy(old_version)
 

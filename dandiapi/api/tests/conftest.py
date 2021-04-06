@@ -31,13 +31,18 @@ register(AssetFactory)
 register(AssetBlobFactory)
 register(AssetMetadataFactory)
 register(DandisetFactory)
-register(PublishedVersionFactory)
-register(DraftVersionFactory)
+register(PublishedVersionFactory, _name='published_version')
+register(DraftVersionFactory, _name='draft_version')
 # registering DraftVersionFactory after PublishedVersionFactory means
 # the fixture `version` will always be a draft
 register(UserFactory)
 register(UploadFactory)
 register(VersionMetadataFactory)
+
+
+@pytest.fixture(params=[DraftVersionFactory, PublishedVersionFactory], ids=['draft', 'published'])
+def version(request):
+    return request.param()
 
 
 @pytest.fixture
