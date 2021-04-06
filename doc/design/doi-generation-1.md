@@ -1,4 +1,16 @@
-# DOI generation process
+# Publish process
+
+This process is predicated on a few tasks that are expected to receive valid input and assuming that only certain errors could happen that are out of our control.
+
+- publish enabled only if dandiset is valid (so all validation checks have passed)
+- on publish trigger:
+   - create the versioned release in the db (this prevents any asset/blob belonging to the release from being deleted)
+   - insert all the relevant metadata (version, doi, url, manifest location/checksum) into the metadata record of the new version 
+  - send this new metadata record to mint the doi (there should be no reason why this should fail unless the external resource fails. if it fails notify admins since this is likely a new bug)
+   - write out to s3 bucket (even on any datacite failure)
+   - switch over ownership of the release to dandi (unless releases are not modifiable by the dandiset creator)
+   
+## DOI generation process
 
 ## dandi-api
 
