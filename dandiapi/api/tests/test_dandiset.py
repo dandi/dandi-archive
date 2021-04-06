@@ -43,6 +43,7 @@ def test_dandiset_rest_list(api_client, dandiset):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'draft_version': None,
+                'most_recent_published_version': None,
             }
         ],
     }
@@ -65,6 +66,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'draft_version': None,
+                'most_recent_published_version': None,
             }
         ],
     }
@@ -77,6 +79,7 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'draft_version': None,
+        'most_recent_published_version': None,
     }
 
 
