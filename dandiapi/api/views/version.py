@@ -62,6 +62,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     @action(detail=True, methods=['POST'])
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
+        # TODO remove this check once publish is allowed
+        if not request.user.is_superuser:
+            return Response('Must be an admin to publish', status=status.HTTP_403_FORBIDDEN)
+
         old_version = self.get_object()
         if old_version.version != 'draft':
             return Response(
