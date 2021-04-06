@@ -189,33 +189,35 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_publish(api_client, user, version, asset):
-    assign_perm('owner', user, version.dandiset)
-    api_client.force_authenticate(user=user)
-    version.assets.add(asset)
+# TODO change admin_user back to a normal user once publish is allowed
+def test_version_rest_publish(api_client, admin_user, draft_version, asset):
+    assign_perm('owner', admin_user, draft_version.dandiset)
+    api_client.force_authenticate(user=admin_user)
+    draft_version.assets.add(asset)
 
     resp = api_client.post(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/publish/'
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
     )
     assert resp.data == {
         'dandiset': {
-            'identifier': version.dandiset.identifier,
+            'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
         'version': VERSION_ID_RE,
-        'name': version.name,
+        'name': draft_version.name,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'asset_count': 1,
-        'size': version.size,
+        'size': draft_version.size,
     }
     published_version = Version.objects.get(version=resp.data['version'])
     assert published_version
-    assert version.dandiset.versions.count() == 2
+    assert draft_version.dandiset.versions.count() == 2
 
     # The original asset should now be in both versions
-    assert asset == version.assets.get()
+    assert asset == draft_version.assets.get()
     assert asset == published_version.assets.get()
     assert asset.versions.count() == 2
 
@@ -229,3 +231,31 @@ def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/publish/'
     )
     assert resp.status_code == 403
+
+
+# TODO remove this test once publish is allowed
+@pytest.mark.django_db
+def test_version_rest_publish_not_an_admin(api_client, user, version, asset):
+    assign_perm('owner', user, version.dandiset)
+    api_client.force_authenticate(user=user)
+    version.assets.add(asset)
+
+    resp = api_client.post(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/publish/'
+    )
+    assert resp.status_code == 403
+    assert resp.data == 'Must be an admin to publish'
+
+
+@pytest.mark.django_db
+# TODO change admin_user back to a normal user once publish is allowed
+def test_version_rest_publish_not_a_draft(api_client, admin_user, published_version, asset):
+    assign_perm('owner', admin_user, published_version.dandiset)
+    api_client.force_authenticate(user=admin_user)
+    published_version.assets.add(asset)
+
+    resp = api_client.post(
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/publish/'
+    )
+    assert resp.status_code == 405
