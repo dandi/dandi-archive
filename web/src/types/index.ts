@@ -9,8 +9,9 @@ export interface Dandiset {
   identifier: string,
   created: string,
   modified: string,
-  // TODO most_recent_version is girderized, it should have type Version
-  most_recent_version?: any,
+  // TODO these versions are girderized, they should have type Version
+  draft_version?: any,
+  most_recent_published_version?: any,
 }
 
 export interface Version {

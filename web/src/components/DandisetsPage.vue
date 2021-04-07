@@ -179,7 +179,9 @@ export default defineComponent({
 
     const dandisets = computed(() => {
       if (toggles.DJANGO_API) {
-        return djangoDandisetRequest.value?.results.map((dandiset) => dandiset.most_recent_version);
+        return djangoDandisetRequest.value?.results.map(
+          (dandiset) => dandiset.most_recent_published_version || dandiset.draft_version,
+        );
       }
       return girderDandisetRequest.value?.data || [];
     });
