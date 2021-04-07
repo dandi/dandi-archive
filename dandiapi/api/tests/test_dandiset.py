@@ -59,7 +59,7 @@ def test_dandiset_versions(api_client, dandiset_factory, draft_version_factory, 
     # Dandiset with a draft version only.
     draft = draft_version_factory().dandiset
 
-    # Dandiset with a draft version and a published version.
+    # Dandiset with a published version only.
     published = published_version_factory().dandiset
 
     assert api_client.get('/api/dandisets/').data == {
