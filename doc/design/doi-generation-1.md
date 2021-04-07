@@ -1,8 +1,10 @@
 # Publish process
 
 This process is predicated on a few tasks that are expected to receive valid input and assuming that only certain errors could happen that are out of our control.
+Dandisets have a new attribute added to track their validation status: `VALID`, `INVALID`, and `VALIDATING`.
+Whenever a dandiset is modified (metadata changed or files uploaded/removed), it is set to `VALIDATING` and an asynchronous task is triggered to run metadata validation on it. The task will update the state of the dandiset accordingly when it finishes.
 
-- publish enabled only if dandiset is valid (so all validation checks have passed)
+- publish enabled only if a dandiset is `VALID`. The button will be greyed out in the UI and the API endpoint will return 405.
 - on publish trigger:
    - create the versioned release in the db (this prevents any asset/blob belonging to the release from being deleted)
    - insert all the relevant metadata (version, doi, url, manifest location/checksum) into the metadata record of the new version 
