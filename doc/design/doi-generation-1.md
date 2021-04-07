@@ -32,7 +32,6 @@ This function will generate the body of the DOI and return it.
   * I would add additional checks if doi (and possibly other fields) is available
 * running datacite_json = to_datacite(meta)
   * this should not return an error
-TODO: what exceptions might be thrown? Missing creator is one.
 
 ## dandi-api
 
