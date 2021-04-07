@@ -250,7 +250,7 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
-    assert dandiset.most_recent_published_version == None
+    assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
     assert dandiset.draft_version.metadata.name == name
 
