@@ -470,7 +470,7 @@ def test_dandiset_rest_search_identifier(api_client, version):
     assert len(results) == 1
     assert results[0]['identifier'] == version.dandiset.identifier
 
-    assert results[0]['most_recent_published_version'] == None
+    assert results[0]['most_recent_published_version'] is None
 
     assert results[0]['draft_version']['version'] == version.version
     assert results[0]['draft_version']['name'] == version.name
