@@ -50,7 +50,9 @@ def test_dandiset_rest_list(api_client, dandiset):
 
 
 @pytest.mark.django_db
-def test_dandiset_versions(api_client, dandiset_factory, draft_version_factory, published_version_factory):
+def test_dandiset_versions(
+    api_client, dandiset_factory, draft_version_factory, published_version_factory
+):
     # Create some dandisets of different kinds.
     #
     # Empty dandiset.
