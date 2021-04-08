@@ -1,0 +1,83 @@
+name: Test Integration with dandi-cli
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t dandiarchive/dandiarchive-api \
+            -f dev/django-public.Dockerfile \
+            .
+
+      - name: Export Docker image
+        run: |
+          docker image save -o dandiarchive-api.tgz dandiarchive/dandiarchive-api
+
+      - name: Upload Docker image tarball
+        uses: actions/upload-artifact@v2
+        with:
+          name: dandiarchive-api.tgz
+          path: dandiarchive-api.tgz
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build-image
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - 3.8
+        dandi-version:
+          - release
+          - master
+    steps:
+      - name: Download Docker image tarball
+        uses: actions/download-artifact@v2
+        with:
+          name: dandiarchive-api.tgz
+
+      - name: Import Docker image
+        run: docker image load -i dandiarchive-api.tgz
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install hdf5
+        if: matrix.python == '3.9'
+        run: sudo apt-get update && sudo apt-get install -y libhdf5-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel
+          # As of 2021-02-01, the latest version of hdmf (v2.3.0) requires
+          # numpy >=1.16, <1.19.4, so we end up with numpy 1.19.3 installed.
+          # However, due to the release of numpy 1.20.0 on January 30, h5py
+          # gets built against the later version instead, and because numpy
+          # 1.20.0 changed the size of ndarray, an error results at runtime.
+          # This can be worked around by installing numpy before the other
+          # dependencies so that it is available when h5py is built.
+          pip install 'numpy<1.19.4'
+
+      - name: Install released dandi
+        if: matrix.dandi-version == 'release'
+        run: pip install "dandi[test]"
+
+      - name: Install dev dandi
+        if: matrix.dandi-version == 'master'
+        run: pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+
+      - name: Run dandi-api tests in dandi-cli
+        run: |
+          python -m pytest -s -v --dandi-api \
+            "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
