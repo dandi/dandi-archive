@@ -98,12 +98,12 @@
         Want to create your own datasets?
       </span>
       <v-btn
+        v-if="!DJANGO_API"
         :to="{ name: 'userRegister' }"
         class="mx-1"
         color="primary"
         outlined
         rounded
-        v-if="!DJANGO_API"
       >
         Create Account
       </v-btn>
