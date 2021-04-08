@@ -1,5 +1,6 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.transaction import atomic
 from rest_framework_yaml.renderers import YAMLRenderer
@@ -37,7 +38,8 @@ def write_yamls(version_id: int) -> None:
     storage = AssetBlob.blob.field.storage
 
     dandiset_yaml_path = (
-        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
     )
     if storage.exists(dandiset_yaml_path):
         logger.info('%s already exists, deleting it', dandiset_yaml_path)
@@ -46,7 +48,10 @@ def write_yamls(version_id: int) -> None:
     dandiset_yaml = YAMLRenderer().render(version.metadata.metadata)
     storage.save(dandiset_yaml_path, ContentFile(dandiset_yaml))
 
-    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    assets_yaml_path = (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    )
     if storage.exists(assets_yaml_path):
         logger.info('%s already exists, deleting it', assets_yaml_path)
         storage.delete(assets_yaml_path)

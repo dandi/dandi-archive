@@ -20,7 +20,7 @@ def get_asset_blob_storage() -> Storage:
 
 
 def get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
-    return filename
+    return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'
 
 
 class AssetBlob(TimeStampedModel):

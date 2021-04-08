@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -47,7 +48,10 @@ class Upload(TimeStampedModel):
     @classmethod
     def object_key(cls, upload_id):
         upload_id = str(upload_id)
-        return f'dev/blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
+        )
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size):
