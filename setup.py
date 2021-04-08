@@ -2,6 +2,8 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
+import versioneer
+
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
     with readme_file.open() as f:
@@ -12,7 +14,7 @@ else:
 
 setup(
     name='dandiapi',
-    version='0.1.0',
+    version=versioneer.get_version(),
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -60,6 +62,7 @@ setup(
         'django-minio-storage',
         # Temporary dependency for user migration
         'girder-client',
+        'versioneer',
     ],
     extras_require={
         'dev': [
@@ -70,4 +73,5 @@ setup(
             'tox',
         ]
     },
+    cmdclass=versioneer.get_cmdclass(),
 )
