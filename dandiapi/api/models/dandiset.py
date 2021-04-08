@@ -20,8 +20,12 @@ class Dandiset(TimeStampedModel):
         return f'{self.id:06}' if self.id is not None else ''
 
     @property
-    def most_recent_version(self):
-        return self.versions.order_by('created').last()
+    def most_recent_published_version(self):
+        return self.versions.exclude(version='draft').order_by('modified').last()
+
+    @property
+    def draft_version(self):
+        return self.versions.filter(version='draft').get()
 
     @property
     def owners(self):
