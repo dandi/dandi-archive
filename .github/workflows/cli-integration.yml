@@ -2,6 +2,8 @@ name: Test Integration with dandi-cli
 
 on:
   push:
+    branches:
+      - master
   pull_request:
 
 jobs:
