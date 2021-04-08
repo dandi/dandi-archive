@@ -35,9 +35,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
 
     tasks.write_yamls(version.id)
 
-    dandiset_yaml_path = (
-        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
-    )
+    dandiset_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
     # TODO this will fail if the test is run twice in the same minute.
     # The same version ID will be generated in the second test,
     # but the dandiset.yaml will still be present from the first test, creating a mismatch.
@@ -57,7 +55,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
 
     tasks.write_yamls(version.id)
 
-    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    assets_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
     with storage.open(assets_yaml_path) as f:
         assert f.read() == YAMLRenderer().render(
             [asset.metadata.metadata for asset in version.assets.all()]
@@ -71,9 +69,7 @@ def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
     AssetBlob.blob.field.storage = storage
 
     # Save an invalid file for the task to overwrite
-    dandiset_yaml_path = (
-        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
-    )
+    dandiset_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
     storage.save(dandiset_yaml_path, ContentFile(b'wrong contents'))
 
     tasks.write_yamls(version.id)
@@ -92,7 +88,7 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     version.assets.add(asset_factory())
 
     # Save an invalid file for the task to overwrite
-    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    assets_yaml_path = f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
     tasks.write_yamls(version.id)
