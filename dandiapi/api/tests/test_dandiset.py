@@ -328,8 +328,8 @@ def test_dandiset_rest_get_owners(api_client, dandiset, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_change_owner(api_client, version, user_factory, mailoutbox):
-    dandiset = version.dandiset
+def test_dandiset_rest_change_owner(api_client, draft_version, user_factory, mailoutbox):
+    dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
     assign_perm('owner', user1, dandiset)
@@ -353,8 +353,8 @@ def test_dandiset_rest_change_owner(api_client, version, user_factory, mailoutbo
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_add_owner(api_client, version, user_factory, mailoutbox):
-    dandiset = version.dandiset
+def test_dandiset_rest_add_owner(api_client, draft_version, user_factory, mailoutbox):
+    dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
     assign_perm('owner', user1, dandiset)
@@ -376,8 +376,8 @@ def test_dandiset_rest_add_owner(api_client, version, user_factory, mailoutbox):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_remove_owner(api_client, version, user_factory, mailoutbox):
-    dandiset = version.dandiset
+def test_dandiset_rest_remove_owner(api_client, draft_version, user_factory, mailoutbox):
+    dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
     assign_perm('owner', user1, dandiset)
@@ -465,14 +465,14 @@ def test_dandiset_rest_search_empty_query(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_search_identifier(api_client, version):
-    results = api_client.get('/api/dandisets/', {'search': version.dandiset.identifier}).data[
+def test_dandiset_rest_search_identifier(api_client, draft_version):
+    results = api_client.get('/api/dandisets/', {'search': draft_version.dandiset.identifier}).data[
         'results'
     ]
     assert len(results) == 1
-    assert results[0]['identifier'] == version.dandiset.identifier
+    assert results[0]['identifier'] == draft_version.dandiset.identifier
 
     assert results[0]['most_recent_published_version'] is None
 
-    assert results[0]['draft_version']['version'] == version.version
-    assert results[0]['draft_version']['name'] == version.name
+    assert results[0]['draft_version']['version'] == draft_version.version
+    assert results[0]['draft_version']['name'] == draft_version.name
