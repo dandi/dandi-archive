@@ -46,6 +46,7 @@ class DandiMixin(ConfigMixin):
         ] = 'dandiapi.api.views.common.DandiPagination'
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
+    DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
     DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
     DANDI_SCHEMA_VERSION = values.Value(environ_required=True)
@@ -68,6 +69,7 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     MINIO_STORAGE_MEDIA_URL = 'http://localhost:9000/test-django-storage'
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
+    DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
     DANDI_GIRDER_API_KEY = 'testkey'
     DANDI_GIRDER_API_URL = 'http://girder.test/api/v1'
 

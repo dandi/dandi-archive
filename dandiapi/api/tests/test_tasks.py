@@ -1,5 +1,6 @@
 import hashlib
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 import pytest
@@ -36,7 +37,8 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
     tasks.write_yamls(version.id)
 
     dandiset_yaml_path = (
-        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
     )
     # TODO this will fail if the test is run twice in the same minute.
     # The same version ID will be generated in the second test,
@@ -57,7 +59,10 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
 
     tasks.write_yamls(version.id)
 
-    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    assets_yaml_path = (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    )
     with storage.open(assets_yaml_path) as f:
         assert f.read() == YAMLRenderer().render(
             [asset.metadata.metadata for asset in version.assets.all()]
@@ -72,7 +77,8 @@ def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
 
     # Save an invalid file for the task to overwrite
     dandiset_yaml_path = (
-        f'dev/dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
     )
     storage.save(dandiset_yaml_path, ContentFile(b'wrong contents'))
 
@@ -92,7 +98,10 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     version.assets.add(asset_factory())
 
     # Save an invalid file for the task to overwrite
-    assets_yaml_path = f'dev/dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    assets_yaml_path = (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
+    )
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
     tasks.write_yamls(version.id)
