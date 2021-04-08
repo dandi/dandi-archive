@@ -46,6 +46,7 @@ class DandiMixin(ConfigMixin):
         ] = 'dandiapi.api.views.common.DandiPagination'
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
+    DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_GIRDER_API_URL = values.URLValue(environ_required=True)
     DANDI_GIRDER_API_KEY = values.Value(environ_required=True)
     DANDI_SCHEMA_VERSION = values.Value(environ_required=True)
