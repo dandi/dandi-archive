@@ -69,6 +69,7 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     MINIO_STORAGE_MEDIA_URL = 'http://localhost:9000/test-django-storage'
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
+    DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
     DANDI_GIRDER_API_KEY = 'testkey'
     DANDI_GIRDER_API_URL = 'http://girder.test/api/v1'
 
