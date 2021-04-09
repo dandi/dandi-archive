@@ -76,15 +76,15 @@ def test_asset_rest_retrieve(api_client, version, asset):
 
 
 @pytest.mark.django_db
-def test_asset_create(api_client, user, version, asset_blob):
-    assign_perm('owner', user, version.dandiset)
+def test_asset_create(api_client, user, draft_version, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
     metadata = {'path': path, 'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
 
     assert api_client.post(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data == {
@@ -96,20 +96,20 @@ def test_asset_create(api_client, user, version, asset_blob):
         'metadata': metadata,
     }
 
-    asset = Asset.objects.get(blob__sha256=asset_blob.sha256, versions=version)
+    asset = Asset.objects.get(blob__sha256=asset_blob.sha256, versions=draft_version)
     assert asset.metadata.metadata == metadata
 
 
 @pytest.mark.django_db
-def test_asset_create_no_valid_blob(api_client, user, version):
-    assign_perm('owner', user, version.dandiset)
+def test_asset_create_no_valid_blob(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
     uuid = uuid4()
 
     resp = api_client.post(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': uuid},
         format='json',
     )
@@ -117,14 +117,14 @@ def test_asset_create_no_valid_blob(api_client, user, version):
 
 
 @pytest.mark.django_db
-def test_asset_create_no_path(api_client, user, version, asset_blob):
-    assign_perm('owner', user, version.dandiset)
+def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
 
     resp = api_client.post(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     )
@@ -147,13 +147,13 @@ def test_asset_create_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.django_db
-def test_asset_create_duplicate(api_client, user, version, asset):
-    assign_perm('owner', user, version.dandiset)
+def test_asset_create_duplicate(api_client, user, draft_version, asset):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
-    version.assets.add(asset)
+    draft_version.assets.add(asset)
 
     resp = api_client.post(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
         {
             'metadata': asset.metadata.metadata,
             'blob_id': asset.blob.blob_id,
@@ -162,6 +162,24 @@ def test_asset_create_duplicate(api_client, user, version, asset):
     )
     assert resp.status_code == 400
     assert resp.data == 'Asset already exists.'
+
+
+@pytest.mark.django_db
+def test_asset_create_published_version(api_client, user, published_version, asset):
+    assign_perm('owner', user, published_version.dandiset)
+    api_client.force_authenticate(user=user)
+    published_version.assets.add(asset)
+
+    resp = api_client.post(
+        f'/api/dandisets/{published_version.dandiset.identifier}/versions/{published_version.version}/assets/',
+        {
+            'metadata': asset.metadata.metadata,
+            'blob_id': asset.blob.blob_id,
+        },
+        format='json',
+    )
+    assert resp.status_code == 405
+    assert resp.data == 'Only draft versions can be modified.'
 
 
 @pytest.mark.django_db
