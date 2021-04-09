@@ -10,7 +10,6 @@ Whenever a dandiset is modified (metadata changed or files uploaded/removed), it
    - insert all the relevant metadata (version, doi, url, manifest location/checksum) into the metadata record of the new version 
   - send this new metadata record to mint the doi (there should be no reason why this should fail unless the external resource fails. if it fails notify admins since this is likely a new bug)
    - write out to s3 bucket (even on any datacite failure)
-   - switch over ownership of the release to dandi (unless releases are not modifiable by the dandiset creator)
    
 ## DOI generation process
 
