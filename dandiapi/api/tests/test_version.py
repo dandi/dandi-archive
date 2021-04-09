@@ -178,14 +178,10 @@ def test_version_rest_update_published_version(api_client, user, published_versi
 
     new_name = 'A unique and special name!'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
-    saved_metadata = {
-        **new_metadata,
-        'name': new_name,
-        'identifier': f'DANDI:{published_version.dandiset.identifier}',
-    }
 
     resp = api_client.put(
-        f'/api/dandisets/{published_version.dandiset.identifier}/versions/{published_version.version}/',
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
         format='json',
     )

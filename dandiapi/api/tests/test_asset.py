@@ -84,7 +84,8 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     metadata = {'path': path, 'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
 
     assert api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data == {
@@ -109,7 +110,8 @@ def test_asset_create_no_valid_blob(api_client, user, draft_version):
     uuid = uuid4()
 
     resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': uuid},
         format='json',
     )
@@ -124,7 +126,8 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
     metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
 
     resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     )
@@ -153,7 +156,8 @@ def test_asset_create_duplicate(api_client, user, draft_version, asset):
     draft_version.assets.add(asset)
 
     resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
         {
             'metadata': asset.metadata.metadata,
             'blob_id': asset.blob.blob_id,
@@ -171,7 +175,8 @@ def test_asset_create_published_version(api_client, user, published_version, ass
     published_version.assets.add(asset)
 
     resp = api_client.post(
-        f'/api/dandisets/{published_version.dandiset.identifier}/versions/{published_version.version}/assets/',
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/assets/',
         {
             'metadata': asset.metadata.metadata,
             'blob_id': asset.blob.blob_id,
