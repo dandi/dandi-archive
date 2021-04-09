@@ -1,7 +1,10 @@
 # flake8: noqa
+# fmt: off
 # Version: 0.19
 
 """The Versioneer - like a rocketeer, but for versions.
+
+isort:skip_file
 
 The Versioneer
 ==============
