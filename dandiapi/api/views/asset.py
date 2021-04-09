@@ -193,6 +193,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         version = Version.objects.get(
             dandiset__pk=versions__dandiset__pk, version=versions__version
         )
+        if version.version != 'draft':
+            return Response(
+                'Only draft versions can be modified.',
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         version.assets.remove(asset)
         return Response(None, status=status.HTTP_204_NO_CONTENT)

@@ -291,18 +291,18 @@ def test_asset_rest_update_published_version(api_client, user, published_version
 
 
 @pytest.mark.django_db
-def test_asset_rest_delete(api_client, user, version, asset):
+def test_asset_rest_delete(api_client, user, draft_version, asset):
     api_client.force_authenticate(user=user)
-    assign_perm('owner', user, version.dandiset)
-    version.assets.add(asset)
+    assign_perm('owner', user, draft_version.dandiset)
+    draft_version.assets.add(asset)
 
     response = api_client.delete(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.asset_id}/'
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
     )
     assert response.status_code == 204
 
-    assert asset not in version.assets.all()
+    assert asset not in draft_version.assets.all()
     assert asset in Asset.objects.all()
 
 
@@ -318,6 +318,20 @@ def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
     assert response.status_code == 403
 
     assert asset in Asset.objects.all()
+
+
+@pytest.mark.django_db
+def test_asset_rest_delete_published_version(api_client, user, published_version, asset):
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, published_version.dandiset)
+    published_version.assets.add(asset)
+
+    response = api_client.delete(
+        f'/api/dandisets/{published_version.dandiset.identifier}/'
+        f'versions/{published_version.version}/assets/{asset.asset_id}/'
+    )
+    assert response.status_code == 405
+    assert response.data == 'Only draft versions can be modified.'
 
 
 @pytest.mark.django_db
