@@ -38,5 +38,4 @@ This function will generate the body of the DOI and return it.
 
 * If DOI generation raised any errors, return a 400 error describing the problem.
 * Otherwise, attempt to register the DOI identifier/body with Datacite.
-* If that raises any errors, log them and return a 400 error.
-* Finally, continue with the publish process.
+* If that raises any errors, log them so they are reported in Sentry. Regardless of the outcome, continue with the publish process.
