@@ -129,6 +129,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         asset.save()
         version.assets.add(asset)
 
+        # Save the version so that the modified field is updated
+        version.save()
+
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -182,6 +185,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             version.assets.add(new_asset)
             version.assets.remove(old_asset)
 
+        # Save the version so that the modified field is updated
+        version.save()
+
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -200,6 +206,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             )
 
         version.assets.remove(asset)
+
+        # Save the version so that the modified field is updated
+        version.save()
+
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(

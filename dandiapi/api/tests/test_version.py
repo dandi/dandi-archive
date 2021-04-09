@@ -124,7 +124,12 @@ def test_version_rest_update(api_client, user, draft_version):
         'size': draft_version.size,
     }
 
+    # The version modified date should be updated
+    start_time = draft_version.modified
     draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
     assert draft_version.metadata.metadata == saved_metadata
     assert draft_version.metadata.name == new_name
 

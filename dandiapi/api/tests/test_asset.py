@@ -100,6 +100,12 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     asset = Asset.objects.get(blob__sha256=asset_blob.sha256, versions=draft_version)
     assert asset.metadata.metadata == metadata
 
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
 
 @pytest.mark.django_db
 def test_asset_create_no_valid_blob(api_client, user, draft_version):
@@ -221,6 +227,12 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     # The new asset should have a reference to the old asset
     assert new_asset.previous == asset
 
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
 
 @pytest.mark.django_db
 def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_factory):
@@ -309,6 +321,12 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
     assert asset not in draft_version.assets.all()
     assert asset in Asset.objects.all()
+
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
 
 
 @pytest.mark.django_db
