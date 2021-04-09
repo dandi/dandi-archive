@@ -93,8 +93,8 @@ def test_version_rest_retrieve_with_asset(api_client, version, asset):
 
 
 @pytest.mark.django_db
-def test_version_rest_update(api_client, user, version):
-    assign_perm('owner', user, version.dandiset)
+def test_version_rest_update(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
@@ -102,36 +102,36 @@ def test_version_rest_update(api_client, user, version):
     saved_metadata = {
         **new_metadata,
         'name': new_name,
-        'identifier': f'DANDI:{version.dandiset.identifier}',
+        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
     }
 
     assert api_client.put(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
         format='json',
     ).data == {
         'dandiset': {
-            'identifier': version.dandiset.identifier,
+            'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
-        'version': version.version,
+        'version': draft_version.version,
         'name': new_name,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'asset_count': version.asset_count,
+        'asset_count': draft_version.asset_count,
         'metadata': saved_metadata,
-        'size': version.size,
+        'size': draft_version.size,
     }
 
-    version.refresh_from_db()
-    assert version.metadata.metadata == saved_metadata
-    assert version.metadata.name == new_name
+    draft_version.refresh_from_db()
+    assert draft_version.metadata.metadata == saved_metadata
+    assert draft_version.metadata.name == new_name
 
 
 @pytest.mark.django_db
-def test_version_rest_update_large(api_client, user, version):
-    assign_perm('owner', user, version.dandiset)
+def test_version_rest_update_large(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
@@ -144,31 +144,49 @@ def test_version_rest_update_large(api_client, user, version):
     saved_metadata = {
         **new_metadata,
         'name': new_name,
-        'identifier': f'DANDI:{version.dandiset.identifier}',
+        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
     }
 
     assert api_client.put(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
         format='json',
     ).data == {
         'dandiset': {
-            'identifier': version.dandiset.identifier,
+            'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
-        'version': version.version,
+        'version': draft_version.version,
         'name': new_name,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'asset_count': version.asset_count,
+        'asset_count': draft_version.asset_count,
         'metadata': saved_metadata,
-        'size': version.size,
+        'size': draft_version.size,
     }
 
-    version.refresh_from_db()
-    assert version.metadata.metadata == saved_metadata
-    assert version.metadata.name == new_name
+    draft_version.refresh_from_db()
+    assert draft_version.metadata.metadata == saved_metadata
+    assert draft_version.metadata.name == new_name
+
+
+@pytest.mark.django_db
+def test_version_rest_update_published_version(api_client, user, published_version):
+    assign_perm('owner', user, published_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_name = 'A unique and special name!'
+    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+
+    resp = api_client.put(
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/',
+        {'metadata': new_metadata, 'name': new_name},
+        format='json',
+    )
+    assert resp.status_code == 405
+    assert resp.data == 'Only draft versions can be modified.'
 
 
 @pytest.mark.django_db

@@ -39,6 +39,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
         version: Version = self.get_object()
+        if version.version != 'draft':
+            return Response(
+                'Only draft versions can be modified.',
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
