@@ -146,6 +146,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
+        if version.version != 'draft':
+            return Response(
+                'Only draft versions can be modified.',
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
 
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

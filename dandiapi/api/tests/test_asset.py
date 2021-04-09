@@ -183,17 +183,17 @@ def test_asset_create_published_version(api_client, user, published_version, ass
 
 
 @pytest.mark.django_db
-def test_asset_rest_update(api_client, user, version, asset, asset_blob):
-    assign_perm('owner', user, version.dandiset)
+def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
-    version.assets.add(asset)
+    draft_version.assets.add(asset)
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {'path': new_path, 'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
 
     resp = api_client.put(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.asset_id}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data
@@ -207,29 +207,29 @@ def test_asset_rest_update(api_client, user, version, asset, asset_blob):
     }
 
     # Updating an asset should leave it in the DB, but disconnect it from the version
-    assert asset not in version.assets.all()
+    assert asset not in draft_version.assets.all()
 
     # A new asset should be created that is associated with the version
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
-    assert new_asset in version.assets.all()
+    assert new_asset in draft_version.assets.all()
 
     # The new asset should have a reference to the old asset
     assert new_asset.previous == asset
 
 
 @pytest.mark.django_db
-def test_asset_rest_update_to_existing(api_client, user, version, asset_factory):
+def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_factory):
     old_asset = asset_factory()
     existing_asset = asset_factory()
-    version.assets.add(old_asset)
-    version.assets.add(existing_asset)
+    draft_version.assets.add(old_asset)
+    draft_version.assets.add(existing_asset)
 
-    assign_perm('owner', user, version.dandiset)
+    assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{old_asset.asset_id}/',
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{old_asset.asset_id}/',
         {'metadata': existing_asset.metadata.metadata, 'blob_id': existing_asset.blob.blob_id},
         format='json',
     ).data
@@ -239,14 +239,14 @@ def test_asset_rest_update_to_existing(api_client, user, version, asset_factory)
 
 
 @pytest.mark.django_db
-def test_asset_rest_update_unauthorized(api_client, version, asset):
-    version.assets.add(asset)
+def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
+    draft_version.assets.add(asset)
     new_metadata = asset.metadata.metadata
     new_metadata['new_field'] = 'new_value'
     assert (
         api_client.put(
-            f'/api/dandisets/{version.dandiset.identifier}/'
-            f'versions/{version.version}/assets/{asset.asset_id}/',
+            f'/api/dandisets/{draft_version.dandiset.identifier}/'
+            f'versions/{draft_version.version}/assets/{asset.asset_id}/',
             {'metadata': new_metadata},
             format='json',
         ).status_code
@@ -255,21 +255,39 @@ def test_asset_rest_update_unauthorized(api_client, version, asset):
 
 
 @pytest.mark.django_db
-def test_asset_rest_update_not_an_owner(api_client, user, version, asset):
+def test_asset_rest_update_not_an_owner(api_client, user, draft_version, asset):
     api_client.force_authenticate(user=user)
-    version.assets.add(asset)
+    draft_version.assets.add(asset)
 
     new_metadata = asset.metadata.metadata
     new_metadata['new_field'] = 'new_value'
     assert (
         api_client.put(
-            f'/api/dandisets/{version.dandiset.identifier}/'
-            f'versions/{version.version}/assets/{asset.asset_id}/',
+            f'/api/dandisets/{draft_version.dandiset.identifier}/'
+            f'versions/{draft_version.version}/assets/{asset.asset_id}/',
             {'metadata': new_metadata},
             format='json',
         ).status_code
         == 403
     )
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_published_version(api_client, user, published_version, asset):
+    assign_perm('owner', user, published_version.dandiset)
+    api_client.force_authenticate(user=user)
+    published_version.assets.add(asset)
+
+    new_metadata = asset.metadata.metadata
+    new_metadata['new_field'] = 'new_value'
+    resp = api_client.put(
+        f'/api/dandisets/{published_version.dandiset.identifier}/'
+        f'versions/{published_version.version}/assets/{asset.asset_id}/',
+        {'metadata': new_metadata},
+        format='json',
+    )
+    assert resp.status_code == 405
+    assert resp.data == 'Only draft versions can be modified.'
 
 
 @pytest.mark.django_db
