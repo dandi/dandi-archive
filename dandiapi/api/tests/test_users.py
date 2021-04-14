@@ -104,25 +104,7 @@ def test_user_search_multiple_matches(api_client, user, user_factory):
             {'username': 'jane'},
             format='json',
         ).data
-        == [serialize(user) for user in users[:3]]
-    )
-
-
-@pytest.mark.django_db
-def test_user_search_alphabetical(api_client, user, user_factory):
-    api_client.force_authenticate(user=user)
-
-    # Create the users in reverse alphabetical order
-    user_z = user_factory(username='jane_z')
-    user_a = user_factory(username='jane_a')
-
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': 'jane'},
-            format='json',
-        ).data
-        == [serialize(user_a), serialize(user_z)]
+        == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
     )
 
 
