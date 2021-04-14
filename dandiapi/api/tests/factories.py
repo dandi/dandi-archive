@@ -1,7 +1,9 @@
 import hashlib
 
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 import factory
+import faker
 
 from dandiapi.api.models import (
     Asset,
@@ -22,6 +24,25 @@ class UserFactory(factory.django.DjangoModelFactory):
     email = factory.Faker('safe_email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
+
+
+class SocialAccountFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SocialAccount
+
+    user = factory.SubFactory(UserFactory)
+    uid = factory.Faker('sha1')
+
+    @factory.lazy_attribute
+    def extra_data(self):
+        first_name = faker.Faker().first_name()
+        last_name = faker.Faker().last_name()
+        name = f'{first_name} {last_name}'
+        return {
+            'login': first_name,
+            'name': name,
+            'email': self.user.username,
+        }
 
 
 class DandisetFactory(factory.django.DjangoModelFactory):
