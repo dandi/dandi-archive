@@ -175,7 +175,7 @@ const publishRest = new Vue({
       return client.put(`dandisets/${identifier}/users/`, owners);
     },
     async searchUsers(username: string): Promise<User[]> {
-      const { data } = await client.get('users/search/?', { params: { username } });
+      const { data } = await client.get('users/search/', { params: { username } });
       return data;
     },
     async publish(identifier: string): Promise<Version> {
