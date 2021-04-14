@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from allauth.socialaccount.models import SocialAccount
 from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
@@ -163,8 +163,18 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             def get_user_or_400(username):
                 try:
-                    return User.objects.get(username=username)
-                except User.DoesNotExist:
+                    # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
+                    # so it is not empowered to do a more powerful query like:
+                    # SocialAccount.objects.get(extra_data__login=username)
+                    # We resort to doing this awkward search instead.
+                    for social_account in SocialAccount.objects.filter(
+                        extra_data__icontains=username
+                    ):
+                        if social_account.extra_data['login'] == username:
+                            return social_account.user
+                    else:
+                        raise SocialAccount.DoesNotExist()
+                except SocialAccount.DoesNotExist:
                     raise ValidationError(f'User {username} not found')
 
             owners = [
@@ -178,5 +188,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
-        serializer = UserSerializer(dandiset.owners, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        owners = []
+        for owner in dandiset.owners:
+            try:
+                owner = SocialAccount.objects.get(user=owner)
+                owner_dict = {'username': owner.extra_data['login']}
+                if 'name' in owner.extra_data:
+                    owner_dict['name'] = owner.extra_data['name']
+                owners.append(owner_dict)
+            except SocialAccount.DoesNotExist:
+                # Just in case some users aren't using social accounts, have a fallback
+                owners.append({'username': owner.username})
+        return Response(owners, status=status.HTTP_200_OK)
