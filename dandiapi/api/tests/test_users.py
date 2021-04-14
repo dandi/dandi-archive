@@ -1,57 +1,57 @@
 import pytest
 
 
-def serialize(user):
+def serialize_social_account(social_account):
     return {
-        'username': user.username,
-        'first_name': user.first_name,
-        'last_name': user.last_name,
-        'admin': user.is_superuser,
+        'username': social_account.extra_data['login'],
+        'name': social_account.extra_data['name'],
+        'admin': social_account.user.is_superuser,
     }
 
 
 @pytest.mark.django_db
-def test_user_me(api_client, user):
-    api_client.force_authenticate(user=user)
+def test_user_me(api_client, social_account):
+    api_client.force_authenticate(user=social_account.user)
 
     assert (
         api_client.get(
             '/api/users/me/',
             format='json',
         ).data
-        == serialize(user)
+        == serialize_social_account(social_account)
     )
 
 
 @pytest.mark.django_db
-def test_user_me_admin(api_client, admin_user):
+def test_user_me_admin(api_client, admin_user, social_account_factory):
     api_client.force_authenticate(user=admin_user)
+    social_account = social_account_factory(user=admin_user)
 
     assert (
         api_client.get(
             '/api/users/me/',
             format='json',
         ).data
-        == serialize(admin_user)
+        == serialize_social_account(social_account)
     )
 
 
 @pytest.mark.django_db
-def test_user_search(api_client, user, user_factory):
-    api_client.force_authenticate(user=user)
+def test_user_search(api_client, social_account, social_account_factory):
+    api_client.force_authenticate(user=social_account.user)
 
     # Create more users to be filtered out
-    user_factory()
-    user_factory()
-    user_factory()
+    social_account_factory()
+    social_account_factory()
+    social_account_factory()
 
     assert (
         api_client.get(
             '/api/users/search/?',
-            {'username': user.username},
+            {'username': social_account.user.username},
             format='json',
         ).data
-        == [serialize(user)]
+        == [serialize_social_account(social_account)]
     )
 
 
@@ -84,7 +84,7 @@ def test_user_search_no_matches(api_client, user):
 
 
 @pytest.mark.django_db
-def test_user_search_multiple_matches(api_client, user, user_factory):
+def test_user_search_multiple_matches(api_client, user, user_factory, social_account_factory):
     api_client.force_authenticate(user=user)
 
     usernames = [
@@ -97,6 +97,7 @@ def test_user_search_multiple_matches(api_client, user, user_factory):
         'john_foo',
     ]
     users = [user_factory(username=username) for username in usernames]
+    social_accounts = [social_account_factory(user=user) for user in users]
 
     assert (
         api_client.get(
@@ -109,11 +110,12 @@ def test_user_search_multiple_matches(api_client, user, user_factory):
 
 
 @pytest.mark.django_db
-def test_user_search_limit_enforced(api_client, user, user_factory):
+def test_user_search_limit_enforced(api_client, user, user_factory, social_account_factory):
     api_client.force_authenticate(user=user)
 
-    usernames = [f'jane_{i:02}' for i in range(0, 100)]
+    usernames = [f'jane_{i:02}' for i in range(0, 20)]
     users = [user_factory(username=username) for username in usernames]
+    social_accounts = [social_account_factory(user=user) for user in users]
 
     assert (
         api_client.get(
@@ -121,5 +123,5 @@ def test_user_search_limit_enforced(api_client, user, user_factory):
             {'username': 'jane'},
             format='json',
         ).data
-        == [serialize(user) for user in users[:10]]
+        == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
     )
