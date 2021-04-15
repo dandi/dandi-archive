@@ -318,7 +318,22 @@ def test_dandiset_rest_delete_not_an_owner(api_client, dandiset, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_get_owners(api_client, dandiset, user):
+def test_dandiset_rest_get_owners(api_client, dandiset, social_account):
+    assign_perm('owner', social_account.user, dandiset)
+
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
+
+    assert resp.status_code == 200
+    assert resp.data == [
+        {
+            'username': social_account.extra_data['login'],
+            'name': social_account.extra_data['name'],
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_get_owners_no_social_account(api_client, dandiset, user):
     assign_perm('owner', user, dandiset)
 
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
@@ -328,21 +343,33 @@ def test_dandiset_rest_get_owners(api_client, dandiset, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_change_owner(api_client, draft_version, user_factory, mailoutbox):
+def test_dandiset_rest_change_owner(
+    api_client,
+    draft_version,
+    user_factory,
+    social_account_factory,
+    mailoutbox,
+):
     dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
+    social_account2 = social_account_factory(user=user2)
     assign_perm('owner', user1, dandiset)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': user2.username}],
+        [{'username': social_account2.extra_data['login']}],
         format='json',
     )
 
     assert resp.status_code == 200
-    assert resp.data == [{'username': user2.username}]
+    assert resp.data == [
+        {
+            'username': social_account2.extra_data['login'],
+            'name': social_account2.extra_data['name'],
+        }
+    ]
     assert list(dandiset.owners) == [user2]
 
     assert len(mailoutbox) == 2
@@ -353,21 +380,41 @@ def test_dandiset_rest_change_owner(api_client, draft_version, user_factory, mai
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_add_owner(api_client, draft_version, user_factory, mailoutbox):
+def test_dandiset_rest_add_owner(
+    api_client,
+    draft_version,
+    user_factory,
+    social_account_factory,
+    mailoutbox,
+):
     dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
+    social_account1 = social_account_factory(user=user1)
+    social_account2 = social_account_factory(user=user2)
     assign_perm('owner', user1, dandiset)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': user1.username}, {'username': user2.username}],
+        [
+            {'username': social_account1.extra_data['login']},
+            {'username': social_account2.extra_data['login']},
+        ],
         format='json',
     )
 
     assert resp.status_code == 200
-    assert resp.data == [{'username': user1.username}, {'username': user2.username}]
+    assert resp.data == [
+        {
+            'username': social_account1.extra_data['login'],
+            'name': social_account1.extra_data['name'],
+        },
+        {
+            'username': social_account2.extra_data['login'],
+            'name': social_account2.extra_data['name'],
+        },
+    ]
     assert list(dandiset.owners) == [user1, user2]
 
     assert len(mailoutbox) == 1
@@ -376,22 +423,34 @@ def test_dandiset_rest_add_owner(api_client, draft_version, user_factory, mailou
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_remove_owner(api_client, draft_version, user_factory, mailoutbox):
+def test_dandiset_rest_remove_owner(
+    api_client,
+    draft_version,
+    user_factory,
+    social_account_factory,
+    mailoutbox,
+):
     dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
+    social_account1 = social_account_factory(user=user1)
     assign_perm('owner', user1, dandiset)
     assign_perm('owner', user2, dandiset)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': user1.username}],
+        [{'username': social_account1.extra_data['login']}],
         format='json',
     )
 
     assert resp.status_code == 200
-    assert resp.data == [{'username': user1.username}]
+    assert resp.data == [
+        {
+            'username': social_account1.extra_data['login'],
+            'name': social_account1.extra_data['name'],
+        }
+    ]
     assert list(dandiset.owners) == [user1]
 
     assert len(mailoutbox) == 1
