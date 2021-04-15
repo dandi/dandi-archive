@@ -54,12 +54,16 @@ export default {
             firstName.charAt(0).toLocaleUpperCase() + lastName.charAt(0).toLocaleUpperCase()
           );
         }
-        // Django uses snake_case
-        const { first_name, last_name } = this.user;
-        if (first_name && last_name) {
-          return (
-            first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase()
-          );
+        const { name } = this.user;
+        if (name) {
+          const name_parts = name.split(' ');
+          if (name_parts.length >= 2) {
+            const first_name = name_parts[0];
+            const last_name = name_parts[name_parts.length - 1];
+            return (
+              first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase()
+            );
+          }
         }
         // If first name + last name aren't specified, try to use the login instead
         const { login } = this.user;

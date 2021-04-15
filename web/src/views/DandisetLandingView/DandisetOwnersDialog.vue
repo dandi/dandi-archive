@@ -92,11 +92,11 @@ const userFormatConversion = (users) => users.map(({
 }));
 
 const girderize = (users) => users.map(
-  ({ username, first_name: firstName, last_name: lastName }) => ({
+  ({ username, name }) => ({
     id: username,
     login: username,
     username,
-    name: (firstName && lastName) ? `${firstName} ${lastName}` : null,
+    name,
   }),
 );
 
