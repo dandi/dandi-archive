@@ -32,6 +32,15 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     lookup_value_regex = Version.VERSION_REGEX
 
     @swagger_auto_schema(
+        responses={
+            200: 'The version metadata.',
+        },
+    )
+    def retrieve(self, request, **kwargs):
+        version = self.get_object()
+        return Response(version.metadata.metadata, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
         responses={200: VersionDetailSerializer()},
     )
