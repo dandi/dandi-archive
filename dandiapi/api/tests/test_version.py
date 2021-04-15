@@ -52,8 +52,18 @@ def test_version_rest_list(api_client, version):
 
 @pytest.mark.django_db
 def test_version_rest_retrieve(api_client, version):
+    assert (
+        api_client.get(
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
+        ).data
+        == version.metadata.metadata
+    )
+
+
+@pytest.mark.django_db
+def test_version_rest_info(api_client, version):
     assert api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
     ).data == {
         'dandiset': {
             'identifier': version.dandiset.identifier,
@@ -71,11 +81,11 @@ def test_version_rest_retrieve(api_client, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_retrieve_with_asset(api_client, version, asset):
+def test_version_rest_info_with_asset(api_client, version, asset):
     version.assets.add(asset)
 
     assert api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
     ).data == {
         'dandiset': {
             'identifier': version.dandiset.identifier,
