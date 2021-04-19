@@ -17,15 +17,7 @@ def run(*args):
 
     client = s3_client()
     # Ignore pagination for now, hopefully there aren't enough objects to matter
-    objs = client.list_object_versions(Bucket=BUCKET, Prefix='blobs/')
-    print(objs['DeleteMarkers'])
-    for delete_marker in objs['Versions']:
-        if not AssetBlob.objects.filter(etag=delete_marker['ETag'][1:-1]).exists():
-            print(f'Deleting delete marker {delete_marker["Key"]}')
-            if delete:
-                client.delete_object(
-                    Bucket=BUCKET, Key=delete_marker['Key'], VersionId=delete_marker['VersionId']
-                )
+    objs = client.list_object_versions(Bucket=BUCKET, Prefix='dev/')
     for version in objs['Versions']:
         if not AssetBlob.objects.filter(etag=version['ETag'][1:-1]).exists():
             print(f'Deleting version {version["Key"]}')
@@ -33,3 +25,9 @@ def run(*args):
                 client.delete_object(
                     Bucket=BUCKET, Key=version['Key'], VersionId=version['VersionId']
                 )
+    for delete_marker in objs['DeleteMarkers']:
+        print(f'Deleting delete marker {delete_marker["Key"]}')
+        if delete:
+            client.delete_object(
+                Bucket=BUCKET, Key=delete_marker['Key'], VersionId=delete_marker['VersionId']
+            )
