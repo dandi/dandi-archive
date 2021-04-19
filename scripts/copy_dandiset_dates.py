@@ -14,7 +14,7 @@ from datetime import datetime
 
 from girder_client import GirderClient
 
-from dandiapi.api.models import Dandiset
+from dandiapi.api.models import Dandiset, Version
 
 
 def get_girder_dandisets(gc):
@@ -37,13 +37,21 @@ def copy_dates(gc: GirderClient):
         except Dandiset.DoesNotExist:
             print(f'Could not find dandiset {dandiset_identifier}')
             continue
+        try:
+            version = dandiset.versions.get(version='draft')
+        except Version.DoesNotExist:
+            print(f'No draft for dandiset {dandiset_identifier}')
+            continue
         dandiset.created = created
+        version.created = created
         # We are not copying modified because the migration process counts
         # as modifying all existing dandisets.
         # dandiset.modified = modified
+        # version.modified = modified
 
         # Do not trigger the auto modified field
         dandiset.save(update_modified=False)
+        version.save(update_modified=False)
 
         print(f'Copied created date for {dandiset_identifier}')
 
