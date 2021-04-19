@@ -117,7 +117,7 @@ const publishRest = new Vue({
     },
     async specificVersion(identifier: string, version: string) {
       try {
-        const { data } = await client.get(`dandisets/${identifier}/versions/${version}/`);
+        const { data } = await client.get(`dandisets/${identifier}/versions/${version}/info/`);
         return girderize(data);
       } catch (error) {
         if (error.response && error.response.status === 404) {
