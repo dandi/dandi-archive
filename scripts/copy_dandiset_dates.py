@@ -31,7 +31,7 @@ def get_girder_dandisets(gc):
 def copy_dates(gc: GirderClient):
     girder_dandisets = get_girder_dandisets(gc)
     for dandiset_identifier in girder_dandisets:
-        created, _modified = girder_dandisets[dandiset_identifier]
+        created, modified = girder_dandisets[dandiset_identifier]
         try:
             dandiset = Dandiset.objects.get(id=int(dandiset_identifier))
         except Dandiset.DoesNotExist:
@@ -44,10 +44,8 @@ def copy_dates(gc: GirderClient):
             continue
         dandiset.created = created
         version.created = created
-        # We are not copying modified because the migration process counts
-        # as modifying all existing dandisets.
-        # dandiset.modified = modified
-        # version.modified = modified
+        dandiset.modified = modified
+        version.modified = modified
 
         # Do not trigger the auto modified field
         dandiset.save(update_modified=False)
