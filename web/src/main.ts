@@ -22,8 +22,6 @@ import router from '@/router';
 import store from '@/store';
 import { girderRest, publishRest } from '@/rest';
 
-window.location.replace('http://www.dandiarchive.org');
-
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
   integrations: [new Integrations.Vue({ Vue, logErrors: true })],
