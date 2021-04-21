@@ -57,7 +57,7 @@ class AssetBlob(TimeStampedModel):
     def digest(self) -> Dict[str, str]:
         digest = {'dandi:dandi-etag': self.etag}
         if self.sha256:
-            digest['dandi:sha256'] = self.sha256
+            digest['dandi:sha2-256'] = self.sha256
         return digest
 
     def __str__(self) -> str:

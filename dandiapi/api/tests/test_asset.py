@@ -74,7 +74,7 @@ def test_asset_rest_retrieve(api_client, version, asset):
         ],
         'digest': {
             'dandi:dandi-etag': asset.blob.etag,
-            'dandi:sha256': asset.blob.sha256,
+            'dandi:sha2-256': asset.blob.sha256,
         },
     }
 
@@ -99,7 +99,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
         ],
         'digest': {
             'dandi:dandi-etag': asset.blob.etag,
-            # The dandi:sha256 value is absent
+            # The dandi:sha2-sha256 value is absent
         },
     }
 
