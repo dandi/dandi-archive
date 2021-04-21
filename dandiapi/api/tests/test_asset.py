@@ -72,6 +72,35 @@ def test_asset_rest_retrieve(api_client, version, asset):
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
             HTTP_URL_RE,
         ],
+        'digest': {
+            'dandi:dandi-etag': asset.blob.etag,
+            'dandi:sha256': asset.blob.sha256,
+        },
+    }
+
+
+@pytest.mark.django_db
+def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
+    version.assets.add(asset)
+    # Remove the sha256 from the factory asset
+    asset.blob.sha256 = None
+    asset.blob.save()
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/'
+    ).data == {
+        **asset.metadata.metadata,
+        'identifier': str(asset.asset_id),
+        'contentUrl': [
+            f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
+            f'/versions/{version.version}/assets/{asset.asset_id}/download/',
+            HTTP_URL_RE,
+        ],
+        'digest': {
+            'dandi:dandi-etag': asset.blob.etag,
+            # The dandi:sha256 value is absent
+        },
     }
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Set
+from typing import Dict, List, Set
 import uuid
 
 from django.conf import settings
@@ -52,6 +52,13 @@ class AssetBlob(TimeStampedModel):
     @property
     def references(self) -> int:
         return self.assets.count()
+
+    @property
+    def digest(self) -> Dict[str, str]:
+        digest = {'dandi:dandi-etag': self.etag}
+        if self.sha256:
+            digest['dandi:sha256'] = self.sha256
+        return digest
 
     def __str__(self) -> str:
         return self.blob.name
