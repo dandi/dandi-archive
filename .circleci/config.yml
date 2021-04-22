@@ -40,51 +40,85 @@ jobs:
           command: yarn run lint --no-fix --max-warnings=0
           working_directory: test
 
-  # test-e2e:
-  #   docker:
-  #     - image: circleci/python:3.6-node-browsers
-  #     - image: circleci/mongo:4.2
-  #       command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Create virtual environment
-  #         command: python3 -m venv install_env
-  #     - run:
-  #         name: Activate virtual environment
-  #         command: echo ". $CIRCLE_WORKING_DIRECTORY/install_env/bin/activate" >> $BASH_ENV
-  #     - run:
-  #         name: Upgrade pip
-  #         command: pip install -U pip
-  #     - run:
-  #         name: Install girder-dandi-archive
-  #         command: pip install .
-  #         working_directory: girder-dandi-archive
-  #     - run:
-  #         name: Run girder-dandi-archive in the background
-  #         command: girder serve
-  #         working_directory: girder-dandi-archive
-  #         background: true
-  #     - run:
-  #         name: Install web app
-  #         command: yarn install --frozen-lockfile
-  #         working_directory: web
-  #     - run:
-  #         name: Run web app
-  #         command: yarn serve
-  #         working_directory: web
-  #         background: true
-  #     - run:
-  #         name: Install E2E tests
-  #         command: yarn install --frozen-lockfile
-  #         working_directory: test
-  #     - run:
-  #         name: Run E2E tests
-  #         command: yarn run test
-  #         working_directory: test
-  #         environment:
-  #           CLIENT_URL: http://localhost:8085
-  #           GIRDER_URL: http://localhost:8080
+  test-e2e:
+    docker:
+      - image: circleci/python:3.9-node-browsers
+      - image: circleci/postgres:latest-ram
+        environment:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+      - image: minio/minio:latest
+        command: server /data
+        environment:
+          MINIO_ACCESS_KEY: minioAccessKey
+          MINIO_SECRET_KEY: minioSecretKey
+      - image: rabbitmq:management
+        name: rabbitmq
+    steps:
+      - checkout
+      - run:
+          name: Create virtual environment
+          command: python3 -m venv install_env
+      - run:
+          name: Activate virtual environment
+          command: echo ". $CIRCLE_WORKING_DIRECTORY/install_env/bin/activate" >> $BASH_ENV
+      - run:
+          name: Upgrade pip
+          command: pip install -U pip
+      - run:
+          name: Clone dandi-api
+          command: git clone https://github.com/dandi/dandi-api.git
+      - run:
+          name: Install dandi-api
+          command: pip install ./dandi-api[dev]
+      - run:
+          name: Apply migrations to API server
+          command: python manage.py migrate
+          working_directory: dandi-api
+          environment:
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+            DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_GIRDER_API_URL: https://girder.dandiarchive.org/not/real
+            DJANGO_DANDI_GIRDER_API_KEY: notarealkey
+            DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
+      - run:
+          name: Run API server in the background
+          command: python manage.py runserver
+          working_directory: dandi-api
+          background: true
+          environment:
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+            DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_GIRDER_API_URL: https://girder.dandiarchive.org/not/real
+            DJANGO_DANDI_GIRDER_API_KEY: notarealkey
+            DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
+      - run:
+          name: Install web app
+          command: yarn install --frozen-lockfile
+          working_directory: web
+      - run:
+          name: Run web app
+          command: yarn serve
+          working_directory: web
+          background: true
+      - run:
+          name: Install E2E tests
+          command: yarn install --frozen-lockfile
+          working_directory: test
+      - run:
+          name: Run E2E tests
+          command: yarn run test
+          working_directory: test
+          environment:
+            CLIENT_URL: http://localhost:8085
 
   provision:
     docker:
