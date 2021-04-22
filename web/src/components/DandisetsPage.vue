@@ -135,7 +135,11 @@ export default defineComponent({
       } else {
         const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
         const response = await publishRest.dandisets({
-          page: page.value, page_size: DANDISETS_PER_PAGE, ordering, user: props.user ? 'me' : null,
+          page: page.value,
+          page_size: DANDISETS_PER_PAGE,
+          ordering,
+          user: props.user ? 'me' : null,
+          search: props.search ? route.query.search : null,
         });
         djangoDandisetRequest.value = response.data;
       }
