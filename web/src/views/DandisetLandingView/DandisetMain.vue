@@ -195,19 +195,27 @@ export default {
         return 'You must be logged in to edit.';
       }
 
-      if (!this.girderDandiset) {
-        return null;
-      }
+      const permissionsMessage = 'You do not have permission to edit this dandiset.';
 
-      if (this.girderDandiset._accessLevel < 1) {
-        return 'You do not have permission to edit this dandiset.';
-      }
-
-      if (this.lockOwner != null) {
-        if (this.lockOwner.email === 'publish@dandiarchive.org') {
-          return 'A publish is currently in progress';
+      if (toggles.DJANGO_API) {
+        if (!this.userCanModifyDandiset) {
+          return permissionsMessage;
         }
-        return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
+      } else {
+        if (!this.girderDandiset) {
+          return null;
+        }
+
+        if (this.girderDandiset._accessLevel < 1) {
+          return permissionsMessage;
+        }
+
+        if (this.lockOwner != null) {
+          if (this.lockOwner.email === 'publish@dandiarchive.org') {
+            return 'A publish is currently in progress';
+          }
+          return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
+        }
       }
 
       return null;
@@ -241,6 +249,23 @@ export default {
     ...mapGetters('dandiset', ['version']),
   },
   asyncComputed: {
+    userCanModifyDandiset: {
+      async get() {
+        if (this.user.admin) {
+          return true;
+        }
+
+        const { identifier } = this.publishDandiset.meta.dandiset;
+        const { data: owners } = await publishRest.owners(identifier);
+        const userExists = owners.find((owner) => owner.username === this.user.username);
+        if (userExists !== undefined) {
+          return true;
+        }
+
+        return false;
+      },
+      default: false,
+    },
     lockOwner: {
       async get() {
         if (toggles.DJANGO_API) {
