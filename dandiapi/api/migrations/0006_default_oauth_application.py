@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('api', '0005_version_doi'),
-        ('oauth2_provider', '0004_auto_20200902_2022'),
+        ('oauth2_provider', '0003_auto_20201211_1314'),
     ]
 
     operations = [migrations.RunPython(create_application, reverse_create_application)]
