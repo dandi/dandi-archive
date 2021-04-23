@@ -25,7 +25,7 @@ from dandiapi.api.models import Dandiset, Version
 
 def get_girder_dandisets(gc):
     dandisets = {}
-    for dandiset in gc.get('/dandi'):
+    for dandiset in gc.get('/dandi?limit=200'):
         identifier = dandiset['meta']['dandiset']['identifier']
         dandisets[identifier] = [
             user['id'] for user in dandiset['access']['users'] if user['level'] == 2
