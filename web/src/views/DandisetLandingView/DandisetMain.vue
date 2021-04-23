@@ -258,11 +258,7 @@ export default {
         const { identifier } = this.publishDandiset.meta.dandiset;
         const { data: owners } = await publishRest.owners(identifier);
         const userExists = owners.find((owner) => owner.username === this.user.username);
-        if (userExists !== undefined) {
-          return true;
-        }
-
-        return false;
+        return !!userExists;
       },
       default: false,
     },
