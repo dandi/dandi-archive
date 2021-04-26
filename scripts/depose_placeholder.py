@@ -6,7 +6,8 @@ from dandiapi.api.user_migration import copy_ownership
 def run(*args):
     if len(args) != 2:
         print(
-            'Usage: python manage.py runscript create_placeholder_users --script-args {placeholder_email} {github_email}'
+            'Usage: python manage.py runscript create_placeholder_users --script-args '
+            '{placeholder_email} {github_email}'
         )
         return
     placeholder_email = args[0]
