@@ -80,6 +80,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             **asset.metadata.metadata,
             'identifier': asset_id,
             'contentUrl': [download_url, blob_url],
+            'digest': asset.blob.digest,
         }
         return Response(metadata, status=status.HTTP_200_OK)
 
