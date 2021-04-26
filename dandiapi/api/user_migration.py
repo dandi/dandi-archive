@@ -1,5 +1,7 @@
-from allauth.account.signals import user_logged_in
+from allauth.account.signals import user_logged_in, user_signed_up
 from django.dispatch import receiver
+
+from dandiapi.api.mail import send_registered_notice_email
 
 
 def copy_ownership(placeholder_user, user):
@@ -38,3 +40,8 @@ def depose_placeholder(user):
 def user_log_in_listener(sender, user, **kwargs):
     """Attempt replace a placeholder user every time a real user logs in."""
     depose_placeholder(user)
+
+
+@receiver(user_signed_up)
+def user_signed_up_listener(sender, user, **kwargs):
+    send_registered_notice_email(user)
