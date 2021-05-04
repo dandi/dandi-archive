@@ -39,3 +39,14 @@ This function will generate the body of the DOI and return it.
 * If DOI generation raised any errors, return a 400 error describing the problem.
 * Otherwise, attempt to register the DOI identifier/body with Datacite.
 * If that raises any errors, log them so they are reported in Sentry. Regardless of the outcome, continue with the publish process.
+
+## Validation process
+
+### Assets
+* Whenever an asset is created (I think this is the only way to set asset metadata), it kicks off an out of band job to validate the asset metadata.
+* The task will grab the appropriate schema for the schema version (currently just the normal `asset.json`, but hopefully soon it will use a more restrictive `publishAsset.json`) and verify that the asset metadata validates against that schema. The result is stored on the asset.
+* If it fails to validate, any draft dandisets which contain that asset will show in the API as `INVALID`, even if they would validate otherwise.
+
+### Dandisets
+* Whenever a new dandiset metadata is created, it kicks off an out of band job to validate the dandiset metadata. This is identical to the asset process, but uses the dandisets JSON schema.
+* If any of the assets in a dandiset are `INVALID`, the dandiset is also `INVALID`. 
