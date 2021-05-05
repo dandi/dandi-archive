@@ -252,7 +252,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     @swagger_auto_schema(
         manual_parameters=[
-            openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING)
+            openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING),
+            openapi.Parameter('extended', openapi.IN_QUERY, type=openapi.TYPE_BOOLEAN)
         ],
         responses={
             200: openapi.Schema(
@@ -270,11 +271,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         (to refer to the root folder) must be the empty string.
         """
         path_prefix: str = self.request.query_params.get('path_prefix') or ''
+        extended: bool = self.request.query_params.get('extended') or False
         # Enforce trailing slash
         if path_prefix and path_prefix[-1] != '/':
             path_prefix = f'{path_prefix}/'
         qs = self.get_queryset().filter(path__startswith=path_prefix).values()
 
-        return Response(Asset.get_path(path_prefix, qs))
+        return Response(Asset.get_path(path_prefix, qs, extended=extended))
 
     # TODO: add create to forge an asset from a validation

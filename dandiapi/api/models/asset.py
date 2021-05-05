@@ -125,25 +125,51 @@ class Asset(TimeStampedModel):
         return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata)
 
     @classmethod
-    def get_path(cls, path_prefix: str, qs: List[str]) -> Set:
+    def get_path(cls, path_prefix: str, qs: List[dict], extended: bool) -> List:
         """
         Return the unique files/directories that directly reside under the specified path.
 
-        The specified path must be a folder (must end with a slash).
+        Parameters
+        ----------
+        path_prefix: str
+          The specified path must be a folder (must end with a slash).
+        extended: bool, optional
+          If True, will return a list of records: original asset records or summary
+          records for directories
         """
         if not path_prefix:
             path_prefix = '/'
         prefix_parts = [part for part in path_prefix.split('/') if part]
-        paths = set()
+        paths = dict() if extended else set()
         for asset in qs:
             path_parts = [part for part in asset['path'].split('/') if part]
 
             # Pivot index is -1 (include all path parts) if prefix is '/'
             pivot_index = path_parts.index(prefix_parts[-1]) if len(prefix_parts) else -1
             base_path, *remainder = path_parts[pivot_index + 1 :]
-            paths.add(f'{base_path}/' if len(remainder) else base_path)
-
-        return sorted(paths)
+            if not extended:
+                paths.add(f'{base_path}/' if len(remainder) else base_path)
+            elif len(remainder):
+                if base_path not in paths:
+                    # Initiate the record from the asset.  It will only miss
+                    # asset_id field and otherwise be the same with cumulative information
+                    paths[base_path] = {
+                        "path": f'{base_path}/',
+                        "size": asset['size'],
+                        "created": asset['created'],
+                        "modified": asset['modified'],
+                    }
+                else:
+                    # update record
+                    rec = paths[base_path]
+                    # Assuming we store in UTC but might better
+                    rec['size'] += asset['size']
+                    rec['created'] = min(rec['created'], asset['created'])  # earliest
+                    rec['modified'] = max(rec['modified'], asset['modified'])  # latest
+            else:
+                # asset
+                paths[base_path] = asset
+        return sorted(paths.values() if extended else paths)
 
     @classmethod
     def total_size(cls):
