@@ -65,6 +65,18 @@
           </v-icon>
           View Data
         </v-btn>
+        <v-btn
+          text
+          @click="$emit('edit', !userCanModifyDandiset)"
+        >
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
+            {{ metadataButtonIcon }}
+          </v-icon>
+          {{ metadataButtonText }}
+        </v-btn>
         <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
           <v-tooltip
             left
@@ -72,19 +84,6 @@
           >
             <template v-slot:activator="{ on }">
               <div v-on="on">
-                <v-btn
-                  text
-                  :disabled="editDisabledMessage !== null"
-                  @click="$emit('edit')"
-                >
-                  <v-icon
-                    color="primary"
-                    class="mr-2"
-                  >
-                    mdi-pencil
-                  </v-icon>
-                  Edit metadata
-                </v-btn>
                 <!-- TODO for now only admins can publish -->
                 <v-btn
                   v-if="DJANGO_API"
@@ -219,6 +218,12 @@ export default {
       }
 
       return null;
+    },
+    metadataButtonText() {
+      return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
+    },
+    metadataButtonIcon() {
+      return this.userCanModifyDandiset ? 'mdi-pencil' : 'mdi-eye';
     },
     fileBrowserLink() {
       if (toggles.DJANGO_API) {
