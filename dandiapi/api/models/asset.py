@@ -125,7 +125,7 @@ class Asset(TimeStampedModel):
         return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata)
 
     @classmethod
-    def get_path(cls, path_prefix: str, qs: List[dict], extended: bool) -> List:
+    def get_path(cls, path_prefix: str, qs: List[dict], extended: bool=False) -> List:
         """
         Return the unique files/directories that directly reside under the specified path.
 
