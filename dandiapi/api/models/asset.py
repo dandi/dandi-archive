@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Set
+from typing import Dict, List
 import uuid
 
 from django.conf import settings
@@ -125,7 +125,7 @@ class Asset(TimeStampedModel):
         return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata)
 
     @classmethod
-    def get_path(cls, path_prefix: str, qs: List[dict], extended: bool=False) -> List:
+    def get_path(cls, path_prefix: str, qs: List[dict], extended: bool = False) -> List:
         """
         Return the unique files/directories that directly reside under the specified path.
 
@@ -154,10 +154,10 @@ class Asset(TimeStampedModel):
                     # Initiate the record from the asset.  It will only miss
                     # asset_id field and otherwise be the same with cumulative information
                     paths[base_path] = {
-                        "path": f'{base_path}/',
-                        "size": asset['size'],
-                        "created": asset['created'],
-                        "modified": asset['modified'],
+                        'path': f'{base_path}/',
+                        'size': asset['size'],
+                        'created': asset['created'],
+                        'modified': asset['modified'],
                     }
                 else:
                     # update record
