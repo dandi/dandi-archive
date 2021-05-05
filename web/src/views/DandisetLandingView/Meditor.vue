@@ -68,6 +68,7 @@
                   color="primary"
                   v-on="on"
                   @click="save"
+                  :disabled="readonly"
                 >
                   <v-icon>
                     mdi-content-save
@@ -180,10 +181,6 @@ function renderField(fieldSchema: JSONSchema7) {
   return true;
 }
 
-const CommonVJSFOptions = {
-  initialValidation: 'all',
-};
-
 export default defineComponent({
   name: 'Meditor',
   components: { VJsf },
@@ -194,6 +191,10 @@ export default defineComponent({
     },
     model: {
       type: Object as PropType<DandiModel>,
+      required: true,
+    },
+    readonly: {
+      type: Boolean,
       required: true,
     },
   },
@@ -228,6 +229,10 @@ export default defineComponent({
       return undefined;
     }
 
+    const options = computed(() => ({
+      initialValidation: 'all',
+      disableAll: props.readonly,
+    }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
     const id = computed(() => publishDandiset.value?.meta.dandiset.identifier || null);
     function setDandiset(payload: any) {
@@ -296,7 +301,7 @@ export default defineComponent({
       download,
       sectionButtonColor,
 
-      CommonVJSFOptions,
+      CommonVJSFOptions: options,
 
       setComplexModelProp,
     };

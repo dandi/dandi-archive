@@ -8,6 +8,7 @@
         v-if="DJANGO_API"
         :schema="schema"
         :model="meta"
+        :readonly="readonly"
         @close="edit = false"
       />
       <meta-editor
@@ -69,7 +70,7 @@
             <DandisetMain
               :schema="schema"
               :meta="meta"
-              @edit="edit = true"
+              @edit="edit = true; readonly = $event"
             />
           </v-col>
           <v-col
@@ -118,6 +119,7 @@ export default {
   data() {
     return {
       edit: false,
+      readonly: false,
       detailsPanel: true,
     };
   },
