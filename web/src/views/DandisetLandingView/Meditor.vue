@@ -195,7 +195,7 @@ export default defineComponent({
     },
     readonly: {
       type: Boolean,
-      required: true,
+      default: true,
     },
   },
   setup(props, ctx) {
