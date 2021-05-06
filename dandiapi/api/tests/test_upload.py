@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.core.files.base import ContentFile
@@ -228,7 +229,7 @@ def test_upload_validate_wrong_size(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
     wrong_content = b'not 100 bytes'
-    upload.blob.save(upload.blob.name, ContentFile(wrong_content))
+    upload.blob.save(os.path.basename(upload.blob.name), ContentFile(wrong_content))
 
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
