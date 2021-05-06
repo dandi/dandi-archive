@@ -46,7 +46,7 @@
                 params: { identifier, version },
               }"
             >
-              <v-icon>mdi-jellyfish</v-icon>
+              <v-icon>mdi-home</v-icon>
             </v-btn>
             <v-divider
               vertical
@@ -56,7 +56,7 @@
               :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
               style="text-decoration: none;"
             >
-              <v-icon>mdi-home</v-icon>
+              {{ identifier }}
             </router-link>
 
             <template v-for="(part, i) in splitLocation">
