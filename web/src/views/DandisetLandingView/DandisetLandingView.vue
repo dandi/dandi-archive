@@ -8,7 +8,7 @@
         v-if="DJANGO_API"
         :schema="schema"
         :model="meta"
-        :readonly="readonly"
+        :readonly="!userCanModifyDandiset"
         @close="edit = false"
       />
       <meta-editor
@@ -70,7 +70,8 @@
             <DandisetMain
               :schema="schema"
               :meta="meta"
-              @edit="edit = true; readonly = $event"
+              :userCanModifyDandiset="userCanModifyDandiset"
+              @edit="edit = true"
             />
           </v-col>
           <v-col
@@ -91,6 +92,7 @@ import { mapState } from 'vuex';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
+import { user } from '@/rest';
 import MetaEditor from './MetaEditor.vue';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
@@ -155,6 +157,22 @@ export default {
       dandisetVersions: (state) => state.versions,
       schema: (state) => state.schema,
     }),
+    user,
+  },
+  asyncComputed: {
+    userCanModifyDandiset: {
+      async get() {
+        if (this.user.admin) {
+          return true;
+        }
+
+        const { identifier } = this.publishDandiset.meta.dandiset;
+        const { data: owners } = await publishRest.owners(identifier);
+        const userExists = owners.find((owner) => owner.username === this.user.username);
+        return !!userExists;
+      },
+      default: false,
+    },
   },
   watch: {
     identifier: {

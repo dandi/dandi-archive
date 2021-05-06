@@ -67,7 +67,7 @@
         </v-btn>
         <v-btn
           text
-          @click="$emit('edit', !userCanModifyDandiset)"
+          @click="$emit('edit')"
         >
           <v-icon
             color="primary"
@@ -175,6 +175,10 @@ export default {
       type: Object,
       required: true,
     },
+    userCanModifyDandiset: {
+      type: Boolean,
+      required: true,
+    },
   },
   data() {
     return {
@@ -254,19 +258,6 @@ export default {
     ...mapGetters('dandiset', ['version']),
   },
   asyncComputed: {
-    userCanModifyDandiset: {
-      async get() {
-        if (this.user.admin) {
-          return true;
-        }
-
-        const { identifier } = this.publishDandiset.meta.dandiset;
-        const { data: owners } = await publishRest.owners(identifier);
-        const userExists = owners.find((owner) => owner.username === this.user.username);
-        return !!userExists;
-      },
-      default: false,
-    },
     lockOwner: {
       async get() {
         if (toggles.DJANGO_API) {
