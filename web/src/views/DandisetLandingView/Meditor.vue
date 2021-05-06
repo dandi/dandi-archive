@@ -229,7 +229,7 @@ export default defineComponent({
       return undefined;
     }
 
-    const options = computed(() => ({
+    const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
       disableAll: props.readonly,
     }));
@@ -301,7 +301,7 @@ export default defineComponent({
       download,
       sectionButtonColor,
 
-      CommonVJSFOptions: options,
+      CommonVJSFOptions,
 
       setComplexModelProp,
     };
