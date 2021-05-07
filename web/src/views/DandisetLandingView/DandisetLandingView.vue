@@ -92,7 +92,7 @@ import { mapState } from 'vuex';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { draftVersion } from '@/utils/constants';
 import toggles from '@/featureToggle';
-import { user } from '@/rest';
+import { publishRest, user } from '@/rest';
 import MetaEditor from './MetaEditor.vue';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
