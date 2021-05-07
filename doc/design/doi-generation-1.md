@@ -7,7 +7,8 @@ Whenever a dandiset is modified (metadata changed or files uploaded/removed), it
 - publish enabled only if a dandiset is `VALID`. The button will be greyed out in the UI and the API endpoint will return 405.
 - on publish trigger:
    - create the versioned release in the db (this prevents any asset/blob belonging to the release from being deleted)
-   - insert all the relevant metadata (version, doi, url, manifest location/checksum) into the metadata record of the new version 
+   - insert all the relevant metadata (version, doi, url, manifest location) into the metadata record of the new version 
+    -  manifest url == dandiarchive api url to GET on assets for the versioned dataset.
   - send this new metadata record to mint the doi (there should be no reason why this should fail unless the external resource fails. if it fails notify admins since this is likely a new bug)
    - write out to s3 bucket (even on any datacite failure)
    
