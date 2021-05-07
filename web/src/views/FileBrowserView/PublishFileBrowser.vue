@@ -55,6 +55,7 @@
             <router-link
               :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
               style="text-decoration: none;"
+              class="mx-2"
             >
               {{ identifier }}
             </router-link>
