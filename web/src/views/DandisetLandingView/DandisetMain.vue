@@ -65,6 +65,18 @@
           </v-icon>
           View Data
         </v-btn>
+        <v-btn
+          text
+          @click="$emit('edit')"
+        >
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
+            {{ metadataButtonIcon }}
+          </v-icon>
+          {{ metadataButtonText }}
+        </v-btn>
         <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
           <v-tooltip
             left
@@ -72,19 +84,6 @@
           >
             <template v-slot:activator="{ on }">
               <div v-on="on">
-                <v-btn
-                  text
-                  :disabled="editDisabledMessage !== null"
-                  @click="$emit('edit')"
-                >
-                  <v-icon
-                    color="primary"
-                    class="mr-2"
-                  >
-                    mdi-pencil
-                  </v-icon>
-                  Edit metadata
-                </v-btn>
                 <!-- TODO for now only admins can publish -->
                 <v-btn
                   v-if="DJANGO_API"
@@ -176,6 +175,10 @@ export default {
       type: Object,
       required: true,
     },
+    userCanModifyDandiset: {
+      type: Boolean,
+      required: true,
+    },
   },
   data() {
     return {
@@ -220,6 +223,12 @@ export default {
 
       return null;
     },
+    metadataButtonText() {
+      return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
+    },
+    metadataButtonIcon() {
+      return this.userCanModifyDandiset ? 'mdi-pencil' : 'mdi-eye';
+    },
     fileBrowserLink() {
       if (toggles.DJANGO_API) {
         const { version } = this;
@@ -249,19 +258,6 @@ export default {
     ...mapGetters('dandiset', ['version']),
   },
   asyncComputed: {
-    userCanModifyDandiset: {
-      async get() {
-        if (this.user.admin) {
-          return true;
-        }
-
-        const { identifier } = this.publishDandiset.meta.dandiset;
-        const { data: owners } = await publishRest.owners(identifier);
-        const userExists = owners.find((owner) => owner.username === this.user.username);
-        return !!userExists;
-      },
-      default: false,
-    },
     lockOwner: {
       async get() {
         if (toggles.DJANGO_API) {
