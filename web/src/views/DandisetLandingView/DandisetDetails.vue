@@ -140,6 +140,7 @@
                       text
                       :disabled="manageOwnersDisabled"
                       v-on="on"
+                      id="manage"
                     >
                       <v-icon
                         x-small
