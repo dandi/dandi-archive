@@ -25,7 +25,7 @@ The API will pass the following to the DOI generator:
 * A URL for the dandiset. This will be a redirector URL of the form `f'https://dandiarchive.org/dandiset/{dandiset_id}/{version_id}'`.
 * The dandiset metadata, as a python dictionary.
 
-## dandi.core.doi ?
+## dandi.core.to_datacite
 
 This function will generate the body of the DOI and return it.
 
