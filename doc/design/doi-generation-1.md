@@ -30,7 +30,7 @@ The API will pass the following to the DOI generator:
 This function will generate the body of the DOI and return it.
 
 * creating a mapping between datacite's metadata and datacite's dictionary
-  * this should not return an error
+  * this should not return an error due to the problems with metadata (should be validated before)
 
 ## dandi-api
 
