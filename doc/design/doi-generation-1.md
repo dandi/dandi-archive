@@ -29,10 +29,7 @@ The API will pass the following to the DOI generator:
 
 This function will generate the body of the DOI and return it.
 
-* checking meta = DandisetMeta(meta) or meta = PublishedDandisetMeta (meta) (if publishedBy and datePublished is available):
-  * if fields are missing (e.g. contributors) it would return error even today
-  * I would add additional checks if doi (and possibly other fields) is available
-* running datacite_json = to_datacite(meta)
+* creating a mapping between datacite's metadata and datacite's dictionary
   * this should not return an error
 
 ## dandi-api
