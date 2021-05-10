@@ -41,6 +41,7 @@
             <v-btn
               text
               v-on="on"
+              id="download"
             >
               <v-icon
                 color="primary"
@@ -56,6 +57,7 @@
         <v-btn
           :to="fileBrowserLink"
           text
+          id="view-data"
         >
           <v-icon
             color="primary"
@@ -68,6 +70,7 @@
         <v-btn
           text
           @click="$emit('edit')"
+          id="view-edit-metadata"
         >
           <v-icon
             color="primary"
@@ -90,6 +93,7 @@
                   text
                   :disabled="editDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
+                  id="publish"
                 >
                   <v-icon
                     color="success"
