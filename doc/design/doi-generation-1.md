@@ -11,6 +11,7 @@ Whenever a dandiset is modified (metadata changed or files uploaded/removed), it
     -  manifest url == dandiarchive api url to GET on assets for the versioned dataset.
   - send this new metadata record to mint the doi (there should be no reason why this should fail unless the external resource fails. if it fails notify admins since this is likely a new bug)
    - write out to s3 bucket (even on any datacite failure)
+      - add checksums for dandiset.yaml and assets.yaml which should be stored in a checksums.json in the published directory.
    
 ## DOI generation process
 
