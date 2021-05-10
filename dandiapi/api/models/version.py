@@ -88,7 +88,7 @@ class Version(TimeStampedModel):
         year = datetime.datetime.now().year
         name = metadata['name']
         url = metadata['url']
-        if 'contributor' not in metadata:
+        if 'contributor' not in metadata or not metadata['contributor']:
             return f'{name} ({year}). Online: {url}'
         cl = '; '.join([val['name'] for val in metadata['contributor'] if val['includeInCitation']])
         citation = f'{cl} ({year}) {name}. Online: {url}'
