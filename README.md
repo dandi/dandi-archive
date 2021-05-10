@@ -89,18 +89,6 @@ Useful sub-commands include:
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
 
-## Connecting to `dandiarchive`
-`dandiarchive` is another application and will need to be setup and run separately.
-1. Login to the `dandiarchive` Girder client using the `publish` admin account. If
-you followed the README it will be located at `http://localhost:8080/`.
-   * **NOTE**: the username of the Girder admin account used here must be `publish` for publishing to work properly. If an admin account with that username doesn't exist, it must be created.
-2. Navigate to account settings, click on the 'API keys' tab, and generate an API key.
-3. Save this API key and the Girder client URL in environment variables named `DJANGO_DANDI_GIRDER_API_KEY`
-   and `DJANGO_DANDI_GIRDER_API_URL`.
-4. Run `dandi-publish` as described above.
-
-**NOTE**: `dandiarchive` also needs to be configured to connect to `dandi-publish`. See its README for instructions.
-
 ## API Authentication
 Read-only API endpoints (i.e. `GET`, `HEAD`) do not require any
 authentication. All other endpoints require token authentication

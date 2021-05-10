@@ -2,7 +2,6 @@ import contextlib
 from dataclasses import dataclass
 from typing import Any, Dict, Iterator, List
 
-from django.conf import settings
 from httpx import Client
 
 
@@ -20,8 +19,8 @@ class GirderFile:
 
 class GirderClient(Client):
     def __init__(self, authenticate=False, **kwargs):
-        girder_api_url = settings.DANDI_GIRDER_API_URL
-        girder_api_key = settings.DANDI_GIRDER_API_KEY
+        girder_api_url = None
+        girder_api_key = None
         if not girder_api_url.endswith('/'):
             girder_api_url += '/'
 
