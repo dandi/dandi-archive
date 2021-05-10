@@ -29,6 +29,67 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
 
 @pytest.mark.django_db
+def test_version_metadata_citation(version):
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_no_contributors(version):
+    version.metadata.metadata['contributor'] = []
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_contributor_not_in_citation(version):
+    version.metadata.metadata['contributor'] = [
+        {'name': 'Jane Doe'},
+        {'name': 'John Doe', 'includeInCitation': False},
+    ]
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_contributor(version):
+    version.metadata.metadata['contributor'] = [{'name': 'Jane Doe', 'includeInCitation': True}]
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'Jane Doe ({year}) {name}. Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_multiple_contributors(version):
+    version.metadata.metadata['contributor'] = [
+        {'name': 'John Doe', 'includeInCitation': True},
+        {'name': 'Jane Doe', 'includeInCitation': True},
+    ]
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'John Doe; Jane Doe ({year}) {name}. Online: {url}'
+    )
+
+
+@pytest.mark.django_db
 def test_version_rest_list(api_client, version):
     assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
         'count': 1,
