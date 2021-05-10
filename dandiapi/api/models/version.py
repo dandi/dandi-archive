@@ -91,8 +91,8 @@ class Version(TimeStampedModel):
         if 'contributor' not in metadata:
             return f'{name} ({year}). Online: {url}'
         cl = '; '.join([val['name'] for val in metadata['contributor'] if val['includeInCitation']])
-        citestr = f'{cl} ({year}) {name}. Online: {url}'
-        return citestr
+        citation = f'{cl} ({year}) {name}. Online: {url}'
+        return citation
 
     def _populate_metadata(self):
         metadata = {
@@ -101,7 +101,7 @@ class Version(TimeStampedModel):
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'{self.dandiset.identifier}/{self.version}',
-            'url': f'https://identifiers.org/{self.dandiset.identifier}/{self.version}',
+            'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
         }
         metadata['citation'] = self.citation(metadata)
 

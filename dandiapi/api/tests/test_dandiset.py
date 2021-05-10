@@ -209,7 +209,7 @@ def test_dandiset_rest_create(api_client, user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://identifiers.org/{dandiset.identifier}/draft'
+    url = f'https://dandiarchive.org/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
@@ -266,7 +266,7 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://identifiers.org/{dandiset.identifier}/draft'
+    url = f'https://dandiarchive.org/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
