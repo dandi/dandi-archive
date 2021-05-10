@@ -120,27 +120,6 @@ jobs:
           environment:
             CLIENT_URL: http://localhost:8085
 
-  provision:
-    docker:
-      - image: circleci/python:3.6
-    environment:
-      ANSIBLE_PRIVATE_KEY_FILE: "$HOME/girder-dandi-server.pem"
-    steps:
-      - checkout
-      - run:
-          name: Install Ansible
-          command: sudo pip install ansible
-      - run:
-          name: Echo key to a file
-          command: echo -e "$DEPLOYKEY" > "$HOME/girder-dandi-server.pem"
-      - run:
-          name: Change key permission
-          command: chmod 600 "$HOME/girder-dandi-server.pem"
-      - run:
-          name: Run ansible playbook
-          working_directory: ./ansible
-          command: . ./provision.sh
-
 workflows:
   version: 2
   test_and_deploy:
@@ -151,9 +130,3 @@ workflows:
       #     requires:
       #       - test-server
       #       - test-gui
-      - provision:
-          # requires:
-          #   - test-e2e
-          filters:
-            branches:
-              only: master
