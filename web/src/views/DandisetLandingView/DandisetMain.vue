@@ -41,6 +41,7 @@
             <v-btn
               text
               v-on="on"
+              id="download"
             >
               <v-icon
                 color="primary"
@@ -56,6 +57,7 @@
         <v-btn
           :to="fileBrowserLink"
           text
+          id="view-data"
         >
           <v-icon
             color="primary"
@@ -65,6 +67,19 @@
           </v-icon>
           View Data
         </v-btn>
+        <v-btn
+          text
+          @click="$emit('edit')"
+          id="view-edit-metadata"
+        >
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
+            {{ metadataButtonIcon }}
+          </v-icon>
+          {{ metadataButtonText }}
+        </v-btn>
         <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
           <v-tooltip
             left
@@ -72,25 +87,13 @@
           >
             <template v-slot:activator="{ on }">
               <div v-on="on">
-                <v-btn
-                  text
-                  :disabled="editDisabledMessage !== null"
-                  @click="$emit('edit')"
-                >
-                  <v-icon
-                    color="primary"
-                    class="mr-2"
-                  >
-                    mdi-pencil
-                  </v-icon>
-                  Edit metadata
-                </v-btn>
                 <!-- TODO for now only admins can publish -->
                 <v-btn
                   v-if="DJANGO_API"
                   text
                   :disabled="editDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
+                  id="publish"
                 >
                   <v-icon
                     color="success"
@@ -176,6 +179,10 @@ export default {
       type: Object,
       required: true,
     },
+    userCanModifyDandiset: {
+      type: Boolean,
+      required: true,
+    },
   },
   data() {
     return {
@@ -195,29 +202,49 @@ export default {
         return 'You must be logged in to edit.';
       }
 
-      if (!this.girderDandiset) {
-        return null;
-      }
+      const permissionsMessage = 'You do not have permission to edit this dandiset.';
 
-      if (this.girderDandiset._accessLevel < 1) {
-        return 'You do not have permission to edit this dandiset.';
-      }
-
-      if (this.lockOwner != null) {
-        if (this.lockOwner.email === 'publish@dandiarchive.org') {
-          return 'A publish is currently in progress';
+      if (toggles.DJANGO_API) {
+        if (!this.userCanModifyDandiset) {
+          return permissionsMessage;
         }
-        return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
+      } else {
+        if (!this.girderDandiset) {
+          return null;
+        }
+
+        if (this.girderDandiset._accessLevel < 1) {
+          return permissionsMessage;
+        }
+
+        if (this.lockOwner != null) {
+          if (this.lockOwner.email === 'publish@dandiarchive.org') {
+            return 'A publish is currently in progress';
+          }
+          return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
+        }
       }
 
       return null;
+    },
+    metadataButtonText() {
+      return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
+    },
+    metadataButtonIcon() {
+      return this.userCanModifyDandiset ? 'mdi-pencil' : 'mdi-eye';
     },
     fileBrowserLink() {
       if (toggles.DJANGO_API) {
         const { version } = this;
         const { identifier } = this.publishDandiset.meta.dandiset;
         // TODO: this probably does not work correctly yet
-        return { name: 'fileBrowser', params: { identifier, version } };
+        return {
+          name: 'fileBrowser',
+          params: { identifier, version },
+          query: {
+            location: ''
+          },
+        };
       }
       const { version } = this;
       const { identifier } = this.girderDandiset.meta.dandiset;

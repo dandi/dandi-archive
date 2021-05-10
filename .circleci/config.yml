@@ -1,23 +1,5 @@
 version: 2
 jobs:
-  test-server:
-    docker:
-      - image: circleci/python:3.6
-      - image: circleci/mongo:4.2
-        command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
-    steps:
-      - checkout
-      - run:
-          name: Upgrade pip
-          command: pip install -U pip
-      - run:
-          name: Install tox
-          command: pip install tox
-      - run:
-          name: Run tests
-          command: tox
-          working_directory: girder-dandi-archive
-
   test-gui:
     docker:
       - image: circleci/node:latest
@@ -42,9 +24,18 @@ jobs:
 
   test-e2e:
     docker:
-      - image: circleci/python:3.6-node-browsers
-      - image: circleci/mongo:4.2
-        command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
+      - image: circleci/python:3.9-node-browsers
+      - image: circleci/postgres:latest-ram
+        environment:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+      - image: minio/minio:latest
+        command: server /data
+        environment:
+          MINIO_ACCESS_KEY: minioAccessKey
+          MINIO_SECRET_KEY: minioSecretKey
+      - image: rabbitmq:management
+        name: rabbitmq
     steps:
       - checkout
       - run:
@@ -57,14 +48,40 @@ jobs:
           name: Upgrade pip
           command: pip install -U pip
       - run:
-          name: Install girder-dandi-archive
-          command: pip install .
-          working_directory: girder-dandi-archive
+          name: Clone dandi-api
+          command: git clone https://github.com/dandi/dandi-api.git
       - run:
-          name: Run girder-dandi-archive in the background
-          command: girder serve
-          working_directory: girder-dandi-archive
+          name: Install dandi-api
+          command: pip install ./dandi-api[dev]
+      - run:
+          name: Apply migrations to API server
+          command: python manage.py migrate
+          working_directory: dandi-api
+          environment:
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+            DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_GIRDER_API_URL: https://girder.dandiarchive.org/not/real
+            DJANGO_DANDI_GIRDER_API_KEY: notarealkey
+            DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
+      - run:
+          name: Run API server in the background
+          command: python manage.py runserver
+          working_directory: dandi-api
           background: true
+          environment:
+            DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+            DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+            DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+            DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
+            DJANGO_DANDI_GIRDER_API_URL: https://girder.dandiarchive.org/not/real
+            DJANGO_DANDI_GIRDER_API_KEY: notarealkey
+            DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
       - run:
           name: Install web app
           command: yarn install --frozen-lockfile
@@ -84,42 +101,13 @@ jobs:
           working_directory: test
           environment:
             CLIENT_URL: http://localhost:8085
-            GIRDER_URL: http://localhost:8080
-
-  provision:
-    docker:
-      - image: circleci/python:3.6
-    environment:
-      ANSIBLE_PRIVATE_KEY_FILE: "$HOME/girder-dandi-server.pem"
-    steps:
-      - checkout
-      - run:
-          name: Install Ansible
-          command: sudo pip install ansible
-      - run:
-          name: Echo key to a file
-          command: echo -e "$DEPLOYKEY" > "$HOME/girder-dandi-server.pem"
-      - run:
-          name: Change key permission
-          command: chmod 600 "$HOME/girder-dandi-server.pem"
-      - run:
-          name: Run ansible playbook
-          working_directory: ./ansible
-          command: . ./provision.sh
 
 workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - test-server
       - test-gui
-      - test-e2e:
-          requires:
-            - test-server
-            - test-gui
-      - provision:
-          requires:
-            - test-e2e
-          filters:
-            branches:
-              only: master
+      # - test-e2e:
+      #     requires:
+      #       - test-server
+      #       - test-gui
