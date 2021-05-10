@@ -1,4 +1,0 @@
-[default]
-region = us-east-2
-role_arn = arn:aws:iam::769362853226:role/dandi-writer
-credential_source = Ec2InstanceMetadata
