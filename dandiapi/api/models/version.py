@@ -83,15 +83,32 @@ class Version(TimeStampedModel):
     def copy(cls, version):
         return Version(dandiset=version.dandiset, metadata=version.metadata)
 
+    @classmethod
+    def citation(cls, metadata):
+        year = datetime.datetime.now().year
+        name = metadata['name']
+        url = metadata['url']
+        if 'contributor' not in metadata:
+            return f'{name} ({year}). Online: {url}'
+        cl = '; '.join([val['name'] for val in metadata['contributor'] if val['includeInCitation']])
+        citestr = f'{cl} ({year}) {name}. Online: {url}'
+        return citestr
+
     def _populate_metadata(self):
+        metadata = {
+            **self.metadata.metadata,
+            'name': self.metadata.name,
+            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'version': self.version,
+            'id': f'{self.dandiset.identifier}/{self.version}',
+            'url': f'https://identifiers.org/{self.dandiset.identifier}/{self.version}',
+        }
+        metadata['citation'] = self.citation(metadata)
+
         new: VersionMetadata
         new, created = VersionMetadata.objects.get_or_create(
             name=self.metadata.name,
-            metadata={
-                **self.metadata.metadata,
-                'name': self.metadata.name,
-                'identifier': f'DANDI:{self.dandiset.identifier}',
-            },
+            metadata=metadata,
         )
 
         if created:

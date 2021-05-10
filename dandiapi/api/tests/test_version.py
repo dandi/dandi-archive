@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -109,10 +111,16 @@ def test_version_rest_update(api_client, user, draft_version):
 
     new_name = 'A unique and special name!'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    year = datetime.now().year
+    url = f'https://identifiers.org/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'id': f'{draft_version.dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': f'{new_name} ({year}). Online: {url}',
     }
 
     assert api_client.put(
@@ -156,10 +164,16 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'list': ['a', 'b', 'c'],
         'very_large': 'words' * 10000,
     }
+    year = datetime.now().year
+    url = f'https://identifiers.org/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'id': f'{draft_version.dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': f'{new_name} ({year}). Online: {url}',
     }
 
     assert api_client.put(

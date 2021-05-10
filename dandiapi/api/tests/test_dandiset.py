@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -205,11 +207,17 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.draft_version.version == 'draft'
     assert dandiset.draft_version.metadata.name == name
 
-    # Verify that name and identifier were injected
+    # Verify that computed metadata was injected
+    year = datetime.now().year
+    url = f'https://identifiers.org/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
+        'id': f'{dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': f'{name} ({year}). Online: {url}',
     }
 
 
@@ -256,11 +264,17 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
     assert dandiset.draft_version.version == 'draft'
     assert dandiset.draft_version.metadata.name == name
 
-    # Verify that name and identifier were injected
+    # Verify that computed metadata was injected
+    year = datetime.now().year
+    url = f'https://identifiers.org/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
         'identifier': f'DANDI:{identifier}',
+        'id': f'{dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': f'{name} ({year}). Online: {url}',
     }
 
 
