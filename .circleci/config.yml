@@ -1,23 +1,5 @@
 version: 2
 jobs:
-  test-server:
-    docker:
-      - image: circleci/python:3.6
-      - image: circleci/mongo:4.2
-        command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/data/db"]
-    steps:
-      - checkout
-      - run:
-          name: Upgrade pip
-          command: pip install -U pip
-      - run:
-          name: Install tox
-          command: pip install tox
-      - run:
-          name: Run tests
-          command: tox
-          working_directory: girder-dandi-archive
-
   test-gui:
     docker:
       - image: circleci/node:latest
@@ -124,7 +106,6 @@ workflows:
   version: 2
   test_and_deploy:
     jobs:
-      - test-server
       - test-gui
       # - test-e2e:
       #     requires:
