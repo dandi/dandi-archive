@@ -238,7 +238,13 @@ export default {
         const { version } = this;
         const { identifier } = this.publishDandiset.meta.dandiset;
         // TODO: this probably does not work correctly yet
-        return { name: 'fileBrowser', params: { identifier, version } };
+        return {
+          name: 'fileBrowser',
+          params: { identifier, version },
+          query: {
+            location: ''
+          },
+        };
       }
       const { version } = this;
       const { identifier } = this.girderDandiset.meta.dandiset;
