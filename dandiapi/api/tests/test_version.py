@@ -90,6 +90,16 @@ def test_version_metadata_citation_multiple_contributors(version):
 
 
 @pytest.mark.django_db
+def test_version_metadata_contaxt(version):
+    version.metadata.metadata['schemaVersion'] = '6.6.6'
+    version.save()
+
+    assert version.metadata.metadata['@context'] == (
+        'https://raw.githubusercontent.com/dandi/schema/master/releases/6.6.6/context.json'
+    )
+
+
+@pytest.mark.django_db
 def test_version_rest_list(api_client, version):
     assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
         'count': 1,
