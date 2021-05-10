@@ -113,6 +113,7 @@
         color="primary"
         rounded
         @click="login"
+        id="login"
       >
         {{ DJANGO_API ? 'Login or Create Account' : 'Login' }}
       </v-btn>
