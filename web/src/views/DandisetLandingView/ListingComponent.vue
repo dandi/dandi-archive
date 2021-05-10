@@ -57,12 +57,11 @@ export default {
       }
 
       switch (this.field) {
-        case 'wasGeneratedBy':
-          return ObjectComponent;
         case 'about':
         case 'access':
         case 'relatedResource':
         case 'variableMeasured':
+        case 'wasGeneratedBy':
           return ObjectArray;
         case 'dandisetStats':
           return DandisetStats;
