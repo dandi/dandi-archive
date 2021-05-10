@@ -88,10 +88,18 @@ class Version(TimeStampedModel):
         year = datetime.datetime.now().year
         name = metadata['name']
         url = metadata['url']
-        if 'contributor' not in metadata or not metadata['contributor']:
-            return f'{name} ({year}). Online: {url}'
-        cl = '; '.join([val['name'] for val in metadata['contributor'] if val['includeInCitation']])
-        citation = f'{cl} ({year}) {name}. Online: {url}'
+        # If we can't find any contributors, use this citation format
+        citation = f'{name} ({year}). Online: {url}'
+        if 'contributor' in metadata and metadata['contributor']:
+            cl = '; '.join(
+                [
+                    val['name']
+                    for val in metadata['contributor']
+                    if 'includeInCitation' in val and val['includeInCitation']
+                ]
+            )
+            if cl:
+                citation = f'{cl} ({year}) {name}. Online: {url}'
         return citation
 
     def _populate_metadata(self):
