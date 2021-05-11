@@ -65,7 +65,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     )
     with storage.open(assets_yaml_path) as f:
         assert f.read() == YAMLRenderer().render(
-            [asset.metadata.metadata for asset in version.assets.all()]
+            [asset.generate_metadata(version) for asset in version.assets.all()]
         )
 
 
@@ -108,5 +108,5 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
 
     with storage.open(assets_yaml_path) as f:
         assert f.read() == YAMLRenderer().render(
-            [asset.metadata.metadata for asset in version.assets.all()]
+            [asset.generate_metadata(version) for asset in version.assets.all()]
         )

@@ -56,7 +56,9 @@ def write_yamls(version_id: int) -> None:
         logger.info('%s already exists, deleting it', assets_yaml_path)
         storage.delete(assets_yaml_path)
     logger.info('Saving %s', assets_yaml_path)
-    assets_yaml = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
+    assets_yaml = YAMLRenderer().render(
+        [asset.generate_metadata(version) for asset in version.assets.all()]
+    )
     storage.save(assets_yaml_path, ContentFile(assets_yaml))
 
     logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
