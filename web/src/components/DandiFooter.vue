@@ -52,19 +52,19 @@ export default {
             rel="noopener"
             href="https://braininitiative.nih.gov/"
           >BRAIN Initiative</a>
-            <v-icon x-small>
-              mdi-open-in-new
-            </v-icon>
-            <br>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+          <br>
           - <a
             target="_blank"
             rel="noopener"
             href="https://www.nimh.nih.gov/index.shtml"
           >NIMH</a>
-            <v-icon x-small>
-              mdi-open-in-new
-            </v-icon>
-            <br>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+          <br>
         </v-col>
         <v-col>
           Support:<br>
@@ -73,25 +73,25 @@ export default {
             rel="noopener"
             :href="dandiAboutUrl"
           >Dandi Project Homepage</a>
-            <v-icon x-small>
-              mdi-open-in-new
-            </v-icon>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
           <br>
           - <a
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandiarchive"
           >Project Github</a>
-            <v-icon x-small>
-              mdi-open-in-new
-            </v-icon> / <a
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandiarchive/issues"
           >Issues</a>
-            <v-icon x-small>
-              mdi-open-in-new
-            </v-icon>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
         </v-col>
       </v-row>
     </v-container>
