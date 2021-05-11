@@ -13,7 +13,6 @@ import os.path
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg import openapi
@@ -65,24 +64,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     )
     def retrieve(self, request, versions__dandiset__pk, versions__version, asset_id):
         asset = self.get_object()
-        # TODO use http://localhost:8000 for local deployments
-        download_url = 'https://api.dandiarchive.org' + reverse(
-            'asset-download',
-            kwargs={
-                'versions__dandiset__pk': versions__dandiset__pk,
-                'versions__version': versions__version,
-                'asset_id': asset_id,
-            },
+        version = Version.objects.get(
+            version=versions__version,
+            dandiset__pk=versions__dandiset__pk,
         )
-
-        blob_url = asset.blob.blob.url
-        metadata = {
-            **asset.metadata.metadata,
-            'identifier': asset_id,
-            'contentUrl': [download_url, blob_url],
-            'digest': asset.blob.digest,
-        }
-        return Response(metadata, status=status.HTTP_200_OK)
+        return Response(asset.generate_metadata(version), status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),

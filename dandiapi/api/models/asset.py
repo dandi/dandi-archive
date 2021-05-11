@@ -8,6 +8,7 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.storage import create_s3_storage
@@ -116,6 +117,33 @@ class Asset(TimeStampedModel):
     def save(self, *args, **kwargs):
         self._populate_metadata()
         super().save(*args, **kwargs)
+
+    def generate_metadata(self, version):
+        """
+        Generate the correct metadata for this asset given a version.
+
+        The route used to download an asset will be different depending on which version it belongs
+        to. Since the download url is included in the asset metadata, it must be injected rather
+        than stored. This method should always be used instead of asset.metadata.metadata.
+        """
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
+            'asset-download',
+            kwargs={
+                'versions__dandiset__pk': version.dandiset.identifier,
+                'versions__version': version.version,
+                'asset_id': str(self.asset_id),
+            },
+        )
+
+        blob_url = self.blob.blob.url
+        metadata = {
+            **self.metadata.metadata,
+            'identifier': str(self.asset_id),
+            'contentUrl': [download_url, blob_url],
+            'digest': self.blob.digest,
+        }
+        return metadata
 
     def __str__(self) -> str:
         return self.path
