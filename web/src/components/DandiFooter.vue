@@ -49,10 +49,12 @@ export default {
           Funding:<br>
           - <a
             target="_blank"
+            rel="noopener"
             href="https://braininitiative.nih.gov/"
           >BRAIN Initiative</a><br>
           - <a
             target="_blank"
+            rel="noopener"
             href="https://www.nimh.nih.gov/index.shtml"
           >NIMH</a><br>
         </v-col>
@@ -60,13 +62,16 @@ export default {
           Support:<br>
           - <a
             target="_blank"
+            rel="noopener"
             :href="dandiAboutUrl"
           >Dandi Project Homepage</a><br>
           - <a
             target="_blank"
+            rel="noopener"
             href="https://github.com/dandi/dandiarchive"
           >Project Github</a> / <a
             target="_blank"
+            rel="noopener"
             href="https://github.com/dandi/dandiarchive/issues"
           >Issues</a>
         </v-col>
