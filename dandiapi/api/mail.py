@@ -86,7 +86,12 @@ def registered_subject(sociallogin):
 
 
 def registered_message(sociallogin):
-    return f"""<p>Dear {sociallogin.account.extra_data['name']} (Github ID: {sociallogin.account.extra_data['login']}),</p>
+    name = (
+        sociallogin.account.extra_data['name']
+        if 'name' in sociallogin.account.extra_data
+        else sociallogin.user.username
+    )
+    return f"""<p>Dear {name} (Github ID: {sociallogin.account.extra_data['login']}),</p>
 <p>Welcome to DANDI. </p>
 <p>You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (<a href="https://hub.dandiarchive.org">https://hub.dandiarchive.org</a>) for computing on dandisets in the cloud. </p>
 <p>It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.</p>
@@ -97,7 +102,12 @@ def registered_message(sociallogin):
 
 
 def registered_html_message(sociallogin):
-    return f"""Dear {sociallogin.account.extra_data["name"]} (Github ID: {sociallogin.account.extra_data["login"]}),
+    name = (
+        sociallogin.account.extra_data['name']
+        if 'name' in sociallogin.account.extra_data
+        else sociallogin.user.username
+    )
+    return f"""Dear {name} (Github ID: {sociallogin.account.extra_data["login"]}),
 
 Welcome to DANDI.
 
