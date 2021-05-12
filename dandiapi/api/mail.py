@@ -1,12 +1,19 @@
+from typing import List
+
+from allauth.socialaccount.signals import social_account_added
 from django.core import mail
+from django.dispatch import receiver
 
-FROM_EMAIL = 'admin@api.dandiarchive.org'
+FROM_EMAIL = 'noreply@api.dandiarchive.org'
 
 
-def build_message(subject, message, to, html_message):
-    message = mail.EmailMultiAlternatives(subject, message, FROM_EMAIL, [to.email])
+def build_message(subject, message, to: List[str], html_message):
+    message = mail.EmailMultiAlternatives(subject, message, FROM_EMAIL, to)
     message.attach_alternative(html_message, 'text/html')
     return message
+
+
+# Email sent when a user is removed as an owner from a dandiset
 
 
 def removed_subject(dandiset):
@@ -30,9 +37,12 @@ def build_removed_message(dandiset, removed_owner):
     return build_message(
         subject=removed_subject(dandiset),
         message=removed_message(dandiset),
-        to=removed_owner,
+        to=[removed_owner.email],
         html_message=removed_html_message(dandiset),
     )
+
+
+# Email sent when a user is added as an owner of a dandiset
 
 
 def added_subject(dandiset):
@@ -56,7 +66,7 @@ def build_added_message(dandiset, added_owner):
     return build_message(
         subject=added_subject(dandiset),
         message=added_message(dandiset),
-        to=added_owner,
+        to=[added_owner.email],
         html_message=added_html_message(dandiset),
     )
 
@@ -66,3 +76,72 @@ def send_ownership_change_emails(dandiset, removed_owners, added_owners):
     messages += [build_added_message(dandiset, added_owner) for added_owner in added_owners]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
+
+
+# Email sent to the DANDI list when a new user logs in for the first time
+
+
+def registered_subject(sociallogin):
+    return f'DANDI: New user registered: {sociallogin.user.email}'
+
+
+def registered_message(sociallogin):
+    name = (
+        sociallogin.account.extra_data['name']
+        if 'name' in sociallogin.account.extra_data
+        else sociallogin.user.username
+    )
+    return f"""<p>Dear {name} (Github ID: {sociallogin.account.extra_data['login']}),</p>
+<p>Welcome to DANDI. </p>
+<p>You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (<a href="https://hub.dandiarchive.org">https://hub.dandiarchive.org</a>) for computing on dandisets in the cloud. </p>
+<p>It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.</p>
+<p>Please post any <a href="https://github.com/dandi/helpdesk/discussions">questions</a> or <a href="https://github.com/dandi/helpdesk/issues">issues</a> at our <a href="https://github.com/dandi/helpdesk">Github helpdesk</a>.</p>
+<p>Thank you for choosing DANDI for your neurophysiology data needs.</p>
+<p>Sincerely,</p>
+<p>The DANDI team</p>"""  # noqa: E501
+
+
+def registered_html_message(sociallogin):
+    name = (
+        sociallogin.account.extra_data['name']
+        if 'name' in sociallogin.account.extra_data
+        else sociallogin.user.username
+    )
+    return f"""Dear {name} (Github ID: {sociallogin.account.extra_data["login"]}),
+
+Welcome to DANDI.
+
+You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (https://hub.dandiarchive.org) for computing on dandisets in the cloud.
+
+It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.
+
+Please use the following links to post any questions or issues.
+
+Discussions: https://github.com/dandi/helpdesk/discussions
+Issues: https://github.com/dandi/helpdesk/issues
+
+Thank you for choosing DANDI for your neurophysiology data needs.
+
+Sincerely,
+
+The DANDI team"""  # noqa: E501
+
+
+def build_registered_message(sociallogin):
+    return build_message(
+        subject=registered_subject(sociallogin),
+        message=registered_message(sociallogin),
+        to=['dandi@mit.edu', sociallogin.user.email],
+        html_message=registered_html_message(sociallogin),
+    )
+
+
+def send_registered_notice_email(sociallogin):
+    messages = [build_registered_message(sociallogin)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+@receiver(social_account_added)
+def user_signed_up_listener(sender, sociallogin, **kwargs):
+    send_registered_notice_email(sociallogin)
