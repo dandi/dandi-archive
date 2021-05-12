@@ -84,17 +84,35 @@ def registered_subject(sociallogin):
 
 
 def registered_message(sociallogin):
-    return (
-        f'A new user has logged in to the DANDI application: {sociallogin.user.email}. '
-        f'Their GitHub login is {sociallogin.account.extra_data["login"]}.'
-    )
+    return f"""<p>Dear {sociallogin.account.extra_data['name']} (Github ID: {sociallogin.account.extra_data['login']}),</p>
+<p>Welcome to DANDI. </p>
+<p>You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (<a href="https://hub.dandiarchive.org">https://hub.dandiarchive.org</a>) for computing on dandisets in the cloud. </p>
+<p>It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.</p>
+<p>Please post any <a href="https://github.com/dandi/helpdesk/discussions">questions</a> or <a href="https://github.com/dandi/helpdesk/issues">issues</a> at our <a href="https://github.com/dandi/helpdesk">Github helpdesk</a>.</p>
+<p>Thank you for choosing DANDI for your neurophysiology data needs.</p>
+<p>Sincerely,</p>
+<p>The DANDI team</p>"""  # noqa: E501
 
 
 def registered_html_message(sociallogin):
-    return (
-        f'A new user has logged in to the DANDI application: {sociallogin.user.email}. '
-        f'Their GitHub login is {sociallogin.account.extra_data["login"]}.'
-    )
+    return f"""Dear {sociallogin.account.extra_data["name"]} (Github ID: {sociallogin.account.extra_data["login"]}),
+
+Welcome to DANDI.
+
+You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (https://hub.dandiarchive.org) for computing on dandisets in the cloud.
+
+It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.
+
+Please use the following links to post any questions or issues.
+
+Discussions: https://github.com/dandi/helpdesk/discussions
+Issues: https://github.com/dandi/helpdesk/issues
+
+Thank you for choosing DANDI for your neurophysiology data needs.
+
+Sincerely,
+
+The DANDI team"""  # noqa: E501
 
 
 def build_registered_message(sociallogin):

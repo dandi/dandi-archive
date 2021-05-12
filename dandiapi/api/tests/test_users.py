@@ -24,9 +24,16 @@ def test_user_registration_email(social_account, mailoutbox):
     assert len(mailoutbox) == 1
     assert mailoutbox[0].subject == f'DANDI: New user registered: {user.email}'
     assert mailoutbox[0].to == ['dandi@mit.edu']
-    assert mailoutbox[0].body == (
-        f'A new user has logged in to the DANDI application: {user.email}. '
-        f'Their GitHub login is {social_account.extra_data["login"]}.'
+    assert (
+        mailoutbox[0].body
+        == f"""<p>Dear {social_account.extra_data['name']} (Github ID: {social_account.extra_data['login']}),</p>
+<p>Welcome to DANDI. </p>
+<p>You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (<a href="https://hub.dandiarchive.org">https://hub.dandiarchive.org</a>) for computing on dandisets in the cloud. </p>
+<p>It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.</p>
+<p>Please post any <a href="https://github.com/dandi/helpdesk/discussions">questions</a> or <a href="https://github.com/dandi/helpdesk/issues">issues</a> at our <a href="https://github.com/dandi/helpdesk">Github helpdesk</a>.</p>
+<p>Thank you for choosing DANDI for your neurophysiology data needs.</p>
+<p>Sincerely,</p>
+<p>The DANDI team</p>"""  # noqa: E501
     )
 
 
