@@ -4,7 +4,7 @@ from allauth.socialaccount.signals import social_account_added
 from django.core import mail
 from django.dispatch import receiver
 
-FROM_EMAIL = 'admin@api.dandiarchive.org'
+FROM_EMAIL = 'noreply@api.dandiarchive.org'
 
 
 def build_message(subject, message, to: List[str], html_message):
