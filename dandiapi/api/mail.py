@@ -1,4 +1,4 @@
-from allauth.account.signals import user_signed_up
+from allauth.socialaccount.signals import social_account_added
 from django.core import mail
 from django.dispatch import receiver
 
@@ -81,33 +81,39 @@ def send_ownership_change_emails(dandiset, removed_owners, added_owners):
 # Email sent to the DANDI list when a new user logs in for the first time
 
 
-def registered_subject(user):
-    return f'DANDI: New user registered: {user.email}'
+def registered_subject(sociallogin):
+    return f'DANDI: New user registered: {sociallogin.user.email}'
 
 
-def registered_message(user):
-    return f'A new user has logged in to the DANDI application: {user.email}.'
-
-
-def registered_html_message(user):
-    return f'A new user has logged in to the DANDI application: {user.email}.'
-
-
-def build_registered_message(user):
-    return build_message(
-        subject=registered_subject(user),
-        message=registered_message(user),
-        to='dandi@mit.edu',
-        html_message=registered_html_message(user),
+def registered_message(sociallogin):
+    return (
+        f'A new user has logged in to the DANDI application: {sociallogin.user.email}. '
+        f'Their GitHub login is {sociallogin.account.extra_data["login"]}.'
     )
 
 
-def send_registered_notice_email(user):
-    messages = [build_registered_message(user)]
+def registered_html_message(sociallogin):
+    return (
+        f'A new user has logged in to the DANDI application: {sociallogin.user.email}. '
+        f'Their GitHub login is {sociallogin.account.extra_data["login"]}.'
+    )
+
+
+def build_registered_message(sociallogin):
+    return build_message(
+        subject=registered_subject(sociallogin),
+        message=registered_message(sociallogin),
+        to='dandi@mit.edu',
+        html_message=registered_html_message(sociallogin),
+    )
+
+
+def send_registered_notice_email(sociallogin):
+    messages = [build_registered_message(sociallogin)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
 
 
-@receiver(user_signed_up)
-def user_signed_up_listener(sender, user, **kwargs):
-    send_registered_notice_email(user)
+@receiver(social_account_added)
+def user_signed_up_listener(sender, sociallogin, **kwargs):
+    send_registered_notice_email(sociallogin)
