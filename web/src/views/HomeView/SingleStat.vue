@@ -18,7 +18,11 @@
         class="pa-0"
         data-id="name"
       >
-        <a v-if="href" :href="href">{{ name }}</a>
+        <a
+          v-if="href"
+          :href="href"
+        >
+          {{ name }}</a>
         <span v-else>
           {{ name }}
         </span>

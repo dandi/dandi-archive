@@ -59,7 +59,7 @@ export default {
             name: 'dandisets',
             value: this.dandisets,
             description: 'A DANDI dataset including files and dataset-level metadata',
-            href: "/#/dandiset",
+            href: '/#/dandiset',
           },
           { name: 'users', value: this.users },
           { name: 'total data size', value: filesize(this.size, { round: 0 }) },
