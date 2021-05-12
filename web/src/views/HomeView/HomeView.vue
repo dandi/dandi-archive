@@ -46,13 +46,13 @@
         </v-container>
       </v-img>
     </v-row>
-    <v-row class="flex-grow-0">
-      <StatsBar />
-    </v-row>
     <v-row no-gutters>
       <v-col class="grey darken-2 pa-12">
         <DandisetSearchField :dense="false" />
       </v-col>
+    </v-row>
+    <v-row class="flex-grow-0">
+      <StatsBar />
     </v-row>
   </v-container>
 </template>
