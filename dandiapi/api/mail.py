@@ -1,4 +1,6 @@
+from allauth.account.signals import user_signed_up
 from django.core import mail
+from django.dispatch import receiver
 
 FROM_EMAIL = 'admin@api.dandiarchive.org'
 
@@ -104,3 +106,8 @@ def send_registered_notice_email(user):
     messages = [build_registered_message(user)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
+
+
+@receiver(user_signed_up)
+def user_signed_up_listener(sender, user, **kwargs):
+    send_registered_notice_email(user)
