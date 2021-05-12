@@ -5,9 +5,7 @@ from django.dispatch import receiver
 FROM_EMAIL = 'admin@api.dandiarchive.org'
 
 
-def build_message(subject, message, to, html_message):
-    if type(to) is not str:
-        to = to.email
+def build_message(subject, message, to: str, html_message):
     message = mail.EmailMultiAlternatives(subject, message, FROM_EMAIL, [to])
     message.attach_alternative(html_message, 'text/html')
     return message
@@ -37,7 +35,7 @@ def build_removed_message(dandiset, removed_owner):
     return build_message(
         subject=removed_subject(dandiset),
         message=removed_message(dandiset),
-        to=removed_owner,
+        to=removed_owner.email,
         html_message=removed_html_message(dandiset),
     )
 
@@ -66,7 +64,7 @@ def build_added_message(dandiset, added_owner):
     return build_message(
         subject=added_subject(dandiset),
         message=added_message(dandiset),
-        to=added_owner,
+        to=added_owner.email,
         html_message=added_html_message(dandiset),
     )
 
