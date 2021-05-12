@@ -6,7 +6,7 @@
       max-width="60vh"
     >
       <v-card>
-        <v-card-title class="headline">
+        <v-card-title class="text-h5">
           Really delete this asset?
         </v-card-title>
 

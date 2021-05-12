@@ -39,9 +39,9 @@
         <DownloadDialog>
           <template v-slot:activator="{ on }">
             <v-btn
+              id="download"
               text
               v-on="on"
-              id="download"
             >
               <v-icon
                 color="primary"
@@ -55,9 +55,9 @@
           </template>
         </DownloadDialog>
         <v-btn
+          id="view-data"
           :to="fileBrowserLink"
           text
-          id="view-data"
         >
           <v-icon
             color="primary"
@@ -68,9 +68,9 @@
           View Data
         </v-btn>
         <v-btn
+          id="view-edit-metadata"
           text
           @click="$emit('edit')"
-          id="view-edit-metadata"
         >
           <v-icon
             color="primary"
@@ -90,10 +90,10 @@
                 <!-- TODO for now only admins can publish -->
                 <v-btn
                   v-if="DJANGO_API"
+                  id="publish"
                   text
                   :disabled="editDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
-                  id="publish"
                 >
                   <v-icon
                     color="success"
@@ -242,7 +242,7 @@ export default {
           name: 'fileBrowser',
           params: { identifier, version },
           query: {
-            location: ''
+            location: '',
           },
         };
       }

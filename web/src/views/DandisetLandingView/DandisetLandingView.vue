@@ -70,7 +70,7 @@
             <DandisetMain
               :schema="schema"
               :meta="meta"
-              :userCanModifyDandiset="userCanModifyDandiset"
+              :user-can-modify-dandiset="userCanModifyDandiset"
               @edit="edit = true"
             />
           </v-col>

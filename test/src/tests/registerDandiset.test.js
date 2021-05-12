@@ -5,7 +5,6 @@ import {
 } from 'jest-puppeteer-vuetify';
 import { uniqueId, registerNewUser } from '../util';
 
-
 describe('dandiset registration page', () => {
   it('registers a new dandiset', async () => {
     const id = uniqueId();
