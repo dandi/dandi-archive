@@ -4,11 +4,9 @@ from allauth.socialaccount.signals import social_account_added
 from django.core import mail
 from django.dispatch import receiver
 
-FROM_EMAIL = 'noreply@api.dandiarchive.org'
 
-
-def build_message(subject, message, to: List[str], html_message):
-    message = mail.EmailMultiAlternatives(subject, message, FROM_EMAIL, to)
+def build_message(subject: str, message: str, to: List[str], html_message: str):
+    message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
     message.attach_alternative(html_message, 'text/html')
     return message
 
@@ -137,6 +135,7 @@ def build_registered_message(sociallogin):
 
 
 def send_registered_notice_email(sociallogin):
+    print('Sending registration message to ', sociallogin.user)
     messages = [build_registered_message(sociallogin)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
