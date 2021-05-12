@@ -1,6 +1,6 @@
-import pytest
 from allauth.socialaccount.models import SocialLogin
 from allauth.socialaccount.signals import social_account_added
+import pytest
 
 
 def serialize_social_account(social_account):
