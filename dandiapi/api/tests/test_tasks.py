@@ -35,6 +35,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
     AssetBlob.blob.field.storage = storage
 
     tasks.write_yamls(version.id)
+    expected = YAMLRenderer().render(version.metadata.metadata)
 
     dandiset_yaml_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -45,7 +46,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
     # but the dandiset.yaml will still be present from the first test, creating a mismatch.
     # The solution is to remove the file if it already exists in models.Version.write_yamls().
     with storage.open(dandiset_yaml_path) as f:
-        assert f.read() == YAMLRenderer().render(version.metadata.metadata)
+        assert f.read() == expected
 
 
 @pytest.mark.django_db
@@ -58,15 +59,16 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     version.assets.add(asset_factory())
 
     tasks.write_yamls(version.id)
+    expected = YAMLRenderer().render(
+        [asset.generate_metadata(version) for asset in version.assets.all()]
+    )
 
     assets_yaml_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
         f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
     )
     with storage.open(assets_yaml_path) as f:
-        assert f.read() == YAMLRenderer().render(
-            [asset.generate_metadata(version) for asset in version.assets.all()]
-        )
+        assert f.read() == expected
 
 
 @pytest.mark.django_db
@@ -83,9 +85,10 @@ def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
     storage.save(dandiset_yaml_path, ContentFile(b'wrong contents'))
 
     tasks.write_yamls(version.id)
+    expected = YAMLRenderer().render(version.metadata.metadata)
 
     with storage.open(dandiset_yaml_path) as f:
-        assert f.read() == YAMLRenderer().render(version.metadata.metadata)
+        assert f.read() == expected
 
 
 @pytest.mark.django_db
@@ -105,8 +108,9 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
     tasks.write_yamls(version.id)
+    expected = YAMLRenderer().render(
+        [asset.generate_metadata(version) for asset in version.assets.all()]
+    )
 
     with storage.open(assets_yaml_path) as f:
-        assert f.read() == YAMLRenderer().render(
-            [asset.generate_metadata(version) for asset in version.assets.all()]
-        )
+        assert f.read() == expected
