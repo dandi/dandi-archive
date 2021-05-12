@@ -23,7 +23,7 @@ def test_user_registration_email(social_account, mailoutbox):
 
     assert len(mailoutbox) == 1
     assert mailoutbox[0].subject == f'DANDI: New user registered: {user.email}'
-    assert mailoutbox[0].to == ['dandi@mit.edu']
+    assert mailoutbox[0].to == ['dandi@mit.edu', user.email]
     assert (
         mailoutbox[0].body
         == f"""<p>Dear {social_account.extra_data['name']} (Github ID: {social_account.extra_data['login']}),</p>
