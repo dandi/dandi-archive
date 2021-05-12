@@ -83,15 +83,46 @@ class Version(TimeStampedModel):
     def copy(cls, version):
         return Version(dandiset=version.dandiset, metadata=version.metadata)
 
+    @classmethod
+    def citation(cls, metadata):
+        year = datetime.datetime.now().year
+        name = metadata['name']
+        url = metadata['url']
+        # If we can't find any contributors, use this citation format
+        citation = f'{name} ({year}). Online: {url}'
+        if 'contributor' in metadata and metadata['contributor']:
+            cl = '; '.join(
+                [
+                    val['name']
+                    for val in metadata['contributor']
+                    if 'includeInCitation' in val and val['includeInCitation']
+                ]
+            )
+            if cl:
+                citation = f'{cl} ({year}) {name}. Online: {url}'
+        return citation
+
     def _populate_metadata(self):
+        metadata = {
+            **self.metadata.metadata,
+            'name': self.metadata.name,
+            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'version': self.version,
+            'id': f'{self.dandiset.identifier}/{self.version}',
+            'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
+        }
+        metadata['citation'] = self.citation(metadata)
+        if 'schemaVersion' in metadata:
+            schema_version = metadata['schemaVersion']
+            metadata['@context'] = (
+                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+                f'{schema_version}/context.json'
+            )
+
         new: VersionMetadata
         new, created = VersionMetadata.objects.get_or_create(
             name=self.metadata.name,
-            metadata={
-                **self.metadata.metadata,
-                'name': self.metadata.name,
-                'identifier': f'DANDI:{self.dandiset.identifier}',
-            },
+            metadata=metadata,
         )
 
         if created:

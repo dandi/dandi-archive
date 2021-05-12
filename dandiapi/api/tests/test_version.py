@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -24,6 +26,77 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
     version_str_2 = Version.make_version(dandiset)
     assert version_1.version != version_str_2
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation(version):
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_no_contributors(version):
+    version.metadata.metadata['contributor'] = []
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_contributor_not_in_citation(version):
+    version.metadata.metadata['contributor'] = [
+        {'name': 'Jane Doe'},
+        {'name': 'John Doe', 'includeInCitation': False},
+    ]
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_contributor(version):
+    version.metadata.metadata['contributor'] = [{'name': 'Jane Doe', 'includeInCitation': True}]
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert version.metadata.metadata['citation'] == f'Jane Doe ({year}) {name}. Online: {url}'
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_multiple_contributors(version):
+    version.metadata.metadata['contributor'] = [
+        {'name': 'John Doe', 'includeInCitation': True},
+        {'name': 'Jane Doe', 'includeInCitation': True},
+    ]
+    version.save()
+
+    name = version.metadata.metadata['name']
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'John Doe; Jane Doe ({year}) {name}. Online: {url}'
+    )
+
+
+@pytest.mark.django_db
+def test_version_metadata_contaxt(version):
+    version.metadata.metadata['schemaVersion'] = '6.6.6'
+    version.save()
+
+    assert version.metadata.metadata['@context'] == (
+        'https://raw.githubusercontent.com/dandi/schema/master/releases/6.6.6/context.json'
+    )
 
 
 @pytest.mark.django_db
@@ -109,10 +182,16 @@ def test_version_rest_update(api_client, user, draft_version):
 
     new_name = 'A unique and special name!'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'id': f'{draft_version.dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': f'{new_name} ({year}). Online: {url}',
     }
 
     assert api_client.put(
@@ -156,10 +235,16 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'list': ['a', 'b', 'c'],
         'very_large': 'words' * 10000,
     }
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'id': f'{draft_version.dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': f'{new_name} ({year}). Online: {url}',
     }
 
     assert api_client.put(
