@@ -1,4 +1,6 @@
 import pytest
+from allauth.socialaccount.models import SocialLogin
+from allauth.socialaccount.signals import social_account_added
 
 
 def serialize_social_account(social_account):
@@ -7,6 +9,25 @@ def serialize_social_account(social_account):
         'name': social_account.extra_data['name'],
         'admin': social_account.user.is_superuser,
     }
+
+
+@pytest.mark.django_db
+def test_user_registration_email(social_account, mailoutbox):
+    user = social_account.user
+
+    # The registration signal is only sent when the user registers through an API call.
+    # This is hard to emulate, so we just send the signal manually.
+    # Wrap the social_account in a SocialLogin, as required
+    sociallogin = SocialLogin(user=user, account=social_account)
+    social_account_added.send(sender=SocialLogin, sociallogin=sociallogin)
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == f'DANDI: New user registered: {user.email}'
+    assert mailoutbox[0].to == ['dandi@mit.edu']
+    assert mailoutbox[0].body == (
+        f'A new user has logged in to the DANDI application: {user.email}. '
+        f'Their GitHub login is {social_account.extra_data["login"]}.'
+    )
 
 
 @pytest.mark.django_db
