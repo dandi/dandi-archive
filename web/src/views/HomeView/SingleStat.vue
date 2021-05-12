@@ -18,7 +18,10 @@
         class="pa-0"
         data-id="name"
       >
-        {{ name }}
+        <a v-if="href" :href="href">{{ name }}</a>
+        <span v-else>
+          {{ name }}
+        </span>
         <v-tooltip
           v-if="description"
           right
@@ -46,6 +49,7 @@ export default {
     value: { type: String, required: true },
     name: { type: String, required: true },
     description: { type: String, default: null, required: false },
+    href: { type: String, default: null, required: false },
   },
 };
 </script>

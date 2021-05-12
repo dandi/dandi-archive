@@ -16,6 +16,7 @@
             :name="stat.name"
             :value="stat.value.toString()"
             :description="stat.description"
+            :href="stat.href"
           />
         </v-col>
         <!-- TODO dividers destroy the grid system breakpoints
@@ -54,7 +55,12 @@ export default {
     stats() {
       if (toggles.DJANGO_API) {
         return [
-          { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
+          {
+            name: 'dandisets',
+            value: this.dandisets,
+            description: 'A DANDI dataset including files and dataset-level metadata',
+            href: "/#/dandiset",
+          },
           { name: 'users', value: this.users },
           { name: 'total data size', value: filesize(this.size, { round: 0 }) },
         ];
