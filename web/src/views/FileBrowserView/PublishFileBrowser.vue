@@ -206,7 +206,8 @@ export default {
     location(location) {
       const { location: existingLocation } = this.$route.query;
 
-      if (existingLocation && existingLocation === location) { return; }
+      // Update route when location changes
+      if (existingLocation === location) { return; }
       this.$router.push({
         ...this.$route,
         query: { location },
