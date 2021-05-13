@@ -44,7 +44,7 @@
           </v-card-text>
           <v-card-actions class="pt-0">
             <v-tooltip bottom>
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-btn
                   icon
                   color="error"
@@ -59,7 +59,7 @@
               <span>Cancel</span>
             </v-tooltip>
             <v-tooltip bottom>
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-btn
                   icon
                   color="primary"

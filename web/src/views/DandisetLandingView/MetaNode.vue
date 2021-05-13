@@ -10,7 +10,7 @@
         :readonly="schema.readOnly"
         :label="schema.title"
       >
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon
             v-if="!required"
             color="error"
@@ -33,7 +33,7 @@
         :readonly="schema.readOnly"
         dense
       >
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon
             v-if="!required"
             color="error"
@@ -121,7 +121,7 @@
       v-if="Object.keys(optionalProperties).length"
       offset-y
     >
-      <template v-slot:activator="{ on }">
+      <template #activator="{ on }">
         <v-btn
           color="primary"
           dark
