@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Dict, List, Set
 import uuid
 
@@ -76,6 +77,13 @@ class AssetMetadata(TimeStampedModel):
         return str(self.metadata)
 
 
+class AssetStatus(Enum):
+    NOT_STARTED = '-'
+    VALIDATING = 'Validating'
+    VALID = 'Valid'
+    INVALID = 'Invalid'
+
+
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
@@ -84,6 +92,12 @@ class Asset(TimeStampedModel):
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
     versions = models.ManyToManyField(Version, related_name='assets')
+    status = models.CharField(
+        max_length=11,
+        default=AssetStatus.NOT_STARTED.name,
+        choices=[(tag.name, tag.value) for tag in AssetStatus],
+    )
+    validation_error = models.TextField(default='')
     previous = models.ForeignKey(
         'Asset',
         blank=True,
