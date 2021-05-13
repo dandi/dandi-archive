@@ -1,7 +1,7 @@
 <template>
   <v-text-field
     ref="textField"
-    v-model="text"
+    :value="text"
     readonly
     :success-messages="messages"
     v-bind="$attrs"
