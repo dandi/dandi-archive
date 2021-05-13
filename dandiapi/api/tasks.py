@@ -29,6 +29,11 @@ def calculate_sha256(blob_id: int) -> None:
     asset_blob.sha256 = sha256
     asset_blob.save()
 
+    # Trigger metadata validation on all assets pointing to this blob
+    for asset in asset_blob.assets.all():
+        for version in asset.versions:
+            validate_asset_metadata.delay(version.id, asset.id)
+
 
 @shared_task
 @atomic
