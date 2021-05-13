@@ -1,5 +1,6 @@
 import hashlib
 
+from celery.exceptions import Retry
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
@@ -7,7 +8,7 @@ import pytest
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api import tasks
-from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, AssetStatus, Version
 
 
 @pytest.mark.django_db
@@ -114,3 +115,104 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
 
     with storage.open(assets_yaml_path) as f:
         assert f.read() == expected
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    # This is the minimum asset metadata for schema version 0.3.0
+    asset.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+        'encodingFormat': 'application/x-nwb',
+    }
+    asset.metadata.save()
+
+    tasks.validate_asset_metadata(version.id, asset.id)
+
+    asset.refresh_from_db()
+
+    assert asset.status == AssetStatus.VALID.name
+    assert asset.validation_error == ''
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_already_validating(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    asset.status = AssetStatus.VALIDATING.name
+    asset.save()
+
+    with pytest.raises(Retry):
+        tasks.validate_asset_metadata(version.id, asset.id)
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_no_schema_version(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    asset.metadata.metadata = {}
+    asset.metadata.save()
+
+    tasks.validate_asset_metadata(version.id, asset.id)
+
+    asset.refresh_from_db()
+
+    assert asset.status == AssetStatus.INVALID.name
+    assert asset.validation_error == 'schemaVersion not specified'
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_malformed_schema_version(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    asset.metadata.metadata = {
+        'schemaVersion': 'xxx',
+    }
+    asset.metadata.save()
+
+    tasks.validate_asset_metadata(version.id, asset.id)
+
+    asset.refresh_from_db()
+
+    assert asset.status == AssetStatus.INVALID.name
+    assert asset.validation_error == (
+        '404 Client Error: Not Found for url: '
+        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/asset.json'
+    )
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    asset.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+    }
+    asset.metadata.save()
+
+    tasks.validate_asset_metadata(version.id, asset.id)
+
+    asset.refresh_from_db()
+
+    assert asset.status == AssetStatus.INVALID.name
+    assert asset.validation_error == "'encodingFormat' is a required property\nSee: metadata"
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    asset.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+        'encodingFormat': 'application/x-nwb',
+        'keywords': 'foo',
+    }
+    asset.metadata.save()
+
+    tasks.validate_asset_metadata(version.id, asset.id)
+
+    asset.refresh_from_db()
+
+    assert asset.status == AssetStatus.INVALID.name
+    assert asset.validation_error == "'foo' is not of type 'array'\nSee: metadata['keywords']"
