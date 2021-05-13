@@ -8,7 +8,7 @@ import pytest
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, AssetStatus, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 
 
 @pytest.mark.django_db
@@ -132,7 +132,7 @@ def test_validate_asset_metadata(version: Version, asset: Asset):
 
     asset.refresh_from_db()
 
-    assert asset.status == AssetStatus.VALID.name
+    assert asset.status == Asset.Status.VALID
     assert asset.validation_error == ''
 
 
@@ -147,7 +147,7 @@ def test_validate_asset_metadata_no_schema_version(version: Version, asset: Asse
 
     asset.refresh_from_db()
 
-    assert asset.status == AssetStatus.INVALID.name
+    assert asset.status == Asset.Status.INVALID
     assert asset.validation_error == 'schemaVersion not specified'
 
 
@@ -164,7 +164,7 @@ def test_validate_asset_metadata_malformed_schema_version(version: Version, asse
 
     asset.refresh_from_db()
 
-    assert asset.status == AssetStatus.INVALID.name
+    assert asset.status == Asset.Status.INVALID
     assert asset.validation_error == (
         '404 Client Error: Not Found for url: '
         'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/asset.json'
@@ -184,7 +184,7 @@ def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Ass
 
     asset.refresh_from_db()
 
-    assert asset.status == AssetStatus.INVALID.name
+    assert asset.status == Asset.Status.INVALID
     assert asset.validation_error == "'encodingFormat' is a required property\nSee: metadata"
 
 
@@ -203,5 +203,5 @@ def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Ass
 
     asset.refresh_from_db()
 
-    assert asset.status == AssetStatus.INVALID.name
+    assert asset.status == Asset.Status.INVALID
     assert asset.validation_error == "'foo' is not of type 'array'\nSee: metadata['keywords']"

@@ -8,7 +8,7 @@ import requests
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.checksum import calculate_sha256_checksum
-from dandiapi.api.models import Asset, AssetBlob, AssetStatus, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 
 logger = get_task_logger(__name__)
 
@@ -97,14 +97,14 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
     version = Version.objects.get(id=version_id)
 
     # Begin the validation process so no other validation tasks will run simultaneously
-    asset.status = AssetStatus.VALIDATING.name
+    asset.status = Asset.Status.VALIDATING
     asset.save()
 
     try:
         metadata = asset.generate_metadata(version)
         if 'schemaVersion' not in metadata:
             logger.info('schemaVersion not specified in metadata for asset %s', asset_id)
-            asset.status = AssetStatus.INVALID.name
+            asset.status = Asset.Status.INVALID
             asset.validation_error = 'schemaVersion not specified'
             asset.save()
             return
@@ -120,18 +120,18 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
     except jsonschema.exceptions.ValidationError as ve:
         logger.info('Validation error for asset %s', asset_id)
 
-        asset.status = AssetStatus.INVALID.name
+        asset.status = Asset.Status.INVALID
         asset.validation_error = format_validation_error(ve)
         asset.save()
         return
     except Exception as e:
         logger.error('Error while validating asset %s', asset_id)
         logger.error(str(e))
-        asset.status = AssetStatus.INVALID.name
+        asset.status = Asset.Status.INVALID
         asset.validation_error = str(e)
         asset.save()
         return
     logger.info('Successfully validated asset %s', asset_id)
-    asset.status = AssetStatus.VALID.name
+    asset.status = Asset.Status.VALID
     asset.validation_error = ''
     asset.save()
