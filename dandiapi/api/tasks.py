@@ -87,6 +87,10 @@ def format_validation_error(error: jsonschema.exceptions.ValidationError):
     return f'{error.message}\nSee: metadata{format_as_index(error.relative_path)}'  # noqa: B306
 
 
+class ValidationError(Exception):
+    pass
+
+
 @shared_task
 @atomic
 # This method takes both a version_id and an asset_id because asset metadata renders differently
@@ -104,10 +108,7 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
         metadata = asset.generate_metadata(version)
         if 'schemaVersion' not in metadata:
             logger.info('schemaVersion not specified in metadata for asset %s', asset_id)
-            asset.status = Asset.Status.INVALID
-            asset.validation_error = 'schemaVersion not specified'
-            asset.save()
-            return
+            raise ValidationError('schemaVersion not specified')
         schema_version = metadata['schemaVersion']
         schema_url = (
             'https://raw.githubusercontent.com/dandi/schema/master/'
@@ -117,11 +118,21 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
         request.raise_for_status()
         schema = request.json()
         jsonschema.validate(instance=metadata, schema=schema)
-    except jsonschema.exceptions.ValidationError as ve:
+
+        # Verify sha256 digest is present in metadata
+        if 'dandi:sha2-256' not in metadata['digest']:
+            raise ValidationError('SHA256 checksum not computed')
+
+    except jsonschema.exceptions.ValidationError as e:
         logger.info('Validation error for asset %s', asset_id)
 
         asset.status = Asset.Status.INVALID
-        asset.validation_error = format_validation_error(ve)
+        asset.validation_error = format_validation_error(e)
+        asset.save()
+        return
+    except ValidationError as e:
+        asset.status = Asset.Status.INVALID
+        asset.validation_error = str(e)
         asset.save()
         return
     except Exception as e:

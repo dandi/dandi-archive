@@ -189,6 +189,27 @@ def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Ass
 
 
 @pytest.mark.django_db
+def test_validate_asset_metadata_no_digest(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    asset.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+        'encodingFormat': 'application/x-nwb',
+    }
+    asset.metadata.save()
+
+    asset.blob.sha256 = None
+    asset.blob.save()
+
+    tasks.validate_asset_metadata(version.id, asset.id)
+
+    asset.refresh_from_db()
+
+    assert asset.status == Asset.Status.INVALID
+    assert asset.validation_error == "SHA256 checksum not computed"
+
+
+@pytest.mark.django_db
 def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Asset):
     version.assets.add(asset)
 
