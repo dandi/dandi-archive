@@ -3,10 +3,12 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.transaction import atomic
+import jsonschema.exceptions
+import requests
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.checksum import calculate_sha256_checksum
-from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, AssetStatus, Version
 
 logger = get_task_logger(__name__)
 
@@ -62,3 +64,75 @@ def write_yamls(version_id: int) -> None:
     storage.save(assets_yaml_path, ContentFile(assets_yaml))
 
     logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
+
+
+def format_as_index(indices):
+    """Render a JSON schema path as a series of indices."""
+    if not indices:
+        return ''
+    return '[%s]' % ']['.join(repr(index) for index in indices)
+
+
+def format_validation_error(error: jsonschema.exceptions.ValidationError):
+    """
+    Succinctly format a ValidationError.
+
+    The default __str__ for ValidationError includes the entire schema, so we simplify it.
+    """
+    return f'{error.message}\nSee: metadata{format_as_index(error.relative_path)}'  # noqa: B306
+
+
+# TODO what is a reasonable retry delay
+@shared_task(bind=True, default_retry_delay=10)
+@atomic
+# This method takes both a version_id and an asset_id because asset metadata renders differently
+# depending on which version the asset belongs to.
+def validate_asset_metadata(self, version_id: int, asset_id: int) -> None:
+    logger.info('Validating asset metadata for asset %s, version %s', asset_id, version_id)
+    asset = Asset.objects.get(id=asset_id)
+    version = Version.objects.get(id=version_id)
+
+    if asset.status == AssetStatus.VALIDATING.name:
+        # Another task is currently validating, let it finish
+        logger.info('Asset %s is already being validated, wait for it to complete', asset_id)
+        raise self.retry()
+
+    # Begin the validation process so no other validation tasks will run simultaneously
+    asset.status = AssetStatus.VALIDATING.name
+    asset.save()
+
+    try:
+        metadata = asset.generate_metadata(version)
+        if 'schemaVersion' not in metadata:
+            logger.info('schemaVersion not specified in metadata for asset %s', asset_id)
+            asset.status = AssetStatus.INVALID.name
+            asset.validation_error = 'schemaVersion not specified'
+            asset.save()
+            return
+        schema_version = metadata['schemaVersion']
+        schema_url = (
+            'https://raw.githubusercontent.com/dandi/schema/master/'
+            f'releases/{schema_version}/asset.json'
+        )
+        request = requests.get(schema_url)
+        request.raise_for_status()
+        schema = request.json()
+        jsonschema.validate(instance=metadata, schema=schema)
+    except jsonschema.exceptions.ValidationError as ve:
+        logger.info('Validation error for asset %s', asset_id)
+
+        asset.status = AssetStatus.INVALID.name
+        asset.validation_error = format_validation_error(ve)
+        asset.save()
+        return
+    except Exception as e:
+        logger.error('Error while validating asset %s', asset_id)
+        logger.error(str(e))
+        asset.status = AssetStatus.INVALID.name
+        asset.validation_error = str(e)
+        asset.save()
+        return
+    logger.info('Successfully validated asset %s', asset_id)
+    asset.status = AssetStatus.VALID.name
+    asset.validation_error = ''
+    asset.save()
