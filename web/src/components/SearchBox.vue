@@ -8,7 +8,7 @@
       placeholder="Type search query"
       @select="selectSearchResult"
     >
-      <template v-slot:searchresult="result">
+      <template #searchresult="result">
         <v-list-item-action>
           <v-icon> {{ $vuetify.icons.values[result._modelType] }} </v-icon>
         </v-list-item-action>
@@ -19,7 +19,7 @@
           </v-list-item-subtitle>
         </v-list-item-content>
       </template>
-      <template v-slot:noresult="{ searchText }">
+      <template #noresult="{ searchText }">
         <v-list-item-action>
           <v-icon>$vuetify.icons.alert</v-icon>
         </v-list-item-action>

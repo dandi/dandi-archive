@@ -22,7 +22,7 @@
         <v-card class="mb-2">
           <v-card-title>
             <v-tooltip top>
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-icon
                   left
                   :color="allModelsValid ? 'success' : 'error'"
@@ -47,7 +47,7 @@
           </v-card-title>
           <v-card-actions class="pt-0">
             <v-tooltip bottom>
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-btn
                   icon
                   color="secondary"
@@ -62,7 +62,7 @@
               <span>Cancel</span>
             </v-tooltip>
             <v-tooltip bottom>
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-btn
                   icon
                   color="primary"
@@ -79,7 +79,7 @@
             </v-tooltip>
             <v-spacer />
             <v-tooltip bottom>
-              <template v-slot:activator="{ on }">
+              <template #activator="{ on }">
                 <v-btn
                   icon
                   v-on="on"
@@ -106,7 +106,7 @@
           :key="propKey"
           eager
         >
-          <template v-slot:activator="{ on }">
+          <template #activator="{ on }">
             <v-btn
               outlined
               class="mx-2 my-2"

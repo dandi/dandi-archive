@@ -96,7 +96,7 @@
               </v-col>
               <v-col v-if="draftDandiset">
                 <v-tooltip top>
-                  <template v-slot:activator="{ on }">
+                  <template #activator="{ on }">
                     <v-icon
                       small
                       color="grey darken-1"
@@ -127,12 +127,12 @@
             v-model="ownerDialog"
             width="50%"
           >
-            <template v-slot:activator="{ on }">
+            <template #activator="{ on }">
               <v-tooltip
                 :disabled="!manageOwnersDisabled"
                 left
               >
-                <template v-slot:activator="{ on: tooltipOn }">
+                <template #activator="{ on: tooltipOn }">
                   <div v-on="tooltipOn">
                     <v-btn
                       id="manage"

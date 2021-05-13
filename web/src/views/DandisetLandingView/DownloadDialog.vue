@@ -6,7 +6,7 @@
     min-width="500"
     max-width="500"
   >
-    <template v-slot:activator="{ on }">
+    <template #activator="{ on }">
       <slot
         name="activator"
         :on="on"
@@ -17,7 +17,7 @@
         Download full dandiset
         <v-spacer />
         <v-tooltip right>
-          <template v-slot:activator="{ on }">
+          <template #activator="{ on }">
             <v-btn
               href="https://www.dandiarchive.org/handbook/10_using_dandi/#downloading-from-dandi"
               target="_blank"

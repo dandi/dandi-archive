@@ -19,7 +19,7 @@
             min-width="500"
             max-width="500"
           >
-            <template v-slot:activator="{ on }">
+            <template #activator="{ on }">
               <v-icon
                 color="primary"
                 v-on="on"
@@ -37,7 +37,7 @@
           </v-menu>
         </v-col>
         <DownloadDialog>
-          <template v-slot:activator="{ on }">
+          <template #activator="{ on }">
             <v-btn
               id="download"
               text
@@ -85,7 +85,7 @@
             left
             :disabled="editDisabledMessage === null"
           >
-            <template v-slot:activator="{ on }">
+            <template #activator="{ on }">
               <div v-on="on">
                 <!-- TODO for now only admins can publish -->
                 <v-btn

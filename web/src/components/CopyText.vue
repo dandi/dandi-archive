@@ -6,9 +6,9 @@
     :success-messages="messages"
     v-bind="$attrs"
   >
-    <template v-slot:append-outer>
+    <template #append-outer>
       <v-tooltip bottom>
-        <template v-slot:activator="{ on }">
+        <template #activator="{ on }">
           <v-icon
             v-on="on"
             @click="copyToClipboard"

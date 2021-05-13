@@ -4,7 +4,7 @@
       open-on-hover
       offset-y
     >
-      <template v-slot:activator="{on}">
+      <template #activator="{on}">
         <v-icon
           class="d-md-none mr-4"
           v-on="on"

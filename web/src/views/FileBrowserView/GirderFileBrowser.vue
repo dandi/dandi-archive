@@ -14,7 +14,7 @@
         >
           <template
             v-if="isDandiset"
-            v-slot:headerwidget
+            #headerwidget
           >
             <v-btn
               icon
@@ -29,7 +29,7 @@
             </v-btn>
           </template>
           <template
-            v-slot:row-widget="{ item }"
+            #row-widget="{ item }"
           >
             <v-btn
               v-if="item._modelType === 'item'"
