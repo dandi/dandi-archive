@@ -141,6 +141,7 @@ class Asset(TimeStampedModel):
             **self.metadata.metadata,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, blob_url],
+            'contentSize': self.blob.size,
             'digest': self.blob.digest,
         }
         return metadata

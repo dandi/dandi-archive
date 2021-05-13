@@ -72,6 +72,7 @@ def test_asset_rest_retrieve(api_client, version, asset):
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
             HTTP_URL_RE,
         ],
+        'contentSize': asset.blob.size,
         'digest': {
             'dandi:dandi-etag': asset.blob.etag,
             'dandi:sha2-256': asset.blob.sha256,
@@ -97,6 +98,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
             HTTP_URL_RE,
         ],
+        'contentSize': asset.blob.size,
         'digest': {
             'dandi:dandi-etag': asset.blob.etag,
             # The dandi:sha2-sha256 value is absent
