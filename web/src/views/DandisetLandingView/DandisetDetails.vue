@@ -135,12 +135,12 @@
                 <template v-slot:activator="{ on: tooltipOn }">
                   <div v-on="tooltipOn">
                     <v-btn
+                      id="manage"
                       color="primary"
                       x-small
                       text
                       :disabled="manageOwnersDisabled"
                       v-on="on"
-                      id="manage"
                     >
                       <v-icon
                         x-small

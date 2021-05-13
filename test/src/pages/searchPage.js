@@ -5,7 +5,6 @@ import {
   vListItem,
 } from 'jest-puppeteer-vuetify';
 
-
 /**
  * Searches for dandisets using the search bar on the search page
  *

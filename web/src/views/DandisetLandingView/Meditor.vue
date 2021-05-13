@@ -66,9 +66,9 @@
                 <v-btn
                   icon
                   color="primary"
+                  :disabled="readonly"
                   v-on="on"
                   @click="save"
-                  :disabled="readonly"
                 >
                   <v-icon>
                     mdi-content-save
