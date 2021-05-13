@@ -137,17 +137,6 @@ def test_validate_asset_metadata(version: Version, asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_already_validating(version: Version, asset: Asset):
-    version.assets.add(asset)
-
-    asset.status = AssetStatus.VALIDATING.name
-    asset.save()
-
-    with pytest.raises(Retry):
-        tasks.validate_asset_metadata(version.id, asset.id)
-
-
-@pytest.mark.django_db
 def test_validate_asset_metadata_no_schema_version(version: Version, asset: Asset):
     version.assets.add(asset)
 

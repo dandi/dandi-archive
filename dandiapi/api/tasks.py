@@ -87,20 +87,14 @@ def format_validation_error(error: jsonschema.exceptions.ValidationError):
     return f'{error.message}\nSee: metadata{format_as_index(error.relative_path)}'  # noqa: B306
 
 
-# TODO what is a reasonable retry delay
-@shared_task(bind=True, default_retry_delay=10)
+@shared_task
 @atomic
 # This method takes both a version_id and an asset_id because asset metadata renders differently
 # depending on which version the asset belongs to.
-def validate_asset_metadata(self, version_id: int, asset_id: int) -> None:
+def validate_asset_metadata(version_id: int, asset_id: int) -> None:
     logger.info('Validating asset metadata for asset %s, version %s', asset_id, version_id)
     asset = Asset.objects.get(id=asset_id)
     version = Version.objects.get(id=version_id)
-
-    if asset.status == AssetStatus.VALIDATING.name:
-        # Another task is currently validating, let it finish
-        logger.info('Asset %s is already being validated, wait for it to complete', asset_id)
-        raise self.retry()
 
     # Begin the validation process so no other validation tasks will run simultaneously
     asset.status = AssetStatus.VALIDATING.name
