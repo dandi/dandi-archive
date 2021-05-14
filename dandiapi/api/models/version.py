@@ -36,6 +36,12 @@ def _get_default_version() -> str:
 class Version(TimeStampedModel):
     VERSION_REGEX = r'(0\.\d{6}\.\d{4})|draft'
 
+    class Status(models.TextChoices):
+        PENDING = 'Pending'
+        VALIDATING = 'Validating'
+        VALID = 'Valid'
+        INVALID = 'Invalid'
+
     dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
     metadata = models.ForeignKey(VersionMetadata, related_name='versions', on_delete=models.CASCADE)
     version = models.CharField(
@@ -44,6 +50,12 @@ class Version(TimeStampedModel):
         default=_get_default_version,
     )  # TODO: rename this?
     doi = models.CharField(max_length=64, null=True, blank=True)
+    status = models.CharField(
+        max_length=10,
+        default=Status.PENDING,
+        choices=Status.choices,
+    )
+    validation_error = models.TextField(default='')
 
     class Meta:
         unique_together = ['dandiset', 'version']

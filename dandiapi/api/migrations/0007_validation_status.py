@@ -29,4 +29,23 @@ class Migration(migrations.Migration):
             name='validation_error',
             field=models.TextField(default=''),
         ),
+        migrations.AddField(
+            model_name='version',
+            name='status',
+            field=models.CharField(
+                choices=[
+                    ('Pending', 'Pending'),
+                    ('Validating', 'Validating'),
+                    ('Valid', 'Valid'),
+                    ('Invalid', 'Invalid'),
+                ],
+                default='Pending',
+                max_length=10,
+            ),
+        ),
+        migrations.AddField(
+            model_name='version',
+            name='validation_error',
+            field=models.TextField(default=''),
+        ),
     ]
