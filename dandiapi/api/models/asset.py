@@ -80,7 +80,7 @@ class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
     class Status(models.TextChoices):
-        PENDING = '-'
+        PENDING = 'Pending'
         VALIDATING = 'Validating'
         VALID = 'Valid'
         INVALID = 'Invalid'
@@ -91,7 +91,7 @@ class Asset(TimeStampedModel):
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
     versions = models.ManyToManyField(Version, related_name='assets')
     status = models.CharField(
-        max_length=11,
+        max_length=10,
         default=Status.PENDING,
         choices=Status.choices,
     )

@@ -15,13 +15,13 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(
                 choices=[
-                    ('PENDING', '-'),
-                    ('VALIDATING', 'Validating'),
-                    ('VALID', 'Valid'),
-                    ('INVALID', 'Invalid'),
+                    ('Pending', 'Pending'),
+                    ('Validating', 'Validating'),
+                    ('Valid', 'Valid'),
+                    ('Invalid', 'Invalid'),
                 ],
-                default='PENDING',
-                max_length=11,
+                default='Pending',
+                max_length=10,
             ),
         ),
         migrations.AddField(

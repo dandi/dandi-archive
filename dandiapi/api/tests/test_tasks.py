@@ -1,6 +1,5 @@
 import hashlib
 
-from celery.exceptions import Retry
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
@@ -206,7 +205,7 @@ def test_validate_asset_metadata_no_digest(version: Version, asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_error == "SHA256 checksum not computed"
+    assert asset.validation_error == 'SHA256 checksum not computed'
 
 
 @pytest.mark.django_db
