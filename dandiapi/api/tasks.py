@@ -146,3 +146,51 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
     asset.status = Asset.Status.VALID
     asset.validation_error = ''
     asset.save()
+
+
+@shared_task
+@atomic
+def validate_version_metadata(version_id: int) -> None:
+    logger.info('Validating dandiset metadata for version %s', version_id)
+    version = Version.objects.get(id=version_id)
+
+    # Begin the validation process so no other validation tasks will run simultaneously
+    version.status = Version.Status.VALIDATING
+    version.save()
+
+    try:
+        metadata = version.metadata.metadata
+        if 'schemaVersion' not in metadata:
+            logger.info('schemaVersion not specified in metadata for version %s', version_id)
+            raise ValidationError('schemaVersion not specified')
+        schema_version = metadata['schemaVersion']
+        schema_url = (
+            'https://raw.githubusercontent.com/dandi/schema/master/'
+            f'releases/{schema_version}/dandiset.json'
+        )
+        request = requests.get(schema_url)
+        request.raise_for_status()
+        schema = request.json()
+        jsonschema.validate(instance=metadata, schema=schema)
+    except jsonschema.exceptions.ValidationError as e:
+        logger.info('Validation error for version %s', version_id)
+        version.status = Version.Status.INVALID
+        version.validation_error = format_validation_error(e)
+        version.save()
+        return
+    except ValidationError as e:
+        version.status = Version.Status.INVALID
+        version.validation_error = str(e)
+        version.save()
+        return
+    except Exception as e:
+        logger.error('Error while validating version %s', version_id)
+        logger.error(str(e))
+        version.status = Version.Status.INVALID
+        version.validation_error = str(e)
+        version.save()
+        return
+    logger.info('Successfully validated version %s', version_id)
+    version.status = Version.Status.VALID
+    version.validation_error = ''
+    version.save()
