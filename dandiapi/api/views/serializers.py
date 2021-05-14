@@ -44,6 +44,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'name',
             'asset_count',
             'size',
+            'status',
             'created',
             'modified',
             'dandiset',
@@ -64,7 +65,7 @@ class DandisetDetailSerializer(DandisetSerializer):
 
 class VersionDetailSerializer(VersionSerializer):
     class Meta(VersionSerializer.Meta):
-        fields = VersionSerializer.Meta.fields + ['metadata']
+        fields = VersionSerializer.Meta.fields + ['validation_error', 'metadata']
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
 
