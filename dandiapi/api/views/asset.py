@@ -28,7 +28,11 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerializer
+from dandiapi.api.views.serializers import (
+    AssetDetailSerializer,
+    AssetSerializer,
+    AssetValidationSerializer,
+)
 
 
 class AssetRequestSerializer(serializers.Serializer):
@@ -70,6 +74,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             dandiset__pk=versions__dandiset__pk,
         )
         return Response(asset.generate_metadata(version), status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(responses={200: AssetValidationSerializer()})
+    @action(detail=True, methods=['GET'])
+    def validation(self, request, **kwargs):
+        asset = self.get_object()
+        serializer = AssetValidationSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),

@@ -107,6 +107,32 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'status,validation_error',
+    [
+        (Asset.Status.PENDING, ''),
+        (Asset.Status.VALIDATING, ''),
+        (Asset.Status.VALID, ''),
+        (Asset.Status.INVALID, 'error'),
+    ],
+)
+def test_asset_rest_validation(api_client, version, asset, status, validation_error):
+    version.assets.add(asset)
+
+    asset.status = status
+    asset.validation_error = validation_error
+    asset.save()
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/validation/'
+    ).data == {
+        'status': status,
+        'validation_error': validation_error,
+    }
+
+
+@pytest.mark.django_db
 def test_asset_create(api_client, user, draft_version, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
