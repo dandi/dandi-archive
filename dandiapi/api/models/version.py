@@ -72,6 +72,16 @@ class Version(TimeStampedModel):
     def size(self):
         return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
 
+    @property
+    def valid(self) -> bool:
+        if self.status != Version.Status.VALID:
+            return False
+
+        # Import here to avoid dependency cycle
+        from .asset import Asset
+
+        return not self.assets.filter(~models.Q(status=Asset.Status.VALID)).exists()
+
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
         return time.strftime('0.%y%m%d.%H%M')
