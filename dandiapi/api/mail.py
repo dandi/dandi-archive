@@ -1,6 +1,6 @@
 from typing import List
 
-from allauth.socialaccount.signals import social_account_added
+from allauth.account.signals import user_signed_up
 from django.core import mail
 from django.dispatch import receiver
 
@@ -79,17 +79,13 @@ def send_ownership_change_emails(dandiset, removed_owners, added_owners):
 # Email sent to the DANDI list when a new user logs in for the first time
 
 
-def registered_subject(sociallogin):
-    return f'DANDI: New user registered: {sociallogin.user.email}'
+def registered_subject(user):
+    return f'DANDI: New user registered: {user.email}'
 
 
-def registered_message(sociallogin):
-    name = (
-        sociallogin.account.extra_data['name']
-        if 'name' in sociallogin.account.extra_data
-        else sociallogin.user.username
-    )
-    return f"""<p>Dear {name} (Github ID: {sociallogin.account.extra_data['login']}),</p>
+def registered_message(user, socialaccount):
+    name = socialaccount.extra_data['name'] if 'name' in socialaccount.extra_data else user.username
+    return f"""<p>Dear {name} (Github ID: {socialaccount.extra_data['login']}),</p>
 <p>Welcome to DANDI. </p>
 <p>You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (<a href="https://hub.dandiarchive.org">https://hub.dandiarchive.org</a>) for computing on dandisets in the cloud. </p>
 <p>It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.</p>
@@ -99,13 +95,9 @@ def registered_message(sociallogin):
 <p>The DANDI team</p>"""  # noqa: E501
 
 
-def registered_html_message(sociallogin):
-    name = (
-        sociallogin.account.extra_data['name']
-        if 'name' in sociallogin.account.extra_data
-        else sociallogin.user.username
-    )
-    return f"""Dear {name} (Github ID: {sociallogin.account.extra_data["login"]}),
+def registered_html_message(user, socialaccount):
+    name = socialaccount.extra_data['name'] if 'name' in socialaccount.extra_data else user.username
+    return f"""Dear {name} (Github ID: {socialaccount.extra_data["login"]}),
 
 Welcome to DANDI.
 
@@ -125,22 +117,23 @@ Sincerely,
 The DANDI team"""  # noqa: E501
 
 
-def build_registered_message(sociallogin):
+def build_registered_message(user, socialaccount):
     return build_message(
-        subject=registered_subject(sociallogin),
-        message=registered_message(sociallogin),
-        to=['dandi@mit.edu', sociallogin.user.email],
-        html_message=registered_html_message(sociallogin),
+        subject=registered_subject(user),
+        message=registered_message(user, socialaccount),
+        to=['dandi@mit.edu', user.email],
+        html_message=registered_html_message(user, socialaccount),
     )
 
 
-def send_registered_notice_email(sociallogin):
-    print('Sending registration message to ', sociallogin.user)
-    messages = [build_registered_message(sociallogin)]
+def send_registered_notice_email(user, socialaccount):
+    print('Sending registration message to ', user)
+    messages = [build_registered_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
 
 
-@receiver(social_account_added)
-def user_signed_up_listener(sender, sociallogin, **kwargs):
-    send_registered_notice_email(sociallogin)
+@receiver(user_signed_up)
+def user_signed_up_listener(sender, user, **kwargs):
+    for socialaccount in user.socialaccount_set.all():
+        send_registered_notice_email(user, socialaccount)
