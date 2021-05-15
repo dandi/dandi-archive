@@ -75,10 +75,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             },
         )
 
-        blob_url = asset.blob.blob.url
+        blob_url = asset.blob.blob.url.split('?')[0]
         metadata = {
             **asset.metadata.metadata,
             'identifier': asset_id,
+            'id': f'dandiasset:{asset_id}',
+            'schemaKey': 'Asset',
             'contentUrl': [download_url, blob_url],
             'digest': asset.blob.digest,
         }

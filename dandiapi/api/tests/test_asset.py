@@ -67,6 +67,8 @@ def test_asset_rest_retrieve(api_client, version, asset):
     ).data == {
         **asset.metadata.metadata,
         'identifier': str(asset.asset_id),
+        'id': f'dandiasset:{asset.asset_id}',
+        'schemaKey': 'Asset',
         'contentUrl': [
             f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
@@ -92,6 +94,8 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
     ).data == {
         **asset.metadata.metadata,
         'identifier': str(asset.asset_id),
+        'id': f'dandiasset:{asset.asset_id}',
+        'schemaKey': 'Asset',
         'contentUrl': [
             f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
