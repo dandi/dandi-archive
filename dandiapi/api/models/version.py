@@ -113,12 +113,13 @@ class Version(TimeStampedModel):
             'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
         }
         metadata['citation'] = self.citation(metadata)
-        if 'schemaVersion' in metadata:
-            schema_version = metadata['schemaVersion']
-            metadata['@context'] = (
-                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
-                f'{schema_version}/context.json'
-            )
+        if 'schemaVersion' not in metadata:
+            from django.conf import settings
+            metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION
+        metadata['@context'] = (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{metadata["schemaVersion"]}/context.json'
+        )
 
         new: VersionMetadata
         new, created = VersionMetadata.objects.get_or_create(

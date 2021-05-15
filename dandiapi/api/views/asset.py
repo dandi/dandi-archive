@@ -84,6 +84,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             'contentUrl': [download_url, blob_url],
             'digest': asset.blob.digest,
         }
+        if 'schemaVersion' not in metadata:
+            from django.conf import settings
+            metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION
+        metadata['@context'] = (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{metadata["schemaVersion"]}/context.json'
+        )
+
         return Response(metadata, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
