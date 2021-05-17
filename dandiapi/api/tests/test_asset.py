@@ -32,6 +32,14 @@ def test_asset_get_path(path, qs, expected):
     assert expected == Asset.get_path(path, qs)
 
 
+@pytest.mark.django_db
+def test_asset_s3_url(asset_blob):
+    signed_url = asset_blob.blob.url
+    s3_url = asset_blob.s3_url
+    assert signed_url.startswith(s3_url)
+    assert signed_url.split('?')[0] == s3_url
+
+
 # API Tests
 
 
@@ -72,6 +80,7 @@ def test_asset_rest_retrieve(api_client, version, asset):
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
             HTTP_URL_RE,
         ],
+        'contentSize': asset.blob.size,
         'digest': {
             'dandi:dandi-etag': asset.blob.etag,
             'dandi:sha2-256': asset.blob.sha256,
@@ -97,10 +106,37 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
             f'/versions/{version.version}/assets/{asset.asset_id}/download/',
             HTTP_URL_RE,
         ],
+        'contentSize': asset.blob.size,
         'digest': {
             'dandi:dandi-etag': asset.blob.etag,
             # The dandi:sha2-sha256 value is absent
         },
+    }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'status,validation_error',
+    [
+        (Asset.Status.PENDING, ''),
+        (Asset.Status.VALIDATING, ''),
+        (Asset.Status.VALID, ''),
+        (Asset.Status.INVALID, 'error'),
+    ],
+)
+def test_asset_rest_validation(api_client, version, asset, status, validation_error):
+    version.assets.add(asset)
+
+    asset.status = status
+    asset.validation_error = validation_error
+    asset.save()
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/validation/'
+    ).data == {
+        'status': status,
+        'validation_error': validation_error,
     }
 
 

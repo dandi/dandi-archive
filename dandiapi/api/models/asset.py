@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Set
+from urllib.parse import urlparse, urlunparse
 import uuid
 
 from django.conf import settings
@@ -8,6 +9,7 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.storage import create_s3_storage
@@ -60,6 +62,13 @@ class AssetBlob(TimeStampedModel):
             digest['dandi:sha2-256'] = self.sha256
         return digest
 
+    @property
+    def s3_url(self) -> str:
+        signed_url = self.blob.url
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
+
     def __str__(self) -> str:
         return self.blob.name
 
@@ -78,11 +87,23 @@ class AssetMetadata(TimeStampedModel):
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
+    class Status(models.TextChoices):
+        PENDING = 'Pending'
+        VALIDATING = 'Validating'
+        VALID = 'Valid'
+        INVALID = 'Invalid'
+
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
     versions = models.ManyToManyField(Version, related_name='assets')
+    status = models.CharField(
+        max_length=10,
+        default=Status.PENDING,
+        choices=Status.choices,
+    )
+    validation_error = models.TextField(default='')
     previous = models.ForeignKey(
         'Asset',
         blank=True,
@@ -116,6 +137,34 @@ class Asset(TimeStampedModel):
     def save(self, *args, **kwargs):
         self._populate_metadata()
         super().save(*args, **kwargs)
+
+    def generate_metadata(self, version):
+        """
+        Generate the correct metadata for this asset given a version.
+
+        The route used to download an asset will be different depending on which version it belongs
+        to. Since the download url is included in the asset metadata, it must be injected rather
+        than stored. This method should always be used instead of asset.metadata.metadata.
+        """
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
+            'asset-download',
+            kwargs={
+                'versions__dandiset__pk': version.dandiset.identifier,
+                'versions__version': version.version,
+                'asset_id': str(self.asset_id),
+            },
+        )
+
+        blob_url = self.blob.s3_url
+        metadata = {
+            **self.metadata.metadata,
+            'identifier': str(self.asset_id),
+            'contentUrl': [download_url, blob_url],
+            'contentSize': self.blob.size,
+            'digest': self.blob.digest,
+        }
+        return metadata
 
     def __str__(self) -> str:
         return self.path

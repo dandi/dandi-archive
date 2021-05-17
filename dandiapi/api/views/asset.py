@@ -13,7 +13,6 @@ import os.path
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg import openapi
@@ -27,8 +26,13 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
+from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerializer
+from dandiapi.api.views.serializers import (
+    AssetDetailSerializer,
+    AssetSerializer,
+    AssetValidationSerializer,
+)
 
 
 class AssetRequestSerializer(serializers.Serializer):
@@ -65,24 +69,18 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     )
     def retrieve(self, request, versions__dandiset__pk, versions__version, asset_id):
         asset = self.get_object()
-        # TODO use http://localhost:8000 for local deployments
-        download_url = 'https://api.dandiarchive.org' + reverse(
-            'asset-download',
-            kwargs={
-                'versions__dandiset__pk': versions__dandiset__pk,
-                'versions__version': versions__version,
-                'asset_id': asset_id,
-            },
+        version = Version.objects.get(
+            version=versions__version,
+            dandiset__pk=versions__dandiset__pk,
         )
+        return Response(asset.generate_metadata(version), status=status.HTTP_200_OK)
 
-        blob_url = asset.blob.blob.url
-        metadata = {
-            **asset.metadata.metadata,
-            'identifier': asset_id,
-            'contentUrl': [download_url, blob_url],
-            'digest': asset.blob.digest,
-        }
-        return Response(metadata, status=status.HTTP_200_OK)
+    @swagger_auto_schema(responses={200: AssetValidationSerializer()})
+    @action(detail=True, methods=['GET'])
+    def validation(self, request, **kwargs):
+        asset = self.get_object()
+        serializer = AssetValidationSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),
@@ -132,6 +130,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         # Save the version so that the modified field is updated
         version.save()
+
+        # Trigger a metadata validation
+        # This will fail if the digest hasn't been calculated yet, but we still need to try now
+        # just in case we are using an existing blob that has already computed its digest.
+        validate_asset_metadata.delay(version.id, asset.id)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -188,6 +191,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         # Save the version so that the modified field is updated
         version.save()
+
+        # Trigger a metadata validation
+        # This will fail if the digest hasn't been calculated yet, but we still need to try now
+        # just in case we are using an existing blob that has already computed its digest.
+        validate_asset_metadata.delay(version.id, new_asset.id)
 
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)

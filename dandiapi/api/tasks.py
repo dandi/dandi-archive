@@ -3,10 +3,12 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.transaction import atomic
+import jsonschema.exceptions
+import requests
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.checksum import calculate_sha256_checksum
-from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 
 logger = get_task_logger(__name__)
 
@@ -26,6 +28,11 @@ def calculate_sha256(blob_id: int) -> None:
 
     asset_blob.sha256 = sha256
     asset_blob.save()
+
+    # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
+    for asset in asset_blob.assets.all():
+        for version in asset.versions:
+            validate_asset_metadata.delay(version.id, asset.id)
 
 
 @shared_task
@@ -56,7 +63,86 @@ def write_yamls(version_id: int) -> None:
         logger.info('%s already exists, deleting it', assets_yaml_path)
         storage.delete(assets_yaml_path)
     logger.info('Saving %s', assets_yaml_path)
-    assets_yaml = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
+    assets_yaml = YAMLRenderer().render(
+        [asset.generate_metadata(version) for asset in version.assets.all()]
+    )
     storage.save(assets_yaml_path, ContentFile(assets_yaml))
 
     logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
+
+
+def format_as_index(indices):
+    """Render a JSON schema path as a series of indices."""
+    if not indices:
+        return ''
+    return '[%s]' % ']['.join(repr(index) for index in indices)
+
+
+def format_validation_error(error: jsonschema.exceptions.ValidationError):
+    """
+    Succinctly format a ValidationError.
+
+    The default __str__ for ValidationError includes the entire schema, so we simplify it.
+    """
+    return f'{error.message}\nSee: metadata{format_as_index(error.relative_path)}'  # noqa: B306
+
+
+class ValidationError(Exception):
+    pass
+
+
+@shared_task
+@atomic
+# This method takes both a version_id and an asset_id because asset metadata renders differently
+# depending on which version the asset belongs to.
+def validate_asset_metadata(version_id: int, asset_id: int) -> None:
+    logger.info('Validating asset metadata for asset %s, version %s', asset_id, version_id)
+    asset = Asset.objects.get(id=asset_id)
+    version = Version.objects.get(id=version_id)
+
+    # Begin the validation process so no other validation tasks will run simultaneously
+    asset.status = Asset.Status.VALIDATING
+    asset.save()
+
+    try:
+        metadata = asset.generate_metadata(version)
+        if 'schemaVersion' not in metadata:
+            logger.info('schemaVersion not specified in metadata for asset %s', asset_id)
+            raise ValidationError('schemaVersion not specified')
+        schema_version = metadata['schemaVersion']
+        schema_url = (
+            'https://raw.githubusercontent.com/dandi/schema/master/'
+            f'releases/{schema_version}/asset.json'
+        )
+        request = requests.get(schema_url)
+        request.raise_for_status()
+        schema = request.json()
+        jsonschema.validate(instance=metadata, schema=schema)
+
+        # Verify sha256 digest is present in metadata
+        if 'dandi:sha2-256' not in metadata['digest']:
+            raise ValidationError('SHA256 checksum not computed')
+
+    except jsonschema.exceptions.ValidationError as e:
+        logger.info('Validation error for asset %s', asset_id)
+
+        asset.status = Asset.Status.INVALID
+        asset.validation_error = format_validation_error(e)
+        asset.save()
+        return
+    except ValidationError as e:
+        asset.status = Asset.Status.INVALID
+        asset.validation_error = str(e)
+        asset.save()
+        return
+    except Exception as e:
+        logger.error('Error while validating asset %s', asset_id)
+        logger.error(str(e))
+        asset.status = Asset.Status.INVALID
+        asset.validation_error = str(e)
+        asset.save()
+        return
+    logger.info('Successfully validated asset %s', asset_id)
+    asset.status = Asset.Status.VALID
+    asset.validation_error = ''
+    asset.save()

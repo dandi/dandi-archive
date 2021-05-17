@@ -86,6 +86,12 @@ class AssetMetadataSerializer(serializers.ModelSerializer):
         fields = ['metadata']
 
 
+class AssetValidationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = ['status', 'validation_error']
+
+
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset

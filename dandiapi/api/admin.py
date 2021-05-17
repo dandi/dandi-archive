@@ -60,7 +60,7 @@ class AssetAdmin(admin.ModelAdmin):
         'asset_id',
         'path',
         'blob',
-        'metadata',
+        'status',
         'size',
         'modified',
         'created',

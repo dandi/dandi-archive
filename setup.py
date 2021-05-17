@@ -53,6 +53,7 @@ setup(
         'drf-extensions',
         'drf-yasg',
         'httpx',
+        'jsonschema',
         # Production-only
         'django-composed-configuration[prod]',
         'django-s3-file-field[boto3]==0.1.1',
