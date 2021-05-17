@@ -36,6 +36,12 @@ def _get_default_version() -> str:
 class Version(TimeStampedModel):
     VERSION_REGEX = r'(0\.\d{6}\.\d{4})|draft'
 
+    class Status(models.TextChoices):
+        PENDING = 'Pending'
+        VALIDATING = 'Validating'
+        VALID = 'Valid'
+        INVALID = 'Invalid'
+
     dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
     metadata = models.ForeignKey(VersionMetadata, related_name='versions', on_delete=models.CASCADE)
     version = models.CharField(
@@ -44,6 +50,12 @@ class Version(TimeStampedModel):
         default=_get_default_version,
     )  # TODO: rename this?
     doi = models.CharField(max_length=64, null=True, blank=True)
+    status = models.CharField(
+        max_length=10,
+        default=Status.PENDING,
+        choices=Status.choices,
+    )
+    validation_error = models.TextField(default='')
 
     class Meta:
         unique_together = ['dandiset', 'version']
@@ -59,6 +71,17 @@ class Version(TimeStampedModel):
     @property
     def size(self):
         return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
+
+    @property
+    def valid(self) -> bool:
+        if self.status != Version.Status.VALID:
+            return False
+
+        # Import here to avoid dependency cycle
+        from .asset import Asset
+
+        # Return False if any asset is not VALID
+        return not self.assets.filter(~models.Q(status=Asset.Status.VALID)).exists()
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:

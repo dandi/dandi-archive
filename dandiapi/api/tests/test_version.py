@@ -3,7 +3,7 @@ from datetime import datetime
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.models import Version
+from dandiapi.api.models import Asset, Version
 
 from .fuzzy import TIMESTAMP_RE, VERSION_ID_RE
 
@@ -90,13 +90,62 @@ def test_version_metadata_citation_multiple_contributors(version):
 
 
 @pytest.mark.django_db
-def test_version_metadata_contaxt(version):
+def test_version_metadata_context(version):
     version.metadata.metadata['schemaVersion'] = '6.6.6'
     version.save()
 
     assert version.metadata.metadata['@context'] == (
         'https://raw.githubusercontent.com/dandi/schema/master/releases/6.6.6/context.json'
     )
+
+
+@pytest.mark.django_db
+def test_version_valid_with_valid_asset(version, asset):
+    version.assets.add(asset)
+
+    version.status = Version.Status.VALID
+    version.save()
+    asset.status = Asset.Status.VALID
+    asset.save()
+
+    assert version.valid
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'status',
+    [
+        Version.Status.PENDING,
+        Version.Status.VALIDATING,
+        Version.Status.INVALID,
+    ],
+)
+def test_version_invalid(version, status):
+    version.status = status
+    version.save()
+
+    assert not version.valid
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'status',
+    [
+        Asset.Status.PENDING,
+        Asset.Status.VALIDATING,
+        Asset.Status.INVALID,
+    ],
+)
+def test_version_valid_with_invalid_asset(version, asset, status):
+    version.assets.add(asset)
+
+    version.status = Version.Status.VALID
+    version.save()
+
+    asset.status = status
+    asset.save()
+
+    assert not version.valid
 
 
 @pytest.mark.django_db
@@ -118,6 +167,7 @@ def test_version_rest_list(api_client, version):
                 'modified': TIMESTAMP_RE,
                 'asset_count': 0,
                 'size': 0,
+                'status': 'Pending',
             }
         ],
     }
@@ -150,6 +200,8 @@ def test_version_rest_info(api_client, version):
         'asset_count': 0,
         'metadata': version.metadata.metadata,
         'size': version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
 
@@ -172,6 +224,8 @@ def test_version_rest_info_with_asset(api_client, version, asset):
         'asset_count': 1,
         'metadata': version.metadata.metadata,
         'size': version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
 
@@ -211,6 +265,8 @@ def test_version_rest_update(api_client, user, draft_version):
         'asset_count': draft_version.asset_count,
         'metadata': saved_metadata,
         'size': draft_version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
     # The version modified date should be updated
@@ -264,6 +320,8 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'asset_count': draft_version.asset_count,
         'metadata': saved_metadata,
         'size': draft_version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
     draft_version.refresh_from_db()
@@ -313,6 +371,12 @@ def test_version_rest_publish(api_client, admin_user, draft_version, asset):
     api_client.force_authenticate(user=admin_user)
     draft_version.assets.add(asset)
 
+    # We could instead use valid metadata, but that changes depending on the schema version.
+    draft_version.status = Version.Status.VALID
+    draft_version.save()
+    asset.status = Asset.Status.VALID
+    asset.save()
+
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/publish/'
@@ -329,6 +393,7 @@ def test_version_rest_publish(api_client, admin_user, draft_version, asset):
         'modified': TIMESTAMP_RE,
         'asset_count': 1,
         'size': draft_version.size,
+        'status': 'Pending',
     }
     published_version = Version.objects.get(version=resp.data['version'])
     assert published_version
@@ -377,3 +442,31 @@ def test_version_rest_publish_not_a_draft(api_client, admin_user, published_vers
         f'/versions/{published_version.version}/publish/'
     )
     assert resp.status_code == 405
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'status',
+    [
+        Version.Status.PENDING,
+        Version.Status.VALIDATING,
+        Version.Status.INVALID,
+    ],
+)
+# TODO change admin_user back to a normal user once publish is allowed
+def test_version_rest_publish_invalid_metadata(
+    api_client, admin_user, draft_version, asset, status
+):
+    assign_perm('owner', admin_user, draft_version.dandiset)
+    api_client.force_authenticate(user=admin_user)
+    draft_version.assets.add(asset)
+
+    draft_version.status = status
+    draft_version.save()
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 400
+    assert resp.data == 'Dandiset metadata or asset metadata is not valid'

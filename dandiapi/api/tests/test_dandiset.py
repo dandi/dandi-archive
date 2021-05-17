@@ -87,6 +87,7 @@ def test_dandiset_versions(
                     'name': draft.draft_version.name,
                     'asset_count': draft.draft_version.asset_count,
                     'size': draft.draft_version.size,
+                    'status': 'Pending',
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
                     'dandiset': {
@@ -107,6 +108,7 @@ def test_dandiset_versions(
                     'name': published.most_recent_published_version.name,
                     'asset_count': published.most_recent_published_version.asset_count,
                     'size': published.most_recent_published_version.size,
+                    'status': 'Pending',
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
                     'dandiset': {
@@ -189,6 +191,7 @@ def test_dandiset_rest_create(api_client, user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
             },
+            'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
@@ -248,6 +251,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
             },
+            'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },

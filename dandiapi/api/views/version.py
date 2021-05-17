@@ -101,6 +101,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
+        if not old_version.valid:
+            return Response(
+                'Dandiset metadata or asset metadata is not valid',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         new_version = Version.copy(old_version)
 
         new_version.doi = doi.create_doi(new_version)

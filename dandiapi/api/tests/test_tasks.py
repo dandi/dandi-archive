@@ -225,3 +225,90 @@ def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Ass
 
     assert asset.status == Asset.Status.INVALID
     assert asset.validation_error == "'foo' is not of type 'array'\nSee: metadata['keywords']"
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata(version: Version):
+
+    # This is the minimum version metadata for schema version 0.3.0
+    version.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+        'description': 'description',
+        'contributor': [{}],
+        'license': [],
+        # 'encodingFormat': 'application/x-nwb',
+    }
+    version.metadata.save()
+
+    tasks.validate_version_metadata(version.id)
+
+    version.refresh_from_db()
+
+    assert version.status == Version.Status.VALID
+    assert version.validation_error == ''
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_no_schema_version(version: Version):
+    version.metadata.metadata = {}
+    version.metadata.save()
+
+    tasks.validate_version_metadata(version.id)
+
+    version.refresh_from_db()
+
+    assert version.status == Version.Status.INVALID
+    assert version.validation_error == 'schemaVersion not specified'
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_malformed_schema_version(version: Version):
+    version.metadata.metadata = {
+        'schemaVersion': 'xxx',
+    }
+    version.metadata.save()
+
+    tasks.validate_version_metadata(version.id)
+
+    version.refresh_from_db()
+
+    assert version.status == Version.Status.INVALID
+    assert version.validation_error == (
+        '404 Client Error: Not Found for url: '
+        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/dandiset.json'
+    )
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_no_description(version: Version):
+    version.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+        'contributor': [{}],
+        'license': [],
+    }
+    version.metadata.save()
+
+    tasks.validate_version_metadata(version.id)
+
+    version.refresh_from_db()
+
+    assert version.status == Version.Status.INVALID
+    assert version.validation_error == "'description' is a required property\nSee: metadata"
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_malformed_license(version: Version):
+    version.metadata.metadata = {
+        'schemaVersion': '0.3.0',
+        'description': 'description',
+        'contributor': [{}],
+        'license': 'foo',
+    }
+    version.metadata.save()
+
+    tasks.validate_version_metadata(version.id)
+
+    version.refresh_from_db()
+
+    assert version.status == Version.Status.INVALID
+    assert version.validation_error == "'foo' is not of type 'array'\nSee: metadata['license']"
