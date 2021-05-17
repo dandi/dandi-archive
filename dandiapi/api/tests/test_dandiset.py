@@ -222,8 +222,8 @@ def test_dandiset_rest_create(api_client, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_identifier(api_client, user):
-    api_client.force_authenticate(user=user)
+def test_dandiset_rest_create_with_identifier(api_client, admin_user):
+    api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
     identifier = '123456'
     metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
@@ -256,7 +256,7 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=identifier)
-    assert list(dandiset.owners.all()) == [user]
+    assert list(dandiset.owners.all()) == [admin_user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -279,8 +279,8 @@ def test_dandiset_rest_create_with_identifier(api_client, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_duplicate_identifier(api_client, user, dandiset):
-    api_client.force_authenticate(user=user)
+def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user, dandiset):
+    api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
     identifier = dandiset.identifier
     metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
@@ -295,8 +295,8 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client, user, dandis
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_with_invalid_identifier(api_client, user):
-    api_client.force_authenticate(user=user)
+def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
+    api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
     identifier = 'abc123'
     metadata = {'foo': 'bar', 'identifier': identifier}
