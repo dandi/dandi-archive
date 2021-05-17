@@ -1,3 +1,5 @@
+import logging
+
 from allauth.socialaccount.models import SocialAccount
 from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
@@ -122,6 +124,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             if e.__cause__.pgcode == '23505':
                 return Response(f'Dandiset {dandiset.identifier} Already Exists', status=400)
             raise e
+
+        logging.info(
+            'Created dandiset %s given request with name=%s and metadata=%s',
+            dandiset.identifier,
+            name,
+            metadata,
+        )
 
         assign_perm('owner', request.user, dandiset)
 
