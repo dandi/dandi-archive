@@ -100,7 +100,6 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
     asset = Asset.objects.get(id=asset_id)
     version = Version.objects.get(id=version_id)
 
-    # Begin the validation process so no other validation tasks will run simultaneously
     asset.status = Asset.Status.VALIDATING
     asset.save()
 
@@ -154,7 +153,6 @@ def validate_version_metadata(version_id: int) -> None:
     logger.info('Validating dandiset metadata for version %s', version_id)
     version = Version.objects.get(id=version_id)
 
-    # Begin the validation process so no other validation tasks will run simultaneously
     version.status = Version.Status.VALIDATING
     version.save()
 

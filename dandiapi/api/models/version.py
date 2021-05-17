@@ -80,6 +80,7 @@ class Version(TimeStampedModel):
         # Import here to avoid dependency cycle
         from .asset import Asset
 
+        # Return False if any asset is not VALID
         return not self.assets.filter(~models.Q(status=Asset.Status.VALID)).exists()
 
     @staticmethod

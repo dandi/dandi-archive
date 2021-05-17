@@ -244,8 +244,6 @@ def test_validate_version_metadata(version: Version):
 
     version.refresh_from_db()
 
-    print(version.metadata.metadata)
-    print(version.validation_error)
     assert version.status == Version.Status.VALID
     assert version.validation_error == ''
 

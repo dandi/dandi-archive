@@ -102,7 +102,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             )
 
         if not old_version.valid:
-            return Response('Metadata is not valid', status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                'Dandiset metadata or asset metadata is not valid',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         new_version = Version.copy(old_version)
 
