@@ -105,6 +105,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
+            if identifier and not request.user.is_superuser:
+                return Response(
+                    'Creating a dandiset for a given identifier '
+                    f'({identifier} was provided) is admin only operation.',
+                    status=403,
+                )
             if identifier.startswith('DANDI:'):
                 identifier = identifier[6:]
             try:
