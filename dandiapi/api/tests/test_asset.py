@@ -32,6 +32,14 @@ def test_asset_get_path(path, qs, expected):
     assert expected == Asset.get_path(path, qs)
 
 
+@pytest.mark.django_db
+def test_asset_s3_url(asset_blob):
+    signed_url = asset_blob.blob.url
+    s3_url = asset_blob.s3_url
+    assert signed_url.startswith(s3_url)
+    assert signed_url.split('?')[0] == s3_url
+
+
 # API Tests
 
 

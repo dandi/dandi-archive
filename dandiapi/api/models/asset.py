@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Set
+from urllib.parse import urlparse, urlunparse
 import uuid
 
 from django.conf import settings
@@ -60,6 +61,13 @@ class AssetBlob(TimeStampedModel):
         if self.sha256:
             digest['dandi:sha2-256'] = self.sha256
         return digest
+
+    @property
+    def s3_url(self) -> str:
+        signed_url = self.blob.url
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
 
     def __str__(self) -> str:
         return self.blob.name
@@ -148,7 +156,7 @@ class Asset(TimeStampedModel):
             },
         )
 
-        blob_url = self.blob.blob.url
+        blob_url = self.blob.s3_url
         metadata = {
             **self.metadata.metadata,
             'identifier': str(self.asset_id),
