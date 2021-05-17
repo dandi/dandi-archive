@@ -131,6 +131,7 @@
                 height="16"
               ></a>
             <v-tooltip
+              v-if="author.affiliation"
               top
               color="black"
             >
@@ -141,6 +142,7 @@
               </template>
               <span>{{ author.affiliation }}</span>
             </v-tooltip>
+            <span v-else> {{ author.name }}</span>
             ;
           </span>
         </v-col>
@@ -236,6 +238,7 @@ export default {
         let affiliations;
         if (!_.isEmpty(author.affiliation)) {
           affiliations = _.map(author.affiliation, (a) => a.name);
+          affiliations = affiliations.join(', ');
         }
         return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
       });
