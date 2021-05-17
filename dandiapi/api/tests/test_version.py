@@ -167,6 +167,7 @@ def test_version_rest_list(api_client, version):
                 'modified': TIMESTAMP_RE,
                 'asset_count': 0,
                 'size': 0,
+                'status': 'Pending',
             }
         ],
     }
@@ -199,6 +200,8 @@ def test_version_rest_info(api_client, version):
         'asset_count': 0,
         'metadata': version.metadata.metadata,
         'size': version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
 
@@ -221,6 +224,8 @@ def test_version_rest_info_with_asset(api_client, version, asset):
         'asset_count': 1,
         'metadata': version.metadata.metadata,
         'size': version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
 
@@ -260,6 +265,8 @@ def test_version_rest_update(api_client, user, draft_version):
         'asset_count': draft_version.asset_count,
         'metadata': saved_metadata,
         'size': draft_version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
     # The version modified date should be updated
@@ -313,6 +320,8 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'asset_count': draft_version.asset_count,
         'metadata': saved_metadata,
         'size': draft_version.size,
+        'status': 'Pending',
+        'validation_error': '',
     }
 
     draft_version.refresh_from_db()
@@ -384,6 +393,7 @@ def test_version_rest_publish(api_client, admin_user, draft_version, asset):
         'modified': TIMESTAMP_RE,
         'asset_count': 1,
         'size': draft_version.size,
+        'status': 'Pending',
     }
     published_version = Version.objects.get(version=resp.data['version'])
     assert published_version
