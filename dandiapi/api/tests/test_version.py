@@ -469,4 +469,4 @@ def test_version_rest_publish_invalid_metadata(
         f'/versions/{draft_version.version}/publish/'
     )
     assert resp.status_code == 400
-    assert resp.data == 'Metadata is not valid'
+    assert resp.data == 'Dandiset metadata or asset metadata is not valid'
