@@ -117,7 +117,7 @@
       >
         <v-col>
           <span
-            v-for="author in getMetadata"
+            v-for="author in contributors"
             :key="author.identifier"
           >
             <a
@@ -233,9 +233,9 @@ export default {
   computed: {
     loggedIn,
     user,
-    getMetadata() {
+    contributors() {
       const authors = _.map(this.meta.contributor, (author) => {
-        let affiliations;
+        let affiliations = '';
         if (!_.isEmpty(author.affiliation)) {
           affiliations = _.map(author.affiliation, (a) => a.name);
           affiliations = affiliations.join(', ');
