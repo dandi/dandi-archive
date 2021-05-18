@@ -10,7 +10,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api import doi
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
-from dandiapi.api.tasks import write_yamls
+from dandiapi.api.tasks import validate_version_metadata, write_yamls
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -82,6 +82,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         version.metadata = version_metadata
         version.save()
+
+        validate_version_metadata.delay(version.id)
 
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
