@@ -6,12 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0006_default_oauth_application'),
+        ('api', '0007_validation_status'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='asset',
+            model_name='version',
             name='status',
             field=models.CharField(
                 choices=[
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name='asset',
+            model_name='version',
             name='validation_error',
             field=models.TextField(default=''),
         ),
