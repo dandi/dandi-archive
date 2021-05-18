@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='asset',
+            model_name='version',
             name='status',
             field=models.CharField(
                 choices=[
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name='asset',
+            model_name='version',
             name='validation_error',
             field=models.TextField(default=''),
         ),
