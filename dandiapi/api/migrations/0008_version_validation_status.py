@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0006_default_oauth_application'),
+        ('api', '0007_validation_status'),
     ]
 
     operations = [
