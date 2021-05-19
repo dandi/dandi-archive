@@ -147,4 +147,9 @@ class Asset(TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        return cls.objects.aggregate(size=models.Sum('blob__size'))['size'] or 0
+        return (
+            cls.objects.values('blob__id', 'blob__size')
+            .distinct()
+            .aggregate(size=models.Sum('blob__size'))['size']
+            or 0
+        )
