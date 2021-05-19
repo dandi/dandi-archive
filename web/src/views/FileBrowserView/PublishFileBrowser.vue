@@ -71,7 +71,6 @@
                 >
                   {{ part }}
                 </router-link>
-                {{ i === splitLocation.length - 1 ? '' : '/' }}
               </template>
             </template>
           </v-card-title>

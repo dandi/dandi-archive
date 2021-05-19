@@ -111,7 +111,42 @@
       </v-row>
 
       <v-divider />
-
+      <v-row
+        class="mx-2"
+        align="center"
+      >
+        <v-col>
+          <span
+            v-for="author in contributors"
+            :key="author.identifier"
+          >
+            <a
+              :href="author.identifier"
+              target="_blank"
+            >
+              <img
+                alt="ORCID logo"
+                src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+                width="16"
+                height="16"
+              ></a>
+            <v-tooltip
+              v-if="author.affiliation"
+              top
+              color="black"
+            >
+              <template #activator="{ on }">
+                <span v-on="on">
+                  {{ author.name }}
+                </span>
+              </template>
+              <span>{{ author.affiliation }}</span>
+            </v-tooltip>
+            <span v-else> {{ author.name }}</span>
+            ;
+          </span>
+        </v-col>
+      </v-row>
       <v-row :class="titleClasses">
         <v-card-title class="font-weight-regular">
           Description
@@ -160,6 +195,7 @@ import {
 import toggles from '@/featureToggle';
 
 import CopyText from '@/components/CopyText.vue';
+import _ from 'lodash';
 import DownloadDialog from './DownloadDialog.vue';
 import ListingComponent from './ListingComponent.vue';
 
@@ -197,6 +233,17 @@ export default {
   computed: {
     loggedIn,
     user,
+    contributors() {
+      const authors = _.map(this.meta.contributor, (author) => {
+        let affiliations = '';
+        if (!_.isEmpty(author.affiliation)) {
+          affiliations = _.map(author.affiliation, (a) => a.name);
+          affiliations = affiliations.join(', ');
+        }
+        return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
+      });
+      return authors;
+    },
     editDisabledMessage() {
       if (!this.loggedIn) {
         return 'You must be logged in to edit.';
