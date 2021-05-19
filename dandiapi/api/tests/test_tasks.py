@@ -120,13 +120,6 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
 def test_validate_asset_metadata(version: Version, asset: Asset):
     version.assets.add(asset)
 
-    # This is the minimum asset metadata for schema version 0.3.0
-    asset.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-        'encodingFormat': 'application/x-nwb',
-    }
-    asset.metadata.save()
-
     tasks.validate_asset_metadata(version.id, asset.id)
 
     asset.refresh_from_db()
@@ -174,9 +167,7 @@ def test_validate_asset_metadata_malformed_schema_version(version: Version, asse
 def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Asset):
     version.assets.add(asset)
 
-    asset.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-    }
+    del asset.metadata.metadata['encodingFormat']
     asset.metadata.save()
 
     tasks.validate_asset_metadata(version.id, asset.id)
@@ -190,12 +181,6 @@ def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Ass
 @pytest.mark.django_db
 def test_validate_asset_metadata_no_digest(version: Version, asset: Asset):
     version.assets.add(asset)
-
-    asset.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-        'encodingFormat': 'application/x-nwb',
-    }
-    asset.metadata.save()
 
     asset.blob.sha256 = None
     asset.blob.save()
@@ -212,11 +197,7 @@ def test_validate_asset_metadata_no_digest(version: Version, asset: Asset):
 def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Asset):
     version.assets.add(asset)
 
-    asset.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-        'encodingFormat': 'application/x-nwb',
-        'keywords': 'foo',
-    }
+    asset.metadata.metadata['keywords'] = 'foo'
     asset.metadata.save()
 
     tasks.validate_asset_metadata(version.id, asset.id)
@@ -229,17 +210,6 @@ def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Ass
 
 @pytest.mark.django_db
 def test_validate_version_metadata(version: Version):
-
-    # This is the minimum version metadata for schema version 0.3.0
-    version.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-        'description': 'description',
-        'contributor': [{}],
-        'license': [],
-        # 'encodingFormat': 'application/x-nwb',
-    }
-    version.metadata.save()
-
     tasks.validate_version_metadata(version.id)
 
     version.refresh_from_db()
@@ -281,11 +251,7 @@ def test_validate_version_metadata_malformed_schema_version(version: Version):
 
 @pytest.mark.django_db
 def test_validate_version_metadata_no_description(version: Version):
-    version.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-        'contributor': [{}],
-        'license': [],
-    }
+    del version.metadata.metadata['description']
     version.metadata.save()
 
     tasks.validate_version_metadata(version.id)
@@ -298,12 +264,7 @@ def test_validate_version_metadata_no_description(version: Version):
 
 @pytest.mark.django_db
 def test_validate_version_metadata_malformed_license(version: Version):
-    version.metadata.metadata = {
-        'schemaVersion': '0.3.0',
-        'description': 'description',
-        'contributor': [{}],
-        'license': 'foo',
-    }
+    version.metadata.metadata['license'] = 'foo'
     version.metadata.save()
 
     tasks.validate_version_metadata(version.id)

@@ -1,4 +1,6 @@
+import datetime
 import hashlib
+import random
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
@@ -54,7 +56,40 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = VersionMetadata
 
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            'schemaVersion': '0.3.1',
+            # Inject some randomness so that duplicate metadatas don't violate DB constraints
+            'description': f'description {random.random()}',
+            'contributor': [{}],
+            'license': ['spdx:CC0-1.0'],
+            'publishedBy': {
+                'id': 'urn:uuid:08fffc59-9f1b-44d6-8e02-6729d266d1b6',
+                'name': 'DANDI publish',
+                'startDate': '2021-05-18T19:58:39.310338-04:00',
+                'endDate': '2021-05-18T19:58:39.310361-04:00',
+                'wasAssociatedWith': [
+                    {
+                        'id': 'RRID:SCR_017571',
+                        'name': 'DANDI API',
+                        'version': '0.1.0',
+                        'schemaKey': 'Software',
+                    }
+                ],
+                'schemaKey': 'PublishActivity',
+            },
+            'datePublished': str(datetime.datetime.now()),
+            'assetsSummary': {
+                'numberOfBytes': 1,
+                'numberOfFiles': 1,
+                'dataStandard': [],
+                'approach': [],
+                'measurementTechnique': [],
+                'species': [],
+            },
+        }
+
     name = factory.Faker('sentence')
 
 
@@ -116,7 +151,30 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetMetadata
 
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+    @factory.lazy_attribute
+    def metadata(self):
+        return {
+            'schemaVersion': '0.3.1',
+            'encodingFormat': 'application/x-nwb',
+            'publishedBy': {
+                'id': 'urn:uuid:08fffc59-9f1b-44d6-8e02-6729d266d1b6',
+                'name': 'DANDI publish',
+                'startDate': '2021-05-18T19:58:39.310338-04:00',
+                'endDate': '2021-05-18T19:58:39.310361-04:00',
+                'wasAssociatedWith': [
+                    {
+                        'id': 'RRID:SCR_017571',
+                        'name': 'DANDI API',
+                        'version': '0.1.0',
+                        'schemaKey': 'Software',
+                    }
+                ],
+                'schemaKey': 'PublishActivity',
+            },
+            'datePublished': str(datetime.datetime.now()),
+            # Inject some randomness so that duplicate metadatas don't violate DB constraints
+            'description': f'description {random.random()}',
+        }
 
 
 class AssetFactory(factory.django.DjangoModelFactory):
