@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import random
+from uuid import uuid4
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
@@ -65,7 +66,7 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
             'contributor': [{}],
             'license': ['spdx:CC0-1.0'],
             'publishedBy': {
-                'id': 'urn:uuid:08fffc59-9f1b-44d6-8e02-6729d266d1b6',
+                'id': uuid4().urn,
                 'name': 'DANDI publish',
                 'startDate': '2021-05-18T19:58:39.310338-04:00',
                 'endDate': '2021-05-18T19:58:39.310361-04:00',
@@ -157,7 +158,7 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
             'schemaVersion': '0.3.1',
             'encodingFormat': 'application/x-nwb',
             'publishedBy': {
-                'id': 'urn:uuid:08fffc59-9f1b-44d6-8e02-6729d266d1b6',
+                'id': uuid4().urn,
                 'name': 'DANDI publish',
                 'startDate': '2021-05-18T19:58:39.310338-04:00',
                 'endDate': '2021-05-18T19:58:39.310361-04:00',
