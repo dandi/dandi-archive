@@ -3,6 +3,7 @@ from datetime import datetime
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 
 from .fuzzy import TIMESTAMP_RE, VERSION_ID_RE
@@ -242,7 +243,7 @@ def test_version_rest_update(api_client, user, draft_version):
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
-        'id': f'{draft_version.dandiset.identifier}/draft',
+        'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'citation': f'{new_name} ({year}). Online: {url}',
@@ -297,7 +298,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         **new_metadata,
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
-        'id': f'{draft_version.dandiset.identifier}/draft',
+        'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
         'citation': f'{new_name} ({year}). Online: {url}',
@@ -371,11 +372,9 @@ def test_version_rest_publish(api_client, admin_user, draft_version, asset):
     api_client.force_authenticate(user=admin_user)
     draft_version.assets.add(asset)
 
-    # We could instead use valid metadata, but that changes depending on the schema version.
-    draft_version.status = Version.Status.VALID
-    draft_version.save()
-    asset.status = Asset.Status.VALID
-    asset.save()
+    # Validate the metadata to mark the version and asset as `VALID`
+    tasks.validate_version_metadata(draft_version.id)
+    tasks.validate_asset_metadata(draft_version.id, asset.id)
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
