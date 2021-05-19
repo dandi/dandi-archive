@@ -36,6 +36,33 @@
             </v-card>
           </v-menu>
         </v-col>
+        <v-col v-if="this.meta.citation">
+          Cite as
+          <v-menu
+            offset-y
+            left
+            :close-on-content-click="false"
+            min-width="500"
+            max-width="500"
+          >
+            <template #activator="{ on }">
+              <v-icon
+                color="primary"
+                v-on="on"
+              >
+                mdi-comment-quote-outline
+              </v-icon>
+            </template>
+
+            <v-card>
+              <CopyText
+                class="mx-2"
+                :text=this.meta.citation
+                icon-hover-text="Copy to clipboard"
+              />
+            </v-card>
+          </v-menu>
+        </v-col>
         <DownloadDialog>
           <template #activator="{ on }">
             <v-btn
@@ -155,7 +182,6 @@
       <v-row class="mx-1 mb-4 px-4 font-weight-light">
         {{ meta.description }}
       </v-row>
-
       <template v-for="key in Object.keys(extraFields).sort()">
         <template v-if="renderData(extraFields[key], schema.properties[key])">
           <v-divider :key="`${key}-divider`" />
@@ -236,11 +262,13 @@ export default {
     contributors() {
       const authors = _.map(this.meta.contributor, (author) => {
         let affiliations = '';
-        if (!_.isEmpty(author.affiliation)) {
-          affiliations = _.map(author.affiliation, (a) => a.name);
-          affiliations = affiliations.join(', ');
-        }
-        return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
+        if (author.schemaKey !== 'Organization' && author.includeInCitation) {
+          if (!_.isEmpty(author.affiliation)) {
+            affiliations = _.map(author.affiliation, (a) => a.name);
+            affiliations = affiliations.join(', ');
+          }
+          return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
+        } return {};
       });
       return authors;
     },
