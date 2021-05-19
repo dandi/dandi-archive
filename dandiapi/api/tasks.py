@@ -111,7 +111,7 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
         schema_version = metadata['schemaVersion']
         schema_url = (
             'https://raw.githubusercontent.com/dandi/schema/master/'
-            f'releases/{schema_version}/asset.json'
+            f'releases/{schema_version}/published-asset.json'
         )
         request = requests.get(schema_url)
         request.raise_for_status()
@@ -164,7 +164,7 @@ def validate_version_metadata(version_id: int) -> None:
         schema_version = metadata['schemaVersion']
         schema_url = (
             'https://raw.githubusercontent.com/dandi/schema/master/'
-            f'releases/{schema_version}/dandiset.json'
+            f'releases/{schema_version}/published-dandiset.json'
         )
         request = requests.get(schema_url)
         request.raise_for_status()

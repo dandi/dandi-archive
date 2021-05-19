@@ -166,7 +166,7 @@ def test_validate_asset_metadata_malformed_schema_version(version: Version, asse
     assert asset.status == Asset.Status.INVALID
     assert asset.validation_error == (
         '404 Client Error: Not Found for url: '
-        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/asset.json'
+        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/published-asset.json'
     )
 
 
@@ -275,7 +275,7 @@ def test_validate_version_metadata_malformed_schema_version(version: Version):
     assert version.status == Version.Status.INVALID
     assert version.validation_error == (
         '404 Client Error: Not Found for url: '
-        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/dandiset.json'
+        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/published-dandiset.json'
     )
 
 
