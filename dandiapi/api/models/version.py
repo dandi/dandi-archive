@@ -131,7 +131,7 @@ class Version(TimeStampedModel):
             'name': self.metadata.name,
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
-            'id': f'{self.dandiset.identifier}/{self.version}',
+            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
         }
         metadata['citation'] = self.citation(metadata)
