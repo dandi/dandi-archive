@@ -6,8 +6,8 @@ nested folder structure with named files inside the folder. In the DANDI this wo
    at kitware is looking into IPFS + NGFF, so we should at least keep that in mind.
 3. Blob store allows for a folder, which contains the zarr named "locations" and data. That is given a root prefix, 
    a zarr-compliant software can navigate the zarr metadata/structure using relative path rules.
-3. Blob url should continue to point to a single location in an s3 bucket instead of a collection of files.
-4. The key connected with the zarr file should be a tree-hash of dandi-etags of the folder.
+3. Blob url should continue to point to a single location (i.e. the prefix ending with `/` common to all keys for zarr files) in an s3 bucket instead of a collection of files.
+4. The `etag` connected with the zarr file should be a tree-hash of dandi-etags of the folder.
 
 Storing each sub-file of a zarr "dataset" as an asset seems like an overkill without any specific gain at this point. 
 
