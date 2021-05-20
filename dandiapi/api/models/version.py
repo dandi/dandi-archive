@@ -163,6 +163,8 @@ class Version(TimeStampedModel):
             'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
         }
         metadata['citation'] = self.citation(metadata)
+        if self.doi:
+            metadata['doi'] = self.doi
         if 'schemaVersion' in metadata:
             schema_version = metadata['schemaVersion']
             metadata['@context'] = (

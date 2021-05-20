@@ -159,6 +159,10 @@ def validate_version_metadata(version_id: int) -> None:
     try:
         publish_version = version.publish_version
         metadata = publish_version.metadata.metadata
+
+        # Inject a dummy DOI so the metadata is valid
+        metadata['doi'] = '10.abc123'
+
         if 'schemaVersion' not in metadata:
             logger.info('schemaVersion not specified in metadata for version %s', version_id)
             raise ValidationError('schemaVersion not specified')
