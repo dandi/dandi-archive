@@ -143,8 +143,10 @@ class Version(TimeStampedModel):
                 'https://raw.githubusercontent.com/dandi/schema/master/releases/'
                 f'{schema_version}/context.json'
             )
+        return metadata
 
-        new: VersionMetadata
+    def save(self, *args, **kwargs):
+        metadata = self._populate_metadata()
         new, created = VersionMetadata.objects.get_or_create(
             name=self.metadata.name,
             metadata=metadata,
@@ -154,9 +156,6 @@ class Version(TimeStampedModel):
             new.save()
 
         self.metadata = new
-
-    def save(self, *args, **kwargs):
-        self._populate_metadata()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
