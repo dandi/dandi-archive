@@ -375,6 +375,8 @@ def test_version_rest_publish(api_client, admin_user, draft_version, asset):
     # Validate the metadata to mark the version and asset as `VALID`
     tasks.validate_version_metadata(draft_version.id)
     tasks.validate_asset_metadata(draft_version.id, asset.id)
+    draft_version.refresh_from_db()
+    assert draft_version.valid
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
