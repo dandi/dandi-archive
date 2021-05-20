@@ -151,7 +151,7 @@ def validate_asset_metadata(version_id: int, asset_id: int) -> None:
 @atomic
 def validate_version_metadata(version_id: int) -> None:
     logger.info('Validating dandiset metadata for version %s', version_id)
-    version = Version.objects.get(id=version_id)
+    version: Version = Version.objects.get(id=version_id)
 
     version.status = Version.Status.VALIDATING
     version.save()

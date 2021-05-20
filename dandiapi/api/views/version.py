@@ -96,7 +96,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         if not request.user.is_superuser:
             return Response('Must be an admin to publish', status=status.HTTP_403_FORBIDDEN)
 
-        old_version = self.get_object()
+        old_version: Version = self.get_object()
         if old_version.version != 'draft':
             return Response(
                 'Only draft versions can be published',
