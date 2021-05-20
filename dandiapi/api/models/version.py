@@ -104,9 +104,35 @@ class Version(TimeStampedModel):
 
         return version
 
-    @classmethod
-    def copy(cls, version):
-        return Version(dandiset=version.dandiset, metadata=version.metadata)
+    @property
+    def publish_version(self):
+        """
+        Generate a published version + metadata without saving it.
+
+        This is useful to validate version metadata without saving it.
+        """
+        now = datetime.datetime.utcnow()
+        # Inject the publishedBy and datePublished fields
+        published_metadata, _ = VersionMetadata.objects.get_or_create(
+            name=self.metadata.name,
+            metadata={
+                **self.metadata.metadata,
+                'publishedBy': self.metadata.published_by(now),
+                'datePublished': now.isoformat(),
+            },
+        )
+
+        # Create the published model
+        published_version = Version(dandiset=self.dandiset, metadata=published_metadata)
+
+        # Recompute the metadata
+        published_metadata, _ = VersionMetadata.objects.get_or_create(
+            name=self.name,
+            metadata=published_version._populate_metadata(),
+        )
+        published_version.metadata = published_metadata
+
+        return published_version
 
     @classmethod
     def citation(cls, metadata):

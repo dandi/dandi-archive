@@ -157,7 +157,8 @@ def validate_version_metadata(version_id: int) -> None:
     version.save()
 
     try:
-        metadata = version.metadata.metadata
+        publish_version = version.publish_version
+        metadata = publish_version.metadata.metadata
         if 'schemaVersion' not in metadata:
             logger.info('schemaVersion not specified in metadata for version %s', version_id)
             raise ValidationError('schemaVersion not specified')

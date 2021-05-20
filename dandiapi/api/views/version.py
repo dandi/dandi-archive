@@ -109,7 +109,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        new_version = Version.copy(old_version)
+        new_version = old_version.publish_version
 
         new_version.doi = doi.create_doi(new_version)
 
