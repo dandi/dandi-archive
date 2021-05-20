@@ -65,23 +65,7 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
             'description': f'description {random.random()}',
             'contributor': [{}],
             'license': ['spdx:CC0-1.0'],
-            'doi': '10.abc123',
-            'publishedBy': {
-                'id': uuid4().urn,
-                'name': 'DANDI publish',
-                'startDate': '2021-05-18T19:58:39.310338-04:00',
-                'endDate': '2021-05-18T19:58:39.310361-04:00',
-                'wasAssociatedWith': [
-                    {
-                        'id': 'RRID:SCR_017571',
-                        'name': 'DANDI API',
-                        'version': '0.1.0',
-                        'schemaKey': 'Software',
-                    }
-                ],
-                'schemaKey': 'PublishActivity',
-            },
-            'datePublished': str(datetime.datetime.now()),
+            # TODO auto-populate assetsSummary
             'assetsSummary': {
                 'numberOfBytes': 1,
                 'numberOfFiles': 1,
