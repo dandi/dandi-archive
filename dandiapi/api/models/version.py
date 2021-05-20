@@ -7,10 +7,12 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.models.metadata import PublishableMetadataMixin
+
 from .dandiset import Dandiset
 
 
-class VersionMetadata(TimeStampedModel):
+class VersionMetadata(PublishableMetadataMixin, TimeStampedModel):
     metadata = models.JSONField(default=dict)
     name = models.CharField(max_length=300)
 
