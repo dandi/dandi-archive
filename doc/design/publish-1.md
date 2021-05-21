@@ -124,7 +124,7 @@ Because they describe Assets that have already been published in a past version,
 
 7. An email is sent to the owners that the Dandiset is published.
 
-7. Asynchronously, manifest files (`dandiset.yaml` and `assets.yaml`) are written out to S3 describing the newly published Version by a background task.
+8. Asynchronously, manifest files (`dandiset.yaml` and `assets.yaml`) are written out to S3 describing the newly published Version by a background task.
 
 Say that a user publishes a Dandiset for the first time, modifies a single Asset, then publishes again.
 During the first publish, all of the Assets will be drafts, so they will all be promoted to published Assets via metadata injection.
