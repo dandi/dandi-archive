@@ -122,6 +122,8 @@ Because they describe Assets that have already been published in a past version,
 
 6. The dandiset is unlocked.
 
+7. An email is sent to the owners that the Dandiset is published.
+
 7. Asynchronously, manifest files (`dandiset.yaml` and `assets.yaml`) are written out to S3 describing the newly published Version by a background task.
 
 Say that a user publishes a Dandiset for the first time, modifies a single Asset, then publishes again.
