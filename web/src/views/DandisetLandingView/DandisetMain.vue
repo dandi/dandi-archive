@@ -205,12 +205,13 @@ export default {
       if (!this.userCanModifyDandiset) {
         return 'You do not have permission to edit this dandiset.';
       }
-
       if (this.publishDandiset.status === 'Invalid') {
         return this.publishDandiset.validationError;
-      } if (this.publishDandiset.status === 'Pending') {
+      }
+      if (this.publishDandiset.status === 'Pending') {
         return 'This dandiset has not yet been validated.';
-      } if (this.publishDandiset.status === 'Validating') {
+      }
+      if (this.publishDandiset.status === 'Validating') {
         return 'Currently validating this dandiset.';
       }
 
