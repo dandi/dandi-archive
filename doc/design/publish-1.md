@@ -1,6 +1,6 @@
 # Moving Parts
 
-This is a summary of system components that are relevant to publish and how they relate to eachother.
+This is a summary of system components that are relevant to publish and how they relate to each other.
 
 ### Dandiset
 A DANDI dataset.
