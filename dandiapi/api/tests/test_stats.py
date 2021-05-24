@@ -38,7 +38,16 @@ def test_stats_user(api_client, user):
 
 
 @pytest.mark.django_db
-def test_stats_asset(api_client, asset):
-    stats = api_client.get('/api/stats/').data
+def test_stats_asset(api_client, asset, draft_version, published_version):
+    def get_size():
+        return api_client.get('/api/stats/').data['size']
 
-    assert stats['size'] == asset.size
+    # asset is not associated with any version
+    assert get_size() == 0
+
+    draft_version.assets.add(asset)
+    assert get_size() == asset.size
+
+    # the same asset, so should not double the size etc.
+    published_version.assets.add(asset)
+    assert get_size() == asset.size
