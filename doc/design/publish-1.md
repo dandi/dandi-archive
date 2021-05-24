@@ -10,7 +10,7 @@ Each dandiset is guaranteed to have a draft Version, and can also have any numbe
 Versions consist of a JSON blob of Dandiset metadata and any number of Assets.
 There are two kinds of Version: draft and published.
 Published Versions are immutable, only draft Versions are editable (except admins, who have superpowers).
-Versions also track their validation status.
+Versions also track the validation status of their Dandiset metadata. Asset metadata validation is not recorded in the Version.
 
 ### AssetBlob
 This is basically just a pointer to a blob in S3.
