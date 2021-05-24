@@ -145,7 +145,7 @@
         <v-col>
           <span
             v-for="author in contributors"
-            :key="author.identifier"
+            :key="author.name + author.identifier"
           >
             <a
               :href="author.identifier"
@@ -260,15 +260,15 @@ export default {
     loggedIn,
     user,
     contributors() {
-      const authors = _.map(this.meta.contributor, (author) => {
+      // eslint-disable-next-line no-console
+      const persons = _.filter(this.meta.contributor, (author) => author.schemaKey === 'Person' && author.includeInCitation);
+      const authors = _.map(persons, (author) => {
         let affiliations = '';
-        if (author.schemaKey !== 'Organization' && author.includeInCitation) {
-          if (!_.isEmpty(author.affiliation)) {
-            affiliations = _.map(author.affiliation, (a) => a.name);
-            affiliations = affiliations.join(', ');
-          }
-          return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
-        } return {};
+        if (!_.isEmpty(author.affiliation)) {
+          affiliations = _.map(author.affiliation, (a) => a.name);
+          affiliations = affiliations.join(', ');
+        }
+        return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
       });
       return authors;
     },
@@ -331,10 +331,14 @@ export default {
     },
     extraFields() {
       const { meta, mainFields } = this;
-      const extra = Object.keys(meta).filter(
+      let extra = Object.keys(meta).filter(
         (x) => !mainFields.includes(x) && x in this.schema.properties,
       );
-      return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
+      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version'];
+      extra = extra.filter((n) => !remove_list.includes(n));
+      const extra_obj = extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
+      extra_obj.contributor = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
+      return extra_obj;
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
