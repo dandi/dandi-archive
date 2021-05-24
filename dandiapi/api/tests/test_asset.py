@@ -32,6 +32,17 @@ def test_asset_get_path(path, qs, expected):
     assert expected == Asset.get_path(path, qs)
 
 
+@pytest.mark.django_db
+def test_asset_total_size(version, asset_factory):
+    asset = asset_factory()
+    version.assets.add(asset)
+
+    orphaned_asset = asset_factory()
+
+    assert Asset.total_size() == asset.blob.size
+    assert Asset.total_size() < asset.blob.size + orphaned_asset.blob.size
+
+
 # API Tests
 
 
