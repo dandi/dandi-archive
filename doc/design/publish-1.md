@@ -7,7 +7,7 @@ A DANDI dataset.
 Each dandiset is guaranteed to have a draft Version, and can also have any number of published Versions.
 
 ### Version
-Versions consist of a JSON blob of metadata and any number of Assets.
+Versions consist of a JSON blob of Dandiset metadata and any number of Assets.
 There are two kinds of Version: draft and published.
 Published Versions are immutable, only draft Versions are editable (except admins, who have superpowers).
 Versions also track their validation status.
