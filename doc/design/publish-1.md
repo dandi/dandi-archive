@@ -13,9 +13,10 @@ Published Versions are immutable, only draft Versions are editable (except admin
 Versions also track the validation status of their Dandiset metadata. Asset metadata validation is not recorded in the Version.
 
 ### AssetBlob
-This is basically just a pointer to a blob in S3.
+This is basically just a pointer to a blob in `blobs/` on S3.
 AssetBlobs are central to how we implement deduplication of blobs in S3.
 Multiple Assets can refer to the same AssetBlob, meaning we only need to store each blob in S3 once.
+Each Asset could have a different metadata record for the same AssetBlob.
 
 Whenever a new AssetBlob is created, a background task runs to compute the sha256 checksum (a "digest") of the blob.
 This can take a long time for large blobs, as it must stream all of the data from S3.
@@ -25,15 +26,15 @@ Assets consist of a JSON blob of metadata and a reference to an AssetBlob.
 Versions and Assets are many-to-many; a Version can have any number of Assets, and an Asset can belong to any number of Versions (even, hypothetically, versions in different Dandisets).
 Assets also track their validation status.
 
+Uploading new data or modifying the metadata of an Asset doesn't actually modify the Asset.
+Instead, it creates a new Asset and replaces the reference to that Asset in the Version.
+This ensures that other Versions which might refer to the original Asset are unmodified, while the Version containing the Asset being modified reflects the changes correctly.
+
 Similarly to Versions, there are two kinds of Asset: draft and published.
 Draft Assets are only allowed to belong to draft Versions.
 Published Assets are basically the same as draft Assets, but have some extra metadata included that was defined during the publish process (`datePublished`, `publishedBy`, etc).
 
 Note that published Assets can belong to both draft and published Versions.
-
-Uploading new data or modifying the metadata of an Asset doesn't actually modify the Asset.
-Instead, it creates a new Asset and replaces the reference to that Asset in the Version.
-This ensures that other Versions which might refer to the original Asset are unmodified, while the Version containing the Asset being modified reflects the changes correctly.
 
 When a published Asset is modified in this way, the publish metadata is stripped out, effectively creating a new draft Asset.
 
@@ -54,7 +55,7 @@ The second one is used to validate metadata prior to publish.
 The JSON schemas can be found at https://github.com/dandi/schema.
 
 The pydantic models can be found and imported from https://github.com/dandi/dandischema.
-dandi-api will use the pydantic models for validation.
+dandi-api will look up the JSON schema for the specified `schemaVersion` and use it for validation. Hopefully at some point we can find a way to provide arbitrary pydantic model versions and use those instead.
 
 # Pre-publish
 
