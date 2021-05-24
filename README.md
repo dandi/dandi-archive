@@ -6,7 +6,8 @@ This is the simplest configuration for developers to start with.
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
 2. Run `docker-compose run --rm django ./manage.py createsuperuser`
-   and follow the prompts to create your own user
+   and follow the prompts to create your own user.
+   Set your username to your email to ensure parity with how GitHub logins work.
 
 ### Run Application
 1. Run `docker-compose up`
@@ -96,8 +97,8 @@ to call.
 
 ### Creating a Token
 Visit the URL `/admin` with a web browser, logging
-in with the credentials entered during the `createsuperuser` setup step
-(login might be the email you entered).  Then go to `/swagger` and use `GET /auth/token` end-point.
+in with the credentials entered during the `createsuperuser` setup step..
+Then go to `/swagger` and use `GET /auth/token` end-point.
 
 ### Supplying the Token
 In API endpoint calls, add the `Authorization` HTTP header with a value of
