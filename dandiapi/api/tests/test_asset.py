@@ -33,14 +33,24 @@ def test_asset_get_path(path, qs, expected):
 
 
 @pytest.mark.django_db
-def test_asset_total_size(version, asset_factory):
-    asset = asset_factory()
-    version.assets.add(asset)
+def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_factory):
+    # This asset blob should only be counted once,
+    # despite belonging to multiple assets and multiple versions.
+    asset_blob = asset_blob_factory()
 
-    orphaned_asset = asset_factory()
+    asset1 = asset_factory(blob=asset_blob)
+    version1 = draft_version_factory()
+    version1.assets.add(asset1)
 
-    assert Asset.total_size() == asset.blob.size
-    assert Asset.total_size() < asset.blob.size + orphaned_asset.blob.size
+    asset2 = asset_factory(blob=asset_blob)
+    version2 = draft_version_factory()
+    version2.assets.add(asset2)
+
+    # These asset blobs should not be counted since they aren't in any versions.
+    asset_blob_factory()
+    asset_factory()
+
+    assert Asset.total_size() == asset_blob.size
 
 
 # API Tests
