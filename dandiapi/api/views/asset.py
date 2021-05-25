@@ -30,6 +30,7 @@ from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadat
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
+    AssetPathsSerializer,
     AssetSerializer,
     AssetValidationSerializer,
 )
@@ -279,15 +280,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         manual_parameters=[
             openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING)
         ],
-        responses={
-            200: openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(type=openapi.TYPE_STRING),
-            )
-        },
+        responses={200: AssetPathsSerializer()},
     )
     @action(detail=False, methods=['GET'])
-    def paths(self, request, **kwargs):
+    def paths(self, request, versions__dandiset__pk: str, versions__version: str, **kwargs):
         """
         Return the unique files/directories that directly reside under the specified path.
 
@@ -295,11 +291,38 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         (to refer to the root folder) must be the empty string.
         """
         path_prefix: str = self.request.query_params.get('path_prefix') or ''
-        # Enforce trailing slash
-        if path_prefix and path_prefix[-1] != '/':
-            path_prefix = f'{path_prefix}/'
-        qs = self.get_queryset().filter(path__startswith=path_prefix).values()
+        qs = self.get_queryset().select_related('blob').filter(path__startswith=path_prefix)
 
-        return Response(Asset.get_path(path_prefix, qs))
+        folders = {}
+        files = {}
+
+        for asset in qs:
+            # Get the remainder of the path after path_prefix
+            base_path: str = asset.path[len(path_prefix) :].strip('/')
+
+            # Since we stripped slashes, any remaining slashes indicate a folder
+            folder_index = base_path.find('/')
+            is_folder = folder_index >= 0
+
+            if not is_folder:
+                files[base_path] = AssetSerializer(asset).data
+            else:
+                base_path = base_path[:folder_index]
+                entry = folders.get(base_path)
+                if entry is None:
+                    folders[base_path] = {
+                        'size': asset.size,
+                        'num_files': 1,
+                        'created': asset.created,
+                        'modified': asset.modified,
+                    }
+                else:
+                    entry['size'] += asset.size
+                    entry['num_files'] += 1
+                    entry['created'] = min(entry['created'], asset.created)  # earliest
+                    entry['modified'] = max(entry['modified'], asset.modified)  # latest
+
+        paths = AssetPathsSerializer({'folders': folders, 'files': files})
+        return Response(paths.data)
 
     # TODO: add create to forge an asset from a validation
