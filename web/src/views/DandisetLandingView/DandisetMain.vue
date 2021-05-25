@@ -5,6 +5,14 @@
         {{ meta.name }}
       </h1>
     </v-row>
+    <v-row
+      class="mx-2"
+      align="center"
+    >
+      <v-col cols="auto">
+        DANDI: {{ meta.identifier }}
+      </v-col>
+    </v-row>
     <v-card class="pb-2">
       <v-row
         class="mx-2"
@@ -57,7 +65,7 @@
             <v-card>
               <CopyText
                 class="mx-2"
-                :text=this.meta.citation
+                :text="this.meta.citation"
                 icon-hover-text="Copy to clipboard"
               />
             </v-card>
@@ -173,6 +181,23 @@
             ;
           </span>
         </v-col>
+      </v-row>
+      <v-row :class="titleClasses">
+        <v-card-title class="font-weight-regular">
+          Keyword(s)
+        </v-card-title>
+      </v-row>
+      <v-row class="mx-1 mb-4 px-4 font-weight-light">
+        <span
+            v-for="key in meta.keywords"
+            :key="key"
+          >
+            <v-chip
+              style="margin: 5px;"
+              class="grey darken-2 font-weight-bold white--text"
+            > &nbsp;{{ key }} </v-chip>
+          </span>
+
       </v-row>
       <v-row :class="titleClasses">
         <v-card-title class="font-weight-regular">
