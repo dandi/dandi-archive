@@ -162,6 +162,10 @@ export default {
   asyncComputed: {
     userCanModifyDandiset: {
       async get() {
+        if (!this.user) {
+          return false;
+        }
+
         if (this.user.admin) {
           return true;
         }
