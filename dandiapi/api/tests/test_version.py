@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -367,7 +368,7 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
 
 @pytest.mark.django_db
 # TODO change admin_user back to a normal user once publish is allowed
-def test_version_rest_publish(api_client, admin_user, draft_version, asset):
+def test_version_rest_publish(api_client, admin_user: User, draft_version: Version, asset: Asset):
     assign_perm('owner', admin_user, draft_version.dandiset)
     api_client.force_authenticate(user=admin_user)
     draft_version.assets.add(asset)
@@ -375,6 +376,8 @@ def test_version_rest_publish(api_client, admin_user, draft_version, asset):
     # Validate the metadata to mark the version and asset as `VALID`
     tasks.validate_version_metadata(draft_version.id)
     tasks.validate_asset_metadata(draft_version.id, asset.id)
+    draft_version.refresh_from_db()
+    assert draft_version.valid
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
