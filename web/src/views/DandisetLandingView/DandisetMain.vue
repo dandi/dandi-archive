@@ -1,17 +1,17 @@
 <template>
   <div>
-    <v-row class="mx-2 my-2">
-      <h1 class="font-weight-regular">
-        {{ meta.name }}
-      </h1>
-    </v-row>
     <v-row
       class="mx-2"
       align="center"
     >
       <v-col cols="auto">
-        DANDI: {{ meta.identifier }}
+        {{ meta.id }}
       </v-col>
+    </v-row>
+    <v-row class="mx-2 my-2">
+      <h1 class="font-weight-regular">
+        {{ meta.name }}
+      </h1>
     </v-row>
     <v-card class="pb-2">
       <v-row
