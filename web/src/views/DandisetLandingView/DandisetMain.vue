@@ -182,17 +182,19 @@
           </span>
         </v-col>
       </v-row>
-      <v-row class="mx-1 mb-4 px-4 font-weight-light">
-        <span
+      <v-row class="mx-2">
+        <v-col>
+          <span
             v-for="key in meta.keywords"
             :key="key"
           >
             <v-chip
+              small
               style="margin: 5px;"
               class="grey darken-2 font-weight-bold white--text"
-            > &nbsp;{{ key }} </v-chip>
+            > {{ key }} </v-chip>
           </span>
-
+        </v-col>
       </v-row>
       <v-row :class="titleClasses">
         <v-card-title class="font-weight-regular">
@@ -210,7 +212,7 @@
             :class="titleClasses"
           >
             <v-card-title class="font-weight-regular">
-              {{ schema.properties[key].title || key }}
+              {{ schemaPropertiesCopy[key].title || key }}
             </v-card-title>
           </v-row>
           <v-row
@@ -354,11 +356,17 @@ export default {
       let extra = Object.keys(meta).filter(
         (x) => !mainFields.includes(x) && x in this.schema.properties,
       );
-      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version'];
+      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version', 'id', 'keywords'];
       extra = extra.filter((n) => !remove_list.includes(n));
       const extra_obj = extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
       extra_obj.contributor = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
+      // console.log(362, extra_obj);
       return extra_obj;
+    },
+    schemaPropertiesCopy() {
+      const schema_copy = { ...this.schema.properties };
+      schema_copy.contributor.title = 'Funding Information';
+      return schema_copy;
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
