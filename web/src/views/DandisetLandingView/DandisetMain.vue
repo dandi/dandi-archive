@@ -117,7 +117,7 @@
         <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
           <v-tooltip
             left
-            :disabled="editDisabledMessage === null"
+            :disabled="publishDisabledMessage === null"
           >
             <template #activator="{ on }">
               <div v-on="on">
@@ -126,7 +126,7 @@
                   v-if="DJANGO_API"
                   id="publish"
                   text
-                  :disabled="editDisabledMessage !== null || !user || !user.admin"
+                  :disabled="publishDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
                 >
                   <v-icon
@@ -139,7 +139,7 @@
                 </v-btn>
               </div>
             </template>
-            {{ editDisabledMessage }}
+            {{ publishDisabledMessage }}
           </v-tooltip>
         </template>
       </v-row>
@@ -296,32 +296,22 @@ export default {
       });
       return authors;
     },
-    editDisabledMessage() {
+    publishDisabledMessage() {
       if (!this.loggedIn) {
         return 'You must be logged in to edit.';
       }
 
-      const permissionsMessage = 'You do not have permission to edit this dandiset.';
-
-      if (toggles.DJANGO_API) {
-        if (!this.userCanModifyDandiset) {
-          return permissionsMessage;
-        }
-      } else {
-        if (!this.girderDandiset) {
-          return null;
-        }
-
-        if (this.girderDandiset._accessLevel < 1) {
-          return permissionsMessage;
-        }
-
-        if (this.lockOwner != null) {
-          if (this.lockOwner.email === 'publish@dandiarchive.org') {
-            return 'A publish is currently in progress';
-          }
-          return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
-        }
+      if (!this.userCanModifyDandiset) {
+        return 'You do not have permission to edit this dandiset.';
+      }
+      if (this.publishDandiset.status === 'Invalid') {
+        return this.publishDandiset.validationError;
+      }
+      if (this.publishDandiset.status === 'Pending') {
+        return 'This dandiset has not yet been validated.';
+      }
+      if (this.publishDandiset.status === 'Validating') {
+        return 'Currently validating this dandiset.';
       }
 
       return null;
