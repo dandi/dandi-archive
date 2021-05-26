@@ -64,6 +64,7 @@
               <CopyText
                 class="pa-2"
                 :text="this.meta.citation"
+                :is-textarea="true"
                 icon-hover-text="Copy to clipboard"
               />
             </v-card>

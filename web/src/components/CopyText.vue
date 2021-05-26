@@ -1,12 +1,43 @@
 <template>
-  <v-text-field
+  <v-textarea
+    v-if="isTextarea == true"
     ref="textField"
     :value="text"
+    hide-details="auto"
+    auto-grow
+    outlined
+    dense
     readonly
     :success-messages="messages"
     v-bind="$attrs"
   >
-    <template #append-outer>
+    <template #prepend>
+      <v-tooltip bottom>
+        <template #activator="{ on }">
+          <v-icon
+            v-on="on"
+            @click="copyToClipboard"
+          >
+            mdi-content-copy
+          </v-icon>
+        </template>
+        {{ iconHoverText }}
+      </v-tooltip>
+    </template>
+  </v-textarea>
+
+  <v-text-field
+    v-else
+    ref="textField"
+    :value="text"
+    hide-details="auto"
+    outlined
+    dense
+    readonly
+    :success-messages="messages"
+    v-bind="$attrs"
+  >
+    <template #prepend>
       <v-tooltip bottom>
         <template #activator="{ on }">
           <v-icon
@@ -37,6 +68,10 @@ export default {
     iconHoverText: {
       type: String,
       default: 'Copy text to clipboard',
+    },
+    isTextarea: {
+      type: String,
+      default: 'is-textarea',
     },
   },
   data() {
