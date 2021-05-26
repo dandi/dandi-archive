@@ -182,11 +182,6 @@
           </span>
         </v-col>
       </v-row>
-      <v-row :class="titleClasses">
-        <v-card-title class="font-weight-regular">
-          Keyword(s)
-        </v-card-title>
-      </v-row>
       <v-row class="mx-1 mb-4 px-4 font-weight-light">
         <span
             v-for="key in meta.keywords"
