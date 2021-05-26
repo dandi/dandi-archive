@@ -69,16 +69,18 @@ setup(
             'django-composed-configuration[dev]',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
-            'factory-boy',
             'ipython',
+            'tox',
+        ],
+        'test': [
+            'factory-boy',
             'pytest',
             'pytest-cov',
             'pytest-django',
             'pytest-factoryboy',
             'pytest-mock',
             'requests',
-            'tox',
-        ]
+        ],
     },
     cmdclass=versioneer.get_cmdclass(),
 )
