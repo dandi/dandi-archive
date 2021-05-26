@@ -356,7 +356,7 @@ export default {
       return extra_obj;
     },
     schemaPropertiesCopy() {
-      const schema_copy = { ...this.schema.properties };
+      const schema_copy = JSON.parse(JSON.stringify(this.schema.properties));
       schema_copy.contributor.title = 'Funding Information';
       return schema_copy;
     },
