@@ -22,10 +22,9 @@
           Get shareable link
           <v-menu
             offset-y
-            left
             :close-on-content-click="false"
-            min-width="500"
-            max-width="500"
+            min-width="420"
+            max-width="420"
           >
             <template #activator="{ on }">
               <v-icon
@@ -37,7 +36,7 @@
             </template>
             <v-card>
               <CopyText
-                class="mx-2"
+                class="pa-2"
                 :text="permalink"
                 icon-hover-text="Copy permalink to clipboard"
               />
@@ -48,10 +47,9 @@
           Cite as
           <v-menu
             offset-y
-            left
             :close-on-content-click="false"
-            min-width="500"
-            max-width="500"
+            min-width="420"
+            max-width="420"
           >
             <template #activator="{ on }">
               <v-icon
@@ -64,7 +62,7 @@
 
             <v-card>
               <CopyText
-                class="mx-2"
+                class="pa-2"
                 :text="this.meta.citation"
                 icon-hover-text="Copy to clipboard"
               />
