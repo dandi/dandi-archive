@@ -177,7 +177,6 @@
               <span>{{ author.affiliation }}</span>
             </v-tooltip>
             <span v-else> {{ author.name }}</span>
-            ;
           </span>
         </v-col>
       </v-row>
@@ -283,13 +282,17 @@ export default {
     contributors() {
       // eslint-disable-next-line no-console
       const persons = _.filter(this.meta.contributor, (author) => author.schemaKey === 'Person' && author.includeInCitation);
-      const authors = _.map(persons, (author) => {
+      const authors = _.map(persons, (author, index) => {
         let affiliations = '';
         if (!_.isEmpty(author.affiliation)) {
           affiliations = _.map(author.affiliation, (a) => a.name);
           affiliations = affiliations.join(', ');
         }
-        return { name: author.name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
+        let author_name = author.name;
+        if (index < persons.length - 1) {
+          author_name = `${author.name};`;
+        }
+        return { name: author_name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
       });
       return authors;
     },
