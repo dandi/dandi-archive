@@ -83,7 +83,7 @@ def registered_subject(user):
     return f'DANDI: New user registered: {user.email}'
 
 
-def registered_message(user, socialaccount):
+def registered_html_message(user, socialaccount):
     name = socialaccount.extra_data['name'] if 'name' in socialaccount.extra_data else user.username
     return f"""<p>Dear {name} (Github ID: {socialaccount.extra_data['login']}),</p>
 <p>Welcome to DANDI. </p>
@@ -95,7 +95,7 @@ def registered_message(user, socialaccount):
 <p>The DANDI team</p>"""  # noqa: E501
 
 
-def registered_html_message(user, socialaccount):
+def registered_message(user, socialaccount):
     name = socialaccount.extra_data['name'] if 'name' in socialaccount.extra_data else user.username
     return f"""Dear {name} (Github ID: {socialaccount.extra_data["login"]}),
 
