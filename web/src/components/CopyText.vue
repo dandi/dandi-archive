@@ -3,10 +3,9 @@
     v-if="isTextarea == true"
     ref="textField"
     :value="text"
+    class="cite-as-textarea"
     hide-details="auto"
-    auto-grow
     outlined
-    dense
     readonly
     :success-messages="messages"
     v-bind="$attrs"
@@ -98,3 +97,9 @@ export default {
   },
 };
 </script>
+
+<style>
+.cite-as-textarea textarea {
+  overflow: auto;
+}
+</style>
