@@ -298,7 +298,7 @@ export default {
       if (!stats) {
         return undefined;
       }
-      return filesize(stats.bytes);
+      return filesize(stats.bytes, { round: 1, base: 10, standard: 'iec' });
     },
     versions() {
       if (toggles.DJANGO_API) {
