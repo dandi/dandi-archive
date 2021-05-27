@@ -20,12 +20,6 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-progress-circular
-          v-if="!currentDandiset || loading"
-          indeterminate
-          class="ml-3"
-        />
-        <v-spacer />
         <DandisetSearchField />
       </v-toolbar>
       <v-container
@@ -33,6 +27,10 @@
         fluid
         class="grey lighten-4"
       >
+        <v-progress-linear
+          v-if="!currentDandiset || loading"
+          indeterminate
+        />
         <v-row v-if="$vuetify.breakpoint.smAndDown">
           <v-col
             cols="12"
