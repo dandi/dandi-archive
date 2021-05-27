@@ -101,9 +101,12 @@ def registered_message(user, socialaccount):
 
 Welcome to DANDI.
 
-You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (https://hub.dandiarchive.org) for computing on dandisets in the cloud.
+You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload
+data right away. You can also use the Jupyterhub (https://hub.dandiarchive.org) for computing on
+dandisets in the cloud.
 
-It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.
+It may take up to 24 hours for your hub account to be activated and for your email to be registered
+with our Slack workspace.
 
 Please use the following links to post any questions or issues.
 

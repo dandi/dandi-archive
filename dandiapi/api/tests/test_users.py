@@ -20,19 +20,12 @@ def test_user_registration_email(social_account, mailoutbox):
     user_signed_up.send(sender=User, user=user)
 
     assert len(mailoutbox) == 1
-    assert mailoutbox[0].subject == f'DANDI: New user registered: {user.email}'
-    assert mailoutbox[0].to == ['dandi@mit.edu', user.email]
-    assert (
-        mailoutbox[0].body
-        == f"""<p>Dear {social_account.extra_data['name']} (Github ID: {social_account.extra_data['login']}),</p>
-<p>Welcome to DANDI. </p>
-<p>You are now registered on the DANDI archive. Registering allows you to create Dandisets and upload data right away. You can also use the Jupyterhub (<a href="https://hub.dandiarchive.org">https://hub.dandiarchive.org</a>) for computing on dandisets in the cloud. </p>
-<p>It may take up to 24 hours for your hub account to be activated and for your email to be registered with our Slack workspace.</p>
-<p>Please post any <a href="https://github.com/dandi/helpdesk/discussions">questions</a> or <a href="https://github.com/dandi/helpdesk/issues">issues</a> at our <a href="https://github.com/dandi/helpdesk">Github helpdesk</a>.</p>
-<p>Thank you for choosing DANDI for your neurophysiology data needs.</p>
-<p>Sincerely,</p>
-<p>The DANDI team</p>"""  # noqa: E501
-    )
+
+    email = mailoutbox[0]
+    assert email.subject == f'DANDI: New user registered: {user.email}'
+    assert email.to == ['dandi@mit.edu', user.email]
+    assert '<p>' not in email.body
+    assert all(len(_) < 100 for _ in email.body.splitlines())
 
 
 @pytest.mark.django_db
