@@ -59,7 +59,7 @@
                 >
                   mdi-database
                 </v-icon>
-                {{ filesize(dandisetStats[i].bytes) }}
+                {{ filesize(dandisetStats[i].bytes, { round: 1, base: 10, standard: 'iec' }) }}
               </template>
             </v-list-item-subtitle>
           </v-list-item-content>

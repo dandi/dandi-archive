@@ -62,7 +62,7 @@ export default {
             href: '/#/dandiset',
           },
           { name: 'users', value: this.users },
-          { name: 'total data size', value: filesize(this.size, { round: 0 }) },
+          { name: 'total data size', value: filesize(this.size, { round: 0, base: 10, standard: 'iec' }) },
         ];
       }
       return [
@@ -71,7 +71,7 @@ export default {
         { name: 'species', value: this.species },
         { name: 'subjects', value: this.subjects },
         { name: 'cells', value: this.cells },
-        { name: 'total data size', value: filesize(this.size, { round: 0 }) },
+        { name: 'total data size', value: filesize(this.size, { round: 0, base: 10 }) },
       ];
     },
   },
