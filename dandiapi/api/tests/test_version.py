@@ -65,7 +65,7 @@ def test_version_metadata_citation(version):
     name = version.metadata.metadata['name']
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
 
 
 @pytest.mark.django_db
@@ -76,7 +76,7 @@ def test_version_metadata_citation_no_contributors(version):
     name = version.metadata.metadata['name']
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
 
 
 @pytest.mark.django_db
@@ -90,7 +90,7 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
     name = version.metadata.metadata['name']
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+    assert version.metadata.metadata['citation'] == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
 
 
 @pytest.mark.django_db
@@ -101,7 +101,7 @@ def test_version_metadata_citation_contributor(version):
     name = version.metadata.metadata['name']
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'Jane Doe ({year}) {name}. Online: {url}'
+    assert version.metadata.metadata['citation'] == f'Jane Doe ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. {url}'
 
 
 @pytest.mark.django_db
@@ -117,7 +117,7 @@ def test_version_metadata_citation_multiple_contributors(version):
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
-        == f'John Doe; Jane Doe ({year}) {name}. Online: {url}'
+        == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. {url}'
     )
 
 
