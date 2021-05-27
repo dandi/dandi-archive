@@ -27,19 +27,6 @@
         />
         <v-spacer />
         <DandisetSearchField />
-        <v-btn
-          icon
-          @click="detailsPanel = !detailsPanel"
-        >
-          <v-icon color="white">
-            <template v-if="detailsPanel">
-              mdi-chevron-up
-            </template>
-            <template v-else>
-              mdi-chevron-down
-            </template>
-          </v-icon>
-        </v-btn>
       </v-toolbar>
       <v-container
         v-if="currentDandiset"
@@ -48,7 +35,6 @@
       >
         <v-row v-if="$vuetify.breakpoint.smAndDown">
           <v-col
-            v-if="detailsPanel"
             cols="12"
           >
             <DandisetDetails />
@@ -64,7 +50,7 @@
             />
           </v-col>
           <v-col
-            v-if="detailsPanel && !$vuetify.breakpoint.smAndDown"
+            v-if="!$vuetify.breakpoint.smAndDown"
             cols="3"
           >
             <DandisetDetails />
@@ -111,7 +97,6 @@ export default {
     return {
       edit: false,
       readonly: false,
-      detailsPanel: true,
     };
   },
   computed: {
