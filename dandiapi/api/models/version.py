@@ -213,10 +213,12 @@ class Version(TimeStampedModel):
     @classmethod
     def citation(cls, metadata):
         year = datetime.datetime.now().year
-        name = metadata['name']
+        name = metadata['name'].rstrip('.')
         url = metadata['url']
+        version = metadata['version']
         # If we can't find any contributors, use this citation format
-        citation = f'{name} ({year}). Online: {url}'
+        citation = f'{name} ({year}). (Version {version}) [Data set]. Dandiarchive. {url}'
+        Neal D. Goldstein. (2021, May 23). goldsteinepi/covid_hiv: Use of Neighborhood Infection Incidence to Identify Disparities of COVID-19 and HIV Occurrence in Philadelphia, Pennsylvania. (Version v4.0). Zenodo. http://doi.org/10.5281/zenodo.4782419
         if 'contributor' in metadata and metadata['contributor']:
             cl = '; '.join(
                 [
@@ -226,7 +228,7 @@ class Version(TimeStampedModel):
                 ]
             )
             if cl:
-                citation = f'{cl} ({year}) {name}. Online: {url}'
+                citation = f'{cl} ({year}) {name} (Version {version}) [Data set]. Dandiarchive. {url}'
         return citation
 
     @classmethod
