@@ -20,9 +20,6 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-toolbar-title class="d-none d-md-block">
-          Dandiset Dashboard
-        </v-toolbar-title>
         <v-progress-circular
           v-if="!currentDandiset || loading"
           indeterminate
