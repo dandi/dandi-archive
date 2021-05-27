@@ -20,15 +20,7 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-btn
-          icon
-          @click="navigateBack"
-        >
-          <v-icon color="white">
-            mdi-arrow-left
-          </v-icon>
-        </v-btn>
-        <v-toolbar-title>
+        <v-toolbar-title class="d-none d-md-block mx-8">
           Dandiset Dashboard
         </v-toolbar-title>
         <v-progress-circular
@@ -217,11 +209,6 @@ export default {
         },
       };
       this.$router.replace(route);
-    },
-    navigateBack() {
-      const route = this.$route.params.origin || { name: 'publicDandisets' };
-      this.$router.push(route);
-      this.$store.dispatch('dandiset/uninitializeDandisets');
     },
   },
 };
