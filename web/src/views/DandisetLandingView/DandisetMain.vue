@@ -5,7 +5,7 @@
       align="center"
     >
       <v-col cols="auto">
-        {{ meta.id }}
+        ID: {{ meta.id }}
       </v-col>
     </v-row>
     <v-row class="mx-2 my-2">
