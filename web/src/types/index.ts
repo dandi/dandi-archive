@@ -18,6 +18,8 @@ export interface Version {
   name: string,
   asset_count: number,
   size: number,
+  status: 'Pending' | 'Validating' | 'Valid' | 'Invalid',
+  validation_error?: string,
   created: string,
   modified: string,
   dandiset: Dandiset,

@@ -12,7 +12,16 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
 
 export function girderize(publishedDandiset: Version) {
   const { // eslint-disable-next-line camelcase
-    created, modified, dandiset, version, metadata, name, size, asset_count,
+    created,
+    modified,
+    dandiset,
+    version,
+    metadata,
+    name,
+    size,
+    asset_count,
+    status,
+    validation_error,
   } = publishedDandiset;
   return {
     created,
@@ -22,6 +31,8 @@ export function girderize(publishedDandiset: Version) {
     lowerName: name,
     bytes: size,
     items: asset_count,
+    status,
+    validationError: validation_error,
     meta: {
       dandiset: {
         ...metadata,

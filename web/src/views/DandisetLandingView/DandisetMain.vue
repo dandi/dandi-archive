@@ -1,5 +1,13 @@
 <template>
   <div>
+    <v-row
+      class="mx-2"
+      align="center"
+    >
+      <v-col cols="auto">
+        ID: {{ meta.id }}
+      </v-col>
+    </v-row>
     <v-row class="mx-2 my-2">
       <h1 class="font-weight-regular">
         {{ meta.name }}
@@ -14,10 +22,9 @@
           Get shareable link
           <v-menu
             offset-y
-            left
             :close-on-content-click="false"
-            min-width="500"
-            max-width="500"
+            min-width="420"
+            max-width="420"
           >
             <template #activator="{ on }">
               <v-icon
@@ -29,9 +36,36 @@
             </template>
             <v-card>
               <CopyText
-                class="mx-2"
+                class="pa-2"
                 :text="permalink"
                 icon-hover-text="Copy permalink to clipboard"
+              />
+            </v-card>
+          </v-menu>
+        </v-col>
+        <v-col v-if="this.meta.citation">
+          Cite as
+          <v-menu
+            offset-y
+            :close-on-content-click="false"
+            min-width="420"
+            max-width="420"
+          >
+            <template #activator="{ on }">
+              <v-icon
+                color="primary"
+                v-on="on"
+              >
+                mdi-comment-quote-outline
+              </v-icon>
+            </template>
+
+            <v-card>
+              <CopyText
+                class="pa-2"
+                :text="this.meta.citation"
+                :is-textarea="true"
+                icon-hover-text="Copy to clipboard"
               />
             </v-card>
           </v-menu>
@@ -83,7 +117,7 @@
         <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
           <v-tooltip
             left
-            :disabled="editDisabledMessage === null"
+            :disabled="publishDisabledMessage === null"
           >
             <template #activator="{ on }">
               <div v-on="on">
@@ -92,7 +126,7 @@
                   v-if="DJANGO_API"
                   id="publish"
                   text
-                  :disabled="editDisabledMessage !== null || !user || !user.admin"
+                  :disabled="publishDisabledMessage !== null || !user || !user.admin"
                   @click="publish"
                 >
                   <v-icon
@@ -105,13 +139,61 @@
                 </v-btn>
               </div>
             </template>
-            {{ editDisabledMessage }}
+            {{ publishDisabledMessage }}
           </v-tooltip>
         </template>
       </v-row>
 
       <v-divider />
-
+      <v-row
+        class="mx-2"
+        align="center"
+      >
+        <v-col>
+          <span
+            v-for="author in contributors"
+            :key="author.name + author.identifier"
+          >
+            <a
+              :href="author.identifier"
+              target="_blank"
+            >
+              <img
+                alt="ORCID logo"
+                src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+                width="16"
+                height="16"
+              ></a>
+            <v-tooltip
+              v-if="author.affiliation"
+              top
+              color="black"
+            >
+              <template #activator="{ on }">
+                <span v-on="on">
+                  {{ author.name }}
+                </span>
+              </template>
+              <span>{{ author.affiliation }}</span>
+            </v-tooltip>
+            <span v-else> {{ author.name }}</span>
+          </span>
+        </v-col>
+      </v-row>
+      <v-row class="mx-2">
+        <v-col>
+          <span
+            v-for="key in meta.keywords"
+            :key="key"
+          >
+            <v-chip
+              small
+              style="margin: 5px;"
+              class="grey darken-2 font-weight-bold white--text"
+            > {{ key }} </v-chip>
+          </span>
+        </v-col>
+      </v-row>
       <v-row :class="titleClasses">
         <v-card-title class="font-weight-regular">
           Description
@@ -120,7 +202,6 @@
       <v-row class="mx-1 mb-4 px-4 font-weight-light">
         {{ meta.description }}
       </v-row>
-
       <template v-for="key in Object.keys(extraFields).sort()">
         <template v-if="renderData(extraFields[key], schema.properties[key])">
           <v-divider :key="`${key}-divider`" />
@@ -129,7 +210,7 @@
             :class="titleClasses"
           >
             <v-card-title class="font-weight-regular">
-              {{ schema.properties[key].title || key }}
+              {{ schemaPropertiesCopy[key].title || key }}
             </v-card-title>
           </v-row>
           <v-row
@@ -160,6 +241,7 @@ import {
 import toggles from '@/featureToggle';
 
 import CopyText from '@/components/CopyText.vue';
+import _ from 'lodash';
 import DownloadDialog from './DownloadDialog.vue';
 import ListingComponent from './ListingComponent.vue';
 
@@ -197,32 +279,39 @@ export default {
   computed: {
     loggedIn,
     user,
-    editDisabledMessage() {
+    contributors() {
+      // eslint-disable-next-line no-console
+      const persons = _.filter(this.meta.contributor, (author) => author.schemaKey === 'Person' && author.includeInCitation);
+      const authors = _.map(persons, (author, index) => {
+        let affiliations = '';
+        if (!_.isEmpty(author.affiliation)) {
+          affiliations = _.map(author.affiliation, (a) => a.name);
+          affiliations = affiliations.join(', ');
+        }
+        let author_name = author.name;
+        if (index < persons.length - 1) {
+          author_name = `${author.name};`;
+        }
+        return { name: author_name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
+      });
+      return authors;
+    },
+    publishDisabledMessage() {
       if (!this.loggedIn) {
         return 'You must be logged in to edit.';
       }
 
-      const permissionsMessage = 'You do not have permission to edit this dandiset.';
-
-      if (toggles.DJANGO_API) {
-        if (!this.userCanModifyDandiset) {
-          return permissionsMessage;
-        }
-      } else {
-        if (!this.girderDandiset) {
-          return null;
-        }
-
-        if (this.girderDandiset._accessLevel < 1) {
-          return permissionsMessage;
-        }
-
-        if (this.lockOwner != null) {
-          if (this.lockOwner.email === 'publish@dandiarchive.org') {
-            return 'A publish is currently in progress';
-          }
-          return `This dandiset is currently locked by ${this.lockOwner.firstName} ${this.lockOwner.lastName}`;
-        }
+      if (!this.userCanModifyDandiset) {
+        return 'You do not have permission to edit this dandiset.';
+      }
+      if (this.publishDandiset.status === 'Invalid') {
+        return this.publishDandiset.validationError;
+      }
+      if (this.publishDandiset.status === 'Pending') {
+        return 'This dandiset has not yet been validated.';
+      }
+      if (this.publishDandiset.status === 'Validating') {
+        return 'Currently validating this dandiset.';
       }
 
       return null;
@@ -256,10 +345,20 @@ export default {
     },
     extraFields() {
       const { meta, mainFields } = this;
-      const extra = Object.keys(meta).filter(
+      let extra = Object.keys(meta).filter(
         (x) => !mainFields.includes(x) && x in this.schema.properties,
       );
-      return extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
+      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version', 'id', 'keywords'];
+      extra = extra.filter((n) => !remove_list.includes(n));
+      const extra_obj = extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
+      extra_obj.contributor = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
+      // console.log(362, extra_obj);
+      return extra_obj;
+    },
+    schemaPropertiesCopy() {
+      const schema_copy = JSON.parse(JSON.stringify(this.schema.properties));
+      schema_copy.contributor.title = 'Funding Information';
+      return schema_copy;
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
