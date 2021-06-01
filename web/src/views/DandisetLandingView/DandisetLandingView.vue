@@ -20,7 +20,11 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <DandisetSearchField />
+        <v-row>
+          <v-col cols="12">
+            <DandisetSearchField />
+          </v-col>
+        </v-row>
       </v-toolbar>
       <v-container
         v-if="currentDandiset"
