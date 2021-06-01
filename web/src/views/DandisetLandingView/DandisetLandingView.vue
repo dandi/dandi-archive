@@ -35,13 +35,6 @@
           v-if="!currentDandiset || loading"
           indeterminate
         />
-        <v-row v-if="$vuetify.breakpoint.smAndDown">
-          <v-col
-            cols="12"
-          >
-            <DandisetDetails />
-          </v-col>
-        </v-row>
         <v-row>
           <v-col>
             <DandisetMain
@@ -54,6 +47,13 @@
           <v-col
             v-if="!$vuetify.breakpoint.smAndDown"
             cols="3"
+          >
+            <DandisetDetails />
+          </v-col>
+        </v-row>
+        <v-row v-if="$vuetify.breakpoint.smAndDown">
+          <v-col
+            cols="12"
           >
             <DandisetDetails />
           </v-col>
