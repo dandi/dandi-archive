@@ -69,6 +69,18 @@ class EditorInterface {
     return this.model;
   }
 
+  setBasicModel(newModel: DandiModel) {
+    Object.entries(newModel).forEach(([key, value]) => {
+      Vue.set(this.basicModel.value, key, value);
+    });
+  }
+
+  setComplexModel(newModel: DandiModel) {
+    Object.entries(newModel).forEach(([key, value]) => {
+      Vue.set(this.complexModel, key, value);
+    });
+  }
+
   setComplexModelProp(propKey: string, value: DandiModel) {
     Vue.set(this.complexModel, propKey, value);
   }
