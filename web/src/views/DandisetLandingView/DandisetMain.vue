@@ -183,7 +183,7 @@
         </v-col>
       </v-row>
       <v-row
-        v-if="meta.keywords"
+        v-if="meta.keywords.length"
         class="mx-2"
       >
         <v-col>
