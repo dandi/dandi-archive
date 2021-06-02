@@ -1,5 +1,8 @@
 <template>
-  <v-form @submit="performSearch">
+  <v-form
+    width="100vh"
+    @submit="performSearch"
+  >
     <v-text-field
       :value="$route.query.search"
       label="Search Dandisets by name, description, identifier, or contributor name"
