@@ -5,7 +5,7 @@
       align="center"
     >
       <v-col cols="auto">
-        ID: {{ meta.id }}
+        {{ meta.id }}
       </v-col>
     </v-row>
     <v-row class="mx-2 my-2">
@@ -146,6 +146,7 @@
 
       <v-divider />
       <v-row
+        v-if="contributors.length"
         class="mx-2"
         align="center"
       >
@@ -155,6 +156,7 @@
             :key="author.name + author.identifier"
           >
             <a
+              v-if="author.identifier"
               :href="author.identifier"
               target="_blank"
             >
@@ -180,7 +182,10 @@
           </span>
         </v-col>
       </v-row>
-      <v-row class="mx-2">
+      <v-row
+        v-if="meta.keywords"
+        class="mx-2"
+      >
         <v-col>
           <span
             v-for="key in meta.keywords"
