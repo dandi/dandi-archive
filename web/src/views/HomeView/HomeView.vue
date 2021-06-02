@@ -39,7 +39,9 @@
               </div>
               <div class="text-h6 font-weight-light text-center">
                 The BRAIN Initiative archive for publishing and sharing
-                cellular neurophysiology data
+                cellular neurophysiology data including electrophysiology,
+                optophysiology, and behavioral time-series, and images from
+                immunostaining experiments.
               </div>
             </v-col>
           </v-row>
