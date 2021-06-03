@@ -5,14 +5,16 @@
       class="mx-2"
       align="center"
     >
-      <v-col cols="auto">
+      <v-col>
         Dandiset ID: {{ meta.id }}
       </v-col>
     </v-row>
     <v-row class="mx-2 my-2">
-      <h1 class="font-weight-regular">
-        {{ meta.name }}
-      </h1>
+      <v-col>
+        <h1 class="font-weight-regular">
+          {{ meta.name }}
+        </h1>
+      </v-col>
     </v-row>
       <v-row
         class="mx-2"
