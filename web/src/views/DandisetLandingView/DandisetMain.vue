@@ -1,11 +1,12 @@
 <template>
   <div>
+    <v-card class="pb-2">
     <v-row
       class="mx-2"
       align="center"
     >
       <v-col cols="auto">
-        ID: {{ meta.id }}
+        Dandiset ID: {{ meta.id }}
       </v-col>
     </v-row>
     <v-row class="mx-2 my-2">
@@ -13,7 +14,6 @@
         {{ meta.name }}
       </h1>
     </v-row>
-    <v-card class="pb-2">
       <v-row
         class="mx-2"
         align="center"
