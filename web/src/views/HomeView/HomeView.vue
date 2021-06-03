@@ -16,18 +16,6 @@
           class="d-flex flex-column py-0"
           :class="[$vuetify.breakpoint.smAndUp ? 'brain-gradient' : 'hide-brain']"
         >
-          <v-row class="flex-grow-0">
-            <v-alert
-              border="bottom"
-              class="flex-grow-1 mb-0 text-center"
-              color="light-blue lighten-5 light-blue--text text--darken-1"
-            >
-              <v-icon color="light-blue darken-1">
-                mdi-information
-              </v-icon>
-              We're in early access
-            </v-alert>
-          </v-row>
           <v-row
             class="flex-grow-1"
             justify="center"
