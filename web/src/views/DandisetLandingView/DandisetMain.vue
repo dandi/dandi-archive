@@ -1,19 +1,21 @@
 <template>
   <div>
+    <v-card class="pb-2">
     <v-row
-      class="mx-2"
+      class="mx-2 font-weight-regular"
       align="center"
     >
-      <v-col cols="auto">
-        ID: {{ meta.id }}
+      <v-col>
+        Dandiset ID: {{ meta.id }}
       </v-col>
     </v-row>
     <v-row class="mx-2 my-2">
-      <h1 class="font-weight-regular">
-        {{ meta.name }}
-      </h1>
+      <v-col>
+        <h1 class="font-weight-regular">
+          {{ meta.name }}
+        </h1>
+      </v-col>
     </v-row>
-    <v-card class="pb-2">
       <v-row
         class="mx-2"
         align="center"
@@ -146,6 +148,7 @@
 
       <v-divider />
       <v-row
+        v-if="contributors.length"
         class="mx-2"
         align="center"
       >
@@ -155,6 +158,7 @@
             :key="author.name + author.identifier"
           >
             <a
+              v-if="author.identifier"
               :href="author.identifier"
               target="_blank"
             >
@@ -180,7 +184,10 @@
           </span>
         </v-col>
       </v-row>
-      <v-row class="mx-2">
+      <v-row
+        v-if="meta.keywords"
+        class="mx-2"
+      >
         <v-col>
           <span
             v-for="key in meta.keywords"
@@ -284,6 +291,7 @@ export default {
       const persons = _.filter(this.meta.contributor, (author) => author.schemaKey === 'Person' && author.includeInCitation);
       const authors = _.map(persons, (author, index) => {
         let affiliations = '';
+        let orcid_id = author.identifier;
         if (!_.isEmpty(author.affiliation)) {
           affiliations = _.map(author.affiliation, (a) => a.name);
           affiliations = affiliations.join(', ');
@@ -292,7 +300,10 @@ export default {
         if (index < persons.length - 1) {
           author_name = `${author.name};`;
         }
-        return { name: author_name, identifier: `https://orcid.org/${author.identifier}`, affiliation: affiliations };
+        if (orcid_id) {
+          orcid_id = `https://orcid.org/${orcid_id}`;
+        }
+        return { name: author_name, identifier: orcid_id, affiliation: affiliations };
       });
       return authors;
     },

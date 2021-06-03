@@ -20,43 +20,21 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-toolbar-title class="d-none d-md-block mx-8">
-          Dandiset Dashboard
-        </v-toolbar-title>
-        <v-progress-circular
-          v-if="!currentDandiset || loading"
-          indeterminate
-          class="ml-3"
-        />
-        <v-spacer />
-        <DandisetSearchField />
-        <v-btn
-          icon
-          @click="detailsPanel = !detailsPanel"
-        >
-          <v-icon color="white">
-            <template v-if="detailsPanel">
-              mdi-chevron-up
-            </template>
-            <template v-else>
-              mdi-chevron-down
-            </template>
-          </v-icon>
-        </v-btn>
+        <v-row>
+          <v-col cols="12">
+            <DandisetSearchField />
+          </v-col>
+        </v-row>
       </v-toolbar>
       <v-container
         v-if="currentDandiset"
         fluid
         class="grey lighten-4"
       >
-        <v-row v-if="$vuetify.breakpoint.smAndDown">
-          <v-col
-            v-if="detailsPanel"
-            cols="12"
-          >
-            <DandisetDetails />
-          </v-col>
-        </v-row>
+        <v-progress-linear
+          v-if="!currentDandiset || loading"
+          indeterminate
+        />
         <v-row>
           <v-col>
             <DandisetMain
@@ -67,8 +45,15 @@
             />
           </v-col>
           <v-col
-            v-if="detailsPanel && !$vuetify.breakpoint.smAndDown"
+            v-if="!$vuetify.breakpoint.smAndDown"
             cols="3"
+          >
+            <DandisetDetails />
+          </v-col>
+        </v-row>
+        <v-row v-if="$vuetify.breakpoint.smAndDown">
+          <v-col
+            cols="12"
           >
             <DandisetDetails />
           </v-col>
@@ -114,7 +99,6 @@ export default {
     return {
       edit: false,
       readonly: false,
-      detailsPanel: true,
     };
   },
   computed: {
