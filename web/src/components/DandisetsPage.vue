@@ -37,7 +37,7 @@
     </v-toolbar>
     <DandisetList
       v-if="dandisets && dandisets.length"
-      class="mx-12 my-12"
+      class="mx-4 mx-md-8 my-8"
       :dandisets="dandisets"
     />
     <v-container v-else>
