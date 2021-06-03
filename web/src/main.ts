@@ -2,6 +2,7 @@
 import Vue from 'vue';
 import { provide } from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
+import VueGtag from 'vue-gtag';
 
 // @ts-ignore missing definitions
 import { vuetify } from '@girder/components/src';
@@ -28,6 +29,10 @@ Sentry.init({
 });
 
 sync(store, router);
+
+Vue.use(VueGtag, {
+  config: { id: "UA-146135810-2" }
+}, router);
 
 function loadUser() {
   if (toggles.DJANGO_API) {

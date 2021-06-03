@@ -23,6 +23,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "vue": "^2.6.11",
+    "vue-gtag": "^2.0.1",
     "vue-json-pretty": "^1.8.0",
     "vue-router": "^3.5.1",
     "vuetify": "~2.3.6",
