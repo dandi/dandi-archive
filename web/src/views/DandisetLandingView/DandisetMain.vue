@@ -2,7 +2,7 @@
   <div>
     <v-card class="pb-2">
     <v-row
-      class="mx-2"
+      class="mx-2 font-weight-regular"
       align="center"
     >
       <v-col>
