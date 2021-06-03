@@ -152,7 +152,8 @@ export default defineComponent({
   border-bottom: 1px solid #eee;
 }
 
-.v-list--three-line .v-list-item .v-list-item__content, .v-list-item--three-line .v-list-item__content {
+.v-list--three-line .v-list-item .v-list-item__content,
+.v-list-item--three-line .v-list-item__content {
   align-self: center;
 }
 </style>
