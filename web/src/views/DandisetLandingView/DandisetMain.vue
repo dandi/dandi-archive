@@ -1,19 +1,21 @@
 <template>
   <div>
+    <v-card class="pb-2">
     <v-row
-      class="mx-2"
+      class="mx-2 font-weight-regular"
       align="center"
     >
-      <v-col cols="auto">
-        ID: {{ meta.id }}
+      <v-col>
+        Dandiset ID: {{ meta.id }}
       </v-col>
     </v-row>
     <v-row class="mx-2 my-2">
-      <h1 class="font-weight-regular">
-        {{ meta.name }}
-      </h1>
+      <v-col>
+        <h1 class="font-weight-regular">
+          {{ meta.name }}
+        </h1>
+      </v-col>
     </v-row>
-    <v-card class="pb-2">
       <v-row
         class="mx-2"
         align="center"
