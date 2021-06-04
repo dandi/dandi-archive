@@ -115,7 +115,7 @@
         rounded
         @click="login"
       >
-        {{ DJANGO_API ? 'Login or Create Account' : 'Login' }}
+        {{ DJANGO_API ? 'Log In with GitHub' : 'Login' }}
       </v-btn>
     </template>
   </v-app-bar>
