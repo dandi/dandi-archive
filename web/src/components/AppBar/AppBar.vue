@@ -94,9 +94,6 @@
       <UserMenu />
     </template>
     <template v-else>
-      <span class="mr-1">
-        Want to create your own datasets?
-      </span>
       <v-btn
         v-if="!DJANGO_API"
         :to="{ name: 'userRegister' }"
