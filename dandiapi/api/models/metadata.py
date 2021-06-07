@@ -2,7 +2,6 @@ import datetime
 from uuid import uuid4
 
 
-# TODO does AssetMetadata need this?
 class PublishableMetadataMixin:
     def published_by(self, now: datetime.datetime):
         return {

@@ -12,6 +12,7 @@ from django.db import models
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import create_s3_storage
 
 from .version import Version
@@ -73,7 +74,7 @@ class AssetBlob(TimeStampedModel):
         return self.blob.name
 
 
-class AssetMetadata(TimeStampedModel):
+class AssetMetadata(PublishableMetadataMixin, TimeStampedModel):
     metadata = models.JSONField(blank=True, unique=True, default=dict)
 
     @property
