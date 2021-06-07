@@ -1,6 +1,15 @@
 const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
+const child_process = require('child_process');
 
-process.env.VUE_APP_VERSION = process.env.COMMIT_REF;
+function getVersion() {
+  try {
+    return child_process.execSync("git describe").toString();
+  } catch (err) {
+    return process.env.COMMIT_REF;
+  }
+}
+
+process.env.VUE_APP_VERSION = getVersion();
 
 module.exports = {
   lintOnSave: false,

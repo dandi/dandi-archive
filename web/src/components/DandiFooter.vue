@@ -40,7 +40,7 @@ export default {
                 class="version-link"
                 v-on="on"
                 @click="versionClick"
-              >{{ version.slice(0, 6) }}</a>
+              >{{ version }}</a>
             </template>
             <span>Copied to clipboard!</span>
           </v-tooltip>
