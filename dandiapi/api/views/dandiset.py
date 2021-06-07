@@ -96,6 +96,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         name = serializer.validated_data['name']
         metadata = serializer.validated_data['metadata']
+        # Strip away any computed fields
+        metadata = Version.strip_metadata(metadata)
 
         version_metadata, created = VersionMetadata.objects.get_or_create(
             name=name,

@@ -103,13 +103,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             200: 'The asset metadata.',
         },
     )
-    def retrieve(self, request, versions__dandiset__pk, versions__version, asset_id):
+    def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        version = Version.objects.get(
-            version=versions__version,
-            dandiset__pk=versions__dandiset__pk,
-        )
-        return Response(asset.generate_metadata(version), status=status.HTTP_200_OK)
+        return Response(asset.metadata.metadata, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(responses={200: AssetValidationSerializer()})
     @action(detail=True, methods=['GET'])
@@ -149,12 +145,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if 'path' not in metadata:
             return Response('No path specified in metadata.', status=400)
         path = metadata['path']
+        # Strip away any computed fields
+        metadata = Asset.strip_metadata(metadata)
         asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
-
-        if version.assets.filter(path=path, blob=asset_blob, metadata=asset_metadata).exists():
-            return Response('Asset already exists.', status=status.HTTP_400_BAD_REQUEST)
 
         asset = Asset(
             path=path,
@@ -170,7 +165,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Trigger a metadata validation
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
         # just in case we are using an existing blob that has already computed its digest.
-        validate_asset_metadata.delay(version.id, asset.id)
+        validate_asset_metadata.delay(asset.id)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -204,6 +199,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if 'path' not in metadata:
             return Response('No path specified in metadata', status=404)
         path = metadata['path']
+        # Strip away any computed fields
+        metadata = Asset.strip_metadata(metadata)
         asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
@@ -231,7 +228,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Trigger a metadata validation
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
         # just in case we are using an existing blob that has already computed its digest.
-        validate_asset_metadata.delay(version.id, new_asset.id)
+        validate_asset_metadata.delay(new_asset.id)
 
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
