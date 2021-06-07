@@ -111,6 +111,7 @@ class Asset(TimeStampedModel):
         default=None,
         on_delete=models.PROTECT,
     )
+    published = models.BooleanField(default=False)
 
     @property
     def size(self):
