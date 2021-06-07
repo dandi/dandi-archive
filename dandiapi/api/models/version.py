@@ -153,6 +153,22 @@ class Version(TimeStampedModel):
                 citation = f'{cl} ({year}) {name}. Online: {url}'
         return citation
 
+    @classmethod
+    def strip_metadata(cls, metadata):
+        """Strip away computed fields from a metadata dict."""
+        computed_fields = [
+            'name',
+            'identifier',
+            'version',
+            'id',
+            'url',
+            'citation',
+            'doi',
+            'datePublished',
+            'publishedBy',
+        ]
+        return {key: metadata[key] for key in metadata if key not in computed_fields}
+
     def _populate_metadata(self):
         metadata = {
             **self.metadata.metadata,

@@ -140,6 +140,14 @@ class Asset(TimeStampedModel):
         self._populate_metadata()
         super().save(*args, **kwargs)
 
+    @classmethod
+    def strip_metadata(cls, metadata):
+        """Strip away computed fields from a metadata dict."""
+        computed_fields = [
+            'path',
+        ]
+        return {key: metadata[key] for key in metadata if key not in computed_fields}
+
     def generate_metadata(self, version):
         """
         Generate the correct metadata for this asset given a version.
