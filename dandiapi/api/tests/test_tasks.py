@@ -59,9 +59,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     version.assets.add(asset_factory())
 
     tasks.write_yamls(version.id)
-    expected = YAMLRenderer().render(
-        [asset.generate_metadata(version) for asset in version.assets.all()]
-    )
+    expected = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
 
     assets_yaml_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -108,19 +106,15 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
     tasks.write_yamls(version.id)
-    expected = YAMLRenderer().render(
-        [asset.generate_metadata(version) for asset in version.assets.all()]
-    )
+    expected = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
 
     with storage.open(assets_yaml_path) as f:
         assert f.read() == expected
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata(version: Version, asset: Asset):
-    version.assets.add(asset)
-
-    tasks.validate_asset_metadata(version.id, asset.id)
+def test_validate_asset_metadata(asset: Asset):
+    tasks.validate_asset_metadata(asset.id)
 
     asset.refresh_from_db()
 
@@ -129,13 +123,11 @@ def test_validate_asset_metadata(version: Version, asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_no_schema_version(version: Version, asset: Asset):
-    version.assets.add(asset)
-
+def test_validate_asset_metadata_no_schema_version(asset: Asset):
     asset.metadata.metadata = {}
     asset.metadata.save()
 
-    tasks.validate_asset_metadata(version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
 
     asset.refresh_from_db()
 
@@ -144,15 +136,13 @@ def test_validate_asset_metadata_no_schema_version(version: Version, asset: Asse
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_malformed_schema_version(version: Version, asset: Asset):
-    version.assets.add(asset)
-
+def test_validate_asset_metadata_malformed_schema_version(asset: Asset):
     asset.metadata.metadata = {
         'schemaVersion': 'xxx',
     }
     asset.metadata.save()
 
-    tasks.validate_asset_metadata(version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
 
     asset.refresh_from_db()
 
@@ -164,13 +154,11 @@ def test_validate_asset_metadata_malformed_schema_version(version: Version, asse
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Asset):
-    version.assets.add(asset)
-
+def test_validate_asset_metadata_no_encoding_format(asset: Asset):
     del asset.metadata.metadata['encodingFormat']
     asset.metadata.save()
 
-    tasks.validate_asset_metadata(version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
 
     asset.refresh_from_db()
 
@@ -179,13 +167,11 @@ def test_validate_asset_metadata_no_encoding_format(version: Version, asset: Ass
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_no_digest(version: Version, asset: Asset):
-    version.assets.add(asset)
-
+def test_validate_asset_metadata_no_digest(asset: Asset):
     asset.blob.sha256 = None
     asset.blob.save()
 
-    tasks.validate_asset_metadata(version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
 
     asset.refresh_from_db()
 
@@ -194,13 +180,11 @@ def test_validate_asset_metadata_no_digest(version: Version, asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_malformed_keywords(version: Version, asset: Asset):
-    version.assets.add(asset)
-
+def test_validate_asset_metadata_malformed_keywords(asset: Asset):
     asset.metadata.metadata['keywords'] = 'foo'
     asset.metadata.save()
 
-    tasks.validate_asset_metadata(version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
 
     asset.refresh_from_db()
 

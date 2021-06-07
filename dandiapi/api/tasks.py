@@ -31,8 +31,7 @@ def calculate_sha256(blob_id: int) -> None:
 
     # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
     for asset in asset_blob.assets.all():
-        for version in asset.versions:
-            validate_asset_metadata.delay(version.id, asset.id)
+        validate_asset_metadata.delay(asset.id)
 
 
 @shared_task
@@ -63,9 +62,7 @@ def write_yamls(version_id: int) -> None:
         logger.info('%s already exists, deleting it', assets_yaml_path)
         storage.delete(assets_yaml_path)
     logger.info('Saving %s', assets_yaml_path)
-    assets_yaml = YAMLRenderer().render(
-        [asset.generate_metadata(version) for asset in version.assets.all()]
-    )
+    assets_yaml = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
     storage.save(assets_yaml_path, ContentFile(assets_yaml))
 
     logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
@@ -95,16 +92,16 @@ class ValidationError(Exception):
 @atomic
 # This method takes both a version_id and an asset_id because asset metadata renders differently
 # depending on which version the asset belongs to.
-def validate_asset_metadata(version_id: int, asset_id: int) -> None:
-    logger.info('Validating asset metadata for asset %s, version %s', asset_id, version_id)
+def validate_asset_metadata(asset_id: int) -> None:
+    logger.info('Validating asset metadata for asset %s', asset_id)
     asset = Asset.objects.get(id=asset_id)
-    version = Version.objects.get(id=version_id)
 
     asset.status = Asset.Status.VALIDATING
     asset.save()
 
     try:
-        metadata = asset.generate_metadata(version)
+        publish_asset = Asset.published_asset(asset)
+        metadata = publish_asset.metadata.metadata
         if 'schemaVersion' not in metadata:
             logger.info('schemaVersion not specified in metadata for asset %s', asset_id)
             raise ValidationError('schemaVersion not specified')
