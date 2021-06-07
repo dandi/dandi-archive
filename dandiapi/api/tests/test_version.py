@@ -289,6 +289,14 @@ def test_version_rest_update(api_client, user, draft_version):
         'version': 'draft',
         'url': url,
         'citation': f'{new_name} ({year}). Online: {url}',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
     }
 
     assert api_client.put(
@@ -332,7 +340,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
-        'very_large': 'words' * 10000,
+        'very_large': 'words' * 10,
     }
     year = datetime.now().year
     url = f'https://dandiarchive.org/{draft_version.dandiset.identifier}/draft'
@@ -344,6 +352,14 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'version': 'draft',
         'url': url,
         'citation': f'{new_name} ({year}). Online: {url}',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
     }
 
     assert api_client.put(

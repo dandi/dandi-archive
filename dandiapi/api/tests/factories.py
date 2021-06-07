@@ -62,14 +62,6 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
             'description': faker.Faker().sentence(),
             'contributor': [{}],
             'license': ['spdx:CC0-1.0'],
-            'assetsSummary': {
-                'numberOfBytes': 1,
-                'numberOfFiles': 1,
-                'dataStandard': [],
-                'approach': [],
-                'measurementTechnique': [],
-                'species': [],
-            },
         }
         # Remove faked data that might conflict with the schema types
         for key in ['about']:
