@@ -123,7 +123,11 @@ class Version(TimeStampedModel):
         )
 
         # Create the published model
-        published_version = Version(dandiset=self.dandiset, metadata=published_metadata)
+        published_version = Version(
+            dandiset=self.dandiset,
+            metadata=published_metadata,
+            status=Version.Status.VALID,
+        )
 
         # Recompute the metadata
         published_metadata, _ = VersionMetadata.objects.get_or_create(
