@@ -1,7 +1,4 @@
-import datetime
 import hashlib
-import random
-from uuid import uuid4
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
@@ -59,13 +56,12 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def metadata(self):
-        return {
+        metadata = {
+            **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': '0.3.1',
-            # Inject some randomness so that duplicate metadatas don't violate DB constraints
-            'description': f'description {random.random()}',
+            'description': faker.Faker().sentence(),
             'contributor': [{}],
             'license': ['spdx:CC0-1.0'],
-            # TODO auto-populate assetsSummary
             'assetsSummary': {
                 'numberOfBytes': 1,
                 'numberOfFiles': 1,
@@ -75,6 +71,11 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
                 'species': [],
             },
         }
+        # Remove faked data that might conflict with the schema types
+        for key in ['about']:
+            if key in metadata:
+                del metadata[key]
+        return metadata
 
     name = factory.Faker('sentence')
 
@@ -85,13 +86,6 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
 
     dandiset = factory.SubFactory(DandisetFactory)
     metadata = factory.SubFactory(VersionMetadataFactory)
-
-
-# class VersionFactory(BaseVersionFactory):
-#     class Meta:
-#         model = Version
-
-#     dandiset = factory.SubFactory(DandisetFactory)
 
 
 class DraftVersionFactory(BaseVersionFactory):
@@ -139,28 +133,16 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def metadata(self):
-        return {
+        metadata = {
+            **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': '0.3.1',
             'encodingFormat': 'application/x-nwb',
-            'publishedBy': {
-                'id': uuid4().urn,
-                'name': 'DANDI publish',
-                'startDate': '2021-05-18T19:58:39.310338-04:00',
-                'endDate': '2021-05-18T19:58:39.310361-04:00',
-                'wasAssociatedWith': [
-                    {
-                        'id': 'RRID:SCR_017571',
-                        'name': 'DANDI API',
-                        'version': '0.1.0',
-                        'schemaKey': 'Software',
-                    }
-                ],
-                'schemaKey': 'PublishActivity',
-            },
-            'datePublished': str(datetime.datetime.now()),
-            # Inject some randomness so that duplicate metadatas don't violate DB constraints
-            'description': f'description {random.random()}',
         }
+        # Remove faked data that might conflict with the schema types
+        for key in ['approach', 'about', 'name']:
+            if key in metadata:
+                del metadata[key]
+        return metadata
 
 
 class AssetFactory(factory.django.DjangoModelFactory):
