@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import Dict, List, Set
 from urllib.parse import urlparse, urlunparse
 import uuid
@@ -123,21 +124,65 @@ class Asset(TimeStampedModel):
         return self.blob.sha256
 
     def _populate_metadata(self):
-        new: AssetMetadata
-        new, created = AssetMetadata.objects.get_or_create(
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
+            'asset-direct-download',
+            kwargs={'asset_id': str(self.asset_id)},
+        )
+        blob_url = self.blob.s3_url
+
+        metadata = {
+            **self.metadata.metadata,
+            'path': self.path,
+            'identifier': str(self.asset_id),
+            'contentUrl': [download_url, blob_url],
+            'contentSize': self.blob.size,
+            'digest': self.blob.digest,
+        }
+        return metadata
+
+    @classmethod
+    def published_asset(cls, asset: Asset):
+        """
+        Generate a published asset + metadata without saving it.
+
+        This is useful to validate version metadata without saving it.
+        """
+        now = datetime.datetime.utcnow()
+        # Inject the publishedBy and datePublished fields
+        published_metadata, _ = AssetMetadata.objects.get_or_create(
             metadata={
-                **self.metadata.metadata,
-                'path': self.path,
+                **asset.metadata.metadata,
+                'publishedBy': asset.metadata.published_by(now),
+                'datePublished': now.isoformat(),
             },
         )
 
-        if created:
-            new.save()
+        # Create the published model
+        published_asset = Asset(
+            path=asset.path,
+            blob=asset.blob,
+            metadata=published_metadata,
+            # If we're publishing, just assume that the asset was valid
+            status=Asset.Status.VALID,
+            previous=asset,
+            published=True,
+        )
 
-        self.metadata = new
+        # Recompute the metadata
+        published_metadata, _ = AssetMetadata.objects.get_or_create(
+            metadata=published_asset._populate_metadata(),
+        )
+        published_asset.metadata = published_metadata
+
+        return published_asset
 
     def save(self, *args, **kwargs):
-        self._populate_metadata()
+        metadata = self._populate_metadata()
+        new, created = AssetMetadata.objects.get_or_create(metadata=metadata)
+        if created:
+            new.save()
+        self.metadata = new
         super().save(*args, **kwargs)
 
     @classmethod
@@ -147,34 +192,6 @@ class Asset(TimeStampedModel):
             'path',
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
-
-    def generate_metadata(self, version):
-        """
-        Generate the correct metadata for this asset given a version.
-
-        The route used to download an asset will be different depending on which version it belongs
-        to. Since the download url is included in the asset metadata, it must be injected rather
-        than stored. This method should always be used instead of asset.metadata.metadata.
-        """
-        # TODO use http://localhost:8000 for local deployments
-        download_url = 'https://api.dandiarchive.org' + reverse(
-            'asset-download',
-            kwargs={
-                'versions__dandiset__pk': version.dandiset.identifier,
-                'versions__version': version.version,
-                'asset_id': str(self.asset_id),
-            },
-        )
-
-        blob_url = self.blob.s3_url
-        metadata = {
-            **self.metadata.metadata,
-            'identifier': str(self.asset_id),
-            'contentUrl': [download_url, blob_url],
-            'contentSize': self.blob.size,
-            'digest': self.blob.digest,
-        }
-        return metadata
 
     def __str__(self) -> str:
         return self.path
