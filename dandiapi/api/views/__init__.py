@@ -1,4 +1,4 @@
-from .asset import AssetViewSet
+from .asset import AssetViewSet, asset_download_view
 from .auth import auth_token_view
 from .dandiset import DandisetViewSet
 from .info import info_view
@@ -16,6 +16,7 @@ __all__ = [
     'AssetViewSet',
     'DandisetViewSet',
     'VersionViewSet',
+    'asset_download_view',
     'auth_token_view',
     'blob_read_view',
     'upload_initialize_view',

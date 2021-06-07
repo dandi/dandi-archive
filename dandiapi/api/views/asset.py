@@ -19,7 +19,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -33,6 +33,42 @@ from dandiapi.api.views.serializers import (
     AssetSerializer,
     AssetValidationSerializer,
 )
+
+
+def _download_asset(asset: Asset):
+    storage = asset.blob.blob.storage
+
+    if isinstance(storage, S3Boto3Storage):
+        client = storage.connection.meta.client
+        path = os.path.basename(asset.path)
+        url = client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': storage.bucket_name,
+                'Key': asset.blob.blob.name,
+                'ResponseContentDisposition': f'attachment; filename="{path}"',
+            },
+        )
+        return HttpResponseRedirect(url)
+    elif isinstance(storage, MinioStorage):
+        client = storage.base_url_client
+        bucket = storage.bucket_name
+        obj = asset.blob.blob.name
+        path = os.path.basename(asset.path)
+        url = client.presigned_get_object(
+            bucket,
+            obj,
+            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+        )
+        return HttpResponseRedirect(url)
+    else:
+        raise ValueError(f'Unknown storage {storage}')
+
+
+@api_view
+def asset_download_view(request, asset_id):
+    asset = Asset.objects.get(asset_id=asset_id)
+    return _download_asset(asset)
 
 
 class AssetRequestSerializer(serializers.Serializer):
@@ -230,33 +266,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
         """Return a redirect to the file download in the object store."""
-        storage = self.get_object().blob.blob.storage
-
-        if isinstance(storage, S3Boto3Storage):
-            client = storage.connection.meta.client
-            path = os.path.basename(self.get_object().path)
-            url = client.generate_presigned_url(
-                'get_object',
-                Params={
-                    'Bucket': storage.bucket_name,
-                    'Key': self.get_object().blob.blob.name,
-                    'ResponseContentDisposition': f'attachment; filename="{path}"',
-                },
-            )
-            return HttpResponseRedirect(url)
-        elif isinstance(storage, MinioStorage):
-            client = storage.base_url_client
-            bucket = storage.bucket_name
-            obj = self.get_object().blob.blob.name
-            path = os.path.basename(self.get_object().path)
-            url = client.presigned_get_object(
-                bucket,
-                obj,
-                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
-            )
-            return HttpResponseRedirect(url)
-        else:
-            raise ValueError(f'Unknown storage {storage}')
+        return _download_asset(self.get_object())
 
     @swagger_auto_schema(
         manual_parameters=[
