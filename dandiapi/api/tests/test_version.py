@@ -7,7 +7,7 @@ import pytest
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 
-from .fuzzy import TIMESTAMP_RE, VERSION_ID_RE
+from .fuzzy import TIMESTAMP_RE, URN_RE, VERSION_ID_RE
 
 
 @pytest.mark.django_db
@@ -148,6 +148,47 @@ def test_version_valid_with_invalid_asset(version, asset, status):
     asset.save()
 
     assert not version.valid
+
+
+@pytest.mark.django_db
+def test_version_publish_version(draft_version):
+    # Normally the publish endpoint would inject a doi, so we must do it manually
+    fake_doi = 'doi'
+
+    publish_version = draft_version.publish_version
+    publish_version.doi = fake_doi
+    publish_version.save()
+
+    assert publish_version.dandiset == draft_version.dandiset
+    assert publish_version.metadata.metadata == {
+        **draft_version.metadata.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': TIMESTAMP_RE,
+            'endDate': TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+        'datePublished': TIMESTAMP_RE,
+        'identifier': f'DANDI:{publish_version.dandiset.identifier}',
+        'version': publish_version.version,
+        'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
+        'url': (
+            f'https://dandiarchive.org/{publish_version.dandiset.identifier}'
+            f'/{publish_version.version}'
+        ),
+        'citation': publish_version.citation(publish_version.metadata.metadata),
+        'doi': fake_doi,
+    }
 
 
 @pytest.mark.django_db
@@ -375,7 +416,7 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
 
     # Validate the metadata to mark the version and asset as `VALID`
     tasks.validate_version_metadata(draft_version.id)
-    tasks.validate_asset_metadata(draft_version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
     draft_version.refresh_from_db()
     assert draft_version.valid
 
@@ -395,16 +436,16 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
         'modified': TIMESTAMP_RE,
         'asset_count': 1,
         'size': draft_version.size,
-        'status': 'Pending',
+        'status': 'Valid',
     }
     published_version = Version.objects.get(version=resp.data['version'])
     assert published_version
     assert draft_version.dandiset.versions.count() == 2
 
-    # The original asset should now be in both versions
-    assert asset == draft_version.assets.get()
-    assert asset == published_version.assets.get()
-    assert asset.versions.count() == 2
+    published_asset = published_version.assets.get()
+    assert published_asset.published
+    # The blob should be the same between the two assets
+    assert asset.blob == published_asset.blob
 
 
 @pytest.mark.django_db

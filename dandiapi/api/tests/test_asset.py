@@ -7,7 +7,7 @@ import requests
 
 from dandiapi.api.models import Asset, AssetBlob
 
-from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, UUID_RE
+from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UUID_RE
 
 # Model tests
 
@@ -40,6 +40,36 @@ def test_asset_s3_url(asset_blob):
     assert signed_url.split('?')[0] == s3_url
 
 
+@pytest.mark.django_db
+def test_version_published_asset(asset):
+    published_asset = Asset.published_asset(asset)
+    published_asset.save()
+
+    assert published_asset.blob == asset.blob
+    assert published_asset.metadata.metadata == {
+        **asset.metadata.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': TIMESTAMP_RE,
+            'endDate': TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+        'datePublished': TIMESTAMP_RE,
+        'identifier': str(published_asset.asset_id),
+        'contentUrl': [HTTP_URL_RE, HTTP_URL_RE],
+    }
+
+
 # API Tests
 
 
@@ -69,23 +99,13 @@ def test_asset_rest_list(api_client, version, asset):
 def test_asset_rest_retrieve(api_client, version, asset):
     version.assets.add(asset)
 
-    assert api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.asset_id}/'
-    ).data == {
-        **asset.metadata.metadata,
-        'identifier': str(asset.asset_id),
-        'contentUrl': [
-            f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
-            f'/versions/{version.version}/assets/{asset.asset_id}/download/',
-            HTTP_URL_RE,
-        ],
-        'contentSize': asset.blob.size,
-        'digest': {
-            'dandi:dandi-etag': asset.blob.etag,
-            'dandi:sha2-256': asset.blob.sha256,
-        },
-    }
+    assert (
+        api_client.get(
+            f'/api/dandisets/{version.dandiset.identifier}/'
+            f'versions/{version.version}/assets/{asset.asset_id}/'
+        ).data
+        == asset.metadata.metadata
+    )
 
 
 @pytest.mark.django_db
@@ -95,23 +115,13 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
     asset.blob.sha256 = None
     asset.blob.save()
 
-    assert api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/{asset.asset_id}/'
-    ).data == {
-        **asset.metadata.metadata,
-        'identifier': str(asset.asset_id),
-        'contentUrl': [
-            f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
-            f'/versions/{version.version}/assets/{asset.asset_id}/download/',
-            HTTP_URL_RE,
-        ],
-        'contentSize': asset.blob.size,
-        'digest': {
-            'dandi:dandi-etag': asset.blob.etag,
-            # The dandi:sha2-sha256 value is absent
-        },
-    }
+    assert (
+        api_client.get(
+            f'/api/dandisets/{version.dandiset.identifier}/'
+            f'versions/{version.version}/assets/{asset.asset_id}/'
+        ).data
+        == asset.metadata.metadata
+    )
 
 
 @pytest.mark.django_db
@@ -148,22 +158,23 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     path = 'test/create/asset.txt'
     metadata = {'path': path, 'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
 
-    assert api_client.post(
+    resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
-    ).data == {
+    ).data
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
         'asset_id': UUID_RE,
         'path': path,
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': metadata,
+        'metadata': new_asset.metadata.metadata,
     }
-
-    asset = Asset.objects.get(blob__sha256=asset_blob.sha256, versions=draft_version)
-    assert asset.metadata.metadata == metadata
+    for key in metadata:
+        assert resp['metadata'][key] == metadata[key]
 
     # The version modified date should be updated
     start_time = draft_version.modified
@@ -221,25 +232,6 @@ def test_asset_create_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.django_db
-def test_asset_create_duplicate(api_client, user, draft_version, asset):
-    assign_perm('owner', user, draft_version.dandiset)
-    api_client.force_authenticate(user=user)
-    draft_version.assets.add(asset)
-
-    resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}'
-        f'/versions/{draft_version.version}/assets/',
-        {
-            'metadata': asset.metadata.metadata,
-            'blob_id': asset.blob.blob_id,
-        },
-        format='json',
-    )
-    assert resp.status_code == 400
-    assert resp.data == 'Asset already exists.'
-
-
-@pytest.mark.django_db
 def test_asset_create_published_version(api_client, user, published_version, asset):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -273,14 +265,17 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).data
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
         'asset_id': UUID_RE,
         'path': new_path,
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_metadata,
+        'metadata': new_asset.metadata.metadata,
     }
+    for key in new_metadata:
+        assert resp['metadata'][key] == new_metadata[key]
 
     # Updating an asset should leave it in the DB, but disconnect it from the version
     assert asset not in draft_version.assets.all()
