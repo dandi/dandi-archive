@@ -1,15 +1,15 @@
 # Staging Environment and Procedures
 
 ## Production Environment
-* Django API server, Postgres, and CloudAMQP running in Heroku
+* Django API server (`api.dandiarchive.org`), Postgres, and CloudAMQP running in Heroku
 * Sponsored S3 bucket in the sponsored account in AWS
-* Web GUI served through Netlify
+* Web GUI served at `gui.dandiarchive.org` through Netlify
 * Sentry instance
 
 ## Staging Environment
-* Django API server, Postgres, and CloudAMQP running in Heroku
+* Django API server (`api-staging.dandiarchive.org`), Postgres, and CloudAMQP running in Heroku
 * Private S3 bucket in the project account in AWS
-* Web GUI served through Netlify
+* Web GUI served at `gui-staging.dandiarchive.org` through Netlify
 * Sentry instance
 
 This should exactly parallel production, except for the S3 bucket, which is private.
