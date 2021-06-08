@@ -11,7 +11,7 @@
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
     "@girder/components": "~2.2.5",
     "@girder/oauth-client": "^0.7.7",
-    "@koumoul/vjsf": "1.21.0",
+    "@koumoul/vjsf": "2.0.2",
     "@sentry/browser": "^6.3.6",
     "@sentry/integrations": "^6.3.6",
     "@vue/composition-api": "^1.0.0-rc.8",
