@@ -65,7 +65,8 @@ def _download_asset(asset: Asset):
         raise ValueError(f'Unknown storage {storage}')
 
 
-@api_view
+@swagger_auto_schema()
+@api_view(['GET'])
 def asset_download_view(request, asset_id):
     asset = Asset.objects.get(asset_id=asset_id)
     return _download_asset(asset)

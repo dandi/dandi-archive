@@ -444,6 +444,29 @@ def test_asset_download(api_client, storage, version, asset):
 
 
 @pytest.mark.django_db
+def test_asset_direct_download(api_client, storage, version, asset):
+    # Pretend like AssetBlob was defined with the given storage
+    AssetBlob.blob.field.storage = storage
+
+    version.assets.add(asset)
+
+    response = api_client.get(f'/api/assets/{asset.asset_id}/download/')
+
+    assert response.status_code == 302
+
+    download_url = response.get('Location')
+    assert download_url == HTTP_URL_RE
+
+    download = requests.get(download_url)
+    cd_header = download.headers.get('Content-Disposition')
+
+    assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
+
+    with asset.blob.blob.file.open('rb') as reader:
+        assert download.content == reader.read()
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'path_prefix,results',
     [
