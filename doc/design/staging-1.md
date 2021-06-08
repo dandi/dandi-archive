@@ -16,6 +16,8 @@ This should exactly parallel production, except for the S3 bucket, which is priv
 Nothing is actually shared, everything is hosted adjacently.
 
 The staging server will contain some test data and some (smallish) real data that reflects the contents of production.
+Developers will manage this manually and upload/delete data as necessary for testing.
+All staging data is ephemeral and should never be relied on to continue existing.
 
 ## Release procedure
 The staging server will track the `master` branch in `dandi-api` and will automatically redeploy whenever `master` is changed.
