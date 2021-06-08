@@ -31,6 +31,36 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
 
 @pytest.mark.django_db
+def test_version_metadata_computed(version, version_metadata):
+    original_metadata = version_metadata.metadata
+    version.metadata = version_metadata
+
+    # Save the version to add computed properties to the metadata
+    version.save()
+
+    expected_metadata = {
+        **original_metadata,
+        'name': version_metadata.name,
+        'identifier': f'DANDI:{version.dandiset.identifier}',
+        'version': version.version,
+        'id': f'DANDI:{version.dandiset.identifier}/{version.version}',
+        'url': f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}',
+        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.3.1/context.json',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
+    }
+    expected_metadata['citation'] = version.citation(expected_metadata)
+
+    assert version.metadata.metadata == expected_metadata
+
+
+@pytest.mark.django_db
 def test_version_metadata_citation(version):
     name = version.metadata.metadata['name']
     year = datetime.now().year
@@ -99,6 +129,107 @@ def test_version_metadata_context(version):
     assert version.metadata.metadata['@context'] == (
         'https://raw.githubusercontent.com/dandi/schema/master/releases/6.6.6/context.json'
     )
+
+
+@pytest.mark.django_db
+def test_version_metadata_assets_summary(version, asset):
+    original_metadata = version.metadata.metadata
+    asset.metadata.metadata = {
+        **asset.metadata.metadata,
+        'approach': ['a'],
+        'dataStandard': ['b'],
+        'measurementTechnique': ['c'],
+        'species': ['d'],
+    }
+    asset.metadata.save()
+    version.assets.add(asset)
+
+    version.save()
+
+    assert version.metadata.metadata == {
+        **original_metadata,
+        'assetsSummary': {
+            'approach': ['a'],
+            'dataStandard': ['b'],
+            'measurementTechnique': ['c'],
+            'species': ['d'],
+            'numberOfBytes': asset.size,
+            'numberOfFiles': 1,
+        },
+    }
+
+
+@pytest.mark.django_db
+def test_version_metadata_assets_summary_missing(version, asset):
+    original_metadata = version.metadata.metadata
+    version.assets.add(asset)
+
+    version.save()
+
+    # Verify that an Asset with no aggregatable metadata doesn't break anything
+    assert version.metadata.metadata == {
+        **original_metadata,
+        'assetsSummary': {
+            'approach': [],
+            'dataStandard': [],
+            'measurementTechnique': [],
+            'species': [],
+            'numberOfBytes': asset.size,
+            'numberOfFiles': 1,
+        },
+    }
+
+
+@pytest.mark.django_db
+def test_version_metadata_assets_summary_aggregate(version, asset_factory):
+    original_metadata = version.metadata.metadata
+
+    # Letters
+    asset_1 = asset_factory(
+        metadata__metadata={
+            'approach': ['a'],
+            'dataStandard': ['b'],
+            'measurementTechnique': ['c'],
+            'species': ['d'],
+        }
+    )
+    # Numbers
+    asset_2 = asset_factory(
+        metadata__metadata={
+            'approach': ['1'],
+            'dataStandard': ['2'],
+            'measurementTechnique': ['3'],
+            'species': ['4'],
+        }
+    )
+    # Duplicates, these will be removed to preserve uniqueness
+    asset_3 = asset_factory(
+        metadata__metadata={
+            'approach': ['1'],
+            'dataStandard': ['b'],
+            'measurementTechnique': ['3'],
+            'species': ['d'],
+        }
+    )
+    version.assets.add(asset_1)
+    version.assets.add(asset_2)
+    version.assets.add(asset_3)
+
+    version.save()
+
+    # The aggregation should sort everything alphabetically, so numbers come before letters
+
+    assert version.metadata.metadata == {
+        **original_metadata,
+        'assetsSummary': {
+            'approach': ['1', 'a'],
+            'dataStandard': ['2', 'b'],
+            'measurementTechnique': ['3', 'c'],
+            'species': ['4', 'd'],
+            'numberOfBytes': asset_1.size + asset_2.size + asset_3.size,
+            'numberOfFiles': 3,
+        },
+    }
 
 
 @pytest.mark.django_db

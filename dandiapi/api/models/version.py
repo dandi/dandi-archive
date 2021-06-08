@@ -184,7 +184,7 @@ class Version(TimeStampedModel):
         # Only compute the asset-based properties if this Version has an id, which means it's saved.
         if self.id:
             number_of_bytes = (
-                self.assets.all().aggregate(models.Sum('blob__size'))['blob__size__sum'] or 0
+                self.assets.all().aggregate(size=models.Sum('blob__size'))['size'] or 0
             )
             number_of_files = self.assets.count()
             for asset in self.assets.all():
