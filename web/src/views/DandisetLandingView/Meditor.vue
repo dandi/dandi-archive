@@ -121,12 +121,14 @@
               :ref="`${propKey}-form`"
               v-model="complexModelValidation[propKey]"
             >
-              <v-jsf
-                :value="complexModel[propKey]"
-                :schema="complexSchema.properties[propKey]"
-                :options="CommonVJSFOptions"
-                @input="setComplexModelProp(propKey, $event)"
-              />
+              <v-lazy>
+                <v-jsf
+                  :value="complexModel[propKey]"
+                  :schema="complexSchema.properties[propKey]"
+                  :options="CommonVJSFOptions"
+                  @input="setComplexModelProp(propKey, $event)"
+                />
+              </v-lazy>
             </v-form>
           </v-card>
         </v-dialog>
