@@ -74,7 +74,11 @@ const publishRest = new Vue({
       const { data } = await client.get('users/me/');
       return data;
     },
-    async apiKey(): Promise<string> {
+    async newApiKey(): Promise<string> {
+      const { data } = await client.post('auth/token/');
+      return data;
+    },
+    async getApiKey(): Promise<string> {
       try {
         const { data } = await client.get('auth/token/');
         return data;
@@ -82,7 +86,7 @@ const publishRest = new Vue({
         // If the request returned 404, the user doesn't have an API key yet
         if (e.response.status === 404) {
           // Create a new API key
-          const { data } = await client.post('auth/token/');
+          const data = await this.newApiKey();
           return data;
         }
         throw e;
