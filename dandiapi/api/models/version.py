@@ -166,6 +166,7 @@ class Version(TimeStampedModel):
             'version',
             'id',
             'url',
+            'assetsSummary',
             'citation',
             'doi',
             'datePublished',

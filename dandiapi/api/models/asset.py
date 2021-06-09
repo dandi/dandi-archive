@@ -190,6 +190,12 @@ class Asset(TimeStampedModel):
         """Strip away computed fields from a metadata dict."""
         computed_fields = [
             'path',
+            'identifier',
+            'contentUrl',
+            'contentSize',
+            'digest',
+            'datePublished',
+            'publishedBy',
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
