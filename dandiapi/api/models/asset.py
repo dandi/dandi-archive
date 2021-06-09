@@ -146,7 +146,7 @@ class Asset(TimeStampedModel):
         """
         Generate a published asset + metadata without saving it.
 
-        This is useful to validate version metadata without saving it.
+        This is useful to validate asset metadata without saving it.
         """
         now = datetime.datetime.utcnow()
         # Inject the publishedBy and datePublished fields
