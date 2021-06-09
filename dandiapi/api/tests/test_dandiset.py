@@ -221,6 +221,14 @@ def test_dandiset_rest_create(api_client, user):
         'version': 'draft',
         'url': url,
         'citation': f'{name} ({year}). Online: {url}',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
     }
 
 
@@ -279,6 +287,14 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'version': 'draft',
         'url': url,
         'citation': f'{name} ({year}). Online: {url}',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
     }
 
 

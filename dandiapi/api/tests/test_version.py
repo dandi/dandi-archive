@@ -7,7 +7,7 @@ import pytest
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 
-from .fuzzy import TIMESTAMP_RE, VERSION_ID_RE
+from .fuzzy import TIMESTAMP_RE, URN_RE, VERSION_ID_RE
 
 
 @pytest.mark.django_db
@@ -28,6 +28,36 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
     version_str_2 = Version.make_version(dandiset)
     assert version_1.version != version_str_2
+
+
+@pytest.mark.django_db
+def test_version_metadata_computed(version, version_metadata):
+    original_metadata = version_metadata.metadata
+    version.metadata = version_metadata
+
+    # Save the version to add computed properties to the metadata
+    version.save()
+
+    expected_metadata = {
+        **original_metadata,
+        'name': version_metadata.name,
+        'identifier': f'DANDI:{version.dandiset.identifier}',
+        'version': version.version,
+        'id': f'DANDI:{version.dandiset.identifier}/{version.version}',
+        'url': f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}',
+        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.3.1/context.json',  # noqa: E501
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
+    }
+    expected_metadata['citation'] = version.citation(expected_metadata)
+
+    assert version.metadata.metadata == expected_metadata
 
 
 @pytest.mark.django_db
@@ -102,6 +132,107 @@ def test_version_metadata_context(version):
 
 
 @pytest.mark.django_db
+def test_version_metadata_assets_summary(version, asset):
+    original_metadata = version.metadata.metadata
+    asset.metadata.metadata = {
+        **asset.metadata.metadata,
+        'approach': ['a'],
+        'dataStandard': ['b'],
+        'measurementTechnique': ['c'],
+        'species': ['d'],
+    }
+    asset.metadata.save()
+    version.assets.add(asset)
+
+    version.save()
+
+    assert version.metadata.metadata == {
+        **original_metadata,
+        'assetsSummary': {
+            'approach': ['a'],
+            'dataStandard': ['b'],
+            'measurementTechnique': ['c'],
+            'species': ['d'],
+            'numberOfBytes': asset.size,
+            'numberOfFiles': 1,
+        },
+    }
+
+
+@pytest.mark.django_db
+def test_version_metadata_assets_summary_missing(version, asset):
+    original_metadata = version.metadata.metadata
+    version.assets.add(asset)
+
+    version.save()
+
+    # Verify that an Asset with no aggregatable metadata doesn't break anything
+    assert version.metadata.metadata == {
+        **original_metadata,
+        'assetsSummary': {
+            'approach': [],
+            'dataStandard': [],
+            'measurementTechnique': [],
+            'species': [],
+            'numberOfBytes': asset.size,
+            'numberOfFiles': 1,
+        },
+    }
+
+
+@pytest.mark.django_db
+def test_version_metadata_assets_summary_aggregate(version, asset_factory):
+    original_metadata = version.metadata.metadata
+
+    # Letters
+    asset_1 = asset_factory(
+        metadata__metadata={
+            'approach': ['a'],
+            'dataStandard': ['b'],
+            'measurementTechnique': ['c'],
+            'species': ['d'],
+        }
+    )
+    # Numbers
+    asset_2 = asset_factory(
+        metadata__metadata={
+            'approach': ['1'],
+            'dataStandard': ['2'],
+            'measurementTechnique': ['3'],
+            'species': ['4'],
+        }
+    )
+    # Duplicates, these will be removed to preserve uniqueness
+    asset_3 = asset_factory(
+        metadata__metadata={
+            'approach': ['1'],
+            'dataStandard': ['b'],
+            'measurementTechnique': ['3'],
+            'species': ['d'],
+        }
+    )
+    version.assets.add(asset_1)
+    version.assets.add(asset_2)
+    version.assets.add(asset_3)
+
+    version.save()
+
+    # The aggregation should sort everything alphabetically, so numbers come before letters
+
+    assert version.metadata.metadata == {
+        **original_metadata,
+        'assetsSummary': {
+            'approach': ['1', 'a'],
+            'dataStandard': ['2', 'b'],
+            'measurementTechnique': ['3', 'c'],
+            'species': ['4', 'd'],
+            'numberOfBytes': asset_1.size + asset_2.size + asset_3.size,
+            'numberOfFiles': 3,
+        },
+    }
+
+
+@pytest.mark.django_db
 def test_version_valid_with_valid_asset(version, asset):
     version.assets.add(asset)
 
@@ -148,6 +279,47 @@ def test_version_valid_with_invalid_asset(version, asset, status):
     asset.save()
 
     assert not version.valid
+
+
+@pytest.mark.django_db
+def test_version_publish_version(draft_version):
+    # Normally the publish endpoint would inject a doi, so we must do it manually
+    fake_doi = 'doi'
+
+    publish_version = draft_version.publish_version
+    publish_version.doi = fake_doi
+    publish_version.save()
+
+    assert publish_version.dandiset == draft_version.dandiset
+    assert publish_version.metadata.metadata == {
+        **draft_version.metadata.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': TIMESTAMP_RE,
+            'endDate': TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+        'datePublished': TIMESTAMP_RE,
+        'identifier': f'DANDI:{publish_version.dandiset.identifier}',
+        'version': publish_version.version,
+        'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
+        'url': (
+            f'https://dandiarchive.org/{publish_version.dandiset.identifier}'
+            f'/{publish_version.version}'
+        ),
+        'citation': publish_version.citation(publish_version.metadata.metadata),
+        'doi': fake_doi,
+    }
 
 
 @pytest.mark.django_db
@@ -248,6 +420,14 @@ def test_version_rest_update(api_client, user, draft_version):
         'version': 'draft',
         'url': url,
         'citation': f'{new_name} ({year}). Online: {url}',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
     }
 
     assert api_client.put(
@@ -291,7 +471,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
-        'very_large': 'words' * 10000,
+        'very_large': 'words' * 10,
     }
     year = datetime.now().year
     url = f'https://dandiarchive.org/{draft_version.dandiset.identifier}/draft'
@@ -303,6 +483,14 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'version': 'draft',
         'url': url,
         'citation': f'{new_name} ({year}). Online: {url}',
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'dataStandard': [],
+            'approach': [],
+            'measurementTechnique': [],
+            'species': [],
+        },
     }
 
     assert api_client.put(
@@ -375,7 +563,7 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
 
     # Validate the metadata to mark the version and asset as `VALID`
     tasks.validate_version_metadata(draft_version.id)
-    tasks.validate_asset_metadata(draft_version.id, asset.id)
+    tasks.validate_asset_metadata(asset.id)
     draft_version.refresh_from_db()
     assert draft_version.valid
 
@@ -395,16 +583,16 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
         'modified': TIMESTAMP_RE,
         'asset_count': 1,
         'size': draft_version.size,
-        'status': 'Pending',
+        'status': 'Valid',
     }
     published_version = Version.objects.get(version=resp.data['version'])
     assert published_version
     assert draft_version.dandiset.versions.count() == 2
 
-    # The original asset should now be in both versions
-    assert asset == draft_version.assets.get()
-    assert asset == published_version.assets.get()
-    assert asset.versions.count() == 2
+    published_asset = published_version.assets.get()
+    assert published_asset.published
+    # The blob should be the same between the two assets
+    assert asset.blob == published_asset.blob
 
 
 @pytest.mark.django_db

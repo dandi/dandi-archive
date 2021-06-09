@@ -123,7 +123,11 @@ class Version(TimeStampedModel):
         )
 
         # Create the published model
-        published_version = Version(dandiset=self.dandiset, metadata=published_metadata)
+        published_version = Version(
+            dandiset=self.dandiset,
+            metadata=published_metadata,
+            status=Version.Status.VALID,
+        )
 
         # Recompute the metadata
         published_metadata, _ = VersionMetadata.objects.get_or_create(
@@ -153,7 +157,49 @@ class Version(TimeStampedModel):
                 citation = f'{cl} ({year}) {name}. Online: {url}'
         return citation
 
+    @classmethod
+    def strip_metadata(cls, metadata):
+        """Strip away computed fields from a metadata dict."""
+        computed_fields = [
+            'name',
+            'identifier',
+            'version',
+            'id',
+            'url',
+            'assetsSummary',
+            'citation',
+            'doi',
+            'datePublished',
+            'publishedBy',
+        ]
+        return {key: metadata[key] for key in metadata if key not in computed_fields}
+
     def _populate_metadata(self):
+        number_of_bytes = 0
+        number_of_files = 0
+        data_standards = set()
+        approaches = set()
+        measurement_techniques = set()
+        species = set()
+        # When running _populate_metadata on an unsaved Version, self.assets is not available.
+        # Only compute the asset-based properties if this Version has an id, which means it's saved.
+        if self.id:
+            number_of_bytes = (
+                self.assets.all().aggregate(size=models.Sum('blob__size'))['size'] or 0
+            )
+            number_of_files = self.assets.count()
+            for asset in self.assets.all():
+                metadata = asset.metadata.metadata
+                if 'dataStandard' in metadata:
+                    data_standards = data_standards.union(set(metadata['dataStandard']))
+                if 'approach' in metadata:
+                    approaches = approaches.union(set(metadata['approach']))
+                if 'measurementTechnique' in metadata:
+                    measurement_techniques = measurement_techniques.union(
+                        set(metadata['measurementTechnique'])
+                    )
+                if 'species' in metadata:
+                    species = species.union(set(metadata['species']))
         metadata = {
             **self.metadata.metadata,
             'name': self.metadata.name,
@@ -161,6 +207,14 @@ class Version(TimeStampedModel):
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
+            'assetsSummary': {
+                'numberOfBytes': number_of_bytes,
+                'numberOfFiles': number_of_files,
+                'dataStandard': sorted(data_standards),
+                'approach': sorted(approaches),
+                'measurementTechnique': sorted(measurement_techniques),
+                'species': sorted(species),
+            },
         }
         metadata['citation'] = self.citation(metadata)
         if self.doi:

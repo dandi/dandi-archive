@@ -72,9 +72,15 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        name = serializer.validated_data['name']
+        metadata = serializer.validated_data['metadata']
+        # Strip away any computed fields
+        metadata = Version.strip_metadata(metadata)
+
         version_metadata: VersionMetadata
         version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'], metadata=serializer.validated_data['metadata']
+            name=name,
+            metadata=metadata,
         )
 
         if created:
@@ -116,10 +122,28 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         new_version.save()
         # Bulk create the join table rows to optimize linking assets to new_version
         AssetVersions = Version.assets.through  # noqa: N806
+
+        # Add a new many-to-many association directly to any already published assets
+        already_published_assets = old_version.assets.filter(published=True)
         AssetVersions.objects.bulk_create(
             [
                 AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in old_version.assets.values('id')
+                for asset in already_published_assets.values('id')
+            ]
+        )
+
+        # Publish any draft assets
+        # Import here to avoid dependency cycle
+        from dandiapi.api.models import Asset
+
+        draft_assets = old_version.assets.filter(published=False).all()
+        new_published_assets = [Asset.published_asset(draft_asset) for draft_asset in draft_assets]
+        Asset.objects.bulk_create(new_published_assets)
+
+        AssetVersions.objects.bulk_create(
+            [
+                AssetVersions(asset_id=asset.id, version_id=new_version.id)
+                for asset in new_published_assets
             ]
         )
 
