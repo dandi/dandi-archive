@@ -69,7 +69,7 @@ the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
 ### Initial Setup
 tox is used to execute all tests.
 tox is installed automatically with the `dev` package extra.
-To install tox's dependencies into your environment, run `pip install -e .[test]`.
+To install the tox pytest dependencies into your environment, run `pip install -e .[test]`.
 These are useful for IDE autocompletion or if you want to run `pytest` directly (not recommended).
 
 When running the "Develop with Docker" configuration, all tox commands must be run as
