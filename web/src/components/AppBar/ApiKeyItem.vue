@@ -4,7 +4,7 @@
       <!-- ".stop" prevents closing the parent v-menu when this is clicked -->
       <v-btn
         icon
-        @click.stop="fetch"
+        @click.stop="refreshApiKey"
       >
         <v-icon>mdi-reload</v-icon>
       </v-btn>
@@ -21,8 +21,7 @@
 
 <script>
 import CopyText from '@/components/CopyText.vue';
-import { girderRest, publishRest } from '@/rest';
-import toggles from '@/featureToggle';
+import { publishRest } from '@/rest';
 
 export default {
   name: 'ApiKeyItem',
@@ -35,43 +34,16 @@ export default {
     };
   },
   created() {
-    this.fetch();
+    this.fetchApiKey();
   },
   methods: {
-    async fetch() {
-      if (toggles.DJANGO_API) {
-        this.apiKey = await publishRest.apiKey();
-      } else {
-        let data;
-        // parentheses required for using the destructure assignment
-        ({ data } = await girderRest.get(
-          'api_key', {
-            params: {
-            // eslint-disable-next-line import/no-named-as-default-member
-              userId: girderRest.user._id,
-              limit: 50,
-              sort: 'name',
-              sortdir: 1,
-            },
-          },
-        ));
-        let [dandiKey] = data.filter((key) => key.name === 'dandicli');
-        if (!dandiKey) {
-          // create a key
-          ({ data } = await girderRest.post('api_key', null, {
-            params: {
-              name: 'dandicli',
-              scope: null,
-              // days
-              tokenDuration: 30,
-              active: true,
-            },
-          }));
-          dandiKey = data;
-        }
-
-        this.apiKey = dandiKey.key;
-      }
+    // gets the logged-in user's existing API key (and creates one if it doesn't exist)
+    async fetchApiKey() {
+      this.apiKey = await publishRest.getApiKey();
+    },
+    // gets a new API key for the logged-in user and deletes the old one
+    async refreshApiKey() {
+      this.apiKey = await publishRest.newApiKey();
     },
   },
 };
