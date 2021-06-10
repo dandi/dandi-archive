@@ -1,6 +1,6 @@
-from datetime import datetime
 import logging
 
+from dandischema.datacite import to_datacite
 from django.conf import settings
 import requests
 
@@ -8,50 +8,13 @@ from dandiapi.api.models import Version
 
 
 def _generate_doi_data(version: Version):
-    prefix = settings.DANDI_DOI_API_PREFIX
+    prefix = settings.DANDI_DOI_API_PREFIX or '10.00000'
     dandiset_id = version.dandiset.identifier
     version_id = version.version
     doi = f'{prefix}/{dandiset_id}/{version_id}'
-    url = f'https://dandiarchive.org/dandiset/{dandiset_id}/{version_id}'
-    creators = []
-    contributors = []
-    if 'contributor' in version.metadata.metadata:
-        creators = [
-            {
-                'name': contributor['name'],
-                'nameType': 'Personal',
-            }
-            for contributor in version.metadata.metadata['contributor']
-            if 'dandi:Author' in contributor['roleName']
-        ]
-        contributors = [
-            {
-                'name': contributor['name'],
-                'nameType': 'Personal',
-                'contributorType': 'ContactPerson',
-            }
-            for contributor in version.metadata.metadata['contributor']
-        ]
-    return (
-        doi,
-        {
-            'data': {
-                'id': doi,
-                'type': 'dois',
-                'attributes': {
-                    'event': 'publish',
-                    'doi': doi,
-                    'creators': creators,
-                    'titles': [{'title': version.name}],
-                    'publisher': 'DANDI Archive',
-                    'publicationYear': datetime.now().year,
-                    'contributors': contributors,
-                    'types': {'resourceTypeGeneral': 'Dataset'},
-                    'url': url,
-                },
-            }
-        },
-    )
+    metadata = version.metadata.metadata
+    metadata['doi'] = doi
+    return (doi, to_datacite(metadata))
 
 
 def create_doi(version: Version) -> str:
