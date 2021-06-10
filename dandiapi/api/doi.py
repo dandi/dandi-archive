@@ -1,4 +1,5 @@
 import logging
+import os
 
 from dandischema.datacite import to_datacite
 from django.conf import settings
@@ -8,6 +9,13 @@ from dandiapi.api.models import Version
 
 
 def _generate_doi_data(version: Version):
+    if settings.DANDI_ALLOW_LOCALHOST_URLS:
+        # If this environment variable is set, the pydantic model will allow URLs with localhost
+        # in them. This is important for development and testing environments, where URLs will
+        # frequently point to localhost.
+        os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
+    from dandischema.datacite import to_datacite
+
     prefix = settings.DANDI_DOI_API_PREFIX or '10.00000'
     dandiset_id = version.dandiset.identifier
     version_id = version.version
