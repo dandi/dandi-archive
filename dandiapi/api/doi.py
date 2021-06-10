@@ -18,26 +18,25 @@ def _generate_doi_data(version: Version):
 
 
 def create_doi(version: Version) -> str:
-    # If DOI isn't configured, skip this step
-    if (
-        settings.DANDI_DOI_API_URL is None
-        and settings.DANDI_DOI_API_USER is None
-        and settings.DANDI_DOI_API_PASSWORD is None
-        and settings.DANDI_DOI_API_PREFIX is None
-    ):
-        return
     doi, request_body = _generate_doi_data(version)
-    try:
-        requests.post(
-            settings.DANDI_DOI_API_URL,
-            json=request_body,
-            auth=requests.auth.HTTPBasicAuth(
-                settings.DANDI_DOI_API_USER,
-                settings.DANDI_DOI_API_PASSWORD,
-            ),
-        ).raise_for_status()
-    except requests.exceptions.HTTPError as e:
-        logging.error('Failed to create DOI %s', doi)
-        logging.error(request_body)
-        raise e
+    # If DOI isn't configured, skip the API call
+    if (
+        settings.DANDI_DOI_API_URL is not None
+        or settings.DANDI_DOI_API_USER is not None
+        or settings.DANDI_DOI_API_PASSWORD is not None
+        or settings.DANDI_DOI_API_PREFIX is not None
+    ):
+        try:
+            requests.post(
+                settings.DANDI_DOI_API_URL,
+                json=request_body,
+                auth=requests.auth.HTTPBasicAuth(
+                    settings.DANDI_DOI_API_USER,
+                    settings.DANDI_DOI_API_PASSWORD,
+                ),
+            ).raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            logging.error('Failed to create DOI %s', doi)
+            logging.error(request_body)
+            raise e
     return doi
