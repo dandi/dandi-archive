@@ -58,7 +58,7 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': '0.3.1',
+            'schemaVersion': '0.4.1',
             'description': faker.Faker().sentence(),
             'contributor': [{}],
             'license': ['spdx:CC0-1.0'],
@@ -127,7 +127,7 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': '0.3.1',
+            'schemaVersion': '0.4.1',
             'encodingFormat': 'application/x-nwb',
         }
         # Remove faked data that might conflict with the schema types
