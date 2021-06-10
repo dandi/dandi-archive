@@ -122,6 +122,22 @@ class Version(TimeStampedModel):
         )
 
     @property
+    def dandiset_yaml_url(self):
+        storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+        signed_url = storage.url(self.dandiset_yaml_path)
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
+
+    @property
+    def assets_yaml_url(self):
+        storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+        signed_url = storage.url(self.assets_yaml_path)
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
+
+    @property
     def publish_version(self):
         """
         Generate a published version + metadata without saving it.
@@ -136,6 +152,7 @@ class Version(TimeStampedModel):
                 **self.metadata.metadata,
                 'publishedBy': self.metadata.published_by(now),
                 'datePublished': now.isoformat(),
+                'manifestLocation': [self.dandiset_yaml_url, self.assets_yaml_url],
             },
         )
 
