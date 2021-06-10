@@ -166,7 +166,7 @@ class Version(TimeStampedModel):
         # Recompute the metadata
         published_metadata, _ = VersionMetadata.objects.get_or_create(
             name=self.name,
-            metadata=published_version._populate_metadata(),
+            metadata=published_version._populate_metadata(version_with_assets=self),
         )
         published_version.metadata = published_metadata
 
@@ -208,21 +208,31 @@ class Version(TimeStampedModel):
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
-    def _populate_metadata(self):
+    def _populate_metadata(self, version_with_assets: Version = None):
         number_of_bytes = 0
         number_of_files = 0
         data_standards = set()
         approaches = set()
         measurement_techniques = set()
         species = set()
+
+        # When validating a draft version, we create a published version without saving it,
+        # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
+        # based on the assets that belong to the dummy published version, which has not had assets
+        # copied to it yet. To get around this, version_with_assets is the draft version that
+        # should be used to look up the assets for the assetsSummary.
+        if version_with_assets is None:
+            version_with_assets = self
+
         # When running _populate_metadata on an unsaved Version, self.assets is not available.
         # Only compute the asset-based properties if this Version has an id, which means it's saved.
-        if self.id:
+        if version_with_assets.id:
             number_of_bytes = (
-                self.assets.all().aggregate(size=models.Sum('blob__size'))['size'] or 0
+                version_with_assets.assets.all().aggregate(size=models.Sum('blob__size'))['size']
+                or 0
             )
-            number_of_files = self.assets.count()
-            for asset in self.assets.all():
+            number_of_files = version_with_assets.assets.count()
+            for asset in version_with_assets.assets.all():
                 metadata = asset.metadata.metadata
                 if 'dataStandard' in metadata:
                     data_standards = data_standards.union(set(metadata['dataStandard']))
