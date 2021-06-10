@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import datetime
+from urllib.parse import urlparse, urlunparse
 
+from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
+from dandiapi.api.storage import create_s3_storage
 
 from .dandiset import Dandiset
 
@@ -103,6 +106,20 @@ class Version(TimeStampedModel):
             time += datetime.timedelta(minutes=1)
 
         return version
+
+    @property
+    def dandiset_yaml_path(self):
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'dandisets/{self.dandiset.identifier}/{self.version}/dandiset.yaml'
+        )
+
+    @property
+    def assets_yaml_path(self):
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'dandisets/{self.dandiset.identifier}/{self.version}/assets.yaml'
+        )
 
     @property
     def publish_version(self):
