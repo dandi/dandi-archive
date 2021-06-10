@@ -60,7 +60,7 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': '0.4.1',
             'description': faker.Faker().sentence(),
-            'contributor': [{}],
+            'contributor': [{'roleName': ['dcite:ContactPerson']}],
             'license': ['spdx:CC0-1.0'],
         }
         # Remove faked data that might conflict with the schema types
