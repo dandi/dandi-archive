@@ -1,7 +1,6 @@
 import logging
 import os
 
-from dandischema.datacite import to_datacite
 from django.conf import settings
 import requests
 
