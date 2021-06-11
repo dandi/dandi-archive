@@ -28,10 +28,10 @@ from dandiapi.api.views.serializers import (
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
-    ordering_fields = ['created', 'name']
+    ordering_fields = ['id', 'name', 'modified']
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are created, -created, name, and -name.'
+        'Options are id, -id, name, -name, modified, and -modified.'
     )
 
     def filter_queryset(self, request, queryset, view):
@@ -39,7 +39,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
         if orderings:
             ordering = orderings[0]
             # ordering can be either 'created' or '-created', so test for both
-            if ordering.endswith('created'):
+            if ordering.endswith('id'):
                 return queryset.order_by(ordering)
             elif ordering.endswith('name'):
                 # name refers to the name of the most recent version, so a subquery is required
@@ -48,7 +48,17 @@ class DandisetFilterBackend(filters.OrderingFilter):
                 )[:1]
                 queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
                 return queryset.order_by(ordering)
-
+            elif ordering.endswith('modified'):
+                # name refers to the name of the most recent version, so a subquery is required
+                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
+                    '-created'
+                )[:1]
+                # Get the `modified` field of each Version's associated VersionMetadata.
+                # Append '_meta' to the field since there's already a 'modified' field on Dandisets
+                queryset = queryset.annotate(
+                    modified_meta=Subquery(latest_version.values('metadata__modified'))
+                )
+                return queryset.order_by(f'{ordering}_meta')
         return queryset
 
 
