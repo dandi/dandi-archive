@@ -34,7 +34,7 @@ A developer has a feature they want to add that impacts both the backend and the
 * They checkout a new branch in `dandi-api` and `dandiarchive`, do the work, and submit related PRs in both repos.
 * Once approved, the `dandi-api` PR is merged into `master`.
 * The `dandiarchive` changes are tested in the branch preview, which points at the staging environment.
-* Once `dandiarchive` is approved, the developer merges the PR, and tags a new release of `dandi-api`, which is then automatically deployed to production.
+* Once `dandiarchive` PR is approved, the developer merges the PR, and tags a new release of `dandi-api`, which is then automatically deployed to production.
 
 A developer has a feature they want to add that only impacts the frontend.
 * They checkout a new branch in `dandiarchive`, do the work, and submit a PR.
