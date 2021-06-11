@@ -53,7 +53,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
                     '-created'
                 )[:1]
-                # Get the `modified` field of each Version's associated VersionMetadata.
+                # Get the `modified` field of the latest Version's associated VersionMetadata.
                 # Append '_meta' to the field since there's already a 'modified' field on Dandisets
                 queryset = queryset.annotate(
                     modified_meta=Subquery(latest_version.values('metadata__modified'))
