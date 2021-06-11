@@ -24,7 +24,9 @@ The staging server will track the `master` branch in `dandi-api` and will automa
 
 The production server will not track any branch. Instead, it will automatically redeploy whenever a release is tagged in GitHub.
 
-The staging web GUI will track the `staging` branch in `dandiarchive` and will automatically redeploy whenever `staging` is changed.
+The staging web GUI will track the `master` branch in `dandiarchive` and will automatically redeploy whenever `master` is changed.
+The configuration variables for the staging Netlify deployment will point it at the staging server rather than the production server.
+To test code changes to the web GUI, branch previews will also be pointed at the staging server.
 
 The production web GUI will track the `master` branch in `dandiarchive` and will automatically redeploy whenever `master` is changed.
 
