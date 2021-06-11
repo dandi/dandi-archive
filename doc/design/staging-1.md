@@ -30,12 +30,22 @@ To test code changes to the web GUI, branch previews will also be pointed at the
 
 The production web GUI will track the `master` branch in `dandiarchive` and will automatically redeploy whenever `master` is changed.
 
-* A developer has a feature they want to add that impacts both the backend and the frontend.
+A developer has a feature they want to add that impacts both the backend and the frontend.
 * They checkout a new branch in `dandi-api` and `dandiarchive`, do the work, and submit related PRs in both repos.
-* Once approved, the `dandi-api` PR is merged into `master` and the `dandiarchive` PR is merged into `staging`.
-* The changes are tested in staging.
-* Once approved, a new release of `dandi-api` is tagged, pushing the changes to production.
-* Once approved, the developer manually merges `dandiarchive/staging` into `dandiarchive/master`.
+* Once approved, the `dandi-api` PR is merged into `master`.
+* The `dandiarchive` changes are tested in the branch preview, which points at the staging environment.
+* Once `dandiarchive` is approved, the developer merges the PR, and tags a new release of `dandi-api`, which is then automatically deployed to production.
+
+A developer has a feature they want to add that only impacts the frontend.
+* They checkout a new branch in `dandiarchive`, do the work, and submit a PR.
+* The changes are tested in the branch preview, which points at the staging environment.
+* Once approved, the developer merges the PR to `master`, which is then automatically deployed to production.
+
+A developer has a feature they want to add that only impacts the backend.
+* They checkout a new branch in `dandi-api`, do the work, and submit a PR.
+* Once approved, the PR is merged to `master` and automatically deployed to `api-staging.dandiarchive.org`.
+* The changes are tested directly using `api-staging.dandiarchive.org`, or through the web GUI at `gui-staging.dandiarchive.org`.
+* Once everything is tested, tags a new release of `dandi-api`, which is then automatically deployed to production.
 
 ## TODO
 Figure out a less manual release procedure for `dandiarchive`.
