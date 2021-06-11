@@ -119,7 +119,7 @@
 
 <script>
 import { loggedIn, publishRest } from '@/rest';
-import { dandiAboutUrl, dandiDocumentationUrl } from '@/utils/constants';
+import { dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 import toggles from '@/featureToggle';
 
@@ -154,6 +154,11 @@ export default {
         {
           text: 'Documentation',
           to: dandiDocumentationUrl,
+          external: true,
+        },
+        {
+          text: 'Help',
+          to: dandiHelpUrl,
           external: true,
         },
       ],
