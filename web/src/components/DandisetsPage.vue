@@ -71,22 +71,23 @@ import {
 } from '@vue/composition-api';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import toggles from '@/featureToggle';
-import { girderRest, publishRest } from '@/rest';
+import { publishRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
 
 const DANDISETS_PER_PAGE = 8;
 
 const sortingOptions = [
   {
-    name: 'Created',
-    field: 'created',
-    djangoField: 'created',
+    name: 'Name',
+    djangoField: 'name',
   },
   {
-    name: 'Name',
-    field: 'meta.dandiset.name',
-    djangoField: 'name',
+    name: 'Identifier',
+    djangoField: 'id',
+  },
+  {
+    name: 'Modified',
+    djangoField: 'modified',
   },
 ];
 
@@ -119,84 +120,31 @@ export default defineComponent({
     const page = ref(Number(route.query.page) || 1);
 
     const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
-    const sortField = computed(() => {
-      if (toggles.DJANGO_API) {
-        return sortingOptions[sortOption.value].djangoField;
-      }
-      return sortingOptions[sortOption.value].field;
-    });
+    const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
 
     // Django dandiset listing
 
     const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
     watchEffect(async () => {
-      if (!toggles.DJANGO_API) {
-        djangoDandisetRequest.value = null;
-      } else {
-        const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
-        const response = await publishRest.dandisets({
-          page: page.value,
-          page_size: DANDISETS_PER_PAGE,
-          ordering,
-          user: props.user ? 'me' : null,
-          search: props.search ? route.query.search : null,
-        });
-        djangoDandisetRequest.value = response.data;
-      }
-    });
-
-    // Girder dandiset listing
-
-    const listingUrl = computed(() => {
-      if (props.user) {
-        return 'dandi/user';
-      }
-      if (props.search) {
-        return 'dandi/search';
-      }
-      return 'dandi';
-    });
-    const girderDandisetRequest: Ref<null | any> = ref(null);
-    watchEffect(async () => {
-      if (toggles.DJANGO_API) {
-        girderDandisetRequest.value = null;
-      } else {
-        const {
-          data, headers, status, statusText,
-        } = await girderRest.get(listingUrl.value, {
-          params: {
-            limit: DANDISETS_PER_PAGE,
-            offset: (page.value - 1) * DANDISETS_PER_PAGE,
-            sort: sortField.value,
-            sortdir: sortDir.value,
-            search: route.query.search,
-          },
-        });
-
-        girderDandisetRequest.value = {
-          data, headers, status, statusText,
-        };
-      }
+      const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
+      const response = await publishRest.dandisets({
+        page: page.value,
+        page_size: DANDISETS_PER_PAGE,
+        ordering,
+        user: props.user ? 'me' : null,
+        search: props.search ? route.query.search : null,
+      });
+      djangoDandisetRequest.value = response.data;
     });
 
     // Unified Django + Girder
 
-    const dandisets = computed(() => {
-      if (toggles.DJANGO_API) {
-        return djangoDandisetRequest.value?.results.map(
-          (dandiset) => dandiset.most_recent_published_version || dandiset.draft_version,
-        );
-      }
-      return girderDandisetRequest.value?.data || [];
-    });
+    const dandisets = computed(() => djangoDandisetRequest.value?.results.map(
+      (dandiset) => dandiset.most_recent_published_version || dandiset.draft_version,
+    ));
 
     const pages = computed(() => {
-      let totalDandisets: number;
-      if (toggles.DJANGO_API) {
-        totalDandisets = djangoDandisetRequest.value?.count || 0;
-      } else {
-        totalDandisets = girderDandisetRequest.value?.headers['girder-total-count'] || 0;
-      }
+      const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
       return Math.ceil(totalDandisets / DANDISETS_PER_PAGE) || 1;
     });
 
