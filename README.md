@@ -30,7 +30,8 @@ but allows developers to run Python code on their native system.
 2. Run `docker-compose -f ./docker-compose.yml up -d`
 3. Install Python 3.8
 4. Install
-  [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites):
+  [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites).
+  Example `psycopg2` installation on Ubuntu 20.04:
   ```
   sudo apt install libpq-dev
   export PATH=/usr/lib/postgresql/X.Y/bin/:$PATH
