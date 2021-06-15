@@ -133,6 +133,7 @@ class Asset(TimeStampedModel):
 
         metadata = {
             **self.metadata.metadata,
+            'id': str(self.asset_id),
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, blob_url],
@@ -189,6 +190,7 @@ class Asset(TimeStampedModel):
     def strip_metadata(cls, metadata):
         """Strip away computed fields from a metadata dict."""
         computed_fields = [
+            'id',
             'path',
             'identifier',
             'contentUrl',

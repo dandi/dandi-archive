@@ -193,7 +193,9 @@ def test_validate_asset_metadata_malformed_keywords(asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata(version: Version):
+def test_validate_version_metadata(version: Version, asset: Asset):
+    version.assets.add(asset)
+
     tasks.validate_version_metadata(version.id)
 
     version.refresh_from_db()

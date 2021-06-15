@@ -1,6 +1,5 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.transaction import atomic
 import jsonschema.exceptions
@@ -43,10 +42,7 @@ def write_yamls(version_id: int) -> None:
     # Piggyback on the AssetBlob storage since we want to store .yamls in the same bucket
     storage = AssetBlob.blob.field.storage
 
-    dandiset_yaml_path = (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
-    )
+    dandiset_yaml_path = version.dandiset_yaml_path
     if storage.exists(dandiset_yaml_path):
         logger.info('%s already exists, deleting it', dandiset_yaml_path)
         storage.delete(dandiset_yaml_path)
@@ -54,10 +50,7 @@ def write_yamls(version_id: int) -> None:
     dandiset_yaml = YAMLRenderer().render(version.metadata.metadata)
     storage.save(dandiset_yaml_path, ContentFile(dandiset_yaml))
 
-    assets_yaml_path = (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
-    )
+    assets_yaml_path = version.assets_yaml_path
     if storage.exists(assets_yaml_path):
         logger.info('%s already exists, deleting it', assets_yaml_path)
         storage.delete(assets_yaml_path)

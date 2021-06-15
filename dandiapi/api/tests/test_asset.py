@@ -48,6 +48,7 @@ def test_version_published_asset(asset):
     assert published_asset.blob == asset.blob
     assert published_asset.metadata.metadata == {
         **asset.metadata.metadata,
+        'id': str(published_asset.asset_id),
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',

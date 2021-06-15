@@ -45,7 +45,7 @@ def test_version_metadata_computed(version, version_metadata):
         'version': version.version,
         'id': f'DANDI:{version.dandiset.identifier}/{version.version}',
         'url': f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}',
-        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.3.1/context.json',  # noqa: E501
+        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.1/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -310,6 +310,12 @@ def test_version_publish_version(draft_version):
             'schemaKey': 'PublishActivity',
         },
         'datePublished': TIMESTAMP_RE,
+        'manifestLocation': [
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
+            f'{publish_version.dandiset.identifier}/draft/dandiset.yaml',
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
+            f'{publish_version.dandiset.identifier}/draft/assets.yaml',
+        ],
         'identifier': f'DANDI:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
         'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',

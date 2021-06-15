@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import datetime
+from urllib.parse import urlparse, urlunparse
 
+from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
+from dandiapi.api.storage import create_s3_storage
 
 from .dandiset import Dandiset
 
@@ -105,6 +108,36 @@ class Version(TimeStampedModel):
         return version
 
     @property
+    def dandiset_yaml_path(self):
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'dandisets/{self.dandiset.identifier}/{self.version}/dandiset.yaml'
+        )
+
+    @property
+    def assets_yaml_path(self):
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'dandisets/{self.dandiset.identifier}/{self.version}/assets.yaml'
+        )
+
+    @property
+    def dandiset_yaml_url(self):
+        storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+        signed_url = storage.url(self.dandiset_yaml_path)
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
+
+    @property
+    def assets_yaml_url(self):
+        storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+        signed_url = storage.url(self.assets_yaml_path)
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
+
+    @property
     def publish_version(self):
         """
         Generate a published version + metadata without saving it.
@@ -119,6 +152,7 @@ class Version(TimeStampedModel):
                 **self.metadata.metadata,
                 'publishedBy': self.metadata.published_by(now),
                 'datePublished': now.isoformat(),
+                'manifestLocation': [self.dandiset_yaml_url, self.assets_yaml_url],
             },
         )
 
@@ -132,7 +166,7 @@ class Version(TimeStampedModel):
         # Recompute the metadata
         published_metadata, _ = VersionMetadata.objects.get_or_create(
             name=self.name,
-            metadata=published_version._populate_metadata(),
+            metadata=published_version._populate_metadata(version_with_assets=self),
         )
         published_version.metadata = published_metadata
 
@@ -174,21 +208,31 @@ class Version(TimeStampedModel):
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
-    def _populate_metadata(self):
+    def _populate_metadata(self, version_with_assets: Version = None):
         number_of_bytes = 0
         number_of_files = 0
         data_standards = set()
         approaches = set()
         measurement_techniques = set()
         species = set()
+
+        # When validating a draft version, we create a published version without saving it,
+        # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
+        # based on the assets that belong to the dummy published version, which has not had assets
+        # copied to it yet. To get around this, version_with_assets is the draft version that
+        # should be used to look up the assets for the assetsSummary.
+        if version_with_assets is None:
+            version_with_assets = self
+
         # When running _populate_metadata on an unsaved Version, self.assets is not available.
         # Only compute the asset-based properties if this Version has an id, which means it's saved.
-        if self.id:
+        if version_with_assets.id:
             number_of_bytes = (
-                self.assets.all().aggregate(size=models.Sum('blob__size'))['size'] or 0
+                version_with_assets.assets.all().aggregate(size=models.Sum('blob__size'))['size']
+                or 0
             )
-            number_of_files = self.assets.count()
-            for asset in self.assets.all():
+            number_of_files = version_with_assets.assets.count()
+            for asset in version_with_assets.assets.all():
                 metadata = asset.metadata.metadata
                 if 'dataStandard' in metadata:
                     data_standards = data_standards.union(set(metadata['dataStandard']))
