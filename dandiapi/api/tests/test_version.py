@@ -386,7 +386,24 @@ def test_version_rest_info(api_client, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_info_with_asset(api_client, version, asset):
+@pytest.mark.parametrize(
+    'asset_status,expected_validation_error',
+    [
+        (Asset.Status.PENDING, '1 assets have not been validated yet'),
+        (Asset.Status.VALIDATING, '1 assets have not been validated yet'),
+        (Asset.Status.VALID, ''),
+        (Asset.Status.INVALID, '1 invalid asset metadatas'),
+    ],
+)
+def test_version_rest_info_with_asset(
+    api_client,
+    draft_version_factory,
+    asset_factory,
+    asset_status: Asset.Status,
+    expected_validation_error: str,
+):
+    version = draft_version_factory(status=Version.Status.VALID)
+    asset = asset_factory(status=asset_status)
     version.assets.add(asset)
 
     assert api_client.get(
@@ -404,8 +421,8 @@ def test_version_rest_info_with_asset(api_client, version, asset):
         'asset_count': 1,
         'metadata': version.metadata.metadata,
         'size': version.size,
-        'status': 'Pending',
-        'validation_error': '',
+        'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
+        'validation_error': expected_validation_error,
     }
 
 

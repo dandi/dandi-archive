@@ -68,6 +68,8 @@ class VersionDetailSerializer(VersionSerializer):
         fields = VersionSerializer.Meta.fields + ['validation_error', 'metadata']
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
+    status = serializers.CharField(source='publish_status')
+    validation_error = serializers.CharField(source='publish_validation_error')
 
 
 class AssetBlobSerializer(serializers.ModelSerializer):
