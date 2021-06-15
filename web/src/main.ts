@@ -25,6 +25,7 @@ import { girderRest, publishRest } from '@/rest';
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
+  environment: process.env.VUE_APP_SENTRY_ENVIRONMENT,
   integrations: [new Integrations.Vue({ Vue, logErrors: true })],
 });
 
