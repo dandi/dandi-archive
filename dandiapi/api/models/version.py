@@ -55,6 +55,7 @@ class Version(TimeStampedModel):
         default=_get_default_version,
     )  # TODO: rename this?
     doi = models.CharField(max_length=64, null=True, blank=True)
+    """Track the validation status of this version, without considering assets"""
     status = models.CharField(
         max_length=10,
         default=Status.PENDING,
@@ -87,6 +88,43 @@ class Version(TimeStampedModel):
 
         # Return False if any asset is not VALID
         return not self.assets.filter(~models.Q(status=Asset.Status.VALID)).exists()
+
+    @property
+    def publish_status(self) -> Version.Status:
+        if self.status != Version.Status.VALID:
+            return self.status
+
+        # Import here to avoid dependency cycle
+        from .asset import Asset
+
+        invalid_asset = self.assets.filter(~models.Q(status=Asset.Status.VALID)).first()
+        if invalid_asset:
+            return Version.Status.INVALID
+
+        return Version.Status.VALID
+
+    @property
+    def publish_validation_error(self) -> str:
+        if self.validation_error:
+            return self.validation_error
+
+        # Import here to avoid dependency cycle
+        from .asset import Asset
+
+        # Assets that are not VALID (could be pending, validating, or invalid)
+        invalid_assets = self.assets.filter(status=Asset.Status.INVALID).count()
+        if invalid_assets > 0:
+            return f'{invalid_assets} invalid asset metadatas'
+
+        # Assets that have not yet been validated (could be pending or validating)
+        unvalidated_assets = self.assets.filter(
+            ~(models.Q(status=Asset.Status.VALID) | models.Q(status=Asset.Status.INVALID))
+        ).count()
+        if unvalidated_assets > 0:
+            return f'{unvalidated_assets} assets have not been validated yet'
+
+        # No error == ''
+        return ''
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:
