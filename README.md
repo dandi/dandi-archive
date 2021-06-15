@@ -26,15 +26,22 @@ This configuration still uses Docker to run attached services in the background,
 but allows developers to run Python code on their native system.
 
 ### Initial Setup
-1. Run `docker-compose -f ./docker-compose.yml up -d`
-2. Install Python 3.8
-3. Install
-   [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites)
-4. Create and activate a new Python virtualenv
-5. Run `pip install -e .[dev]`
-6. Run `source ./dev/export-env.sh`
-7. Run `./manage.py migrate`
-8. Run `./manage.py createsuperuser` and follow the prompts to create your own user
+1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
+2. Run `docker-compose -f ./docker-compose.yml up -d`
+3. Install Python 3.8
+4. Install
+  [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites).
+  Example `psycopg2` installation on Ubuntu 20.04:
+  ```
+  sudo apt install libpq-dev
+  export PATH=/usr/lib/postgresql/X.Y/bin/:$PATH
+  pip install psycopg2
+  ```
+5. Create and activate a new Python virtualenv
+6. Run `pip install -e .[dev]`
+7. Run `source ./dev/export-env.sh`
+8. Run `./manage.py migrate`
+9. Run `./manage.py createsuperuser` and follow the prompts to create your own user
 
 ### Run Application
 1.  Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
