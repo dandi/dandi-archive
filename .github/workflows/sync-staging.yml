@@ -1,0 +1,32 @@
+
+name: Update staging branch
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync:
+    name: Update the staging branch with changes from master
+    runs-on: ubuntu-latest
+    env:
+      GIT_AUTHOR_NAME: "dandibot"
+      GIT_AUTHOR_EMAIL: "dandibot@mit.edu"
+      GIT_COMMITTER_NAME: "dandibot"
+      GIT_COMMITTER_EMAIL: "dandibot@mit.edu"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - run: git fetch
+      - run: git rebase origin/master
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: staging
+          force: true
