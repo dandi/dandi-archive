@@ -61,7 +61,6 @@ setup(
         # Development-only, but required
         'django-minio-storage',
         # Temporary dependency for user migration
-        'girder-client',
         'versioneer',
     ],
     extras_require={
