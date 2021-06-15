@@ -106,7 +106,7 @@ You are now registered on the DANDI archive!
 It may take up to 24 hours for your account to be approved and activated.  During the approval
 process DANDI team might contact you with additional questions.
 
-Once your account is activated you would be able to create Dandisets and upload data.
+Once your account is activated you will be able to create Dandisets and upload data.
 Within 24 hours after approval, your account on Jupyterhub (https://hub.dandiarchive.org) for
 computing on dandisets in the cloud will be activated, and your email will be
 registered with our Slack workspace.
