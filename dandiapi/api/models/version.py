@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from urllib.parse import urlparse, urlunparse
 
+from dandischema.metadata import aggregate_assets_summary
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
@@ -12,7 +13,6 @@ from django_extensions.db.models import TimeStampedModel
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import create_s3_storage
 
-from dandischema.metadata import aggregate, toSummary
 from .dandiset import Dandiset
 
 
@@ -248,7 +248,6 @@ class Version(TimeStampedModel):
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
     def _populate_metadata(self, version_with_assets: Version = None):
-        number_of_bytes = 0
 
         # When validating a draft version, we create a published version without saving it,
         # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
@@ -260,13 +259,11 @@ class Version(TimeStampedModel):
 
         # When running _populate_metadata on an unsaved Version, self.assets is not available.
         # Only compute the asset-based properties if this Version has an id, which means it's saved.
-        summary = None
-        if version_with_assets.id:
-            stats = {}
-            for asset in version_with_assets.assets.all():
-                metadata = asset.metadata.metadata
-                aggregate(metadata, stats)
-            summary = toSummary(stats)
+        summary = (
+            aggregate_assets_summary(version_with_assets.assets.all())
+            if version_with_assets.id
+            else None
+        )
         metadata = {
             **self.metadata.metadata,
             'name': self.metadata.name,
@@ -274,7 +271,7 @@ class Version(TimeStampedModel):
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
-            'assetsSummary': summary
+            'assetsSummary': summary,
         }
         metadata['citation'] = self.citation(metadata)
         if self.doi:
