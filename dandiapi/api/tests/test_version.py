@@ -62,10 +62,13 @@ def test_version_metadata_computed(version, version_metadata):
 
 @pytest.mark.django_db
 def test_version_metadata_citation(version):
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -73,10 +76,13 @@ def test_version_metadata_citation_no_contributors(version):
     version.metadata.metadata['contributor'] = []
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -87,10 +93,13 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
     ]
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -98,10 +107,14 @@ def test_version_metadata_citation_contributor(version):
     version.metadata.metadata['contributor'] = [{'name': 'Doe, Jane', 'includeInCitation': True}]
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. '
+        f'DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -112,12 +125,13 @@ def test_version_metadata_citation_multiple_contributors(version):
     ]
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
-        == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. {url}'
+        == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
+        f'DANDI archive. {url}'
     )
 
 

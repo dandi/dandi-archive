@@ -227,7 +227,9 @@ class Version(TimeStampedModel):
                 ]
             )
             if cl:
-                citation = f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI archive. {url}'
+                citation = (
+                    f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI archive. {url}'
+                )
         return citation
 
     @classmethod
