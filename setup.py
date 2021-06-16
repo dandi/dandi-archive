@@ -65,6 +65,7 @@ setup(
     ],
     extras_require={
         'dev': [
+            'django-click',
             'django-composed-configuration[dev]',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',

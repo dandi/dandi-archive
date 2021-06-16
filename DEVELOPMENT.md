@@ -9,7 +9,7 @@ For frequent deployment administration tasks, `django-extensions` provides a con
 ### refresh_metadata
 
 ```
-python manage.py runscript refresh_metadata
+python manage.py refresh_metadata
 ```
 
 This will save all `Version`s and `Asset`s, forcing them to recompute their metadata.
