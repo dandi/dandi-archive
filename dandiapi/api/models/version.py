@@ -12,6 +12,7 @@ from django_extensions.db.models import TimeStampedModel
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import create_s3_storage
 
+from dandischema.metadata import aggregate, toSummary
 from .dandiset import Dandiset
 
 
@@ -248,11 +249,6 @@ class Version(TimeStampedModel):
 
     def _populate_metadata(self, version_with_assets: Version = None):
         number_of_bytes = 0
-        number_of_files = 0
-        data_standards = set()
-        approaches = set()
-        measurement_techniques = set()
-        species = set()
 
         # When validating a draft version, we create a published version without saving it,
         # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
@@ -264,24 +260,13 @@ class Version(TimeStampedModel):
 
         # When running _populate_metadata on an unsaved Version, self.assets is not available.
         # Only compute the asset-based properties if this Version has an id, which means it's saved.
+        summary = None
         if version_with_assets.id:
-            number_of_bytes = (
-                version_with_assets.assets.all().aggregate(size=models.Sum('blob__size'))['size']
-                or 0
-            )
-            number_of_files = version_with_assets.assets.count()
+            stats = {}
             for asset in version_with_assets.assets.all():
                 metadata = asset.metadata.metadata
-                if 'dataStandard' in metadata:
-                    data_standards = data_standards.union(set(metadata['dataStandard']))
-                if 'approach' in metadata:
-                    approaches = approaches.union(set(metadata['approach']))
-                if 'measurementTechnique' in metadata:
-                    measurement_techniques = measurement_techniques.union(
-                        set(metadata['measurementTechnique'])
-                    )
-                if 'species' in metadata:
-                    species = species.union(set(metadata['species']))
+                aggregate(metadata, stats)
+            summary = toSummary(stats)
         metadata = {
             **self.metadata.metadata,
             'name': self.metadata.name,
@@ -289,14 +274,7 @@ class Version(TimeStampedModel):
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
-            'assetsSummary': {
-                'numberOfBytes': number_of_bytes,
-                'numberOfFiles': number_of_files,
-                'dataStandard': sorted(data_standards),
-                'approach': sorted(approaches),
-                'measurementTechnique': sorted(measurement_techniques),
-                'species': sorted(species),
-            },
+            'assetsSummary': summary
         }
         metadata['citation'] = self.citation(metadata)
         if self.doi:
