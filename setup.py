@@ -63,7 +63,6 @@ setup(
         # Development-only, but required
         'django-minio-storage',
         # Temporary dependency for user migration
-        'girder-client',
         'versioneer',
     ],
     extras_require={
@@ -73,7 +72,16 @@ setup(
             'django-s3-file-field[minio]',
             'ipython',
             'tox',
-        ]
+        ],
+        'test': [
+            'factory-boy',
+            'pytest',
+            'pytest-cov',
+            'pytest-django',
+            'pytest-factoryboy',
+            'pytest-mock',
+            'requests',
+        ],
     },
     cmdclass=versioneer.get_cmdclass(),
 )

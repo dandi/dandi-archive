@@ -71,6 +71,27 @@ def test_version_published_asset(asset):
     }
 
 
+@pytest.mark.django_db
+def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_factory):
+    # This asset blob should only be counted once,
+    # despite belonging to multiple assets and multiple versions.
+    asset_blob = asset_blob_factory()
+
+    asset1 = asset_factory(blob=asset_blob)
+    version1 = draft_version_factory()
+    version1.assets.add(asset1)
+
+    asset2 = asset_factory(blob=asset_blob)
+    version2 = draft_version_factory()
+    version2.assets.add(asset2)
+
+    # These asset blobs should not be counted since they aren't in any versions.
+    asset_blob_factory()
+    asset_factory()
+
+    assert Asset.total_size() == asset_blob.size
+
+
 # API Tests
 
 

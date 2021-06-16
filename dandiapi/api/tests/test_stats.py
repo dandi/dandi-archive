@@ -38,7 +38,8 @@ def test_stats_user(api_client, user):
 
 
 @pytest.mark.django_db
-def test_stats_asset(api_client, asset):
+def test_stats_asset(api_client, version, asset):
+    version.assets.add(asset)
     stats = api_client.get('/api/stats/').data
 
     assert stats['size'] == asset.size

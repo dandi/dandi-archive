@@ -6,7 +6,8 @@ This is the simplest configuration for developers to start with.
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
 2. Run `docker-compose run --rm django ./manage.py createsuperuser`
-   and follow the prompts to create your own user
+   and follow the prompts to create your own user.
+   Set your username to your email to ensure parity with how GitHub logins work.
 
 ### Run Application
 1. Run `docker-compose up`
@@ -25,15 +26,22 @@ This configuration still uses Docker to run attached services in the background,
 but allows developers to run Python code on their native system.
 
 ### Initial Setup
-1. Run `docker-compose -f ./docker-compose.yml up -d`
-2. Install Python 3.8
-3. Install
-   [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites)
-4. Create and activate a new Python virtualenv
-5. Run `pip install -e .[dev]`
-6. Run `source ./dev/export-env.sh`
-7. Run `./manage.py migrate`
-8. Run `./manage.py createsuperuser` and follow the prompts to create your own user
+1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
+2. Run `docker-compose -f ./docker-compose.yml up -d`
+3. Install Python 3.8
+4. Install
+  [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites).
+  Example `psycopg2` installation on Ubuntu 20.04:
+  ```
+  sudo apt install libpq-dev
+  export PATH=/usr/lib/postgresql/X.Y/bin/:$PATH
+  pip install psycopg2
+  ```
+5. Create and activate a new Python virtualenv
+6. Run `pip install -e .[dev]`
+7. Run `source ./dev/export-env.sh`
+8. Run `./manage.py migrate`
+9. Run `./manage.py createsuperuser` and follow the prompts to create your own user
 
 ### Run Application
 1.  Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
@@ -69,6 +77,8 @@ the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
 ### Initial Setup
 tox is used to execute all tests.
 tox is installed automatically with the `dev` package extra.
+To install the tox pytest dependencies into your environment, run `pip install -e .[test]`.
+These are useful for IDE autocompletion or if you want to run `pytest` directly (not recommended).
 
 When running the "Develop with Docker" configuration, all tox commands must be run as
 `docker-compose run --rm django tox`; extra arguments may also be appended to this form.
@@ -95,10 +105,9 @@ authentication. All other endpoints require token authentication
 to call.
 
 ### Creating a Token
-Visit the URL `/admin/authtoken/token/add/` with a web browser, logging
-in with the credentials entered during the `createsuperuser` setup step.
-Select your user from the drop-down, and click SAVE. Copy the token value
-from the KEY column in the token listing.
+Visit the URL `/admin` with a web browser, logging
+in with the credentials entered during the `createsuperuser` setup step..
+Then go to `/swagger` and use `GET /auth/token` end-point.
 
 ### Supplying the Token
 In API endpoint calls, add the `Authorization` HTTP header with a value of
