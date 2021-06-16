@@ -26,7 +26,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
-from dandiapi.api.tasks import validate_asset_metadata
+from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
@@ -163,7 +163,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        # Trigger a metadata validation
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        validate_version_metadata.delay(version.id)
+
+        # Trigger an asset metadata validation
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
         # just in case we are using an existing blob that has already computed its digest.
         validate_asset_metadata.delay(asset.id)
@@ -226,7 +229,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        # Trigger a metadata validation
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        validate_version_metadata.delay(version.id)
+
+        # Trigger an asset metadata validation
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
         # just in case we are using an existing blob that has already computed its digest.
         validate_asset_metadata.delay(new_asset.id)
@@ -252,6 +258,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         # Save the version so that the modified field is updated
         version.save()
+
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        validate_version_metadata.delay(version.id)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
