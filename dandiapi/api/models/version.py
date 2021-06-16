@@ -213,10 +213,11 @@ class Version(TimeStampedModel):
     @classmethod
     def citation(cls, metadata):
         year = datetime.datetime.now().year
-        name = metadata['name']
+        name = metadata['name'].rstrip('.')
         url = metadata['url']
+        version = metadata['version']
         # If we can't find any contributors, use this citation format
-        citation = f'{name} ({year}). Online: {url}'
+        citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI archive. {url}'
         if 'contributor' in metadata and metadata['contributor']:
             cl = '; '.join(
                 [
@@ -226,7 +227,9 @@ class Version(TimeStampedModel):
                 ]
             )
             if cl:
-                citation = f'{cl} ({year}) {name}. Online: {url}'
+                citation = (
+                    f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI archive. {url}'
+                )
         return citation
 
     @classmethod

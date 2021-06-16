@@ -220,7 +220,7 @@ def test_dandiset_rest_create(api_client, user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{name} ({year}). Online: {url}',
+        'citation': f'{name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -286,7 +286,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{name} ({year}). Online: {url}',
+        'citation': f'{name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,

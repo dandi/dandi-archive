@@ -62,10 +62,13 @@ def test_version_metadata_computed(version, version_metadata):
 
 @pytest.mark.django_db
 def test_version_metadata_citation(version):
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -73,10 +76,13 @@ def test_version_metadata_citation_no_contributors(version):
     version.metadata.metadata['contributor'] = []
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -87,21 +93,28 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
     ]
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'{name} ({year}). Online: {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
 def test_version_metadata_citation_contributor(version):
-    version.metadata.metadata['contributor'] = [{'name': 'Jane Doe', 'includeInCitation': True}]
+    version.metadata.metadata['contributor'] = [{'name': 'Doe, Jane', 'includeInCitation': True}]
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
-    assert version.metadata.metadata['citation'] == f'Jane Doe ({year}) {name}. Online: {url}'
+    assert (
+        version.metadata.metadata['citation']
+        == f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. '
+        f'DANDI archive. {url}'
+    )
 
 
 @pytest.mark.django_db
@@ -112,12 +125,13 @@ def test_version_metadata_citation_multiple_contributors(version):
     ]
     version.save()
 
-    name = version.metadata.metadata['name']
+    name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
     url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
-        == f'John Doe; Jane Doe ({year}) {name}. Online: {url}'
+        == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
+        f'DANDI archive. {url}'
     )
 
 
@@ -442,7 +456,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{new_name} ({year}). Online: {url}',
+        'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -505,7 +519,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{new_name} ({year}). Online: {url}',
+        'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
