@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import datetime
+import os
 from urllib.parse import urlparse, urlunparse
 
-from dandischema.metadata import aggregate_assets_summary
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
@@ -14,6 +14,14 @@ from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import create_s3_storage
 
 from .dandiset import Dandiset
+
+if settings.DANDI_ALLOW_LOCALHOST_URLS:
+    # If this environment variable is set, the pydantic model will allow URLs with localhost
+    # in them. This is important for development and testing environments, where URLs will
+    # frequently point to localhost.
+    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
+
+from dandischema.metadata import aggregate_assets_summary
 
 
 class VersionMetadata(PublishableMetadataMixin, TimeStampedModel):
