@@ -22,6 +22,8 @@ class DandiMixin(ConfigMixin):
 
     ACCOUNT_EMAIL_VERIFICATION = 'none'
 
+    DANDI_ALLOW_LOCALHOST_URLS = False
+
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
