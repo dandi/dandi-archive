@@ -224,10 +224,6 @@ def test_dandiset_rest_create(api_client, user):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
         },
     }
 
@@ -290,10 +286,6 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
         },
     }
 

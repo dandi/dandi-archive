@@ -49,10 +49,7 @@ def test_version_metadata_computed(version, version_metadata):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
+            'schemaKey': 'AssetsSummary',
         },
     }
     expected_metadata['citation'] = version.citation(expected_metadata)
@@ -146,104 +143,11 @@ def test_version_metadata_context(version):
 
 
 @pytest.mark.django_db
-def test_version_metadata_assets_summary(version, asset):
-    original_metadata = version.metadata.metadata
-    asset.metadata.metadata = {
-        **asset.metadata.metadata,
-        'approach': ['a'],
-        'dataStandard': ['b'],
-        'measurementTechnique': ['c'],
-        'species': ['d'],
-    }
-    asset.metadata.save()
-    version.assets.add(asset)
-
-    version.save()
-
-    assert version.metadata.metadata == {
-        **original_metadata,
-        'assetsSummary': {
-            'approach': ['a'],
-            'dataStandard': ['b'],
-            'measurementTechnique': ['c'],
-            'species': ['d'],
-            'numberOfBytes': asset.size,
-            'numberOfFiles': 1,
-        },
-    }
-
-
-@pytest.mark.django_db
 def test_version_metadata_assets_summary_missing(version, asset):
-    original_metadata = version.metadata.metadata
     version.assets.add(asset)
-
-    version.save()
 
     # Verify that an Asset with no aggregatable metadata doesn't break anything
-    assert version.metadata.metadata == {
-        **original_metadata,
-        'assetsSummary': {
-            'approach': [],
-            'dataStandard': [],
-            'measurementTechnique': [],
-            'species': [],
-            'numberOfBytes': asset.size,
-            'numberOfFiles': 1,
-        },
-    }
-
-
-@pytest.mark.django_db
-def test_version_metadata_assets_summary_aggregate(version, asset_factory):
-    original_metadata = version.metadata.metadata
-
-    # Letters
-    asset_1 = asset_factory(
-        metadata__metadata={
-            'approach': ['a'],
-            'dataStandard': ['b'],
-            'measurementTechnique': ['c'],
-            'species': ['d'],
-        }
-    )
-    # Numbers
-    asset_2 = asset_factory(
-        metadata__metadata={
-            'approach': ['1'],
-            'dataStandard': ['2'],
-            'measurementTechnique': ['3'],
-            'species': ['4'],
-        }
-    )
-    # Duplicates, these will be removed to preserve uniqueness
-    asset_3 = asset_factory(
-        metadata__metadata={
-            'approach': ['1'],
-            'dataStandard': ['b'],
-            'measurementTechnique': ['3'],
-            'species': ['d'],
-        }
-    )
-    version.assets.add(asset_1)
-    version.assets.add(asset_2)
-    version.assets.add(asset_3)
-
     version.save()
-
-    # The aggregation should sort everything alphabetically, so numbers come before letters
-
-    assert version.metadata.metadata == {
-        **original_metadata,
-        'assetsSummary': {
-            'approach': ['1', 'a'],
-            'dataStandard': ['2', 'b'],
-            'measurementTechnique': ['3', 'c'],
-            'species': ['4', 'd'],
-            'numberOfBytes': asset_1.size + asset_2.size + asset_3.size,
-            'numberOfFiles': 3,
-        },
-    }
 
 
 @pytest.mark.django_db
@@ -460,10 +364,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
+            'schemaKey': 'AssetsSummary',
         },
     }
 
@@ -523,10 +424,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
+            'schemaKey': 'AssetsSummary',
         },
     }
 

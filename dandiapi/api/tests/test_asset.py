@@ -178,7 +178,14 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
-    metadata = {'path': path, 'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    metadata = {
+        'schemaVersion': '0.4.2',
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
@@ -279,7 +286,14 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     draft_version.assets.add(asset)
 
     new_path = 'test/asset/rest/update.txt'
-    new_metadata = {'path': new_path, 'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    new_metadata = {
+        'schemaVersion': '0.4.2',
+        'encodingFormat': 'application/x-nwb',
+        'path': new_path,
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+    }
 
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
