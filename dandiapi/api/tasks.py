@@ -1,13 +1,23 @@
+import os
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db.transaction import atomic
 import jsonschema.exceptions
-import requests
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.models import Asset, AssetBlob, Version
+
+if settings.DANDI_ALLOW_LOCALHOST_URLS:
+    # If this environment variable is set, the pydantic model will allow URLs with localhost
+    # in them. This is important for development and testing environments, where URLs will
+    # frequently point to localhost.
+    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
+
+from dandischema.metadata import validate
 
 logger = get_task_logger(__name__)
 
@@ -95,35 +105,7 @@ def validate_asset_metadata(asset_id: int) -> None:
     try:
         publish_asset = Asset.published_asset(asset)
         metadata = publish_asset.metadata.metadata
-        if 'schemaVersion' not in metadata:
-            logger.info('schemaVersion not specified in metadata for asset %s', asset_id)
-            raise ValidationError('schemaVersion not specified')
-        schema_version = metadata['schemaVersion']
-        schema_url = (
-            'https://raw.githubusercontent.com/dandi/schema/master/'
-            f'releases/{schema_version}/published-asset.json'
-        )
-        request = requests.get(schema_url)
-        request.raise_for_status()
-        schema = request.json()
-        jsonschema.validate(instance=metadata, schema=schema)
-
-        # Verify sha256 digest is present in metadata
-        if 'dandi:sha2-256' not in metadata['digest']:
-            raise ValidationError('SHA256 checksum not computed')
-
-    except jsonschema.exceptions.ValidationError as e:
-        logger.info('Validation error for asset %s', asset_id)
-
-        asset.status = Asset.Status.INVALID
-        asset.validation_error = format_validation_error(e)
-        asset.save()
-        return
-    except ValidationError as e:
-        asset.status = Asset.Status.INVALID
-        asset.validation_error = str(e)
-        asset.save()
-        return
+        validate(metadata, schema_key='PublishedAsset')
     except Exception as e:
         logger.error('Error while validating asset %s', asset_id)
         logger.error(str(e))
@@ -153,29 +135,7 @@ def validate_version_metadata(version_id: int) -> None:
         # Inject a dummy DOI so the metadata is valid
         metadata['doi'] = '10.abc123'
 
-        if 'schemaVersion' not in metadata:
-            logger.info('schemaVersion not specified in metadata for version %s', version_id)
-            raise ValidationError('schemaVersion not specified')
-        schema_version = metadata['schemaVersion']
-        schema_url = (
-            'https://raw.githubusercontent.com/dandi/schema/master/'
-            f'releases/{schema_version}/published-dandiset.json'
-        )
-        request = requests.get(schema_url)
-        request.raise_for_status()
-        schema = request.json()
-        jsonschema.validate(instance=metadata, schema=schema)
-    except jsonschema.exceptions.ValidationError as e:
-        logger.info('Validation error for version %s', version_id)
-        version.status = Version.Status.INVALID
-        version.validation_error = format_validation_error(e)
-        version.save()
-        return
-    except ValidationError as e:
-        version.status = Version.Status.INVALID
-        version.validation_error = str(e)
-        version.save()
-        return
+        validate(metadata, schema_key='PublishedDandiset')
     except Exception as e:
         logger.error('Error while validating version %s', version_id)
         logger.error(str(e))

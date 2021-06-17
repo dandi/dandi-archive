@@ -58,7 +58,7 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': '0.4.1',
+            'schemaVersion': '0.4.3',
             'description': faker.Faker().sentence(),
             'contributor': [{'roleName': ['dcite:ContactPerson']}],
             'license': ['spdx:CC0-1.0'],
@@ -112,7 +112,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         h = hashlib.md5()
         h.update(self.blob.read())
         self.blob.seek(0)
-        return h.hexdigest()
+        return f'{h.hexdigest()}-0'
 
     @factory.lazy_attribute
     def size(self):
@@ -127,7 +127,7 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': '0.4.1',
+            'schemaVersion': '0.4.3',
             'encodingFormat': 'application/x-nwb',
         }
         # Remove faked data that might conflict with the schema types
