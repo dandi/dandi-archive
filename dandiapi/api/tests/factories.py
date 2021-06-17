@@ -112,7 +112,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         h = hashlib.md5()
         h.update(self.blob.read())
         self.blob.seek(0)
-        return h.hexdigest()
+        return f'{h.hexdigest()}-0'
 
     @factory.lazy_attribute
     def size(self):
