@@ -259,11 +259,19 @@ class Version(TimeStampedModel):
 
         # When running _populate_metadata on an unsaved Version, self.assets is not available.
         # Only compute the asset-based properties if this Version has an id, which means it's saved.
-        summary = (
-            aggregate_assets_summary(version_with_assets.assets.all())
-            if version_with_assets.id
-            else None
-        )
+        summary = {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+        }
+        if version_with_assets.id:
+            try:
+                summary = aggregate_assets_summary(
+                    [asset.metadata.metadata for asset in version_with_assets.assets.all()]
+                )
+            except:
+                # The assets summary aggregation may fail if any asset metadata is invalid.
+                # If so, just use the placeholder summary.
+                pass
         metadata = {
             **self.metadata.metadata,
             'name': self.metadata.name,
