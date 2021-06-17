@@ -268,7 +268,7 @@ class Version(TimeStampedModel):
                 summary = aggregate_assets_summary(
                     [asset.metadata.metadata for asset in version_with_assets.assets.all()]
                 )
-            except:
+            except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
                 # If so, just use the placeholder summary.
                 pass

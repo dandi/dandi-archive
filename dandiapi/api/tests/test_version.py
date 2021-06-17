@@ -130,7 +130,6 @@ def test_version_metadata_context(version):
 
 @pytest.mark.django_db
 def test_version_metadata_assets_summary_missing(version, asset):
-    original_metadata = version.metadata.metadata
     version.assets.add(asset)
 
     # Verify that an Asset with no aggregatable metadata doesn't break anything
