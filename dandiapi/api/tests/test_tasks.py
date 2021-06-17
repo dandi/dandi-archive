@@ -137,9 +137,7 @@ def test_validate_asset_metadata_no_schema_version(asset: Asset):
 
 @pytest.mark.django_db
 def test_validate_asset_metadata_malformed_schema_version(asset: Asset):
-    asset.metadata.metadata = {
-        'schemaVersion': 'xxx',
-    }
+    asset.metadata.metadata['schemaVersion'] = 'xxx'
     asset.metadata.save()
 
     tasks.validate_asset_metadata(asset.id)
@@ -205,8 +203,10 @@ def test_validate_version_metadata(version: Version, asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_no_schema_version(version: Version):
-    version.metadata.metadata = {}
+def test_validate_version_metadata_no_schema_version(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    del version.metadata.metadata['schemaVersion']
     version.metadata.save()
 
     tasks.validate_version_metadata(version.id)
@@ -214,14 +214,14 @@ def test_validate_version_metadata_no_schema_version(version: Version):
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error == 'schemaVersion not specified'
+    assert version.validation_error.startswith('Metadata version None is not allowed.')
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_malformed_schema_version(version: Version):
-    version.metadata.metadata = {
-        'schemaVersion': 'xxx',
-    }
+def test_validate_version_metadata_malformed_schema_version(version: Version, asset: Asset):
+    version.assets.add(asset)
+
+    version.metadata.metadata['schemaVersion'] = 'xxx'
     version.metadata.save()
 
     tasks.validate_version_metadata(version.id)
@@ -229,14 +229,13 @@ def test_validate_version_metadata_malformed_schema_version(version: Version):
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error == (
-        '404 Client Error: Not Found for url: '
-        'https://raw.githubusercontent.com/dandi/schema/master/releases/xxx/published-dandiset.json'
-    )
+    assert version.validation_error.startswith('Metadata version xxx is not allowed.')
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_no_description(version: Version):
+def test_validate_version_metadata_no_description(version: Version, asset: Asset):
+    version.assets.add(asset)
+
     del version.metadata.metadata['description']
     version.metadata.save()
 
@@ -245,11 +244,17 @@ def test_validate_version_metadata_no_description(version: Version):
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error == "'description' is a required property\nSee: metadata"
+    assert version.validation_error == (
+        '1 validation error for PublishedDandiset\n'
+        'description\n'
+        '  field required (type=value_error.missing)'
+    )
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_malformed_license(version: Version):
+def test_validate_version_metadata_malformed_license(version: Version, asset: Asset):
+    version.assets.add(asset)
+
     version.metadata.metadata['license'] = 'foo'
     version.metadata.save()
 
