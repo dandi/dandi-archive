@@ -350,10 +350,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
+            'schemaKey': 'AssetsSummary',
         },
     }
 
@@ -413,10 +410,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
-            'dataStandard': [],
-            'approach': [],
-            'measurementTechnique': [],
-            'species': [],
+            'schemaKey': 'AssetsSummary',
         },
     }
 
