@@ -12,6 +12,15 @@ export default {
     version() {
       return process.env.VUE_APP_VERSION;
     },
+
+    githubLink() {
+      const gitRev = process.env.VUE_APP_GIT_REVISION;
+      if (gitRev) {
+        return `https://github.com/dandi/dandiarchive/commit/${gitRev}`;
+      } else {
+        return "https://github.com/dandi/dandiarchive";
+      }
+    },
   },
   methods: {
     versionClick() {
@@ -39,7 +48,9 @@ export default {
               <a
                 class="version-link"
                 v-on="on"
-                @click="versionClick"
+                :href="githubLink"
+                target="_blank"
+                rel="noopener"
               >{{ version }}</a>
             </template>
             <span>Copied to clipboard!</span>
