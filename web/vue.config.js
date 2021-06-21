@@ -13,7 +13,7 @@ function getGitRevision() {
   try {
     return child_process.execSync("git rev-parse HEAD").toString();
   } catch (err) {
-    return null;
+    return "";
   }
 }
 
