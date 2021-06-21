@@ -9,7 +9,16 @@ function getVersion() {
   }
 }
 
+function getGitRevision() {
+  try {
+    return child_process.execSync("git rev-parse HEAD").toString();
+  } catch (err) {
+    return "";
+  }
+}
+
 process.env.VUE_APP_VERSION = getVersion();
+process.env.VUE_APP_GIT_REVISION = getGitRevision();
 
 module.exports = {
   lintOnSave: false,
