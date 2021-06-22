@@ -3,9 +3,10 @@
 from django.db import migrations
 from django.db.models import Q
 
+from dandiapi.api.models.oauth import Application
+
 
 def create_application(apps, schema_editor):
-    Application = apps.get_model('oauth2_provider', 'Application')
     name = 'DANDI GUI'
     # This is specified so it matches the default value used in the frontend.
     client_id = 'Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl'

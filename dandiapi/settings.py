@@ -59,6 +59,8 @@ class DandiMixin(ConfigMixin):
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
 
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.Application'
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
