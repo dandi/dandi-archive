@@ -110,6 +110,16 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Strip away any computed fields
         metadata = Version.strip_metadata(metadata)
 
+        metadata['contributor'] = [
+            {
+                'name': f'{request.user.first_name} {request.user.last_name}',
+                'email': request.user.email,
+                'roleName': ['dandi:ContactPerson'],
+                'schemaKey': 'Person',
+                'includeInCitation': True,
+            }
+        ]
+
         version_metadata, created = VersionMetadata.objects.get_or_create(
             name=name,
             metadata=metadata,
