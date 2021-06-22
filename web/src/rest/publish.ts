@@ -59,8 +59,21 @@ const publishRest = new Vue({
   methods: {
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
-      if (oauthClient.isLoggedIn) {
+      if (!oauthClient.isLoggedIn) {
+        return;
+      }
+
+      try {
+        // Fetch user
         this.user = await this.me();
+      } catch (e) {
+        // A status of 401 indicates login failed, so the exception should be supressed.
+        if (e.response.status === 401) {
+          await oauthClient.logout();
+        } else {
+          // Any other kind of exception indicates an error that shouldn't occur
+          throw e;
+        }
       }
     },
     async login() {
