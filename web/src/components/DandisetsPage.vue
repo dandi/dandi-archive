@@ -116,7 +116,7 @@ export default defineComponent({
     const route = ctx.root.$route;
 
     const sortOption = ref(Number(route.query.sortOption) || 0);
-    const sortDir = ref(Number(route.query.sortDir || 1));
+    const sortDir = ref(Number(route.query.sortDir || -1));
     const page = ref(Number(route.query.page) || 1);
 
     const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
