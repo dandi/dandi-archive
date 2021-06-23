@@ -59,7 +59,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
                 queryset = queryset.annotate(
                     modified_version=Subquery(latest_version.values('modified'))
                 )
-                # call reverse() so the default order puts more recently modified dandisets first
                 return queryset.order_by(f'{ordering}_version')
         return queryset
 
