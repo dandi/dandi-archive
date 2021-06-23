@@ -283,7 +283,7 @@ export default {
     },
     manageOwnersDisabled() {
       if (!this.loggedIn || !this.owners) return true;
-      return !this.owners.find((owner) => owner.id === this.user._id);
+      return !this.owners.find((owner) => owner.username === this.user.username);
     },
     limitedOwners() {
       if (!this.owners) return [];
