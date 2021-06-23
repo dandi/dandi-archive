@@ -59,8 +59,6 @@ class DandiMixin(ConfigMixin):
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
 
-    OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.Application'
-
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
@@ -85,3 +83,8 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
+
+
+# use the same config for staging as production, but also allow regex for OAuth redirect URIs
+class HerokuStagingConfiguration(HerokuProductionBaseConfiguration):
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.Application'
