@@ -78,16 +78,16 @@ const DANDISETS_PER_PAGE = 8;
 
 const sortingOptions = [
   {
-    name: 'Name',
-    djangoField: 'name',
+    name: 'Modified',
+    djangoField: 'modified',
   },
   {
     name: 'Identifier',
     djangoField: 'id',
   },
   {
-    name: 'Modified',
-    djangoField: 'modified',
+    name: 'Name',
+    djangoField: 'name',
   },
 ];
 
@@ -116,7 +116,7 @@ export default defineComponent({
     const route = ctx.root.$route;
 
     const sortOption = ref(Number(route.query.sortOption) || 0);
-    const sortDir = ref(Number(route.query.sortDir || 1));
+    const sortDir = ref(Number(route.query.sortDir || -1));
     const page = ref(Number(route.query.page) || 1);
 
     const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
