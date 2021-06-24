@@ -223,7 +223,10 @@ def test_dandiset_rest_create(api_client, user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
+        'citation': (
+            f'{user.first_name} {user.last_name} ({year}) {name} '
+            f'(Version draft) [Data set]. DANDI archive. {url}'
+        ),
         'contributor': [
             {
                 'name': 'John Doe',
@@ -297,7 +300,10 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
+        'citation': (
+            f'{admin_user.first_name} {admin_user.last_name} ({year}) {name} '
+            f'(Version draft) [Data set]. DANDI archive. {url}'
+        ),
         'contributor': [
             {
                 'name': 'John Doe',
