@@ -45,7 +45,7 @@ def test_version_metadata_computed(version, version_metadata):
         'version': version.version,
         'id': f'DANDI:{version.dandiset.identifier}/{version.version}',
         'url': f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}',
-        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.3/context.json',  # noqa: E501
+        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
