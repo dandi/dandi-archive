@@ -44,7 +44,7 @@ def test_version_metadata_computed(version, version_metadata):
         'identifier': f'DANDI:{version.dandiset.identifier}',
         'version': version.version,
         'id': f'DANDI:{version.dandiset.identifier}/{version.version}',
-        'url': f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}',
+        'url': f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}',
         '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -61,7 +61,7 @@ def test_version_metadata_computed(version, version_metadata):
 def test_version_metadata_citation(version):
     name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
         == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
@@ -75,7 +75,7 @@ def test_version_metadata_citation_no_contributors(version):
 
     name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
         == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
@@ -92,7 +92,7 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
 
     name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
         == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
@@ -106,7 +106,7 @@ def test_version_metadata_citation_contributor(version):
 
     name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
         == f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. '
@@ -124,7 +124,7 @@ def test_version_metadata_citation_multiple_contributors(version):
 
     name = version.metadata.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
     assert (
         version.metadata.metadata['citation']
         == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
@@ -238,7 +238,7 @@ def test_version_publish_version(draft_version):
         'version': publish_version.version,
         'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
         'url': (
-            f'https://dandiarchive.org/{publish_version.dandiset.identifier}'
+            f'https://dandiarchive.org/dandiset/{publish_version.dandiset.identifier}'
             f'/{publish_version.version}'
         ),
         'citation': publish_version.citation(publish_version.metadata.metadata),
@@ -352,7 +352,7 @@ def test_version_rest_update(api_client, user, draft_version):
     new_name = 'A unique and special name!'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{draft_version.dandiset.identifier}/draft'
+    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'name': new_name,
@@ -412,7 +412,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'very_large': 'words' * 10,
     }
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{draft_version.dandiset.identifier}/draft'
+    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'name': new_name,

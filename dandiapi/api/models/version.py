@@ -289,7 +289,7 @@ class Version(TimeStampedModel):
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
-            'url': f'https://dandiarchive.org/{self.dandiset.identifier}/{self.version}',
+            'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
             'assetsSummary': summary,
         }
         metadata['citation'] = self.citation(metadata)
