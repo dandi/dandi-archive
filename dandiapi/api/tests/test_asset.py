@@ -56,7 +56,8 @@ def test_version_published_asset(asset):
             'endDate': TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
-                    'id': 'RRID:SCR_017571',
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
                     'name': 'DANDI API',
                     # TODO version the API
                     'version': '0.1.0',
