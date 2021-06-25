@@ -3,6 +3,7 @@ from dandischema import migrate
 from dandiapi.api.models import Version, VersionMetadata
 from dandiapi.api.tasks import validate_version_metadata
 
+
 def run(to_version):
     print(f'Migrating all version metadata to version {to_version}')
     for version in Version.objects.all():
