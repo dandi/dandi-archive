@@ -133,7 +133,7 @@ def validate_version_metadata(version_id: int) -> None:
         metadata = publish_version.metadata.metadata
 
         # Inject a dummy DOI so the metadata is valid
-        metadata['doi'] = '10.abc123'
+        metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
 
         validate(metadata, schema_key='PublishedDandiset')
     except Exception as e:

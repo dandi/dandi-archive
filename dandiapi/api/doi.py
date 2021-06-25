@@ -15,10 +15,10 @@ def _generate_doi_data(version: Version):
         os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
     from dandischema.datacite import to_datacite
 
-    prefix = settings.DANDI_DOI_API_PREFIX or '10.00000'
+    prefix = settings.DANDI_DOI_API_PREFIX or '10.80507'
     dandiset_id = version.dandiset.identifier
     version_id = version.version
-    doi = f'{prefix}/{dandiset_id}/{version_id}'
+    doi = f'{prefix}/dandi.{dandiset_id}/{version_id}'
     metadata = version.metadata.metadata
     metadata['doi'] = doi
     return (doi, to_datacite(metadata))
