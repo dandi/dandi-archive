@@ -323,6 +323,97 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_create_with_contributor(api_client, admin_user):
+    admin_user.first_name = 'John'
+    admin_user.last_name = 'Doe'
+    admin_user.save()
+    api_client.force_authenticate(user=admin_user)
+    name = 'Test Dandiset'
+    identifier = '123456'
+    metadata = {
+        'foo': 'bar',
+        'identifier': f'DANDI:{identifier}',
+        # This contributor is different from the admin_user
+        'contributor': [
+            {
+                'name': 'Jane Doe',
+                'email': 'jane.doe@kitware.com',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+                'affiliation': [],
+                'includeInCitation': True,
+            }
+        ],
+    }
+
+    response = api_client.post(
+        '/api/dandisets/',
+        {'name': name, 'metadata': metadata},
+        format='json',
+    )
+    assert response.data == {
+        'identifier': identifier,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'most_recent_published_version': None,
+        'draft_version': {
+            'version': 'draft',
+            'name': name,
+            'asset_count': 0,
+            'size': 0,
+            'dandiset': {
+                'identifier': identifier,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            },
+            'status': 'Pending',
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        },
+    }
+
+    # Creating a Dandiset has side affects.
+    # Verify that the user is the only owner.
+    dandiset = Dandiset.objects.get(id=identifier)
+    assert list(dandiset.owners.all()) == [admin_user]
+
+    # Verify that a draft Version and VersionMetadata were also created.
+    assert dandiset.versions.count() == 1
+    assert dandiset.most_recent_published_version is None
+    assert dandiset.draft_version.version == 'draft'
+    assert dandiset.draft_version.metadata.name == name
+
+    # Verify that computed metadata was injected
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
+    assert dandiset.draft_version.metadata.metadata == {
+        **metadata,
+        'name': name,
+        'identifier': f'DANDI:{identifier}',
+        'id': f'DANDI:{dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'citation': (
+            f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
+        ),
+        'contributor': [
+            {
+                'name': 'Jane Doe',
+                'email': 'jane.doe@kitware.com',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+                'affiliation': [],
+                'includeInCitation': True,
+            }
+        ],
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+        },
+    }
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user, dandiset):
     api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
