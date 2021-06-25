@@ -5,16 +5,9 @@
   >
     <template v-if="edit && Object.entries(meta).length">
       <meditor
-        v-if="DJANGO_API"
         :schema="schema"
         :model="meta"
         :readonly="!userCanModifyDandiset"
-        @close="edit = false"
-      />
-      <meta-editor
-        v-else
-        :schema="schema"
-        :model="meta"
         @close="edit = false"
       />
     </template>
@@ -67,10 +60,7 @@
 import { mapState } from 'vuex';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { draftVersion } from '@/utils/constants';
-import toggles from '@/featureToggle';
 import { publishRest, user } from '@/rest';
-import MetaEditor from './MetaEditor.vue';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetDetails from './DandisetDetails.vue';
@@ -79,7 +69,6 @@ export default {
   name: 'DandisetLandingView',
   components: {
     Meditor,
-    MetaEditor,
     DandisetMain,
     DandisetSearchField,
     DandisetDetails,
@@ -103,10 +92,7 @@ export default {
   },
   computed: {
     currentDandiset() {
-      if (toggles.DJANGO_API) {
-        return this.publishDandiset;
-      }
-      return this.girderDandiset;
+      return this.publishDandiset;
     },
     meta() {
       if (this.publishDandiset) {
@@ -170,23 +156,13 @@ export default {
     },
     async version(version) {
       // On version change, fetch the new dandiset (not initial)
-      if (toggles.DJANGO_API) {
-        const { identifier } = this;
-        await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
-        // If the above await call didn't result in publishDandiset being set, navigate to a default
-        if (!this.publishDandiset) {
-          // Omitting version will fetch the most recent version instead
-          await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier });
-          this.navigateToVersion(this.publishDandiset.version);
-        }
-      } else {
-        // With girder there is only two permissible versions, null and 'draft'
-        // eslint-disable-next-line no-lonely-if
-        if (version) {
-          this.navigateToVersion(draftVersion);
-        } else {
-          this.navigateToVersion(version);
-        }
+      const { identifier } = this;
+      await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
+      // If the above await call didn't result in publishDandiset being set, navigate to a default
+      if (!this.publishDandiset) {
+        // Omitting version will fetch the most recent version instead
+        await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier });
+        this.navigateToVersion(this.publishDandiset.version);
       }
     },
   },
