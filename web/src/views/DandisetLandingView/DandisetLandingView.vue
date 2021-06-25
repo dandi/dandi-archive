@@ -138,6 +138,11 @@ export default {
   asyncComputed: {
     userCanModifyDandiset: {
       async get() {
+        // published versions are never editable
+        if (this.publishDandiset.meta.dandiset.version !== 'draft') {
+          return false;
+        }
+
         if (!this.user) {
           return false;
         }
