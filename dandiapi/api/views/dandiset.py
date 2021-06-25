@@ -116,8 +116,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 {
                     'name': f'{request.user.first_name} {request.user.last_name}',
                     'email': request.user.email,
-                    'roleName': ['dandi:ContactPerson'],
+                    'roleName': ['dcite:ContactPerson'],
                     'schemaKey': 'Person',
+                    'affiliation': [],
                     'includeInCitation': True,
                 },
             ],

@@ -231,8 +231,9 @@ def test_dandiset_rest_create(api_client, user):
             {
                 'name': 'John Doe',
                 'email': user.email,
-                'roleName': ['dandi:ContactPerson'],
+                'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
+                'affiliation': [],
                 'includeInCitation': True,
             }
         ],
@@ -308,8 +309,9 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             {
                 'name': 'John Doe',
                 'email': admin_user.email,
-                'roleName': ['dandi:ContactPerson'],
+                'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
+                'affiliation': [],
                 'includeInCitation': True,
             }
         ],
