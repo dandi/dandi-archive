@@ -116,7 +116,7 @@
           </v-icon>
           {{ metadataButtonText }}
         </v-btn>
-        <template v-if="!DJANGO_API || publishDandiset.version == 'draft'">
+        <template v-if="publishDandiset.version === 'draft'">
           <v-tooltip
             left
             :disabled="publishDisabledMessage === null"
@@ -125,7 +125,6 @@
               <div v-on="on">
                 <!-- TODO for now only admins can publish -->
                 <v-btn
-                  v-if="DJANGO_API"
                   id="publish"
                   text
                   :disabled="publishDisabledMessage !== null || !user || !user.admin"
@@ -246,9 +245,8 @@ import { mapState, mapGetters } from 'vuex';
 
 import { dandiUrl } from '@/utils/constants';
 import {
-  girderRest, loggedIn, publishRest, user,
+  loggedIn, publishRest, user,
 } from '@/rest';
-import toggles from '@/featureToggle';
 
 import CopyText from '@/components/CopyText.vue';
 import _ from 'lodash';
@@ -337,22 +335,16 @@ export default {
       return this.userCanModifyDandiset ? 'mdi-pencil' : 'mdi-eye';
     },
     fileBrowserLink() {
-      if (toggles.DJANGO_API) {
-        const { version } = this;
-        const { identifier } = this.publishDandiset.meta.dandiset;
-        // TODO: this probably does not work correctly yet
-        return {
-          name: 'fileBrowser',
-          params: { identifier, version },
-          query: {
-            location: '',
-          },
-        };
-      }
       const { version } = this;
-      const { identifier } = this.girderDandiset.meta.dandiset;
-
-      return { name: 'fileBrowser', params: { identifier, version } };
+      const { identifier } = this.publishDandiset.meta.dandiset;
+      // TODO: this probably does not work correctly yet
+      return {
+        name: 'fileBrowser',
+        params: { identifier, version },
+        query: {
+          location: '',
+        },
+      };
     },
     permalink() {
       return `${dandiUrl}/dandiset/${this.meta.identifier}/${this.version}`;
@@ -379,22 +371,6 @@ export default {
       publishDandiset: (state) => state.publishDandiset,
     }),
     ...mapGetters('dandiset', ['version']),
-  },
-  asyncComputed: {
-    lockOwner: {
-      async get() {
-        if (toggles.DJANGO_API) {
-          return null;
-        }
-        const { data: owner } = await girderRest.get(`/dandi/${this.girderDandiset.meta.dandiset.identifier}/lock/owner`);
-        if (!owner) {
-          return null;
-        }
-        return owner;
-      },
-      // default to the publish lock message until the actual lock owner can be fetched
-      default: { email: 'publish@dandiarchive.org' },
-    },
   },
   methods: {
     async publish() {
