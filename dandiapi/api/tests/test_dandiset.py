@@ -170,6 +170,9 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create(api_client, user):
+    user.first_name = 'John'
+    user.last_name = 'Doe'
+    user.save()
     api_client.force_authenticate(user=user)
     name = 'Test Dandiset'
     metadata = {'foo': 'bar'}
@@ -212,7 +215,7 @@ def test_dandiset_rest_create(api_client, user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{dandiset.identifier}/draft'
+    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
@@ -220,7 +223,19 @@ def test_dandiset_rest_create(api_client, user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
+        'citation': (
+            f'{user.first_name} {user.last_name} ({year}) {name} '
+            f'(Version draft) [Data set]. DANDI archive. {url}'
+        ),
+        'contributor': [
+            {
+                'name': 'John Doe',
+                'email': user.email,
+                'roleName': ['dandi:ContactPerson'],
+                'schemaKey': 'Person',
+                'includeInCitation': True,
+            }
+        ],
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -230,6 +245,9 @@ def test_dandiset_rest_create(api_client, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_create_with_identifier(api_client, admin_user):
+    admin_user.first_name = 'John'
+    admin_user.last_name = 'Doe'
+    admin_user.save()
     api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'
     identifier = '123456'
@@ -274,7 +292,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://dandiarchive.org/{dandiset.identifier}/draft'
+    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
         'name': name,
@@ -282,7 +300,19 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
-        'citation': f'{name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
+        'citation': (
+            f'{admin_user.first_name} {admin_user.last_name} ({year}) {name} '
+            f'(Version draft) [Data set]. DANDI archive. {url}'
+        ),
+        'contributor': [
+            {
+                'name': 'John Doe',
+                'email': admin_user.email,
+                'roleName': ['dandi:ContactPerson'],
+                'schemaKey': 'Person',
+                'includeInCitation': True,
+            }
+        ],
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,

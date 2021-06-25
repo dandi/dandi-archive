@@ -133,7 +133,7 @@ class Asset(TimeStampedModel):
 
         metadata = {
             **self.metadata.metadata,
-            'id': str(self.asset_id),
+            'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, blob_url],
