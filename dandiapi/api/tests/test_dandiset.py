@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -227,6 +228,8 @@ def test_dandiset_rest_create(api_client, user):
             f'{user.first_name} {user.last_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'contributor': [
             {
                 'name': 'John Doe',
@@ -305,6 +308,8 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             f'{admin_user.first_name} {admin_user.last_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'contributor': [
             {
                 'name': 'John Doe',
@@ -396,6 +401,8 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'citation': (
             f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'contributor': [
             {
                 'name': 'Jane Doe',

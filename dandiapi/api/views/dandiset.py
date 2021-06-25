@@ -1,6 +1,7 @@
 import logging
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
@@ -110,8 +111,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Strip away any computed fields
         metadata = Version.strip_metadata(metadata)
 
-        # Only inject a default contributor field if it is not specified in the metadata
+        # Only inject a schemaVersion and default contributor field if they are
+        # not specified in the metadata
         metadata = {
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'contributor': [
                 {
                     'name': f'{request.user.first_name} {request.user.last_name}',
