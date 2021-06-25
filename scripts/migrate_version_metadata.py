@@ -1,7 +1,7 @@
 from dandischema import migrate
 
 from dandiapi.api.models import Version, VersionMetadata
-
+from dandiapi.api.tasks import validate_version_metadata
 
 def run(to_version):
     print(f'Migrating all version metadata to version {to_version}')
@@ -19,3 +19,5 @@ def run(to_version):
             new.save()
         version.metadata = new
         version.save()
+
+        validate_version_metadata.delay(version.id)
