@@ -70,7 +70,7 @@ class Version(TimeStampedModel):
         default=Status.PENDING,
         choices=Status.choices,
     )
-    validation_error = models.TextField(default='')
+    validation_error = models.TextField(default='', blank=True)
 
     class Meta:
         unique_together = ['dandiset', 'version']

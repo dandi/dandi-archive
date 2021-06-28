@@ -105,7 +105,7 @@ class Asset(TimeStampedModel):
         default=Status.PENDING,
         choices=Status.choices,
     )
-    validation_error = models.TextField(default='')
+    validation_error = models.TextField(default='', blank=True)
     previous = models.ForeignKey(
         'Asset',
         blank=True,
