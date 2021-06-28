@@ -200,9 +200,12 @@ def test_version_valid_with_invalid_asset(version, asset, status):
 
 
 @pytest.mark.django_db
-def test_version_publish_version(draft_version):
+def test_version_publish_version(draft_version, asset):
     # Normally the publish endpoint would inject a doi, so we must do it manually
     fake_doi = 'doi'
+
+    draft_version.assets.add(asset)
+    draft_version.save()
 
     publish_version = draft_version.publish_version
     publish_version.doi = fake_doi
@@ -218,7 +221,8 @@ def test_version_publish_version(draft_version):
             'endDate': TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
-                    'id': 'RRID:SCR_017571',
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
                     'name': 'DANDI API',
                     # TODO version the API
                     'version': '0.1.0',
@@ -229,8 +233,6 @@ def test_version_publish_version(draft_version):
         },
         'datePublished': TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
-            f'{publish_version.dandiset.identifier}/draft/dandiset.yaml',
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{publish_version.dandiset.identifier}/draft/assets.yaml',
         ],
@@ -243,6 +245,12 @@ def test_version_publish_version(draft_version):
         ),
         'citation': publish_version.citation(publish_version.metadata.metadata),
         'doi': fake_doi,
+        # The published_version cannot have a properly defined assetsSummary yet, since that would
+        # require having created rows the Asset-to-Version join table, which is a side affect.
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+        },
     }
 
 
@@ -528,6 +536,58 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
     assert published_asset.published
     # The blob should be the same between the two assets
     assert asset.blob == published_asset.blob
+
+    assert published_version.metadata.metadata == {
+        **draft_version.metadata.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': TIMESTAMP_RE,
+            'endDate': TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+        'datePublished': TIMESTAMP_RE,
+        'manifestLocation': [
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
+            f'{draft_version.dandiset.identifier}/draft/assets.yaml',
+        ],
+        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'version': published_version.version,
+        'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
+        'url': (
+            f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}'
+            f'/{published_version.version}'
+        ),
+        'citation': published_version.citation(published_version.metadata.metadata),
+        'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
+        # Once the assets are linked, assetsSummary should be computed properly
+        'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
+            'numberOfBytes': 100,
+            'numberOfFiles': 1,
+            'dataStandard': [
+                {
+                    'schemaKey': 'StandardsType',
+                    'identifier': 'RRID:SCR_015242',
+                    'name': 'Neurodata Without Borders (NWB)',
+                }
+            ],
+            'approach': [],
+            'measurementTechnique': [],
+            'variableMeasured': [],
+            'species': [],
+        },
+    }
 
 
 @pytest.mark.django_db

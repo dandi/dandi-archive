@@ -225,14 +225,14 @@ def test_dandiset_rest_create(api_client, user):
         'version': 'draft',
         'url': url,
         'citation': (
-            f'{user.first_name} {user.last_name} ({year}) {name} '
+            f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'contributor': [
             {
-                'name': 'John Doe',
+                'name': 'Doe, John',
                 'email': user.email,
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
@@ -305,14 +305,14 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'version': 'draft',
         'url': url,
         'citation': (
-            f'{admin_user.first_name} {admin_user.last_name} ({year}) {name} '
+            f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'contributor': [
             {
-                'name': 'John Doe',
+                'name': 'Doe, John',
                 'email': admin_user.email,
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',

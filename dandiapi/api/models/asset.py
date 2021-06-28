@@ -140,6 +140,12 @@ class Asset(TimeStampedModel):
             'contentSize': self.blob.size,
             'digest': self.blob.digest,
         }
+        if 'schemaVersion' in metadata:
+            schema_version = metadata['schemaVersion']
+            metadata['@context'] = (
+                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+                f'{schema_version}/context.json'
+            )
         return metadata
 
     @classmethod
