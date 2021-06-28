@@ -1,4 +1,5 @@
 from dandischema import migrate
+from django.conf import settings
 
 from dandiapi.api.models import Version, VersionMetadata
 from dandiapi.api.tasks import validate_version_metadata
@@ -6,11 +7,21 @@ from dandiapi.api.tasks import validate_version_metadata
 
 def run(to_version):
     print(f'Migrating all version metadata to version {to_version}')
-    for version in Version.objects.all():
+    for version in Version.objects.filter(version='draft'):
         print(f'Migrating {version.dandiset.identifier}/{version.version}')
-        if not version.version == 'draft':
+
+        metadata = version.metadata.metadata
+        # If there is no schemaVersion, assume the most recent
+        if 'schemaVersion' not in metadata:
+            metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION
+
+        try:
+            metanew = migrate(metadata, to_version=to_version, skip_validation=True)
+        except Exception as e:
+            print(f'Failed to migrate {version.dandiset.identifier}/{version.version}')
+            print(e)
             continue
-        metanew = migrate(version.metadata.metadata, to_version=to_version, skip_validation=True)
+
         new: VersionMetadata
         new, created = VersionMetadata.objects.get_or_create(
             name=version.metadata.name,
