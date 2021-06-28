@@ -12,6 +12,7 @@ class PublishableMetadataMixin:
             'endDate': now.isoformat(),
             'wasAssociatedWith': [
                 {
+                    'id': uuid4().urn,
                     'identifier': 'RRID:SCR_017571',
                     'name': 'DANDI API',
                     # TODO version the API
