@@ -117,7 +117,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'contributor': [
                 {
-                    'name': f'{request.user.first_name} {request.user.last_name}',
+                    'name': f'{request.user.last_name}, {request.user.first_name}',
                     'email': request.user.email,
                     'roleName': ['dcite:ContactPerson'],
                     'schemaKey': 'Person',
