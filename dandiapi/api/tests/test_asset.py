@@ -1,6 +1,8 @@
 import os.path
 from uuid import uuid4
 
+from django.conf import settings
+from django.urls import reverse
 from guardian.shortcuts import assign_perm
 import pytest
 import requests
@@ -90,6 +92,30 @@ def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_facto
     asset_factory()
 
     assert Asset.total_size() == asset_blob.size
+
+
+@pytest.mark.django_db
+def test_asset_populate_metadata(asset_factory, asset_metadata):
+    raw_metadata = asset_metadata.metadata
+
+    # This should trigger _populate_metadata to inject all the computed metadata fields
+    asset = asset_factory(metadata=asset_metadata)
+
+    download_url = 'https://api.dandiarchive.org' + reverse(
+        'asset-direct-download',
+        kwargs={'asset_id': str(asset.asset_id)},
+    )
+    blob_url = asset.blob.s3_url
+    assert asset.metadata.metadata == {
+        **raw_metadata,
+        'id': f'dandiasset:{asset.asset_id}',
+        'path': asset.path,
+        'identifier': str(asset.asset_id),
+        'contentUrl': [download_url, blob_url],
+        'contentSize': asset.blob.size,
+        'digest': asset.blob.digest,
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+    }
 
 
 # API Tests
