@@ -147,6 +147,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             ]
         )
 
+        # Save again to recompute metadata, specifically assetsSummary
+        new_version.save()
+
         write_yamls.delay(new_version.id)
 
         serializer = VersionSerializer(new_version)
