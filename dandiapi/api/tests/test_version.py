@@ -230,8 +230,6 @@ def test_version_publish_version(draft_version):
         'datePublished': TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
-            f'{publish_version.dandiset.identifier}/draft/dandiset.yaml',
-            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{publish_version.dandiset.identifier}/draft/assets.yaml',
         ],
         'identifier': f'DANDI:{publish_version.dandiset.identifier}',

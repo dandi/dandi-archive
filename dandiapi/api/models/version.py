@@ -199,7 +199,7 @@ class Version(TimeStampedModel):
                 **self.metadata.metadata,
                 'publishedBy': self.metadata.published_by(now),
                 'datePublished': now.isoformat(),
-                'manifestLocation': [self.dandiset_yaml_url, self.assets_yaml_url],
+                'manifestLocation': [self.assets_yaml_url],
             },
         )
 
