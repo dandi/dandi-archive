@@ -15,7 +15,12 @@ def run(to_version):
         if 'schemaVersion' not in metadata:
             metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION
 
-        metanew = migrate(metadata, to_version=to_version, skip_validation=True)
+        try:
+            metanew = migrate(metadata, to_version=to_version, skip_validation=True)
+        except Exception as e:
+            print(f'Failed to migrate {version.dandiset.identifier}/{version.version}')
+            print(e)
+            continue
 
         new: VersionMetadata
         new, created = VersionMetadata.objects.get_or_create(
