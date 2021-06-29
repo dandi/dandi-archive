@@ -1,4 +1,4 @@
-import re
+from fnmatch import fnmatch
 from django.core.exceptions import ValidationError
 from oauth2_provider.models import AbstractApplication
 
@@ -15,6 +15,6 @@ class Application(AbstractApplication):
 
     def redirect_uri_allowed(self, uri):
         for allowed_uri in self.redirect_uris.split():
-            if re.fullmatch(uri, allowed_uri):
+            if fnmatch(uri, allowed_uri):
                 return True
         return False
