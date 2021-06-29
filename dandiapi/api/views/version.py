@@ -10,7 +10,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api import doi
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
-from dandiapi.api.tasks import write_yamls
+from dandiapi.api.tasks import validate_version_metadata, write_yamls
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -72,9 +72,15 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        name = serializer.validated_data['name']
+        metadata = serializer.validated_data['metadata']
+        # Strip away any computed fields
+        metadata = Version.strip_metadata(metadata)
+
         version_metadata: VersionMetadata
         version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'], metadata=serializer.validated_data['metadata']
+            name=name,
+            metadata=metadata,
         )
 
         if created:
@@ -82,6 +88,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         version.metadata = version_metadata
         version.save()
+
+        validate_version_metadata.delay(version.id)
 
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -94,26 +102,53 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         if not request.user.is_superuser:
             return Response('Must be an admin to publish', status=status.HTTP_403_FORBIDDEN)
 
-        old_version = self.get_object()
+        old_version: Version = self.get_object()
         if old_version.version != 'draft':
             return Response(
                 'Only draft versions can be published',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
-        new_version = Version.copy(old_version)
+        if not old_version.valid:
+            return Response(
+                'Dandiset metadata or asset metadata is not valid',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_version = old_version.publish_version
 
         new_version.doi = doi.create_doi(new_version)
 
         new_version.save()
         # Bulk create the join table rows to optimize linking assets to new_version
         AssetVersions = Version.assets.through  # noqa: N806
+
+        # Add a new many-to-many association directly to any already published assets
+        already_published_assets = old_version.assets.filter(published=True)
         AssetVersions.objects.bulk_create(
             [
                 AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in old_version.assets.values('id')
+                for asset in already_published_assets.values('id')
             ]
         )
+
+        # Publish any draft assets
+        # Import here to avoid dependency cycle
+        from dandiapi.api.models import Asset
+
+        draft_assets = old_version.assets.filter(published=False).all()
+        new_published_assets = [Asset.published_asset(draft_asset) for draft_asset in draft_assets]
+        Asset.objects.bulk_create(new_published_assets)
+
+        AssetVersions.objects.bulk_create(
+            [
+                AssetVersions(asset_id=asset.id, version_id=new_version.id)
+                for asset in new_published_assets
+            ]
+        )
+
+        # Save again to recompute metadata, specifically assetsSummary
+        new_version.save()
 
         write_yamls.delay(new_version.id)
 

@@ -30,7 +30,7 @@ class AssetInline(admin.TabularInline):
 
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'dandiset', 'version', 'asset_count', 'modified', 'created']
+    list_display = ['id', 'dandiset', 'version', 'status', 'asset_count', 'modified', 'created']
     list_display_links = ['id', 'version']
     inlines = [AssetInline]
 
@@ -60,7 +60,7 @@ class AssetAdmin(admin.ModelAdmin):
         'asset_id',
         'path',
         'blob',
-        'metadata',
+        'status',
         'size',
         'modified',
         'created',

@@ -1,6 +1,7 @@
 import logging
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.db.models import OuterRef, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
@@ -19,6 +20,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
+from dandiapi.api.tasks import validate_version_metadata
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.views.serializers import (
     DandisetDetailSerializer,
@@ -106,6 +108,25 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         name = serializer.validated_data['name']
         metadata = serializer.validated_data['metadata']
+        # Strip away any computed fields
+        metadata = Version.strip_metadata(metadata)
+
+        # Only inject a schemaVersion and default contributor field if they are
+        # not specified in the metadata
+        metadata = {
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'contributor': [
+                {
+                    'name': f'{request.user.last_name}, {request.user.first_name}',
+                    'email': request.user.email,
+                    'roleName': ['dcite:ContactPerson'],
+                    'schemaKey': 'Person',
+                    'affiliation': [],
+                    'includeInCitation': True,
+                },
+            ],
+            **metadata,
+        }
 
         version_metadata, created = VersionMetadata.objects.get_or_create(
             name=name,
@@ -154,6 +175,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Create new draft version
         version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
         version.save()
+
+        validate_version_metadata.delay(version.id)
 
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)

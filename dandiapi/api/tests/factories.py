@@ -54,7 +54,21 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = VersionMetadata
 
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+    @factory.lazy_attribute
+    def metadata(self):
+        metadata = {
+            **faker.Faker().pydict(value_types=['str', 'float', 'int']),
+            'schemaVersion': '0.4.4',
+            'description': faker.Faker().sentence(),
+            'contributor': [{'roleName': ['dcite:ContactPerson']}],
+            'license': ['spdx:CC0-1.0'],
+        }
+        # Remove faked data that might conflict with the schema types
+        for key in ['about']:
+            if key in metadata:
+                del metadata[key]
+        return metadata
+
     name = factory.Faker('sentence')
 
 
@@ -64,13 +78,6 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
 
     dandiset = factory.SubFactory(DandisetFactory)
     metadata = factory.SubFactory(VersionMetadataFactory)
-
-
-# class VersionFactory(BaseVersionFactory):
-#     class Meta:
-#         model = Version
-
-#     dandiset = factory.SubFactory(DandisetFactory)
 
 
 class DraftVersionFactory(BaseVersionFactory):
@@ -105,7 +112,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         h = hashlib.md5()
         h.update(self.blob.read())
         self.blob.seek(0)
-        return h.hexdigest()
+        return f'{h.hexdigest()}-0'
 
     @factory.lazy_attribute
     def size(self):
@@ -116,7 +123,18 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetMetadata
 
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
+    @factory.lazy_attribute
+    def metadata(self):
+        metadata = {
+            **faker.Faker().pydict(value_types=['str', 'float', 'int']),
+            'schemaVersion': '0.4.4',
+            'encodingFormat': 'application/x-nwb',
+        }
+        # Remove faked data that might conflict with the schema types
+        for key in ['approach', 'about', 'name']:
+            if key in metadata:
+                del metadata[key]
+        return metadata
 
 
 class AssetFactory(factory.django.DjangoModelFactory):

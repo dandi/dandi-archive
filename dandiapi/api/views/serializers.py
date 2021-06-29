@@ -44,6 +44,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'name',
             'asset_count',
             'size',
+            'status',
             'created',
             'modified',
             'dandiset',
@@ -64,9 +65,11 @@ class DandisetDetailSerializer(DandisetSerializer):
 
 class VersionDetailSerializer(VersionSerializer):
     class Meta(VersionSerializer.Meta):
-        fields = VersionSerializer.Meta.fields + ['metadata']
+        fields = VersionSerializer.Meta.fields + ['validation_error', 'metadata']
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
+    status = serializers.CharField(source='publish_status')
+    validation_error = serializers.CharField(source='publish_validation_error')
 
 
 class AssetBlobSerializer(serializers.ModelSerializer):
@@ -84,6 +87,12 @@ class AssetMetadataSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetMetadata
         fields = ['metadata']
+
+
+class AssetValidationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = ['status', 'validation_error']
 
 
 class AssetSerializer(serializers.ModelSerializer):

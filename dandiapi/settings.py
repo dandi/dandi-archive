@@ -22,6 +22,8 @@ class DandiMixin(ConfigMixin):
 
     ACCOUNT_EMAIL_VERIFICATION = 'none'
 
+    DANDI_ALLOW_LOCALHOST_URLS = False
+
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
@@ -59,7 +61,8 @@ class DandiMixin(ConfigMixin):
 
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
-    pass
+    # This makes pydantic model schema allow URLs with localhost in them.
+    DANDI_ALLOW_LOCALHOST_URLS = True
 
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
@@ -68,6 +71,9 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
 
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
+
+    # This makes the dandischema pydantic model allow URLs with localhost in them.
+    DANDI_ALLOW_LOCALHOST_URLS = True
 
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):

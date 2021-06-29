@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import datetime
 from typing import Dict, List, Set
+from urllib.parse import urlparse, urlunparse
 import uuid
 
 from django.conf import settings
@@ -8,8 +10,10 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import create_s3_storage
 
 from .version import Version
@@ -60,11 +64,18 @@ class AssetBlob(TimeStampedModel):
             digest['dandi:sha2-256'] = self.sha256
         return digest
 
+    @property
+    def s3_url(self) -> str:
+        signed_url = self.blob.url
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
+
     def __str__(self) -> str:
         return self.blob.name
 
 
-class AssetMetadata(TimeStampedModel):
+class AssetMetadata(PublishableMetadataMixin, TimeStampedModel):
     metadata = models.JSONField(blank=True, unique=True, default=dict)
 
     @property
@@ -78,11 +89,23 @@ class AssetMetadata(TimeStampedModel):
 class Asset(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
+    class Status(models.TextChoices):
+        PENDING = 'Pending'
+        VALIDATING = 'Validating'
+        VALID = 'Valid'
+        INVALID = 'Invalid'
+
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
     metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
     versions = models.ManyToManyField(Version, related_name='assets')
+    status = models.CharField(
+        max_length=10,
+        default=Status.PENDING,
+        choices=Status.choices,
+    )
+    validation_error = models.TextField(default='', blank=True)
     previous = models.ForeignKey(
         'Asset',
         blank=True,
@@ -90,6 +113,7 @@ class Asset(TimeStampedModel):
         default=None,
         on_delete=models.PROTECT,
     )
+    published = models.BooleanField(default=False)
 
     @property
     def size(self):
@@ -100,29 +124,91 @@ class Asset(TimeStampedModel):
         return self.blob.sha256
 
     def _populate_metadata(self):
-        new: AssetMetadata
-        new, created = AssetMetadata.objects.get_or_create(
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
+            'asset-direct-download',
+            kwargs={'asset_id': str(self.asset_id)},
+        )
+        blob_url = self.blob.s3_url
+
+        metadata = {
+            **self.metadata.metadata,
+            'id': f'dandiasset:{self.asset_id}',
+            'path': self.path,
+            'identifier': str(self.asset_id),
+            'contentUrl': [download_url, blob_url],
+            'contentSize': self.blob.size,
+            'digest': self.blob.digest,
+        }
+        if 'schemaVersion' in metadata:
+            schema_version = metadata['schemaVersion']
+            metadata['@context'] = (
+                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+                f'{schema_version}/context.json'
+            )
+        return metadata
+
+    @classmethod
+    def published_asset(cls, asset: Asset):
+        """
+        Generate a published asset + metadata without saving it.
+
+        This is useful to validate asset metadata without saving it.
+        """
+        now = datetime.datetime.utcnow()
+        # Inject the publishedBy and datePublished fields
+        published_metadata, _ = AssetMetadata.objects.get_or_create(
             metadata={
-                **self.metadata.metadata,
-                'path': self.path,
+                **asset.metadata.metadata,
+                'publishedBy': asset.metadata.published_by(now),
+                'datePublished': now.isoformat(),
             },
         )
 
-        if created:
-            new.save()
+        # Create the published model
+        published_asset = Asset(
+            path=asset.path,
+            blob=asset.blob,
+            metadata=published_metadata,
+            # If we're publishing, just assume that the asset was valid
+            status=Asset.Status.VALID,
+            previous=asset,
+            published=True,
+        )
 
-        self.metadata = new
+        # Recompute the metadata
+        published_metadata, _ = AssetMetadata.objects.get_or_create(
+            metadata=published_asset._populate_metadata(),
+        )
+        published_asset.metadata = published_metadata
+
+        return published_asset
 
     def save(self, *args, **kwargs):
-        self._populate_metadata()
+        metadata = self._populate_metadata()
+        new, created = AssetMetadata.objects.get_or_create(metadata=metadata)
+        if created:
+            new.save()
+        self.metadata = new
         super().save(*args, **kwargs)
+
+    @classmethod
+    def strip_metadata(cls, metadata):
+        """Strip away computed fields from a metadata dict."""
+        computed_fields = [
+            'id',
+            'path',
+            'identifier',
+            'contentUrl',
+            'contentSize',
+            'digest',
+            'datePublished',
+            'publishedBy',
+        ]
+        return {key: metadata[key] for key in metadata if key not in computed_fields}
 
     def __str__(self) -> str:
         return self.path
-
-    @classmethod
-    def copy(cls, asset):
-        return Asset(path=asset.path, blob=asset.blob, metadata=asset.metadata)
 
     @classmethod
     def get_path(cls, path_prefix: str, qs: List[str]) -> Set:

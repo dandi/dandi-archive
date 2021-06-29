@@ -40,6 +40,7 @@ setup(
     install_requires=[
         'celery',
         'dandi>=0.12.0',
+        'dandischema>=0.2.9',
         'django>=3.1.2',
         'django-admin-display',
         'django-allauth',
@@ -53,6 +54,7 @@ setup(
         'drf-extensions',
         'drf-yasg',
         'httpx',
+        'jsonschema',
         # Production-only
         'django-composed-configuration[prod]',
         'django-s3-file-field[boto3]==0.1.1',

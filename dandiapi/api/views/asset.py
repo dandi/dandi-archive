@@ -13,22 +13,63 @@ import os.path
 
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
+from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.api.views.serializers import AssetDetailSerializer, AssetSerializer
+from dandiapi.api.views.serializers import (
+    AssetDetailSerializer,
+    AssetSerializer,
+    AssetValidationSerializer,
+)
+
+
+def _download_asset(asset: Asset):
+    storage = asset.blob.blob.storage
+
+    if isinstance(storage, S3Boto3Storage):
+        client = storage.connection.meta.client
+        path = os.path.basename(asset.path)
+        url = client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': storage.bucket_name,
+                'Key': asset.blob.blob.name,
+                'ResponseContentDisposition': f'attachment; filename="{path}"',
+            },
+        )
+        return HttpResponseRedirect(url)
+    elif isinstance(storage, MinioStorage):
+        client = storage.base_url_client
+        bucket = storage.bucket_name
+        obj = asset.blob.blob.name
+        path = os.path.basename(asset.path)
+        url = client.presigned_get_object(
+            bucket,
+            obj,
+            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+        )
+        return HttpResponseRedirect(url)
+    else:
+        raise ValueError(f'Unknown storage {storage}')
+
+
+@swagger_auto_schema()
+@api_view(['GET'])
+def asset_download_view(request, asset_id):
+    asset = Asset.objects.get(asset_id=asset_id)
+    return _download_asset(asset)
 
 
 class AssetRequestSerializer(serializers.Serializer):
@@ -63,26 +104,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             200: 'The asset metadata.',
         },
     )
-    def retrieve(self, request, versions__dandiset__pk, versions__version, asset_id):
+    def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        # TODO use http://localhost:8000 for local deployments
-        download_url = 'https://api.dandiarchive.org' + reverse(
-            'asset-download',
-            kwargs={
-                'versions__dandiset__pk': versions__dandiset__pk,
-                'versions__version': versions__version,
-                'asset_id': asset_id,
-            },
-        )
+        return Response(asset.metadata.metadata, status=status.HTTP_200_OK)
 
-        blob_url = asset.blob.blob.url
-        metadata = {
-            **asset.metadata.metadata,
-            'identifier': asset_id,
-            'contentUrl': [download_url, blob_url],
-            'digest': asset.blob.digest,
-        }
-        return Response(metadata, status=status.HTTP_200_OK)
+    @swagger_auto_schema(responses={200: AssetValidationSerializer()})
+    @action(detail=True, methods=['GET'])
+    def validation(self, request, **kwargs):
+        asset = self.get_object()
+        serializer = AssetValidationSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),
@@ -115,12 +146,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if 'path' not in metadata:
             return Response('No path specified in metadata.', status=400)
         path = metadata['path']
+        # Strip away any computed fields
+        metadata = Asset.strip_metadata(metadata)
         asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
-
-        if version.assets.filter(path=path, blob=asset_blob, metadata=asset_metadata).exists():
-            return Response('Asset already exists.', status=status.HTTP_400_BAD_REQUEST)
 
         asset = Asset(
             path=path,
@@ -132,6 +162,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         # Save the version so that the modified field is updated
         version.save()
+
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        validate_version_metadata.delay(version.id)
+
+        # Trigger an asset metadata validation
+        # This will fail if the digest hasn't been calculated yet, but we still need to try now
+        # just in case we are using an existing blob that has already computed its digest.
+        validate_asset_metadata.delay(asset.id)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -165,6 +203,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if 'path' not in metadata:
             return Response('No path specified in metadata', status=404)
         path = metadata['path']
+        # Strip away any computed fields
+        metadata = Asset.strip_metadata(metadata)
         asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
         if created:
             asset_metadata.save()
@@ -189,6 +229,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        validate_version_metadata.delay(version.id)
+
+        # Trigger an asset metadata validation
+        # This will fail if the digest hasn't been calculated yet, but we still need to try now
+        # just in case we are using an existing blob that has already computed its digest.
+        validate_asset_metadata.delay(new_asset.id)
+
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -211,6 +259,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        validate_version_metadata.delay(version.id)
+
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
@@ -222,33 +273,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
         """Return a redirect to the file download in the object store."""
-        storage = self.get_object().blob.blob.storage
-
-        if isinstance(storage, S3Boto3Storage):
-            client = storage.connection.meta.client
-            path = os.path.basename(self.get_object().path)
-            url = client.generate_presigned_url(
-                'get_object',
-                Params={
-                    'Bucket': storage.bucket_name,
-                    'Key': self.get_object().blob.blob.name,
-                    'ResponseContentDisposition': f'attachment; filename="{path}"',
-                },
-            )
-            return HttpResponseRedirect(url)
-        elif isinstance(storage, MinioStorage):
-            client = storage.base_url_client
-            bucket = storage.bucket_name
-            obj = self.get_object().blob.blob.name
-            path = os.path.basename(self.get_object().path)
-            url = client.presigned_get_object(
-                bucket,
-                obj,
-                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
-            )
-            return HttpResponseRedirect(url)
-        else:
-            raise ValueError(f'Unknown storage {storage}')
+        return _download_asset(self.get_object())
 
     @swagger_auto_schema(
         manual_parameters=[
