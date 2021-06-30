@@ -77,6 +77,11 @@ class AssetRequestSerializer(serializers.Serializer):
     blob_id = serializers.UUIDField()
 
 
+class AssetUpdateRequestSerializer(serializers.Serializer):
+    metadata = serializers.JSONField(required=False)
+    blob_id = serializers.UUIDField(required=False)
+
+
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
 
@@ -175,7 +180,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=AssetRequestSerializer(),
+        request_body=AssetUpdateRequestSerializer(),
         responses={200: AssetDetailSerializer()},
     )
     @method_decorator(
@@ -194,20 +199,26 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
-        serializer = AssetRequestSerializer(data=request.data)
+        serializer = AssetUpdateRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+        if 'blob_id' in serializer.validated_data:
+            asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+        else:
+            asset_blob = old_asset.blob
 
-        metadata = serializer.validated_data['metadata']
-        if 'path' not in metadata:
-            return Response('No path specified in metadata', status=404)
-        path = metadata['path']
-        # Strip away any computed fields
-        metadata = Asset.strip_metadata(metadata)
-        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
-        if created:
-            asset_metadata.save()
+        if 'metadata' in serializer.validated_data:
+            metadata = serializer.validated_data['metadata']
+            if 'path' not in metadata:
+                return Response('No path specified in metadata', status=404)
+            path = metadata['path']
+            # Strip away any computed fields
+            metadata = Asset.strip_metadata(metadata)
+            asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
+            if created:
+                asset_metadata.save()
+        else:
+            asset_metadata = old_asset.metadata
 
         if asset_metadata == old_asset.metadata and asset_blob == old_asset.blob:
             # No changes, don't create a new asset

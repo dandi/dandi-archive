@@ -358,6 +358,65 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
 
 
 @pytest.mark.django_db
+def test_asset_rest_update_only_metadata(api_client, user, draft_version, asset):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    draft_version.assets.add(asset)
+
+    new_path = 'test/asset/rest/update.txt'
+    new_metadata = {
+        'schemaVersion': '0.4.4',
+        'encodingFormat': 'application/x-nwb',
+        'path': new_path,
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
+        {'metadata': new_metadata},
+        format='json',
+    ).data
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
+        'asset_id': UUID_RE,
+        'path': new_path,
+        'size': asset.blob.size,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'metadata': new_asset.metadata.metadata,
+    }
+    for key in new_metadata:
+        assert resp['metadata'][key] == new_metadata[key]
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_only_blob_id(api_client, user, draft_version, asset, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    draft_version.assets.add(asset)
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
+        {'blob_id': asset_blob.blob_id},
+        format='json',
+    ).data
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
+        'asset_id': UUID_RE,
+        'path': asset.path,
+        'size': asset_blob.size,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'metadata': asset.metadata.metadata,
+    }
+    assert asset.blob.blob_id == str(new_asset.blob.blob_id)
+
+
+@pytest.mark.django_db
 def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_factory):
     old_asset = asset_factory()
     existing_asset = asset_factory()
