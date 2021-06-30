@@ -134,7 +134,6 @@
 import { mapState } from 'vuex';
 import { publishRest } from '@/rest';
 
-const isFolder = (pathName) => (pathName.slice(-1) === '/');
 const parentDirectory = '..';
 const rootDirectory = '';
 
@@ -188,7 +187,28 @@ export default {
         this.owners = (await publishRest.owners(identifier)).data
           .map((x) => x.username);
 
-        let mapped = data.map((x) => ({ name: x, folder: isFolder(x) }));
+        // flatten the assetPaths object into an array:
+        let mapped = [];
+
+        if (data.files) {
+          mapped = Object.keys(data.files).map(
+            (name) => ({ name, folder: false, ...data.files[name] }),
+          );
+          // set download links and uuids (needed for deleting) for files
+          mapped.forEach((item) => {
+            this.$set(this.itemData, item.name, {
+              download: item.download_url,
+              uuid: item.asset_id,
+            });
+          });
+        }
+
+        if (data.folders) {
+          mapped = mapped.concat(Object.keys(data.folders).map(
+            (name) => ({ name: `${name}/`, folder: true, ...data.folders[name] }),
+          ));
+        }
+
         if (location !== rootDirectory && mapped.length) {
           mapped = [
             { name: parentDirectory, folder: true },
@@ -216,23 +236,7 @@ export default {
       if (items && !items.length) {
         // If the API call returns no items, go back to the root (shouldn't normally happen)
         this.location = rootDirectory;
-        return;
       }
-
-      // Create download and delete links in local data for each item in items
-      const { identifier, version, location } = this;
-
-      items.filter((x) => !x.folder).map(async (item) => {
-        const relativePath = `${location}${item.name}`;
-        const {
-          results: [asset],
-        } = await publishRest.assets(identifier, version, { params: { path: relativePath } });
-
-        this.$set(this.itemData, item.name, {
-          download: publishRest.assetDownloadURI(identifier, version, asset),
-          uuid: asset.asset_id,
-        });
-      });
     },
     $route: {
       immediate: true,
