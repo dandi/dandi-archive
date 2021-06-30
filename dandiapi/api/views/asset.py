@@ -66,7 +66,7 @@ def _download_asset(asset: Asset):
 
 
 @swagger_auto_schema()
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 def asset_download_view(request, asset_id):
     asset = Asset.objects.get(asset_id=asset_id)
     return _download_asset(asset)
