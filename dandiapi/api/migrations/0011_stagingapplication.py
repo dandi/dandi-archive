@@ -10,10 +10,8 @@ import oauth2_provider.generators
 
 
 class Migration(migrations.Migration):
-
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('api', '0010_blank_validation_errors'),
+    run_before = [
+        ('oauth2_provider', '0001_initial'),
     ]
 
     operations = [
