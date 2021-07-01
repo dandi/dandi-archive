@@ -10,5 +10,4 @@ class Migration(migrations.Migration):
         ('api', '0011_stagingapplication'),
     ]
 
-    operations = [
-    ]
+    operations = []
