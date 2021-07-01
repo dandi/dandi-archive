@@ -1,7 +1,8 @@
 <template>
   <v-container>
     <v-dialog
-      v-model="dialogActive"
+      v-if="!!itemToDelete"
+      v-model="itemToDelete"
       persistent
       max-width="60vh"
     >
@@ -13,7 +14,7 @@
         <v-card-text>
           Are you sure you want to delete asset <span
             class="font-italic"
-          >{{ dialogName }}</span>?
+          >{{ itemToDelete.name }}</span>?
           <strong>This action cannot be undone.</strong>
         </v-card-text>
 
@@ -26,7 +27,7 @@
           </v-btn>
           <v-btn
             color="error"
-            @click="deleteAsset(dialogName)"
+            @click="deleteAsset(itemToDelete)"
           >
             Yes
           </v-btn>
@@ -104,7 +105,7 @@
                 <v-btn
                   v-if="showDelete(item)"
                   icon
-                  @click="openDialog(item.name)"
+                  @click="openDialog(item)"
                 >
                   <v-icon color="error">
                     mdi-delete
@@ -112,10 +113,10 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="itemData[item.name]">
+              <v-list-item-action v-if="item.download_url">
                 <v-btn
                   icon
-                  :href="itemData[item.name].download"
+                  :href="item.download_url"
                 >
                   <v-icon color="primary">
                     mdi-download
@@ -153,10 +154,9 @@ export default {
     return {
       rootDirectory,
       location: rootDirectory,
-      itemData: {},
       owners: [],
       dialogActive: false,
-      dialogName: '',
+      itemToDelete: null,
     };
   },
   computed: {
@@ -190,22 +190,15 @@ export default {
         // flatten the assetPaths object into an array:
         let mapped = [];
 
-        if (data.files) {
-          mapped = Object.keys(data.files).map(
-            (name) => ({ ...data.files[name], name, folder: false }),
+        if (data.folders) {
+          mapped = Object.keys(data.folders).map(
+            (name) => ({ name: `${name}/`, folder: true, ...data.folders[name] }),
           );
-          // set download links and uuids (needed for deleting) for files
-          mapped.forEach((item) => {
-            this.$set(this.itemData, item.name, {
-              download: item.download_url,
-              uuid: item.asset_id,
-            });
-          });
         }
 
-        if (data.folders) {
-          mapped = mapped.concat(Object.keys(data.folders).map(
-            (name) => ({ name: `${name}/`, folder: true, ...data.folders[name] }),
+        if (data.files) {
+          mapped = mapped.concat(Object.keys(data.files).map(
+            (name) => ({ ...data.files[name], name, folder: false }),
           ));
         }
 
@@ -265,21 +258,20 @@ export default {
       return !item.folder && (this.isAdmin || this.isOwner);
     },
 
-    openDialog(name) {
-      this.dialogName = name;
-      this.dialogActive = true;
+    openDialog(item) {
+      this.itemToDelete = item;
     },
 
-    async deleteAsset(name) {
-      const uuid = this.itemData[name] && this.itemData[name].uuid;
-      if (uuid !== undefined) {
+    async deleteAsset(item) {
+      const { asset_id } = item;
+      if (asset_id !== undefined) {
         // Delete the asset on the server.
-        await publishRest.deleteAsset(this.identifier, this.version, uuid);
+        await publishRest.deleteAsset(this.identifier, this.version, asset_id);
 
         // Recompute the items to display in the browser.
         this.$asyncComputed.items.update();
       }
-      this.dialogActive = false;
+      this.itemToDelete = null;
     },
   },
 };
