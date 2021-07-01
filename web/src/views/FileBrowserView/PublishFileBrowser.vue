@@ -192,7 +192,7 @@ export default {
 
         if (data.files) {
           mapped = Object.keys(data.files).map(
-            (name) => ({ name, folder: false, ...data.files[name] }),
+            (name) => ({ ...data.files[name], name, folder: false }),
           );
           // set download links and uuids (needed for deleting) for files
           mapped.forEach((item) => {
