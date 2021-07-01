@@ -1,9 +1,12 @@
+import logging
 from typing import List
 
 from allauth.account.signals import user_signed_up
 from django.core import mail
 from django.dispatch import receiver
 from django.template.loader import render_to_string
+
+logger = logging.getLogger(__name__)
 
 
 def build_message(subject: str, message: str, to: List[str], html_message: str):
@@ -62,7 +65,7 @@ def build_registered_message(user, socialaccount):
 
 
 def send_registered_notice_email(user, socialaccount):
-    print('Sending registration message to ', user)
+    logger.info(f'Sending registration message to {user}')
     messages = [build_registered_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
