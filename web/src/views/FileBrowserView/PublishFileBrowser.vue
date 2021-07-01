@@ -105,7 +105,7 @@
                 <v-btn
                   v-if="showDelete(item)"
                   icon
-                  @click="itemToDelete = item;"
+                  @click="itemToDelete = item"
                 >
                   <v-icon color="error">
                     mdi-delete
