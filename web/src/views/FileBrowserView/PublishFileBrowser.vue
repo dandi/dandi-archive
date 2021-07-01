@@ -21,7 +21,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            @click="dialogActive = false"
+            @click="itemToDelete = null"
           >
             Cancel
           </v-btn>
@@ -105,7 +105,7 @@
                 <v-btn
                   v-if="showDelete(item)"
                   icon
-                  @click="openDialog(item)"
+                  @click="itemToDelete = item;"
                 >
                   <v-icon color="error">
                     mdi-delete
@@ -155,7 +155,6 @@ export default {
       rootDirectory,
       location: rootDirectory,
       owners: [],
-      dialogActive: false,
       itemToDelete: null,
     };
   },
@@ -242,10 +241,6 @@ export default {
 
     showDelete(item) {
       return !item.folder && (this.isAdmin || this.isOwner);
-    },
-
-    openDialog(item) {
-      this.itemToDelete = item;
     },
 
     async deleteAsset(item) {
