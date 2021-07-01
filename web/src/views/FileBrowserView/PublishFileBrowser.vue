@@ -187,29 +187,15 @@ export default {
         this.owners = (await publishRest.owners(identifier)).data
           .map((x) => x.username);
 
-        // flatten the assetPaths object into an array:
-        let mapped = [];
-
-        if (data.folders) {
-          mapped = Object.keys(data.folders).map(
-            (name) => ({ name: `${name}/`, folder: true, ...data.folders[name] }),
-          );
-        }
-
-        if (data.files) {
-          mapped = mapped.concat(Object.keys(data.files).map(
-            (name) => ({ ...data.files[name], name, folder: false }),
-          ));
-        }
-
-        if (location !== rootDirectory && mapped.length) {
-          mapped = [
-            { name: parentDirectory, folder: true },
-            ...mapped,
-          ];
-        }
-
-        return mapped;
+        return [
+          ...location !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
+          ...Object.keys(data.folders).map(
+            (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
+          ),
+          ...Object.keys(data.files).map(
+            (key) => ({ ...data.files[key], name: key, folder: false }),
+          ),
+        ];
       },
       default: null,
     },
