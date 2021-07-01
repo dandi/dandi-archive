@@ -1,0 +1,17 @@
+name: Trigger production deploy on new release
+
+on:
+  release:
+    types:
+      - published # use `published` instead of `created` b/c `created` also runs on draft releases
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "dandi-api"
+          heroku_email: ${{secrets.HEROKU_EMAIL}}
