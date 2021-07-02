@@ -45,7 +45,7 @@
             </v-card>
           </v-menu>
         </v-col>
-        <v-col v-if="this.meta.citation">
+        <v-col v-if="meta.citation">
           Cite as
           <v-menu
             offset-y
@@ -65,7 +65,7 @@
             <v-card>
               <CopyText
                 class="pa-2"
-                :text="this.meta.citation"
+                :text="meta.citation"
                 :is-textarea="true"
                 icon-hover-text="Copy to clipboard"
               />

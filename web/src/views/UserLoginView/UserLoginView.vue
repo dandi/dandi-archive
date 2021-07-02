@@ -16,19 +16,14 @@
         javascript:setTokenHack('django_auth_token_for_user')
       </code>
     </p>
-    </div>
   </v-container>
 </template>
 
 <script>
-import { Authentication as GirderAuth } from '@girder/components/src/components';
 import { loggedIn } from '@/rest';
 
 export default {
   name: 'UserLoginView',
-  components: {
-    GirderAuth,
-  },
   computed: {
     loggedIn,
     returnTo() {

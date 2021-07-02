@@ -72,7 +72,6 @@ import moment from 'moment';
 import filesize from 'filesize';
 
 import { getDandisetContact } from '@/utils';
-import { girderRest } from '@/rest';
 
 type Dandiset = {};
 interface DandisetStats {

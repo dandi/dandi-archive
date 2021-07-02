@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { girderRest, publishRest, loggedIn } from '@/rest';
+import { publishRest, loggedIn } from '@/rest';
 
 export default {
   name: 'CreateDandisetView',

@@ -17,9 +17,8 @@ export default {
       const gitRev = process.env.VUE_APP_GIT_REVISION;
       if (gitRev) {
         return `https://github.com/dandi/dandiarchive/commit/${gitRev}`;
-      } else {
-        return "https://github.com/dandi/dandiarchive";
       }
+      return 'https://github.com/dandi/dandiarchive';
     },
   },
   methods: {
@@ -47,10 +46,10 @@ export default {
             <template #activator="{ on }">
               <a
                 class="version-link"
-                v-on="on"
                 :href="githubLink"
                 target="_blank"
                 rel="noopener"
+                v-on="on"
               >{{ version }}</a>
             </template>
             <span>Copied to clipboard!</span>

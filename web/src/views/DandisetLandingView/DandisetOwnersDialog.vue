@@ -80,15 +80,9 @@
 </template>
 
 <script>
-import { girderRest, publishRest, user } from '@/rest';
+import { publishRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
 import _ from 'lodash';
-
-const userFormatConversion = (users) => users.map(({
-  _id, _accessLevel, login, firstName, lastName,
-}) => ({
-  id: _id, level: _accessLevel, login, name: `${firstName} ${lastName}`,
-}));
 
 const girderize = (users) => users.map(
   ({ username, name }) => ({

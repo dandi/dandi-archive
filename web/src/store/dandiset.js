@@ -1,7 +1,6 @@
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
-import oldDandisetSchema from '@/assets/schema/old_dandiset.json';
 import { girderRest, publishRest } from '@/rest';
 import { draftVersion } from '@/utils/constants';
 
