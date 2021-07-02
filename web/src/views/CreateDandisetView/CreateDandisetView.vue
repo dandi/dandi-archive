@@ -41,7 +41,6 @@
 
 <script>
 import { girderRest, publishRest, loggedIn } from '@/rest';
-import toggles from '@/featureToggle';
 
 export default {
   name: 'CreateDandisetView',
@@ -64,27 +63,12 @@ export default {
   methods: {
     async registerDandiset() {
       const { name, description } = this;
-      if (toggles.DJANGO_API) {
-        const { data } = await publishRest.createDandiset(name, description);
-        const { identifier } = data;
-        this.$router.push({
-          name: 'dandisetLanding',
-          params: { identifier },
-        });
-      } else {
-        const { data } = await girderRest.post('dandi', null, {
-          params: {
-            name,
-            description,
-          },
-        });
-
-        const { identifier } = data.meta.dandiset;
-        this.$router.push({
-          name: 'dandisetLanding',
-          params: { identifier },
-        });
-      }
+      const { data } = await publishRest.createDandiset(name, description);
+      const { identifier } = data;
+      this.$router.push({
+        name: 'dandisetLanding',
+        params: { identifier },
+      });
     },
   },
 };

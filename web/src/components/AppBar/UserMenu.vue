@@ -30,9 +30,8 @@
 </template>
 
 <script>
-import { girderRest, publishRest, user } from '@/rest';
+import { publishRest, user } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
-import toggles from '@/featureToggle';
 
 export default {
   name: 'UserMenu',
@@ -76,11 +75,7 @@ export default {
   },
   methods: {
     async logout() {
-      if (toggles.DJANGO_API) {
-        await publishRest.logout();
-      } else {
-        await girderRest.logout();
-      }
+      await publishRest.logout();
     },
   },
 };

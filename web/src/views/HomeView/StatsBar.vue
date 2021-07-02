@@ -8,9 +8,9 @@
         <v-col
           :key="stat.name"
           class="py-0 flex-grow-1"
-          :md="(DJANGO_API) ? 4 : 2"
-          :sm="(DJANGO_API) ? 4 : 4"
-          :cols="(DJANGO_API) ? 12 : 6"
+          md="4"
+          sm="4"
+          cols="12"
         >
           <SingleStat
             :name="stat.name"
@@ -32,10 +32,9 @@
 </template>
 
 <script>
-import { girderRest, publishRest } from '@/rest';
+import { publishRest } from '@/rest';
 import filesize from 'filesize';
 import SingleStat from '@/views/HomeView/SingleStat.vue';
-import toggles from '@/featureToggle';
 
 export default {
   name: 'StatsBar',
@@ -53,43 +52,23 @@ export default {
   },
   computed: {
     stats() {
-      if (toggles.DJANGO_API) {
-        return [
-          {
-            name: 'dandisets',
-            value: this.dandisets,
-            description: 'A DANDI dataset including files and dataset-level metadata',
-            href: '/#/dandiset',
-          },
-          { name: 'users', value: this.users },
-          { name: 'total data size', value: filesize(this.size, { round: 0, base: 10, standard: 'iec' }) },
-        ];
-      }
       return [
-        { name: 'dandisets', value: this.dandisets, description: 'A DANDI dataset including files and dataset-level metadata' },
+        {
+          name: 'dandisets',
+          value: this.dandisets,
+          description: 'A DANDI dataset including files and dataset-level metadata',
+          href: '/#/dandiset',
+        },
         { name: 'users', value: this.users },
-        { name: 'species', value: this.species },
-        { name: 'subjects', value: this.subjects },
-        { name: 'cells', value: this.cells },
-        { name: 'total data size', value: filesize(this.size, { round: 0, base: 10 }) },
+        { name: 'total data size', value: filesize(this.size, { round: 0, base: 10, standard: 'iec' }) },
       ];
     },
   },
   async created() {
-    if (toggles.DJANGO_API) {
-      const data = await publishRest.stats();
-      this.dandisets = data.dandiset_count;
-      this.users = data.user_count;
-      this.size = data.size;
-    } else {
-      const { data } = await girderRest.get('dandi/stats');
-      this.dandisets = data.draft_count;
-      this.users = data.user_count;
-      this.species = data.species_count;
-      this.subjects = data.subject_count;
-      this.cells = data.cell_count;
-      this.size = data.size;
-    }
+    const data = await publishRest.stats();
+    this.dandisets = data.dandiset_count;
+    this.users = data.user_count;
+    this.size = data.size;
   },
 };
 </script>
