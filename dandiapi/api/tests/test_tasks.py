@@ -199,6 +199,7 @@ def test_validate_asset_metadata_malformed_keywords(asset: Asset):
     )
 
 
+@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 def test_validate_version_metadata(version: Version, asset: Asset):
     version.assets.add(asset)
@@ -241,6 +242,7 @@ def test_validate_version_metadata_malformed_schema_version(version: Version, as
     assert version.validation_error.startswith('Metadata version xxx is not allowed.')
 
 
+@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 def test_validate_version_metadata_no_description(version: Version, asset: Asset):
     version.assets.add(asset)
@@ -260,6 +262,7 @@ def test_validate_version_metadata_no_description(version: Version, asset: Asset
     )
 
 
+@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 def test_validate_version_metadata_malformed_license(version: Version, asset: Asset):
     version.assets.add(asset)
