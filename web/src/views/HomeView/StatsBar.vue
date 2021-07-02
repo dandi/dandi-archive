@@ -44,10 +44,6 @@ export default {
       dandisets: 0,
       users: 0,
       size: 0,
-      // Girder only
-      species: 0,
-      subjects: 0,
-      cells: 0,
     };
   },
   computed: {

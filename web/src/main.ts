@@ -20,7 +20,7 @@ import '@/title';
 import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
-import { girderRest, publishRest } from '@/rest';
+import { publishRest } from '@/rest';
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
@@ -42,7 +42,6 @@ loadUser().then(() => {
   new Vue({
     setup() {
       provide('store', store);
-      provide('girderRest', girderRest);
     },
     router,
     render: (h) => h(App),

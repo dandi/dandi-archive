@@ -169,7 +169,6 @@ export default {
       return this.publishDandiset.meta.dandiset.identifier;
     },
     ...mapState('dandiset', {
-      girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       publishedVersions: (state) => state.versions,
     }),

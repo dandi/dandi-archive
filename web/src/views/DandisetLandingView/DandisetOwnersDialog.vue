@@ -116,7 +116,7 @@ export default {
   },
   computed: {
     user,
-    ...mapState('dandiset', ['girderDandiset', 'publishDandiset']),
+    ...mapState('dandiset', ['publishDandiset']),
   },
   watch: {
     selection(val) {

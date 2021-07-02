@@ -102,18 +102,9 @@ export default {
         };
       }
 
-      if (
-        !this.girderDandiset
-        || !this.girderDandiset.meta
-        || !this.girderDandiset.meta.dandiset
-      ) {
-        return {};
-      }
-
-      return { ...this.girderDandiset.meta.dandiset };
+      return {};
     },
     ...mapState('dandiset', {
-      girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       loading: (state) => state.loading,
       dandisetVersions: (state) => state.versions,

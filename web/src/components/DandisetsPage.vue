@@ -137,8 +137,6 @@ export default defineComponent({
       djangoDandisetRequest.value = response.data;
     });
 
-    // Unified Django + Girder
-
     const dandisets = computed(() => djangoDandisetRequest.value?.results.map(
       (dandiset) => dandiset.most_recent_published_version || dandiset.draft_version,
     ));
