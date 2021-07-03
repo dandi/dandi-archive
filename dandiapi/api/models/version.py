@@ -274,9 +274,7 @@ class Version(TimeStampedModel):
             'numberOfBytes': 0,
             'numberOfFiles': 0,
         }
-        # TODO: remove the `and False` and find a better way to handle the
-        # unconditional recomputation of the summary stats.
-        if version_with_assets.id and False:
+        if version_with_assets.id:
             try:
                 summary = aggregate_assets_summary(
                     [asset.metadata.metadata for asset in version_with_assets.assets.all()]

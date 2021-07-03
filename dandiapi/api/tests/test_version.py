@@ -30,7 +30,6 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
     assert version_1.version != version_str_2
 
 
-@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 def test_version_metadata_computed(version, version_metadata):
     original_metadata = version_metadata.metadata
@@ -353,7 +352,6 @@ def test_version_rest_info_with_asset(
     }
 
 
-@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 def test_version_rest_update(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
@@ -409,7 +407,6 @@ def test_version_rest_update(api_client, user, draft_version):
     assert draft_version.metadata.name == new_name
 
 
-@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 def test_version_rest_update_large(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
@@ -500,7 +497,6 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
     )
 
 
-@pytest.mark.skip(reason='https://github.com/dandi/dandi-api/pull/386')
 @pytest.mark.django_db
 # TODO change admin_user back to a normal user once publish is allowed
 def test_version_rest_publish(api_client, admin_user: User, draft_version: Version, asset: Asset):
