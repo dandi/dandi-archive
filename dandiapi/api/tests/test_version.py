@@ -256,7 +256,15 @@ def test_version_publish_version(draft_version, asset):
 
 @pytest.mark.django_db
 def test_version_rest_list(api_client, version):
-    assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
+    dandiset_list = api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data
+
+    # check that 'metadata' field exists, but don't validate its contents
+    assert 'results' in dandiset_list
+    assert len(dandiset_list['results']) == 1
+    assert 'metadata' in dandiset_list['results'][0]
+    del dandiset_list['results'][0]['metadata']
+
+    assert dandiset_list == {
         'count': 1,
         'next': None,
         'previous': None,
@@ -514,6 +522,12 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/publish/'
     )
+
+    # metadata has already been validated, so just remove it
+    # so the rest of the data can be validated
+    assert 'metadata' in resp.data
+    del resp.data['metadata']['metadata']
+
     assert resp.data == {
         'dandiset': {
             'identifier': draft_version.dandiset.identifier,
@@ -527,6 +541,9 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
         'asset_count': 1,
         'size': draft_version.size,
         'status': 'Valid',
+        'metadata': {
+            'name': draft_version.name,
+        },
     }
     published_version = Version.objects.get(version=resp.data['version'])
     assert published_version

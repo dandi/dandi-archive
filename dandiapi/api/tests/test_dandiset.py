@@ -67,7 +67,16 @@ def test_dandiset_versions(
     # Dandiset with a published version only.
     published = published_version_factory().dandiset
 
-    assert api_client.get('/api/dandisets/').data == {
+    response = api_client.get('/api/dandisets/')
+
+    # check that 'metadata' field exists, but don't validate its contents
+    assert len(response.data['results']) == 3
+    assert 'metadata' in response.data['results'][1]['draft_version']['metadata']
+    del response.data['results'][1]['draft_version']['metadata']['metadata']
+    assert 'metadata' in response.data['results'][2]['most_recent_published_version']['metadata']
+    del response.data['results'][2]['most_recent_published_version']['metadata']['metadata']
+
+    assert response.data == {
         'count': 3,
         'next': None,
         'previous': None,
@@ -96,6 +105,9 @@ def test_dandiset_versions(
                         'created': TIMESTAMP_RE,
                         'modified': TIMESTAMP_RE,
                     },
+                    'metadata': {
+                        'name': draft.draft_version.name,
+                    },
                 },
                 'most_recent_published_version': None,
             },
@@ -116,6 +128,9 @@ def test_dandiset_versions(
                         'identifier': published.identifier,
                         'created': TIMESTAMP_RE,
                         'modified': TIMESTAMP_RE,
+                    },
+                    'metadata': {
+                        'name': published.most_recent_published_version.name,
                     },
                 },
             },
@@ -181,6 +196,11 @@ def test_dandiset_rest_create(api_client, user):
     response = api_client.post(
         '/api/dandisets/', {'name': name, 'metadata': metadata}, format='json'
     )
+
+    # check that 'metadata' field exists, but don't validate its contents
+    assert 'metadata' in response.data['draft_version']['metadata']
+    del response.data['draft_version']['metadata']['metadata']
+
     assert response.data == {
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
@@ -198,6 +218,9 @@ def test_dandiset_rest_create(api_client, user):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'metadata': {
+                'name': name,
+            },
         },
         'most_recent_published_version': None,
     }
@@ -262,6 +285,11 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         {'name': name, 'metadata': metadata},
         format='json',
     )
+
+    # check that 'metadata' field exists, but don't validate its contents
+    assert 'metadata' in response.data['draft_version']['metadata']
+    del response.data['draft_version']['metadata']['metadata']
+
     assert response.data == {
         'identifier': identifier,
         'created': TIMESTAMP_RE,
@@ -280,6 +308,9 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'metadata': {
+                'name': name,
+            },
         },
     }
 
@@ -356,6 +387,11 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         {'name': name, 'metadata': metadata},
         format='json',
     )
+
+    # check that 'metadata' field exists, but don't validate its contents
+    assert 'metadata' in response.data['draft_version']['metadata']
+    del response.data['draft_version']['metadata']['metadata']
+
     assert response.data == {
         'identifier': identifier,
         'created': TIMESTAMP_RE,
@@ -374,6 +410,9 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
+            'metadata': {
+                'name': name,
+            }
         },
     }
 
