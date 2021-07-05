@@ -84,17 +84,8 @@ import { publishRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
 import _ from 'lodash';
 
-const girderize = (users) => users.map(
-  ({ username, name }) => ({
-    id: username,
-    login: username,
-    username,
-    name,
-  }),
-);
-
 // Includes a field `result` on each user which is the value displayed in the UI
-const appendResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.login})` : u.login }));
+const appendResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.username})` : u.username }));
 
 export default {
   name: 'DandisetOwnersDialog',
@@ -109,7 +100,7 @@ export default {
       search: null,
       loadingUsers: false,
       selection: null,
-      newOwners: appendResult(girderize(this.owners)),
+      newOwners: appendResult(this.owners),
       items: [],
       throttledUpdate: _.debounce(this.updateItems, 200),
     };
@@ -130,7 +121,7 @@ export default {
 
       this.loadingUsers = true;
       const users = await publishRest.searchUsers(this.search);
-      this.items = appendResult(girderize(users));
+      this.items = appendResult(users);
       this.loadingUsers = false;
     },
     removeOwner(index) {
