@@ -48,10 +48,12 @@ class VersionSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'dandiset',
+            'metadata',
         ]
         read_only_fields = ['created']
 
     dandiset = DandisetSerializer()
+    metadata = VersionMetadataSerializer()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
 
