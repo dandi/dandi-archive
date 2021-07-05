@@ -131,7 +131,7 @@ export default {
       this.$emit('close');
     },
     async save() {
-      const { identifier } = this.publishDandiset.meta.dandiset;
+      const { identifier } = this.publishDandiset.metadata;
       const { data } = await publishRest.setOwners(identifier, this.newOwners);
       this.setOwners(data);
       this.close();

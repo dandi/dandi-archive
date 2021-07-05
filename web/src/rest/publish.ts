@@ -10,39 +10,6 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_PUBLISH_API_ROOT
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
-export function girderize(publishedDandiset: Version) {
-  const { // eslint-disable-next-line camelcase
-    created,
-    modified,
-    dandiset,
-    version,
-    metadata,
-    name,
-    size,
-    asset_count,
-    status,
-    validation_error,
-  } = publishedDandiset;
-  return {
-    created,
-    updated: modified,
-    version,
-    name,
-    lowerName: name,
-    bytes: size,
-    items: asset_count,
-    status,
-    validationError: validation_error,
-    meta: {
-      dandiset: {
-        ...metadata,
-        name,
-        identifier: dandiset.identifier,
-      },
-    },
-  };
-}
-
 const client = axios.create({ baseURL: publishApiRoot });
 const oauthClient = new OAuthClient(
   process.env.VUE_APP_OAUTH_API_ROOT,
@@ -146,7 +113,7 @@ const publishRest = new Vue({
     async specificVersion(identifier: string, version: string) {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/${version}/info/`);
-        return girderize(data);
+        return data;
       } catch (error) {
         if (error.response && error.response.status === 404) {
           return null;
@@ -165,22 +132,10 @@ const publishRest = new Vue({
       if (versions === null) {
         return null;
       }
-      return girderize(versions.results[0]);
+      return versions.results[0];
     },
     async dandisets(params?: any): Promise<AxiosResponse<Paginated<Dandiset>>> {
       const response = await client.get('dandisets/', { params });
-      // girderize the version fields for consumption in DandisetsPage
-      response.data.results = response.data.results.map((dandiset: any) => ({
-        ...dandiset,
-        most_recent_published_version: dandiset.most_recent_published_version ? girderize({
-          dandiset,
-          ...dandiset.most_recent_published_version,
-        }) : null,
-        draft_version: girderize({
-          dandiset,
-          ...dandiset.draft_version,
-        }),
-      }));
       return response;
     },
     async createDandiset(name: string, description: string): Promise<AxiosResponse<Dandiset>> {

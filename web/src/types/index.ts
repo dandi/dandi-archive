@@ -8,7 +8,6 @@ export interface Dandiset {
   identifier: string,
   created: string,
   modified: string,
-  // TODO these versions are girderized, they should have type Version
   draft_version?: any,
   most_recent_published_version?: any,
 }

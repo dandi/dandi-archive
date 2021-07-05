@@ -166,7 +166,7 @@ export default {
         .map((version, index) => ({ version: version.version, index }));
     },
     identifier() {
-      return this.publishDandiset.meta.dandiset.identifier;
+      return this.publishDandiset.dandiset.identifier;
     },
     ...mapState('dandiset', {
       publishDandiset: (state) => state.publishDandiset,
