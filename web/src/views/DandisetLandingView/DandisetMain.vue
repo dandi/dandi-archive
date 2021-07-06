@@ -128,7 +128,7 @@
                   id="publish"
                   text
                   :disabled="publishDisabledMessage !== null || !user
-                    || !(user.admin || user.username == 'ben.dichter@gmail.com')"
+                    || !(user.admin || user.username == 'bendichter')"
                   @click="publish"
                 >
                   <v-icon
