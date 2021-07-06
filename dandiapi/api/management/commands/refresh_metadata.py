@@ -15,5 +15,6 @@ def refresh_metadata():
     for asset in Asset.objects.all():
         asset.save()
 
-    for version in Version.objects.all():
+    # Only update the metadata for draft versions
+    for version in Version.objects.filter(version='draft'):
         version.save()
