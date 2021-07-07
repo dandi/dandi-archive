@@ -1,11 +1,14 @@
 from dandischema import migrate
 from django.conf import settings
+import djclick as click
 
 from dandiapi.api.models import Version, VersionMetadata
 from dandiapi.api.tasks import validate_version_metadata
 
 
-def run(to_version):
+@click.command()
+@click.argument('to_version')
+def migrate_version_metadata(to_version: str):
     print(f'Migrating all version metadata to version {to_version}')
     for version in Version.objects.filter(version='draft'):
         print(f'Migrating {version.dandiset.identifier}/{version.version}')
