@@ -1,6 +1,6 @@
 from dandischema import migrate
-import djclick as click
 from django.conf import settings
+import djclick as click
 
 from dandiapi.api.models import Version, VersionMetadata
 from dandiapi.api.tasks import validate_version_metadata
