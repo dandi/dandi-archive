@@ -8,10 +8,9 @@ export interface Dandiset {
   identifier: string,
   created: string,
   modified: string,
-  // eslint-disable-next-line no-use-before-define
-  draft_version?: Version,
-  // eslint-disable-next-line no-use-before-define
-  most_recent_published_version?: Version,
+  draft_version?: any,
+  most_recent_published_version?: any,
+  contact_person?: string,
 }
 
 export interface Version {
