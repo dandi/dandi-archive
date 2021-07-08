@@ -16,14 +16,34 @@ class UserDetailSerializer(serializers.Serializer):
 
 
 class DandisetSerializer(serializers.ModelSerializer):
+    contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
+
     class Meta:
         model = Dandiset
         fields = [
             'identifier',
             'created',
             'modified',
+            'contact_person',
         ]
         read_only_fields = ['created']
+
+    def get_contact_person(self, obj):
+        latest_version = Version.objects.filter(dandiset=obj.id).order_by('-created').first()
+
+        # TODO: move this logic into dandischema since it is schema-dependant
+        contributors = latest_version.metadata.metadata.get('contributor')
+        if contributors is not None:
+            for contributor in contributors:
+                name = contributor.get('name')
+                roleNames = contributor.get('roleName')
+                if (
+                    name is not None
+                    and roleNames is not None
+                    and 'dcite:ContactPerson' in roleNames
+                ):
+                    return name
+        return ''
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
