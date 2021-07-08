@@ -219,6 +219,12 @@ def test_dandiset_rest_create(api_client, user):
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
+        'manifestLocation': [
+            (
+                f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
         'id': f'DANDI:{dandiset.identifier}/draft',
@@ -299,6 +305,12 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
+        'manifestLocation': [
+            (
+                f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
         'id': f'DANDI:{dandiset.identifier}/draft',
@@ -393,6 +405,12 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata.metadata == {
         **metadata,
+        'manifestLocation': [
+            (
+                f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
         'id': f'DANDI:{dandiset.identifier}/draft',

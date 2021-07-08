@@ -40,6 +40,12 @@ def test_version_metadata_computed(version, version_metadata):
 
     expected_metadata = {
         **original_metadata,
+        'manifestLocation': [
+            (
+                f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ],
         'name': version_metadata.name,
         'identifier': f'DANDI:{version.dandiset.identifier}',
         'version': version.version,
@@ -363,6 +369,12 @@ def test_version_rest_update(api_client, user, draft_version):
     url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
+        'manifestLocation': [
+            (
+                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
@@ -423,6 +435,12 @@ def test_version_rest_update_large(api_client, user, draft_version):
     url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
+        'manifestLocation': [
+            (
+                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
