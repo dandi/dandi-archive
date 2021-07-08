@@ -173,9 +173,8 @@ const publishRest = new Vue({
       const { data } = await client.get('stats/');
       return data;
     },
-    assetDownloadURI(identifier: string, version: string, asset: Asset) {
-      const { asset_id } = asset;
-      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${asset_id}/download/`;
+    assetDownloadURI(identifier: string, version: string, uuid: string) {
+      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/download/`;
     },
     async deleteAsset(identifier: string, version: string, uuid: string): Promise<AxiosResponse> {
       return client.delete(`${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`);

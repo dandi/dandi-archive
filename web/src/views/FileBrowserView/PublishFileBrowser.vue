@@ -113,10 +113,10 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="item.download_url">
+              <v-list-item-action v-if="item.asset_id">
                 <v-btn
                   icon
-                  :href="item.download_url"
+                  :href="downloadURI(item.asset_id)"
                 >
                   <v-icon color="primary">
                     mdi-download
@@ -237,6 +237,10 @@ export default {
       } else {
         this.location = `${this.location}${name}`;
       }
+    },
+
+    downloadURI(asset_id) {
+      return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
     },
 
     showDelete(item) {
