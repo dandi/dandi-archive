@@ -31,16 +31,19 @@ class DandisetSerializer(serializers.ModelSerializer):
     def get_contact_person(self, obj):
         latest_version = Version.objects.filter(dandiset=obj.id).order_by('-created').first()
 
+        if latest_version is None:
+            return ''
+
         # TODO: move this logic into dandischema since it is schema-dependant
         contributors = latest_version.metadata.metadata.get('contributor')
         if contributors is not None:
             for contributor in contributors:
                 name = contributor.get('name')
-                roleNames = contributor.get('roleName')
+                role_names = contributor.get('roleName')
                 if (
                     name is not None
-                    and roleNames is not None
-                    and 'dcite:ContactPerson' in roleNames
+                    and role_names is not None
+                    and 'dcite:ContactPerson' in role_names
                 ):
                     return name
         return ''
