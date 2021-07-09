@@ -80,16 +80,9 @@
 </template>
 
 <script>
-import { girderRest, publishRest, user } from '@/rest';
+import { publishRest, user } from '@/rest';
 import { mapState, mapMutations } from 'vuex';
-import toggles from '@/featureToggle';
 import _ from 'lodash';
-
-const userFormatConversion = (users) => users.map(({
-  _id, _accessLevel, login, firstName, lastName,
-}) => ({
-  id: _id, level: _accessLevel, login, name: `${firstName} ${lastName}`,
-}));
 
 const girderize = (users) => users.map(
   ({ username, name }) => ({
@@ -116,7 +109,7 @@ export default {
       search: null,
       loadingUsers: false,
       selection: null,
-      newOwners: appendResult((toggles.DJANGO_API) ? girderize(this.owners) : this.owners),
+      newOwners: appendResult(girderize(this.owners)),
       items: [],
       throttledUpdate: _.debounce(this.updateItems, 200),
     };
@@ -136,23 +129,8 @@ export default {
       if (!this.search) return;
 
       this.loadingUsers = true;
-      if (toggles.DJANGO_API) {
-        const users = await publishRest.searchUsers(this.search);
-        this.items = appendResult(girderize(users));
-      } else {
-        const { data: { user: users } } = await girderRest.get('/resource/search', {
-          params: {
-            q: this.search,
-            mode: 'prefix',
-            types: JSON.stringify(['user']),
-            limit: 10,
-          },
-        });
-
-        // Needed to match existing owner document schema
-        this.items = appendResult(userFormatConversion(users));
-      }
-
+      const users = await publishRest.searchUsers(this.search);
+      this.items = appendResult(girderize(users));
       this.loadingUsers = false;
     },
     removeOwner(index) {
@@ -162,16 +140,9 @@ export default {
       this.$emit('close');
     },
     async save() {
-      if (toggles.DJANGO_API) {
-        const { identifier } = this.publishDandiset.meta.dandiset;
-        const { data } = await publishRest.setOwners(identifier, this.newOwners);
-        this.setOwners(data);
-      } else {
-        const { identifier } = this.girderDandiset.meta.dandiset;
-        const formattedOwners = this.newOwners.map((owner) => ({ _id: owner.id }));
-        const { data } = await girderRest.put(`/dandi/${identifier}/owners`, formattedOwners);
-        this.setOwners(data);
-      }
+      const { identifier } = this.publishDandiset.meta.dandiset;
+      const { data } = await publishRest.setOwners(identifier, this.newOwners);
+      this.setOwners(data);
       this.close();
     },
     ...mapMutations('dandiset', ['setOwners']),

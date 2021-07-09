@@ -72,8 +72,6 @@ import moment from 'moment';
 import filesize from 'filesize';
 
 import { getDandisetContact } from '@/utils';
-import toggles from '@/featureToggle';
-import { girderRest } from '@/rest';
 
 type Dandiset = {};
 interface DandisetStats {
@@ -107,16 +105,7 @@ export default defineComponent({
       // Set back to null in case of failure
       dandisetStats.value = null;
 
-      if (toggles.DJANGO_API) {
-        dandisetStats.value = dandisets as DandisetStats[];
-      } else {
-        const res = await Promise.all(dandisets.map(async (dandiset: any) => {
-          const { identifier } = dandiset.meta.dandiset;
-          const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
-          return data;
-        }));
-        dandisetStats.value = res;
-      }
+      dandisetStats.value = dandisets as DandisetStats[];
     }
 
     // Fetching dandiset stats must be done this way since we don't have access to asyncComputed

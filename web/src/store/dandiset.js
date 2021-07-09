@@ -1,10 +1,8 @@
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
-import oldDandisetSchema from '@/assets/schema/old_dandiset.json';
 import { girderRest, publishRest } from '@/rest';
 import { draftVersion } from '@/utils/constants';
-import toggles from '@/featureToggle';
 
 export default {
   namespaced: true,
@@ -49,13 +47,9 @@ export default {
     async initializeDandisets({ dispatch }, { identifier, version }) {
       await dispatch('uninitializeDandisets');
 
-      if (toggles.DJANGO_API) {
-        // this can be done concurrently, don't await
-        dispatch('fetchDandisetVersions', { identifier });
-        await dispatch('fetchPublishDandiset', { identifier, version });
-      } else {
-        await dispatch('fetchGirderDandiset', { identifier });
-      }
+      // this can be done concurrently, don't await
+      dispatch('fetchDandisetVersions', { identifier });
+      await dispatch('fetchPublishDandiset', { identifier, version });
       await dispatch('fetchOwners', identifier);
     },
     async fetchDandisetVersions({ state, commit }, { identifier }) {
@@ -93,33 +87,22 @@ export default {
       state.loading = false;
     },
     async fetchSchema({ commit }) {
-      let schema;
+      const { schema_url: schemaUrl } = await publishRest.info();
+      const res = await axios.get(schemaUrl);
 
-      if (toggles.DJANGO_API) {
-        const { schema_url: schemaUrl } = await publishRest.info();
-        const res = await axios.get(schemaUrl);
-
-        if (res.status !== 200) {
-          throw new Error('Could not retrieve Dandiset Schema!');
-        }
-
-        schema = await RefParser.dereference(res.data);
-      } else {
-        schema = oldDandisetSchema;
+      if (res.status !== 200) {
+        throw new Error('Could not retrieve Dandiset Schema!');
       }
+
+      const schema = await RefParser.dereference(res.data);
 
       commit('setSchema', schema);
     },
     async fetchOwners({ state, commit }, identifier) {
       state.loading = true;
 
-      if (toggles.DJANGO_API) {
-        const { data } = await publishRest.owners(identifier);
-        commit('setOwners', data);
-      } else {
-        const { data } = await girderRest.get(`/dandi/${identifier}/owners`);
-        commit('setOwners', data);
-      }
+      const { data } = await publishRest.owners(identifier);
+      commit('setOwners', data);
 
       state.loading = false;
     },

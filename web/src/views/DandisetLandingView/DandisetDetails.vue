@@ -49,16 +49,6 @@
           {{ stats.items }}
         </v-col>
         <v-col
-          v-if="!DJANGO_API"
-          class="text--secondary mx-2 pa-0 py-1"
-          cols="auto"
-        >
-          <v-icon color="primary">
-            mdi-folder
-          </v-icon>
-          {{ stats.folders }}
-        </v-col>
-        <v-col
           class="text--secondary mx-2 pa-0 py-1"
           cols="auto"
         >
@@ -226,11 +216,10 @@
 
 <script>
 import { mapState, mapGetters } from 'vuex';
-import { loggedIn, user, girderRest } from '@/rest';
+import { loggedIn, user } from '@/rest';
 import moment from 'moment';
 import filesize from 'filesize';
 
-import toggles from '@/featureToggle';
 import { draftVersion } from '@/utils/constants';
 import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
 
@@ -273,10 +262,7 @@ export default {
       return null;
     },
     currentDandiset() {
-      if (toggles.DJANGO_API) {
-        return this.publishDandiset;
-      }
-      return this.girderDandiset;
+      return this.publishDandiset;
     },
     draftDandiset() {
       return this.currentVersion === draftVersion;
@@ -301,11 +287,7 @@ export default {
       return filesize(stats.bytes, { round: 1, base: 10, standard: 'iec' });
     },
     versions() {
-      if (toggles.DJANGO_API) {
-        return this.publishedVersions || [];
-      }
-      // Girder only has the draft version
-      return [{ version: draftVersion }];
+      return this.publishedVersions || [];
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
@@ -319,13 +301,8 @@ export default {
   },
   asyncComputed: {
     async stats() {
-      if (toggles.DJANGO_API) {
-        const { items, bytes } = this.currentDandiset;
-        return { items, bytes };
-      }
-      const { identifier } = this.currentDandiset.meta.dandiset;
-      const { data } = await girderRest.get(`/dandi/${identifier}/stats`);
-      return data;
+      const { items, bytes } = this.currentDandiset;
+      return { items, bytes };
     },
   },
   watch: {

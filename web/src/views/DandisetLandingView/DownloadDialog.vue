@@ -118,7 +118,6 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
 import CopyText from '@/components/CopyText.vue';
-import toggles from '@/featureToggle';
 
 function formatDownloadCommand(identifier, version) {
   if (version === 'draft') {
@@ -167,10 +166,7 @@ export default {
         .map((version, index) => ({ version: version.version, index }));
     },
     identifier() {
-      if (toggles.DJANGO_API) {
-        return this.publishDandiset.meta.dandiset.identifier;
-      }
-      return this.girderDandiset.meta.dandiset.identifier;
+      return this.publishDandiset.meta.dandiset.identifier;
     },
     ...mapState('dandiset', {
       girderDandiset: (state) => state.girderDandiset,
