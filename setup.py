@@ -54,6 +54,7 @@ setup(
         'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
+        'email-validator',
         'httpx',
         'jsonschema',
         # Production-only
