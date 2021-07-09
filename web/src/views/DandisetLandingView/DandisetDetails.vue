@@ -247,11 +247,7 @@ export default {
       return this.formatDateTime(this.currentDandiset.updated);
     },
     contactName() {
-      if (!this.currentDandiset) {
-        return null;
-      }
-
-      return this.currentDandiset.contact_person;
+      return this.currentDandiset?.contact_person;
     },
     currentDandiset() {
       return this.publishDandiset;
