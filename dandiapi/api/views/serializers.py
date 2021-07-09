@@ -43,8 +43,8 @@ class DandisetSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created']
 
-    def get_contact_person(self, obj):
-        latest_version = Version.objects.filter(dandiset=obj.id).order_by('-created').first()
+    def get_contact_person(self, dandiset: Dandiset):
+        latest_version = dandiset.versions.order_by('-created').first()
 
         if latest_version is None:
             return ''
