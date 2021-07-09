@@ -316,6 +316,7 @@ def test_version_rest_info(api_client, version):
         'size': version.size,
         'status': 'Pending',
         'validation_error': '',
+        'contact_person': '',
     }
 
 
@@ -358,6 +359,7 @@ def test_version_rest_info_with_asset(
         'size': version.size,
         'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
         'validation_error': expected_validation_error,
+        'contact_person': '',
     }
 
 
@@ -411,6 +413,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'size': draft_version.size,
         'status': 'Pending',
         'validation_error': '',
+        'contact_person': '',
     }
 
     # The version modified date should be updated
@@ -478,6 +481,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'size': draft_version.size,
         'status': 'Pending',
         'validation_error': '',
+        'contact_person': '',
     }
 
     draft_version.refresh_from_db()
