@@ -47,6 +47,7 @@ def test_dandiset_rest_list(api_client, dandiset):
                 'modified': TIMESTAMP_RE,
                 'draft_version': None,
                 'most_recent_published_version': None,
+                'contact_person': '',
             }
         ],
     }
@@ -76,6 +77,7 @@ def test_dandiset_versions(
                 'identifier': empty.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
+                'contact_person': '',
                 'draft_version': None,
                 'most_recent_published_version': None,
             },
@@ -83,6 +85,7 @@ def test_dandiset_versions(
                 'identifier': draft.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
+                'contact_person': '',
                 'draft_version': {
                     'version': draft.draft_version.version,
                     'name': draft.draft_version.name,
@@ -95,14 +98,17 @@ def test_dandiset_versions(
                         'identifier': draft.identifier,
                         'created': TIMESTAMP_RE,
                         'modified': TIMESTAMP_RE,
+                        'contact_person': '',
                     },
                 },
                 'most_recent_published_version': None,
+                'contact_person': '',
             },
             {
                 'identifier': published.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
+                'contact_person': '',
                 'draft_version': None,
                 'most_recent_published_version': {
                     'version': published.most_recent_published_version.version,
@@ -116,6 +122,7 @@ def test_dandiset_versions(
                         'identifier': published.identifier,
                         'created': TIMESTAMP_RE,
                         'modified': TIMESTAMP_RE,
+                        'contact_person': '',
                     },
                 },
             },
@@ -141,6 +148,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'modified': TIMESTAMP_RE,
                 'draft_version': None,
                 'most_recent_published_version': None,
+                'contact_person': '',
             }
         ],
     }
@@ -154,6 +162,7 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'modified': TIMESTAMP_RE,
         'draft_version': None,
         'most_recent_published_version': None,
+        'contact_person': '',
     }
 
 
@@ -185,6 +194,7 @@ def test_dandiset_rest_create(api_client, user):
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
+        'contact_person': 'Doe, John',
         'draft_version': {
             'version': 'draft',
             'name': name,
@@ -194,6 +204,7 @@ def test_dandiset_rest_create(api_client, user):
                 'identifier': DANDISET_ID_RE,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
+                'contact_person': 'Doe, John',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
@@ -282,11 +293,13 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
                 'identifier': identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
+                'contact_person': 'Doe, John',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
+        'contact_person': 'Doe, John',
     }
 
     # Creating a Dandiset has side affects.
@@ -382,11 +395,13 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
                 'identifier': identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
+                'contact_person': 'Jane Doe',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
+        'contact_person': 'Jane Doe',
     }
 
     # Creating a Dandiset has side affects.

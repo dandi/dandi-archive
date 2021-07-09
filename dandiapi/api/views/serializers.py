@@ -4,6 +4,19 @@ from rest_framework import serializers
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
 
 
+def extract_contact_person(version):
+    """Extract a version's contact person from its metadata."""
+    # TODO: move this logic into dandischema since it is schema-dependant
+    contributors = version.metadata.metadata.get('contributor')
+    if contributors is not None:
+        for contributor in contributors:
+            name = contributor.get('name')
+            role_names = contributor.get('roleName')
+            if name is not None and role_names is not None and 'dcite:ContactPerson' in role_names:
+                return name
+    return ''
+
+
 # The default ModelSerializer for User fails if the user already exists
 class UserSerializer(serializers.Serializer):
     username = serializers.CharField(validators=[UnicodeUsernameValidator()])
@@ -16,14 +29,25 @@ class UserDetailSerializer(serializers.Serializer):
 
 
 class DandisetSerializer(serializers.ModelSerializer):
+    contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
+
     class Meta:
         model = Dandiset
         fields = [
             'identifier',
             'created',
             'modified',
+            'contact_person',
         ]
         read_only_fields = ['created']
+
+    def get_contact_person(self, dandiset: Dandiset):
+        latest_version = dandiset.versions.order_by('-created').first()
+
+        if latest_version is None:
+            return ''
+
+        return extract_contact_person(latest_version)
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
@@ -64,12 +88,17 @@ class DandisetDetailSerializer(DandisetSerializer):
 
 
 class VersionDetailSerializer(VersionSerializer):
+    contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
+
     class Meta(VersionSerializer.Meta):
-        fields = VersionSerializer.Meta.fields + ['validation_error', 'metadata']
+        fields = VersionSerializer.Meta.fields + ['validation_error', 'metadata', 'contact_person']
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
     status = serializers.CharField(source='publish_status')
     validation_error = serializers.CharField(source='publish_validation_error')
+
+    def get_contact_person(self, obj):
+        return extract_contact_person(obj)
 
 
 class AssetBlobSerializer(serializers.ModelSerializer):
