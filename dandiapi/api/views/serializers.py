@@ -3,21 +3,19 @@ from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
 
+
 def extract_contact_person(version):
-    """ Extract a version's contact person from its metadata """
+    """Extract a version's contact person from its metadata."""
     # TODO: move this logic into dandischema since it is schema-dependant
     contributors = version.metadata.metadata.get('contributor')
     if contributors is not None:
         for contributor in contributors:
             name = contributor.get('name')
             role_names = contributor.get('roleName')
-            if (
-                name is not None
-                and role_names is not None
-                and 'dcite:ContactPerson' in role_names
-            ):
+            if name is not None and role_names is not None and 'dcite:ContactPerson' in role_names:
                 return name
     return ''
+
 
 # The default ModelSerializer for User fails if the user already exists
 class UserSerializer(serializers.Serializer):
