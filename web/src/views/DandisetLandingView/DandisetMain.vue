@@ -363,7 +363,6 @@ export default {
       delete extra_obj.assetsSummary.schemaKey;
       delete extra_obj.assetsSummary.numberOfBytes;
       delete extra_obj.assetsSummary.numberOfFiles;
-      this.getAssetsSummary = extra_obj.assetsSummary;
       return extra_obj;
     },
     schemaPropertiesCopy() {
