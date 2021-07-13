@@ -384,11 +384,12 @@ export default {
       await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
     },
     renderData(data, schema) {
-      if (data === null) { return false; }
+      if (data === null || _.isEmpty(data)) {
+        return false;
+      }
       if (schema.type === 'array' && Array.isArray(data) && data.length === 0) {
         return false;
       }
-
       return true;
     },
   },
