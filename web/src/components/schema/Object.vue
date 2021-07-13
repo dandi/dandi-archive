@@ -12,6 +12,7 @@
         <template v-for="item in val">
           <template v-for="(v, k) in item">
             <v-row
+              v-if="k !== 'schemaKey'"
               :key="`${k}`"
               class="mx-4"
             >
