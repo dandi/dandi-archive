@@ -19,7 +19,7 @@
               <strong class="mr-2">{{ k }}:</strong> {{ renderedValue(v) }}
             </v-row>
           </template>
-          <v-divider :key="`${item}-divider`" />
+          <v-divider/>
         </template>
       </template>
       <template v-else>
@@ -31,7 +31,7 @@
           <strong class="mr-2">{{ objectKey(key) }}:</strong>{{ renderedValue(val) }}
         </v-row>
       </template>
-      <br :key="key">
+      <br>
     </template>
   </div>
 </template>
