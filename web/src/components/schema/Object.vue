@@ -3,7 +3,7 @@
     <template v-for="(val, key) in data">
       <template v-if="isObjectArray(val)">
         <v-row
-          v-if="val || (!val && !omitEmpty)"
+          v-if="val || !omitEmpty"
           :key="key"
           class="mx-1"
         >
