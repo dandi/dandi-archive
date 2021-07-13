@@ -93,9 +93,7 @@ export default defineComponent({
     }
 
     function isObjectArray(value: unknown) {
-      if (Array.isArray(value) && (value[0] instanceof Object)) {
-        return true;
-      } return false;
+      return Array.isArray(value) && (value[0] instanceof Object);
     }
     function renderedValue(value: unknown) {
       if (Array.isArray(value) && (value[0] instanceof Object)) {
