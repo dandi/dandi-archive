@@ -153,6 +153,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if created:
             asset_metadata.save()
 
+        # Check if there are already any assets with the same path
+        if version.assets.filter(path=path).exists():
+            return Response(
+                'An asset with that path already exists',
+                status=status.HTTP_409_CONFLICT,
+            )
+
         asset = Asset(
             path=path,
             blob=asset_blob,
@@ -214,6 +221,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             # No changes, don't create a new asset
             new_asset = old_asset
         else:
+            # Verify we aren't changing path to the same value as an existing asset
+            if (
+                version.assets.filter(path=path)
+                .filter(~models.Q(asset_id=old_asset.asset_id))
+                .exists()
+            ):
+                return Response(
+                    'An asset with that path already exists',
+                    status=status.HTTP_409_CONFLICT,
+                )
+
             with transaction.atomic():
                 # Mint a new Asset whenever blob or metadata are modified
                 new_asset = Asset(
