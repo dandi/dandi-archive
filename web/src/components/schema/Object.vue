@@ -19,7 +19,7 @@
               <strong class="mr-2">{{ k }}:</strong> {{ renderedValue(v) }}
             </v-row>
           </template>
-          <v-divider/>
+          <v-divider :key="`${item}-divider`"/>
         </template>
       </template>
       <template v-else>
@@ -31,7 +31,7 @@
           <strong class="mr-2">{{ objectKey(key) }}:</strong>{{ renderedValue(val) }}
         </v-row>
       </template>
-      <br>
+      <br :key="`${key}`">
     </template>
   </div>
 </template>
@@ -40,7 +40,6 @@
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import type { JSONSchema7 } from 'json-schema';
 import type { JSONSchema7WithSubSchema } from '@/utils/schema/types';
-import _ from 'lodash';
 import type { RenderOptions } from './types';
 
 export default defineComponent({
