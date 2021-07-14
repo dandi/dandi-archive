@@ -87,21 +87,13 @@ export default defineComponent({
       );
     });
 
-    function renderListOfObjects(value: any[]) {
-      const newVal:any = _.map(value, (v) => v);
-      return newVal;
-    }
-
     function isObjectArray(value: unknown) {
       return Array.isArray(value) && (value[0] instanceof Object);
     }
     function renderedValue(value: unknown) {
-      if (Array.isArray(value) && (value[0] instanceof Object)) {
-        return renderListOfObjects(value);
-      } if (Array.isArray(value)) {
+      if (Array.isArray(value) && !(value[0] instanceof Object)) {
         return value.join(', ');
       }
-
       return value;
     }
 
