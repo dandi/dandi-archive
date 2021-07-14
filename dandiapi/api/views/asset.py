@@ -11,6 +11,7 @@ except ImportError:
 
 import os.path
 
+from django.db import models, transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -213,18 +214,19 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             # No changes, don't create a new asset
             new_asset = old_asset
         else:
-            # Mint a new Asset whenever blob or metadata are modified
-            new_asset = Asset(
-                path=path,
-                blob=asset_blob,
-                metadata=asset_metadata,
-                previous=old_asset,
-            )
-            new_asset.save()
+            with transaction.atomic():
+                # Mint a new Asset whenever blob or metadata are modified
+                new_asset = Asset(
+                    path=path,
+                    blob=asset_blob,
+                    metadata=asset_metadata,
+                    previous=old_asset,
+                )
+                new_asset.save()
 
-            # Replace the old asset with the new one
-            version.assets.add(new_asset)
-            version.assets.remove(old_asset)
+                # Replace the old asset with the new one
+                version.assets.add(new_asset)
+                version.assets.remove(old_asset)
 
         # Save the version so that the modified field is updated
         version.save()
