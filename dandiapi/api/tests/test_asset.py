@@ -307,6 +307,32 @@ def test_asset_create_published_version(api_client, user, published_version, ass
 
 
 @pytest.mark.django_db
+def test_asset_create_existing_path(api_client, user, draft_version, asset_blob, asset_factory):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    # Create an existing asset with a conflicting path
+    existing_asset = asset_factory(path=path)
+    draft_version.assets.add(existing_asset)
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
+        format='json',
+    )
+    assert resp.status_code == 409
+
+
+@pytest.mark.django_db
 def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -355,27 +381,6 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     draft_version.refresh_from_db()
     end_time = draft_version.modified
     assert start_time < end_time
-
-
-@pytest.mark.django_db
-def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_factory):
-    old_asset = asset_factory()
-    existing_asset = asset_factory()
-    draft_version.assets.add(old_asset)
-    draft_version.assets.add(existing_asset)
-
-    assign_perm('owner', user, draft_version.dandiset)
-    api_client.force_authenticate(user=user)
-
-    resp = api_client.put(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/'
-        f'versions/{draft_version.version}/assets/{old_asset.asset_id}/',
-        {'metadata': existing_asset.metadata.metadata, 'blob_id': existing_asset.blob.blob_id},
-        format='json',
-    ).data
-
-    # Updating an Asset to be the same as an existing Asset should still mint a new Asset
-    assert resp['asset_id'] != existing_asset.asset_id
 
 
 @pytest.mark.django_db
@@ -428,6 +433,25 @@ def test_asset_rest_update_published_version(api_client, user, published_version
     )
     assert resp.status_code == 405
     assert resp.data == 'Only draft versions can be modified.'
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_factory):
+    old_asset = asset_factory()
+    existing_asset = asset_factory()
+    draft_version.assets.add(old_asset)
+    draft_version.assets.add(existing_asset)
+
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{old_asset.asset_id}/',
+        {'metadata': existing_asset.metadata.metadata, 'blob_id': existing_asset.blob.blob_id},
+        format='json',
+    )
+    assert resp.status_code == 409
 
 
 @pytest.mark.django_db

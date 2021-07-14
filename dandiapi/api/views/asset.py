@@ -11,6 +11,7 @@ except ImportError:
 
 import os.path
 
+from django.db import models, transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -152,6 +153,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if created:
             asset_metadata.save()
 
+        # Check if there are already any assets with the same path
+        if version.assets.filter(path=path).exists():
+            return Response(
+                'An asset with that path already exists',
+                status=status.HTTP_409_CONFLICT,
+            )
+
         asset = Asset(
             path=path,
             blob=asset_blob,
@@ -213,18 +221,30 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             # No changes, don't create a new asset
             new_asset = old_asset
         else:
-            # Mint a new Asset whenever blob or metadata are modified
-            new_asset = Asset(
-                path=path,
-                blob=asset_blob,
-                metadata=asset_metadata,
-                previous=old_asset,
-            )
-            new_asset.save()
+            # Verify we aren't changing path to the same value as an existing asset
+            if (
+                version.assets.filter(path=path)
+                .filter(~models.Q(asset_id=old_asset.asset_id))
+                .exists()
+            ):
+                return Response(
+                    'An asset with that path already exists',
+                    status=status.HTTP_409_CONFLICT,
+                )
 
-            # Replace the old asset with the new one
-            version.assets.add(new_asset)
-            version.assets.remove(old_asset)
+            with transaction.atomic():
+                # Mint a new Asset whenever blob or metadata are modified
+                new_asset = Asset(
+                    path=path,
+                    blob=asset_blob,
+                    metadata=asset_metadata,
+                    previous=old_asset,
+                )
+                new_asset.save()
+
+                # Replace the old asset with the new one
+                version.assets.add(new_asset)
+                version.assets.remove(old_asset)
 
         # Save the version so that the modified field is updated
         version.save()
