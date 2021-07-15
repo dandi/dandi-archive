@@ -1,6 +1,6 @@
 <template>
   <v-progress-linear
-    v-if="!girderDandiset && !publishDandiset"
+    v-if="!publishDandiset"
     indeterminate
   />
   <PublishFileBrowser
@@ -36,10 +36,10 @@ export default {
     };
   },
   computed: {
-    ...mapState('dandiset', ['publishDandiset', 'girderDandiset']),
+    ...mapState('dandiset', ['publishDandiset']),
   },
   async created() {
-    // Don't extract girderDandiset or publishDandiset, for reactivity
+    // Don't extract publishDandiset, for reactivity
     const { identifier, version } = this;
 
     if (!this.publishDandiset) {
@@ -47,7 +47,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('dandiset', ['fetchPublishDandiset', 'fetchGirderDandiset']),
+    ...mapActions('dandiset', ['fetchPublishDandiset']),
   },
 };
 </script>

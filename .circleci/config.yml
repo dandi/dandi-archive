@@ -64,8 +64,6 @@ jobs:
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
             DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
             DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
-            DJANGO_DANDI_GIRDER_API_URL: https://girder.dandiarchive.org/not/real
-            DJANGO_DANDI_GIRDER_API_KEY: notarealkey
             DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
       - run:
           name: Run API server in the background
@@ -79,8 +77,6 @@ jobs:
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
             DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
             DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
-            DJANGO_DANDI_GIRDER_API_URL: https://girder.dandiarchive.org/not/real
-            DJANGO_DANDI_GIRDER_API_KEY: notarealkey
             DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
       - run:
           name: Install web app

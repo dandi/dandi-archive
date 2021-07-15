@@ -162,7 +162,6 @@ import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 
 import { publishRest } from '@/rest';
-import { girderize } from '@/rest/publish';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
 
@@ -234,10 +233,10 @@ export default defineComponent({
       disableAll: props.readonly,
     }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
-    const id = computed(() => publishDandiset.value?.meta.dandiset.identifier || null);
+    const id = computed(() => publishDandiset.value?.dandiset.identifier || null);
     function setDandiset(payload: any) {
       // TODO: Replace once direct-vuex is added
-      store.commit('dandiset/setPublishDandiset', girderize(payload));
+      store.commit('dandiset/setPublishDandiset', payload);
     }
 
     async function save() {
