@@ -100,12 +100,20 @@ def validate_asset_metadata(asset_id: int) -> None:
         logger.error('Error while validating asset %s', asset_id)
         logger.error(str(e))
         asset.status = Asset.Status.INVALID
-        asset.validation_error = str(e)
+
+        if type(e) is ValueError:
+            asset.validation_errors = [{'field': '', 'message': str(e)}]
+        else:
+            # parse the pydantic ValidationError:
+            asset.validation_errors = [
+                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors()
+            ]
+
         asset.save()
         return
     logger.info('Successfully validated asset %s', asset_id)
     asset.status = Asset.Status.VALID
-    asset.validation_error = ''
+    asset.validation_errors = []
     asset.save()
 
 
@@ -130,10 +138,18 @@ def validate_version_metadata(version_id: int) -> None:
         logger.error('Error while validating version %s', version_id)
         logger.error(str(e))
         version.status = Version.Status.INVALID
-        version.validation_error = str(e)
+
+        if type(e) is ValueError:
+            version.validation_errors = [{'field': '', 'message': str(e)}]
+        else:
+            # parse the pydantic ValidationError:
+            version.validation_errors = [
+                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors()
+            ]
+
         version.save()
         return
     logger.info('Successfully validated version %s', version_id)
     version.status = Version.Status.VALID
-    version.validation_error = ''
+    version.validation_errors = []
     version.save()

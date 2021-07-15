@@ -91,11 +91,18 @@ class VersionDetailSerializer(VersionSerializer):
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
 
     class Meta(VersionSerializer.Meta):
-        fields = VersionSerializer.Meta.fields + ['validation_error', 'metadata', 'contact_person']
+        fields = VersionSerializer.Meta.fields + [
+            'asset_validation_errors',
+            'version_validation_errors',
+            'metadata',
+            'contact_person',
+        ]
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
     status = serializers.CharField(source='publish_status')
-    validation_error = serializers.CharField(source='publish_validation_error')
+
+    # rename this field in the serializer to differentiate from asset_validation_errors
+    version_validation_errors = serializers.JSONField(source='validation_errors')
 
     def get_contact_person(self, obj):
         return extract_contact_person(obj)
@@ -121,7 +128,7 @@ class AssetMetadataSerializer(serializers.ModelSerializer):
 class AssetValidationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
-        fields = ['status', 'validation_error']
+        fields = ['status', 'validation_errors']
 
 
 class AssetSerializer(serializers.ModelSerializer):
