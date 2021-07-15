@@ -119,15 +119,14 @@
         <template v-if="publishDandiset.version === 'draft'">
           <v-tooltip
             left
-            :disabled="publishDisabledMessage === null"
+            :disabled="!publishDisabledMessage"
           >
             <template #activator="{ on }">
               <div v-on="on">
-                <!-- TODO for now only admins can publish -->
                 <v-btn
                   id="publish"
                   text
-                  :disabled="publishDisabledMessage !== null || !user
+                  :disabled="publishDisabled || !user
                     || !(user.admin ||
                       user.username === 'bendichter' || user.username === 'ben.dichter@gmail.com')"
                   @click="publish"
@@ -147,6 +146,110 @@
               v-text="publishDisabledMessage"
             />
           </v-tooltip>
+          <v-menu
+            v-if="publishDandiset.version_validation_errors.length"
+            :nudge-width="200"
+            offset-y
+          >
+            <template #activator="{ on: menu, attrs }">
+              <v-tooltip bottom>
+                <template #activator="{ on: tooltip }">
+                  <v-btn
+                    v-bind="attrs"
+                    v-on="{ ...tooltip, ...menu }"
+                  >
+                    <v-icon
+                      color="error"
+                      class="mr-1"
+                    >
+                      mdi-clipboard-alert
+                    </v-icon>
+                    {{ publishDandiset.version_validation_errors.length }}
+                  </v-btn>
+                </template>
+                <span>Fix issues with metadata</span>
+              </v-tooltip>
+            </template>
+            <v-card class="pa-1">
+              <v-list
+                style="max-height: 200px"
+                class="overflow-y-auto"
+              >
+                <div
+                  v-for="(error, index) in publishDandiset.version_validation_errors"
+                  :key="index"
+                >
+                  <v-list-item>
+                    <v-list-item-icon>
+                      <v-icon>
+                        {{ getValidationErrorIcon(error.field) }}
+                      </v-icon>
+                    </v-list-item-icon>
+
+                    <v-list-item-content>
+                      {{ error.field }}: {{ error.message }}
+                    </v-list-item-content>
+                  </v-list-item>
+                  <v-divider />
+                </div>
+              </v-list>
+              <v-btn
+                color="primary"
+                @click="$emit('edit')"
+              >
+                Fix issues
+              </v-btn>
+            </v-card>
+          </v-menu>
+          <v-menu
+            v-if="publishDandiset.asset_validation_errors.length"
+            :nudge-width="300"
+            offset-y
+          >
+            <template #activator="{ on: menu, attrs }">
+              <v-tooltip bottom>
+                <template #activator="{ on: tooltip }">
+                  <v-btn
+                    v-bind="attrs"
+                    v-on="{ ...tooltip, ...menu }"
+                  >
+                    <v-icon
+                      color="error"
+                      class="mr-1"
+                    >
+                      mdi-database-alert
+                    </v-icon>
+                    {{ publishDandiset.asset_validation_errors.length }}
+                  </v-btn>
+                </template>
+                <span>Fix issues with assets</span>
+              </v-tooltip>
+            </template>
+            <v-card class="pa-1">
+              <v-list
+                style="max-height: 200px"
+                class="overflow-y-auto"
+              >
+                <div
+                  v-for="(error, index) in publishDandiset.asset_validation_errors"
+                  :key="index"
+                >
+                  <v-list-item>
+                    <v-list-item-icon>
+                      <v-icon>
+                        {{ getValidationErrorIcon(error.field) }}
+                      </v-icon>
+                    </v-list-item-icon>
+
+                    <v-list-item-content>
+                      {{ error.field }}: {{ error.message }}
+                    </v-list-item-content>
+                  </v-list-item>
+                  <v-divider />
+                </div>
+              </v-list>
+            </v-card>
+          </v-menu>
         </template>
       </v-row>
 
@@ -245,7 +348,7 @@
 <script>
 import { mapState, mapGetters } from 'vuex';
 
-import { dandiUrl } from '@/utils/constants';
+import { dandiUrl, VALIDATION_ICONS } from '@/utils/constants';
 import {
   loggedIn, publishRest, user,
 } from '@/rest';
@@ -314,12 +417,8 @@ export default {
       if (!this.loggedIn) {
         return 'You must be logged in to edit.';
       }
-
       if (!this.userCanModifyDandiset) {
         return 'You do not have permission to edit this dandiset.';
-      }
-      if (this.publishDandiset.status === 'Invalid') {
-        return this.publishDandiset.validation_error;
       }
       if (this.publishDandiset.status === 'Pending') {
         return 'This dandiset has not yet been validated.';
@@ -332,6 +431,11 @@ export default {
       }
 
       return null;
+    },
+    publishDisabled() {
+      return !!(this.publishDandiset.version_validation_errors
+        || this.publishDandiset.asset_validation_errors
+        || this.publishDisabledMessage);
     },
     metadataButtonText() {
       return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
@@ -403,6 +507,13 @@ export default {
         return false;
       }
       return true;
+    },
+    getValidationErrorIcon(errorField) {
+      const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
+      if (icons.length > 0) {
+        return VALIDATION_ICONS[icons[0]];
+      }
+      return VALIDATION_ICONS.DEFAULT;
     },
   },
 };
