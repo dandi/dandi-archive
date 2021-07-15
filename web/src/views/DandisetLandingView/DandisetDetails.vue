@@ -247,19 +247,7 @@ export default {
       return this.formatDateTime(this.currentDandiset.updated);
     },
     contactName() {
-      if (!this.currentDandiset || !this.currentDandiset.metadata.contributors) {
-        return null;
-      }
-
-      const contacts = this.currentDandiset.metadata.contributors.filter(
-        (contributor) => contributor.roles.includes('ContactPerson'),
-      );
-
-      if (contacts.length > 0) {
-        return contacts[0].name;
-      }
-
-      return null;
+      return this.currentDandiset?.contact_person;
     },
     currentDandiset() {
       return this.publishDandiset;

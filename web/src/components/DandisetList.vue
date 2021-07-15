@@ -37,7 +37,7 @@
           </v-chip>
           DANDI:<b>{{ item.dandiset.identifier }}</b>
           ·
-          Contact <b>{{ getDandisetContact(item) }}</b>
+          Contact <b>{{ item.contact_person }}</b>
           ·
           Updated on <b>{{ formatDate(item.dandiset.modified) }}</b>
           ·
@@ -70,8 +70,6 @@ import {
 } from '@vue/composition-api';
 import moment from 'moment';
 import filesize from 'filesize';
-
-import { getDandisetContact } from '@/utils';
 
 type Dandiset = {};
 interface DandisetStats {
@@ -122,7 +120,6 @@ export default defineComponent({
 
       // Returned imports
       filesize,
-      getDandisetContact,
     };
   },
 });

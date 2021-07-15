@@ -137,9 +137,10 @@ export default defineComponent({
       djangoDandisetRequest.value = response.data;
     });
 
-    const dandisets = computed(() => djangoDandisetRequest.value?.results.map(
-      (dandiset) => dandiset.most_recent_published_version || dandiset.draft_version,
-    ));
+    const dandisets = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
+      ...(dandiset.most_recent_published_version || dandiset.draft_version),
+      contact_person: dandiset.contact_person,
+    })));
 
     const pages = computed(() => {
       const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
