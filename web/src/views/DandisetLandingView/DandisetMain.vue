@@ -369,7 +369,6 @@ export default {
       return schema_copy;
     },
     ...mapState('dandiset', {
-      girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
     }),
     ...mapGetters('dandiset', ['version']),

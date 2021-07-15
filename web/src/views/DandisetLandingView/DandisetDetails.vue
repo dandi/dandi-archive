@@ -290,7 +290,6 @@ export default {
       return this.publishedVersions || [];
     },
     ...mapState('dandiset', {
-      girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       owners: (state) => state.owners,
       publishedVersions: (state) => state.versions,

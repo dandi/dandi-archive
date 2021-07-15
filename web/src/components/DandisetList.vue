@@ -84,7 +84,6 @@ export default defineComponent({
   name: 'DandisetList',
   props: {
     dandisets: {
-      // Girder Items
       type: Array as PropType<Dandiset[]>,
       required: true,
     },
