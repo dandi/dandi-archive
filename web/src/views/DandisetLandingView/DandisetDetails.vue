@@ -34,7 +34,7 @@
 
     <v-row :class="`${rowClasses} px-2`">
       <span :class="labelClasses">Identifier</span>
-      <span :class="itemClasses">{{ currentDandiset.meta.dandiset.identifier }}</span>
+      <span :class="itemClasses">{{ currentDandiset.dandiset.identifier }}</span>
     </v-row>
 
     <template v-if="stats">
@@ -46,7 +46,7 @@
           <v-icon color="primary">
             mdi-file
           </v-icon>
-          {{ stats.items }}
+          {{ stats.asset_count }}
         </v-col>
         <v-col
           class="text--secondary mx-2 pa-0 py-1"
@@ -247,11 +247,11 @@ export default {
       return this.formatDateTime(this.currentDandiset.updated);
     },
     contactName() {
-      if (!this.currentDandiset || !this.currentDandiset.meta.dandiset.contributors) {
+      if (!this.currentDandiset || !this.currentDandiset.metadata.contributors) {
         return null;
       }
 
-      const contacts = this.currentDandiset.meta.dandiset.contributors.filter(
+      const contacts = this.currentDandiset.metadata.contributors.filter(
         (contributor) => contributor.roles.includes('ContactPerson'),
       );
 
@@ -284,7 +284,7 @@ export default {
       if (!stats) {
         return undefined;
       }
-      return filesize(stats.bytes, { round: 1, base: 10, standard: 'iec' });
+      return filesize(stats.size, { round: 1, base: 10, standard: 'iec' });
     },
     versions() {
       return this.publishedVersions || [];
@@ -300,8 +300,8 @@ export default {
   },
   asyncComputed: {
     async stats() {
-      const { items, bytes } = this.currentDandiset;
-      return { items, bytes };
+      const { asset_count, size } = this.currentDandiset;
+      return { asset_count, size };
     },
   },
   watch: {

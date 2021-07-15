@@ -48,7 +48,7 @@ function copyToClipboard(text) {
 }
 
 function getDandisetContact(dandiset) {
-  if (dandiset.meta.dandiset.contributors) {
+  if (dandiset.meta?.dandiset.contributors) {
     const contact = dandiset.meta.dandiset.contributors.find((cont) => cont.roles && cont.roles.includes('ContactPerson'));
 
     if (!contact) return null;

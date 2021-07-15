@@ -8,9 +8,10 @@ export interface Dandiset {
   identifier: string,
   created: string,
   modified: string,
-  // TODO these versions are girderized, they should have type Version
-  draft_version?: any,
-  most_recent_published_version?: any,
+  // eslint-disable-next-line no-use-before-define
+  draft_version?: Version,
+  // eslint-disable-next-line no-use-before-define
+  most_recent_published_version?: Version,
 }
 
 export interface Version {

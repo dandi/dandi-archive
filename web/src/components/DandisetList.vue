@@ -9,12 +9,12 @@
       selectable
       :to="{
         name: 'dandisetLanding',
-        params: { identifier: item.meta.dandiset.identifier, origin }
+        params: { identifier: item.dandiset.identifier, origin }
       }"
     >
       <v-list-item-content>
         <v-list-item-title class="wrap-text text-h6 grey--text text--darken-3 pb-1">
-          {{ item.meta.dandiset.name }}
+          {{ item.name }}
         </v-list-item-title>
         <v-list-item-subtitle>
           <v-chip
@@ -35,11 +35,11 @@
           >
             <b>DRAFT</b>
           </v-chip>
-          DANDI:<b>{{ item.meta.dandiset.identifier }}</b>
+          DANDI:<b>{{ item.dandiset.identifier }}</b>
           ·
           Contact <b>{{ getDandisetContact(item) }}</b>
           ·
-          Updated on <b>{{ formatDate(item.updated) }}</b>
+          Updated on <b>{{ formatDate(item.dandiset.modified) }}</b>
           ·
           <template v-if="dandisetStats">
             <v-icon
@@ -56,7 +56,7 @@
             >
               mdi-database
             </v-icon>
-            {{ filesize(dandisetStats[i].bytes, { round: 1, base: 10, standard: 'iec' }) }}
+            {{ filesize(dandisetStats[i].size, { round: 1, base: 10, standard: 'iec' }) }}
           </template>
         </v-list-item-subtitle>
       </v-list-item-content>
