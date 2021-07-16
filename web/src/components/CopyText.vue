@@ -35,6 +35,7 @@
     readonly
     :success-messages="messages"
     v-bind="$attrs"
+    id="api-key-text"
   >
     <template #prepend>
       <v-tooltip bottom>
