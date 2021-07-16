@@ -356,11 +356,13 @@ export default {
       let extra = Object.keys(meta).filter(
         (x) => !mainFields.includes(x) && x in this.schema.properties,
       );
-      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version', 'id', 'keywords'];
+      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version', 'id', 'keywords', 'schemaKey'];
       extra = extra.filter((n) => !remove_list.includes(n));
       const extra_obj = extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
       extra_obj.contributor = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
-      // console.log(362, extra_obj);
+      delete extra_obj.assetsSummary.schemaKey;
+      delete extra_obj.assetsSummary.numberOfBytes;
+      delete extra_obj.assetsSummary.numberOfFiles;
       return extra_obj;
     },
     schemaPropertiesCopy() {
@@ -380,11 +382,12 @@ export default {
       await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
     },
     renderData(data, schema) {
-      if (data === null) { return false; }
+      if (data === null || _.isEmpty(data)) {
+        return false;
+      }
       if (schema.type === 'array' && Array.isArray(data) && data.length === 0) {
         return false;
       }
-
       return true;
     },
   },
