@@ -4,7 +4,6 @@ import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
 
 import HomeView from '@/views/HomeView/HomeView.vue';
 import UserLoginView from '@/views/UserLoginView/UserLoginView.vue';
-import UserRegisterView from '@/views/UserRegisterView/UserRegisterView.vue';
 import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
 import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
 import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView.vue';
@@ -24,11 +23,6 @@ export default new Router({
       path: '/user/login',
       name: 'userLogin',
       component: UserLoginView,
-    },
-    {
-      path: '/user/register',
-      name: 'userRegister',
-      component: UserRegisterView,
     },
     {
       path: '/dandiset',

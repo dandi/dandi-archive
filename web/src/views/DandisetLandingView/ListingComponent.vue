@@ -52,6 +52,9 @@ export default {
           return Contributor;
         case 'keywords':
           return SimpleArray;
+        case 'assetsSummary':
+          return ObjectComponent;
+
         default:
           break;
       }
