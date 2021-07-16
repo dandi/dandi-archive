@@ -1,6 +1,6 @@
 <template>
   <div>
-    <template v-for="(val, key) in data">
+    <template v-for="(val, key) in filteredData">
       <template v-if="isObjectArray(val)">
         <v-row
           v-if="val || !omitEmpty"
@@ -10,16 +10,14 @@
           <strong class="mr-2">{{ objectKey(key) }}:</strong>
         </v-row>
         <template v-for="item in val">
-          <template v-for="(v, k) in item">
-            <v-row
-              v-if="k !== 'schemaKey'"
-              :key="`${k}`"
-              class="mx-4"
-            >
-              <strong class="mr-2">{{ k }}:</strong> {{ renderedValue(v) }}
-            </v-row>
-          </template>
-          <v-divider :key="`${item}-divider`"/>
+          <v-row
+            v-for="(v, k) in item"
+            :key="`${k}`"
+            class="mx-4"
+          >
+            <strong class="mr-2">{{ k }}:</strong> {{ renderedValue(v) }}
+          </v-row>
+          <v-divider :key="`${item}-divider`" />
         </template>
       </template>
       <template v-else>
@@ -40,6 +38,7 @@
 import { computed, defineComponent, PropType } from '@vue/composition-api';
 import type { JSONSchema7 } from 'json-schema';
 import type { JSONSchema7WithSubSchema } from '@/utils/schema/types';
+import _ from 'lodash';
 import type { RenderOptions } from './types';
 
 export default defineComponent({
@@ -89,6 +88,21 @@ export default defineComponent({
     function isObjectArray(value: unknown) {
       return Array.isArray(value) && (value[0] instanceof Object);
     }
+
+    const filteredData = computed(() => _.mapValues(props.data, val => {
+      let newVal = val;
+      if (isObjectArray(val)) {
+        newVal = _.map(val, (eachObj) => {
+          if (Object.keys(eachObj).includes('schemaKey')) {
+            // eslint-disable-next-line no-param-reassign
+            delete eachObj.schemaKey;
+          }
+          return eachObj;
+        });
+      }
+      return newVal;
+    }));
+
     function renderedValue(value: unknown) {
       if (Array.isArray(value) && !(value[0] instanceof Object)) {
         return value.join(', ');
@@ -113,6 +127,7 @@ export default defineComponent({
     return {
       omitEmpty,
       subschema,
+      filteredData,
       renderedValue,
       objectKey,
       isObjectArray,
