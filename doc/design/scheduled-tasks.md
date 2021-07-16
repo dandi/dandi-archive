@@ -24,26 +24,30 @@ Instead of adding a new task to the queue whenever something needs to be done, w
 Since `assetsSummary` calculation and dandiset metadata validation both need to be triggered in the same circumstances, we'll consider them together.
 
 #### Request thread
-Whenever a Version is modified, a flag is set on the Version indicating that it has been modified (instead of queueing a task as it does now):
+Whenever a Version is modified, a flag `needs_recomputing` is set on the Version indicating that it has been modified (instead of queueing a task as it does now):
 ```
   # Things that modify the version, necessitating a validation/assetsSummary computation
   ...
   # validate_version_metadata.delay(version.id)
-  version.status = status.MODIFIED
+  version.needs_recomputing = True
 ```
 
 #### Scheduled job
 Separately, a scheduled job that runs on a configurable fairly tight interval will check for any Versions that need to be updated.
-For each of those Versions, it also checks that the Version hasn't been modified in a certain amount of time. This prevents DB locks from happening while Assets are still being uploaded to the Version.
+For each of those Versions, it also checks that the Version hasn't been modified in a certain amount of time (say 5 minutes). This prevents DB locks from happening while Assets are still being uploaded to the Version.
 
 The code would look something like this:
 ```
 def scheduled_task():
-  versions = Version.objects.filter(status=status.MODIFIED).filter(modified__lt=timezone.now() - 5 minutes)
-  # SELECT ... FROM api_version WHERE api_version.status = "MODIFIED" AND now() - api_version.modified > 5 minutes;
+  versions = Version.objects.filter(needs_recomputing=True).filter(modified__lt=timezone.now() - 5 minutes)
+  # SELECT ... FROM api_version WHERE api_version.needs_recomputing AND now() - api_version.modified > 5 minutes;
 ```
 
-For each of those Versions, the job would then calculate `assetsSummary`, inject it into the metadata, and perform the validation, marking the Version accordingly.
+The job would then immediately set `version.needs_recomputing = False` on all of the "dirty" Versions.
+If any simultaneous requests happen to modify the Version while it is being recomputed/validated, those changes may or may not happen in time to be represented.
+However, they are guaranteed to trigger another recomputation in 5 minutes, so the system will eventually regain consistency.
+
+Finally, the actual task logic would be applied to each version: calculate `assetsSummary`, inject it into the metadata, and perform the validation, marking the Version accordingly.
 
 ## Changes to existing tasks
 We shouldn't need to change how calculating blob sha256 digests or how writing dandiset.yaml and assets.yaml work at all.
