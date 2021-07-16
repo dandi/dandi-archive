@@ -1,14 +1,13 @@
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
-import { girderRest, publishRest } from '@/rest';
+import { publishRest } from '@/rest';
 import { draftVersion } from '@/utils/constants';
 
 export default {
   namespaced: true,
   state: {
     publishDandiset: null,
-    girderDandiset: null,
     versions: null,
     loading: false, // No mutation, as we don't want this mutated by the user
     owners: null,
@@ -20,9 +19,6 @@ export default {
     },
   },
   mutations: {
-    setGirderDandiset(state, dandiset) {
-      state.girderDandiset = dandiset;
-    },
     setPublishDandiset(state, dandiset) {
       state.publishDandiset = dandiset;
     },
@@ -39,7 +35,6 @@ export default {
   actions: {
     async uninitializeDandisets({ state, commit }) {
       commit('setPublishDandiset', null);
-      commit('setGirderDandiset', null);
       commit('setVersions', null);
       commit('setOwners', null);
       state.loading = false;
@@ -75,14 +70,6 @@ export default {
       } catch (err) {
         commit('setPublishDandiset', null);
       }
-
-      state.loading = false;
-    },
-    async fetchGirderDandiset({ state, commit }, { identifier }) {
-      state.loading = true;
-
-      const { data } = await girderRest.get(`dandi/${identifier}`);
-      commit('setGirderDandiset', data);
 
       state.loading = false;
     },

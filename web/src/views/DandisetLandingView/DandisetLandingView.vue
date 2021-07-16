@@ -96,24 +96,12 @@ export default {
     },
     meta() {
       if (this.publishDandiset) {
-        return {
-          name: this.publishDandiset.name,
-          ...this.publishDandiset.meta.dandiset,
-        };
+        return this.publishDandiset.metadata;
       }
 
-      if (
-        !this.girderDandiset
-        || !this.girderDandiset.meta
-        || !this.girderDandiset.meta.dandiset
-      ) {
-        return {};
-      }
-
-      return { ...this.girderDandiset.meta.dandiset };
+      return {};
     },
     ...mapState('dandiset', {
-      girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
       loading: (state) => state.loading,
       dandisetVersions: (state) => state.versions,
@@ -125,7 +113,7 @@ export default {
     userCanModifyDandiset: {
       async get() {
         // published versions are never editable
-        if (this.publishDandiset.meta.dandiset.version !== 'draft') {
+        if (this.publishDandiset.metadata.version !== 'draft') {
           return false;
         }
 
@@ -137,7 +125,7 @@ export default {
           return true;
         }
 
-        const { identifier } = this.publishDandiset.meta.dandiset;
+        const { identifier } = this.publishDandiset.dandiset;
         const { data: owners } = await publishRest.owners(identifier);
         const userExists = owners.find((owner) => owner.username === this.user.username);
         return !!userExists;

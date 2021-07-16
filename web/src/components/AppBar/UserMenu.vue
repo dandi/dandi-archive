@@ -46,13 +46,6 @@ export default {
     user,
     userInitials() {
       if (this.user) {
-        // TODO Girder uses camelCase. Delete after Girder is deprecated.
-        const { firstName, lastName } = this.user;
-        if (firstName && lastName) {
-          return (
-            firstName.charAt(0).toLocaleUpperCase() + lastName.charAt(0).toLocaleUpperCase()
-          );
-        }
         const { name } = this.user;
         if (name) {
           const name_parts = name.split(' ');

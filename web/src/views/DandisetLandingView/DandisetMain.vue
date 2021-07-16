@@ -319,7 +319,7 @@ export default {
         return 'You do not have permission to edit this dandiset.';
       }
       if (this.publishDandiset.status === 'Invalid') {
-        return this.publishDandiset.validationError;
+        return this.publishDandiset.validation_error;
       }
       if (this.publishDandiset.status === 'Pending') {
         return 'This dandiset has not yet been validated.';
@@ -338,7 +338,7 @@ export default {
     },
     fileBrowserLink() {
       const { version } = this;
-      const { identifier } = this.publishDandiset.meta.dandiset;
+      const { identifier } = this.publishDandiset.dandiset;
       // TODO: this probably does not work correctly yet
       return {
         name: 'fileBrowser',
@@ -349,7 +349,7 @@ export default {
       };
     },
     permalink() {
-      return `${dandiUrl}/dandiset/${this.meta.identifier}/${this.version}`;
+      return `${dandiUrl}/dandiset/${this.publishDandiset.dandiset.identifier}/${this.version}`;
     },
     extraFields() {
       const { meta, mainFields } = this;
@@ -371,15 +371,13 @@ export default {
       return schema_copy;
     },
     ...mapState('dandiset', {
-      girderDandiset: (state) => state.girderDandiset,
       publishDandiset: (state) => state.publishDandiset,
     }),
     ...mapGetters('dandiset', ['version']),
   },
   methods: {
     async publish() {
-      // TODO ungirderize
-      const version = await publishRest.publish(this.publishDandiset.meta.dandiset.identifier);
+      const version = await publishRest.publish(this.publishDandiset.dandiset.identifier);
       // re-initialize the dataset to load the newly published version
       await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
     },

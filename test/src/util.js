@@ -4,7 +4,7 @@ import {
   vTextarea,
 } from 'jest-puppeteer-vuetify';
 
-export const { CLIENT_URL, GIRDER_URL } = process.env;
+export const { CLIENT_URL } = process.env;
 
 export function uniqueId() {
   // TODO think of something cleaner
