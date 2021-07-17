@@ -89,19 +89,24 @@ export default defineComponent({
       return Array.isArray(value) && (value[0] instanceof Object);
     }
 
-    const filteredData = computed(() => _.mapValues(props.data, val => {
-      let newVal = val;
-      if (isObjectArray(val)) {
-        newVal = _.map(val, (eachObj) => {
-          if (Object.keys(eachObj).includes('schemaKey')) {
-            // eslint-disable-next-line no-param-reassign
-            delete eachObj.schemaKey;
-          }
-          return eachObj;
-        });
-      }
-      return newVal;
-    }));
+    const filteredData = computed(() => {
+      Object.keys(props.data).forEach((k) => (props.data[k] == null || props.data[k].length === 0)
+        // eslint-disable-next-line no-param-reassign
+        && delete props.data[k]);
+      return _.mapValues(props.data, (val) => {
+        let newVal = val;
+        if (isObjectArray(val)) {
+          newVal = _.map(val, (eachObj) => {
+            if (Object.keys(eachObj).includes('schemaKey')) {
+              // eslint-disable-next-line no-param-reassign
+              delete eachObj.schemaKey;
+            }
+            return eachObj;
+          });
+        }
+        return newVal;
+      });
+    });
 
     function renderedValue(value: unknown) {
       if (Array.isArray(value) && !(value[0] instanceof Object)) {
