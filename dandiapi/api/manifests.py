@@ -1,10 +1,38 @@
+from urllib.parse import urlparse, urlunparse
+
+from django.conf import settings
 from django.core.files.base import ContentFile
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.storage import create_s3_storage
 
 
-def _write_manifest_file(path, metadata, logger):
+def _manifests_path(version: Version):
+    return (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}'
+    )
+
+
+def dandiset_yaml_path(version: Version):
+    return f'{_manifests_path(version)}/dandiset.yaml'
+
+
+def assets_yaml_path(version: Version):
+    return f'{_manifests_path(version)}/assets.yaml'
+
+
+def s3_url(path: str):
+    """Turn an object path into a fully qualified S3 URL."""
+    storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+    signed_url = storage.url(path)
+    parsed = urlparse(signed_url)
+    s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+    return s3_url
+
+
+def _write_manifest_file(path: str, metadata, logger):
     # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
     storage = AssetBlob.blob.field.storage
 
@@ -19,7 +47,7 @@ def _write_manifest_file(path, metadata, logger):
 
 def write_dandiset_yaml(version: Version, logger=None):
     _write_manifest_file(
-        version.dandiset_yaml_path,
+        dandiset_yaml_path(version),
         YAMLRenderer().render(version.metadata.metadata),
         logger,
     )
@@ -27,7 +55,7 @@ def write_dandiset_yaml(version: Version, logger=None):
 
 def write_asset_yaml(version: Version, logger=None):
     _write_manifest_file(
-        version.assets_yaml_path,
+        assets_yaml_path(version),
         YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()]),
         logger,
     )
