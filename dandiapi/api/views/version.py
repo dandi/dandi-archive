@@ -150,6 +150,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         # Save again to recompute metadata, specifically assetsSummary
         new_version.save()
 
+        # Set the version of the draft to PUBLISHED so that it cannot be publishd again without
+        # being modified and revalidated
+        old_version.status = Version.Status.PUBLISHED
+        old_version.save()
+
         write_yamls.delay(new_version.id)
 
         serializer = VersionSerializer(new_version)
