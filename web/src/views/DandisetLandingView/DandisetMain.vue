@@ -327,6 +327,9 @@ export default {
       if (this.publishDandiset.status === 'Validating') {
         return 'Currently validating this dandiset.';
       }
+      if (this.publishDandiset.status === 'Published') {
+        return 'No changes since last publish.';
+      }
 
       return null;
     },
