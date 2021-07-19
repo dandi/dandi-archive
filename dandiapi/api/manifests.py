@@ -2,6 +2,7 @@ from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
 from django.core.files.base import ContentFile
+from rest_framework.renderers import JSONRenderer
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.models import AssetBlob, Version
@@ -13,6 +14,14 @@ def _manifests_path(version: Version):
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
         f'dandisets/{version.dandiset.identifier}/{version.version}'
     )
+
+
+def dandiset_jsonld_path(version: Version):
+    return f'{_manifests_path(version)}/dandiset.jsonld'
+
+
+def assets_jsonld_path(version: Version):
+    return f'{_manifests_path(version)}/assets.jsonld'
 
 
 def dandiset_yaml_path(version: Version):
@@ -45,6 +54,22 @@ def _write_manifest_file(path: str, metadata, logger):
     storage.save(path, ContentFile(metadata))
 
 
+def write_dandiset_jsonld(version: Version, logger=None):
+    _write_manifest_file(
+        dandiset_jsonld_path(version),
+        JSONRenderer().render(version.metadata.metadata),
+        logger,
+    )
+
+
+def write_assets_jsonld(version: Version, logger=None):
+    _write_manifest_file(
+        assets_jsonld_path(version),
+        JSONRenderer().render([asset.metadata.metadata for asset in version.assets.all()]),
+        logger,
+    )
+
+
 def write_dandiset_yaml(version: Version, logger=None):
     _write_manifest_file(
         dandiset_yaml_path(version),
@@ -53,7 +78,7 @@ def write_dandiset_yaml(version: Version, logger=None):
     )
 
 
-def write_asset_yaml(version: Version, logger=None):
+def write_assets_yaml(version: Version, logger=None):
     _write_manifest_file(
         assets_yaml_path(version),
         YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()]),

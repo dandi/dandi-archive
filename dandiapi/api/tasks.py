@@ -7,7 +7,12 @@ from django.db.transaction import atomic
 import jsonschema.exceptions
 
 from dandiapi.api.checksum import calculate_sha256_checksum
-from dandiapi.api.manifests import write_asset_yaml, write_dandiset_yaml
+from dandiapi.api.manifests import (
+    write_assets_jsonld,
+    write_assets_yaml,
+    write_dandiset_jsonld,
+    write_dandiset_yaml,
+)
 from dandiapi.api.models import Asset, AssetBlob, Version
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
@@ -49,7 +54,9 @@ def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
 
     write_dandiset_yaml(version, logger=logger)
-    write_asset_yaml(version, logger=logger)
+    write_assets_yaml(version, logger=logger)
+    write_dandiset_jsonld(version, logger=logger)
+    write_assets_jsonld(version, logger=logger)
 
 
 def format_as_index(indices):
