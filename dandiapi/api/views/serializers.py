@@ -142,3 +142,15 @@ class AssetDetailSerializer(AssetSerializer):
         fields = AssetSerializer.Meta.fields + ['metadata']
 
     metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
+
+
+class AssetFolderSerializer(serializers.Serializer):
+    size = serializers.IntegerField()
+    num_files = serializers.IntegerField()
+    created = serializers.DateTimeField()
+    modified = serializers.DateTimeField()
+
+
+class AssetPathsSerializer(serializers.Serializer):
+    folders = serializers.DictField(child=AssetFolderSerializer())
+    files = serializers.DictField(child=AssetSerializer())

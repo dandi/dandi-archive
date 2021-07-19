@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Dict, List, Set
+from typing import Dict
 from urllib.parse import urlparse, urlunparse
 import uuid
 
@@ -209,27 +209,6 @@ class Asset(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.path
-
-    @classmethod
-    def get_path(cls, path_prefix: str, qs: List[str]) -> Set:
-        """
-        Return the unique files/directories that directly reside under the specified path.
-
-        The specified path must be a folder (must end with a slash).
-        """
-        if not path_prefix:
-            path_prefix = '/'
-        prefix_parts = [part for part in path_prefix.split('/') if part]
-        paths = set()
-        for asset in qs:
-            path_parts = [part for part in asset['path'].split('/') if part]
-
-            # Pivot index is -1 (include all path parts) if prefix is '/'
-            pivot_index = path_parts.index(prefix_parts[-1]) if len(prefix_parts) else -1
-            base_path, *remainder = path_parts[pivot_index + 1 :]
-            paths.add(f'{base_path}/' if len(remainder) else base_path)
-
-        return sorted(paths)
 
     @classmethod
     def total_size(cls):
