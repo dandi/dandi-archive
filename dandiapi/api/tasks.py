@@ -3,12 +3,11 @@ import os
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.core.files.base import ContentFile
 from django.db.transaction import atomic
 import jsonschema.exceptions
-from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.checksum import calculate_sha256_checksum
+from dandiapi.api.manifests import write_asset_yaml, write_dandiset_yaml
 from dandiapi.api.models import Asset, AssetBlob, Version
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
@@ -46,29 +45,11 @@ def calculate_sha256(blob_id: int) -> None:
 @shared_task
 @atomic
 def write_manifest_files(version_id: int) -> None:
-    logger.info('Writing dandiset.yaml and assets.yaml for version %s', version_id)
+    logger.info('Writing manifests for version %s', version_id)
     version: Version = Version.objects.get(id=version_id)
 
-    # Piggyback on the AssetBlob storage since we want to store .yamls in the same bucket
-    storage = AssetBlob.blob.field.storage
-
-    dandiset_yaml_path = version.dandiset_yaml_path
-    if storage.exists(dandiset_yaml_path):
-        logger.info('%s already exists, deleting it', dandiset_yaml_path)
-        storage.delete(dandiset_yaml_path)
-    logger.info('Saving %s', dandiset_yaml_path)
-    dandiset_yaml = YAMLRenderer().render(version.metadata.metadata)
-    storage.save(dandiset_yaml_path, ContentFile(dandiset_yaml))
-
-    assets_yaml_path = version.assets_yaml_path
-    if storage.exists(assets_yaml_path):
-        logger.info('%s already exists, deleting it', assets_yaml_path)
-        storage.delete(assets_yaml_path)
-    logger.info('Saving %s', assets_yaml_path)
-    assets_yaml = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
-    storage.save(assets_yaml_path, ContentFile(assets_yaml))
-
-    logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
+    write_dandiset_yaml(version, logger=logger)
+    write_asset_yaml(version, logger=logger)
 
 
 def format_as_index(indices):
