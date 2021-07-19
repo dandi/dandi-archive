@@ -55,6 +55,7 @@ class Version(TimeStampedModel):
         VALIDATING = 'Validating'
         VALID = 'Valid'
         INVALID = 'Invalid'
+        PUBLISHED = 'Published'
 
     dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
     metadata = models.ForeignKey(VersionMetadata, related_name='versions', on_delete=models.CASCADE)

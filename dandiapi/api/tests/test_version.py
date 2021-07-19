@@ -617,6 +617,10 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
         },
     }
 
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHED
+    assert not draft_version.valid
+
 
 @pytest.mark.django_db
 def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
