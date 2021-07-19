@@ -126,6 +126,18 @@
                   </v-icon>
                 </v-btn>
               </v-list-item-action>
+
+              <v-list-item-action v-if="item.asset_id">
+                <v-btn
+                  icon
+                  :href="assetMetadataURI(item.asset_id)"
+                >
+                  <v-icon color="primary">
+                    mdi-information
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
+
               <v-list-item-action
                 v-if="item.size"
                 class="justify-end"
@@ -252,6 +264,10 @@ export default {
 
     downloadURI(asset_id) {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+    },
+
+    assetMetadataURI(asset_id) {
+      return publishRest.assetMetadataURI(this.identifier, this.version, asset_id);
     },
 
     fileSize(item) {
