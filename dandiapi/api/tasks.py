@@ -10,6 +10,7 @@ from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
+    write_collection_jsonld,
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
@@ -57,6 +58,7 @@ def write_manifest_files(version_id: int) -> None:
     write_assets_yaml(version, logger=logger)
     write_dandiset_jsonld(version, logger=logger)
     write_assets_jsonld(version, logger=logger)
+    write_collection_jsonld(version, logger=logger)
 
 
 def format_as_index(indices):

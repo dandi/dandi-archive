@@ -52,6 +52,10 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
         f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.jsonld'
     )
+    collection_jsonld_path = (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/collection.jsonld'
+    )
 
     tasks.write_manifest_files(version.id)
 
@@ -59,6 +63,7 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
     assert storage.exists(dandiset_yaml_path)
     assert storage.exists(assets_jsonld_path)
     assert storage.exists(dandiset_jsonld_path)
+    assert storage.exists(collection_jsonld_path)
 
 
 @pytest.mark.django_db

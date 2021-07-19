@@ -32,6 +32,10 @@ def assets_yaml_path(version: Version):
     return f'{_manifests_path(version)}/assets.yaml'
 
 
+def collection_jsonld_path(version: Version):
+    return f'{_manifests_path(version)}/collection.jsonld'
+
+
 def s3_url(path: str):
     """Turn an object path into a fully qualified S3 URL."""
     storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
@@ -82,5 +86,20 @@ def write_assets_yaml(version: Version, logger=None):
     _write_manifest_file(
         assets_yaml_path(version),
         YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()]),
+        logger,
+    )
+
+
+def write_collection_jsonld(version: Version, logger=None):
+    _write_manifest_file(
+        collection_jsonld_path(version),
+        JSONRenderer().render(
+            {
+                '@context': version.metadata.metadata['@context'],
+                'id': version.metadata.metadata['id'],
+                '@type': 'prov:Collection',
+                'hasMember': [asset.metadata.metadata['id'] for asset in version.assets.all()],
+            }
+        ),
         logger,
     )

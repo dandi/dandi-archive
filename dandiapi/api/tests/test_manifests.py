@@ -8,6 +8,7 @@ from rest_framework_yaml.renderers import YAMLRenderer
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
+    write_collection_jsonld,
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
@@ -48,6 +49,32 @@ def test_write_assets_jsonld(storage: Storage, version: Version, asset_factory):
         f'dandisets/{version.dandiset.identifier}/{version.version}/assets.jsonld'
     )
     with storage.open(assets_jsonld_path) as f:
+        assert f.read() == expected
+
+
+@pytest.mark.django_db
+def test_write_collection_jsonld(storage: Storage, version: Version, asset):
+    # Pretend like AssetBlob was defined with the given storage
+    # The task piggybacks off of the AssetBlob storage to write the yamls
+    AssetBlob.blob.field.storage = storage
+
+    version.assets.add(asset)
+
+    write_collection_jsonld(version)
+    expected = JSONRenderer().render(
+        {
+            '@context': version.metadata.metadata['@context'],
+            'id': version.metadata.metadata['id'],
+            '@type': 'prov:Collection',
+            'hasMember': [asset.metadata.metadata['id']],
+        }
+    )
+
+    collection_jsonld_path = (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'dandisets/{version.dandiset.identifier}/{version.version}/collection.jsonld'
+    )
+    with storage.open(collection_jsonld_path) as f:
         assert f.read() == expected
 
 
