@@ -74,6 +74,9 @@
                 </router-link>
               </template>
             </template>
+            <span class="ml-auto">
+              <b>Size</b>
+            </span>
           </v-card-title>
           <v-progress-linear
             v-if="$asyncComputed.items.updating"
@@ -123,6 +126,13 @@
                   </v-icon>
                 </v-btn>
               </v-list-item-action>
+              <v-list-item-action
+                v-if="item.size"
+                class="justify-end"
+                :style="{width: '4em'}"
+              >
+                {{ fileSize(item) }}
+              </v-list-item-action>
             </v-list-item>
           </v-list>
         </v-card>
@@ -133,6 +143,7 @@
 
 <script>
 import { mapState } from 'vuex';
+import filesize from 'filesize';
 import { publishRest } from '@/rest';
 
 const parentDirectory = '..';
@@ -241,6 +252,10 @@ export default {
 
     downloadURI(asset_id) {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+    },
+
+    fileSize(item) {
+      return filesize(item.size, { round: 1, base: 10, standard: 'iec' });
     },
 
     showDelete(item) {
