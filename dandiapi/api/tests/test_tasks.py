@@ -34,7 +34,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
     # The task piggybacks off of the AssetBlob storage to write the yamls
     AssetBlob.blob.field.storage = storage
 
-    tasks.write_yamls(version.id)
+    tasks.write_manifest_files(version.id)
     expected = YAMLRenderer().render(version.metadata.metadata)
 
     dandiset_yaml_path = (
@@ -44,7 +44,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
     # TODO this will fail if the test is run twice in the same minute.
     # The same version ID will be generated in the second test,
     # but the dandiset.yaml will still be present from the first test, creating a mismatch.
-    # The solution is to remove the file if it already exists in models.Version.write_yamls().
+    # The solution is to remove the file if it already exists in models.Version.write_manifest_files().
     with storage.open(dandiset_yaml_path) as f:
         assert f.read() == expected
 
@@ -58,7 +58,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     # Create a new asset in the version so there is information to write
     version.assets.add(asset_factory())
 
-    tasks.write_yamls(version.id)
+    tasks.write_manifest_files(version.id)
     expected = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
 
     assets_yaml_path = (
@@ -82,7 +82,7 @@ def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
     )
     storage.save(dandiset_yaml_path, ContentFile(b'wrong contents'))
 
-    tasks.write_yamls(version.id)
+    tasks.write_manifest_files(version.id)
     expected = YAMLRenderer().render(version.metadata.metadata)
 
     with storage.open(dandiset_yaml_path) as f:
@@ -105,7 +105,7 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     )
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
-    tasks.write_yamls(version.id)
+    tasks.write_manifest_files(version.id)
     expected = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
 
     with storage.open(assets_yaml_path) as f:
