@@ -41,7 +41,6 @@ export default {
   async created() {
     // Don't extract publishDandiset, for reactivity
     const { identifier, version } = this;
-
     if (!this.publishDandiset) {
       this.fetchPublishDandiset({ identifier, version });
     }

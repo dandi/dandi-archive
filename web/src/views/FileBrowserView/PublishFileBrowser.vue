@@ -1,7 +1,8 @@
 <template>
   <v-container>
     <v-dialog
-      v-model="dialogActive"
+      v-if="!!itemToDelete"
+      v-model="itemToDelete"
       persistent
       max-width="60vh"
     >
@@ -13,20 +14,20 @@
         <v-card-text>
           Are you sure you want to delete asset <span
             class="font-italic"
-          >{{ dialogName }}</span>?
+          >{{ itemToDelete.name }}</span>?
           <strong>This action cannot be undone.</strong>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer />
           <v-btn
-            @click="dialogActive = false"
+            @click="itemToDelete = null"
           >
             Cancel
           </v-btn>
           <v-btn
             color="error"
-            @click="deleteAsset(dialogName)"
+            @click="deleteAsset(itemToDelete)"
           >
             Yes
           </v-btn>
@@ -104,7 +105,7 @@
                 <v-btn
                   v-if="showDelete(item)"
                   icon
-                  @click="openDialog(item.name)"
+                  @click="itemToDelete = item"
                 >
                   <v-icon color="error">
                     mdi-delete
@@ -112,10 +113,10 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="itemData[item.name]">
+              <v-list-item-action v-if="item.asset_id">
                 <v-btn
                   icon
-                  :href="itemData[item.name].download"
+                  :href="downloadURI(item.asset_id)"
                 >
                   <v-icon color="primary">
                     mdi-download
@@ -134,7 +135,6 @@
 import { mapState } from 'vuex';
 import { publishRest } from '@/rest';
 
-const isFolder = (pathName) => (pathName.slice(-1) === '/');
 const parentDirectory = '..';
 const rootDirectory = '';
 
@@ -154,10 +154,8 @@ export default {
     return {
       rootDirectory,
       location: rootDirectory,
-      itemData: {},
       owners: [],
-      dialogActive: false,
-      dialogName: '',
+      itemToDelete: null,
     };
   },
   computed: {
@@ -188,15 +186,15 @@ export default {
         this.owners = (await publishRest.owners(identifier)).data
           .map((x) => x.username);
 
-        let mapped = data.map((x) => ({ name: x, folder: isFolder(x) }));
-        if (location !== rootDirectory && mapped.length) {
-          mapped = [
-            { name: parentDirectory, folder: true },
-            ...mapped,
-          ];
-        }
-
-        return mapped;
+        return [
+          ...location !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
+          ...Object.keys(data.folders).map(
+            (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
+          ),
+          ...Object.keys(data.files).map(
+            (key) => ({ ...data.files[key], name: key, folder: false }),
+          ),
+        ];
       },
       default: null,
     },
@@ -216,23 +214,7 @@ export default {
       if (items && !items.length) {
         // If the API call returns no items, go back to the root (shouldn't normally happen)
         this.location = rootDirectory;
-        return;
       }
-
-      // Create download and delete links in local data for each item in items
-      const { identifier, version, location } = this;
-
-      items.filter((x) => !x.folder).map(async (item) => {
-        const relativePath = `${location}${item.name}`;
-        const {
-          results: [asset],
-        } = await publishRest.assets(identifier, version, { params: { path: relativePath } });
-
-        this.$set(this.itemData, item.name, {
-          download: publishRest.assetDownloadURI(identifier, version, asset),
-          uuid: asset.asset_id,
-        });
-      });
     },
     $route: {
       immediate: true,
@@ -257,25 +239,24 @@ export default {
       }
     },
 
+    downloadURI(asset_id) {
+      return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+    },
+
     showDelete(item) {
       return !item.folder && (this.isAdmin || this.isOwner);
     },
 
-    openDialog(name) {
-      this.dialogName = name;
-      this.dialogActive = true;
-    },
-
-    async deleteAsset(name) {
-      const uuid = this.itemData[name] && this.itemData[name].uuid;
-      if (uuid !== undefined) {
+    async deleteAsset(item) {
+      const { asset_id } = item;
+      if (asset_id !== undefined) {
         // Delete the asset on the server.
-        await publishRest.deleteAsset(this.identifier, this.version, uuid);
+        await publishRest.deleteAsset(this.identifier, this.version, asset_id);
 
         // Recompute the items to display in the browser.
         this.$asyncComputed.items.update();
       }
-      this.dialogActive = false;
+      this.itemToDelete = null;
     },
   },
 };
