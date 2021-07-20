@@ -143,7 +143,7 @@
               <v-list-item-action
                 v-if="item.size"
                 class="justify-end"
-                :style="{width: '4em'}"
+                :style="{width: '4.5em'}"
               >
                 {{ fileSize(item) }}
               </v-list-item-action>
