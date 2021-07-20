@@ -11,7 +11,7 @@ jobs:
           working_directory: web
       - run:
           name: Lint web app
-          command: yarn run lint
+          command: yarn run lint --no-fix
           working_directory: web
       - run:
           name: Install E2E tests

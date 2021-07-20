@@ -15,7 +15,10 @@
         </v-avatar>
       </v-btn>
     </template>
-    <v-list id="user-menu" dense>
+    <v-list
+      id="user-menu"
+      dense
+    >
       <ApiKeyItem />
       <v-list-item @click="logout">
         <v-list-item-content>
