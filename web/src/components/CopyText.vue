@@ -27,6 +27,8 @@
 
   <v-text-field
     v-else
+    v-bind="$attrs"
+    id="api-key-text"
     ref="textField"
     :value="text"
     hide-details="auto"
@@ -34,8 +36,6 @@
     dense
     readonly
     :success-messages="messages"
-    v-bind="$attrs"
-    id="api-key-text"
   >
     <template #prepend>
       <v-tooltip bottom>
