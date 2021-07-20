@@ -46,6 +46,3 @@ A developer has a feature they want to add that only impacts the backend.
 * Once approved, the PR is merged to `master` and automatically deployed to `api-staging.dandiarchive.org`.
 * The changes are tested directly using `api-staging.dandiarchive.org`, or through the web GUI at `gui-staging.dandiarchive.org`.
 * Once everything is tested, tags a new release of `dandi-api`, which is then automatically deployed to production.
-
-## TODO
-Figure out a less manual release procedure for `dandi-api`.
