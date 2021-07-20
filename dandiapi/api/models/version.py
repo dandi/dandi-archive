@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import os
-from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
@@ -11,7 +10,6 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
-from dandiapi.api.storage import create_s3_storage
 
 from .dandiset import Dandiset
 
@@ -156,42 +154,14 @@ class Version(TimeStampedModel):
         return version
 
     @property
-    def dandiset_yaml_path(self):
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'dandisets/{self.dandiset.identifier}/{self.version}/dandiset.yaml'
-        )
-
-    @property
-    def assets_yaml_path(self):
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'dandisets/{self.dandiset.identifier}/{self.version}/assets.yaml'
-        )
-
-    @property
-    def dandiset_yaml_url(self):
-        storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
-        signed_url = storage.url(self.dandiset_yaml_path)
-        parsed = urlparse(signed_url)
-        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
-        return s3_url
-
-    @property
-    def assets_yaml_url(self):
-        storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
-        signed_url = storage.url(self.assets_yaml_path)
-        parsed = urlparse(signed_url)
-        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
-        return s3_url
-
-    @property
     def publish_version(self):
         """
         Generate a published version + metadata without saving it.
 
         This is useful to validate version metadata without saving it.
         """
+        from dandiapi.api.manifests import assets_yaml_path, s3_url
+
         now = datetime.datetime.utcnow()
         # Inject the publishedBy and datePublished fields
         published_metadata, _ = VersionMetadata.objects.get_or_create(
@@ -200,7 +170,7 @@ class Version(TimeStampedModel):
                 **self.metadata.metadata,
                 'publishedBy': self.metadata.published_by(now),
                 'datePublished': now.isoformat(),
-                'manifestLocation': [self.assets_yaml_url],
+                'manifestLocation': [s3_url(assets_yaml_path(self))],
             },
         )
 
