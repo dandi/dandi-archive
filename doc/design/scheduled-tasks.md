@@ -46,8 +46,15 @@ def scheduled_task():
 The job would then immediately set `version.needs_recomputing = False` on all of the "dirty" Versions.
 If any simultaneous requests happen to modify the Version while it is being recomputed/validated, those changes may or may not happen in time to be represented.
 However, they are guaranteed to trigger another recomputation in 5 minutes, so the system will eventually regain consistency.
+If the job takes too long to complete and the next job kicks off while the first is still running, this will also prevent any versions from being recomputed in different jobs.
 
 Finally, the actual task logic would be applied to each version: calculate `assetsSummary`, inject it into the metadata, and perform the validation, marking the Version accordingly.
+
+Recomputation should fail very infrequently, either because of SQL errors or because of introduced bugs in our code.
+In the event of an error, `needs_recomputing` should be set back to `True` so that it is retried, hopefully resolving intermittent errors.
+The error should then be thrown so that it shows up in Sentry.
+
+We shouldn't have to worry about publishes happening during recomputation. Any changes that would set `needs_recomputing = True` would also mark the Version's validation status as `PENDING`, and validation cannot happen until after recomputation is complete. Since publish is not allowed on non-`VALID` Versions, we don't have to worry about simultaneous publishes.
 
 ## Changes to existing tasks
 We shouldn't need to change how calculating blob sha256 digests or how writing dandiset.yaml and assets.yaml work at all.
