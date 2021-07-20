@@ -48,7 +48,7 @@
             >
               mdi-file
             </v-icon>
-            {{ dandisetStats[i].items }}
+            {{ dandisetStats[i].asset_count }}
             ·
             <v-icon
               small
