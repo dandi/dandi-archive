@@ -163,6 +163,16 @@ import { publishRest } from '@/rest';
 const parentDirectory = '..';
 const rootDirectory = '';
 
+const sortByName = (a, b) => {
+  if (a.name > b.name) {
+    return 1;
+  }
+  if (b.name > a.name) {
+    return -1;
+  }
+  return 0;
+};
+
 export default {
   name: 'PublishFileBrowser',
   props: {
@@ -215,10 +225,10 @@ export default {
           ...location !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
           ...Object.keys(data.folders).map(
             (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
-          ),
+          ).sort(sortByName),
           ...Object.keys(data.files).map(
             (key) => ({ ...data.files[key], name: key, folder: false }),
-          ),
+          ).sort(sortByName),
         ];
       },
       default: null,
