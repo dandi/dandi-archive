@@ -93,3 +93,7 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
 # the API server is running in (production/local or staging).
 class HerokuStagingConfiguration(HerokuProductionConfiguration):
     OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.StagingApplication'
+
+    # We are using cheaper Heroku dynos for staging, so we need to artificially lower the number
+    # of concurrent tasks (default is 8) to keep memory usage down.
+    CELERY_WORKER_CONCURRENCY = 2
