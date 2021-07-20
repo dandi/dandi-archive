@@ -31,26 +31,29 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
 
 @pytest.mark.django_db
-def test_version_metadata_computed(version, version_metadata):
+def test_draft_version_metadata_computed(draft_version, version_metadata):
     original_metadata = version_metadata.metadata
-    version.metadata = version_metadata
+    draft_version.metadata = version_metadata
 
     # Save the version to add computed properties to the metadata
-    version.save()
+    draft_version.save()
 
     expected_metadata = {
         **original_metadata,
         'manifestLocation': [
             (
-                f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
+                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
                 f'/versions/draft/assets/'
             )
         ],
         'name': version_metadata.name,
-        'identifier': f'DANDI:{version.dandiset.identifier}',
-        'version': version.version,
-        'id': f'DANDI:{version.dandiset.identifier}/{version.version}',
-        'url': f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}',
+        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'version': draft_version.version,
+        'id': f'DANDI:{draft_version.dandiset.identifier}/{draft_version.version}',
+        'url': (
+            f'https://dandiarchive.org/dandiset/'
+            f'{draft_version.dandiset.identifier}/{draft_version.version}'
+        ),
         '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -58,9 +61,45 @@ def test_version_metadata_computed(version, version_metadata):
             'schemaKey': 'AssetsSummary',
         },
     }
-    expected_metadata['citation'] = version.citation(expected_metadata)
+    expected_metadata['citation'] = draft_version.citation(expected_metadata)
 
-    assert version.metadata.metadata == expected_metadata
+    assert draft_version.metadata.metadata == expected_metadata
+
+
+@pytest.mark.django_db
+def test_published_version_metadata_computed(published_version, version_metadata):
+    original_metadata = version_metadata.metadata
+    published_version.metadata = version_metadata
+
+    # Save the version to add computed properties to the metadata
+    published_version.save()
+
+    expected_metadata = {
+        **original_metadata,
+        'manifestLocation': [
+            (
+                f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets'
+                f'/{published_version.dandiset.identifier}/{published_version.version}/assets.yaml'
+            )
+        ],
+        'name': version_metadata.name,
+        'identifier': f'DANDI:{published_version.dandiset.identifier}',
+        'version': published_version.version,
+        'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
+        'url': (
+            f'https://dandiarchive.org/dandiset/'
+            f'{published_version.dandiset.identifier}/{published_version.version}'
+        ),
+        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+            'schemaKey': 'AssetsSummary',
+        },
+    }
+    expected_metadata['citation'] = published_version.citation(expected_metadata)
+
+    assert published_version.metadata.metadata == expected_metadata
 
 
 @pytest.mark.django_db

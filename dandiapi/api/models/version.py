@@ -160,8 +160,6 @@ class Version(TimeStampedModel):
 
         This is useful to validate version metadata without saving it.
         """
-        from dandiapi.api.manifests import assets_yaml_path, s3_url
-
         # Create the published model
         published_version = Version(
             dandiset=self.dandiset,
@@ -177,7 +175,6 @@ class Version(TimeStampedModel):
                 **published_version._populate_metadata(version_with_assets=self),
                 'publishedBy': self.metadata.published_by(now),
                 'datePublished': now.isoformat(),
-                'manifestLocation': [s3_url(assets_yaml_path(published_version))],
             },
         )
         published_version.metadata = published_metadata
@@ -249,15 +246,13 @@ class Version(TimeStampedModel):
                 # The assets summary aggregation may fail if any asset metadata is invalid.
                 # If so, just use the placeholder summary.
                 pass
+
+        # Import here to avoid dependency cycle
+        from dandiapi.api.manifests import manifest_location
+
         metadata = {
-            # this is here so that it does not overwrite the value already in the metadata
-            'manifestLocation': [
-                (
-                    f'https://api.dandiarchive.org/api/dandisets/{self.dandiset.identifier}'
-                    f'/versions/draft/assets/'
-                )
-            ],
             **self.metadata.metadata,
+            'manifestLocation': manifest_location(self),
             'name': self.metadata.name,
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
