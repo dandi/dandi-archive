@@ -131,6 +131,8 @@
                 <v-btn
                   icon
                   :href="assetMetadataURI(item.asset_id)"
+                  target="_blank"
+                  rel="noopener"
                 >
                   <v-icon color="primary">
                     mdi-information
