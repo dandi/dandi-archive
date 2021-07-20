@@ -240,7 +240,7 @@ def test_version_publish_version(draft_version, asset):
         'datePublished': TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
-            f'{publish_version.dandiset.identifier}/draft/assets.yaml',
+            f'{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
         ],
         'identifier': f'DANDI:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
@@ -587,7 +587,7 @@ def test_version_rest_publish(api_client, admin_user: User, draft_version: Versi
         'datePublished': TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
-            f'{draft_version.dandiset.identifier}/draft/assets.yaml',
+            f'{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
         ],
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': published_version.version,
