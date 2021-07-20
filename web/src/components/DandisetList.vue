@@ -39,7 +39,7 @@
           ·
           Contact <b>{{ item.contact_person }}</b>
           ·
-          Updated on <b>{{ formatDate(item.dandiset.modified) }}</b>
+          Updated on <b>{{ formatDate(item.modified) }}</b>
           ·
           <template v-if="dandisetStats">
             <v-icon
