@@ -34,17 +34,35 @@ Whenever a Version is modified, a flag `needs_recomputing` is set on the Version
 
 #### Scheduled job
 Separately, a scheduled job that runs on a configurable fairly tight interval will check for any Versions that need to be updated.
-For each of those Versions, it also checks that the Version hasn't been modified in a certain amount of time (say 5 minutes). This prevents DB locks from happening while Assets are still being uploaded to the Version.
 
-The code would look something like this:
+The full code would look something like this:
 ```
 def scheduled_task():
   versions = Version.objects.filter(needs_recomputing=True).filter(modified__lt=timezone.now() - 5 minutes)
   # SELECT ... FROM api_version WHERE api_version.needs_recomputing AND now() - api_version.modified > 5 minutes;
+
+  # Mark all versions as not needing recomputation to prevent subsequent tasks from picking them up as well.
+  for version in versions:
+    version.needs_recomputing = False
+    version.save()
+
+  for version in versions:
+    try:
+      # Calculate assetsSummary
+      version.metadata['assetsSummary'] = calculate_assetsSummary(version)
+
+      # Validate the version
+      validate_version(version)
+    except:
+      # Something went wrong, mark the version as dirty again so it can be retried next task
+      version.needs_recomputing = True
+      version.save()
 ```
 
-The job would then immediately set `version.needs_recomputing = False` on all of the "dirty" Versions.
-If any simultaneous requests happen to modify the Version while it is being recomputed/validated, those changes may or may not happen in time to be represented.
+For Version that `needs_recomputing`, it also checks that the Version hasn't been modified in a certain amount of time (say 5 minutes). This prevents DB locks from happening while Assets are still being uploaded to the Version.
+
+The next step is to set `version.needs_recomputing = False` on all of the "dirty" Versions.
+If any requests happen to modify the Version while it is being recomputed/validated, those changes may or may not happen in time to be represented.
 However, they are guaranteed to trigger another recomputation in 5 minutes, so the system will eventually regain consistency.
 If the job takes too long to complete and the next job kicks off while the first is still running, this will also prevent any versions from being recomputed in different jobs.
 
