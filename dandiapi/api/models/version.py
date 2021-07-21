@@ -14,8 +14,6 @@ from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
 
-logger = logging.getLogger(__name__)
-
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # If this environment variable is set, the pydantic model will allow URLs with localhost
     # in them. This is important for development and testing environments, where URLs will
@@ -23,6 +21,8 @@ if settings.DANDI_ALLOW_LOCALHOST_URLS:
     os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
 from dandischema.metadata import aggregate_assets_summary
+
+logger = logging.getLogger(__name__)
 
 
 class VersionMetadata(PublishableMetadataMixin, TimeStampedModel):
