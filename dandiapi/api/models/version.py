@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 
 from django.conf import settings
@@ -12,6 +13,8 @@ from django_extensions.db.models import TimeStampedModel
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
+
+logger = logging.getLogger(__name__)
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # If this environment variable is set, the pydantic model will allow URLs with localhost
@@ -245,7 +248,7 @@ class Version(TimeStampedModel):
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
                 # If so, just use the placeholder summary.
-                pass
+                logger.error('Error calculating assetsSummary', exc_info=1)
 
         # Import here to avoid dependency cycle
         from dandiapi.api.manifests import manifest_location
