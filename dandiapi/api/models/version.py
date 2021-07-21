@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import os
 
 from django.conf import settings
@@ -20,6 +21,8 @@ if settings.DANDI_ALLOW_LOCALHOST_URLS:
     os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
 from dandischema.metadata import aggregate_assets_summary
+
+logger = logging.getLogger(__name__)
 
 
 class VersionMetadata(PublishableMetadataMixin, TimeStampedModel):
@@ -245,7 +248,7 @@ class Version(TimeStampedModel):
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
                 # If so, just use the placeholder summary.
-                pass
+                logger.error('Error calculating assetsSummary', exc_info=1)
 
         # Import here to avoid dependency cycle
         from dandiapi.api.manifests import manifest_location
