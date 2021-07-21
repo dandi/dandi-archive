@@ -47,26 +47,28 @@ def scheduled_task():
     version.save()
 
   for version in versions:
-    try:
-      # Calculate assetsSummary
-      version.metadata['assetsSummary'] = calculate_assetsSummary(version)
+    with transaction.atomic():
+      try:
+        # Calculate assetsSummary
+        version.metadata['assetsSummary'] = calculate_assetsSummary(version)
 
-      # Validate the version
-      validate_version(version)
-    except:
-      # Something went wrong, mark the version as dirty again so it can be retried next task
-      version.needs_recomputing = True
-      version.save()
+        # Validate the version
+        validate_version(version)
+      except:
+        # Something went wrong, mark the version as dirty again so it can be retried next task
+        version.needs_recomputing = True
+        version.save()
 ```
 
 For Version that `needs_recomputing`, it also checks that the Version hasn't been modified in a certain amount of time (say 5 minutes). This prevents DB locks from happening while Assets are still being uploaded to the Version.
 
 The next step is to set `version.needs_recomputing = False` on all of the "dirty" Versions.
-If any requests happen to modify the Version while it is being recomputed/validated, those changes may or may not happen in time to be represented.
+If any requests happen to modify the Version before it is recomputed/validated, those changes may or may not happen in time to be represented.
 However, they are guaranteed to trigger another recomputation in 5 minutes, so the system will eventually regain consistency.
 If the job takes too long to complete and the next job kicks off while the first is still running, this will also prevent any versions from being recomputed in different jobs.
 
 Finally, the actual task logic would be applied to each version: calculate `assetsSummary`, inject it into the metadata, and perform the validation, marking the Version accordingly.
+These operations happen within a [Django transaction](https://docs.djangoproject.com/en/3.2/topics/db/transactions/#controlling-transactions-explicitly), so we don't have to worry about requests making concurrent modifications while we are calculating `assetsSummary` and validating.
 
 Recomputation should fail very infrequently, either because of SQL errors or because of introduced bugs in our code.
 In the event of an error, `needs_recomputing` should be set back to `True` so that it is retried, hopefully resolving intermittent errors.
