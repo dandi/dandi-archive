@@ -97,9 +97,11 @@ def minio_storage_factory() -> MinioStorage:
         bucket_name=settings.DANDI_DANDISETS_BUCKET_NAME,
         auto_create_bucket=True,
         presign_urls=True,
-        base_url=settings.MINIO_STORAGE_MEDIA_URL,
-        # TODO: Test the case of an alternate base_url
-        # base_url='http://minio:9000/bucket-name'
+        # For testing, connect to a local Minio instance
+        base_url=(
+            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
+            f'//{settings.MINIO_STORAGE_ENDPOINT}'
+        ),
     )
 
 
