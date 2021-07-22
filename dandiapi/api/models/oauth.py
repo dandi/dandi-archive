@@ -1,6 +1,7 @@
 from fnmatch import fnmatch
 
 from django.core.exceptions import ValidationError
+from django.db import models
 from oauth2_provider.models import AbstractApplication
 
 
@@ -11,6 +12,10 @@ class StagingApplication(AbstractApplication):
     This is ONLY used in staging; the standard `oauth2_provider.models.Application` is used
     in production and local development.
     """
+
+    # The default value of `skip_authorization` in `AbstractApplication` is `False`; we
+    # override that default here for staging.
+    skip_authorization = models.BooleanField(default=True)
 
     def clean(self):
         """
