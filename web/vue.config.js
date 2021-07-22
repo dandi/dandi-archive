@@ -3,7 +3,7 @@ const child_process = require('child_process');
 
 function getVersion() {
   try {
-    return child_process.execSync('git describe').toString();
+    return child_process.execSync('git describe --tags').toString();
   } catch (err) {
     return process.env.COMMIT_REF;
   }
