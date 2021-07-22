@@ -243,7 +243,10 @@ class Version(TimeStampedModel):
         if version_with_assets.id:
             try:
                 summary = aggregate_assets_summary(
-                    [asset.metadata.metadata for asset in version_with_assets.assets.all()]
+                    [
+                        asset.metadata.metadata
+                        for asset in version_with_assets.assets.select_related('metadata').all()
+                    ]
                 )
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
