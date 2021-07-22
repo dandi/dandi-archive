@@ -21,7 +21,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
 from dandiapi.api.tasks import validate_version_metadata
-from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     DandisetDetailSerializer,
     UserSerializer,
@@ -101,8 +101,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
         responses={200: DandisetDetailSerializer()},
+        manual_parameters=[DANDISET_PK_PARAM],
     )
     def create(self, request):
+        """Create a new dandiset."""
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -181,8 +183,16 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM],
+    )
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def destroy(self, request, dandiset__pk):
+        """
+        Delete a dandiset.
+
+        Deletes a dandiset. Only dandisets without published versions are deletable.
+        """
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
 
         if dandiset.versions.filter(~Q(version='draft')).exists():
@@ -194,9 +204,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(method='GET', responses={200: UserSerializer(many=True)})
+    @swagger_auto_schema(
+        method='GET',
+        manual_parameters=[DANDISET_PK_PARAM],
+        responses={200: UserSerializer(many=True)},
+    )
     @swagger_auto_schema(
         method='PUT',
+        manual_parameters=[DANDISET_PK_PARAM],
         request_body=UserSerializer(many=True),
         responses={
             200: UserSerializer(many=True),
