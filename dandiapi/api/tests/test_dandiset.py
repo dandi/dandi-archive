@@ -486,24 +486,48 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete(api_client, dandiset, user):
+def test_dandiset_rest_delete(api_client, draft_version, user):
     api_client.force_authenticate(user=user)
-    assign_perm('owner', user, dandiset)
+    assign_perm('owner', user, draft_version.dandiset)
 
-    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert response.status_code == 204
 
     assert not Dandiset.objects.all()
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_not_an_owner(api_client, dandiset, user):
+def test_dandiset_rest_delete_not_an_owner(api_client, draft_version, user):
     api_client.force_authenticate(user=user)
 
-    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/')
+    response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert response.status_code == 403
 
-    assert dandiset in Dandiset.objects.all()
+    assert draft_version.dandiset in Dandiset.objects.all()
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_delete_published(api_client, published_version, admin_user):
+    api_client.force_authenticate(user=admin_user)
+
+    response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
+    assert response.status_code == 204
+
+    assert not Dandiset.objects.all()
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_delete_published_not_an_admin(api_client, published_version, user):
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, published_version.dandiset)
+
+    response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
+    assert response.status_code == 403
+    assert (
+        response.data == 'Non-admins are not permitted to delete dandisets with published versions.'
+    )
+
+    assert published_version.dandiset in Dandiset.objects.all()
 
 
 @pytest.mark.django_db
