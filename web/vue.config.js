@@ -5,7 +5,7 @@ function getVersion() {
   try {
     return child_process.execSync('git describe --tags').toString();
   } catch (err) {
-    return process.env.COMMIT_REF;
+    return process.env.COMMIT_REF ? process.env.COMMIT_REF : 'unknown';
   }
 }
 
