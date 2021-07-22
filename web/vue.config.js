@@ -2,6 +2,10 @@ const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
 const child_process = require('child_process');
 
 function getVersion() {
+  // Try to get the version via `git` if available; otherwise fall back on
+  // the COMMIT_REF environment variable provided by Netlify's build
+  // environment; if that is missing, report "unknown" as the version.
+
   try {
     return child_process.execSync('git describe --tags').toString();
   } catch (err) {
