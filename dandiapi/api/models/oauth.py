@@ -12,6 +12,10 @@ class StagingApplication(AbstractApplication):
     in production and local development.
     """
 
+    # The default value of `skip_authorization` in `AbstractApplication` is `False`; we
+    # override that default here for staging.
+    skip_authorization = models.BooleanField(default=True)
+
     def clean(self):
         """
         Validate model fields.
