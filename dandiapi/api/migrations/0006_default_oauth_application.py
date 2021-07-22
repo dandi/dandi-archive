@@ -21,7 +21,7 @@ def create_application(apps, schema_editor):
             client_secret='',
             name=name,
             # This can be turned off in production if appropriate.
-            skip_authorization=False,
+            skip_authorization=True,
         )
         application.save()
 
