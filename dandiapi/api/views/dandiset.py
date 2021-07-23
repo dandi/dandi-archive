@@ -185,9 +185,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     def destroy(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
 
-        if dandiset.versions.filter(~Q(version='draft')).exists() and not request.user.is_superuser:
+        if dandiset.versions.filter(~Q(version='draft')).exists():
             return Response(
-                'Non-admins are not permitted to delete dandisets with published versions.',
+                'Cannot delete dandisets with published versions.',
                 status=status.HTTP_403_FORBIDDEN,
             )
 
