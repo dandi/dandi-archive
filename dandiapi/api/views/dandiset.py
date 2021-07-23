@@ -2,7 +2,7 @@ import logging
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Q, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -184,6 +184,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def destroy(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+
+        if dandiset.versions.filter(~Q(version='draft')).exists():
+            return Response(
+                'Cannot delete dandisets with published versions.',
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         dandiset.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
