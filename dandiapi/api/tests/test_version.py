@@ -364,10 +364,16 @@ def test_version_rest_info(api_client, version):
 @pytest.mark.parametrize(
     'asset_status,expected_validation_error',
     [
-        (Asset.Status.PENDING, ['has not been validated']),
-        (Asset.Status.VALIDATING, ['has not been validated']),
+        (
+            Asset.Status.PENDING,
+            [{'field': '', 'message': 'asset is currently being validated, please wait.'}],
+        ),
+        (
+            Asset.Status.VALIDATING,
+            [{'field': '', 'message': 'asset is currently being validated, please wait.'}],
+        ),
         (Asset.Status.VALID, []),
-        (Asset.Status.INVALID, ['1 invalid asset metadatas']),
+        (Asset.Status.INVALID, []),
     ],
 )
 def test_version_rest_info_with_asset(
@@ -383,7 +389,7 @@ def test_version_rest_info_with_asset(
 
     # These validation error types should have the asset path prepended to them:
     if asset_status == Asset.Status.PENDING or asset_status == Asset.Status.VALIDATING:
-        expected_validation_error = [f'{asset.path} {expected_validation_error[0]}']
+        expected_validation_error[0]['field'] = asset.path
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'

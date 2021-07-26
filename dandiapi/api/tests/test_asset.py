@@ -240,7 +240,7 @@ def test_asset_rest_validation(api_client, version, asset, status, validation_er
     version.assets.add(asset)
 
     asset.status = status
-    asset.validation_error = validation_error
+    asset.validation_errors = validation_error
     asset.save()
 
     assert api_client.get(
@@ -248,7 +248,7 @@ def test_asset_rest_validation(api_client, version, asset, status, validation_er
         f'versions/{version.version}/assets/{asset.asset_id}/validation/'
     ).data == {
         'status': status,
-        'validation_error': validation_error,
+        'validation_errors': validation_error,
     }
 
 
