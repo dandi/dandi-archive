@@ -1,5 +1,4 @@
 [build]
-base = "web"
 publish = "dist"
 command = "yarn run build"
 
