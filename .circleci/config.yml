@@ -8,11 +8,9 @@ jobs:
       - run:
           name: Install web app
           command: yarn install --frozen-lockfile
-          working_directory: web
       - run:
           name: Lint web app
           command: yarn run lint --no-fix
-          working_directory: web
       - run:
           name: Install E2E tests
           command: yarn install --frozen-lockfile
@@ -81,11 +79,9 @@ jobs:
       - run:
           name: Install web app
           command: yarn install --frozen-lockfile
-          working_directory: web
       - run:
           name: Run web app
           command: yarn serve
-          working_directory: web
           background: true
       - run:
           name: Install E2E tests
