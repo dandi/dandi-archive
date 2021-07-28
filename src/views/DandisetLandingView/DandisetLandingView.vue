@@ -113,7 +113,7 @@ export default {
     userCanModifyDandiset: {
       async get() {
         // published versions are never editable
-        if (this.publishDandiset.metadata.version !== 'draft') {
+        if (this.publishDandiset?.metadata.version !== 'draft') {
           return false;
         }
 
