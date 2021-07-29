@@ -1,3 +1,4 @@
+import json
 import os.path
 from uuid import uuid4
 
@@ -205,6 +206,11 @@ def test_asset_rest_retrieve(api_client, version, asset):
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
         ).data
+        == asset.metadata.metadata
+    )
+
+    assert (
+        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/metadata/').content)
         == asset.metadata.metadata
     )
 
