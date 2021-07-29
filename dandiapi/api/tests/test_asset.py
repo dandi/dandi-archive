@@ -209,11 +209,6 @@ def test_asset_rest_retrieve(api_client, version, asset):
         == asset.metadata.metadata
     )
 
-    assert (
-        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/metadata/').content)
-        == asset.metadata.metadata
-    )
-
 
 @pytest.mark.django_db
 def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
@@ -632,3 +627,11 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 
     with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
+
+
+@pytest.mark.django_db
+def test_asset_direct_metadata(api_client, asset):
+    assert (
+        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/metadata/').content)
+        == asset.metadata.metadata
+    )
