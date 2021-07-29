@@ -26,6 +26,7 @@ def _generate_doi_data(version: Version):
 
 def create_doi(version: Version) -> str:
     doi, request_body = _generate_doi_data(version)
+    request_body["data"]["attributes"]["event"] = "publish"
     # If DOI isn't configured, skip the API call
     if (
         settings.DANDI_DOI_API_URL is not None
