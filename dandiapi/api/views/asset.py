@@ -12,7 +12,7 @@ except ImportError:
 import os.path
 
 from django.db import models, transaction
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -72,6 +72,13 @@ def _download_asset(asset: Asset):
 def asset_download_view(request, asset_id):
     asset = Asset.objects.get(asset_id=asset_id)
     return _download_asset(asset)
+
+
+@swagger_auto_schema()
+@api_view(['GET', 'HEAD'])
+def asset_metadata_view(request, asset_id):
+    asset = get_object_or_404(Asset, asset_id=asset_id)
+    return JsonResponse(asset.metadata.metadata)
 
 
 class AssetRequestSerializer(serializers.Serializer):
