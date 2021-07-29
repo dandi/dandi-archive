@@ -632,6 +632,6 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
     assert (
-        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/metadata/').content)
+        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content)
         == asset.metadata.metadata
     )
