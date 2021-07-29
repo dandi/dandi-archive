@@ -11,6 +11,7 @@ from dandiapi.api.views import (
     DandisetViewSet,
     VersionViewSet,
     asset_download_view,
+    asset_metadata_view,
     auth_token_view,
     blob_read_view,
     info_view,
@@ -68,6 +69,11 @@ class DandisetIDConverter:
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('api/', include(router.urls)),
+    re_path(
+        r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/metadata/',
+        asset_metadata_view,
+        name='asset-direct-metadata',
+    ),
     re_path(
         r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/download/',
         asset_download_view,
