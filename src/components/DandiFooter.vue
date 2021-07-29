@@ -2,8 +2,11 @@
 import { copyToClipboard } from '@/utils';
 import { dandiAboutUrl } from '@/utils/constants';
 
+import CookieLaw from 'vue-cookie-law';
+
 export default {
   name: 'DandiFooter',
+  components: { CookieLaw },
   data: () => ({
     copied: false,
     dandiAboutUrl,
@@ -34,6 +37,11 @@ export default {
 <template>
   <v-footer class="text-body-2">
     <v-container>
+      <cookie-law theme="blood-orange">
+        <div slot="message">
+          We use cookies to ensure you get the best experience on DANDI.
+        </div>
+      </cookie-law>
       <v-row>
         <v-col offset="2">
           &copy; 2021 DANDI<br>
