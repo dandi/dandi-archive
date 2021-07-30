@@ -1,1 +1,1 @@
-declare module '@koumoul/vjsf/lib/VJsf';
+declare module '@mvandenburgh/vjsf/lib/VJsf';
