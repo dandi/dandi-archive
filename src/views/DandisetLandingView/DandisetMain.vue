@@ -126,9 +126,7 @@
                 <v-btn
                   id="publish"
                   text
-                  :disabled="publishDisabled || !user
-                    || !(user.admin ||
-                      user.username === 'bendichter' || user.username === 'ben.dichter@gmail.com')"
+                  :disabled="publishDisabled || !user"
                   @click="publish"
                 >
                   <v-icon
