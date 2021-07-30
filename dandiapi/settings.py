@@ -60,6 +60,15 @@ class DandiMixin(ConfigMixin):
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
 
+    # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
+    # button to appear in Swagger, along with a spurious "authorize" button that
+    # doesn't work. This at least enables us to authorize to the Swagger page on
+    # the spot, which is quite useful.
+    #
+    # When Brian Helba is able to resolve this problem upstream (in
+    # django-composed-configuration) we can remove this setting.
+    SWAGGER_SETTINGS = {}
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
