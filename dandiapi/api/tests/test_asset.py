@@ -1,3 +1,4 @@
+import json
 import os.path
 from uuid import uuid4
 
@@ -626,3 +627,11 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 
     with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
+
+
+@pytest.mark.django_db
+def test_asset_direct_metadata(api_client, asset):
+    assert (
+        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content)
+        == asset.metadata.metadata
+    )
