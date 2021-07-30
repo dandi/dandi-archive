@@ -55,6 +55,7 @@ class DandiMixin(ConfigMixin):
     DANDI_DOI_API_USER = values.Value(environ=True)
     DANDI_DOI_API_PASSWORD = values.Value(environ=True)
     DANDI_DOI_API_PREFIX = values.Value(environ=True)
+    DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
 
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
