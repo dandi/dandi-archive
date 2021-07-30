@@ -72,7 +72,7 @@ class Version(TimeStampedModel):
         default=Status.PENDING,
         choices=Status.choices,
     )
-    validation_error = models.TextField(default='', blank=True)
+    validation_errors = models.JSONField(default=list)
 
     class Meta:
         unique_together = ['dandiset', 'version']
@@ -115,27 +115,33 @@ class Version(TimeStampedModel):
         return Version.Status.VALID
 
     @property
-    def publish_validation_error(self) -> str:
-        if self.validation_error:
-            return self.validation_error
-
+    def asset_validation_errors(self) -> list[str]:
         # Import here to avoid dependency cycle
         from .asset import Asset
 
         # Assets that are not VALID (could be pending, validating, or invalid)
-        invalid_assets = self.assets.filter(status=Asset.Status.INVALID).count()
-        if invalid_assets > 0:
-            return f'{invalid_assets} invalid asset metadatas'
+        invalid_assets = self.assets.filter(status=Asset.Status.INVALID).values('validation_errors')
+
+        errors = [
+            error
+            for invalid_asset in invalid_assets
+            for error in invalid_asset['validation_errors']
+        ]
 
         # Assets that have not yet been validated (could be pending or validating)
         unvalidated_assets = self.assets.filter(
             ~(models.Q(status=Asset.Status.VALID) | models.Q(status=Asset.Status.INVALID))
-        ).count()
-        if unvalidated_assets > 0:
-            return f'{unvalidated_assets} assets have not been validated yet'
+        ).values('path')
 
-        # No error == ''
-        return ''
+        errors += [
+            {
+                'field': unvalidated_asset['path'],
+                'message': 'asset is currently being validated, please wait.',
+            }
+            for unvalidated_asset in unvalidated_assets
+        ]
+
+        return errors
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:

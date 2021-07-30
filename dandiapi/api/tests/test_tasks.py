@@ -73,7 +73,7 @@ def test_validate_asset_metadata(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.VALID
-    assert asset.validation_error == ''
+    assert asset.validation_errors == []
 
 
 @pytest.mark.django_db
@@ -86,7 +86,9 @@ def test_validate_asset_metadata_no_schema_version(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_error.startswith('Metadata version None is not allowed.')
+    assert len(asset.validation_errors) == 1
+    assert asset.validation_errors[0]['field'] == ''
+    assert asset.validation_errors[0]['message'].startswith('Metadata version None is not allowed.')
 
 
 @pytest.mark.django_db
@@ -99,7 +101,9 @@ def test_validate_asset_metadata_malformed_schema_version(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_error.startswith('Metadata version xxx is not allowed.')
+    assert len(asset.validation_errors) == 1
+    assert asset.validation_errors[0]['field'] == ''
+    assert asset.validation_errors[0]['message'].startswith('Metadata version xxx is not allowed.')
 
 
 @pytest.mark.django_db
@@ -112,11 +116,7 @@ def test_validate_asset_metadata_no_encoding_format(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_error == (
-        '1 validation error for PublishedAsset\n'
-        'encodingFormat\n'
-        '  field required (type=value_error.missing)'
-    )
+    assert asset.validation_errors == [{'field': 'encodingFormat', 'message': 'field required'}]
 
 
 @pytest.mark.django_db
@@ -129,11 +129,9 @@ def test_validate_asset_metadata_no_digest(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_error == (
-        '1 validation error for PublishedAsset\n'
-        'digest\n'
-        '  Digest is missing dandi-etag or sha256 keys. (type=value_error)'
-    )
+    assert asset.validation_errors == [
+        {'field': 'digest', 'message': 'Digest is missing dandi-etag or sha256 keys.'}
+    ]
 
 
 @pytest.mark.django_db
@@ -146,11 +144,9 @@ def test_validate_asset_metadata_malformed_keywords(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_error == (
-        '1 validation error for PublishedAsset\n'
-        'keywords\n'
-        '  value is not a valid list (type=type_error.list)'
-    )
+    assert asset.validation_errors == [
+        {'field': 'keywords', 'message': 'value is not a valid list'}
+    ]
 
 
 @pytest.mark.django_db
@@ -162,7 +158,7 @@ def test_validate_version_metadata(version: Version, asset: Asset):
     version.refresh_from_db()
 
     assert version.status == Version.Status.VALID
-    assert version.validation_error == ''
+    assert version.validation_errors == []
 
 
 @pytest.mark.django_db
@@ -177,7 +173,11 @@ def test_validate_version_metadata_no_schema_version(version: Version, asset: As
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error.startswith('Metadata version None is not allowed.')
+    assert len(version.validation_errors) == 1
+    assert version.validation_errors[0]['field'] == ''
+    assert version.validation_errors[0]['message'].startswith(
+        'Metadata version None is not allowed.'
+    )
 
 
 @pytest.mark.django_db
@@ -192,7 +192,10 @@ def test_validate_version_metadata_malformed_schema_version(version: Version, as
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error.startswith('Metadata version xxx is not allowed.')
+    assert len(version.validation_errors) == 1
+    assert version.validation_errors[0]['message'].startswith(
+        'Metadata version xxx is not allowed.'
+    )
 
 
 @pytest.mark.django_db
@@ -207,11 +210,7 @@ def test_validate_version_metadata_no_description(version: Version, asset: Asset
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error == (
-        '1 validation error for PublishedDandiset\n'
-        'description\n'
-        '  field required (type=value_error.missing)'
-    )
+    assert version.validation_errors == [{'field': 'description', 'message': 'field required'}]
 
 
 @pytest.mark.django_db
@@ -226,8 +225,6 @@ def test_validate_version_metadata_malformed_license(version: Version, asset: As
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_error == (
-        '1 validation error for PublishedDandiset\n'
-        'license\n'
-        '  value is not a valid list (type=type_error.list)'
-    )
+    assert version.validation_errors == [
+        {'field': 'license', 'message': 'value is not a valid list'}
+    ]

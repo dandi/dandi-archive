@@ -354,7 +354,8 @@ def test_version_rest_info(api_client, version):
         'metadata': version.metadata.metadata,
         'size': version.size,
         'status': 'Pending',
-        'validation_error': '',
+        'asset_validation_errors': [],
+        'version_validation_errors': [],
         'contact_person': '',
     }
 
@@ -363,10 +364,16 @@ def test_version_rest_info(api_client, version):
 @pytest.mark.parametrize(
     'asset_status,expected_validation_error',
     [
-        (Asset.Status.PENDING, '1 assets have not been validated yet'),
-        (Asset.Status.VALIDATING, '1 assets have not been validated yet'),
-        (Asset.Status.VALID, ''),
-        (Asset.Status.INVALID, '1 invalid asset metadatas'),
+        (
+            Asset.Status.PENDING,
+            [{'field': '', 'message': 'asset is currently being validated, please wait.'}],
+        ),
+        (
+            Asset.Status.VALIDATING,
+            [{'field': '', 'message': 'asset is currently being validated, please wait.'}],
+        ),
+        (Asset.Status.VALID, []),
+        (Asset.Status.INVALID, []),
     ],
 )
 def test_version_rest_info_with_asset(
@@ -379,6 +386,10 @@ def test_version_rest_info_with_asset(
     version = draft_version_factory(status=Version.Status.VALID)
     asset = asset_factory(status=asset_status)
     version.assets.add(asset)
+
+    # These validation error types should have the asset path prepended to them:
+    if asset_status == Asset.Status.PENDING or asset_status == Asset.Status.VALIDATING:
+        expected_validation_error[0]['field'] = asset.path
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
@@ -397,7 +408,8 @@ def test_version_rest_info_with_asset(
         'metadata': version.metadata.metadata,
         'size': version.size,
         'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
-        'validation_error': expected_validation_error,
+        'asset_validation_errors': expected_validation_error,
+        'version_validation_errors': [],
         'contact_person': '',
     }
 
@@ -451,7 +463,8 @@ def test_version_rest_update(api_client, user, draft_version):
         'metadata': saved_metadata,
         'size': draft_version.size,
         'status': 'Pending',
-        'validation_error': '',
+        'asset_validation_errors': [],
+        'version_validation_errors': [],
         'contact_person': '',
     }
 
@@ -519,7 +532,8 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'metadata': saved_metadata,
         'size': draft_version.size,
         'status': 'Pending',
-        'validation_error': '',
+        'asset_validation_errors': [],
+        'version_validation_errors': [],
         'contact_person': '',
     }
 
