@@ -28,7 +28,7 @@ module.exports = {
   lintOnSave: false,
   transpileDependencies: [
     'vuetify',
-    '@koumoul/vjsf',
+    '@mvandenburgh/vjsf',
     '@girder/oauth-client',
   ],
   devServer: {
