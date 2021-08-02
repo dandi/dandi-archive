@@ -366,13 +366,12 @@ export default {
       delete extra_obj.assetsSummary.schemaKey;
       delete extra_obj.assetsSummary.numberOfBytes;
       delete extra_obj.assetsSummary.numberOfFiles;
-      _.map(extra_obj, (val) => {
+      _.forEach(extra_obj, (val) => {
         if (Array.isArray(val) && val.length !== 0) {
-          _.map(val, (each_val) => {
+          val.forEach((each_val) => {
             if (each_val instanceof Object && Object.keys(each_val).includes('schemaKey')) {
               // eslint-disable-next-line no-param-reassign
               delete each_val.schemaKey;
-              console.log(372, each_val, Object.keys(each_val));
             }
           });
         }
