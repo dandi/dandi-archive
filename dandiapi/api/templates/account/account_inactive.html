@@ -1,0 +1,20 @@
+{% extends "account/base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}Account Pending Approval{% endblock %}
+
+{% block content %}
+<h1>Pending Approval</h1>
+<hr />
+
+<div class="pb-2 pt-5">
+  <p class="mb-5">This account has not been approved yet. Please allow 1-2 business days for approval.</p>
+  <p class="text-center">
+    <a href="https://dandiarchive.org" class="button inline-flex items-center is-primary">
+      Return to the DANDI Archive Homepage
+      <i class="ri-arrow-left-circle-line ml-3 text-xl"></i>
+    </a>
+  </p>
+</div>
+{% endblock %}
