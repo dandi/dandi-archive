@@ -26,8 +26,8 @@
       :class="rowClasses"
     >
       <v-icon>mdi-update</v-icon>
-      <span :class="labelClasses">Last updated</span>
-      <span :class="itemClasses">{{ lastUpdated }}</span>
+      <span :class="labelClasses">Last modified</span>
+      <span :class="itemClasses">{{ lastModified }}</span>
     </v-row>
 
     <v-divider class="my-2" />
@@ -243,8 +243,8 @@ export default {
     created() {
       return this.formatDateTime(this.currentDandiset.created);
     },
-    lastUpdated() {
-      return this.formatDateTime(this.currentDandiset.updated);
+    lastModified() {
+      return this.formatDateTime(this.currentDandiset.modified);
     },
     contactName() {
       return this.currentDandiset?.contact_person;
