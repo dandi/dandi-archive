@@ -369,7 +369,7 @@ export default {
       _.forEach(extra_obj, (val) => {
         if (Array.isArray(val) && val.length !== 0) {
           val.forEach((each_val) => {
-            if (each_val instanceof Object && Object.keys(each_val).includes('schemaKey')) {
+            if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
               // eslint-disable-next-line no-param-reassign
               delete each_val.schemaKey;
             }
