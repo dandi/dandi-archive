@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -18,6 +19,13 @@ from rest_framework.response import Response
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+
+@receiver(user_signed_up)
+def set_user_inactive(sender, user, **kwargs):
+    if settings.SET_NEW_USER_INACTIVE:
+        user.is_active = False
+        user.save()
 
 
 @swagger_auto_schema(

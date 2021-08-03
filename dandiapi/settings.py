@@ -69,6 +69,9 @@ class DandiMixin(ConfigMixin):
     # django-composed-configuration) we can remove this setting.
     SWAGGER_SETTINGS = {}
 
+    # Don't set new users as inactive by default
+    SET_NEW_USER_INACTIVE = False
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
@@ -93,6 +96,10 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
+
+    # New user accounts in production and staging should be inactive by
+    # default (pending manual approval by a member of the DANDI team)
+    SET_NEW_USER_INACTIVE = True
 
 
 # NOTE: The staging configuration uses a custom OAuth toolkit `Application` model
