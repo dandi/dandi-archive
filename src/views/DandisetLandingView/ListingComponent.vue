@@ -45,6 +45,7 @@ export default {
         case 'relatedResource':
         case 'variableMeasured':
         case 'wasGeneratedBy':
+        case 'ethicsApproval':
           return ObjectArray;
         case 'dandisetStats':
           return DandisetStats;
@@ -87,6 +88,8 @@ export default {
           return 'status';
         case 'relatedResource':
           return 'url';
+        case 'ethicsApproval':
+          return 'identifier';
         default:
           return 'name';
       }

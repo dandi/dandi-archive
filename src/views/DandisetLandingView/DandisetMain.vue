@@ -366,6 +366,17 @@ export default {
       delete extra_obj.assetsSummary.schemaKey;
       delete extra_obj.assetsSummary.numberOfBytes;
       delete extra_obj.assetsSummary.numberOfFiles;
+      _.forEach(extra_obj, (val) => {
+        if (Array.isArray(val) && val.length !== 0) {
+          val.forEach((each_val) => {
+            if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
+              /* eslint no-param-reassign:["error",
+              {"ignorePropertyModificationsFor":["each_val"] }] */
+              delete each_val.schemaKey;
+            }
+          });
+        }
+      });
       return extra_obj;
     },
     schemaPropertiesCopy() {
