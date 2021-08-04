@@ -370,7 +370,8 @@ export default {
         if (Array.isArray(val) && val.length !== 0) {
           val.forEach((each_val) => {
             if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
-              // eslint-disable-next-line no-param-reassign
+              /* eslint no-param-reassign:["error",
+              {"ignorePropertyModificationsFor":["each_val"] }] */
               delete each_val.schemaKey;
             }
           });
