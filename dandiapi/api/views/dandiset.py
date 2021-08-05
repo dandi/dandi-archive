@@ -102,6 +102,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         request_body=VersionMetadataSerializer(),
         responses={200: DandisetDetailSerializer()},
         manual_parameters=[DANDISET_PK_PARAM],
+        operation_summary='Create a new dandiset.',
+        operation_description='',
     )
     def create(self, request):
         """Create a new dandiset."""
@@ -208,6 +210,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         method='GET',
         manual_parameters=[DANDISET_PK_PARAM],
         responses={200: UserSerializer(many=True)},
+        operation_summary='Get owners of a dandiset.',
+        operation_description='',
     )
     @swagger_auto_schema(
         method='PUT',
@@ -217,6 +221,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             200: UserSerializer(many=True),
             400: 'User not found, or cannot remove all owners',
         },
+        operation_summary='Set owners of a dandiset.',
+        operation_description='Set the owners of a dandiset. The user performing this action must\
+                               be an owner of the dandiset themself.',
     )
     # TODO move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
