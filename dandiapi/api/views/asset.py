@@ -72,14 +72,23 @@ def _download_asset(asset: Asset):
         raise ValueError(f'Unknown storage {storage}')
 
 
-@swagger_auto_schema()
+@swagger_auto_schema(
+    method='GET',
+    operation_summary='Get the download link for an asset.',
+    operation_description='',
+    manual_parameters=[ASSET_ID_PARAM],
+)
 @api_view(['GET', 'HEAD'])
 def asset_download_view(request, asset_id):
     asset = Asset.objects.get(asset_id=asset_id)
     return _download_asset(asset)
 
 
-@swagger_auto_schema()
+@swagger_auto_schema(
+    method='GET',
+    operation_summary="Get an asset's metadata",
+    manual_parameters=[ASSET_ID_PARAM],
+)
 @api_view(['GET', 'HEAD'])
 def asset_metadata_view(request, asset_id):
     asset = get_object_or_404(Asset, asset_id=asset_id)
@@ -118,6 +127,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             200: 'The asset metadata.',
         },
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary="Get an asset\'s metadata",
+        operation_description='',
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
@@ -126,6 +137,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer()},
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Get any validation errors associated with an asset',
+        operation_description='',
     )
     @action(detail=True, methods=['GET'])
     def validation(self, request, **kwargs):
@@ -140,6 +153,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             404: 'If a blob with the given checksum has not been validated',
         },
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Create an asset.',
+        operation_description='Creates an asset and adds it to a specified version.\
+                               User must be an owner of the specified dandiset.\
+                               New assets can only be attached to draft versions.',
     )
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
@@ -204,6 +221,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         request_body=AssetRequestSerializer(),
         responses={200: AssetDetailSerializer()},
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Update the metadata of an asset.',
+        operation_description='User must be an owner of the associated dandiset.\
+                               Only draft versions can be modified.',
     )
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
@@ -282,7 +302,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
     )
-    @swagger_auto_schema(manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM])
+    @swagger_auto_schema(
+        manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Remove an asset from a version.',
+        operation_description='Assets are never deleted, only disassociated from a version.\
+                               Only draft versions can be modified.',
+    )
     def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         asset = self.get_object()
         version = Version.objects.get(
@@ -310,6 +335,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             301: 'Redirect to object store',
         },
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Return a redirect to the file download in the object store.',
+        operation_description='',
     )
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
