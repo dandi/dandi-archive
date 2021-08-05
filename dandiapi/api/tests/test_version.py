@@ -578,10 +578,9 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.django_db
-# TODO change admin_user back to a normal user once publish is allowed
-def test_version_rest_publish(api_client, admin_user: User, draft_version: Version, asset: Asset):
-    assign_perm('owner', admin_user, draft_version.dandiset)
-    api_client.force_authenticate(user=admin_user)
+def test_version_rest_publish(api_client, user: User, draft_version: Version, asset: Asset):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
 
     # Validate the metadata to mark the version and asset as `VALID`
@@ -686,25 +685,10 @@ def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
     assert resp.status_code == 403
 
 
-# TODO remove this test once publish is allowed
 @pytest.mark.django_db
-def test_version_rest_publish_not_an_admin(api_client, user, version, asset):
-    assign_perm('owner', user, version.dandiset)
+def test_version_rest_publish_not_a_draft(api_client, user, published_version, asset):
+    assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
-    version.assets.add(asset)
-
-    resp = api_client.post(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/publish/'
-    )
-    assert resp.status_code == 403
-    assert resp.data == 'Must be an admin to publish'
-
-
-@pytest.mark.django_db
-# TODO change admin_user back to a normal user once publish is allowed
-def test_version_rest_publish_not_a_draft(api_client, admin_user, published_version, asset):
-    assign_perm('owner', admin_user, published_version.dandiset)
-    api_client.force_authenticate(user=admin_user)
     published_version.assets.add(asset)
 
     resp = api_client.post(
@@ -723,12 +707,9 @@ def test_version_rest_publish_not_a_draft(api_client, admin_user, published_vers
         Version.Status.INVALID,
     ],
 )
-# TODO change admin_user back to a normal user once publish is allowed
-def test_version_rest_publish_invalid_metadata(
-    api_client, admin_user, draft_version, asset, status
-):
-    assign_perm('owner', admin_user, draft_version.dandiset)
-    api_client.force_authenticate(user=admin_user)
+def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, asset, status):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
 
     draft_version.status = status
