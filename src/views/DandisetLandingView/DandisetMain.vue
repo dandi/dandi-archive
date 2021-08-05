@@ -433,8 +433,8 @@ export default {
       return null;
     },
     publishDisabled() {
-      return !!(this.publishDandiset.version_validation_errors
-        || this.publishDandiset.asset_validation_errors
+      return !!(this.publishDandiset.version_validation_errors.length
+        || this.publishDandiset.asset_validation_errors.length
         || this.publishDisabledMessage);
     },
     metadataButtonText() {
