@@ -7,7 +7,7 @@ from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadat
 @click.command()
 @click.option('--assets', is_flag=True, default=False)
 @click.option('--versions', is_flag=True, default=False)
-def refresh_metadata(assets: bool, versions: bool):
+def revalidate(assets: bool, versions: bool):
     """
     Revalidate all Versions and Assets.
 
