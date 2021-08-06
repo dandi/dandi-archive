@@ -8,34 +8,34 @@ from dandiapi.api.models import Asset, Version
 
 
 @pytest.mark.django_db
-def test_stale_assets(version: Version, asset_factory):
-
-    stale_orphan_asset: Asset = asset_factory()
-    stale_linked_asset: Asset = asset_factory()
-    fresh_orphan_asset: Asset = asset_factory()  # noqa: F841
-    fresh_linked_asset: Asset = asset_factory()
-
-    # link the linked assets
-    version.assets.add(stale_linked_asset)
-    version.assets.add(fresh_linked_asset)
-
-    # Spoof the modified dates on the stale assets
+def test_stale_assets(version: Version, draft_asset_factory, published_asset_factory):
     stale_date = timezone.now() - timedelta(days=8)
-    stale_orphan_asset.modified = stale_date
-    stale_orphan_asset.update_modified = False
-    stale_orphan_asset.save()
-    stale_linked_asset.modified = stale_date
-    stale_linked_asset.update_modified = False
-    stale_linked_asset.save()
 
-    # Only the stale orphan asset should be returned by stale_assets()
-    assert stale_assets().get() == stale_orphan_asset
+    for is_stale in (False, True):
+        for is_orphaned in (False, True):
+            for is_draft in (False, True):
+                if is_draft:
+                    asset = draft_asset_factory()
+                else:
+                    asset = published_asset_factory()
+                if is_stale:
+                    asset.modified = stale_date
+                    asset.update_modified = False
+                    asset.save()
+                if not is_orphaned:
+                    version.assets.add(asset)
+    # The last asset should be stale, orphaned, and draft.
+    asset_to_delete = asset
+
+    # Only the last asset should be returned by stale_assets()
+    assert stale_assets().get() == asset_to_delete
 
     # This is how assets will generally be deleted
     stale_assets().delete()
 
     # The stale asset should be gone
     assert stale_assets().count() == 0
-    assert not Asset.objects.filter(id=stale_orphan_asset.id).exists()
-    # The three other assets should still be present
-    assert Asset.objects.count() == 3
+    assert not Asset.objects.filter(id=asset_to_delete.id).exists()
+
+    # The 7 other assets should still be present
+    assert Asset.objects.count() == 7
