@@ -36,5 +36,6 @@ def test_stale_assets(version: Version, asset_factory):
 
     # The stale asset should be gone
     assert stale_assets().count() == 0
+    assert not Asset.objects.filter(id=stale_orphan_asset.id).exists()
     # The three other assets should still be present
     assert Asset.objects.count() == 3
