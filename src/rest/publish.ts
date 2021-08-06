@@ -145,7 +145,7 @@ const publishRest = new Vue({
     },
     async saveDandiset(
       identifier: string, version: string, metadata: any,
-    ): Promise<AxiosResponse<Dandiset>> {
+    ): Promise<AxiosResponse<Version>> {
       return client.put(`dandisets/${identifier}/versions/${version}/`, {
         name: metadata.name,
         metadata,
