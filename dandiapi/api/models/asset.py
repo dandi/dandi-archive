@@ -168,6 +168,7 @@ class Asset(TimeStampedModel):
         This is useful to validate asset metadata without saving it.
         To actually publish this Asset, simply save() after calling publish().
         """
+        # These fields need to be listed in the bulk_update() in VersionViewSet#publish.
         self.metadata = self.published_metadata()
         self.published = True
 
