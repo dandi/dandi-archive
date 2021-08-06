@@ -22,15 +22,15 @@ def collect_garbage(assets: bool, assetblobs: bool, uploads: bool, s3blobs: bool
     if doing_deletes:
         echo_report()
 
+    if assetblobs:
+        raise click.NoSuchOption('Deleting AssetBlobs is not yet implemented')
+    if uploads:
+        raise click.NoSuchOption('Deleting Uploads is not yet implemented')
+    if s3blobs:
+        raise click.NoSuchOption('Deleting S3 Blobs is not yet implemented')
     if assets:
         click.echo(f'Deleting {stale_assets().count()} assets...')
         stale_assets().delete()
-    if assetblobs:
-        click.echo('Deleting AssetBlobs is not yet implemented')
-    if uploads:
-        click.echo('Deleting Uploads is not yet implemented')
-    if s3blobs:
-        click.echo('Deleting S3 Blobs is not yet implemented')
 
     # Log how many things there are, either after deletion
     # or if the user forgot to specify anything to delete
