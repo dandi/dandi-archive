@@ -15,5 +15,6 @@ def stale_assets() -> QuerySet[Asset]:
     return (
         Asset.objects.annotate(has_version=Exists(Version.objects.filter(assets=OuterRef('id'))))
         .filter(has_version=False)
+        .filter(published=False)
         .filter(modified__lt=deadline)
     )
