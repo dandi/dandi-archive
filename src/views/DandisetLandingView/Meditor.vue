@@ -235,10 +235,6 @@ export default defineComponent({
     }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
     const id = computed(() => publishDandiset.value?.dandiset.identifier || null);
-    function setDandiset(payload: any) {
-      // TODO: Replace once direct-vuex is added
-      store.commit('dandiset/setPublishDandiset', payload);
-    }
 
     async function save() {
       const dandiset = editorInterface.getModel();
@@ -249,8 +245,11 @@ export default defineComponent({
         );
 
         if (status === 200) {
-          setDandiset(data);
-          closeEditor();
+          // wait 0.5 seconds to give the celery worker some time to finish validation
+          setTimeout(async () => {
+            await store.dispatch('dandiset/fetchPublishDandiset', { identifier: data.dandiset.identifier, version: data.version });
+            closeEditor();
+          }, 500);
         }
       } catch (error) {
         if (error.response.status === 403) {
