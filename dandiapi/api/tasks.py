@@ -93,8 +93,7 @@ def validate_asset_metadata(asset_id: int) -> None:
     asset.save()
 
     try:
-        publish_asset = Asset.published_asset(asset)
-        metadata = publish_asset.metadata.metadata
+        metadata = asset.published_metadata().metadata
         validate(metadata, schema_key='PublishedAsset')
     except Exception as e:
         logger.error('Error while validating asset %s', asset_id)
