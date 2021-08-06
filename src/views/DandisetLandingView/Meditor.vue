@@ -235,10 +235,6 @@ export default defineComponent({
     }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
     const id = computed(() => publishDandiset.value?.dandiset.identifier || null);
-    function setDandiset(payload: any) {
-      // TODO: Replace once direct-vuex is added
-      store.commit('dandiset/setPublishDandiset', payload);
-    }
 
     async function save() {
       const dandiset = editorInterface.getModel();
@@ -249,7 +245,7 @@ export default defineComponent({
         );
 
         if (status === 200) {
-          setDandiset(data);
+          await store.dispatch('dandiset/fetchPublishDandiset', { identifier: data.dandiset.identifier, version: data.version });
           closeEditor();
         }
       } catch (error) {
