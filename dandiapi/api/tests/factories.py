@@ -137,13 +137,22 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
         return metadata
 
 
-class AssetFactory(factory.django.DjangoModelFactory):
+class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
 
     path = factory.Faker('file_path', extension='nwb')
     metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
+
+
+class PublishedAssetFactory(DraftAssetFactory):
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        asset: Asset = super()._create(*args, **kwargs)
+        asset.publish()
+        asset.save()
+        return asset
 
 
 class UploadFactory(factory.django.DjangoModelFactory):

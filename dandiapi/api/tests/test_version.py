@@ -612,10 +612,10 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
     assert published_version
     assert draft_version.dandiset.versions.count() == 2
 
-    published_asset = published_version.assets.get()
+    published_asset: Asset = published_version.assets.get()
     assert published_asset.published
-    # The blob should be the same between the two assets
-    assert asset.blob == published_asset.blob
+    # The asset should be the same after publishing
+    assert asset.asset_id == published_asset.asset_id
 
     assert published_version.metadata.metadata == {
         **draft_version.metadata.metadata,
@@ -672,6 +672,79 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
     draft_version.refresh_from_db()
     assert draft_version.status == Version.Status.PUBLISHED
     assert not draft_version.valid
+
+
+@pytest.mark.django_db
+def test_version_rest_publish_assets(
+    api_client,
+    user: User,
+    draft_version: Version,
+    draft_asset_factory,
+    published_asset_factory,
+):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    old_draft_asset: Asset = draft_asset_factory()
+    old_published_asset: Asset = published_asset_factory()
+    old_published_asset.publish()
+    old_published_asset.save()
+    assert not old_draft_asset.published
+    assert old_published_asset.published
+    draft_version.assets.add(old_draft_asset)
+    draft_version.assets.add(old_published_asset)
+
+    # Validate the metadata to mark the assets and version as `VALID`
+    tasks.validate_asset_metadata(old_draft_asset.id)
+    tasks.validate_asset_metadata(old_published_asset.id)
+    tasks.validate_version_metadata(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.valid
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 200
+    published_version = Version.objects.get(version=resp.data['version'])
+
+    assert published_version.assets.count() == 2
+    new_draft_asset: Asset = published_version.assets.get(asset_id=old_draft_asset.asset_id)
+    new_published_asset: Asset = published_version.assets.get(asset_id=old_published_asset.asset_id)
+
+    # The former draft asset should have been modified into a published asset
+    assert new_draft_asset.published
+    assert new_draft_asset.asset_id == old_draft_asset.asset_id
+    assert new_draft_asset.path == old_draft_asset.path
+    assert new_draft_asset.blob == old_draft_asset.blob
+    assert new_draft_asset.metadata.metadata == {
+        **old_draft_asset.metadata.metadata,
+        'datePublished': TIMESTAMP_RE,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': TIMESTAMP_RE,
+            # TODO endDate needs to be defined before publish is complete
+            'endDate': TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+    }
+
+    # The published_asset should be completely unchanged
+    assert new_published_asset.published
+    assert new_published_asset.asset_id == old_published_asset.asset_id
+    assert new_published_asset.path == old_published_asset.path
+    assert new_published_asset.blob == old_published_asset.blob
+    assert new_published_asset.metadata.metadata == old_published_asset.metadata.metadata
 
 
 @pytest.mark.django_db

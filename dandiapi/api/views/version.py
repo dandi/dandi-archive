@@ -141,14 +141,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         from dandiapi.api.models import Asset
 
         draft_assets = old_version.assets.filter(published=False).all()
-        new_published_assets = [Asset.published_asset(draft_asset) for draft_asset in draft_assets]
-        Asset.objects.bulk_create(new_published_assets)
+        for draft_asset in draft_assets:
+            draft_asset.publish()
+        Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
 
         AssetVersions.objects.bulk_create(
-            [
-                AssetVersions(asset_id=asset.id, version_id=new_version.id)
-                for asset in new_published_assets
-            ]
+            [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
         )
 
         # Save again to recompute metadata, specifically assetsSummary

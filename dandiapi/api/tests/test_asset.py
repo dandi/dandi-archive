@@ -96,14 +96,20 @@ def test_asset_s3_url(asset_blob):
 
 
 @pytest.mark.django_db
-def test_version_published_asset(asset):
-    published_asset = Asset.published_asset(asset)
-    published_asset.save()
+def test_publish_asset(draft_asset: Asset):
+    draft_asset_id = draft_asset.asset_id
+    draft_blob = draft_asset.blob
+    draft_metadata = draft_asset.metadata.metadata
+    draft_asset.publish()
+    draft_asset.save()
 
-    assert published_asset.blob == asset.blob
+    # draft_asset has been published, so it is now published_asset
+    published_asset = draft_asset
+
+    assert published_asset.blob == draft_blob
     assert published_asset.metadata.metadata == {
-        **asset.metadata.metadata,
-        'id': f'dandiasset:{published_asset.asset_id}',
+        **draft_metadata,
+        'id': f'dandiasset:{draft_asset_id}',
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
@@ -122,7 +128,7 @@ def test_version_published_asset(asset):
             'schemaKey': 'PublishActivity',
         },
         'datePublished': TIMESTAMP_RE,
-        'identifier': str(published_asset.asset_id),
+        'identifier': str(draft_asset_id),
         'contentUrl': [HTTP_URL_RE, HTTP_URL_RE],
     }
 
@@ -149,11 +155,11 @@ def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_facto
 
 
 @pytest.mark.django_db
-def test_asset_populate_metadata(asset_factory, asset_metadata):
+def test_asset_populate_metadata(draft_asset_factory, asset_metadata):
     raw_metadata = asset_metadata.metadata
 
     # This should trigger _populate_metadata to inject all the computed metadata fields
-    asset = asset_factory(metadata=asset_metadata)
+    asset = draft_asset_factory(metadata=asset_metadata)
 
     download_url = 'https://api.dandiarchive.org' + reverse(
         'asset-direct-download',

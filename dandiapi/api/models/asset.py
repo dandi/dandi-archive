@@ -148,41 +148,29 @@ class Asset(TimeStampedModel):
             )
         return metadata
 
-    @classmethod
-    def published_asset(cls, asset: Asset):
-        """
-        Generate a published asset + metadata without saving it.
-
-        This is useful to validate asset metadata without saving it.
-        """
+    def published_metadata(self):
+        """Generate the metadata of this asset as if it were being published."""
         now = datetime.datetime.utcnow()
         # Inject the publishedBy and datePublished fields
         published_metadata, _ = AssetMetadata.objects.get_or_create(
             metadata={
-                **asset.metadata.metadata,
-                'publishedBy': asset.metadata.published_by(now),
+                **self.metadata.metadata,
+                'publishedBy': self.metadata.published_by(now),
                 'datePublished': now.isoformat(),
             },
         )
+        return published_metadata
 
-        # Create the published model
-        published_asset = Asset(
-            path=asset.path,
-            blob=asset.blob,
-            metadata=published_metadata,
-            # If we're publishing, just assume that the asset was valid
-            status=Asset.Status.VALID,
-            previous=asset,
-            published=True,
-        )
+    def publish(self):
+        """
+        Modify the metadata of this asset as if it were being published.
 
-        # Recompute the metadata
-        published_metadata, _ = AssetMetadata.objects.get_or_create(
-            metadata=published_asset._populate_metadata(),
-        )
-        published_asset.metadata = published_metadata
-
-        return published_asset
+        This is useful to validate asset metadata without saving it.
+        To actually publish this Asset, simply save() after calling publish().
+        """
+        # These fields need to be listed in the bulk_update() in VersionViewSet#publish.
+        self.metadata = self.published_metadata()
+        self.published = True
 
     def save(self, *args, **kwargs):
         metadata = self._populate_metadata()

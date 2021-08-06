@@ -12,10 +12,11 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 from .factories import (
     AssetBlobFactory,
-    AssetFactory,
     AssetMetadataFactory,
     DandisetFactory,
+    DraftAssetFactory,
     DraftVersionFactory,
+    PublishedAssetFactory,
     PublishedVersionFactory,
     SocialAccountFactory,
     UploadFactory,
@@ -28,7 +29,8 @@ if TYPE_CHECKING:
     import mypy_boto3_s3 as s3
 
 
-register(AssetFactory)
+register(PublishedAssetFactory, _name='published_asset')
+register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
 register(AssetMetadataFactory)
 register(DandisetFactory)
@@ -40,6 +42,16 @@ register(UserFactory)
 register(SocialAccountFactory)
 register(UploadFactory)
 register(VersionMetadataFactory)
+
+
+@pytest.fixture(params=[DraftAssetFactory, PublishedAssetFactory], ids=['draft', 'published'])
+def asset_factory(request):
+    return request.param
+
+
+@pytest.fixture
+def asset(asset_factory):
+    return asset_factory()
 
 
 @pytest.fixture(params=[DraftVersionFactory, PublishedVersionFactory], ids=['draft', 'published'])
