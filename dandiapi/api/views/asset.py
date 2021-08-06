@@ -16,7 +16,6 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
-from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
@@ -28,7 +27,13 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
 from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadata
-from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.views.common import (
+    ASSET_ID_PARAM,
+    PATH_PREFIX_PARAM,
+    VERSIONS_DANDISET_PK_PARAM,
+    VERSIONS_VERSION_PARAM,
+    DandiPagination,
+)
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
     AssetPathsSerializer,
@@ -67,14 +72,23 @@ def _download_asset(asset: Asset):
         raise ValueError(f'Unknown storage {storage}')
 
 
-@swagger_auto_schema()
+@swagger_auto_schema(
+    method='GET',
+    operation_summary='Get the download link for an asset.',
+    operation_description='',
+    manual_parameters=[ASSET_ID_PARAM],
+)
 @api_view(['GET', 'HEAD'])
 def asset_download_view(request, asset_id):
     asset = Asset.objects.get(asset_id=asset_id)
     return _download_asset(asset)
 
 
-@swagger_auto_schema()
+@swagger_auto_schema(
+    method='GET',
+    operation_summary="Get an asset's metadata",
+    manual_parameters=[ASSET_ID_PARAM],
+)
 @api_view(['GET', 'HEAD'])
 def asset_metadata_view(request, asset_id):
     asset = get_object_or_404(Asset, asset_id=asset_id)
@@ -112,12 +126,20 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         responses={
             200: 'The asset metadata.',
         },
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary="Get an asset\'s metadata",
+        operation_description='',
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
         return Response(asset.metadata.metadata, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(responses={200: AssetValidationSerializer()})
+    @swagger_auto_schema(
+        responses={200: AssetValidationSerializer()},
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Get any validation errors associated with an asset',
+        operation_description='',
+    )
     @action(detail=True, methods=['GET'])
     def validation(self, request, **kwargs):
         asset = self.get_object()
@@ -130,6 +152,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             200: AssetDetailSerializer(),
             404: 'If a blob with the given checksum has not been validated',
         },
+        manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Create an asset.',
+        operation_description='Creates an asset and adds it to a specified version.\
+                               User must be an owner of the specified dandiset.\
+                               New assets can only be attached to draft versions.',
     )
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
@@ -193,6 +220,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @swagger_auto_schema(
         request_body=AssetRequestSerializer(),
         responses={200: AssetDetailSerializer()},
+        manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Update the metadata of an asset.',
+        operation_description='User must be an owner of the associated dandiset.\
+                               Only draft versions can be modified.',
     )
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
@@ -271,6 +302,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
     )
+    @swagger_auto_schema(
+        manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Remove an asset from a version.',
+        operation_description='Assets are never deleted, only disassociated from a version.\
+                               Only draft versions can be modified.',
+    )
     def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         asset = self.get_object()
         version = Version.objects.get(
@@ -296,7 +333,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         responses={
             200: None,  # This disables the auto-generated 200 response
             301: 'Redirect to object store',
-        }
+        },
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        operation_summary='Return a redirect to the file download in the object store.',
+        operation_description='',
     )
     @action(detail=True, methods=['GET'])
     def download(self, request, **kwargs):
@@ -304,9 +344,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         return _download_asset(self.get_object())
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING)
-        ],
+        manual_parameters=[PATH_PREFIX_PARAM],
         responses={200: AssetPathsSerializer()},
     )
     @action(detail=False, methods=['GET'])

@@ -11,7 +11,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 from dandiapi.api import doi
 from dandiapi.api.models import Dandiset, Version, VersionMetadata
 from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
-from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
     VersionMetadataSerializer,
@@ -35,6 +35,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={
             200: 'The version metadata.',
         },
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
     def retrieve(self, request, **kwargs):
         version = self.get_object()
@@ -46,6 +47,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     # Unfortunately the web UI is built around VersionDetailSerializer, so this endpoint was
     # added to avoid rewriting the web UI.
     @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
         responses={200: VersionDetailSerializer()},
     )
     @action(detail=True, methods=['GET'])
@@ -58,6 +60,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
         responses={200: VersionDetailSerializer()},
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def update(self, request, **kwargs):
@@ -94,10 +97,15 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=no_body, responses={200: VersionSerializer()})
+    @swagger_auto_schema(
+        request_body=no_body,
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
+        responses={200: VersionSerializer()},
+    )
     @action(detail=True, methods=['POST'])
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
+        """Publish a version."""
         old_version: Version = self.get_object()
         if old_version.version != 'draft':
             return Response(
