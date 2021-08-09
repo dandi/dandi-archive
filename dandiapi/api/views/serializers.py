@@ -98,7 +98,6 @@ class VersionDetailSerializer(VersionSerializer):
             'contact_person',
         ]
 
-    metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
     status = serializers.CharField(source='publish_status')
 
     # rename this field in the serializer to differentiate from asset_validation_errors
@@ -141,8 +140,6 @@ class AssetSerializer(serializers.ModelSerializer):
 class AssetDetailSerializer(AssetSerializer):
     class Meta(AssetSerializer.Meta):
         fields = AssetSerializer.Meta.fields + ['metadata']
-
-    metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
 
 
 class AssetFolderSerializer(serializers.Serializer):

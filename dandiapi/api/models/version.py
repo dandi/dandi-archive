@@ -229,10 +229,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         if version_with_assets.id:
             try:
                 summary = aggregate_assets_summary(
-                    [
-                        asset.metadata
-                        for asset in version_with_assets.assets.select_related('metadata').all()
-                    ]
+                    [asset['metadata'] for asset in version_with_assets.assets.values('metadata')]
                 )
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.

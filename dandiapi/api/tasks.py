@@ -87,13 +87,13 @@ class ValidationError(Exception):
 # depending on which version the asset belongs to.
 def validate_asset_metadata(asset_id: int) -> None:
     logger.info('Validating asset metadata for asset %s', asset_id)
-    asset = Asset.objects.get(id=asset_id)
+    asset: Asset = Asset.objects.get(id=asset_id)
 
     asset.status = Asset.Status.VALIDATING
     asset.save()
 
     try:
-        metadata = asset.published_metadata().metadata
+        metadata = asset.published_metadata()
         validate(metadata, schema_key='PublishedAsset')
     except Exception as e:
         logger.error('Error while validating asset %s', asset_id)
