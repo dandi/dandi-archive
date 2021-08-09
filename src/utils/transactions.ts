@@ -13,7 +13,7 @@ interface MeditorTransaction {
 // to the stack before they start to be discarded
 const MAX_TRANSACTION_STACK_SIZE = 500;
 
-class MeditorTransactionTracker {
+export default class MeditorTransactionTracker {
   private transactions: MeditorTransaction[];
 
   // a "pointer" to the current transaction, i.e. the index
@@ -146,7 +146,3 @@ class MeditorTransactionTracker {
     this.lostTransactions = false;
   }
 }
-
-export {
-  MeditorTransactionTracker,
-};

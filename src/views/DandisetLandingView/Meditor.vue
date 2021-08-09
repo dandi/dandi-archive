@@ -233,7 +233,7 @@ import '@koumoul/vjsf/lib/VJsf.css';
 import { publishRest } from '@/rest';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
-import { MeditorTransactionTracker } from '@/utils/transactions';
+import MeditorTransactionTracker from '@/utils/transactions';
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
