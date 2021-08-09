@@ -159,11 +159,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         self.published = True
 
     def save(self, *args, **kwargs):
-        metadata = self._populate_metadata()
-        new, created = AssetMetadata.objects.get_or_create(metadata=metadata)
-        if created:
-            new.save()
-        self.metadata = new
+        self.metadata = self._populate_metadata()
         super().save(*args, **kwargs)
 
     @classmethod

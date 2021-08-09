@@ -264,16 +264,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return metadata
 
     def save(self, *args, **kwargs):
-        metadata = self._populate_metadata()
-        new, created = VersionMetadata.objects.get_or_create(
-            name=self.metadata.name,
-            metadata=metadata,
-        )
-
-        if created:
-            new.save()
-
-        self.metadata = new
+        self.metadata = self._populate_metadata()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
