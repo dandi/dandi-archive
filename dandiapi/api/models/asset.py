@@ -75,7 +75,7 @@ class AssetBlob(TimeStampedModel):
         return self.blob.name
 
 
-class Asset(TimeStampedModel):
+class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
     class Status(models.TextChoices):
@@ -141,14 +141,11 @@ class Asset(TimeStampedModel):
         """Generate the metadata of this asset as if it were being published."""
         now = datetime.datetime.utcnow()
         # Inject the publishedBy and datePublished fields
-        published_metadata, _ = AssetMetadata.objects.get_or_create(
-            metadata={
-                **self.metadata.metadata,
-                'publishedBy': self.metadata.published_by(now),
-                'datePublished': now.isoformat(),
-            },
-        )
-        return published_metadata
+        return {
+            **self.metadata,
+            'publishedBy': self.published_by(now),
+            'datePublished': now.isoformat(),
+        }
 
     def publish(self):
         """

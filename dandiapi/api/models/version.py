@@ -30,7 +30,7 @@ def _get_default_version() -> str:
     return Version.make_version()
 
 
-class Version(TimeStampedModel):
+class Version(PublishableMetadataMixin, TimeStampedModel):
     VERSION_REGEX = r'(0\.\d{6}\.\d{4})|draft'
 
     class Status(models.TextChoices):
@@ -155,21 +155,18 @@ class Version(TimeStampedModel):
         # Create the published model
         published_version = Version(
             dandiset=self.dandiset,
+            name=self.name,
             metadata=self.metadata,
             status=Version.Status.VALID,
         )
 
         now = datetime.datetime.utcnow()
         # Recompute the metadata and inject the publishedBy and datePublished fields
-        published_metadata, _ = VersionMetadata.objects.get_or_create(
-            name=self.metadata.name,
-            metadata={
-                **published_version._populate_metadata(version_with_assets=self),
-                'publishedBy': self.metadata.published_by(now),
-                'datePublished': now.isoformat(),
-            },
-        )
-        published_version.metadata = published_metadata
+        published_version.metadata = {
+            **published_version._populate_metadata(version_with_assets=self),
+            'publishedBy': self.published_by(now),
+            'datePublished': now.isoformat(),
+        }
 
         return published_version
 
