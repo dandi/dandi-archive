@@ -8,11 +8,9 @@ import faker
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
-    AssetMetadata,
     Dandiset,
     Upload,
     Version,
-    VersionMetadata,
 )
 
 
@@ -50,9 +48,12 @@ class DandisetFactory(factory.django.DjangoModelFactory):
         model = Dandiset
 
 
-class VersionMetadataFactory(factory.django.DjangoModelFactory):
+class BaseVersionFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = VersionMetadata
+        abstract = True
+
+    dandiset = factory.SubFactory(DandisetFactory)
+    name = factory.Faker('sentence')
 
     @factory.lazy_attribute
     def metadata(self):
@@ -68,16 +69,6 @@ class VersionMetadataFactory(factory.django.DjangoModelFactory):
             if key in metadata:
                 del metadata[key]
         return metadata
-
-    name = factory.Faker('sentence')
-
-
-class BaseVersionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        abstract = True
-
-    dandiset = factory.SubFactory(DandisetFactory)
-    metadata = factory.SubFactory(VersionMetadataFactory)
 
 
 class DraftVersionFactory(BaseVersionFactory):
@@ -119,9 +110,12 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         return len(self.blob.read())
 
 
-class AssetMetadataFactory(factory.django.DjangoModelFactory):
+class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = AssetMetadata
+        model = Asset
+
+    path = factory.Faker('file_path', extension='nwb')
+    blob = factory.SubFactory(AssetBlobFactory)
 
     @factory.lazy_attribute
     def metadata(self):
@@ -135,15 +129,6 @@ class AssetMetadataFactory(factory.django.DjangoModelFactory):
             if key in metadata:
                 del metadata[key]
         return metadata
-
-
-class DraftAssetFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Asset
-
-    path = factory.Faker('file_path', extension='nwb')
-    metadata = factory.SubFactory(AssetMetadataFactory)
-    blob = factory.SubFactory(AssetBlobFactory)
 
 
 class PublishedAssetFactory(DraftAssetFactory):
