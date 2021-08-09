@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from guardian.shortcuts import assign_perm
 import pytest
@@ -31,9 +32,9 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
 
 @pytest.mark.django_db
-def test_draft_version_metadata_computed(draft_version, version_metadata):
-    original_metadata = version_metadata.metadata
-    draft_version.metadata = version_metadata
+def test_draft_version_metadata_computed(draft_version):
+    original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    draft_version.metadata = original_metadata
 
     # Save the version to add computed properties to the metadata
     draft_version.save()
@@ -46,7 +47,7 @@ def test_draft_version_metadata_computed(draft_version, version_metadata):
                 f'/versions/draft/assets/'
             )
         ],
-        'name': version_metadata.name,
+        'name': draft_version.name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': draft_version.version,
         'id': f'DANDI:{draft_version.dandiset.identifier}/{draft_version.version}',
@@ -67,9 +68,9 @@ def test_draft_version_metadata_computed(draft_version, version_metadata):
 
 
 @pytest.mark.django_db
-def test_published_version_metadata_computed(published_version, version_metadata):
-    original_metadata = version_metadata.metadata
-    published_version.metadata = version_metadata
+def test_published_version_metadata_computed(published_version):
+    original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    published_version.metadata = original_metadata
 
     # Save the version to add computed properties to the metadata
     published_version.save()
@@ -82,7 +83,7 @@ def test_published_version_metadata_computed(published_version, version_metadata
                 f'/{published_version.dandiset.identifier}/{published_version.version}/assets.yaml'
             )
         ],
-        'name': version_metadata.name,
+        'name': published_version.name,
         'identifier': f'DANDI:{published_version.dandiset.identifier}',
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',

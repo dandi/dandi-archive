@@ -155,11 +155,14 @@ def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_facto
 
 
 @pytest.mark.django_db
-def test_asset_populate_metadata(draft_asset_factory, asset_metadata):
-    raw_metadata = asset_metadata.metadata
+def test_asset_populate_metadata(draft_asset_factory):
+    raw_metadata = {
+        'foo': 'bar',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+    }
 
     # This should trigger _populate_metadata to inject all the computed metadata fields
-    asset = draft_asset_factory(metadata=asset_metadata)
+    asset = draft_asset_factory(metadata=raw_metadata)
 
     download_url = 'https://api.dandiarchive.org' + reverse(
         'asset-direct-download',
