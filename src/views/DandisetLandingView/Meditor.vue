@@ -157,9 +157,9 @@ import {
 
 import jsYaml from 'js-yaml';
 
-import VJsf from '@mvandenburgh/vjsf/lib/VJsf';
-import '@mvandenburgh/vjsf/lib/deps/third-party';
-import '@mvandenburgh/vjsf/lib/VJsf.css';
+import VJsf from '@koumoul/vjsf/lib/VJsf';
+import '@koumoul/vjsf/lib/deps/third-party';
+import '@koumoul/vjsf/lib/VJsf.css';
 
 import { publishRest } from '@/rest';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
@@ -230,7 +230,7 @@ export default defineComponent({
 
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
-      disablePrefilledArrays: true,
+      autoFixArrayItems: false,
       disableAll: props.readonly,
     }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
