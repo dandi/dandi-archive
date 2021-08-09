@@ -2,12 +2,11 @@
 
 import django.contrib.postgres.indexes
 from django.db import migrations, models
-from django.db.migrations.operations.fields import RemoveField
 
 
 def migrate_metadata(apps, schema_editor):
-    Version = apps.get_model('api', 'Version')
-    Asset = apps.get_model('api', 'Asset')
+    Version = apps.get_model('api', 'Version')  # noqa: N806
+    Asset = apps.get_model('api', 'Asset')  # noqa: N806
 
     versions = Version.objects.all()
     for version in versions:

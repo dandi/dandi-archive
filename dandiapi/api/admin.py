@@ -1,13 +1,7 @@
 from django.contrib import admin
 from guardian.admin import GuardedModelAdmin
 
-from dandiapi.api.models import (
-    Asset,
-    AssetBlob,
-    Dandiset,
-    Upload,
-    Version,
-)
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
 
 
 @admin.register(Dandiset)

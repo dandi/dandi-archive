@@ -5,13 +5,7 @@ from django.contrib.auth.models import User
 import factory
 import faker
 
-from dandiapi.api.models import (
-    Asset,
-    AssetBlob,
-    Dandiset,
-    Upload,
-    Version,
-)
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):
