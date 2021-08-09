@@ -230,7 +230,7 @@ export default defineComponent({
 
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
-      disablePrefilledArrays: true,
+      autoFixArrayItems: false,
       disableAll: props.readonly,
     }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
