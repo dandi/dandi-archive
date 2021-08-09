@@ -4,11 +4,9 @@ from guardian.admin import GuardedModelAdmin
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
-    AssetMetadata,
     Dandiset,
     Upload,
     Version,
-    VersionMetadata,
 )
 
 
@@ -16,12 +14,6 @@ from dandiapi.api.models import (
 class DandisetAdmin(GuardedModelAdmin):
     list_display = ['identifier', 'modified', 'created']
     readonly_fields = ['identifier', 'created']
-
-
-@admin.register(VersionMetadata)
-class VersionMetadataAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'metadata', 'references', 'modified', 'created']
-    list_display_links = ['id', 'name', 'metadata']
 
 
 class AssetInline(admin.TabularInline):
@@ -39,12 +31,6 @@ class VersionAdmin(admin.ModelAdmin):
 class AssetBlobAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
     list_display_links = ['id', 'blob_id']
-
-
-@admin.register(AssetMetadata)
-class AssetMetadataAdmin(admin.ModelAdmin):
-    list_display = ['id', 'metadata', 'references', 'modified', 'created']
-    list_display_links = ['id', 'metadata']
 
 
 class AssetBlobInline(admin.TabularInline):
