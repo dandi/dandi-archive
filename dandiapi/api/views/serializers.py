@@ -52,7 +52,7 @@ class DandisetSerializer(serializers.ModelSerializer):
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VersionMetadata
+        model = Version
         fields = ['metadata', 'name']
         # By default, validators contains a single UniqueTogether constraint.
         # This will fail serialization if the version metadata already exists,
@@ -117,12 +117,6 @@ class AssetBlobSerializer(serializers.ModelSerializer):
             'sha256',
             'size',
         ]
-
-
-class AssetMetadataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssetMetadata
-        fields = ['metadata']
 
 
 class AssetValidationSerializer(serializers.ModelSerializer):
