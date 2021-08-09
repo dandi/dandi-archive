@@ -182,11 +182,6 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if 'path' not in metadata:
             return Response('No path specified in metadata.', status=400)
         path = metadata['path']
-        # Strip away any computed fields
-        metadata = Asset.strip_metadata(metadata)
-        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
-        if created:
-            asset_metadata.save()
 
         # Check if there are already any assets with the same path
         if version.assets.filter(path=path).exists():
@@ -195,10 +190,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 status=status.HTTP_409_CONFLICT,
             )
 
+        # Strip away any computed fields
+        metadata = Asset.strip_metadata(metadata)
+
         asset = Asset(
             path=path,
             blob=asset_blob,
-            metadata=asset_metadata,
+            metadata=metadata,
         )
         asset.save()
         version.assets.add(asset)
@@ -252,11 +250,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         path = metadata['path']
         # Strip away any computed fields
         metadata = Asset.strip_metadata(metadata)
-        asset_metadata, created = AssetMetadata.objects.get_or_create(metadata=metadata)
-        if created:
-            asset_metadata.save()
 
-        if asset_metadata == old_asset.metadata and asset_blob == old_asset.blob:
+        if metadata == old_asset.metadata and asset_blob == old_asset.blob:
             # No changes, don't create a new asset
             new_asset = old_asset
         else:
@@ -276,7 +271,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 new_asset = Asset(
                     path=path,
                     blob=asset_blob,
-                    metadata=asset_metadata,
+                    metadata=metadata,
                     previous=old_asset,
                 )
                 new_asset.save()
