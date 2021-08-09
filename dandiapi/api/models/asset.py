@@ -121,7 +121,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         blob_url = self.blob.s3_url
 
         metadata = {
-            **self.metadata.metadata,
+            **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),

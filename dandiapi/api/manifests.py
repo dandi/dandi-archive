@@ -73,7 +73,7 @@ def _write_manifest_file(path: str, metadata, logger):
 def write_dandiset_jsonld(version: Version, logger=None):
     _write_manifest_file(
         dandiset_jsonld_path(version),
-        JSONRenderer().render(version.metadata.metadata),
+        JSONRenderer().render(version.metadata),
         logger,
     )
 
@@ -81,7 +81,7 @@ def write_dandiset_jsonld(version: Version, logger=None):
 def write_assets_jsonld(version: Version, logger=None):
     _write_manifest_file(
         assets_jsonld_path(version),
-        JSONRenderer().render([asset.metadata.metadata for asset in version.assets.all()]),
+        JSONRenderer().render([asset.metadata for asset in version.assets.all()]),
         logger,
     )
 
@@ -89,7 +89,7 @@ def write_assets_jsonld(version: Version, logger=None):
 def write_dandiset_yaml(version: Version, logger=None):
     _write_manifest_file(
         dandiset_yaml_path(version),
-        YAMLRenderer().render(version.metadata.metadata),
+        YAMLRenderer().render(version.metadata),
         logger,
     )
 
@@ -97,7 +97,7 @@ def write_dandiset_yaml(version: Version, logger=None):
 def write_assets_yaml(version: Version, logger=None):
     _write_manifest_file(
         assets_yaml_path(version),
-        YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()]),
+        YAMLRenderer().render([asset.metadata for asset in version.assets.all()]),
         logger,
     )
 
@@ -107,10 +107,10 @@ def write_collection_jsonld(version: Version, logger=None):
         collection_jsonld_path(version),
         JSONRenderer().render(
             {
-                '@context': version.metadata.metadata['@context'],
-                'id': version.metadata.metadata['id'],
+                '@context': version.metadata['@context'],
+                'id': version.metadata['id'],
                 '@type': 'prov:Collection',
-                'hasMember': [asset.metadata.metadata['id'] for asset in version.assets.all()],
+                'hasMember': [asset.metadata['id'] for asset in version.assets.all()],
             }
         ),
         logger,

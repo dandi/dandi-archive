@@ -230,7 +230,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             try:
                 summary = aggregate_assets_summary(
                     [
-                        asset.metadata.metadata
+                        asset.metadata
                         for asset in version_with_assets.assets.select_related('metadata').all()
                     ]
                 )
@@ -243,7 +243,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         from dandiapi.api.manifests import manifest_location
 
         metadata = {
-            **self.metadata.metadata,
+            **self.metadata,
             'manifestLocation': manifest_location(self),
             'name': self.metadata.name,
             'identifier': f'DANDI:{self.dandiset.identifier}',

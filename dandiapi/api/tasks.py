@@ -127,7 +127,7 @@ def validate_version_metadata(version_id: int) -> None:
 
     try:
         publish_version = version.publish_version
-        metadata = publish_version.metadata.metadata
+        metadata = publish_version.metadata
 
         # Inject a dummy DOI so the metadata is valid
         metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'

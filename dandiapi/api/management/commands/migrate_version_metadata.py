@@ -13,7 +13,7 @@ def migrate_version_metadata(to_version: str):
     for version in Version.objects.filter(version='draft'):
         print(f'Migrating {version.dandiset.identifier}/{version.version}')
 
-        metadata = version.metadata.metadata
+        metadata = version.metadata
         # If there is no schemaVersion, assume the most recent
         if 'schemaVersion' not in metadata:
             metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION

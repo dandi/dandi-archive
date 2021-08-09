@@ -39,7 +39,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     )
     def retrieve(self, request, **kwargs):
         version = self.get_object()
-        return Response(version.metadata.metadata, status=status.HTTP_200_OK)
+        return Response(version.metadata, status=status.HTTP_200_OK)
 
     # TODO clean up this action
     # Originally retrieve() returned this, but the API specification was modified so that

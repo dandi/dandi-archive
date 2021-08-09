@@ -228,7 +228,7 @@ def test_dandiset_rest_create(api_client, user):
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -316,7 +316,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -418,7 +418,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (

@@ -92,7 +92,7 @@ def asset_download_view(request, asset_id):
 @api_view(['GET', 'HEAD'])
 def asset_metadata_view(request, asset_id):
     asset = get_object_or_404(Asset, asset_id=asset_id)
-    return JsonResponse(asset.metadata.metadata)
+    return JsonResponse(asset.metadata)
 
 
 class AssetRequestSerializer(serializers.Serializer):
@@ -132,7 +132,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        return Response(asset.metadata.metadata, status=status.HTTP_200_OK)
+        return Response(asset.metadata, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer()},

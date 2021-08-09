@@ -7,7 +7,7 @@ from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 def extract_contact_person(version):
     """Extract a version's contact person from its metadata."""
     # TODO: move this logic into dandischema since it is schema-dependant
-    contributors = version.metadata.metadata.get('contributor')
+    contributors = version.metadata.get('contributor')
     if contributors is not None:
         for contributor in contributors:
             name = contributor.get('name')
