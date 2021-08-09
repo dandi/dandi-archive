@@ -245,7 +245,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         metadata = {
             **self.metadata,
             'manifestLocation': manifest_location(self),
-            'name': self.metadata.name,
+            'name': self.name,
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',

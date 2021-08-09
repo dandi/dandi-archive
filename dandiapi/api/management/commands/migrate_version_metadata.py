@@ -27,7 +27,7 @@ def migrate_version_metadata(to_version: str):
 
         new: VersionMetadata
         new, created = VersionMetadata.objects.get_or_create(
-            name=version.metadata.name,
+            name=version.name,
             metadata=metanew,
         )
         if created:

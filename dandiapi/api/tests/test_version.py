@@ -475,7 +475,7 @@ def test_version_rest_update(api_client, user, draft_version):
     assert start_time < end_time
 
     assert draft_version.metadata == saved_metadata
-    assert draft_version.metadata.name == new_name
+    assert draft_version.name == new_name
 
 
 @pytest.mark.django_db
@@ -539,7 +539,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
 
     draft_version.refresh_from_db()
     assert draft_version.metadata == saved_metadata
-    assert draft_version.metadata.name == new_name
+    assert draft_version.name == new_name
 
 
 @pytest.mark.django_db
