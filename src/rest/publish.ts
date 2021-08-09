@@ -11,10 +11,16 @@ const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
   : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
 
 const client = axios.create({ baseURL: publishApiRoot });
-const oauthClient = new OAuthClient(
-  process.env.VUE_APP_OAUTH_API_ROOT,
-  process.env.VUE_APP_OAUTH_CLIENT_ID,
-);
+
+let oauthClient: OAuthClient|null;
+try {
+  oauthClient = new OAuthClient(
+    process.env.VUE_APP_OAUTH_API_ROOT,
+    process.env.VUE_APP_OAUTH_CLIENT_ID,
+  );
+} catch (e) {
+  oauthClient = null;
+}
 
 const publishRest = new Vue({
   data(): { client: AxiosInstance, user: User | null } {
@@ -25,6 +31,9 @@ const publishRest = new Vue({
   },
   methods: {
     async restoreLogin() {
+      if (!oauthClient) {
+        return;
+      }
       await oauthClient.maybeRestoreLogin();
       if (!oauthClient.isLoggedIn) {
         return;
@@ -44,11 +53,15 @@ const publishRest = new Vue({
       }
     },
     async login() {
-      await oauthClient.redirectToLogin();
+      if (oauthClient) {
+        await oauthClient.redirectToLogin();
+      }
     },
     async logout() {
-      await oauthClient.logout();
-      this.user = null;
+      if (oauthClient) {
+        await oauthClient.logout();
+        this.user = null;
+      }
     },
     async me(): Promise<User> {
       const { data } = await client.get('users/me/');
@@ -193,7 +206,7 @@ const publishRest = new Vue({
 client.interceptors.request.use((config) => ({
   ...config,
   headers: {
-    ...oauthClient.authHeaders,
+    ...oauthClient?.authHeaders,
     ...config.headers,
   },
 }));

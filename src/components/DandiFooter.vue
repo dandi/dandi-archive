@@ -1,6 +1,7 @@
 <script>
 import { copyToClipboard } from '@/utils';
 import { dandiAboutUrl } from '@/utils/constants';
+import { cookiesEnabled } from '@/rest';
 
 import CookieLaw from 'vue-cookie-law';
 
@@ -12,6 +13,8 @@ export default {
     dandiAboutUrl,
   }),
   computed: {
+    cookiesEnabled,
+
     version() {
       return process.env.VUE_APP_VERSION;
     },
@@ -27,7 +30,9 @@ export default {
   methods: {
     versionClick() {
       this.copied = true;
-      setTimeout(() => { this.copied = false; }, 1000);
+      setTimeout(() => {
+        this.copied = false;
+      }, 1000);
       copyToClipboard(this.version);
     },
   },
@@ -39,7 +44,14 @@ export default {
     <v-container>
       <cookie-law theme="blood-orange">
         <div slot="message">
-          We use cookies to ensure you get the best experience on DANDI.
+          <span
+            v-if="cookiesEnabled"
+          >We use cookies to ensure you get the best experience on
+            DANDI.</span>
+          <span
+            v-else
+          >We noticed you're blocking cookies - note that certain aspects of
+            the site may not work.</span>
         </div>
       </cookie-law>
       <v-row>
