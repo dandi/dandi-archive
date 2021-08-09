@@ -132,13 +132,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             **metadata,
         }
 
-        version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=name,
-            metadata=metadata,
-        )
-        if created:
-            version_metadata.save()
-
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
             if identifier and not request.user.is_superuser:
@@ -177,7 +170,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         assign_perm('owner', request.user, dandiset)
 
         # Create new draft version
-        version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
+        version = Version(dandiset=dandiset, name=name, metadata=metadata, version='draft')
         version.save()
 
         validate_version_metadata.delay(version.id)
