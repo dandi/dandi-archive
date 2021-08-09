@@ -80,16 +80,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         # Strip away any computed fields
         metadata = Version.strip_metadata(metadata)
 
-        version_metadata: VersionMetadata
-        version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=name,
-            metadata=metadata,
-        )
-
-        if created:
-            version_metadata.save()
-
-        version.metadata = version_metadata
+        version.name = name
+        version.metadata = metadata
         version.save()
 
         validate_version_metadata.delay(version.id)
