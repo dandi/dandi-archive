@@ -128,7 +128,7 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row v-if="!readonly">
       <v-subheader>Click a field below to edit it.</v-subheader>
     </v-row>
     <v-row class="px-2">
