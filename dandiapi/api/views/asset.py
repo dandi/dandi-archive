@@ -25,7 +25,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,

@@ -9,7 +9,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api import doi
-from dandiapi.api.models import Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (

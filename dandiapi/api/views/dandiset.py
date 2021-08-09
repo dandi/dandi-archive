@@ -19,7 +19,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
-from dandiapi.api.models import Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.tasks import validate_version_metadata
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (

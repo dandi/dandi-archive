@@ -1,7 +1,7 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
-from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 
 
 def extract_contact_person(version):
