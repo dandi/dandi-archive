@@ -104,13 +104,24 @@ def test_published_version_metadata_computed(published_version):
 
 
 @pytest.mark.django_db
-def test_version_metadata_citation(version):
-    name = version.metadata['name'].rstrip('.')
+def test_version_metadata_citation_draft(draft_version):
+    name = draft_version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
     assert (
-        version.metadata['citation']
-        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+        draft_version.metadata['citation']
+        == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
+    )
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_published(published_version):
+    name = published_version.metadata['name'].rstrip('.')
+    year = datetime.now().year
+    url = f'https://doi.org/{published_version.doi}'
+    assert (
+        published_version.metadata['citation']
+        == f'{name} ({year}). (Version {published_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
     )
 
 
