@@ -75,18 +75,7 @@ class AssetBlob(TimeStampedModel):
         return self.blob.name
 
 
-class AssetMetadata(PublishableMetadataMixin, TimeStampedModel):
-    metadata = models.JSONField(blank=True, unique=True, default=dict)
-
-    @property
-    def references(self) -> int:
-        return self.assets.count()
-
-    def __str__(self) -> str:
-        return str(self.metadata)
-
-
-class Asset(TimeStampedModel):
+class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
     class Status(models.TextChoices):
@@ -98,7 +87,7 @@ class Asset(TimeStampedModel):
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
-    metadata = models.ForeignKey(AssetMetadata, related_name='assets', on_delete=models.CASCADE)
+    metadata = models.JSONField(blank=True, default=dict)
     versions = models.ManyToManyField(Version, related_name='assets')
     status = models.CharField(
         max_length=10,
@@ -132,7 +121,7 @@ class Asset(TimeStampedModel):
         blob_url = self.blob.s3_url
 
         metadata = {
-            **self.metadata.metadata,
+            **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),
@@ -152,14 +141,11 @@ class Asset(TimeStampedModel):
         """Generate the metadata of this asset as if it were being published."""
         now = datetime.datetime.utcnow()
         # Inject the publishedBy and datePublished fields
-        published_metadata, _ = AssetMetadata.objects.get_or_create(
-            metadata={
-                **self.metadata.metadata,
-                'publishedBy': self.metadata.published_by(now),
-                'datePublished': now.isoformat(),
-            },
-        )
-        return published_metadata
+        return {
+            **self.metadata,
+            'publishedBy': self.published_by(now),
+            'datePublished': now.isoformat(),
+        }
 
     def publish(self):
         """
@@ -173,11 +159,7 @@ class Asset(TimeStampedModel):
         self.published = True
 
     def save(self, *args, **kwargs):
-        metadata = self._populate_metadata()
-        new, created = AssetMetadata.objects.get_or_create(metadata=metadata)
-        if created:
-            new.save()
-        self.metadata = new
+        self.metadata = self._populate_metadata()
         super().save(*args, **kwargs)
 
     @classmethod

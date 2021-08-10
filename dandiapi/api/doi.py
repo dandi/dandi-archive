@@ -20,7 +20,7 @@ def _generate_doi_data(version: Version):
     dandiset_id = version.dandiset.identifier
     version_id = version.version
     doi = f'{prefix}/dandi.{dandiset_id}/{version_id}'
-    metadata = version.metadata.metadata
+    metadata = version.metadata
     metadata['doi'] = doi
     return (doi, to_datacite(metadata, publish=publish))
 

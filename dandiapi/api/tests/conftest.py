@@ -12,7 +12,6 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 from .factories import (
     AssetBlobFactory,
-    AssetMetadataFactory,
     DandisetFactory,
     DraftAssetFactory,
     DraftVersionFactory,
@@ -21,7 +20,6 @@ from .factories import (
     SocialAccountFactory,
     UploadFactory,
     UserFactory,
-    VersionMetadataFactory,
 )
 
 if TYPE_CHECKING:
@@ -32,7 +30,6 @@ if TYPE_CHECKING:
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
-register(AssetMetadataFactory)
 register(DandisetFactory)
 register(PublishedVersionFactory, _name='published_version')
 register(DraftVersionFactory, _name='draft_version')
@@ -41,7 +38,6 @@ register(DraftVersionFactory, _name='draft_version')
 register(UserFactory)
 register(SocialAccountFactory)
 register(UploadFactory)
-register(VersionMetadataFactory)
 
 
 @pytest.fixture(params=[DraftAssetFactory, PublishedAssetFactory], ids=['draft', 'published'])

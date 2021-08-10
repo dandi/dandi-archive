@@ -99,7 +99,7 @@ def test_asset_s3_url(asset_blob):
 def test_publish_asset(draft_asset: Asset):
     draft_asset_id = draft_asset.asset_id
     draft_blob = draft_asset.blob
-    draft_metadata = draft_asset.metadata.metadata
+    draft_metadata = draft_asset.metadata
     draft_asset.publish()
     draft_asset.save()
 
@@ -107,7 +107,7 @@ def test_publish_asset(draft_asset: Asset):
     published_asset = draft_asset
 
     assert published_asset.blob == draft_blob
-    assert published_asset.metadata.metadata == {
+    assert published_asset.metadata == {
         **draft_metadata,
         'id': f'dandiasset:{draft_asset_id}',
         'publishedBy': {
@@ -155,18 +155,21 @@ def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_facto
 
 
 @pytest.mark.django_db
-def test_asset_populate_metadata(draft_asset_factory, asset_metadata):
-    raw_metadata = asset_metadata.metadata
+def test_asset_populate_metadata(draft_asset_factory):
+    raw_metadata = {
+        'foo': 'bar',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+    }
 
     # This should trigger _populate_metadata to inject all the computed metadata fields
-    asset = draft_asset_factory(metadata=asset_metadata)
+    asset = draft_asset_factory(metadata=raw_metadata)
 
     download_url = 'https://api.dandiarchive.org' + reverse(
         'asset-direct-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     blob_url = asset.blob.s3_url
-    assert asset.metadata.metadata == {
+    assert asset.metadata == {
         **raw_metadata,
         'id': f'dandiasset:{asset.asset_id}',
         'path': asset.path,
@@ -212,7 +215,7 @@ def test_asset_rest_retrieve(api_client, version, asset):
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
         ).data
-        == asset.metadata.metadata
+        == asset.metadata
     )
 
 
@@ -228,7 +231,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
         ).data
-        == asset.metadata.metadata
+        == asset.metadata
     )
 
 
@@ -286,7 +289,7 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset.metadata.metadata,
+        'metadata': new_asset.metadata,
     }
     for key in metadata:
         assert resp['metadata'][key] == metadata[key]
@@ -356,7 +359,7 @@ def test_asset_create_published_version(api_client, user, published_version, ass
         f'/api/dandisets/{published_version.dandiset.identifier}'
         f'/versions/{published_version.version}/assets/',
         {
-            'metadata': asset.metadata.metadata,
+            'metadata': asset.metadata,
             'blob_id': asset.blob.blob_id,
         },
         format='json',
@@ -420,7 +423,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         'size': asset_blob.size,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset.metadata.metadata,
+        'metadata': new_asset.metadata,
     }
     for key in new_metadata:
         assert resp['metadata'][key] == new_metadata[key]
@@ -445,7 +448,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
 @pytest.mark.django_db
 def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
     draft_version.assets.add(asset)
-    new_metadata = asset.metadata.metadata
+    new_metadata = asset.metadata
     new_metadata['new_field'] = 'new_value'
     assert (
         api_client.put(
@@ -463,7 +466,7 @@ def test_asset_rest_update_not_an_owner(api_client, user, draft_version, asset):
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
 
-    new_metadata = asset.metadata.metadata
+    new_metadata = asset.metadata
     new_metadata['new_field'] = 'new_value'
     assert (
         api_client.put(
@@ -482,7 +485,7 @@ def test_asset_rest_update_published_version(api_client, user, published_version
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
 
-    new_metadata = asset.metadata.metadata
+    new_metadata = asset.metadata
     new_metadata['new_field'] = 'new_value'
     resp = api_client.put(
         f'/api/dandisets/{published_version.dandiset.identifier}/'
@@ -507,7 +510,7 @@ def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_fa
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{old_asset.asset_id}/',
-        {'metadata': existing_asset.metadata.metadata, 'blob_id': existing_asset.blob.blob_id},
+        {'metadata': existing_asset.metadata, 'blob_id': existing_asset.blob.blob_id},
         format='json',
     )
     assert resp.status_code == 409
@@ -637,7 +640,4 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
-    assert (
-        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content)
-        == asset.metadata.metadata
-    )
+    assert json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.metadata

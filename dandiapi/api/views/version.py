@@ -9,7 +9,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api import doi
-from dandiapi.api.models import Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -39,7 +39,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     )
     def retrieve(self, request, **kwargs):
         version = self.get_object()
-        return Response(version.metadata.metadata, status=status.HTTP_200_OK)
+        return Response(version.metadata, status=status.HTTP_200_OK)
 
     # TODO clean up this action
     # Originally retrieve() returned this, but the API specification was modified so that
@@ -80,16 +80,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         # Strip away any computed fields
         metadata = Version.strip_metadata(metadata)
 
-        version_metadata: VersionMetadata
-        version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=name,
-            metadata=metadata,
-        )
-
-        if created:
-            version_metadata.save()
-
-        version.metadata = version_metadata
+        version.name = name
+        version.metadata = metadata
         version.save()
 
         validate_version_metadata.delay(version.id)

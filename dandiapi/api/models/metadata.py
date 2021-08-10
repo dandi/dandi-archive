@@ -8,7 +8,8 @@ class PublishableMetadataMixin:
             'id': uuid4().urn,
             'name': 'DANDI publish',
             'startDate': now.isoformat(),
-            # TODO endDate needs to be defined before publish is complete
+            # TODO https://github.com/dandi/dandi-api/issues/465
+            # endDate needs to be defined before publish is complete
             'endDate': now.isoformat(),
             'wasAssociatedWith': [
                 {

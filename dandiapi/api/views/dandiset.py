@@ -19,7 +19,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
-from dandiapi.api.models import Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.tasks import validate_version_metadata
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -70,7 +70,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
-    search_fields = ['versions__metadata__metadata']
+    search_fields = ['versions__metadata']
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
@@ -132,13 +132,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             **metadata,
         }
 
-        version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=name,
-            metadata=metadata,
-        )
-        if created:
-            version_metadata.save()
-
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
             if identifier and not request.user.is_superuser:
@@ -177,7 +170,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         assign_perm('owner', request.user, dandiset)
 
         # Create new draft version
-        version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
+        version = Version(dandiset=dandiset, name=name, metadata=metadata, version='draft')
         version.save()
 
         validate_version_metadata.delay(version.id)

@@ -223,12 +223,12 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.metadata.name == name
+    assert dandiset.draft_version.name == name
 
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -311,12 +311,12 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.metadata.name == name
+    assert dandiset.draft_version.name == name
 
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -413,12 +413,12 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.metadata.name == name
+    assert dandiset.draft_version.name == name
 
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (

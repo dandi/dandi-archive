@@ -25,30 +25,12 @@ from dandischema.metadata import aggregate_assets_summary
 logger = logging.getLogger(__name__)
 
 
-class VersionMetadata(PublishableMetadataMixin, TimeStampedModel):
-    metadata = models.JSONField(default=dict)
-    name = models.CharField(max_length=300)
-
-    class Meta:
-        indexes = [
-            HashIndex(fields=['metadata']),
-            HashIndex(fields=['name']),
-        ]
-
-    @property
-    def references(self) -> int:
-        return self.versions.count()
-
-    def __str__(self) -> str:
-        return self.name
-
-
 def _get_default_version() -> str:
     # This cannot be a lambda, as migrations cannot serialize those
     return Version.make_version()
 
 
-class Version(TimeStampedModel):
+class Version(PublishableMetadataMixin, TimeStampedModel):
     VERSION_REGEX = r'(0\.\d{6}\.\d{4})|draft'
 
     class Status(models.TextChoices):
@@ -59,7 +41,8 @@ class Version(TimeStampedModel):
         PUBLISHED = 'Published'
 
     dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
-    metadata = models.ForeignKey(VersionMetadata, related_name='versions', on_delete=models.CASCADE)
+    name = models.CharField(max_length=300)
+    metadata = models.JSONField(blank=True, default=dict)
     version = models.CharField(
         max_length=13,
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
@@ -76,14 +59,14 @@ class Version(TimeStampedModel):
 
     class Meta:
         unique_together = ['dandiset', 'version']
+        indexes = [
+            HashIndex(fields=['metadata']),
+            HashIndex(fields=['name']),
+        ]
 
     @property
     def asset_count(self):
         return self.assets.count()
-
-    @property
-    def name(self):
-        return self.metadata.name
 
     @property
     def size(self):
@@ -172,21 +155,18 @@ class Version(TimeStampedModel):
         # Create the published model
         published_version = Version(
             dandiset=self.dandiset,
+            name=self.name,
             metadata=self.metadata,
             status=Version.Status.VALID,
         )
 
         now = datetime.datetime.utcnow()
         # Recompute the metadata and inject the publishedBy and datePublished fields
-        published_metadata, _ = VersionMetadata.objects.get_or_create(
-            name=self.metadata.name,
-            metadata={
-                **published_version._populate_metadata(version_with_assets=self),
-                'publishedBy': self.metadata.published_by(now),
-                'datePublished': now.isoformat(),
-            },
-        )
-        published_version.metadata = published_metadata
+        published_version.metadata = {
+            **published_version._populate_metadata(version_with_assets=self),
+            'publishedBy': self.published_by(now),
+            'datePublished': now.isoformat(),
+        }
 
         return published_version
 
@@ -249,10 +229,7 @@ class Version(TimeStampedModel):
         if version_with_assets.id:
             try:
                 summary = aggregate_assets_summary(
-                    [
-                        asset.metadata.metadata
-                        for asset in version_with_assets.assets.select_related('metadata').all()
-                    ]
+                    [asset['metadata'] for asset in version_with_assets.assets.values('metadata')]
                 )
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
@@ -263,9 +240,9 @@ class Version(TimeStampedModel):
         from dandiapi.api.manifests import manifest_location
 
         metadata = {
-            **self.metadata.metadata,
+            **self.metadata,
             'manifestLocation': manifest_location(self),
-            'name': self.metadata.name,
+            'name': self.name,
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
@@ -284,16 +261,7 @@ class Version(TimeStampedModel):
         return metadata
 
     def save(self, *args, **kwargs):
-        metadata = self._populate_metadata()
-        new, created = VersionMetadata.objects.get_or_create(
-            name=self.metadata.name,
-            metadata=metadata,
-        )
-
-        if created:
-            new.save()
-
-        self.metadata = new
+        self.metadata = self._populate_metadata()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
