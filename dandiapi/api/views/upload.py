@@ -77,8 +77,12 @@ def blob_read_view(request: Request) -> HttpResponseBase:
     """Fetch an existing asset blob by digest, if it exists."""
     request_serializer = DigestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    if request_serializer.validated_data['algorithm'] != 'dandi:dandi-etag':
-        return Response('Unsupported Digest Algorithm', status=400)
+    supported_digests = ('dandi:dandi-etag',)
+    if request_serializer.validated_data['algorithm'] not in supported_digests:
+        return Response(
+            f'Unsupported Digest Algorithm. Supported: {", ".join(supported_digests)}',
+            status=400
+        )
     etag = request_serializer.validated_data['value']
 
     asset_blob = get_object_or_404(AssetBlob, etag=etag)
