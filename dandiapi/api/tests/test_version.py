@@ -87,6 +87,7 @@ def test_published_version_metadata_computed(published_version):
         'identifier': f'DANDI:{published_version.dandiset.identifier}',
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
+        'doi': f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}',  # noqa: E501
         'url': (
             f'https://dandiarchive.org/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
@@ -132,10 +133,8 @@ def test_version_metadata_citation_no_contributors(version):
 
     name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata['citation']
-        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
@@ -149,10 +148,8 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
 
     name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata['citation']
-        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
@@ -163,11 +160,8 @@ def test_version_metadata_citation_contributor(version):
 
     name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata['citation']
-        == f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. '
-        f'DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
@@ -181,11 +175,9 @@ def test_version_metadata_citation_multiple_contributors(version):
 
     name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata['citation']
-        == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
-        f'DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
+        f'DANDI archive. '
     )
 
 

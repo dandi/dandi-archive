@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
@@ -75,6 +76,19 @@ class DraftVersionFactory(BaseVersionFactory):
 class PublishedVersionFactory(BaseVersionFactory):
     class Meta:
         model = Version
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        version: Version = super()._create(*args, **kwargs)
+        version.doi = f'10.80507/dandi.{version.dandiset.identifier}/{version.version}'
+        now = datetime.datetime.utcnow()
+        version.metadata = {
+            **version.metadata,
+            'publishedBy': version.published_by(now),
+            'datePublished': now.isoformat(),
+        }
+        version.save()
+        return version
 
 
 class AssetBlobFactory(factory.django.DjangoModelFactory):
