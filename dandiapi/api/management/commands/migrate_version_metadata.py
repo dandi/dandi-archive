@@ -2,7 +2,7 @@ from dandischema import migrate
 from django.conf import settings
 import djclick as click
 
-from dandiapi.api.models import Version, VersionMetadata
+from dandiapi.api.models import Version
 from dandiapi.api.tasks import validate_version_metadata
 
 
@@ -25,14 +25,7 @@ def migrate_version_metadata(to_version: str):
             print(e)
             continue
 
-        new: VersionMetadata
-        new, created = VersionMetadata.objects.get_or_create(
-            name=version.name,
-            metadata=metanew,
-        )
-        if created:
-            new.save()
-        version.metadata = new
+        version.metadata = metanew
         version.save()
 
         validate_version_metadata.delay(version.id)
