@@ -101,7 +101,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
         responses={200: DandisetDetailSerializer()},
-        manual_parameters=[DANDISET_PK_PARAM],
         operation_summary='Create a new dandiset.',
         operation_description='',
     )
