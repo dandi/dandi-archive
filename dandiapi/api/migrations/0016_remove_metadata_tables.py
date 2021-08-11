@@ -6,18 +6,24 @@ from django.db import migrations, models
 
 def migrate_metadata(apps, schema_editor):
     Version = apps.get_model('api', 'Version')  # noqa: N806
+    VersionMetadata = apps.get_model('api', 'VersionMetadata')  # noqa: N806
     Asset = apps.get_model('api', 'Asset')  # noqa: N806
+    AssetMetadata = apps.get_model('api', 'AssetMetadata')  # noqa: N806
 
-    versions = Version.objects.all()
-    for version in versions:
-        version.name = version.old_metadata.name
-        version.metadata = version.old_metadata.metadata
-    Version.objects.bulk_update(versions, ['name', 'metadata'])
+    moved_metadata = VersionMetadata.objects.filter(id=models.OuterRef('old_metadata')).values_list(
+        'metadata'
+    )[:1]
+    moved_name = VersionMetadata.objects.filter(id=models.OuterRef('old_metadata')).values_list(
+        'name'
+    )[:1]
+    Version.objects.update(
+        metadata=models.Subquery(moved_metadata), name=models.Subquery(moved_name)
+    )
 
-    assets = Asset.objects.all()
-    for asset in assets:
-        asset.metadata = asset.old_metadata.metadata
-    Asset.objects.bulk_update(assets, ['metadata'])
+    moved_metadata = AssetMetadata.objects.filter(id=models.OuterRef('old_metadata')).values_list(
+        'metadata'
+    )[:1]
+    Asset.objects.update(metadata=models.Subquery(moved_metadata))
 
 
 class Migration(migrations.Migration):
