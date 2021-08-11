@@ -174,7 +174,10 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def citation(cls, metadata):
         year = datetime.datetime.now().year
         name = metadata['name'].rstrip('.')
-        url = metadata['url']
+        if 'doi' in metadata:
+            url = f'https://doi.org/{metadata["doi"]}'
+        else:
+            url = metadata['url']
         version = metadata['version']
         # If we can't find any contributors, use this citation format
         citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI archive. {url}'
@@ -249,9 +252,9 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
             'assetsSummary': summary,
         }
-        metadata['citation'] = self.citation(metadata)
         if self.doi:
             metadata['doi'] = self.doi
+        metadata['citation'] = self.citation(metadata)
         if 'schemaVersion' in metadata:
             schema_version = metadata['schemaVersion']
             metadata['@context'] = (
