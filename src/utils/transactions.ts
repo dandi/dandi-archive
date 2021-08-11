@@ -128,15 +128,15 @@ export default class MeditorTransactionTracker {
     return this.transactions[this.transactionPointer].complex;
   }
 
-  areTransactionsAhead() {
+  areTransactionsAhead(): boolean {
     return this.transactionPointer < this.transactions.length - 1;
   }
 
-  areTransactionsBehind() {
+  areTransactionsBehind(): boolean {
     return this.transactionPointer > -1;
   }
 
-  isModified() {
+  isModified(): boolean {
     return this.transactionPointer > -1 || this.lostTransactions;
   }
 
