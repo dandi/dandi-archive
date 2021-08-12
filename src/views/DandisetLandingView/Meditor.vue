@@ -52,7 +52,7 @@
                   icon
                   color="secondary"
                   v-on="on"
-                  @click="closeEditor"
+                  @click="exitMeditor"
                 >
                   <v-icon>
                     mdi-arrow-left
@@ -65,17 +65,49 @@
               <template #activator="{ on }">
                 <v-btn
                   icon
-                  color="primary"
+                  :color="modified ? 'warning' : 'primary'"
                   :disabled="readonly"
                   v-on="on"
                   @click="save"
                 >
-                  <v-icon>
-                    mdi-content-save
-                  </v-icon>
+                  <v-icon
+                    v-text="modified ? 'mdi-content-save-alert' : 'mdi-content-save'"
+                  />
                 </v-btn>
               </template>
               <span>Save</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template #activator="{ on }">
+                <v-btn
+                  icon
+                  color="secondary"
+                  :disabled="disableUndo"
+                  v-on="on"
+                  @click="undoChange"
+                >
+                  <v-icon>
+                    mdi-undo
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Undo</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template #activator="{ on }">
+                <v-btn
+                  icon
+                  color="secondary"
+                  :disabled="disableRedo"
+                  v-on="on"
+                  @click="redoChange"
+                >
+                  <v-icon>
+                    mdi-redo
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Redo</span>
             </v-tooltip>
             <v-spacer />
             <v-tooltip bottom>
@@ -96,7 +128,7 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row v-if="!readonly">
       <v-subheader>Click a field below to edit it.</v-subheader>
     </v-row>
     <v-row class="px-2">
@@ -122,10 +154,12 @@
               v-model="complexModelValidation[propKey]"
             >
               <v-jsf
+                ref="complexRef"
                 :value="complexModel[propKey]"
                 :schema="complexSchema.properties[propKey]"
                 :options="CommonVJSFOptions"
                 @input="setComplexModelProp(propKey, $event)"
+                @change="complexFormListener"
               />
             </v-form>
           </v-card>
@@ -139,11 +173,46 @@
         v-model="basicModelValid"
       >
         <v-jsf
+          ref="basicRef"
           v-model="basicModel"
           :schema="basicSchema"
           :options="{...CommonVJSFOptions, hideReadOnly: true}"
+          @change="basicFormListener"
         />
       </v-form>
+    </v-row>
+    <v-row
+      v-if="exiting && modified"
+      justify="center"
+    >
+      <v-dialog
+        v-model="exiting"
+        max-width="290"
+      >
+        <v-card>
+          <v-card-title class="text-h5">
+            Warning
+          </v-card-title>
+          <v-card-text>You have unsaved changes. Would you still like to exit?</v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              color="green darken-1"
+              text
+              @click="exiting = false"
+            >
+              No
+            </v-btn>
+            <v-btn
+              color="green darken-1"
+              text
+              @click="closeEditor"
+            >
+              Yes
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-row>
   </v-container>
 </template>
@@ -152,7 +221,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import {
-  defineComponent, PropType, ref, computed,
+  defineComponent, PropType, ref, computed, nextTick,
 } from '@vue/composition-api';
 
 import jsYaml from 'js-yaml';
@@ -164,6 +233,7 @@ import '@koumoul/vjsf/lib/VJsf.css';
 import { publishRest } from '@/rest';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
+import MeditorTransactionTracker from '@/utils/transactions';
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
@@ -236,6 +306,52 @@ export default defineComponent({
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
     const id = computed(() => publishDandiset.value?.dandiset.identifier || null);
 
+    const basicRef: any = ref(null);
+    const complexRef: any = ref(null);
+
+    const TransactionTracker = new MeditorTransactionTracker(editorInterface);
+
+    const undoChange = () => {
+      // Undo the change and then trigger revalidation of the form. The return value of undo()
+      // indicates whether this was a basic or complex form change.
+      if (TransactionTracker.undo()) {
+        nextTick().then(() => complexRef.value.forEach((formRef: any) => formRef.validate()));
+      } else {
+        nextTick().then(() => basicRef.value.validate());
+      }
+    };
+
+    const redoChange = () => {
+      // Redo the change and then trigger revalidation of the form. The return value of redo()
+      // indicates whether this was a basic or complex form change.
+      if (TransactionTracker.redo()) {
+        nextTick().then(() => complexRef.value.forEach((formRef: any) => formRef.validate()));
+      } else {
+        nextTick().then(() => basicRef.value.validate());
+      }
+    };
+
+    const disableUndo = computed(
+      () => props.readonly || !TransactionTracker.areTransactionsBehind(),
+    );
+    const disableRedo = computed(
+      () => props.readonly || !TransactionTracker.areTransactionsAhead(),
+    );
+
+    const basicFormListener = () => TransactionTracker.add(basicModel.value, false);
+    const complexFormListener = () => TransactionTracker.add(complexModel, true);
+
+    const modified = computed(() => TransactionTracker.isModified());
+
+    const exiting = ref(false);
+    const exitMeditor = () => {
+      if (modified.value) {
+        exiting.value = true;
+        return;
+      }
+      closeEditor();
+    };
+
     async function save() {
       const dandiset = editorInterface.getModel();
 
@@ -248,7 +364,7 @@ export default defineComponent({
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
             await store.dispatch('dandiset/fetchPublishDandiset', { identifier: data.dandiset.identifier, version: data.version });
-            closeEditor();
+            TransactionTracker.reset();
           }, 500);
         }
       } catch (error) {
@@ -287,11 +403,15 @@ export default defineComponent({
       basicSchema,
       basicModel,
       basicModelValid,
+      basicRef,
+      basicFormListener,
 
       complexSchema,
       complexModel,
       complexModelValid,
       complexModelValidation,
+      complexRef,
+      complexFormListener,
 
       invalidPermissionSnackbar,
       renderField,
@@ -300,9 +420,20 @@ export default defineComponent({
       download,
       sectionButtonColor,
 
+      modified,
+      exiting,
+      exitMeditor,
+
+      undoChange,
+      redoChange,
+      disableUndo,
+      disableRedo,
+
       CommonVJSFOptions,
 
       setComplexModelProp,
+
+      TransactionTracker,
     };
   },
 });
