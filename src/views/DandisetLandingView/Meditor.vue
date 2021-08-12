@@ -91,7 +91,7 @@
                   </v-icon>
                 </v-btn>
               </template>
-              <span>Undo (CTRL-Z)</span>
+              <span>Undo</span>
             </v-tooltip>
             <v-tooltip bottom>
               <template #activator="{ on }">
@@ -107,7 +107,7 @@
                   </v-icon>
                 </v-btn>
               </template>
-              <span>Redo (CTRL-Y)</span>
+              <span>Redo</span>
             </v-tooltip>
             <v-spacer />
             <v-tooltip bottom>
@@ -328,14 +328,6 @@ export default defineComponent({
         nextTick().then(() => complexRef.value.forEach((formRef: any) => formRef.validate()));
       } else {
         nextTick().then(() => basicRef.value.validate());
-      }
-    };
-
-    document.onkeydown = (event) => {
-      if (!props.readonly && event.ctrlKey && event.code === 'KeyZ') {
-        undoChange();
-      } else if (!props.readonly && event.ctrlKey && event.code === 'KeyY') {
-        redoChange();
       }
     };
 
