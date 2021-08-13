@@ -9,7 +9,7 @@ This proposal only applies to the `schemaVersion` of dandiset metadata, not asse
 1. The API should call dandischema `migrate` on all metadata exchanges of draft metadata.
 2. The API can have the option (parameter `?migrate=true`) of providing migration on a `GET` on published metadata. 
    This would be needed for the UI to display landing pages for published dandisets with older schemas.
-3. To determine the state of validity, the API should also revalidate all draft metadata on any schema version change 
+3. To determine the state of validity, the API should also migrate and  revalidate all draft metadata on any schema version change 
    in the infrastructure.
 4. Publish should not be enabled for any dandisets with a metadata schemaVersion that is not up to date.
 
