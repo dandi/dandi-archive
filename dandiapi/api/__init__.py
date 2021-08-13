@@ -3,4 +3,3 @@
 # Import here to register any signal handlers
 import dandiapi.api.mail
 import dandiapi.api.user_migration
-import dandiapi.api.signals
