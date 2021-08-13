@@ -29,8 +29,8 @@ def migrate_published_version_metadata(dandiset: str, published_version: str):
     try:
         metanew = migrate(metadata, to_version=settings.DANDI_SCHEMA_VERSION, skip_validation=False)
     except Exception as e:
-        print(f'Failed to migrate {dandiset}/{published_version}')
-        print(e)
+        click.echo(f'Failed to migrate {dandiset}/{published_version}')
+        click.echo(e)
         raise click.Abort()
 
     if metadata == metanew:
