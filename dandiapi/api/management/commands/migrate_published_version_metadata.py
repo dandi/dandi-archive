@@ -22,7 +22,7 @@ def migrate_published_version_metadata(dandiset: str, published_version: str, to
     )
     metadata = version.metadata
 
-    # If there is no schemaVersion, assume the most recent
+    # If there is no schemaVersion, assume to_version
     if 'schemaVersion' not in metadata:
         metadata['schemaVersion'] = to_version
 
