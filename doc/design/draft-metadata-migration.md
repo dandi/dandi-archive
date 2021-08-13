@@ -11,5 +11,6 @@ This proposal only applies to the `schemaVersion` of dandiset metadata, not asse
    This would be needed for the UI to display landing pages for published dandisets with older schemas.
 3. To determine the state of validity, the API should also revalidate all draft metadata on any schema version change 
    in the infrastructure.
+4. Publish should not be enabled for any dandisets with a metadata schemaVersion that is not up to date.
 
 
