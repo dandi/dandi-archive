@@ -1,9 +1,7 @@
 import logging
 from typing import List
 
-from allauth.account.signals import user_signed_up
 from django.core import mail
-from django.dispatch import receiver
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
@@ -69,9 +67,3 @@ def send_registered_notice_email(user, socialaccount):
     messages = [build_registered_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
-
-
-@receiver(user_signed_up)
-def user_signed_up_listener(sender, user, **kwargs):
-    for socialaccount in user.socialaccount_set.all():
-        send_registered_notice_email(user, socialaccount)
