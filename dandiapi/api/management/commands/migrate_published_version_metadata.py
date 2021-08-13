@@ -1,8 +1,7 @@
-from pprint import pformat
 from difflib import ndiff
+from pprint import pformat
 
 from dandischema import migrate
-from django.conf import settings
 from django.db.models import Q
 import djclick as click
 
@@ -13,9 +12,10 @@ from dandiapi.api.tasks import write_manifest_files
 @click.command()
 @click.argument('dandiset')
 @click.argument('published_version')
-def migrate_published_version_metadata(dandiset: str, published_version: str):
+@click.argument('to_version')
+def migrate_published_version_metadata(dandiset: str, published_version: str, to_version: str):
     click.echo(
-        f'Migrating published version {dandiset}/{published_version} metadata to version {settings.DANDI_SCHEMA_VERSION}'
+        f'Migrating published version {dandiset}/{published_version} metadata to version {to_version}'  # noqa: E501
     )
     version = Version.objects.filter(~Q(version='draft')).get(
         dandiset=dandiset, version=published_version
@@ -24,10 +24,10 @@ def migrate_published_version_metadata(dandiset: str, published_version: str):
 
     # If there is no schemaVersion, assume the most recent
     if 'schemaVersion' not in metadata:
-        metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION
+        metadata['schemaVersion'] = to_version
 
     try:
-        metanew = migrate(metadata, to_version=settings.DANDI_SCHEMA_VERSION, skip_validation=False)
+        metanew = migrate(metadata, to_version=to_version, skip_validation=False)
     except Exception as e:
         click.echo(f'Failed to migrate {dandiset}/{published_version}')
         click.echo(e)
