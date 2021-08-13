@@ -1001,6 +1001,22 @@
   resolved "https://registry.yarnpkg.com/@jsdevtools/ono/-/ono-7.1.3.tgz#9df03bbd7c696a5c58885c34aa06da41c8543796"
   integrity sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==
 
+"@koumoul/vjsf@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@koumoul/vjsf/-/vjsf-2.2.1.tgz#8e657344c7c335603728428719940a4d5adaabcc"
+  integrity sha512-ShpYZVwU4vq1DlyNi3BCnIzSP3O9ZNN8Ov5zTFSOIe8FrdhztGyW1PNQmga2vSHJof89mVgIb9ZoDN5myKF3AQ==
+  dependencies:
+    "@mdi/js" "^5.5.55"
+    ajv "^6.12.0"
+    debounce "^1.2.0"
+    fast-copy "^2.1.1"
+    fast-equals "^2.0.0"
+    markdown-it "^8.4.2"
+    match-all "^1.2.5"
+    object-hash "^2.1.1"
+    property-expr "^1.5.1"
+    vuedraggable "^2.24.3"
+
 "@mdi/font@^5.3.45":
   version "5.9.55"
   resolved "https://registry.yarnpkg.com/@mdi/font/-/font-5.9.55.tgz#41acd50b88073ded7095fc3029d8712b6e12f38e"
@@ -1018,22 +1034,6 @@
   dependencies:
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
-
-"@mvandenburgh/vjsf@^2.1.3-fork3":
-  version "2.1.3-fork3"
-  resolved "https://registry.yarnpkg.com/@mvandenburgh/vjsf/-/vjsf-2.1.3-fork3.tgz#681c4fd5bdf4efc79d1b714a661dd11c47f89844"
-  integrity sha512-33uNUQUTabHuP/8Rx+75STDS8q4TSygayWcgl8xQdlhL5/xnEzOMYu+pecWisuop98jgxFltGygC7RbeFoGq3A==
-  dependencies:
-    "@mdi/js" "^5.5.55"
-    ajv "^6.12.0"
-    debounce "^1.2.0"
-    fast-copy "^2.1.1"
-    fast-equals "^2.0.0"
-    markdown-it "^8.4.2"
-    match-all "^1.2.5"
-    object-hash "^2.1.1"
-    property-expr "^1.5.1"
-    vuedraggable "^2.24.3"
 
 "@nodelib/fs.scandir@2.1.4":
   version "2.1.4"
