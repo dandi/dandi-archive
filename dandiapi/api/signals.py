@@ -5,13 +5,13 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 
-@receiver(check_request_enabled)
+@receiver(check_request_enabled, dispatch_uid='cors_allow_anyone_read_only')
 def cors_allow_anyone_read_only(sender, request, **kwargs):
     """Allow any read-only request from any origin."""
     return request.method in ('GET', 'HEAD', 'OPTIONS')
 
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+@receiver(post_save, sender=settings.AUTH_USER_MODEL, dispatch_uid='create_auth_token')
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     """Create an auth token for every new user."""
     if created:
