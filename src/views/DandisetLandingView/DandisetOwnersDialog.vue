@@ -37,7 +37,7 @@
           max-height="50vh"
         >
           <template v-for="(owner, i) in newOwners">
-            <v-list-item :key="owner._id || owner.id">
+            <v-list-item :key="owner.username">
               <v-list-item-title>
                 {{ owner.result }}
               </v-list-item-title>
@@ -50,7 +50,7 @@
                 </v-btn>
               </v-list-item-action>
             </v-list-item>
-            <v-divider :key="`${owner.id}-divider`" />
+            <v-divider :key="`${owner.username}-divider`" />
           </template>
         </v-list>
       </v-row>
@@ -111,8 +111,10 @@ export default {
   },
   watch: {
     selection(val) {
-      if (!val || this.newOwners.find((x) => x.id === val.id)) return;
-      this.newOwners.push(val);
+      // Verify that the selected user hasn't already been selected
+      if (val && !this.newOwners.find((x) => x.username === val.username)) {
+        this.newOwners.push(val);
+      }
     },
   },
   methods: {
