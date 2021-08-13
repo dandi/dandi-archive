@@ -1,4 +1,3 @@
-<!-- TODO: Find way to clear v-autocomplete once selected-->
 <template>
   <v-card class="flex-grow-0">
     <v-card-title>Manage Ownership</v-card-title>
@@ -114,6 +113,10 @@ export default {
       // Verify that the selected user hasn't already been selected
       if (val && !this.newOwners.find((x) => x.username === val.username)) {
         this.newOwners.push(val);
+      }
+      // Clear the search field, if it isn't already
+      if (val) {
+        this.selection = '';
       }
     },
   },
