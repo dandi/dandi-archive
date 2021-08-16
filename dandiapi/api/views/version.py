@@ -153,3 +153,28 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
+    )
+    def destroy(self, request, **kwargs):
+        """
+        Delete a version.
+
+        Deletes a version. Only published versions can be deleted, and only by
+        admin users.
+        """
+        version: Version = self.get_object()
+        if version.version == 'draft':
+            return Response(
+                'Cannot delete draft versions',
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        elif not request.user.is_superuser:
+            return Response(
+                'Cannot delete published versions',
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        else:
+            version.delete()
+            return Response(None, status=status.HTTP_204_NO_CONTENT)
