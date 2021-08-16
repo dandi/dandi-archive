@@ -95,22 +95,35 @@
         <UserMenu />
       </template>
       <template v-else>
-        <v-btn
-          id="login"
-          class="mx-1"
-          color="primary"
-          rounded
-          @click="login"
+        <v-tooltip
+          bottom
+          :disabled="cookiesEnabled"
         >
-          Log In with GitHub
-        </v-btn>
+          <template #activator="{ on }">
+            <div v-on="on">
+              <v-btn
+                id="login"
+                class="mx-1"
+                color="primary"
+                rounded
+                :disabled="!cookiesEnabled"
+                @click="login"
+              >
+                Log In with GitHub
+              </v-btn>
+            </div>
+          </template>
+          <span>Enable cookies to log in.</span>
+        </v-tooltip>
       </template>
     </div>
   </v-app-bar>
 </template>
 
 <script>
-import { loggedIn, insideIFrame, publishRest } from '@/rest';
+import {
+  cookiesEnabled, loggedIn, insideIFrame, publishRest,
+} from '@/rest';
 import { dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
@@ -158,6 +171,7 @@ export default {
   computed: {
     loggedIn,
     insideIFrame,
+    cookiesEnabled,
     returnObject() {
       const { name, query, params } = this.$route;
       return JSON.stringify({ name, query, params });
