@@ -38,7 +38,7 @@ def test_blob_read_bad_algorithm(api_client, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'Unsupported Digest Algorithm'
+    assert resp.data == 'Unsupported Digest Algorithm. Supported: dandi:dandi-etag'
 
 
 @pytest.mark.django_db
