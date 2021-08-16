@@ -798,3 +798,50 @@ def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, 
     )
     assert resp.status_code == 400
     assert resp.data == 'Dandiset metadata or asset metadata is not valid'
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_published_not_admin(api_client, user, published_version):
+    assign_perm('owner', user, published_version.dandiset)
+    api_client.force_authenticate(user=user)
+    response = api_client.delete(
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/'
+    )
+    assert response.status_code == 403
+    assert response.data == 'Cannot delete published versions'
+    assert published_version in Version.objects.all()
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_published_admin(api_client, admin_user, published_version):
+    api_client.force_authenticate(user=admin_user)
+    response = api_client.delete(
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/'
+    )
+    assert response.status_code == 204
+    assert not Version.objects.all()
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_draft_not_admin(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    response = api_client.delete(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
+    )
+    assert response.status_code == 403
+    assert response.data == 'Cannot delete draft versions'
+    assert draft_version in Version.objects.all()
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_draft_admin(api_client, admin_user, draft_version):
+    api_client.force_authenticate(user=admin_user)
+    response = api_client.delete(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
+    )
+    assert response.status_code == 403
+    assert response.data == 'Cannot delete draft versions'
+    assert draft_version in Version.objects.all()
