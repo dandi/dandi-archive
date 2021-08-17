@@ -287,7 +287,7 @@ export default {
     },
 
     showDelete(item) {
-      return !item.folder && (this.isAdmin || this.isOwner);
+      return this.version === 'draft' && !item.folder && (this.isAdmin || this.isOwner);
     },
 
     async deleteAsset(item) {
