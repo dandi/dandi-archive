@@ -74,6 +74,8 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
 
+    DEBUG = values.BooleanValue(environ=True, default=True)
+
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
