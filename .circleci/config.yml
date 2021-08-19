@@ -60,6 +60,7 @@ jobs:
             DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
             DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_DANDI_SCHEMA_VERSION: 0.5.1
             DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
             DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
             DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
@@ -73,6 +74,7 @@ jobs:
             DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
             DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
             DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+            DJANGO_DANDI_SCHEMA_VERSION: 0.5.1
             DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
             DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
             DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
