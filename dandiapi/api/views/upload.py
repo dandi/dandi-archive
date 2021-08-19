@@ -70,7 +70,7 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
 @swagger_auto_schema(
     method='POST',
     operation_summary='Fetch an existing asset blob by digest, if it exists.',
-    operation_description=f'Supported digest algorithms: {", ".join(supported_digests.keys())}',
+    operation_description=f'Supported digest algorithms: {", ".join(supported_digests)}',
     request_body=DigestSerializer(),
     responses={200: AssetBlobSerializer()},
 )
