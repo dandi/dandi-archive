@@ -99,7 +99,6 @@ workflows:
   test_and_deploy:
     jobs:
       - test-gui
-      # - test-e2e:
-      #     requires:
-      #       - test-server
-      #       - test-gui
+      - test-e2e:
+          requires:
+            - test-gui
