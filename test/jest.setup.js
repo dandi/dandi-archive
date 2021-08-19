@@ -4,7 +4,8 @@ import { setDefaultOptions } from 'expect-puppeteer';
 import { CLIENT_URL } from './src/util';
 
 // Set the default action timeout to something greater than 500ms
-setDefaultOptions({ timeout: 10000 });
+// and retry failed tests 2 times
+setDefaultOptions({ timeout: 10000, retryTimes: 2 });
 
 // This is not redundant, do not remove it.
 // It allows tests to start on the SPA in their own beforeAlls.

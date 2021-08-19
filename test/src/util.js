@@ -1,10 +1,15 @@
 import {
   vBtn,
+  vListItem,
+  vIcon,
   vTextField,
   vTextarea,
 } from 'jest-puppeteer-vuetify';
 
 export const { CLIENT_URL } = process.env;
+
+export const LOGIN_BUTTON_TEXT = 'Log In with GitHub';
+export const LOGOUT_BUTTON_TEXT = 'Logout';
 
 export function uniqueId() {
   // TODO think of something cleaner
@@ -15,15 +20,14 @@ export function uniqueId() {
  * Authorizes the user account.
  */
 export async function authorize() {
-  await Promise.all([
-    expect(page).toClickXPath(vBtn('Login')),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
+}
 
-  await Promise.all([
-    expect(page).toClickXPath('//input[@value="Authorize"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+/**
+ * Log out the current user.
+ */
+export async function logoutUser() {
+  await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 }
 
 /**
@@ -36,7 +40,7 @@ export async function registerNewUser() {
   const email = `mr${username}@dandi.test`;
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
-  await expect(page).toClickXPath(vBtn('Login'));
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
   // API pages are not styled with Vuetify, so we can't use the vHelpers
   await expect(page).toClickXPath('//a[@href="/accounts/signup/"]');
   await expect(page).toFillXPath('//input[@name="email"]', email);
@@ -54,7 +58,7 @@ export async function registerNewUser() {
     page.waitForNavigation({ waitUntil: 'networkidle0' }),
   ]);
 
-  await authorize(username, password);
+  await authorize();
 
   return { username, email, password };
 }

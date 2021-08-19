@@ -16,7 +16,7 @@ describe('home page stats', () => {
 
     // refresh the page to get the new stats
     await Promise.all([
-      page.goto(CLIENT_URL),
+      page.reload(),
       page.waitForNavigation({ waitUntil: 'networkidle0' }),
     ]);
 
