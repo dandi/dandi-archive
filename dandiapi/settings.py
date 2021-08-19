@@ -10,7 +10,6 @@ from composed_configuration import (
     TestingBaseConfiguration,
 )
 from configurations import values
-from drf_yasg.inspectors import SwaggerAutoSchema
 
 
 class DandiMixin(ConfigMixin):
@@ -69,7 +68,7 @@ class DandiMixin(ConfigMixin):
     # When Brian Helba is able to resolve this problem upstream (in
     # django-composed-configuration) we can remove this setting.
     SWAGGER_SETTINGS = {
-        'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.settings.DANDISwaggerAutoSchema',
+        'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.swagger.DANDISwaggerAutoSchema',
     }
 
 
@@ -110,19 +109,3 @@ class HerokuStagingConfiguration(HerokuProductionConfiguration):
     # We are using cheaper Heroku dynos for staging, so we need to artificially lower the number
     # of concurrent tasks (default is 8) to keep memory usage down.
     CELERY_WORKER_CONCURRENCY = 2
-
-
-class DANDISwaggerAutoSchema(SwaggerAutoSchema):
-    """Custom class for @swagger_auto_schema to provide summary from one line docstrings.
-
-    See https://github.com/axnsan12/drf-yasg/issues/205 and
-    https://github.com/axnsan12/drf-yasg/issues/265 for more information on why it is not
-    a default behavior.
-    """
-
-    def split_summary_from_description(self, description):
-        summary, description = super().split_summary_from_description(description)
-        if summary is None:
-            return description, None
-        else:
-            return summary, description
