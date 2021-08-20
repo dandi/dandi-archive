@@ -44,7 +44,7 @@ def create_dev_dandiset(name: str, owner: str):
     )
     draft_version.save()
 
-    uploaded_file = SimpleUploadedFile(name='/foo/bar.txt', content=b'A' * 20)
+    uploaded_file = SimpleUploadedFile(name='foo/bar.txt', content=b'A' * 20)
     etag = '76d36e98f312e98ff908c8c82c8dd623-0'
     try:
         asset_blob = AssetBlob.objects.get(etag=etag)
@@ -60,7 +60,7 @@ def create_dev_dandiset(name: str, owner: str):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'text/plain',
     }
-    asset = Asset(blob=asset_blob, metadata=asset_metadata, path='/foo/bar.txt')
+    asset = Asset(blob=asset_blob, metadata=asset_metadata, path='foo/bar.txt')
     asset.save()
     draft_version.assets.add(asset)
 
