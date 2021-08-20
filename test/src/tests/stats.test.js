@@ -31,6 +31,10 @@ describe('home page stats', () => {
     const dandisetName = `dandiset${uniqueId()}`;
     const dandisetDescription = `Description! ${uniqueId()}`;
 
+    // The value that `homePage.getStat` looks for is retrieved via XHR, so
+    // wait until all requests are finished before trying to retrieve it.
+    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
     const initialDandisetCount = await homePage.getStat('dandisets');
 
     // register a new dandiset to increment the dandiset count
