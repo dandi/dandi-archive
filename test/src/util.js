@@ -1,7 +1,5 @@
 import {
   vBtn,
-  vListItem,
-  vIcon,
   vTextField,
   vTextarea,
 } from 'jest-puppeteer-vuetify';
@@ -17,17 +15,21 @@ export function uniqueId() {
 }
 
 /**
- * Authorizes the user account.
+ * Waits for all network requests to finish before continuing.
  */
-export async function authorize() {
-  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
+export async function waitForRequestsToFinish() {
+  try {
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 });
+  } catch (e) {
+    // ignore
+  }
 }
 
 /**
- * Log out the current user.
+ * Log in a user
  */
-export async function logoutUser() {
-  await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
+export async function login() {
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 }
 
 /**
@@ -47,18 +49,14 @@ export async function registerNewUser() {
   await expect(page).toFillXPath('//input[@name="password1"]', password);
   await expect(page).toFillXPath('//input[@name="password2"]', password);
 
-  await Promise.all([
-    // The locator is different in CI for some reason, just click the first button
-    expect(page).toClickXPath('//button'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  // The locator is different in CI for some reason, just click the first button
+  await expect(page).toClickXPath('//button');
+  await waitForRequestsToFinish();
 
-  await Promise.all([
-    page.goto(CLIENT_URL),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await page.goto(CLIENT_URL, { timeout: 0 });
+  await waitForRequestsToFinish();
 
-  await authorize();
+  await login();
 
   return { username, email, password };
 }
@@ -73,8 +71,6 @@ export async function registerDandiset(name, description) {
   await expect(page).toClickXPath(vBtn('New Dandiset'));
   await expect(page).toFillXPath(vTextField('Name*'), name);
   await expect(page).toFillXPath(vTextarea('Description*'), description);
-  await Promise.all([
-    expect(page).toClickXPath(vBtn('Register dataset')),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await expect(page).toClickXPath(vBtn('Register dataset'));
+  await waitForRequestsToFinish();
 }

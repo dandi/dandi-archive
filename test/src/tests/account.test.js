@@ -1,8 +1,11 @@
 import {
   vAvatar,
+  vBtn,
+  vIcon,
+  vListItem,
 } from 'jest-puppeteer-vuetify';
 import {
-  logoutUser, registerNewUser, LOGIN_BUTTON_TEXT, authorize,
+  registerNewUser, LOGIN_BUTTON_TEXT, LOGOUT_BUTTON_TEXT,
 } from '../util';
 
 describe('account management', () => {
@@ -10,8 +13,7 @@ describe('account management', () => {
     await registerNewUser();
 
     await expect(page).toClickXPath(vAvatar('??'));
-
-    await logoutUser();
+    await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 
     // this text is only displayed when not logged in
     await expect(page).toMatch(LOGIN_BUTTON_TEXT);
@@ -20,11 +22,12 @@ describe('account management', () => {
   it('logs the user in', async () => {
     await registerNewUser();
 
+    // Logout
     await expect(page).toClickXPath(vAvatar('??'));
+    await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 
-    await logoutUser();
-
-    await authorize();
+    // Test logging in
+    await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 
     // the user avatar contains the initials and is only rendered when logged in successfully
     await expect(page).toContainXPath(vAvatar('??'));

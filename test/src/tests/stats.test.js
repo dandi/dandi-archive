@@ -3,6 +3,7 @@ import {
   registerNewUser,
   registerDandiset,
   uniqueId,
+  waitForRequestsToFinish,
 } from '../util';
 import * as homePage from '../pages/homePage';
 
@@ -15,10 +16,8 @@ describe('home page stats', () => {
     await registerNewUser();
 
     // refresh the page to get the new stats
-    await Promise.all([
-      page.reload(),
-      page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    ]);
+    await page.reload();
+    await waitForRequestsToFinish();
 
     const finalUserCount = await homePage.getStat('users');
 
@@ -33,7 +32,7 @@ describe('home page stats', () => {
 
     // The value that `homePage.getStat` looks for is retrieved via XHR, so
     // wait until all requests are finished before trying to retrieve it.
-    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    await waitForRequestsToFinish();
 
     const initialDandisetCount = await homePage.getStat('dandisets');
 
@@ -41,10 +40,8 @@ describe('home page stats', () => {
     await registerDandiset(dandisetName, dandisetDescription);
 
     // refresh the page to get the new stats
-    await Promise.all([
-      page.goto(CLIENT_URL),
-      page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    ]);
+    await page.goto(CLIENT_URL, { timeout: 0 });
+    await waitForRequestsToFinish();
 
     const finalDandisetCount = await homePage.getStat('dandisets');
 
