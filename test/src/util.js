@@ -6,24 +6,30 @@ import {
 
 export const { CLIENT_URL } = process.env;
 
+export const LOGIN_BUTTON_TEXT = 'Log In with GitHub';
+export const LOGOUT_BUTTON_TEXT = 'Logout';
+
 export function uniqueId() {
   // TODO think of something cleaner
   return Date.now().toString();
 }
 
 /**
- * Authorizes the user account.
+ * Waits for all network requests to finish before continuing.
  */
-export async function authorize() {
-  await Promise.all([
-    expect(page).toClickXPath(vBtn('Login')),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+export async function waitForRequestsToFinish() {
+  try {
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 });
+  } catch (e) {
+    // ignore
+  }
+}
 
-  await Promise.all([
-    expect(page).toClickXPath('//input[@value="Authorize"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+/**
+ * Log in a user
+ */
+export async function login() {
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 }
 
 /**
@@ -36,25 +42,21 @@ export async function registerNewUser() {
   const email = `mr${username}@dandi.test`;
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
-  await expect(page).toClickXPath(vBtn('Login'));
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
   // API pages are not styled with Vuetify, so we can't use the vHelpers
   await expect(page).toClickXPath('//a[@href="/accounts/signup/"]');
   await expect(page).toFillXPath('//input[@name="email"]', email);
   await expect(page).toFillXPath('//input[@name="password1"]', password);
   await expect(page).toFillXPath('//input[@name="password2"]', password);
 
-  await Promise.all([
-    // The locator is different in CI for some reason, just click the first button
-    expect(page).toClickXPath('//button'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  // The locator is different in CI for some reason, just click the first button
+  await expect(page).toClickXPath('//button');
+  await waitForRequestsToFinish();
 
-  await Promise.all([
-    page.goto(CLIENT_URL),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await page.goto(CLIENT_URL, { timeout: 0 });
+  await waitForRequestsToFinish();
 
-  await authorize(username, password);
+  await login();
 
   return { username, email, password };
 }
@@ -69,8 +71,6 @@ export async function registerDandiset(name, description) {
   await expect(page).toClickXPath(vBtn('New Dandiset'));
   await expect(page).toFillXPath(vTextField('Name*'), name);
   await expect(page).toFillXPath(vTextarea('Description*'), description);
-  await Promise.all([
-    expect(page).toClickXPath(vBtn('Register dataset')),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await expect(page).toClickXPath(vBtn('Register dataset'));
+  await waitForRequestsToFinish();
 }
