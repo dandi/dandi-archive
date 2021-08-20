@@ -292,9 +292,8 @@ export default {
     },
 
     viewURI(asset_id) {
-      return "https://bioimagesuiteweb.github.io/webapp/overlayviewer.html?image=" + publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+      return `https://bioimagesuiteweb.github.io/webapp/overlayviewer.html?image=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
     },
-
 
     assetMetadataURI(asset_id) {
       return publishRest.assetMetadataURI(this.identifier, this.version, asset_id);
