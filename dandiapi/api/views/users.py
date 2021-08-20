@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
@@ -77,6 +78,17 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     social_accounts = SocialAccount.objects.filter(extra_data__icontains=username)[:10]
     users = [social_account_to_dict(social_account) for social_account in social_accounts]
+
+    # Try searching Django's regular `User`s if there aren't any results.
+    # This allows this feature to work in development without having to conditionalize
+    # code based on the type of deployment.
+    if not users:
+        users = [
+            user_to_dict(user)
+            for user in User.objects.filter(username__icontains=username).filter(
+                ~Q(username='AnonymousUser')
+            )[:10]
+        ]
 
     response_serializer = UserDetailSerializer(users, many=True)
     return Response(response_serializer.data)
