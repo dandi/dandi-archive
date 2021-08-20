@@ -64,7 +64,6 @@ def create_s3_storage(bucket_name: str) -> Storage:
         # Required to upload to the sponsored bucket
         storage.default_acl = 'bucket-owner-full-control'
     elif issubclass(default_storage_class, MinioStorage):
-        base_url = None
         if getattr(settings, 'MINIO_STORAGE_MEDIA_URL', None):
             # If a new base_url is set for the media storage, it's safe to assume one should be
             # set for this storage too.
@@ -77,6 +76,18 @@ def create_s3_storage(bucket_name: str) -> Storage:
                     f'/{bucket_name}',
                     base_url_parts.query,
                     base_url_parts.fragment,
+                )
+            )
+        else:
+            scheme = 'https' if getattr(settings, 'MINIO_STORAGE_USE_HTTPS', True) else 'http'
+            netloc = settings.MINIO_STORAGE_ENDPOINT
+            base_url = urlunsplit(
+                (
+                    scheme,
+                    netloc,
+                    f'/{bucket_name}',
+                    None,
+                    None,
                 )
             )
 
