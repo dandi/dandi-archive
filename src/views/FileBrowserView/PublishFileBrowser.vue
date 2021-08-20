@@ -140,6 +140,19 @@
                 </v-btn>
               </v-list-item-action>
 
+              <v-list-item-action v-if="item.asset_id">
+                <v-btn
+                  icon
+                  :href="viewURI(item.asset_id)"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <v-icon color="primary">
+                    mdi-file-eye
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
+
               <v-list-item-action
                 v-if="item.size"
                 class="justify-end"
@@ -277,6 +290,11 @@ export default {
     downloadURI(asset_id) {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
     },
+
+    viewURI(asset_id) {
+      return "https://bioimagesuiteweb.github.io/webapp/overlayviewer.html?image=" + publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+    },
+
 
     assetMetadataURI(asset_id) {
       return publishRest.assetMetadataURI(this.identifier, this.version, asset_id);
