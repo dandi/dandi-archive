@@ -83,7 +83,7 @@ def blob_read_view(request: Request) -> HttpResponseBase:
     algorithm = request_serializer.validated_data['algorithm']
     if algorithm not in supported_digests:
         return Response(
-            f'Unsupported Digest Algorithm. Supported: {", ".join(supported_digests.keys())}',
+            f'Unsupported Digest Algorithm. Supported: {", ".join(supported_digests)}',
             status=400,
         )
     digest = request_serializer.validated_data['value']
