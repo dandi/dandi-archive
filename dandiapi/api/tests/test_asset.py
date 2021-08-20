@@ -11,7 +11,7 @@ import requests
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
-from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UUID_RE
+from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
 # Model tests
 
@@ -113,8 +113,8 @@ def test_publish_asset(draft_asset: Asset):
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -127,7 +127,7 @@ def test_publish_asset(draft_asset: Asset):
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'identifier': str(draft_asset_id),
         'contentUrl': [HTTP_URL_RE, HTTP_URL_RE],
     }

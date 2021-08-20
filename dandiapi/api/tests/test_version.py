@@ -32,7 +32,7 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
 
 @pytest.mark.django_db
-def test_draft_version_metadata_computed(draft_version):
+def test_draft_version_metadata_computed(draft_version: Version):
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     draft_version.metadata = original_metadata
 
@@ -69,7 +69,7 @@ def test_draft_version_metadata_computed(draft_version):
 
 
 @pytest.mark.django_db
-def test_published_version_metadata_computed(published_version):
+def test_published_version_metadata_computed(published_version: Version):
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     published_version.metadata = original_metadata
 
@@ -268,8 +268,8 @@ def test_version_publish_version(draft_version, asset):
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -282,8 +282,8 @@ def test_version_publish_version(draft_version, asset):
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
@@ -637,8 +637,8 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -651,7 +651,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
@@ -734,13 +734,13 @@ def test_version_rest_publish_assets(
     assert new_draft_asset.blob == old_draft_asset.blob
     assert new_draft_asset.metadata == {
         **old_draft_asset.metadata,
-        'datePublished': TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
             # TODO endDate needs to be defined before publish is complete
-            'endDate': TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
