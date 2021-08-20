@@ -1,5 +1,8 @@
 import {
+  vAvatar,
   vBtn,
+  vIcon,
+  vListItem,
   vTextField,
   vTextarea,
 } from 'jest-puppeteer-vuetify';
@@ -30,6 +33,14 @@ export async function waitForRequestsToFinish() {
  */
 export async function login() {
   await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
+}
+
+/**
+ * Log out a user
+ */
+export async function logout() {
+  await expect(page).toClickXPath(vAvatar('??'));
+  await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 }
 
 /**
