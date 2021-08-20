@@ -207,6 +207,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'assetsSummary',
             'citation',
             'doi',
+            'dateCreated',
             'datePublished',
             'publishedBy',
             'manifestLocation',
@@ -251,6 +252,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
             'assetsSummary': summary,
+            'dateCreated': self.dandiset.created.isoformat(),
         }
         if self.doi:
             metadata['doi'] = self.doi
