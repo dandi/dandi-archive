@@ -140,10 +140,10 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="item.asset_id">
+              <v-list-item-action v-if="item.asset_id && fileExtension(item.name)">
                 <v-btn
                   icon
-                  :href="viewURI(item.asset_id)"
+                  :href="viewURI(item.asset_id, item.name)"
                   target="_blank"
                   rel="noopener"
                 >
@@ -291,8 +291,29 @@ export default {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
     },
 
-    viewURI(asset_id) {
-      return `https://bioimagesuiteweb.github.io/webapp/overlayviewer.html?image=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
+    viewURI(asset_id, name) {
+      const file_ext = this.fileExtension(name);
+      if (file_ext === 'nii') {
+        return `https://bioimagesuiteweb.github.io/alphaapp/viewer.html?image=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
+      }
+      if (file_ext === 'nwb') {
+        return `http://nwbexplorer.opensourcebrain.org/nwbfile=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
+      }
+
+      return undefined;
+    },
+
+    fileExtension(name) {
+      let ext;
+      const name_split_ar = name.split('.');
+      if (name_split_ar[name_split_ar.length - 1] === 'nwb') {
+        ext = 'nwb';
+      } else if (name_split_ar[name_split_ar.length - 1] === 'nii' || name_split_ar[name_split_ar.length - 2] === 'nii') {
+        ext = 'nii';
+      } else {
+        ext = false;
+      }
+      return ext;
     },
 
     assetMetadataURI(asset_id) {
