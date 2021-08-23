@@ -22,7 +22,7 @@ export function uniqueId() {
  */
 export async function waitForRequestsToFinish() {
   try {
-    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 10000 });
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 });
   } catch (e) {
     // ignore
   }
@@ -40,6 +40,7 @@ export async function login() {
  */
 export async function logout() {
   await expect(page).toClickXPath(vAvatar('??'));
+  await page.waitFor(500);
   await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 }
 
@@ -54,8 +55,15 @@ export async function registerNewUser() {
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
   await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
+
+  await waitForRequestsToFinish();
+
+  // puppeteer sometimes can't detect the signup link to click, so just navigate to it manually.
+  // This login/signup page is not used in production anyway, so we're not missing anything
+  // in terms of testing.
+  await page.goto(page.url().replace('/accounts/login', '/accounts/signup'));
+
   // API pages are not styled with Vuetify, so we can't use the vHelpers
-  await expect(page).toClickXPath('//a[@href="/accounts/signup/"]');
   await expect(page).toFillXPath('//input[@name="email"]', email);
   await expect(page).toFillXPath('//input[@name="password1"]', password);
   await expect(page).toFillXPath('//input[@name="password2"]', password);
@@ -66,8 +74,6 @@ export async function registerNewUser() {
 
   await page.goto(CLIENT_URL, { timeout: 0 });
   await waitForRequestsToFinish();
-
-  await login();
 
   return { username, email, password };
 }
