@@ -294,7 +294,7 @@ export default {
     viewURI(asset_id, name) {
       const file_ext = this.fileExtension(name);
       if (file_ext === 'nii') {
-        return `https://bioimagesuiteweb.github.io/alphaapp/viewer.html?image=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
+        return `https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
       }
       if (file_ext === 'nwb') {
         return `http://nwbexplorer.opensourcebrain.org/nwbfile=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
