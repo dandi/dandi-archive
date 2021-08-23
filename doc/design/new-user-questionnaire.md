@@ -11,6 +11,7 @@ Three new columns, `status`, `questionnaire_form`, and `rejection_reason` will b
 
 ### Changes to API
 - /users/me needs to include the user's current status
+- A [Django group](https://docs.djangoproject.com/en/3.2/topics/auth/default/#groups), `approved_users`, will be created. Only users in this group will have access to protected endpoints.
 
 ### Changes to frontend
 - Configuration so the frontend knows where to find SSR pages
@@ -44,8 +45,7 @@ user hasn't filled out the questionnaire yet, the button will say "COMPLETE SIGN
 1) A user signs up as described in steps 1-4 in the previous section.
 2) An email is sent to DANDI admins with a link to an SSR page that lists the user's info (name, email, GitHub account, etc) as well as their answers to the questionnaire. The page will contain two buttons - "APPROVE" or "REJECT" - and a textbox underneath the "REJECT" button entitled "Rejection Reason".
 3)
-    a) The admin decides to approve the user and clicks "APPROVE". This updates the user's `status` field to `APPROVED`, granting them full access to
-    DANDI.
+    a) The admin decides to approve the user and clicks "APPROVE". This updates the user's `status` field to `APPROVED` and adds them to the `approved_users` group, granting them full access to DANDI.
     <br>
     b) The admin decides to reject the user, optionally fills out the "Rejection reason" box, and clicks "REJECT". This sets the user's `status` field to `REJECTED` and `is_active` field to `false`.
 
