@@ -1,5 +1,4 @@
-import { vBtn } from 'jest-puppeteer-vuetify';
-import { disableAllCookies, LOGIN_BUTTON_TEXT } from '../util';
+import { disableAllCookies } from '../util';
 
 const COOKIE_CONSENT_MESSAGE = 'We use cookies to ensure you get the best experience on DANDI.';
 const COOKIE_DISABLED_MESSAGE = 'We noticed you\'re blocking cookies - note that certain aspects of the site may not work.';
@@ -20,8 +19,5 @@ describe('cookie usage text', () => {
     await expect(page).toMatch(COOKIE_DISABLED_MESSAGE);
     await page.click('button.Cookie__button');
     await expect(page).not.toMatch(COOKIE_DISABLED_MESSAGE);
-
-    // TODO: check that this button is disabled too
-    await expect(page).toContainXPath(vBtn(LOGIN_BUTTON_TEXT));
   });
 });
