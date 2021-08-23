@@ -44,7 +44,7 @@ but allows developers to run Python code on their native system.
 7. Run `source ./dev/export-env.sh`
 8. Run `./manage.py migrate`
 9. Run `./manage.py createsuperuser` and follow the prompts to create your own user
-3. Run `./manage.py create_dev_dandiset --owner your.email@email.com`
+10. Run `./manage.py create_dev_dandiset --owner your.email@email.com`
    to create a dummy dandiset to start working with.
 
 ### Run Application
