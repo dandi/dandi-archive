@@ -40,7 +40,7 @@ export async function login() {
  */
 export async function logout() {
   await expect(page).toClickXPath(vAvatar('??'));
-  await page.waitFor(500);
+  await page.waitForTimeout(500);
   await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 }
 
