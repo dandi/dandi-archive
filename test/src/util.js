@@ -11,6 +11,7 @@ export const { CLIENT_URL } = process.env;
 
 export const LOGIN_BUTTON_TEXT = 'Log In with GitHub';
 export const LOGOUT_BUTTON_TEXT = 'Logout';
+export const MY_DANDISETS_BTN_TEXT = 'My Dandisets';
 
 export function uniqueId() {
   // TODO think of something cleaner
@@ -33,15 +34,6 @@ export async function waitForRequestsToFinish() {
  */
 export async function login() {
   await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
-}
-
-/**
- * Log out a user
- */
-export async function logout() {
-  await expect(page).toClickXPath(vAvatar('??'));
-  await page.waitForTimeout(500);
-  await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 }
 
 /**
@@ -119,4 +111,14 @@ export async function disableAllCookies() {
   await client.send('Emulation.setDocumentCookieDisabled', { disabled: true });
   await page.reload();
   await waitForRequestsToFinish();
+}
+
+/**
+ * Log out a user
+ */
+export async function logout() {
+  await expect(page).toClickXPath(vAvatar('??'));
+  await page.waitForTimeout(500);
+  await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
+  await clearCookiesAndCache();
 }
