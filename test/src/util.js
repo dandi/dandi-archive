@@ -91,3 +91,12 @@ export async function registerDandiset(name, description) {
   await expect(page).toClickXPath(vBtn('Register dataset'));
   await waitForRequestsToFinish();
 }
+
+/**
+ * Clears browser cookies and cache.
+ */
+export async function clearCookiesAndCache() {
+  const client = await page.target().createCDPSession();
+  await client.send('Network.clearBrowserCookies');
+  await client.send('Network.clearBrowserCache');
+}

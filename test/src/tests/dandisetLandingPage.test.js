@@ -2,7 +2,7 @@ import {
   vBtn, vListItem, vChip
 } from 'jest-puppeteer-vuetify';
 import {
-  uniqueId, registerNewUser, registerDandiset, logout, waitForRequestsToFinish,
+  uniqueId, registerNewUser, registerDandiset, logout, waitForRequestsToFinish, clearCookiesAndCache,
 } from '../util';
 
 describe('dandiset landing page', () => {
@@ -10,9 +10,7 @@ describe('dandiset landing page', () => {
     const { email: otherUser } = await registerNewUser();
     await logout();
 
-    const client = await page.target().createCDPSession();
-    await client.send('Network.clearBrowserCookies');
-    await client.send('Network.clearBrowserCache');
+    await clearCookiesAndCache();
 
     const { email: owner } = await registerNewUser();
 
