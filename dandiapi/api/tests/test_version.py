@@ -55,7 +55,7 @@ def test_draft_version_metadata_computed(draft_version):
             f'https://dandiarchive.org/dandiset/'
             f'{draft_version.dandiset.identifier}/{draft_version.version}'
         ),
-        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -92,7 +92,7 @@ def test_published_version_metadata_computed(published_version):
             f'https://dandiarchive.org/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
-        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
