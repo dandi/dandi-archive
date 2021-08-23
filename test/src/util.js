@@ -47,12 +47,17 @@ export async function logout() {
 /**
  * Register a new user with a random username.
  *
- * @returns {object} { username, email, password }
+ * @returns {object} { username, email, password, firstName, lastName }
  */
 export async function registerNewUser() {
   const username = `user${uniqueId()}`;
   const email = `mr${username}@dandi.test`;
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
+
+  // there's currently no way to set these in development mode,
+  // so they are always empty strings by default
+  const firstName = '';
+  const lastName = '';
 
   await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 
@@ -75,7 +80,7 @@ export async function registerNewUser() {
   await page.goto(CLIENT_URL, { timeout: 0 });
   await waitForRequestsToFinish();
 
-  return { username, email, password };
+  return { username, email, password, firstName, lastName };
 }
 
 /**
@@ -83,6 +88,8 @@ export async function registerNewUser() {
  *
  * @param {string} name
  * @param {string} description
+ *
+ * @returns {string} identifier of the new dandiset
  */
 export async function registerDandiset(name, description) {
   await expect(page).toClickXPath(vBtn('New Dandiset'));
@@ -90,6 +97,7 @@ export async function registerDandiset(name, description) {
   await expect(page).toFillXPath(vTextarea('Description*'), description);
   await expect(page).toClickXPath(vBtn('Register dataset'));
   await waitForRequestsToFinish();
+  return page.url().split('/').pop();
 }
 
 /**
