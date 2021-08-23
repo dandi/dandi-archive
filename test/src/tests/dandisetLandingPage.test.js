@@ -1,5 +1,5 @@
 import {
-  vBtn, vListItem, vChip,
+  vBtn, vChip, vListItem,
 } from 'jest-puppeteer-vuetify';
 import {
   uniqueId,
@@ -39,9 +39,8 @@ describe('dandiset landing page', () => {
     // owner should be in the list of owners
     await expect(page).toMatch(owner);
 
-    // TODO: find a better way to do this (not using keyboard shortcuts)
-    await page.keyboard.press('Tab');
-    await page.type('.v-text-field__slot', otherUser);
+    // search for otherUser and add them as an owner
+    await expect(page).toFillXPath('//input[@placeholder="Search by first name, last name or username"]', otherUser);
     await waitForRequestsToFinish();
     await expect(page).toClickXPath(vListItem(otherUser));
 
