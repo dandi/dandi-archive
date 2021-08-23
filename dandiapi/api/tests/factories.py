@@ -2,6 +2,7 @@ import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib.auth.models import User
 import factory
 import faker
@@ -54,7 +55,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': '0.4.4',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'description': faker.Faker().sentence(),
             'contributor': [{'roleName': ['dcite:ContactPerson']}],
             'license': ['spdx:CC0-1.0'],
@@ -129,7 +130,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
-            'schemaVersion': '0.4.4',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'encodingFormat': 'application/x-nwb',
         }
         # Remove faked data that might conflict with the schema types
