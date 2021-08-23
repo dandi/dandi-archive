@@ -5,9 +5,16 @@ approval process to help prevent misuse of the archive.
 ## 1. Implementation Details
 ### Changes to User model
 Three new columns, `status`, `questionnaire_form`, and `rejection_reason` will be introduced to the `User` model in dandi-api.
-- `status` is an enum that can be one of three values: `INCOMPLETE`, `PENDING`, `APPROVED`, or `REJECTED`.
+- `status` is an enum that can be one of four values: `INCOMPLETE`, `PENDING`, `APPROVED`, or `REJECTED`.
 - `questionnaire_form` is a JSON field. The keys are questions, and the values are the users' answers.
 - `rejection_reason` is an optional string that contains a message written by one of the admins describing why a user was denied approval (if applicable).
+
+### Changes to API
+- /users/me needs to include the user's current status
+
+### Changes to frontend
+- Configuration so the frontend knows where to find SSR pages
+- User avatar circley thing needs to show user's current status
 
 ### New views
 - SSR rendered pages for questionnaire form, pending approval page, rejected page, and admin approval page.
