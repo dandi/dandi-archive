@@ -19,6 +19,7 @@ beforeAll(async () => {
 // eslint-disable-next-line jest/require-top-level-describe
 beforeEach(async () => {
   await jestPuppeteer.resetBrowser();
+  await page.setViewport({ width: 1366, height: 768 });
   await page.goto(CLIENT_URL, { timeout: 0 });
   await waitForRequestsToFinish();
 });

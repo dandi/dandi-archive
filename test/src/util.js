@@ -80,7 +80,9 @@ export async function registerNewUser() {
   await page.goto(CLIENT_URL, { timeout: 0 });
   await waitForRequestsToFinish();
 
-  return { username, email, password, firstName, lastName };
+  return {
+    username, email, password, firstName, lastName,
+  };
 }
 
 /**
