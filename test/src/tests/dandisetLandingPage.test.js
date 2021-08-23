@@ -1,8 +1,13 @@
 import {
-  vBtn, vListItem, vChip
+  vBtn, vListItem, vChip,
 } from 'jest-puppeteer-vuetify';
 import {
-  uniqueId, registerNewUser, registerDandiset, logout, waitForRequestsToFinish, clearCookiesAndCache,
+  uniqueId,
+  registerNewUser,
+  registerDandiset,
+  logout,
+  waitForRequestsToFinish,
+  clearCookiesAndCache,
 } from '../util';
 
 describe('dandiset landing page', () => {

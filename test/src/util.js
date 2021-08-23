@@ -100,3 +100,13 @@ export async function clearCookiesAndCache() {
   await client.send('Network.clearBrowserCookies');
   await client.send('Network.clearBrowserCache');
 }
+
+/**
+ * Disables all cookies (3rd party and otherwise) in the current browser session.
+ */
+export async function disableAllCookies() {
+  const client = await page.target().createCDPSession();
+  await client.send('Emulation.setDocumentCookieDisabled', { disabled: true });
+  await page.reload();
+  await waitForRequestsToFinish();
+}
