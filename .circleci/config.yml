@@ -6,6 +6,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install web app
+          command: yarn install --frozen-lockfile
+      - run:
           name: Lint web app
           command: yarn run lint --no-fix
 
