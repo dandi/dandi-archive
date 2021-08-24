@@ -162,7 +162,7 @@
                     </template>
                     <v-list dense>
                       <v-subheader
-                        v-if="getExternalServices(item.asset_id, item.name).length"
+                        v-if="item.services.length"
                         class="font-weight-medium"
                       >
                         EXTERNAL SERVICES
@@ -172,7 +172,7 @@
                       </v-subheader>
 
                       <v-list-item
-                        v-for="el in getExternalServices(item.asset_id, item.name)"
+                        v-for="el in item.services"
                         :key="el.name"
                         :href="el.url"
                       >
@@ -293,7 +293,16 @@ export default {
             (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
           ).sort(sortByName),
           ...Object.keys(data.files).map(
-            (key) => ({ ...data.files[key], name: key, folder: false }),
+            (key) => {
+              const { id } = data.files[key];
+              const services = this.getExternalServices(id, key);
+              return {
+                ...data.files[key],
+                name: key,
+                folder: false,
+                services,
+              };
+            },
           ).sort(sortByName),
         ];
       },
@@ -346,7 +355,6 @@ export default {
 
     getExternalServices(asset_id, name) {
       const { identifier, version } = this;
-
       return EXTERNAL_SERVICES
         .filter((service) => new RegExp(service.regex).test(name))
         .map((service) => ({
