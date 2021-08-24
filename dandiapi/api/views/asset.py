@@ -80,7 +80,7 @@ def _download_asset(asset: Asset):
 )
 @api_view(['GET', 'HEAD'])
 def asset_download_view(request, asset_id):
-    asset = Asset.objects.get(asset_id=asset_id)
+    asset = get_object_or_404(Asset, asset_id=asset_id)
     return _download_asset(asset)
 
 
@@ -229,7 +229,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
         old_asset = self.get_object()
-        version = Version.objects.get(
+        version = get_object_or_404(
+            Version,
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
@@ -305,8 +306,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     )
     def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         asset = self.get_object()
-        version = Version.objects.get(
-            dandiset__pk=versions__dandiset__pk, version=versions__version
+        version = get_object_or_404(
+            Version,
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
         )
         if version.version != 'draft':
             return Response(

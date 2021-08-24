@@ -268,7 +268,7 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': '0.4.4',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': path,
         'meta': 'data',
@@ -402,7 +402,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
-        'schemaVersion': '0.4.4',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': new_path,
         'foo': 'bar',

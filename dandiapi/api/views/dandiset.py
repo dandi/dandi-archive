@@ -2,6 +2,8 @@ import logging
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import OuterRef, Q, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
@@ -231,20 +233,18 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             def get_user_or_400(username):
-                try:
-                    # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
-                    # so it is not empowered to do a more powerful query like:
-                    # SocialAccount.objects.get(extra_data__login=username)
-                    # We resort to doing this awkward search instead.
-                    for social_account in SocialAccount.objects.filter(
-                        extra_data__icontains=username
-                    ):
-                        if social_account.extra_data['login'] == username:
-                            return social_account.user
-                    else:
-                        raise SocialAccount.DoesNotExist()
-                except SocialAccount.DoesNotExist:
-                    raise ValidationError(f'User {username} not found')
+                # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
+                # so it is not empowered to do a more powerful query like:
+                # SocialAccount.objects.get(extra_data__login=username)
+                # We resort to doing this awkward search instead.
+                for social_account in SocialAccount.objects.filter(extra_data__icontains=username):
+                    if social_account.extra_data['login'] == username:
+                        return social_account.user
+                else:
+                    try:
+                        return User.objects.get(username=username)
+                    except ObjectDoesNotExist:
+                        raise ValidationError(f'User {username} not found')
 
             owners = [
                 get_user_or_400(username=owner['username']) for owner in serializer.validated_data
