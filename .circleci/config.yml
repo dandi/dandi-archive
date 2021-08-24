@@ -29,6 +29,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install web app
+          command: yarn install --frozen-lockfile
+      - run:
+          name: Run web app
+          command: yarn serve
+          background: true
+      - run:
           name: Create virtual environment
           command: python3 -m venv install_env
       - run:
@@ -70,13 +77,6 @@ jobs:
             DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
             DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
             DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
-      - run:
-          name: Install web app
-          command: yarn install --frozen-lockfile
-      - run:
-          name: Run web app
-          command: yarn serve
-          background: true
       - run:
           name: Install E2E tests
           command: yarn install --frozen-lockfile
