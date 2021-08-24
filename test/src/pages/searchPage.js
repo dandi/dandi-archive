@@ -14,7 +14,7 @@ export async function search(query) {
   await expect(page).toFillXPath(vToolbar() + vTextField(), query);
   await expect(page).toClickXPath(vIcon('mdi-magnify'));
   // TODO figure out a dynamic wait
-  await page.waitFor(2000);
+  await page.waitForTimeout(2000);
 }
 
 /**
