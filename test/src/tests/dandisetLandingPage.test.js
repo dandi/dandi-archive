@@ -30,7 +30,7 @@ describe('dandiset landing page', () => {
     await expect(page).not.toContainXPath(vChip(otherUser));
     await expect(page).toContainXPath(vChip(owner));
 
-    // click the manage button, giving it some time to render
+    // click the manage button
     await expect(page).toClickXPath(vBtn('Manage'));
 
     // otherUser should not be in the list of owners (yet)
