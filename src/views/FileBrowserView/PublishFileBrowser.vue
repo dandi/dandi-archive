@@ -140,17 +140,49 @@
                 </v-btn>
               </v-list-item-action>
 
-              <v-list-item-action v-if="item.asset_id && fileExtension(item.name)">
-                <v-btn
-                  icon
-                  :href="viewURI(item.asset_id, item.name)"
-                  target="_blank"
-                  rel="noopener"
+              <v-list-item-action v-if="item.asset_id">
+                <v-col
+                  cols="12"
+                  sm="6"
+                  offset-sm="3"
                 >
-                  <v-icon color="primary">
-                    mdi-file-eye
-                  </v-icon>
-                </v-btn>
+                  <v-menu
+                    bottom
+                    left
+                  >
+                    <template #activator="{ on, attrs }">
+                      <v-btn
+                        color="primary"
+                        icon
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon>mdi-dots-vertical</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list dense>
+                      <v-subheader
+                        v-if="getExternalServices(item.asset_id, item.name).length"
+                        class="font-weight-medium"
+                      >
+                        EXTERNAL SERVICES
+                      </v-subheader>
+                      <v-subheader v-else>
+                        EXTERNAL SERVICES: not found
+                      </v-subheader>
+
+                      <v-list-item
+                        v-for="el in getExternalServices(item.asset_id, item.name)"
+                        :key="el.name"
+                        :href="el.url"
+                      >
+                        <v-list-item-title class="font-weight-light">
+                          {{ el.name }}
+                        </v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </v-col>
               </v-list-item-action>
 
               <v-list-item-action
@@ -185,6 +217,27 @@ const sortByName = (a, b) => {
   }
   return 0;
 };
+
+const EXTERNAL_SERVICES = [
+  {
+    name: 'Bioimagesuite/Viewer',
+    regex: '.nii(.gz)?$',
+    extensions: [
+      '.nii',
+      '.nii.gz',
+    ],
+    endpoint: 'https://bioimagesuiteweb.github.io/alphaapp/viewer.html?image=',
+  },
+
+  {
+    name: 'MetaCell/NWBExplorer',
+    regex: '.nwb$',
+    extensions: [
+      '.nwb',
+    ],
+    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
+  },
+];
 
 export default {
   name: 'PublishFileBrowser',
@@ -291,29 +344,21 @@ export default {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
     },
 
-    viewURI(asset_id, name) {
-      const file_ext = this.fileExtension(name);
-      if (file_ext === 'nii') {
-        return `https://bioimagesuiteweb.github.io/alphaapp/viewer.html?image=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
-      }
-      if (file_ext === 'nwb') {
-        return `http://nwbexplorer.opensourcebrain.org/nwbfile=${publishRest.assetDownloadURI(this.identifier, this.version, asset_id)}`;
-      }
+    getExternalServices(asset_id, name) {
+      const validServices = [];
+      const ident = this.identifier;
+      const vers = this.version;
 
-      return undefined;
-    },
-
-    fileExtension(name) {
-      let ext;
-      const name_split_ar = name.split('.');
-      if (name_split_ar[name_split_ar.length - 1] === 'nwb') {
-        ext = 'nwb';
-      } else if (name_split_ar[name_split_ar.length - 1] === 'nii' || name_split_ar[name_split_ar.length - 2] === 'nii') {
-        ext = 'nii';
-      } else {
-        ext = false;
-      }
-      return ext;
+      EXTERNAL_SERVICES.forEach((service) => {
+        const regex = new RegExp(service.regex);
+        if (regex.test(name)) {
+          validServices.push({
+            name: service.name,
+            url: service.endpoint + publishRest.assetDownloadURI(ident, vers, asset_id),
+          });
+        }
+      });
+      return validServices;
     },
 
     assetMetadataURI(asset_id) {
