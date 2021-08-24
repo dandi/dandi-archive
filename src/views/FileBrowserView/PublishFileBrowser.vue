@@ -226,7 +226,7 @@ const EXTERNAL_SERVICES = [
       '.nii',
       '.nii.gz',
     ],
-    endpoint: 'https://bioimagesuiteweb.github.io/alphaapp/viewer.html?image=',
+    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
   },
 
   {
