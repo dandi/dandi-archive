@@ -71,7 +71,9 @@ class DandiMixin(ConfigMixin):
     #
     # When Brian Helba is able to resolve this problem upstream (in
     # django-composed-configuration) we can remove this setting.
-    SWAGGER_SETTINGS = {}
+    SWAGGER_SETTINGS = {
+        'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.swagger.DANDISwaggerAutoSchema',
+    }
 
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
