@@ -345,20 +345,14 @@ export default {
     },
 
     getExternalServices(asset_id, name) {
-      const validServices = [];
-      const ident = this.identifier;
-      const vers = this.version;
+      const { identifier, version } = this;
 
-      EXTERNAL_SERVICES.forEach((service) => {
-        const regex = new RegExp(service.regex);
-        if (regex.test(name)) {
-          validServices.push({
-            name: service.name,
-            url: service.endpoint + publishRest.assetDownloadURI(ident, vers, asset_id),
-          });
-        }
-      });
-      return validServices;
+      return EXTERNAL_SERVICES
+        .filter((service) => new RegExp(service.regex).test(name))
+        .map((service) => ({
+          name: service.name,
+          url: `${service.endpoint}${publishRest.assetDownloadURI(identifier, version, asset_id)}`,
+        }));
     },
 
     assetMetadataURI(asset_id) {
