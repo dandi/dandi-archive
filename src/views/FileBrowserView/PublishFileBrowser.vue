@@ -226,6 +226,7 @@ const EXTERNAL_SERVICES = [
       '.nii',
       '.nii.gz',
     ],
+    maxsize: 4e6,
     endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
   },
 
@@ -235,6 +236,7 @@ const EXTERNAL_SERVICES = [
     extensions: [
       '.nwb',
     ],
+    maxsize: 4e6,
     endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
   },
 ];
@@ -294,8 +296,8 @@ export default {
           ).sort(sortByName),
           ...Object.keys(data.files).map(
             (key) => {
-              const { id } = data.files[key];
-              const services = this.getExternalServices(id, key);
+              const { id, size } = data.files[key];
+              const services = this.getExternalServices(id, key, size);
               return {
                 ...data.files[key],
                 name: key,
@@ -353,10 +355,10 @@ export default {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
     },
 
-    getExternalServices(asset_id, name) {
+    getExternalServices(asset_id, name, size) {
       const { identifier, version } = this;
       return EXTERNAL_SERVICES
-        .filter((service) => new RegExp(service.regex).test(name))
+        .filter((service) => new RegExp(service.regex).test(name) && size <= service.maxsize)
         .map((service) => ({
           name: service.name,
           url: `${service.endpoint}${publishRest.assetDownloadURI(identifier, version, asset_id)}`,
