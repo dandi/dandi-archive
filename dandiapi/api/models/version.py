@@ -134,7 +134,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def make_version(cls, dandiset: Dandiset = None) -> str:
         versions: models.Manager = dandiset.versions if dandiset else cls.objects
 
-        time = datetime.datetime.utcnow()
+        time = datetime.datetime.now(datetime.timezone.utc)
         # increment time until there are no collisions
         while True:
             version = cls.datetime_to_version(time)
@@ -160,7 +160,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             status=Version.Status.VALID,
         )
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         # Recompute the metadata and inject the publishedBy and datePublished fields
         published_version.metadata = {
             **published_version._populate_metadata(version_with_assets=self),
@@ -207,6 +207,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'assetsSummary',
             'citation',
             'doi',
+            'dateCreated',
             'datePublished',
             'publishedBy',
             'manifestLocation',
@@ -251,6 +252,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
             'assetsSummary': summary,
+            'dateCreated': self.dandiset.created.isoformat(),
         }
         if self.doi:
             metadata['doi'] = self.doi

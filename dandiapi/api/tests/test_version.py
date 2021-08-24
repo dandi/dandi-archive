@@ -8,7 +8,7 @@ import pytest
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 
-from .fuzzy import TIMESTAMP_RE, URN_RE, VERSION_ID_RE
+from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
 
 @pytest.mark.django_db
@@ -32,7 +32,7 @@ def test_version_make_version_save(mocker, dandiset, published_version_factory):
 
 
 @pytest.mark.django_db
-def test_draft_version_metadata_computed(draft_version):
+def test_draft_version_metadata_computed(draft_version: Version):
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     draft_version.metadata = original_metadata
 
@@ -55,6 +55,7 @@ def test_draft_version_metadata_computed(draft_version):
             f'https://dandiarchive.org/dandiset/'
             f'{draft_version.dandiset.identifier}/{draft_version.version}'
         ),
+        'dateCreated': draft_version.dandiset.created.isoformat(),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -68,7 +69,7 @@ def test_draft_version_metadata_computed(draft_version):
 
 
 @pytest.mark.django_db
-def test_published_version_metadata_computed(published_version):
+def test_published_version_metadata_computed(published_version: Version):
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     published_version.metadata = original_metadata
 
@@ -92,6 +93,7 @@ def test_published_version_metadata_computed(published_version):
             f'https://dandiarchive.org/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
+        'dateCreated': published_version.dandiset.created.isoformat(),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -266,8 +268,8 @@ def test_version_publish_version(draft_version, asset):
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -280,7 +282,8 @@ def test_version_publish_version(draft_version, asset):
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
@@ -424,7 +427,13 @@ def test_version_rest_update(api_client, user, draft_version):
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
-    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    new_metadata = {
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+        # This should be stripped out
+        'dateCreated': 'foobar',
+    }
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
@@ -440,6 +449,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -509,6 +519,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -626,8 +637,8 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -640,7 +651,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
@@ -723,13 +734,13 @@ def test_version_rest_publish_assets(
     assert new_draft_asset.blob == old_draft_asset.blob
     assert new_draft_asset.metadata == {
         **old_draft_asset.metadata,
-        'datePublished': TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
             # TODO endDate needs to be defined before publish is complete
-            'endDate': TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,

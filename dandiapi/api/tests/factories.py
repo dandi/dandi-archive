@@ -82,7 +82,7 @@ class PublishedVersionFactory(BaseVersionFactory):
     def _create(cls, *args, **kwargs):
         version: Version = super()._create(*args, **kwargs)
         version.doi = f'10.80507/dandi.{version.dandiset.identifier}/{version.version}'
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
         version.metadata = {
             **version.metadata,
             'publishedBy': version.published_by(now),
