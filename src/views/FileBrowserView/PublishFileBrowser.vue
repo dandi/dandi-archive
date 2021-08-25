@@ -226,7 +226,7 @@ const EXTERNAL_SERVICES = [
       '.nii',
       '.nii.gz',
     ],
-    maxsize: 4e6,
+    maxsize: 1e9,
     endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
   },
 
@@ -236,7 +236,7 @@ const EXTERNAL_SERVICES = [
     extensions: [
       '.nwb',
     ],
-    maxsize: 4e6,
+    maxsize: 1e9,
     endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
   },
 ];
