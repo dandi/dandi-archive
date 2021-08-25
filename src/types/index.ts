@@ -1,5 +1,8 @@
 import { Dandiset as DandisetMetadata } from './schema';
 
+export { DandisetMetadata };
+export * from './schema';
+
 export interface User {
   username: string,
   name: string,
