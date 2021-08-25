@@ -296,8 +296,8 @@ export default {
           ).sort(sortByName),
           ...Object.keys(data.files).map(
             (key) => {
-              const { id, size } = data.files[key];
-              const services = this.getExternalServices(id, key, size);
+              const { asset_id, size } = data.files[key];
+              const services = this.getExternalServices(asset_id, key, size);
               return {
                 ...data.files[key],
                 name: key,
