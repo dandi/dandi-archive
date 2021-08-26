@@ -141,48 +141,48 @@
               </v-list-item-action>
 
               <v-list-item-action v-if="item.asset_id">
-                <v-col
-                  cols="12"
-                  sm="6"
-                  offset-sm="3"
+                <v-menu
+                  bottom
+                  left
                 >
-                  <v-menu
-                    bottom
-                    left
-                  >
-                    <template #activator="{ on, attrs }">
-                      <v-btn
-                        color="primary"
-                        icon
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        <v-icon>mdi-dots-vertical</v-icon>
-                      </v-btn>
-                    </template>
-                    <v-list dense>
-                      <v-subheader
-                        v-if="item.services.length"
-                        class="font-weight-medium"
-                      >
-                        EXTERNAL SERVICES
-                      </v-subheader>
-                      <v-subheader v-else>
-                        EXTERNAL SERVICES: not found
-                      </v-subheader>
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      v-if="item.services.length"
+                      color="primary"
+                      icon
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-else
+                      color="primary"
+                      disabled
+                      icon
+                    >
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list dense>
+                    <v-subheader
+                      v-if="item.services.length"
+                      class="font-weight-medium"
+                    >
+                      EXTERNAL SERVICES
+                    </v-subheader>
 
-                      <v-list-item
-                        v-for="el in item.services"
-                        :key="el.name"
-                        :href="el.url"
-                      >
-                        <v-list-item-title class="font-weight-light">
-                          {{ el.name }}
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </v-col>
+                    <v-list-item
+                      v-for="el in item.services"
+                      :key="el.name"
+                      :href="el.url"
+                    >
+                      <v-list-item-title class="font-weight-light">
+                        {{ el.name }}
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
               </v-list-item-action>
 
               <v-list-item-action
@@ -222,10 +222,6 @@ const EXTERNAL_SERVICES = [
   {
     name: 'Bioimagesuite/Viewer',
     regex: '.nii(.gz)?$',
-    extensions: [
-      '.nii',
-      '.nii.gz',
-    ],
     maxsize: 1e9,
     endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
   },
@@ -233,9 +229,6 @@ const EXTERNAL_SERVICES = [
   {
     name: 'MetaCell/NWBExplorer',
     regex: '.nwb$',
-    extensions: [
-      '.nwb',
-    ],
     maxsize: 1e9,
     endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
   },
