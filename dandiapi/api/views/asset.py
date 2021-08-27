@@ -58,7 +58,7 @@ def _download_asset(asset: Asset):
         )
         return HttpResponseRedirect(url)
     elif isinstance(storage, MinioStorage):
-        client = storage.base_url_client
+        client = storage.client if storage.base_url is None else storage.base_url_client
         bucket = storage.bucket_name
         obj = asset.blob.blob.name
         path = os.path.basename(asset.path)
