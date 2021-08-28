@@ -12,23 +12,36 @@ from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
 
 @pytest.mark.django_db
-def test_version_make_version_nosave(dandiset):
+def test_version_next_published_version_nosave(dandiset):
     # Without saving, the output should be reproducible
-    version_str_1 = Version.make_version(dandiset)
-    version_str_2 = Version.make_version(dandiset)
+    version_str_1 = Version.next_published_version(dandiset)
+    version_str_2 = Version.next_published_version(dandiset)
     assert version_str_1 == version_str_2
     assert version_str_1 == VERSION_ID_RE
 
 
 @pytest.mark.django_db
-def test_version_make_version_save(mocker, dandiset, published_version_factory):
+def test_version_next_published_version_save(mocker, dandiset, published_version_factory):
     # Given an existing version at the current time, a different one should be allocated
-    make_version_spy = mocker.spy(Version, 'make_version')
+    next_published_version_spy = mocker.spy(Version, 'next_published_version')
     version_1 = published_version_factory(dandiset=dandiset)
-    make_version_spy.assert_called_once()
+    next_published_version_spy.assert_called_once()
 
-    version_str_2 = Version.make_version(dandiset)
+    version_str_2 = Version.next_published_version(dandiset)
     assert version_1.version != version_str_2
+
+
+@pytest.mark.django_db
+def test_version_next_published_version_simultaneous_save(
+    dandiset_factory,
+    published_version_factory,
+):
+    dandiset_1 = dandiset_factory()
+    dandiset_2 = dandiset_factory()
+    version_1 = published_version_factory(dandiset=dandiset_1)
+    version_2 = published_version_factory(dandiset=dandiset_2)
+    # Different dandisets published at the same time should have the same version string
+    assert version_1.version == version_2.version
 
 
 @pytest.mark.django_db

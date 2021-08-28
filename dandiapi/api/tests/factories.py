@@ -52,6 +52,10 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('sentence')
 
     @factory.lazy_attribute
+    def version(self):
+        return Version.next_published_version(self.dandiset)
+
+    @factory.lazy_attribute
     def metadata(self):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
