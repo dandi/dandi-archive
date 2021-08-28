@@ -126,13 +126,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def next_published_version(cls, dandiset: Dandiset) -> str:
-        versions: models.Manager = dandiset.versions if dandiset else cls.objects
-
         time = datetime.datetime.now(datetime.timezone.utc)
         # increment time until there are no collisions
         while True:
             version = cls.datetime_to_version(time)
-            collision = versions.filter(version=version).exists()
+            collision = dandiset.versions.filter(version=version).exists()
             if not collision:
                 break
             time += datetime.timedelta(minutes=1)
