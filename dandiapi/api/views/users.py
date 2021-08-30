@@ -76,17 +76,22 @@ def users_search_view(request: Request) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     username: str = request_serializer.validated_data['username']
 
-    social_accounts = SocialAccount.objects.filter(extra_data__icontains=username)[:10]
+    # Perform a search, excluding any inactive users
+    social_accounts = SocialAccount.objects.filter(
+        extra_data__icontains=username, user__is_active=True
+    )[:10]
     users = [social_account_to_dict(social_account) for social_account in social_accounts]
 
     # Try searching Django's regular `User`s if there aren't any results.
     # This allows this feature to work in development without having to conditionalize
     # code based on the type of deployment.
     if not users:
+        # Perform a search, excluding any user accounts that
+        # are inactive + the default 'AnonymousUser' account
         users = [
             user_to_dict(user)
             for user in User.objects.filter(username__icontains=username).filter(
-                ~Q(username='AnonymousUser')
+                ~Q(username='AnonymousUser'), Q(is_active=True)
             )[:10]
         ]
 
