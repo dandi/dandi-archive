@@ -1,3 +1,8 @@
+# ARCHIVED
+This design was intended to create a better UX around calculating the `assetsSummary` field.
+An optimization was found that addressed the issues we were experiencing, so this design was never implemented.
+If it is ever of interest, the design will need to be reevaluated.
+
 # Asynchronous Tasks
 We are currently (7/16/2021) using celery to run these asynchronous tasks:
 
