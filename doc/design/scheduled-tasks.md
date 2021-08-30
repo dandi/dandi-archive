@@ -19,41 +19,66 @@ We would like to move this `assetsSummary` calculation into a celery task, but w
 We need a way to run this task only once per batch of uploads.
 
 ## Proposal
-Instead of adding a new task to the queue whenever something needs to be done, we use a scheduled job that runs the task only when necessary.
+Instead of adding a new task to the queue to calculate `assetsSummary`, we use a scheduled job that runs the task only when necessary.
 
-Since `assetsSummary` calculation and dandiset metadata validation both need to be triggered in the same circumstances, we'll consider them together.
+Since `assetsSummary` only needs to be recalculated when an asset is added, removed, or modified, we don't want it to recompute whenever the Version is modified, as it is now.
 
 #### Request thread
-Whenever a Version is modified, a flag `needs_recomputing` is set on the Version indicating that it has been modified (instead of queueing a task as it does now):
+Whenever an asset is added (`POST`), removed (`DELETE`), or modified (`PUT`), a flag `needs_recomputing` is set on the Version indicating that it needs to be recomputed (instead of queueing a task as it does now):
 ```
-  # Things that modify the version, necessitating a validation/assetsSummary computation
-  ...
   # validate_version_metadata.delay(version.id)
   version.needs_recomputing = True
 ```
 
 #### Scheduled job
 Separately, a scheduled job that runs on a configurable fairly tight interval will check for any Versions that need to be updated.
-For each of those Versions, it also checks that the Version hasn't been modified in a certain amount of time (say 5 minutes). This prevents DB locks from happening while Assets are still being uploaded to the Version.
 
-The code would look something like this:
+The full code would look something like this:
 ```
 def scheduled_task():
-  versions = Version.objects.filter(needs_recomputing=True).filter(modified__lt=timezone.now() - 5 minutes)
-  # SELECT ... FROM api_version WHERE api_version.needs_recomputing AND now() - api_version.modified > 5 minutes;
+  with transaction.atomic():
+    versions = Version.objects.filter(needs_recomputing=True).filter(modified__lt=timezone.now() - 5 minutes)
+    # SELECT ... FROM api_version WHERE api_version.needs_recomputing AND now() - api_version.modified > 5 minutes;
+
+    for version in versions:
+      try:
+        # Calculate assetsSummary
+        version.metadata['assetsSummary'] = calculate_assetsSummary(version)
+
+        version.needs_recomputing = False
+
+        # The version has been modified, so it needs to be revalidated
+        version.status = PENDING
+        version.save()
+
+        # Dispatch the version validation task
+        validate_version_task.delay(version.id)
+      except:
+        # Something went wrong, mark the version as dirty again so it can be retried next task
+        version.needs_recomputing = True
+        version.save()
 ```
 
-The job would then immediately set `version.needs_recomputing = False` on all of the "dirty" Versions.
-If any simultaneous requests happen to modify the Version while it is being recomputed/validated, those changes may or may not happen in time to be represented.
-However, they are guaranteed to trigger another recomputation in 5 minutes, so the system will eventually regain consistency.
+The entire task happens within a [Django transaction](https://docs.djangoproject.com/en/3.2/topics/db/transactions/#controlling-transactions-explicitly), so we don't have to worry about requests making concurrent modifications.
+This is a little overzealous because if there are multiple versions to update, they will all be locked until they have all finished computing.
+In practice it is very unlikely that two or more users will coincidentally finish making modifications at the same time.
 
-Finally, the actual task logic would be applied to each version: calculate `assetsSummary`, inject it into the metadata, and perform the validation, marking the Version accordingly.
+For Version that `needs_recomputing`, the query checks that the Version hasn't been modified in a certain amount of time (say 5 minutes). This prevents DB locks from happening while Assets are still being uploaded to the Version.
 
-## Changes to existing tasks
-We shouldn't need to change how calculating blob sha256 digests or how writing dandiset.yaml and assets.yaml work at all.
-They don't block the DB in any meaningful way, and so can continue working as they always have.
+The actual task logic would be applied to each version: calculate `assetsSummary`, inject it into the metadata, marking the version as no longer needing recomputing, and dispatching a follow-up task to validate the version.
 
-Validating asset metadata could possibly be run with a job, but I would recommend not switching it yet.
-Uploading or updating Assets doesn't happen with the same frequency as with Versions, so it doesn't benefit from debouncing in the same way.
+Recomputation should fail very infrequently, either because of SQL errors or because of introduced bugs in our code.
+In the event of an error, `needs_recomputing` should be set to `True` so that it is retried, hopefully resolving intermittent errors.
+The error should then be thrown so that it shows up in Sentry.
 
-Validating dandiset metadata will, as described, be a dispatched by the scheduled job, and will also calculate `assetsSummary` before validating.
+## Related changes
+No other tasks would benefit from this same debouncing, so all our other tasks will remain the same.
+
+The only other required change is to make Versions with `needs_recomputing == True` report as non-valid for publishing purposes.
+If a version needs to be recomputed, it is not eligible for publishing.
+
+We will need two configurable settings:
+* The interval that the scheduled task runs at.
+* How long the scheduled task should wait after a Version is modified before recomputing `assetsSummary`.
+
+Integration tests will be able to set these configuration values to something like 1 second each, so the task finishes in a timely manner.
