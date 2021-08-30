@@ -1,3 +1,4 @@
+import logging
 import os
 
 from celery import shared_task
@@ -5,6 +6,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db.transaction import atomic
 import jsonschema.exceptions
+import requests
 
 from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.manifests import (
@@ -152,3 +154,33 @@ def validate_version_metadata(version_id: int) -> None:
     version.status = Version.Status.VALID
     version.validation_errors = []
     version.save()
+
+
+@shared_task
+def delete_doi(doi: str) -> None:
+    # If DOI isn't configured, skip the API call
+    if (
+        settings.DANDI_DOI_API_URL is not None
+        and settings.DANDI_DOI_API_USER is not None
+        and settings.DANDI_DOI_API_PASSWORD is not None
+        and settings.DANDI_DOI_API_PREFIX is not None
+    ):
+        doi_url = settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi
+        with requests.Session() as s:
+            s.auth = (settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
+            try:
+                r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    logging.warning('Tried to get data for nonexistent DOI %s', doi)
+                    return
+                else:
+                    logging.error('Failed to fetch data for DOI %s', doi)
+                    raise e
+            if r.json()['data']['attributes']['state'] == 'draft':
+                try:
+                    s.delete(doi_url).raise_for_status()
+                except requests.exceptions.HTTPError as e:
+                    logging.error('Failed to delete DOI %s', doi)
+                    raise e
