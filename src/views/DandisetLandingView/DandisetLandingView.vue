@@ -43,7 +43,7 @@
             v-if="!$vuetify.breakpoint.smAndDown"
             cols="2"
           >
-            <DandisetDetails
+            <DandisetSidebar
               :user-can-modify-dandiset="userCanModifyDandiset"
               @edit="edit = true"
             />
@@ -53,7 +53,7 @@
           <v-col
             cols="12"
           >
-            <DandisetDetails
+            <DandisetSidebar
               :user-can-modify-dandiset="userCanModifyDandiset"
               @edit="edit = true"
             />
@@ -75,7 +75,7 @@ import { publishRest, user as userFunc } from '@/rest';
 import { User, Version } from '@/types';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
-import DandisetDetails from './DandisetDetails.vue';
+import DandisetSidebar from './DandisetSidebar.vue';
 
 export default defineComponent({
   name: 'DandisetLandingView',
@@ -84,7 +84,7 @@ export default defineComponent({
     DandisetMain,
     DandisetSearchField,
     DandisetStats,
-    DandisetDetails,
+    DandisetSidebar,
   },
   props: {
     identifier: {

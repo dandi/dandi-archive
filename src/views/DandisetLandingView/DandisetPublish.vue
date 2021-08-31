@@ -1,0 +1,349 @@
+<template>
+  <v-card
+    outlined
+    class="mt-4 pa-3"
+  >
+    <v-row
+      class="mb-4"
+      no-gutters
+    >
+      <template v-if="currentDandiset.version === 'draft'">
+        <v-tooltip
+          :disabled="!publishDisabledMessage"
+          left
+        >
+          <template #activator="{ on }">
+            <div
+              style="width: 100%"
+              v-on="on"
+            >
+              <v-btn
+                block
+                color="success"
+                :disabled="publishDisabled || !user"
+                @click="publish"
+              >
+                Publish
+                <v-spacer />
+                <v-icon>mdi-upload</v-icon>
+              </v-btn>
+            </div>
+          </template>
+          <span>{{ publishDisabledMessage }}</span>
+        </v-tooltip>
+      </template>
+    </v-row>
+
+    <v-row
+      class="mb-4"
+      no-gutters
+    >
+      <v-menu
+        v-if="currentDandiset.version_validation_errors.length"
+        :nudge-width="200"
+        offset-y
+        open-on-hover
+      >
+        <template #activator="{ on: menu, attrs }">
+          <v-tooltip bottom>
+            <template #activator="{ on: tooltip }">
+              <v-btn
+                block
+                class="amber lighten-5 no-text-transform"
+                depressed
+                v-bind="attrs"
+                v-on="{ ...tooltip, ...menu }"
+              >
+                <v-icon
+                  color="warning"
+                  class="mr-1"
+                >
+                  mdi-playlist-remove
+                </v-icon>
+                <v-spacer />
+                <span
+                  style="white-space: normal"
+                  class="text-caption"
+                >
+                  This Dandiset has {{ currentDandiset.version_validation_errors.length }}
+                  metadata<br>validation error(s).
+                </span>
+              </v-btn>
+            </template>
+            <span>Fix issues with metadata</span>
+          </v-tooltip>
+        </template>
+        <v-card class="pa-1">
+          <v-list
+            style="max-height: 200px"
+            class="overflow-y-auto"
+          >
+            <div
+              v-for="(error, index) in currentDandiset.version_validation_errors"
+              :key="index"
+            >
+              <v-list-item>
+                <v-list-item-icon>
+                  <v-icon>
+                    {{ getValidationErrorIcon(error.field) }}
+                  </v-icon>
+                </v-list-item-icon>
+
+                <v-list-item-content>
+                  {{ error.field }}: {{ error.message }}
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider />
+            </div>
+          </v-list>
+          <v-btn
+            color="primary"
+            @click="$emit('edit')"
+          >
+            Fix issues
+          </v-btn>
+        </v-card>
+      </v-menu>
+    </v-row>
+
+    <v-row
+      class="mb-4"
+      no-gutters
+    >
+      <v-menu
+        v-if="currentDandiset.asset_validation_errors.length"
+        :nudge-width="200"
+        offset-y
+        open-on-hover
+      >
+        <template #activator="{ on: menu, attrs }">
+          <v-tooltip bottom>
+            <template #activator="{ on: tooltip }">
+              <v-btn
+                block
+                class="amber lighten-5 no-text-transform"
+                depressed
+                v-bind="attrs"
+                v-on="{ ...tooltip, ...menu }"
+              >
+                <v-icon
+                  color="warning"
+                  class="mr-1"
+                >
+                  mdi-database-remove
+                </v-icon>
+                <v-spacer />
+                <span
+                  style="white-space: normal"
+                  class="text-caption"
+                >
+                  This Dandiset has {{ currentDandiset.asset_validation_errors.length }}
+                  asset<br>validation error(s).
+                </span>
+              </v-btn>
+            </template>
+            <span>Fix issues with assets</span>
+          </v-tooltip>
+        </template>
+        <v-card class="pa-1">
+          <v-list
+            style="max-height: 200px"
+            class="overflow-y-auto"
+          >
+            <div
+              v-for="(error, index) in currentDandiset.asset_validation_errors"
+              :key="index"
+            >
+              <v-list-item>
+                <v-list-item-icon>
+                  <v-icon>
+                    {{ getValidationErrorIcon(error.field) }}
+                  </v-icon>
+                </v-list-item-icon>
+
+                <v-list-item-content>
+                  {{ error.field }}: {{ error.message }}
+                </v-list-item-content>
+              </v-list-item>
+              <v-divider />
+            </div>
+          </v-list>
+        </v-card>
+      </v-menu>
+    </v-row>
+    <v-row>
+      <v-subheader>
+        This Version
+      </v-subheader>
+    </v-row>
+    <v-row
+      class="pa-2 mb-5 text-body-2 align-center"
+      style="border-top: thin solid rgba(0, 0, 0, 0.12);
+               border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+    >
+      <v-col cols="5">
+        {{ formatDate(currentDandiset.modified) }}
+      </v-col>
+      <v-col>
+        <h3>{{ currentVersion.toUpperCase() }}</h3>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-subheader>
+        Other Versions
+      </v-subheader>
+    </v-row>
+    <v-row
+      v-for="(version, i) in otherVersions"
+      :key="i"
+      class="pa-2 text-body-2 align-center"
+      style="border-top: thin solid rgba(0, 0, 0, 0.12);
+               border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+    >
+      <v-col cols="5">
+        {{ formatDate(version.modified) }}
+      </v-col>
+      <v-col>
+        <v-btn
+          outlined
+          @click="setVersion(version)"
+        >
+          {{ version.version.toUpperCase() }}
+        </v-btn>
+      </v-col>
+    </v-row>
+  </v-card>
+</template>
+
+<script lang="ts">
+import {
+  defineComponent, computed, ComputedRef,
+} from '@vue/composition-api';
+
+import moment from 'moment';
+
+import { publishRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
+import { Version } from '@/types';
+
+import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
+import { RawLocation } from 'vue-router';
+
+function getValidationErrorIcon(errorField: string): string {
+  const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
+  if (icons.length > 0) {
+    return (VALIDATION_ICONS as any)[icons[0]];
+  }
+  return VALIDATION_ICONS.DEFAULT;
+}
+
+// Sort versions from most recently modified to least recently modified.
+// The DRAFT version is always the first element when present.
+function sortVersions(v1: Version, v2: Version) {
+  // Always put draft first
+  if (v1.version === 'draft' || v1.modified > v2.modified) {
+    return -1;
+  }
+  if (v1.modified < v2.modified) {
+    return 1;
+  }
+  return 0;
+}
+
+export default defineComponent({
+  name: 'DandisetPublish',
+  props: {
+    userCanModifyDandiset: {
+      type: Boolean,
+      required: true,
+    },
+  },
+  setup(props, ctx) {
+    const store = ctx.root.$store;
+
+    const currentDandiset: ComputedRef<Version> = computed(
+      () => store.state.dandiset.publishDandiset,
+    );
+
+    const currentVersion: ComputedRef<string> = computed(
+      () => store.getters['dandiset/version'],
+    );
+
+    const otherVersions: ComputedRef<Version[]> = computed(
+      () => store.state.dandiset.versions?.filter(
+        (version: Version) => version.version !== currentVersion.value,
+      ).sort(sortVersions),
+    );
+
+    const user: ComputedRef<any> = computed(userFunc);
+    const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
+
+    const publishDisabledMessage: ComputedRef<string> = computed(() => {
+      if (!loggedIn.value) {
+        return 'You must be logged in to edit.';
+      }
+      // NOTE: must access the prop directly instead of destructuring to preserve reactivity
+      // i.e. `const { userCanModifyDandiset } = props;` won't be reactive
+      // See https://github.com/vuejs/composition-api/issues/156
+      if (!props.userCanModifyDandiset) {
+        return 'You do not have permission to edit this dandiset.';
+      }
+      if (currentDandiset.value.status === 'Pending') {
+        return 'This dandiset has not yet been validated.';
+      }
+      if (currentDandiset.value.status === 'Validating') {
+        return 'Currently validating this dandiset.';
+      }
+      if (currentDandiset.value.status === 'Published') {
+        return 'No changes since last publish.';
+      }
+      return '';
+    });
+
+    const publishDisabled: ComputedRef<boolean> = computed(
+      () => !!(currentDandiset.value.version_validation_errors.length
+        || currentDandiset.value.asset_validation_errors.length
+        || publishDisabledMessage.value),
+    );
+
+    function formatDate(date: string) {
+      return moment(date).format('MM/DD/YYYY');
+    }
+
+    function setVersion({ version: newVersion }: any) {
+      const version = newVersion || draftVersion;
+
+      if (ctx.root.$route.params.version !== version) {
+        ctx.root.$router.replace({
+          ...ctx.root.$route,
+          params: {
+            ...ctx.root.$route.params,
+            version,
+          },
+        } as RawLocation);
+
+        store.dispatch('dandiset/fetchPublishDandiset', { identifier: currentDandiset.value.dandiset.identifier, version: newVersion });
+      }
+    }
+
+    async function publish() {
+      const version = await publishRest.publish(currentDandiset.value.dandiset.identifier);
+      // re-initialize the dataset to load the newly published version
+      await store.dispatch('dandiset/initializeDandisets', { identifier: currentDandiset.value.dandiset.identifier, version: version.version });
+    }
+
+    return {
+      currentDandiset,
+      currentVersion,
+      otherVersions,
+      setVersion,
+      formatDate,
+      sortVersions,
+      user,
+      publishDisabledMessage,
+      publishDisabled,
+      getValidationErrorIcon,
+      publish,
+    };
+  },
+});
+</script>

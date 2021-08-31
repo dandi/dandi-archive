@@ -1,63 +1,76 @@
 <template>
-  <div>
-    <template v-if="!owners || !owners.length">
-      <v-row
-        align="center"
-        justify="center"
-        class="mx-1"
-      >
-        No owners
-      </v-row>
-    </template>
-    <template v-else>
-      <v-tooltip
-        top
-        :disabled="!manageOwnersDisabled"
-      >
-        <template #activator="{ on }">
-          <div v-on="on">
-            <v-row class="mx-1 px-1">
-              <v-autocomplete
-                v-model="selection"
-                :items="items"
-                :disabled="manageOwnersDisabled"
-                :loading="loadingUsers"
-                :search-input.sync="search"
-                hide-no-data
-                clearable
-                auto-select-first
-                item-text="result"
-                placeholder="enter email address"
-                outlined
-                flat
-                return-object
-                @update:search-input="throttledUpdate"
-              />
-            </v-row>
-          </div>
-        </template>
-        <template v-if="loggedIn">
-          You must be an owner to manage ownership.
-        </template>
-        <template v-else>
-          You must be logged in to manage ownership.
-        </template>
-      </v-tooltip>
-      <v-row class="mx-1">
-        <v-chip
-          v-for="(owner, i) in newOwners"
-          :key="i"
-          color="light-blue lighten-4"
-          text-color="light-blue darken-3"
-          class="font-weight-medium ma-1"
-          :close="userCanModifyDandiset"
-          @click:close="removeOwner(i)"
+  <v-card
+    v-if="publishDandiset"
+    height="100%"
+    class="px-3 py-1"
+    outlined
+  >
+    <v-row
+      no-gutters
+      class="my-1"
+    >
+      <v-card-subtitle>
+        Ownership
+      </v-card-subtitle>
+      <template v-if="!owners || !owners.length">
+        <v-row
+          align="center"
+          justify="center"
+          class="mx-1"
         >
-          {{ owner.name || owner.username }}
-        </v-chip>
-      </v-row>
-    </template>
-  </div>
+          No owners
+        </v-row>
+      </template>
+      <template v-else>
+        <v-tooltip
+          top
+          :disabled="!manageOwnersDisabled"
+        >
+          <template #activator="{ on }">
+            <div v-on="on">
+              <v-row class="mx-1 px-1">
+                <v-autocomplete
+                  v-model="selection"
+                  :items="items"
+                  :disabled="manageOwnersDisabled"
+                  :loading="loadingUsers"
+                  :search-input.sync="search"
+                  hide-no-data
+                  clearable
+                  auto-select-first
+                  item-text="result"
+                  placeholder="enter email address"
+                  outlined
+                  flat
+                  return-object
+                  @update:search-input="throttledUpdate"
+                />
+              </v-row>
+            </div>
+          </template>
+          <template v-if="loggedIn">
+            You must be an owner to manage ownership.
+          </template>
+          <template v-else>
+            You must be logged in to manage ownership.
+          </template>
+        </v-tooltip>
+        <v-row class="mx-1">
+          <v-chip
+            v-for="(owner, i) in newOwners"
+            :key="i"
+            color="light-blue lighten-4"
+            text-color="light-blue darken-3"
+            class="font-weight-medium ma-1"
+            :close="userCanModifyDandiset"
+            @click:close="removeOwner(i)"
+          >
+            {{ owner.name || owner.username }}
+          </v-chip>
+        </v-row>
+      </template>
+    </v-row>
+  </v-card>
 </template>
 
 <script>
