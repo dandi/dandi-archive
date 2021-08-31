@@ -1,21 +1,23 @@
 import {
   vAvatar,
   vBtn,
-  vListItem,
   vIcon,
+  vListItem,
 } from 'jest-puppeteer-vuetify';
-import { registerNewUser } from '../util';
+import {
+  registerNewUser, LOGIN_BUTTON_TEXT, LOGOUT_BUTTON_TEXT,
+} from '../util';
 
 describe('account management', () => {
   it('logs the user out', async () => {
     await registerNewUser();
 
     await expect(page).toClickXPath(vAvatar('??'));
-    await page.waitFor(500);
-    await expect(page).toClickXPath(vListItem({ content: 'Logout', action: vIcon('mdi-logout') }));
+    await page.waitForTimeout(500);
+    await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 
     // this text is only displayed when not logged in
-    await expect(page).toMatch('Want to create your own datasets?');
+    await expect(page).toMatch(LOGIN_BUTTON_TEXT);
   });
 
   it('logs the user in', async () => {
@@ -23,19 +25,10 @@ describe('account management', () => {
 
     // Logout
     await expect(page).toClickXPath(vAvatar('??'));
-    await page.waitFor(500);
-    await expect(page).toClickXPath(vListItem('Logout', { action: vIcon('mdi-logout') }));
+    await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 
     // Test logging in
-    await expect(page).toClickXPath(vBtn('Login'));
-
-    // The user is still authenticated with the API server, we only need to authorize
-    await Promise.all([
-      // this button has the same text as the button in the app bar,
-      // but also contains a mdi-login icon
-      expect(page).toClickXPath('//input[@value="Authorize"]'),
-      page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    ]);
+    await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 
     // the user avatar contains the initials and is only rendered when logged in successfully
     await expect(page).toContainXPath(vAvatar('??'));

@@ -1,10 +1,17 @@
 import {
+  vAvatar,
   vBtn,
+  vIcon,
+  vListItem,
   vTextField,
   vTextarea,
 } from 'jest-puppeteer-vuetify';
 
 export const { CLIENT_URL } = process.env;
+
+export const LOGIN_BUTTON_TEXT = 'Log In with GitHub';
+export const LOGOUT_BUTTON_TEXT = 'Logout';
+export const MY_DANDISETS_BTN_TEXT = 'My Dandisets';
 
 export function uniqueId() {
   // TODO think of something cleaner
@@ -12,51 +19,62 @@ export function uniqueId() {
 }
 
 /**
- * Authorizes the user account.
+ * Waits for all network requests to finish before continuing.
  */
-export async function authorize() {
-  await Promise.all([
-    expect(page).toClickXPath(vBtn('Login')),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+export async function waitForRequestsToFinish() {
+  try {
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 });
+  } catch (e) {
+    // ignore
+  }
+}
 
-  await Promise.all([
-    expect(page).toClickXPath('//input[@value="Authorize"]'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+/**
+ * Log in a user
+ */
+export async function login() {
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 }
 
 /**
  * Register a new user with a random username.
  *
- * @returns {object} { username, email, password }
+ * @returns {object} { username, email, password, firstName, lastName }
  */
 export async function registerNewUser() {
   const username = `user${uniqueId()}`;
   const email = `mr${username}@dandi.test`;
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
-  await expect(page).toClickXPath(vBtn('Login'));
+  // there's currently no way to set these in development mode,
+  // so they are always empty strings by default
+  const firstName = '';
+  const lastName = '';
+
+  await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
+
+  await waitForRequestsToFinish();
+
+  // puppeteer sometimes can't detect the signup link to click, so just navigate to it manually.
+  // This login/signup page is not used in production anyway, so we're not missing anything
+  // in terms of testing.
+  await page.goto(page.url().replace('/accounts/login', '/accounts/signup'));
+
   // API pages are not styled with Vuetify, so we can't use the vHelpers
-  await expect(page).toClickXPath('//a[@href="/accounts/signup/"]');
   await expect(page).toFillXPath('//input[@name="email"]', email);
   await expect(page).toFillXPath('//input[@name="password1"]', password);
   await expect(page).toFillXPath('//input[@name="password2"]', password);
 
-  await Promise.all([
-    // The locator is different in CI for some reason, just click the first button
-    expect(page).toClickXPath('//button'),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  // The locator is different in CI for some reason, just click the first button
+  await expect(page).toClickXPath('//button');
+  await waitForRequestsToFinish();
 
-  await Promise.all([
-    page.goto(CLIENT_URL),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await page.goto(CLIENT_URL, { timeout: 0 });
+  await waitForRequestsToFinish();
 
-  await authorize(username, password);
-
-  return { username, email, password };
+  return {
+    username, email, password, firstName, lastName,
+  };
 }
 
 /**
@@ -64,13 +82,43 @@ export async function registerNewUser() {
  *
  * @param {string} name
  * @param {string} description
+ *
+ * @returns {string} identifier of the new dandiset
  */
 export async function registerDandiset(name, description) {
   await expect(page).toClickXPath(vBtn('New Dandiset'));
   await expect(page).toFillXPath(vTextField('Name*'), name);
   await expect(page).toFillXPath(vTextarea('Description*'), description);
-  await Promise.all([
-    expect(page).toClickXPath(vBtn('Register dataset')),
-    page.waitForNavigation({ waitUntil: 'networkidle0' }),
-  ]);
+  await expect(page).toClickXPath(vBtn('Register dataset'));
+  await waitForRequestsToFinish();
+  return page.url().split('/').pop();
+}
+
+/**
+ * Clears browser cookies and cache.
+ */
+export async function clearCookiesAndCache() {
+  const client = await page.target().createCDPSession();
+  await client.send('Network.clearBrowserCookies');
+  await client.send('Network.clearBrowserCache');
+}
+
+/**
+ * Disables all cookies (3rd party and otherwise) in the current browser session.
+ */
+export async function disableAllCookies() {
+  const client = await page.target().createCDPSession();
+  await client.send('Emulation.setDocumentCookieDisabled', { disabled: true });
+  await page.reload();
+  await waitForRequestsToFinish();
+}
+
+/**
+ * Log out a user
+ */
+export async function logout() {
+  await expect(page).toClickXPath(vAvatar('??'));
+  await page.waitForTimeout(500);
+  await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
+  await clearCookiesAndCache();
 }
