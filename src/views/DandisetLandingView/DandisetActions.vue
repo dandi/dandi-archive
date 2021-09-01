@@ -135,6 +135,7 @@
 import {
   defineComponent, computed, ComputedRef,
 } from '@vue/composition-api';
+import { Location } from 'vue-router';
 
 import { Version } from '@/types';
 
@@ -160,8 +161,8 @@ export default defineComponent({
       () => store.getters['dandiset/version'],
     );
 
-    const fileBrowserLink: ComputedRef<any> = computed(() => {
-      const version = currentVersion.value;
+    const fileBrowserLink: ComputedRef<Location> = computed(() => {
+      const version: string = currentVersion.value;
       const { identifier } = currentDandiset.value.dandiset;
       return {
         name: 'fileBrowser',

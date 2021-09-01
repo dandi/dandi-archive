@@ -68,6 +68,7 @@
 import {
   defineComponent, ref, computed, watchEffect, watch, Ref, ComputedRef,
 } from '@vue/composition-api';
+import { RawLocation } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import DandisetStats from '@/components/DandisetStats.vue';
@@ -118,13 +119,13 @@ export default defineComponent({
     function navigateToVersion(versionToNavigateTo: string) {
       if (ctx.root.$route.params.version === versionToNavigateTo) return;
 
-      const route: any = {
+      const route = {
         ...ctx.root.$route,
         params: {
           ...ctx.root.$route.params,
           versionToNavigateTo,
         },
-      };
+      } as RawLocation;
       ctx.root.$router.replace(route);
     }
 

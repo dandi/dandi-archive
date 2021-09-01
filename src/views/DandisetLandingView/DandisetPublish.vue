@@ -223,7 +223,7 @@ import {
 import moment from 'moment';
 
 import { publishRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
-import { Version } from '@/types';
+import { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
 import { RawLocation } from 'vue-router';
@@ -238,7 +238,7 @@ function getValidationErrorIcon(errorField: string): string {
 
 // Sort versions from most recently modified to least recently modified.
 // The DRAFT version is always the first element when present.
-function sortVersions(v1: Version, v2: Version) {
+function sortVersions(v1: Version, v2: Version): number {
   // Always put draft first
   if (v1.version === 'draft' || v1.modified > v2.modified) {
     return -1;
@@ -274,7 +274,7 @@ export default defineComponent({
       ).sort(sortVersions),
     );
 
-    const user: ComputedRef<any> = computed(userFunc);
+    const user: ComputedRef<User|null> = computed(userFunc);
     const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
     const publishDisabledMessage: ComputedRef<string> = computed(() => {
@@ -305,7 +305,7 @@ export default defineComponent({
         || publishDisabledMessage.value),
     );
 
-    function formatDate(date: string) {
+    function formatDate(date: string): string {
       return moment(date).format('MM/DD/YYYY');
     }
 

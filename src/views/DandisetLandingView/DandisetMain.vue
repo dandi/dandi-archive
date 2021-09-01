@@ -144,7 +144,7 @@ import { Version } from '@/types';
 import ListingComponent from './ListingComponent.vue';
 
 // TODO: remove when redesign is implemented
-function renderData(data: any, schema: any) {
+function renderData(data: any, schema: any): boolean {
   if (data === null || _.isEmpty(data)) {
     return false;
   }
