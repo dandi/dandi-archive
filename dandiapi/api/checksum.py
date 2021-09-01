@@ -3,7 +3,7 @@ import hashlib
 from django.core.files.storage import Storage
 
 
-class UnsupportedStorageException(Exception):
+class UnsupportedStorageError(Exception):
     """Raised when the given Storage is not supported."""
 
     pass
@@ -63,4 +63,4 @@ def calculate_sha256_checksum(storage: Storage, name: str):
         if isinstance(storage, MinioStorage):
             return _calculate_checksum_minio(storage, name)
 
-    raise UnsupportedStorageException('Unsupported storage provider.')
+    raise UnsupportedStorageError('Unsupported storage provider.')

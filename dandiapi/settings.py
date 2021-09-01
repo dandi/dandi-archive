@@ -22,6 +22,8 @@ class DandiMixin(ConfigMixin):
 
     ACCOUNT_EMAIL_VERIFICATION = 'none'
 
+    DANDI_ALLOW_LOCALHOST_URLS = False
+
     @staticmethod
     def before_binding(configuration: Type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
@@ -47,27 +49,44 @@ class DandiMixin(ConfigMixin):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
-    DANDI_SCHEMA_VERSION = values.Value(environ_required=True)
+
+    # This is where the schema version should be set.
+    # It can optionally be overwritten with the environment variable, but that should only be
+    # considered a temporary fix.
+    DANDI_SCHEMA_VERSION = values.Value(default='0.5.1', environ=True)
 
     DANDI_DOI_API_URL = values.URLValue(environ=True)
     DANDI_DOI_API_USER = values.Value(environ=True)
     DANDI_DOI_API_PASSWORD = values.Value(environ=True)
     DANDI_DOI_API_PREFIX = values.Value(environ=True)
+    DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
 
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
 
+    # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
+    # button to appear in Swagger, along with a spurious "authorize" button that
+    # doesn't work. This at least enables us to authorize to the Swagger page on
+    # the spot, which is quite useful.
+    #
+    # When Brian Helba is able to resolve this problem upstream (in
+    # django-composed-configuration) we can remove this setting.
+    SWAGGER_SETTINGS = {
+        'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.swagger.DANDISwaggerAutoSchema',
+    }
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
-    pass
+    # This makes pydantic model schema allow URLs with localhost in them.
+    DANDI_ALLOW_LOCALHOST_URLS = True
 
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
-    MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
-    MINIO_STORAGE_MEDIA_URL = 'http://localhost:9000/test-django-storage'
-
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
+
+    # This makes the dandischema pydantic model allow URLs with localhost in them.
+    DANDI_ALLOW_LOCALHOST_URLS = True
 
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
@@ -77,3 +96,17 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
+
+
+# NOTE: The staging configuration uses a custom OAuth toolkit `Application` model
+# (`StagingApplication`) to allow for wildcards in OAuth redirect URIs (to support Netlify branch
+# deploy previews, etc). Note that both the custom `StagingApplication` and default
+# `oauth2_provider.models.Application` will have Django database models and will show up on the
+# Django admin, but only one of them will be in active use depending on the environment
+# the API server is running in (production/local or staging).
+class HerokuStagingConfiguration(HerokuProductionConfiguration):
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.StagingApplication'
+
+    # We are using cheaper Heroku dynos for staging, so we need to artificially lower the number
+    # of concurrent tasks (default is 8) to keep memory usage down.
+    CELERY_WORKER_CONCURRENCY = 2

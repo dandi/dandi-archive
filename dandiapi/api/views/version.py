@@ -9,9 +9,9 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api import doi
-from dandiapi.api.models import Dandiset, Version, VersionMetadata
-from dandiapi.api.tasks import write_yamls
-from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
+from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
     VersionMetadataSerializer,
@@ -35,10 +35,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={
             200: 'The version metadata.',
         },
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
     def retrieve(self, request, **kwargs):
         version = self.get_object()
-        return Response(version.metadata.metadata, status=status.HTTP_200_OK)
+        return Response(version.metadata, status=status.HTTP_200_OK)
 
     # TODO clean up this action
     # Originally retrieve() returned this, but the API specification was modified so that
@@ -46,6 +47,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     # Unfortunately the web UI is built around VersionDetailSerializer, so this endpoint was
     # added to avoid rewriting the web UI.
     @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
         responses={200: VersionDetailSerializer()},
     )
     @action(detail=True, methods=['GET'])
@@ -58,6 +60,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
         responses={200: VersionDetailSerializer()},
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def update(self, request, **kwargs):
@@ -72,50 +75,106 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        version_metadata: VersionMetadata
-        version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=serializer.validated_data['name'], metadata=serializer.validated_data['metadata']
-        )
+        name = serializer.validated_data['name']
+        metadata = serializer.validated_data['metadata']
+        # Strip away any computed fields
+        metadata = Version.strip_metadata(metadata)
 
-        if created:
-            version_metadata.save()
-
-        version.metadata = version_metadata
+        version.name = name
+        version.metadata = metadata
         version.save()
+
+        validate_version_metadata.delay(version.id)
 
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=no_body, responses={200: VersionSerializer()})
+    @swagger_auto_schema(
+        request_body=no_body,
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
+        responses={200: VersionSerializer()},
+    )
     @action(detail=True, methods=['POST'])
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
-        # TODO remove this check once publish is allowed
-        if not request.user.is_superuser:
-            return Response('Must be an admin to publish', status=status.HTTP_403_FORBIDDEN)
-
-        old_version = self.get_object()
+        """Publish a version."""
+        old_version: Version = self.get_object()
         if old_version.version != 'draft':
             return Response(
                 'Only draft versions can be published',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
-        new_version = Version.copy(old_version)
+        if not old_version.valid:
+            return Response(
+                'Dandiset metadata or asset metadata is not valid',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        new_version = old_version.publish_version
 
         new_version.doi = doi.create_doi(new_version)
 
         new_version.save()
         # Bulk create the join table rows to optimize linking assets to new_version
         AssetVersions = Version.assets.through  # noqa: N806
+
+        # Add a new many-to-many association directly to any already published assets
+        already_published_assets = old_version.assets.filter(published=True)
         AssetVersions.objects.bulk_create(
             [
                 AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in old_version.assets.values('id')
+                for asset in already_published_assets.values('id')
             ]
         )
 
-        write_yamls.delay(new_version.id)
+        # Publish any draft assets
+        # Import here to avoid dependency cycle
+        from dandiapi.api.models import Asset
+
+        draft_assets = old_version.assets.filter(published=False).all()
+        for draft_asset in draft_assets:
+            draft_asset.publish()
+        Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
+
+        AssetVersions.objects.bulk_create(
+            [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
+        )
+
+        # Save again to recompute metadata, specifically assetsSummary
+        new_version.save()
+
+        # Set the version of the draft to PUBLISHED so that it cannot be publishd again without
+        # being modified and revalidated
+        old_version.status = Version.Status.PUBLISHED
+        old_version.save()
+
+        write_manifest_files.delay(new_version.id)
 
         serializer = VersionSerializer(new_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
+    )
+    def destroy(self, request, **kwargs):
+        """
+        Delete a version.
+
+        Deletes a version. Only published versions can be deleted, and only by
+        admin users.
+        """
+        version: Version = self.get_object()
+        if version.version == 'draft':
+            return Response(
+                'Cannot delete draft versions',
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        elif not request.user.is_superuser:
+            return Response(
+                'Cannot delete published versions',
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        else:
+            version.delete()
+            return Response(None, status=status.HTTP_204_NO_CONTENT)

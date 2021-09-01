@@ -12,15 +12,14 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 from .factories import (
     AssetBlobFactory,
-    AssetFactory,
-    AssetMetadataFactory,
     DandisetFactory,
+    DraftAssetFactory,
     DraftVersionFactory,
+    PublishedAssetFactory,
     PublishedVersionFactory,
     SocialAccountFactory,
     UploadFactory,
     UserFactory,
-    VersionMetadataFactory,
 )
 
 if TYPE_CHECKING:
@@ -28,9 +27,9 @@ if TYPE_CHECKING:
     import mypy_boto3_s3 as s3
 
 
-register(AssetFactory)
+register(PublishedAssetFactory, _name='published_asset')
+register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
-register(AssetMetadataFactory)
 register(DandisetFactory)
 register(PublishedVersionFactory, _name='published_version')
 register(DraftVersionFactory, _name='draft_version')
@@ -39,7 +38,16 @@ register(DraftVersionFactory, _name='draft_version')
 register(UserFactory)
 register(SocialAccountFactory)
 register(UploadFactory)
-register(VersionMetadataFactory)
+
+
+@pytest.fixture(params=[DraftAssetFactory, PublishedAssetFactory], ids=['draft', 'published'])
+def asset_factory(request):
+    return request.param
+
+
+@pytest.fixture
+def asset(asset_factory):
+    return asset_factory()
 
 
 @pytest.fixture(params=[DraftVersionFactory, PublishedVersionFactory], ids=['draft', 'published'])
@@ -97,9 +105,11 @@ def minio_storage_factory() -> MinioStorage:
         bucket_name=settings.DANDI_DANDISETS_BUCKET_NAME,
         auto_create_bucket=True,
         presign_urls=True,
-        base_url=settings.MINIO_STORAGE_MEDIA_URL,
-        # TODO: Test the case of an alternate base_url
-        # base_url='http://minio:9000/bucket-name'
+        # For testing, connect to a local Minio instance
+        base_url=(
+            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
+            f'//{settings.MINIO_STORAGE_ENDPOINT}'
+        ),
     )
 
 

@@ -1,12 +1,28 @@
+import os
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.core.files.base import ContentFile
 from django.db.transaction import atomic
-from rest_framework_yaml.renderers import YAMLRenderer
+import jsonschema.exceptions
 
 from dandiapi.api.checksum import calculate_sha256_checksum
-from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.manifests import (
+    write_assets_jsonld,
+    write_assets_yaml,
+    write_collection_jsonld,
+    write_dandiset_jsonld,
+    write_dandiset_yaml,
+)
+from dandiapi.api.models import Asset, AssetBlob, Version
+
+if settings.DANDI_ALLOW_LOCALHOST_URLS:
+    # If this environment variable is set, the pydantic model will allow URLs with localhost
+    # in them. This is important for development and testing environments, where URLs will
+    # frequently point to localhost.
+    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
+
+from dandischema.metadata import validate
 
 logger = get_task_logger(__name__)
 
@@ -27,36 +43,112 @@ def calculate_sha256(blob_id: int) -> None:
     asset_blob.sha256 = sha256
     asset_blob.save()
 
+    # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
+    for asset in asset_blob.assets.all():
+        validate_asset_metadata.delay(asset.id)
+
 
 @shared_task
 @atomic
-def write_yamls(version_id: int) -> None:
-    logger.info('Writing dandiset.yaml and assets.yaml for version %s', version_id)
+def write_manifest_files(version_id: int) -> None:
+    logger.info('Writing manifests for version %s', version_id)
     version: Version = Version.objects.get(id=version_id)
 
-    # Piggyback on the AssetBlob storage since we want to store .yamls in the same bucket
-    storage = AssetBlob.blob.field.storage
+    write_dandiset_yaml(version, logger=logger)
+    write_assets_yaml(version, logger=logger)
+    write_dandiset_jsonld(version, logger=logger)
+    write_assets_jsonld(version, logger=logger)
+    write_collection_jsonld(version, logger=logger)
 
-    dandiset_yaml_path = (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'dandisets/{version.dandiset.identifier}/{version.version}/dandiset.yaml'
-    )
-    if storage.exists(dandiset_yaml_path):
-        logger.info('%s already exists, deleting it', dandiset_yaml_path)
-        storage.delete(dandiset_yaml_path)
-    logger.info('Saving %s', dandiset_yaml_path)
-    dandiset_yaml = YAMLRenderer().render(version.metadata.metadata)
-    storage.save(dandiset_yaml_path, ContentFile(dandiset_yaml))
 
-    assets_yaml_path = (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'dandisets/{version.dandiset.identifier}/{version.version}/assets.yaml'
-    )
-    if storage.exists(assets_yaml_path):
-        logger.info('%s already exists, deleting it', assets_yaml_path)
-        storage.delete(assets_yaml_path)
-    logger.info('Saving %s', assets_yaml_path)
-    assets_yaml = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
-    storage.save(assets_yaml_path, ContentFile(assets_yaml))
+def format_as_index(indices):
+    """Render a JSON schema path as a series of indices."""
+    if not indices:
+        return ''
+    return '[%s]' % ']['.join(repr(index) for index in indices)
 
-    logger.info('Wrote dandiset.yaml and assets.yaml for version %s', version_id)
+
+def format_validation_error(error: jsonschema.exceptions.ValidationError):
+    """
+    Succinctly format a ValidationError.
+
+    The default __str__ for ValidationError includes the entire schema, so we simplify it.
+    """
+    return f'{error.message}\nSee: metadata{format_as_index(error.relative_path)}'  # noqa: B306
+
+
+class ValidationError(Exception):
+    pass
+
+
+@shared_task
+@atomic
+# This method takes both a version_id and an asset_id because asset metadata renders differently
+# depending on which version the asset belongs to.
+def validate_asset_metadata(asset_id: int) -> None:
+    logger.info('Validating asset metadata for asset %s', asset_id)
+    asset: Asset = Asset.objects.get(id=asset_id)
+
+    asset.status = Asset.Status.VALIDATING
+    asset.save()
+
+    try:
+        metadata = asset.published_metadata()
+        validate(metadata, schema_key='PublishedAsset')
+    except Exception as e:
+        logger.error('Error while validating asset %s', asset_id)
+        logger.error(str(e))
+        asset.status = Asset.Status.INVALID
+
+        if type(e) is ValueError:
+            asset.validation_errors = [{'field': '', 'message': str(e)}]
+        else:
+            # parse the pydantic ValidationError:
+            asset.validation_errors = [
+                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors()
+            ]
+
+        asset.save()
+        return
+    logger.info('Successfully validated asset %s', asset_id)
+    asset.status = Asset.Status.VALID
+    asset.validation_errors = []
+    asset.save()
+
+
+@shared_task
+@atomic
+def validate_version_metadata(version_id: int) -> None:
+    logger.info('Validating dandiset metadata for version %s', version_id)
+    version: Version = Version.objects.get(id=version_id)
+
+    version.status = Version.Status.VALIDATING
+    version.save()
+
+    try:
+        publish_version = version.publish_version
+        metadata = publish_version.metadata
+
+        # Inject a dummy DOI so the metadata is valid
+        metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
+
+        validate(metadata, schema_key='PublishedDandiset')
+    except Exception as e:
+        logger.error('Error while validating version %s', version_id)
+        logger.error(str(e))
+        version.status = Version.Status.INVALID
+
+        if type(e) is ValueError:
+            version.validation_errors = [{'field': '', 'message': str(e)}]
+        else:
+            # parse the pydantic ValidationError:
+            version.validation_errors = [
+                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors()
+            ]
+
+        version.save()
+        return
+    logger.info('Successfully validated version %s', version_id)
+    version.status = Version.Status.VALID
+    version.validation_errors = []
+    version.save()

@@ -1,14 +1,14 @@
 from datetime import timedelta
 from typing import Iterator, Tuple
 
-from dandi.core.digests.dandietag import PartGenerator
+from dandischema.digests.dandietag import PartGenerator
 from django.core.files.storage import Storage
 from s3_file_field._multipart import MultipartManager
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 
 
-class UnsupportedStorageException(Exception):
+class UnsupportedStorageError(Exception):
     """Raised when MultipartManager does not support the given Storage."""
 
     pass
@@ -62,4 +62,4 @@ class DandiMultipartManager(MultipartManager):
             if isinstance(storage, MinioStorage):
                 return DandiMinioMultipartManager(storage)
 
-        raise UnsupportedStorageException('Unsupported storage provider.')
+        raise UnsupportedStorageError('Unsupported storage provider.')

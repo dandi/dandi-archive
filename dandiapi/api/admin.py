@@ -1,15 +1,7 @@
 from django.contrib import admin
 from guardian.admin import GuardedModelAdmin
 
-from dandiapi.api.models import (
-    Asset,
-    AssetBlob,
-    AssetMetadata,
-    Dandiset,
-    Upload,
-    Version,
-    VersionMetadata,
-)
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
 
 
 @admin.register(Dandiset)
@@ -18,19 +10,13 @@ class DandisetAdmin(GuardedModelAdmin):
     readonly_fields = ['identifier', 'created']
 
 
-@admin.register(VersionMetadata)
-class VersionMetadataAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'metadata', 'references', 'modified', 'created']
-    list_display_links = ['id', 'name', 'metadata']
-
-
 class AssetInline(admin.TabularInline):
     model = Asset.versions.through
 
 
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'dandiset', 'version', 'asset_count', 'modified', 'created']
+    list_display = ['id', 'dandiset', 'version', 'status', 'asset_count', 'modified', 'created']
     list_display_links = ['id', 'version']
     inlines = [AssetInline]
 
@@ -39,12 +25,6 @@ class VersionAdmin(admin.ModelAdmin):
 class AssetBlobAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
     list_display_links = ['id', 'blob_id']
-
-
-@admin.register(AssetMetadata)
-class AssetMetadataAdmin(admin.ModelAdmin):
-    list_display = ['id', 'metadata', 'references', 'modified', 'created']
-    list_display_links = ['id', 'metadata']
 
 
 class AssetBlobInline(admin.TabularInline):
@@ -60,7 +40,7 @@ class AssetAdmin(admin.ModelAdmin):
         'asset_id',
         'path',
         'blob',
-        'metadata',
+        'status',
         'size',
         'modified',
         'created',

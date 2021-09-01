@@ -39,10 +39,11 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandi>=0.12.0',
+        'dandischema>=0.3.2',
         'django>=3.1.2',
         'django-admin-display',
         'django-allauth',
+        'django-click',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
@@ -53,6 +54,7 @@ setup(
         'drf-extensions',
         'drf-yasg',
         'httpx',
+        'jsonschema',
         # Production-only
         'django-composed-configuration[prod]',
         'django-s3-file-field[boto3]==0.1.1',
@@ -61,7 +63,6 @@ setup(
         # Development-only, but required
         'django-minio-storage',
         # Temporary dependency for user migration
-        'girder-client',
         'versioneer',
     ],
     extras_require={
@@ -71,7 +72,16 @@ setup(
             'django-s3-file-field[minio]',
             'ipython',
             'tox',
-        ]
+        ],
+        'test': [
+            'factory-boy',
+            'pytest',
+            'pytest-cov',
+            'pytest-django',
+            'pytest-factoryboy',
+            'pytest-mock',
+            'requests',
+        ],
     },
     cmdclass=versioneer.get_cmdclass(),
 )

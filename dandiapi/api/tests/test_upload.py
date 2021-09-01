@@ -30,6 +30,21 @@ def test_blob_read(api_client, asset_blob):
 
 
 @pytest.mark.django_db
+def test_blob_read_sha256(api_client, asset_blob):
+
+    assert api_client.post(
+        '/api/blobs/digest/',
+        {'algorithm': 'dandi:sha2-256', 'value': asset_blob.sha256},
+        format='json',
+    ).data == {
+        'blob_id': str(asset_blob.blob_id),
+        'etag': asset_blob.etag,
+        'sha256': asset_blob.sha256,
+        'size': asset_blob.size,
+    }
+
+
+@pytest.mark.django_db
 def test_blob_read_bad_algorithm(api_client, asset_blob):
 
     resp = api_client.post(
@@ -38,7 +53,7 @@ def test_blob_read_bad_algorithm(api_client, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'Unsupported Digest Algorithm'
+    assert resp.data == 'Unsupported Digest Algorithm. Supported: dandi:dandi-etag, dandi:sha2-256'
 
 
 @pytest.mark.django_db

@@ -41,6 +41,8 @@ jobs:
         dandi-version:
           - release
           - master
+    env:
+      DANDI_ALLOW_LOCALHOST_URLS: 1
     steps:
       - name: Download Docker image tarball
         uses: actions/download-artifact@v2

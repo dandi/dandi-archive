@@ -19,6 +19,8 @@ from dandiapi.api.models import AssetBlob, Upload
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
+supported_digests = {'dandi:dandi-etag': 'etag', 'dandi:sha2-256': 'sha256'}
+
 
 class DigestSerializer(serializers.Serializer):
     algorithm = serializers.CharField()
@@ -67,6 +69,8 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
 
 @swagger_auto_schema(
     method='POST',
+    operation_summary='Fetch an existing asset blob by digest, if it exists.',
+    operation_description=f'Supported digest algorithms: {", ".join(supported_digests)}',
     request_body=DigestSerializer(),
     responses={200: AssetBlobSerializer()},
 )
@@ -74,14 +78,17 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
 @parser_classes([JSONParser])
 @permission_classes([])
 def blob_read_view(request: Request) -> HttpResponseBase:
-    """Fetch an existing asset blob by digest, if it exists."""
     request_serializer = DigestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    if request_serializer.validated_data['algorithm'] != 'dandi:dandi-etag':
-        return Response('Unsupported Digest Algorithm', status=400)
-    etag = request_serializer.validated_data['value']
+    algorithm = request_serializer.validated_data['algorithm']
+    if algorithm not in supported_digests:
+        return Response(
+            f'Unsupported Digest Algorithm. Supported: {", ".join(supported_digests)}',
+            status=400,
+        )
+    digest = request_serializer.validated_data['value']
 
-    asset_blob = get_object_or_404(AssetBlob, etag=etag)
+    asset_blob = get_object_or_404(AssetBlob, **{supported_digests[algorithm]: digest})
     response_serializer = AssetBlobSerializer(asset_blob)
     return Response(response_serializer.data)
 

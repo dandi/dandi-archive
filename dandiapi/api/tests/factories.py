@@ -1,19 +1,13 @@
+import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib.auth.models import User
 import factory
 import faker
 
-from dandiapi.api.models import (
-    Asset,
-    AssetBlob,
-    AssetMetadata,
-    Dandiset,
-    Upload,
-    Version,
-    VersionMetadata,
-)
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -50,27 +44,27 @@ class DandisetFactory(factory.django.DjangoModelFactory):
         model = Dandiset
 
 
-class VersionMetadataFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = VersionMetadata
-
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
-    name = factory.Faker('sentence')
-
-
 class BaseVersionFactory(factory.django.DjangoModelFactory):
     class Meta:
         abstract = True
 
     dandiset = factory.SubFactory(DandisetFactory)
-    metadata = factory.SubFactory(VersionMetadataFactory)
+    name = factory.Faker('sentence')
 
-
-# class VersionFactory(BaseVersionFactory):
-#     class Meta:
-#         model = Version
-
-#     dandiset = factory.SubFactory(DandisetFactory)
+    @factory.lazy_attribute
+    def metadata(self):
+        metadata = {
+            **faker.Faker().pydict(value_types=['str', 'float', 'int']),
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'description': faker.Faker().sentence(),
+            'contributor': [{'roleName': ['dcite:ContactPerson']}],
+            'license': ['spdx:CC0-1.0'],
+        }
+        # Remove faked data that might conflict with the schema types
+        for key in ['about']:
+            if key in metadata:
+                del metadata[key]
+        return metadata
 
 
 class DraftVersionFactory(BaseVersionFactory):
@@ -83,6 +77,19 @@ class DraftVersionFactory(BaseVersionFactory):
 class PublishedVersionFactory(BaseVersionFactory):
     class Meta:
         model = Version
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        version: Version = super()._create(*args, **kwargs)
+        version.doi = f'10.80507/dandi.{version.dandiset.identifier}/{version.version}'
+        now = datetime.datetime.now(datetime.timezone.utc)
+        version.metadata = {
+            **version.metadata,
+            'publishedBy': version.published_by(now),
+            'datePublished': now.isoformat(),
+        }
+        version.save()
+        return version
 
 
 class AssetBlobFactory(factory.django.DjangoModelFactory):
@@ -105,27 +112,41 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         h = hashlib.md5()
         h.update(self.blob.read())
         self.blob.seek(0)
-        return h.hexdigest()
+        return f'{h.hexdigest()}-0'
 
     @factory.lazy_attribute
     def size(self):
         return len(self.blob.read())
 
 
-class AssetMetadataFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = AssetMetadata
-
-    metadata = factory.Faker('pydict', value_types=['str', 'float', 'int'])
-
-
-class AssetFactory(factory.django.DjangoModelFactory):
+class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
 
     path = factory.Faker('file_path', extension='nwb')
-    metadata = factory.SubFactory(AssetMetadataFactory)
     blob = factory.SubFactory(AssetBlobFactory)
+
+    @factory.lazy_attribute
+    def metadata(self):
+        metadata = {
+            **faker.Faker().pydict(value_types=['str', 'float', 'int']),
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'encodingFormat': 'application/x-nwb',
+        }
+        # Remove faked data that might conflict with the schema types
+        for key in ['approach', 'about', 'name']:
+            if key in metadata:
+                del metadata[key]
+        return metadata
+
+
+class PublishedAssetFactory(DraftAssetFactory):
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        asset: Asset = super()._create(*args, **kwargs)
+        asset.publish()
+        asset.save()
+        return asset
 
 
 class UploadFactory(factory.django.DjangoModelFactory):

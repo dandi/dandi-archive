@@ -1,4 +1,5 @@
 from django.conf import settings
+import djclick as click
 from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models.upload import AssetBlob
@@ -11,22 +12,21 @@ def s3_client():
     return storage.connection.meta.client
 
 
-def run(*args):
-    # Only delete the objects if the argument "delete" is passed to the script
-    delete = len(args) == 1 and args[0] == 'delete'
-
+@click.command()
+@click.option('--delete', is_flag=True, default=False)
+def cleanup_blobs(delete: bool):
     client = s3_client()
     # Ignore pagination for now, hopefully there aren't enough objects to matter
     objs = client.list_object_versions(Bucket=BUCKET, Prefix='dev/')
     for version in objs['Versions']:
         if not AssetBlob.objects.filter(etag=version['ETag'][1:-1]).exists():
-            print(f'Deleting version {version["Key"]}')
+            click.echo(f'Deleting version {version["Key"]}')
             if delete:
                 client.delete_object(
                     Bucket=BUCKET, Key=version['Key'], VersionId=version['VersionId']
                 )
     for delete_marker in objs['DeleteMarkers']:
-        print(f'Deleting delete marker {delete_marker["Key"]}')
+        click.echo(f'Deleting delete marker {delete_marker["Key"]}')
         if delete:
             client.delete_object(
                 Bucket=BUCKET, Key=delete_marker['Key'], VersionId=delete_marker['VersionId']
