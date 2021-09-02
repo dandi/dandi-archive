@@ -38,7 +38,7 @@ user hasn't filled out the questionnaire yet, the button will say "COMPLETE SIGN
 6) The DANDI admins will decide whether to approve or reject the user.
 7) a) If approved, the user will receive an email saying so and they will be able to logon and use DANDI as normal.
    <br>
-   b) If rejected, the user will receive an email containing the custom reason (if one was provided), as well as an email address to contact if they belieave
+   b) If rejected, the user will receive an email containing the custom reason (if one was provided), as well as an email address to contact if they believe
    they shouldn't have been rejected.
 
 
