@@ -91,7 +91,8 @@ def users_search_view(request: Request) -> HttpResponseBase:
         users = [
             user_to_dict(user)
             for user in User.objects.filter(username__icontains=username).filter(
-                ~Q(username='AnonymousUser'), Q(is_active=True)
+                ~Q(username='AnonymousUser'),
+                is_active=True,
             )[:10]
         ]
 
