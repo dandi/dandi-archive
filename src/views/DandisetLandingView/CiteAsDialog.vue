@@ -41,7 +41,9 @@ export default defineComponent({
       () => store.state.dandiset.publishDandiset,
     );
 
-    const citation: ComputedRef<string> = computed(() => currentDandiset.value.metadata.citation);
+    const citation: ComputedRef<string|undefined> = computed(
+      () => currentDandiset.value.metadata?.citation,
+    );
 
     return {
       citation,
