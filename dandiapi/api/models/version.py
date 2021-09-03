@@ -25,11 +25,6 @@ from dandischema.metadata import aggregate_assets_summary
 logger = logging.getLogger(__name__)
 
 
-def _get_default_version() -> str:
-    # This cannot be a lambda, as migrations cannot serialize those
-    return Version.make_version()
-
-
 class Version(PublishableMetadataMixin, TimeStampedModel):
     VERSION_REGEX = r'(0\.\d{6}\.\d{4})|draft'
 
@@ -46,7 +41,6 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     version = models.CharField(
         max_length=13,
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
-        default=_get_default_version,
     )  # TODO: rename this?
     doi = models.CharField(max_length=64, null=True, blank=True)
     """Track the validation status of this version, without considering assets"""
@@ -131,14 +125,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return time.strftime('0.%y%m%d.%H%M')
 
     @classmethod
-    def make_version(cls, dandiset: Dandiset = None) -> str:
-        versions: models.Manager = dandiset.versions if dandiset else cls.objects
-
+    def next_published_version(cls, dandiset: Dandiset) -> str:
         time = datetime.datetime.now(datetime.timezone.utc)
         # increment time until there are no collisions
         while True:
             version = cls.datetime_to_version(time)
-            collision = versions.filter(version=version).exists()
+            collision = dandiset.versions.filter(version=version).exists()
             if not collision:
                 break
             time += datetime.timedelta(minutes=1)
@@ -158,6 +150,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             name=self.name,
             metadata=self.metadata,
             status=Version.Status.VALID,
+            version=Version.next_published_version(self.dandiset),
         )
 
         now = datetime.datetime.now(datetime.timezone.utc)

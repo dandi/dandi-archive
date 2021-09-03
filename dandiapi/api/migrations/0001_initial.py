@@ -224,7 +224,7 @@ class Migration(migrations.Migration):
                 (
                     'version',
                     models.CharField(
-                        default=dandiapi.api.models.version._get_default_version,
+                        default='draft',
                         max_length=13,
                         validators=[
                             django.core.validators.RegexValidator('^(0\\.\\d{6}\\.\\d{4})|draft$')
