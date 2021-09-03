@@ -10,7 +10,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api import doi
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.tasks import delete_doi, validate_version_metadata, write_manifest_files
+from dandiapi.api.tasks import delete_doi_task, validate_version_metadata, write_manifest_files
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -179,5 +179,5 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             doi = version.doi
             version.delete()
             if doi is not None:
-                delete_doi.delay(doi)
+                delete_doi_task.delay(doi)
             return Response(None, status=status.HTTP_204_NO_CONTENT)
