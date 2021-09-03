@@ -7,6 +7,7 @@ from django.db.transaction import atomic
 import jsonschema.exceptions
 
 from dandiapi.api.checksum import calculate_sha256_checksum
+from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
@@ -152,3 +153,8 @@ def validate_version_metadata(version_id: int) -> None:
     version.status = Version.Status.VALID
     version.validation_errors = []
     version.save()
+
+
+@shared_task
+def delete_doi_task(doi: str) -> None:
+    delete_doi(doi)

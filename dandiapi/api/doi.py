@@ -25,15 +25,19 @@ def _generate_doi_data(version: Version):
     return (doi, to_datacite(metadata, publish=publish))
 
 
-def create_doi(version: Version) -> str:
-    doi, request_body = _generate_doi_data(version)
-    # If DOI isn't configured, skip the API call
-    if (
+def doi_configured() -> bool:
+    return (
         settings.DANDI_DOI_API_URL is not None
         or settings.DANDI_DOI_API_USER is not None
         or settings.DANDI_DOI_API_PASSWORD is not None
         or settings.DANDI_DOI_API_PREFIX is not None
-    ):
+    )
+
+
+def create_doi(version: Version) -> str:
+    doi, request_body = _generate_doi_data(version)
+    # If DOI isn't configured, skip the API call
+    if doi_configured():
         try:
             requests.post(
                 settings.DANDI_DOI_API_URL,
@@ -48,3 +52,27 @@ def create_doi(version: Version) -> str:
             logging.error(request_body)
             raise e
     return doi
+
+
+def delete_doi(doi: str) -> None:
+    # If DOI isn't configured, skip the API call
+    if doi_configured():
+        doi_url = settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi
+        with requests.Session() as s:
+            s.auth = (settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
+            try:
+                r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    logging.warning('Tried to get data for nonexistent DOI %s', doi)
+                    return
+                else:
+                    logging.error('Failed to fetch data for DOI %s', doi)
+                    raise e
+            if r.json()['data']['attributes']['state'] == 'draft':
+                try:
+                    s.delete(doi_url).raise_for_status()
+                except requests.exceptions.HTTPError as e:
+                    logging.error('Failed to delete DOI %s', doi)
+                    raise e
