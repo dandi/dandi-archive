@@ -6,4 +6,5 @@ class PublishConfig(AppConfig):
     verbose_name = 'DANDI: Publish'
 
     def ready(self):
+        import dandiapi.api.checks  # noqa: F401
         import dandiapi.api.signals  # noqa: F401
