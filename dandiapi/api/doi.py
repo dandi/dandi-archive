@@ -6,6 +6,18 @@ import requests
 
 from dandiapi.api.models import Version
 
+# All of the required DOI configuration settings
+DANDI_DOI_SETTINGS = [
+    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_URL'),
+    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_USER'),
+    (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
+    (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
+]
+
+
+def doi_configured() -> bool:
+    return any([setting is not None for setting, _ in DANDI_DOI_SETTINGS])
+
 
 def _generate_doi_data(version: Version):
     if settings.DANDI_ALLOW_LOCALHOST_URLS:
@@ -24,15 +36,6 @@ def _generate_doi_data(version: Version):
     metadata = version.metadata
     metadata['doi'] = doi
     return (doi, to_datacite(metadata, publish=publish))
-
-
-def doi_configured() -> bool:
-    return (
-        settings.DANDI_DOI_API_URL is not None
-        or settings.DANDI_DOI_API_USER is not None
-        or settings.DANDI_DOI_API_PASSWORD is not None
-        or settings.DANDI_DOI_API_PREFIX is not None
-    )
 
 
 def create_doi(version: Version) -> str:

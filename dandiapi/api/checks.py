@@ -1,12 +1,7 @@
 from django.conf import settings
 from django.core.checks import Error, register
 
-DANDI_DOI_SETTINGS = [
-    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_URL'),
-    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_USER'),
-    (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
-    (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
-]
+from dandiapi.api.doi import DANDI_DOI_SETTINGS
 
 
 @register()
