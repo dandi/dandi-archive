@@ -16,6 +16,7 @@ def _generate_doi_data(version: Version):
     from dandischema.datacite import to_datacite
 
     publish = settings.DANDI_DOI_PUBLISH
+    # Use the DANDI test datacite instance as a placeholder if PREFIX isn't set
     prefix = settings.DANDI_DOI_API_PREFIX or '10.80507'
     dandiset_id = version.dandiset.identifier
     version_id = version.version
