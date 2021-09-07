@@ -1,6 +1,6 @@
 <template>
   <v-card
-    v-if="publishDandiset"
+    v-if="currentDandiset"
     height="100%"
     class="px-3 py-1"
     outlined
@@ -62,7 +62,7 @@
             color="light-blue lighten-4"
             text-color="light-blue darken-3"
             class="font-weight-medium ma-1"
-            :close="userCanModifyDandiset"
+            :close="userCanModifyOwners"
             @click:close="removeOwner(i)"
           >
             {{ owner.name || owner.username }}
@@ -73,87 +73,124 @@
   </v-card>
 </template>
 
-<script>
-import { publishRest, loggedIn, user } from '@/rest';
-import { mapState, mapMutations } from 'vuex';
-import _ from 'lodash';
+<script lang="ts">
+import {
+  defineComponent, reactive, ref, computed, Ref, ComputedRef, watch, watchEffect, PropType,
+} from '@vue/composition-api';
+
+import { debounce } from 'lodash';
+
+import { publishRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
+import { User, Version } from '@/types';
+
+interface UserResult extends User {
+  result: string
+}
 
 // Includes a field `result` on each user which is the value displayed in the UI
-const appendResult = (users) => users.map((u) => ({ ...u, result: (u.name) ? `${u.name} (${u.username})` : u.username }));
+const appendResult = (users: User[]): UserResult[] => users.map((u: User) => ({ ...u, result: (u.name) ? `${u.name} (${u.username})` : u.username }));
 
-export default {
+export default defineComponent({
   name: 'DandisetOwners',
   props: {
     owners: {
-      type: Array,
+      type: Array as PropType<User[]>,
       required: true,
     },
   },
-  data() {
-    return {
-      search: null,
-      loadingUsers: false,
-      selection: null,
-      newOwners: appendResult(this.owners),
-      items: [],
-      throttledUpdate: _.debounce(this.updateItems, 200),
-    };
-  },
-  asyncComputed: {
-    async userCanModifyDandiset() {
-      if (this.publishDandiset?.metadata?.version !== 'draft' || !this.user) {
+  setup(props, ctx) {
+    const search: Ref<string> = ref('');
+    const loadingUsers: Ref<boolean> = ref(false);
+    const selection: Ref<UserResult|null> = ref(null);
+    const items: Ref<UserResult[]> = ref([]);
+    const newOwners: UserResult[] = reactive(appendResult(props.owners));
+
+    const store = ctx.root.$store;
+
+    const currentDandiset: ComputedRef<Version> = computed(
+      () => store.state.dandiset.publishDandiset,
+    );
+
+    function setOwners(ownersToSet: User[]) {
+      store.commit('dandiset/setOwners', ownersToSet);
+    }
+
+    const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
+    const user: ComputedRef<User|null> = computed(userFunc);
+    const manageOwnersDisabled: ComputedRef<boolean> = computed(() => {
+      if (user.value?.admin) {
         return false;
       }
-      if (this.user.admin) {
+      if (!loggedIn.value || !props.owners) {
         return true;
       }
-      const { data: owners } = await publishRest.owners(this.publishDandiset.dandiset.identifier);
-      const userExists = owners.find((owner) => owner.username === this.user.username);
-      return !!userExists;
-    },
-  },
-  computed: {
-    loggedIn,
-    user,
-    manageOwnersDisabled() {
-      if (!this.loggedIn || !this.owners) return true;
-      return !this.owners.find((owner) => owner.username === this.user.username);
-    },
-    ...mapState('dandiset', ['publishDandiset']),
-  },
-  watch: {
-    async selection(val) {
+      return !props.owners.find((owner: User) => owner.username === user.value?.username);
+    });
+
+    const userCanModifyOwners: Ref<boolean> = ref(false);
+    watchEffect(async () => {
+      if (!user.value) {
+        // If user isn't logged in, they can't modify owners
+        userCanModifyOwners.value = false;
+      } else if (user.value?.admin) {
+        // If user is logged in as an admin, they can modify owners
+        userCanModifyOwners.value = true;
+      } else {
+        // otherwise, check if the logged in user is an owner
+        const { data: owners } = await publishRest.owners(
+          currentDandiset.value.dandiset.identifier,
+        );
+        const userExists = owners.find((owner) => owner.username === user.value?.username);
+        userCanModifyOwners.value = !!userExists;
+      }
+    });
+
+    const throttledUpdate = debounce((async () => {
+      if (!search.value) return;
+
+      loadingUsers.value = true;
+      const users = await publishRest.searchUsers(search.value);
+      items.value = appendResult(users);
+      loadingUsers.value = false;
+    }), 200);
+
+    async function save() {
+      const { identifier } = currentDandiset.value.dandiset;
+      const { data } = await publishRest.setOwners(identifier, newOwners);
+      setOwners(data);
+    }
+
+    async function removeOwner(index: number) {
+      newOwners.splice(index, 1);
+      await save();
+    }
+
+    watch(selection, async () => {
       // Verify that the selected user hasn't already been selected
-      if (val && !this.newOwners.find((x) => x.username === val.username)) {
-        this.newOwners.push(val);
+      if (selection.value && !newOwners.find((x) => x.username === selection.value?.username)) {
+        newOwners.push(selection.value);
       }
       // Clear the search field, if it isn't already
-      if (val) {
-        this.selection = '';
+      if (selection.value) {
+        selection.value = null;
       }
 
-      await this.save();
-    },
-  },
-  methods: {
-    async updateItems() {
-      if (!this.search) return;
+      await save();
+    });
 
-      this.loadingUsers = true;
-      const users = await publishRest.searchUsers(this.search);
-      this.items = appendResult(users);
-      this.loadingUsers = false;
-    },
-    async removeOwner(index) {
-      this.newOwners.splice(index, 1);
-      await this.save();
-    },
-    async save() {
-      const { identifier } = this.publishDandiset.dandiset;
-      const { data } = await publishRest.setOwners(identifier, this.newOwners);
-      this.setOwners(data);
-    },
-    ...mapMutations('dandiset', ['setOwners']),
+    return {
+      currentDandiset,
+      manageOwnersDisabled,
+      userCanModifyOwners,
+      selection,
+      items,
+      loadingUsers,
+      search,
+      throttledUpdate,
+      loggedIn,
+      newOwners,
+      removeOwner,
+    };
   },
-};
+});
 </script>
