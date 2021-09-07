@@ -12,26 +12,27 @@
         </v-col>
       </v-row>
       <v-row class="mx-1">
-        <v-col cols="3">
+        <v-col cols="4">
           <v-chip
+            class="text-wrap py-1"
+            style="word-break: break-word; text-align: center; height: 100%;"
             outlined
           >
-            <v-row>
-              <v-col :cols="currentDandiset.version === 'draft' ? '6' : '5'">
-                <span class="pr-3">ID: {{ currentDandiset.dandiset.identifier }}</span>
-              </v-col>
-              <v-col
-                :class="`${currentDandiset.version === 'draft' ? 'orange' : 'blue'} lighten-4`"
-              >
-                <span
-                  :class="`
-                    ${currentDandiset.version === 'draft' ? 'orange' : 'blue'}--text text--darken-4
-                  `"
-                >
-                  {{ currentDandiset.version.toUpperCase() }}
-                </span>
-              </v-col>
-            </v-row>
+            <span>
+              ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
+            </span>
+            <v-divider
+              vertical
+              class="mx-2"
+            />
+            <span
+              :class="`
+                font-weight-bold
+                ${currentDandiset.version === 'draft' ? 'orange' : 'blue'}--text text--darken-4
+              `"
+            >
+              {{ currentDandiset.version.toUpperCase() }}
+            </span>
           </v-chip>
         </v-col>
         <v-col cols="3">

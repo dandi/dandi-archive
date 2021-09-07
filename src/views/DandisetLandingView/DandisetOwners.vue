@@ -12,6 +12,8 @@
       <v-card-subtitle>
         Ownership
       </v-card-subtitle>
+    </v-row>
+    <v-row>
       <template v-if="!owners || !owners.length">
         <v-row
           align="center"
@@ -29,7 +31,7 @@
         >
           <template #activator="{ on }">
             <div v-on="on">
-              <v-row class="mx-1 px-1">
+              <v-row class="mx-2 px-2">
                 <v-autocomplete
                   v-model="selection"
                   :items="items"
@@ -56,7 +58,7 @@
             You must be logged in to manage ownership.
           </template>
         </v-tooltip>
-        <v-row class="mx-1">
+        <v-row class="mx-2 px-2">
           <v-chip
             v-for="(owner, i) in newOwners"
             :key="i"
