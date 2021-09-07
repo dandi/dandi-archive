@@ -24,7 +24,7 @@
       <template v-else>
         <v-tooltip
           top
-          :disabled="!manageOwnersDisabled"
+          :disabled="userCanModifyDandiset"
         >
           <template #activator="{ on }">
             <div v-on="on">
@@ -32,7 +32,7 @@
                 <v-autocomplete
                   v-model="selection"
                   :items="items"
-                  :disabled="manageOwnersDisabled"
+                  :disabled="!userCanModifyDandiset"
                   :loading="loadingUsers"
                   :search-input.sync="search"
                   hide-no-data
@@ -62,7 +62,7 @@
             color="light-blue lighten-4"
             text-color="light-blue darken-3"
             class="font-weight-medium ma-1"
-            :close="userCanModifyOwners"
+            :close="userCanModifyDandiset"
             @click:close="removeOwner(i)"
           >
             {{ owner.name || owner.username }}
@@ -75,12 +75,12 @@
 
 <script lang="ts">
 import {
-  defineComponent, reactive, ref, computed, Ref, ComputedRef, watch, watchEffect, PropType,
+  defineComponent, reactive, ref, computed, Ref, ComputedRef, watch,
 } from '@vue/composition-api';
 
 import { debounce } from 'lodash';
 
-import { publishRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
+import { publishRest, loggedIn as loggedInFunc } from '@/rest';
 import { User, Version } from '@/types';
 
 interface UserResult extends User {
@@ -93,8 +93,8 @@ const appendResult = (users: User[]): UserResult[] => users.map((u: User) => ({ 
 export default defineComponent({
   name: 'DandisetOwners',
   props: {
-    owners: {
-      type: Array as PropType<User[]>,
+    userCanModifyDandiset: {
+      type: Boolean,
       required: true,
     },
   },
@@ -103,47 +103,24 @@ export default defineComponent({
     const loadingUsers: Ref<boolean> = ref(false);
     const selection: Ref<UserResult|null> = ref(null);
     const items: Ref<UserResult[]> = ref([]);
-    const newOwners: UserResult[] = reactive(appendResult(props.owners));
 
     const store = ctx.root.$store;
 
     const currentDandiset: ComputedRef<Version> = computed(
       () => store.state.dandiset.publishDandiset,
     );
+    const owners: ComputedRef<User[]> = computed(
+      () => store.state.dandiset.owners,
+    );
+
+    const newOwners: UserResult[] = reactive([]);
+    watch(owners, () => Object.assign(newOwners, appendResult(owners.value)), { immediate: true });
+
+    const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
     function setOwners(ownersToSet: User[]) {
       store.commit('dandiset/setOwners', ownersToSet);
     }
-
-    const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
-    const user: ComputedRef<User|null> = computed(userFunc);
-    const manageOwnersDisabled: ComputedRef<boolean> = computed(() => {
-      if (user.value?.admin) {
-        return false;
-      }
-      if (!loggedIn.value || !props.owners) {
-        return true;
-      }
-      return !props.owners.find((owner: User) => owner.username === user.value?.username);
-    });
-
-    const userCanModifyOwners: Ref<boolean> = ref(false);
-    watchEffect(async () => {
-      if (!user.value) {
-        // If user isn't logged in, they can't modify owners
-        userCanModifyOwners.value = false;
-      } else if (user.value?.admin) {
-        // If user is logged in as an admin, they can modify owners
-        userCanModifyOwners.value = true;
-      } else {
-        // otherwise, check if the logged in user is an owner
-        const { data: owners } = await publishRest.owners(
-          currentDandiset.value.dandiset.identifier,
-        );
-        const userExists = owners.find((owner) => owner.username === user.value?.username);
-        userCanModifyOwners.value = !!userExists;
-      }
-    });
 
     const throttledUpdate = debounce((async () => {
       if (!search.value) return;
@@ -180,8 +157,7 @@ export default defineComponent({
 
     return {
       currentDandiset,
-      manageOwnersDisabled,
-      userCanModifyOwners,
+      owners,
       selection,
       items,
       loadingUsers,

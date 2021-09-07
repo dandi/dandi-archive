@@ -72,7 +72,7 @@ import { RawLocation } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import DandisetStats from '@/components/DandisetStats.vue';
-import { publishRest, user as userFunc } from '@/rest';
+import { user as userFunc } from '@/rest';
 import { User, Version } from '@/types';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
@@ -129,20 +129,9 @@ export default defineComponent({
       ctx.root.$router.replace(route);
     }
 
-    const userCanModifyDandiset: Ref<boolean> = ref(false);
-
-    watchEffect(async () => {
-      // published versions are never editable
-      if (currentDandiset.value?.metadata?.version !== 'draft' || !user.value) {
-        userCanModifyDandiset.value = false;
-      } else if (user.value?.admin) {
-        userCanModifyDandiset.value = true;
-      } else {
-        const { data: owners } = await publishRest.owners(identifier);
-        const userExists = owners.find((owner) => owner.username === user.value?.username);
-        userCanModifyDandiset.value = !!userExists;
-      }
-    });
+    const userCanModifyDandiset: ComputedRef<boolean> = computed(
+      () => store.getters['dandiset/userCanModifyDandiset'],
+    );
 
     // () => identifier is needed since we're using Vue 2
     // https://stackoverflow.com/a/59127059

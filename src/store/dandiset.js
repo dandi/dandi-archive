@@ -1,7 +1,7 @@
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
-import { publishRest } from '@/rest';
+import { publishRest, user } from '@/rest';
 import { draftVersion } from '@/utils/constants';
 
 export default {
@@ -16,6 +16,19 @@ export default {
   getters: {
     version(state) {
       return state.publishDandiset ? state.publishDandiset.version : draftVersion;
+    },
+    userCanModifyDandiset(state) {
+      // published versions are never editable, and logged out users can never edit a dandiset
+      if (state.publishDandiset?.metadata?.version !== draftVersion || !user()) {
+        return false;
+      }
+      // if they're an admin, they can edit any dandiset
+      if (user()?.admin) {
+        return true;
+      }
+      // otherwise check if they are an owner
+      const userExists = state.owners?.find((owner) => owner.username === user().username);
+      return !!userExists;
     },
   },
   mutations: {

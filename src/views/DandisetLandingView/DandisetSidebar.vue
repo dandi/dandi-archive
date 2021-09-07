@@ -4,8 +4,8 @@
       @edit="$emit('edit')"
     />
     <DandisetOwners
-      v-if="owners"
-      :owners="owners"
+      v-if="userCanModifyDandiset"
+      :user-can-modify-dandiset="userCanModifyDandiset"
     />
     <DandisetPublish
       :user-can-modify-dandiset="userCanModifyDandiset"
@@ -19,7 +19,7 @@ import {
   defineComponent, computed, ComputedRef,
 } from '@vue/composition-api';
 
-import { User, Version } from '@/types';
+import { Version } from '@/types';
 
 import DandisetActions from './DandisetActions.vue';
 import DandisetOwners from './DandisetOwners.vue';
@@ -44,7 +44,6 @@ export default defineComponent({
     const currentDandiset: ComputedRef<Version> = computed(
       () => store.state.dandiset.publishDandiset,
     );
-    const owners: ComputedRef<User[]> = computed(() => store.state.dandiset.owners);
 
     const currentVersion: ComputedRef<string> = computed(
       () => store.getters['dandiset/version'],
@@ -58,7 +57,6 @@ export default defineComponent({
 
     return {
       currentDandiset,
-      owners,
       currentVersion,
       otherVersions,
     };
