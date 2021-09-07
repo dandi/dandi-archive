@@ -98,3 +98,38 @@ Honestly, not that unreasonable for this much data.
 Because the checksum has a well-defined ordering, you cannot decide that you want to tack a few more files on at the beginning after you have begun the checksumming.
 * Possibly inefficient hashing algorithm?
 My approach was simple but possibly naive, maybe there's a better algorithm that meets the requirements.
+
+## Benchmarks
+I mocked up API endpoints that would behave more or less like the ones described above.
+I recommend throwing the code away, but it should give a good estimate for performance.
+See https://github.com/dandi/dandi-api/tree/zarr-demo, specifically https://github.com/dandi/dandi-api/commit/2e651e336a052f59e867ee97cca0f1c5b3e2ff2a for the code.
+
+I ran these benchmarks locally against my local Minio object store.
+
+Some sample logs from the benchmarking script:
+```
+Uploading 10000 files of size 20.000 KB, for a total size of 195.312 MB
+Presigning 10000 URLs...
+ 1.256s
+Uploading 195.312 MB of data direct to object store (this would be parallelizable)...
+ 67.029s
+Verifying uploaded files are present in object store and have the correct ETag...
+Upload complete!
+ 10.868s
+```
+
+The data:
+
+| File Size | Total Size | Files | Presigning | Uploading | Verifying | Efficiency |
+|---|---|---|---|---|---|---|
+| 20KB | 20KB | 1 | 0.014s | 0.006s | 0.015s | 17.1% |
+| 20KB | 200KB |10 | 0.014s | 0.050s | 0.024s | 56.8% |
+| 20KB | 1.95MB | 100 | 0.025s | 0.581s | 0.270s | 66.3% |
+| 20KB | 19.5MB | 1000 | 0.130s | 6.293s | 1.069s | 84.0% |
+| 20KB | 195MB | 10000 | 1.256s | 67.029s | 10.868s | 84.7% |
+
+Efficiency indicates what percentage of the total time taken was spent actually uploading bytes, as opposed to waiting for the server to presign or verify.
+A direct upload to S3 would be 100% efficient.
+
+These numbers are from uploading to my local Minio, so they omit the burden of actual network traffic.
+However, uploading to S3 would involve network latency during the upload step and during the verification step, so the ratio should remain roughly the same.
