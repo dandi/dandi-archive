@@ -7,7 +7,7 @@
       class="mb-4"
       no-gutters
     >
-      <template v-if="currentDandiset.version === 'draft'">
+      <template v-if="!publishButtonHidden">
         <v-tooltip
           :disabled="!publishDisabledMessage"
           left
@@ -20,7 +20,7 @@
               <v-btn
                 block
                 color="success"
-                :disabled="publishDisabled || !user"
+                :disabled="publishButtonDisabled"
                 @click="publish"
               >
                 Publish
@@ -240,7 +240,7 @@ function getValidationErrorIcon(errorField: string): string {
 // The DRAFT version is always the first element when present.
 function sortVersions(v1: Version, v2: Version): number {
   // Always put draft first
-  if (v1.version === 'draft' || v1.modified > v2.modified) {
+  if (v1.version === draftVersion || v1.modified > v2.modified) {
     return -1;
   }
   if (v1.modified < v2.modified) {
@@ -277,9 +277,18 @@ export default defineComponent({
     const user: ComputedRef<User|null> = computed(userFunc);
     const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
+    const isOwner: ComputedRef<boolean> = computed(
+      () => !!(store.state.dandiset.owners?.find(
+        (owner: User) => owner.username === user.value?.username,
+      )),
+    );
+
     const publishDisabledMessage: ComputedRef<string> = computed(() => {
       if (!loggedIn.value) {
         return 'You must be logged in to edit.';
+      }
+      if (isOwner.value && currentVersion.value !== draftVersion) {
+        return 'Only draft versions can be published.';
       }
       // NOTE: must access the prop directly instead of destructuring to preserve reactivity
       // i.e. `const { userCanModifyDandiset } = props;` won't be reactive
@@ -299,11 +308,19 @@ export default defineComponent({
       return '';
     });
 
-    const publishDisabled: ComputedRef<boolean> = computed(
+    const publishButtonDisabled: ComputedRef<boolean> = computed(
       () => !!(currentDandiset.value.version_validation_errors.length
         || currentDandiset.value.asset_validation_errors.length
         || publishDisabledMessage.value),
     );
+
+    const publishButtonHidden: ComputedRef<boolean> = computed(() => {
+      const { owners } = store.state.dandiset;
+      // Hide the publish button if the user is not an owner of the dandiset
+      return !(loggedIn.value && !!(owners?.find(
+        (owner: User) => owner.username === user.value?.username,
+      )));
+    });
 
     function formatDate(date: string): string {
       return moment(date).format('MM/DD/YYYY');
@@ -340,9 +357,11 @@ export default defineComponent({
       sortVersions,
       user,
       publishDisabledMessage,
-      publishDisabled,
+      publishButtonDisabled,
+      publishButtonHidden,
       getValidationErrorIcon,
       publish,
+      draftVersion,
     };
   },
 });
