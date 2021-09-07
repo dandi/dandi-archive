@@ -4,42 +4,41 @@
     class="mt-4 pa-3"
   >
     <v-row
+      v-if="!publishButtonHidden"
       class="mb-4"
       no-gutters
     >
-      <template v-if="!publishButtonHidden">
-        <v-tooltip
-          :disabled="!publishDisabledMessage"
-          left
-        >
-          <template #activator="{ on }">
-            <div
-              style="width: 100%"
-              v-on="on"
+      <v-tooltip
+        :disabled="!publishDisabledMessage"
+        left
+      >
+        <template #activator="{ on }">
+          <div
+            style="width: 100%"
+            v-on="on"
+          >
+            <v-btn
+              block
+              color="success"
+              :disabled="publishButtonDisabled"
+              @click="publish"
             >
-              <v-btn
-                block
-                color="success"
-                :disabled="publishButtonDisabled"
-                @click="publish"
-              >
-                Publish
-                <v-spacer />
-                <v-icon>mdi-upload</v-icon>
-              </v-btn>
-            </div>
-          </template>
-          <span>{{ publishDisabledMessage }}</span>
-        </v-tooltip>
-      </template>
+              Publish
+              <v-spacer />
+              <v-icon>mdi-upload</v-icon>
+            </v-btn>
+          </div>
+        </template>
+        <span>{{ publishDisabledMessage }}</span>
+      </v-tooltip>
     </v-row>
 
     <v-row
+      v-if="currentDandiset.version_validation_errors.length "
       class="mb-4"
       no-gutters
     >
       <v-menu
-        v-if="currentDandiset.version_validation_errors.length"
         :nudge-width="200"
         offset-y
         open-on-hover
@@ -107,11 +106,12 @@
     </v-row>
 
     <v-row
+      v-if="currentDandiset.asset_validation_errors.length"
       class="mb-4"
       no-gutters
     >
       <v-menu
-        v-if="currentDandiset.asset_validation_errors.length"
+
         :nudge-width="200"
         offset-y
         open-on-hover
