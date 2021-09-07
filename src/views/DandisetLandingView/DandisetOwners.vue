@@ -23,6 +23,7 @@
       </template>
       <template v-else>
         <v-tooltip
+          v-if="showOwnerSearchBox"
           top
           :disabled="userCanModifyDandiset"
         >
@@ -80,6 +81,7 @@ import {
 
 import { debounce } from 'lodash';
 
+import { draftVersion } from '@/utils/constants';
 import { publishRest, loggedIn as loggedInFunc } from '@/rest';
 import { User, Version } from '@/types';
 
@@ -88,7 +90,7 @@ interface UserResult extends User {
 }
 
 // Includes a field `result` on each user which is the value displayed in the UI
-const appendResult = (users: User[]): UserResult[] => users.map((u: User) => ({ ...u, result: (u.name) ? `${u.name} (${u.username})` : u.username }));
+const appendResult = (users: User[]): UserResult[] => users?.map((u: User) => ({ ...u, result: (u.name) ? `${u.name} (${u.username})` : u.username }));
 
 export default defineComponent({
   name: 'DandisetOwners',
@@ -117,6 +119,11 @@ export default defineComponent({
     watch(owners, () => Object.assign(newOwners, appendResult(owners.value)), { immediate: true });
 
     const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
+
+    const showOwnerSearchBox: ComputedRef<boolean> = computed(
+      // Only show the search box to logged in users on DRAFT versions
+      () => loggedIn.value && currentDandiset.value.version === draftVersion,
+    );
 
     function setOwners(ownersToSet: User[]) {
       store.commit('dandiset/setOwners', ownersToSet);
@@ -166,6 +173,8 @@ export default defineComponent({
       loggedIn,
       newOwners,
       removeOwner,
+      draftVersion,
+      showOwnerSearchBox,
     };
   },
 });

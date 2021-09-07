@@ -4,7 +4,6 @@
       @edit="$emit('edit')"
     />
     <DandisetOwners
-      v-if="userCanModifyDandiset"
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
     <DandisetPublish
