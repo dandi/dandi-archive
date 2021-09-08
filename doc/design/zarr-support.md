@@ -122,7 +122,7 @@ The data:
 
 | File Size | Total Size | Files | Presigning | Uploading | Verifying | Efficiency |
 |---|---|---|---|---|---|---|
-| 20KB | 20KB | 1 | 0.014s | 0.006s | 0.015s | 17.1% |
+| 20KB | 20KB | 1 | 0.082s | 0.006s | 0.015s | 17.1% |
 | 20KB | 200KB |10 | 0.014s | 0.050s | 0.024s | 56.8% |
 | 20KB | 1.95MB | 100 | 0.025s | 0.581s | 0.270s | 66.3% |
 | 20KB | 19.5MB | 1000 | 0.130s | 6.293s | 1.069s | 84.0% |
@@ -133,3 +133,18 @@ A direct upload to S3 would be 100% efficient.
 
 These numbers are from uploading to my local Minio, so they omit the burden of actual network traffic.
 However, uploading to S3 would involve network latency during the upload step and during the verification step, so the ratio should remain roughly the same.
+
+Here is some data from connecting to an S3 bucket from my local machine (and associated wifi speeds):
+
+| File Size | Total Size | Files | Presigning | Uploading | Verifying | Efficiency |
+|---|---|---|---|---|---|---|
+| 20KB | 20KB | 1 | 0.082s | 0.377s | 0.423s | 42.7% |
+| 20KB | 200KB | 10 | 0.043s | 3.262s | 0.946s | 76.7% |
+| 20KB | 1000KB | 50 | 0.104s | 15.134s | 3.677s | 80.0% |
+| 20KB | 1.95MB | 100 | 0.077s | 30.912s | 6.901s | 81.6% |
+| 20KB | 2.93MB | 150 | 0.095s | 46.975s | 10.614s | 81.4% |
+| 20KB | 3.906MB | 200 | 0.117s | 61.827s | 14.048s | 81.4% |
+
+The production ratio will hopefully be better, since the verification step involves requests to S3 from the Heroku API server, which is hopefully a better pipe than whatever wifi users are uploading from.
+
+80% efficiency seems like a good estimate.
