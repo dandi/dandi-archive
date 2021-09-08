@@ -1,5 +1,29 @@
 # Embargo support
 
+## User experience
+
+### uploading embargoed data
+When a user creates a dandiset, they have the option to mark it as "open" or "embargoed". There is some help text that explains these options, either as a hover-hint or some other way. The text for "open" would indicate that the dandiset would be visible to anyone.
+
+If "embargoed" is selected, a page would be displayed that would explain the rules of embargoed data. The user is required to check "I agree" before proceeding. There is also a "back" option. On this page, the user is required to enter the grant or award number, and we would ideally validate that this is an active award. The message would indicate that this option is only available to BRAIN Initiative grants, and that the landing page of the dandiset would be visible to everyone but the underlying assets would not be. As per recent NIH policy, the user will be required to make the dandiset "open" upon the first publication of the data, or when the funding for the grant runs out, whichever comes first. We will be able to determine when the grant expires and we will automatically open the dandiset if it has not already been opened. Using the grant number, we determine the embargoedUntil date and add it automatically as metadata which is visible publicly on the dandiset landing page.
+
+It is expected that each grant have at least one of these embargoed dandisets. Since it is not always clear from the outset how the data from a grant will be divided into publications, it is expected that several groups may start with a single dandiset.
+
+For embargoed data the owner would have options to add user permissions, with an interface similar to Google Docs:
+
+* add read-only member. This would be used for collaborators with team members who do not need to submit data but only to read it. This would also be useful for reviewers of manuscripts who need to see the data as part of the review process. Read access allows a user to view available assets, and download them with the web API, the Python API, and reading data directly using s3 streaming. A DANDI Hub user will automatically use the credentials from the dandi hub account they are currently using.
+* add owner. This would give them read and write permissions and the ability to add users, including owners.
+
+Permissions are all by dandiset, not by asset. If a user needs to set different permissions for specific assets within the dandiset, they will need to create a new dandiset and put the assets in this separate place.
+When a there is a new publication, the user is expected to create a new dandiset for this publication. There should be an online interface for copying assets from an existing dandiset to this one.
+
+### requesting access
+
+When a user without access to an embargoed dandiset visits the landing page, they see a message that says that this
+dataset is currently under embargo until the embargo end date. They have a button to request read access. If they
+click this button, an email is sent to the contact person with a link that leads them to an interface where they can
+give this user access.
+
 ## Principles
 
 ### Use of key stores
