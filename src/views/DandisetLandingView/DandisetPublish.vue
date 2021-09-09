@@ -212,14 +212,14 @@
     <v-row
       v-for="(version, i) in otherVersions"
       :key="i"
-      class="pa-2 text-body-2 align-center"
+      class="pa-2 text-body-2 align-center justify-center"
       style="border-top: thin solid rgba(0, 0, 0, 0.12);
-               border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+             border-bottom: thin solid rgba(0, 0, 0, 0.12);"
     >
       <v-col cols="5">
         {{ formatDate(version.modified) }}
       </v-col>
-      <v-col>
+      <v-col style="text-align: center;">
         <v-btn
           outlined
           @click="setVersion(version)"
@@ -339,7 +339,7 @@ export default defineComponent({
     });
 
     function formatDate(date: string): string {
-      return moment(date).format('MM/DD/YYYY');
+      return moment(date).format('ll');
     }
 
     function setVersion({ version: newVersion }: any) {
