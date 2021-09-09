@@ -12,10 +12,10 @@
         </v-col>
       </v-row>
       <v-row class="mx-1">
-        <v-col cols="4">
+        <v-col cols="3">
           <v-chip
             class="text-wrap py-1"
-            style="word-break: break-word; text-align: center; height: 100%;"
+            style="text-align: center;"
             outlined
           >
             <span>
