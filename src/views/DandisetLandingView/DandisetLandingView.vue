@@ -13,7 +13,7 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-row>
+        <v-row no-gutters>
           <v-col cols="10">
             <DandisetSearchField />
           </v-col>

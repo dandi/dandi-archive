@@ -1,8 +1,7 @@
 <template>
   <v-row
     v-if="stats"
-    class="align-center text-h6 font-weight-light mx-2"
-    style="height: 100%"
+    class="align-center text-h6 font-weight-light"
     no-gutters
   >
     <v-col cols="6">
@@ -64,3 +63,10 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.row {
+  text-align: center;
+  height: 100%;
+}
+</style>
