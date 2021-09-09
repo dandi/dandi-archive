@@ -46,28 +46,36 @@
         <template #activator="{ on: menu, attrs }">
           <v-tooltip bottom>
             <template #activator="{ on: tooltip }">
-              <v-btn
-                block
+              <v-card
                 class="amber lighten-5 no-text-transform"
-                depressed
+                outlined
                 v-bind="attrs"
                 v-on="{ ...tooltip, ...menu }"
               >
-                <v-icon
-                  color="warning"
-                  class="mr-1"
-                >
-                  mdi-playlist-remove
-                </v-icon>
-                <v-spacer />
-                <span
-                  style="white-space: normal"
-                  class="text-caption"
-                >
-                  This Dandiset has {{ currentDandiset.version_validation_errors.length }}
-                  metadata<br>validation error(s).
-                </span>
-              </v-btn>
+                <v-row class="align-center px-4">
+                  <v-col
+                    cols="1"
+                    class="justify-center py-0"
+                  >
+                    <v-icon
+                      color="warning"
+                      class="mr-1"
+                    >
+                      mdi-playlist-remove
+                    </v-icon>
+                  </v-col>
+                  <v-spacer />
+                  <v-col
+                    cols="9"
+                    class="py-0"
+                  >
+                    <div class="text-caption">
+                      This Dandiset has {{ currentDandiset.version_validation_errors.length }}
+                      metadata validation error(s).
+                    </div>
+                  </v-col>
+                </v-row>
+              </v-card>
             </template>
             <span>Fix issues with metadata</span>
           </v-tooltip>
@@ -119,28 +127,36 @@
         <template #activator="{ on: menu, attrs }">
           <v-tooltip bottom>
             <template #activator="{ on: tooltip }">
-              <v-btn
-                block
+              <v-card
                 class="amber lighten-5 no-text-transform"
-                depressed
+                outlined
                 v-bind="attrs"
                 v-on="{ ...tooltip, ...menu }"
               >
-                <v-icon
-                  color="warning"
-                  class="mr-1"
-                >
-                  mdi-database-remove
-                </v-icon>
-                <v-spacer />
-                <span
-                  style="white-space: normal"
-                  class="text-caption"
-                >
-                  This Dandiset has {{ currentDandiset.asset_validation_errors.length }}
-                  asset<br>validation error(s).
-                </span>
-              </v-btn>
+                <v-row class="align-center px-4">
+                  <v-col
+                    cols="1"
+                    class="justify-center py-0"
+                  >
+                    <v-icon
+                      color="warning"
+                      class="mr-1"
+                    >
+                      mdi-database-remove
+                    </v-icon>
+                  </v-col>
+                  <v-spacer />
+                  <v-col
+                    cols="9"
+                    class="py-0"
+                  >
+                    <div class="text-caption">
+                      This Dandiset has {{ currentDandiset.asset_validation_errors.length }}
+                      asset validation error(s).
+                    </div>
+                  </v-col>
+                </v-row>
+              </v-card>
             </template>
             <span>Fix issues with assets</span>
           </v-tooltip>
