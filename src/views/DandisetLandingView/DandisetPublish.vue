@@ -239,6 +239,7 @@ import {
 import moment from 'moment';
 
 import { publishRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
+import store from '@/store';
 import { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
@@ -274,17 +275,10 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
-    const store = ctx.root.$store;
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentVersion = computed(() => store.getters.version);
 
-    const currentDandiset: ComputedRef<Version> = computed(
-      () => store.state.dandiset.publishDandiset,
-    );
-
-    const currentVersion: ComputedRef<string> = computed(
-      () => store.getters['dandiset/version'],
-    );
-
-    const otherVersions: ComputedRef<Version[]> = computed(
+    const otherVersions: ComputedRef<Version[]|undefined> = computed(
       () => store.state.dandiset.versions?.filter(
         (version: Version) => version.version !== currentVersion.value,
       ).sort(sortVersions),
@@ -312,21 +306,21 @@ export default defineComponent({
       if (!props.userCanModifyDandiset) {
         return 'You do not have permission to edit this dandiset.';
       }
-      if (currentDandiset.value.status === 'Pending') {
+      if (currentDandiset.value?.status === 'Pending') {
         return 'This dandiset has not yet been validated.';
       }
-      if (currentDandiset.value.status === 'Validating') {
+      if (currentDandiset.value?.status === 'Validating') {
         return 'Currently validating this dandiset.';
       }
-      if (currentDandiset.value.status === 'Published') {
+      if (currentDandiset.value?.status === 'Published') {
         return 'No changes since last publish.';
       }
       return '';
     });
 
     const publishButtonDisabled: ComputedRef<boolean> = computed(
-      () => !!(currentDandiset.value.version_validation_errors.length
-        || currentDandiset.value.asset_validation_errors.length
+      () => !!(currentDandiset.value?.version_validation_errors.length
+        || currentDandiset.value?.asset_validation_errors.length
         || publishDisabledMessage.value),
     );
 
@@ -354,14 +348,22 @@ export default defineComponent({
           },
         } as RawLocation);
 
-        store.dispatch('dandiset/fetchPublishDandiset', { identifier: currentDandiset.value.dandiset.identifier, version: newVersion });
+        store.dispatch.fetchPublishDandiset({
+          identifier: currentDandiset.value?.dandiset.identifier,
+          version: newVersion,
+        });
       }
     }
 
     async function publish() {
-      const version = await publishRest.publish(currentDandiset.value.dandiset.identifier);
-      // re-initialize the dataset to load the newly published version
-      await store.dispatch('dandiset/initializeDandisets', { identifier: currentDandiset.value.dandiset.identifier, version: version.version });
+      if (currentDandiset.value) {
+        const version = await publishRest.publish(currentDandiset.value.dandiset.identifier);
+        // re-initialize the dataset to load the newly published version
+        await store.dispatch.initializeDandisets({
+          identifier: currentDandiset.value?.dandiset.identifier,
+          version: version.version,
+        });
+      }
     }
 
     return {

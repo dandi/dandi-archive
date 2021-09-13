@@ -183,7 +183,8 @@ import filesize from 'filesize';
 import moment from 'moment';
 import _ from 'lodash';
 
-import { DandisetStats, Version } from '@/types';
+import { DandisetStats } from '@/types';
+import store from '@/store';
 
 // TODO: delete DandisetContributors component after redesigned contributors list is implemented
 import DandisetContributors from './DandisetContributors.vue';
@@ -222,13 +223,10 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
+  setup(props) {
     const { meta, schema } = props;
-    const store = ctx.root.$store;
 
-    const currentDandiset: ComputedRef<Version> = computed(
-      () => store.state.dandiset.publishDandiset,
-    );
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
 
     const stats: ComputedRef<DandisetStats|null> = computed(() => {
       if (!currentDandiset.value) {

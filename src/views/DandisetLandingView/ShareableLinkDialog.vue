@@ -23,11 +23,9 @@
 <script lang="ts">
 import CopyText from '@/components/CopyText.vue';
 
-import {
-  defineComponent, computed, ComputedRef,
-} from '@vue/composition-api';
+import { defineComponent, computed } from '@vue/composition-api';
 
-import { Version } from '@/types';
+import store from '@/store';
 import { dandiUrl } from '@/utils/constants';
 
 export default defineComponent({
@@ -35,17 +33,16 @@ export default defineComponent({
   components: {
     CopyText,
   },
-  setup(props, ctx) {
-    const store = ctx.root.$store;
+  setup() {
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentVersion = computed(() => store.getters.version);
 
-    const currentDandiset: ComputedRef<Version> = computed(
-      () => store.state.dandiset.publishDandiset,
-    );
-    const version: ComputedRef<Version> = computed(
-      () => store.getters['dandiset/version'],
-    );
-
-    const permalink: ComputedRef<string> = computed(() => `${dandiUrl}/dandiset/${currentDandiset.value.dandiset.identifier}/${version.value}`);
+    const permalink = computed(() => {
+      if (currentDandiset.value?.dandiset && currentVersion.value) {
+        return `${dandiUrl}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
+      }
+      return '';
+    });
 
     return {
       permalink,

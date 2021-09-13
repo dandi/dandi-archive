@@ -221,7 +221,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import {
-  defineComponent, PropType, ref, computed, nextTick,
+  defineComponent, PropType, ref, computed, nextTick, Ref,
 } from '@vue/composition-api';
 
 import jsYaml from 'js-yaml';
@@ -231,6 +231,7 @@ import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 
 import { publishRest } from '@/rest';
+import store from '@/store';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
 import MeditorTransactionTracker from '@/utils/transactions';
@@ -268,9 +269,6 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
-    // TODO: Replace once direct-vuex is added
-    const store = ctx.root.$store;
-
     const { model: modelProp, schema: schemaProp } = props;
     const invalidPermissionSnackbar = ref(false);
 
@@ -304,10 +302,10 @@ export default defineComponent({
       disableAll: props.readonly,
     }));
     const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
-    const id = computed(() => publishDandiset.value?.dandiset.identifier || null);
+    const id = computed(() => publishDandiset.value?.dandiset.identifier);
 
-    const basicRef: any = ref(null);
-    const complexRef: any = ref(null);
+    const basicRef: Ref<any> = ref(null);
+    const complexRef: Ref<any> = ref(null);
 
     const TransactionTracker = new MeditorTransactionTracker(editorInterface);
 
@@ -353,6 +351,9 @@ export default defineComponent({
     };
 
     async function save() {
+      if (!id.value || !publishDandiset.value?.version) {
+        return;
+      }
       const dandiset = editorInterface.getModel();
 
       try {
@@ -363,7 +364,10 @@ export default defineComponent({
         if (status === 200) {
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
-            await store.dispatch('dandiset/fetchPublishDandiset', { identifier: data.dandiset.identifier, version: data.version });
+            await store.dispatch.fetchPublishDandiset({
+              identifier: data.dandiset.identifier,
+              version: data.version,
+            });
             TransactionTracker.reset();
           }, 500);
         }

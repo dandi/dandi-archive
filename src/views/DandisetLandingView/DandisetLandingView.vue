@@ -59,13 +59,15 @@
 
 <script lang="ts">
 import {
-  defineComponent, ref, computed, watchEffect, watch, Ref, ComputedRef,
+  defineComponent, ref, computed, watchEffect, watch,
 } from '@vue/composition-api';
 import { RawLocation } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { user as userFunc } from '@/rest';
-import { User, Version } from '@/types';
+import store from '@/store';
+import { Version } from '@/types';
+import { draftVersion } from '@/utils/constants';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
@@ -90,22 +92,16 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
-    const { identifier, version } = props;
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const loading = computed(() => store.state.dandiset.loading);
+    const schema = computed(() => store.state.dandiset.schema);
+    const userCanModifyDandiset = computed(() => store.getters.userCanModifyDandiset);
 
-    const store = ctx.root.$store;
+    const user = computed(userFunc);
+    const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
 
-    const currentDandiset: ComputedRef<Version> = computed(
-      () => store.state.dandiset.publishDandiset,
-    );
-    const loading: ComputedRef<boolean> = computed(() => store.state.dandiset.loading);
-    const schema: ComputedRef<any> = computed(() => store.state.dandiset.schema);
-    const user: ComputedRef<User|null> = computed(userFunc);
-    const meta: ComputedRef<any> = computed(() => (
-      currentDandiset.value ? currentDandiset.value.metadata : {}
-    ));
-
-    const edit: Ref<boolean> = ref(false);
-    const readonly: Ref<boolean> = ref(false);
+    const edit = ref(false);
+    const readonly = ref(false);
 
     function navigateToVersion(versionToNavigateTo: string) {
       if (ctx.root.$route.params.version === versionToNavigateTo) return;
@@ -120,26 +116,34 @@ export default defineComponent({
       ctx.root.$router.replace(route);
     }
 
-    const userCanModifyDandiset: ComputedRef<boolean> = computed(
-      () => store.getters['dandiset/userCanModifyDandiset'],
-    );
-
-    // () => identifier is needed since we're using Vue 2
+    // () => props.identifier is needed since we're using Vue 2
     // https://stackoverflow.com/a/59127059
-    watch(() => identifier, async () => {
+    watch(() => props.identifier, async () => {
+      const { identifier, version } = props;
       if (identifier) {
-        await store.dispatch('dandiset/initializeDandisets', { identifier, version });
+        await store.dispatch.initializeDandisets({ identifier, version });
       }
     }, { immediate: true });
 
     watchEffect(async () => {
+      const { identifier, version } = props;
+      if (version) {
       // On version change, fetch the new dandiset (not initial)
-      await store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
+        await store.dispatch.fetchPublishDandiset({ identifier, version });
+      } else {
+        await store.dispatch.fetchPublishDandiset({ identifier });
+      }
       // If the above await call didn't result in publishDandiset being set, navigate to a default
-      if (!currentDandiset) {
+      if (!currentDandiset.value) {
         // Omitting version will fetch the most recent version instead
-        await store.dispatch('dandiset/fetchPublishDandiset', { identifier });
-        navigateToVersion((currentDandiset as Version).version);
+        await store.dispatch.fetchPublishDandiset({ identifier });
+
+        if (currentDandiset.value) {
+          navigateToVersion((currentDandiset.value as Version).version);
+        } else {
+          // if all else fails, navigate to the draft version
+          navigateToVersion(draftVersion);
+        }
       }
     });
 

@@ -15,9 +15,10 @@
 
 <script lang="ts">
 import {
-  defineComponent, computed, ComputedRef,
+  defineComponent, computed,
 } from '@vue/composition-api';
 
+import store from '@/store';
 import { Version } from '@/types';
 
 import DandisetActions from './DandisetActions.vue';
@@ -37,22 +38,13 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
-    const store = ctx.root.$store;
+  setup() {
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentVersion = computed(() => store.getters.version);
 
-    const currentDandiset: ComputedRef<Version> = computed(
-      () => store.state.dandiset.publishDandiset,
-    );
-
-    const currentVersion: ComputedRef<string> = computed(
-      () => store.getters['dandiset/version'],
-    );
-
-    const otherVersions: ComputedRef<Version[]> = computed(
-      () => store.state.dandiset.versions.filter(
-        (version: Version) => version.version !== currentVersion.value,
-      ),
-    );
+    const otherVersions = computed(() => store.state.dandiset.versions?.filter(
+      (version: Version) => version.version !== currentVersion.value,
+    ));
 
     return {
       currentDandiset,

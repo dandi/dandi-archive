@@ -111,7 +111,7 @@
 import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
 import { Location } from 'vue-router';
 
-import { Version } from '@/types';
+import store from '@/store';
 
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
@@ -122,18 +122,14 @@ export default defineComponent({
     CiteAsDialog,
     DownloadDialog,
   },
-  setup(props, ctx) {
-    const store = ctx.root.$store;
+  setup() {
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentVersion = computed(() => store.getters.version);
 
-    const currentDandiset: ComputedRef<Version> = computed(
-      () => store.state.dandiset.publishDandiset,
-    );
-
-    const currentVersion: ComputedRef<string> = computed(
-      () => store.getters['dandiset/version'],
-    );
-
-    const fileBrowserLink: ComputedRef<Location> = computed(() => {
+    const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
+      if (!currentDandiset.value) {
+        return null;
+      }
       const version: string = currentVersion.value;
       const { identifier } = currentDandiset.value.dandiset;
       return {

@@ -19,7 +19,7 @@ export default {
     DandiFooter,
   },
   created() {
-    store.dispatch('dandiset/fetchSchema');
+    store.dispatch.fetchSchema();
   },
 };
 </script>
