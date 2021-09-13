@@ -28,7 +28,7 @@ Sentry.init({
   integrations: [new Integrations.Vue({ Vue, logErrors: true })],
 });
 
-sync(store, router);
+sync(store.original, router);
 
 Vue.use(VueGtag, {
   config: { id: 'UA-146135810-2' },
@@ -45,7 +45,7 @@ loadUser().then(() => {
     },
     router,
     render: (h) => h(App),
-    store,
+    store: store.original,
     // @ts-ignore: missing definitions because Vue.use(Vuetify) is in a .js file
     vuetify,
   }).$mount('#app');
