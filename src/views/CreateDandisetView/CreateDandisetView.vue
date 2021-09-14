@@ -39,37 +39,34 @@
   </v-card>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, computed, ref } from '@vue/composition-api';
 import { publishRest, loggedIn } from '@/rest';
 
-export default {
+export default defineComponent({
   name: 'CreateDandisetView',
-  data() {
+  setup(props, ctx) {
+    const name = ref('');
+    const description = ref('');
+    const saveDisabled = computed(() => !name.value || !description.value);
+
+    if (!loggedIn()) {
+      ctx.root.$router.push({ name: 'home' });
+    }
+
+    async function registerDandiset() {
+      const { data } = await publishRest.createDandiset(name.value, description.value);
+      const { identifier } = data;
+      ctx.root.$router.push({ name: 'dandisetLanding', params: { identifier } });
+    }
+
     return {
-      name: '',
-      description: '',
+      name,
+      description,
+      saveDisabled,
+      registerDandiset,
     };
   },
-  computed: {
-    saveDisabled() {
-      return !(this.name && this.description);
-    },
-  },
-  created() {
-    if (!loggedIn()) {
-      this.$router.push({ name: 'home' });
-    }
-  },
-  methods: {
-    async registerDandiset() {
-      const { name, description } = this;
-      const { data } = await publishRest.createDandiset(name, description);
-      const { identifier } = data;
-      this.$router.push({
-        name: 'dandisetLanding',
-        params: { identifier },
-      });
-    },
-  },
-};
+});
+
 </script>
