@@ -1,8 +1,8 @@
-import requests
 from urllib.parse import urljoin
 
 from django.db import transaction
 import djclick as click
+import requests
 
 from dandiapi.api.models import Dandiset, Version
 
@@ -45,7 +45,7 @@ def import_dandisets_from_response(api_url: str, dandiset_api_response: dict):
         # Check if dandiset with this name already exists. If it does, skip it.
         # I can't think of a better way to uniquely identify dandisets
         # without being able to use identifiers.
-        existing_dandiset = Version.objects.filter(name=result["draft_version"]["name"])
+        existing_dandiset = Version.objects.filter(name=result['draft_version']['name'])
         if existing_dandiset.first():
             identifier = existing_dandiset.first().dandiset.identifier
             click.echo(
@@ -53,7 +53,7 @@ def import_dandisets_from_response(api_url: str, dandiset_api_response: dict):
             )
             continue
 
-        identifier = result["identifier"]
+        identifier = result['identifier']
         dandiset = Dandiset()
         dandiset.save()
 
