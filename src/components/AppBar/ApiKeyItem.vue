@@ -19,32 +19,32 @@
   </v-list-item>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, ref } from '@vue/composition-api';
+
 import CopyText from '@/components/CopyText.vue';
 import { publishRest } from '@/rest';
 
-export default {
+export default defineComponent({
   name: 'ApiKeyItem',
-  components: {
-    CopyText,
-  },
-  data() {
+  components: { CopyText },
+  setup() {
+    const apiKey = ref('');
+
+    async function fetchApiKey() {
+      apiKey.value = await publishRest.getApiKey();
+    }
+    async function refreshApiKey() {
+      apiKey.value = await publishRest.newApiKey();
+    }
+
+    // fetch API key when component is created
+    fetchApiKey();
+
     return {
-      apiKey: null,
+      apiKey,
+      refreshApiKey,
     };
   },
-  created() {
-    this.fetchApiKey();
-  },
-  methods: {
-    // gets the logged-in user's existing API key (and creates one if it doesn't exist)
-    async fetchApiKey() {
-      this.apiKey = await publishRest.getApiKey();
-    },
-    // gets a new API key for the logged-in user and deletes the old one
-    async refreshApiKey() {
-      this.apiKey = await publishRest.newApiKey();
-    },
-  },
-};
+});
 </script>
