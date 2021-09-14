@@ -113,6 +113,7 @@
       </v-row>
       <v-row no-gutters>
         <v-btn
+          id="view-edit-metadata"
           outlined
           style="width: 100%"
           @click="$emit('edit')"
