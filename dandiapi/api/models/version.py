@@ -49,7 +49,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         default=Status.PENDING,
         choices=Status.choices,
     )
-    validation_errors = models.JSONField(default=list)
+    validation_errors = models.JSONField(default=list, blank=True, null=True)
 
     class Meta:
         unique_together = ['dandiset', 'version']
