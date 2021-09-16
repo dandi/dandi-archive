@@ -56,6 +56,8 @@
       </v-row>
 
       <v-divider />
+      <!-- TODO: delete this component after redesigned contributors list is implemented -->
+      <DandisetContributors />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
         {{ meta.description }}
@@ -142,6 +144,8 @@ import _ from 'lodash';
 
 import { Version } from '@/types';
 
+// TODO: delete DandisetContributors component after redesigned contributors list is implemented
+import DandisetContributors from './DandisetContributors.vue';
 import ListingComponent from './ListingComponent.vue';
 
 // TODO: remove when redesign is implemented
@@ -157,7 +161,11 @@ function renderData(data: any, schema: any): boolean {
 
 export default defineComponent({
   name: 'DandisetMain',
-  components: { ListingComponent },
+  components: {
+    ListingComponent,
+    // TODO: delete DandisetContributors component after redesigned contributors list is implemented
+    DandisetContributors,
+  },
   props: {
     schema: {
       type: Object,
