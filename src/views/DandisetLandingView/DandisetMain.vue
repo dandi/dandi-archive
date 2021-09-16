@@ -8,6 +8,20 @@
         <v-col>
           <h1 class="font-weight-light">
             {{ meta.name }}
+            <ShareableLinkDialog>
+              <template
+                #activator="{ on }"
+                class="justify-left"
+              >
+                <v-icon
+                  color="primary"
+                  left
+                  v-on="on"
+                >
+                  mdi-link
+                </v-icon>
+              </template>
+            </ShareableLinkDialog>
           </h1>
         </v-col>
       </v-row>
@@ -161,6 +175,7 @@ import { DandisetStats, Version } from '@/types';
 // TODO: delete DandisetContributors component after redesigned contributors list is implemented
 import DandisetContributors from './DandisetContributors.vue';
 import ListingComponent from './ListingComponent.vue';
+import ShareableLinkDialog from './ShareableLinkDialog.vue';
 
 // TODO: remove when redesign is implemented
 function renderData(data: any, schema: any): boolean {
@@ -177,6 +192,7 @@ export default defineComponent({
   name: 'DandisetMain',
   components: {
     ListingComponent,
+    ShareableLinkDialog,
     // TODO: delete DandisetContributors component after redesigned contributors list is implemented
     DandisetContributors,
   },

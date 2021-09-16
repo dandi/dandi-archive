@@ -39,31 +39,6 @@
         </DownloadDialog>
       </v-row>
       <v-row no-gutters>
-        <ShareableLinkDialog>
-          <template
-            #activator="{ on }"
-            class="justify-left"
-          >
-            <v-btn
-              id="download"
-              outlined
-              block
-              v-on="on"
-            >
-              <v-icon
-                color="primary"
-                left
-              >
-                mdi-link
-              </v-icon>
-              Shareable Link
-              <v-spacer />
-              <v-icon right>
-                mdi-chevron-down
-              </v-icon>
-            </v-btn>
-          </template>
-        </ShareableLinkDialog>
         <CiteAsDialog>
           <template
             #activator="{ on }"
@@ -133,15 +108,12 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent, computed, ComputedRef,
-} from '@vue/composition-api';
+import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
 import { Location } from 'vue-router';
 
 import { Version } from '@/types';
 
 import DownloadDialog from './DownloadDialog.vue';
-import ShareableLinkDialog from './ShareableLinkDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 
 export default defineComponent({
@@ -149,7 +121,6 @@ export default defineComponent({
   components: {
     CiteAsDialog,
     DownloadDialog,
-    ShareableLinkDialog,
   },
   setup(props, ctx) {
     const store = ctx.root.$store;
