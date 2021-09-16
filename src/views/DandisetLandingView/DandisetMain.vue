@@ -6,7 +6,7 @@
     >
       <v-row class="mx-2 my-2 mb-0">
         <v-col>
-          <h1 class="font-weight-light">
+          <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
             {{ meta.name }}
             <ShareableLinkDialog>
               <template
