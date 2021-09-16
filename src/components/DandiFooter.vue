@@ -1,51 +1,10 @@
-<script>
-import { copyToClipboard } from '@/utils';
-import { dandiAboutUrl } from '@/utils/constants';
-import { cookiesEnabled } from '@/rest';
-
-import CookieLaw from 'vue-cookie-law';
-
-export default {
-  name: 'DandiFooter',
-  components: { CookieLaw },
-  data: () => ({
-    copied: false,
-    dandiAboutUrl,
-  }),
-  computed: {
-    cookiesEnabled,
-
-    version() {
-      return process.env.VUE_APP_VERSION;
-    },
-
-    githubLink() {
-      const gitRev = process.env.VUE_APP_GIT_REVISION;
-      if (gitRev) {
-        return `https://github.com/dandi/dandiarchive/commit/${gitRev}`;
-      }
-      return 'https://github.com/dandi/dandiarchive';
-    },
-  },
-  methods: {
-    versionClick() {
-      this.copied = true;
-      setTimeout(() => {
-        this.copied = false;
-      }, 1000);
-      copyToClipboard(this.version);
-    },
-  },
-};
-</script>
-
 <template>
   <v-footer class="text-body-2">
     <v-container>
       <cookie-law theme="blood-orange">
         <div slot="message">
           <span
-            v-if="cookiesEnabled"
+            v-if="cookiesEnabled()"
           >We use cookies to ensure you get the best experience on
             DANDI.</span>
           <span
@@ -58,22 +17,13 @@ export default {
         <v-col offset="2">
           &copy; 2021 DANDI<br>
           version
-          <v-tooltip
-            v-model="copied"
-            bottom
-            :open-on-hover="false"
-          >
-            <template #activator="{ on }">
-              <a
-                class="version-link"
-                :href="githubLink"
-                target="_blank"
-                rel="noopener"
-                v-on="on"
-              >{{ version }}</a>
-            </template>
-            <span>Copied to clipboard!</span>
-          </v-tooltip>
+          <a
+            class="version-link"
+            :href="githubLink"
+            target="_blank"
+            rel="noopener"
+            v-on="on"
+          >{{ version }}</a>
         </v-col>
         <v-col>
           Funding:<br>
@@ -127,6 +77,30 @@ export default {
     </v-container>
   </v-footer>
 </template>
+
+<script lang="ts">
+import { defineComponent } from '@vue/composition-api';
+import CookieLaw from 'vue-cookie-law';
+
+import { dandiAboutUrl } from '@/utils/constants';
+import { cookiesEnabled } from '@/rest';
+
+const version = process.env.VUE_APP_VERSION;
+const githubLink = process.env.VUE_APP_GIT_REVISION ? `https://github.com/dandi/dandiarchive/commit/${process.env.VUE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandiarchive';
+
+export default defineComponent({
+  name: 'DandiFooter',
+  components: { CookieLaw },
+  setup() {
+    return {
+      dandiAboutUrl,
+      version,
+      githubLink,
+      cookiesEnabled,
+    };
+  },
+});
+</script>
 
 <style scoped>
 @media (min-width: 1904px) {
