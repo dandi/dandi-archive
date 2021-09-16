@@ -7,18 +7,17 @@
   >
     <v-row
       no-gutters
-      class="my-1"
+      class="my-1 ml-1"
     >
-      <v-card-subtitle>
+      <div class="black--text text-h5">
         Ownership
-      </v-card-subtitle>
+      </div>
     </v-row>
     <v-row>
       <template v-if="!owners || !owners.length">
         <v-row
           align="center"
-          justify="center"
-          class="mx-1"
+          class="mx-1 px-6"
         >
           No owners
         </v-row>

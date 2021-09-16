@@ -188,7 +188,7 @@
       </v-menu>
     </v-row>
     <v-row>
-      <v-subheader>
+      <v-subheader class="black--text text-h5">
         This Version
       </v-subheader>
     </v-row>
@@ -205,7 +205,7 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-subheader>
+      <v-subheader class="black--text text-h5">
         Other Versions
       </v-subheader>
     </v-row>

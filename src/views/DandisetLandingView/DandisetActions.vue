@@ -5,12 +5,12 @@
     class="px-3 py-1 mb-3"
     outlined
   >
-    <v-card-subtitle>
+    <div class="black--text text-h5 mt-2">
       Dandiset Actions
-    </v-card-subtitle>
+    </div>
 
     <!-- Download, Shareable Link, and Cite As buttons -->
-    <div class="mb-4">
+    <div class="my-4">
       <v-row no-gutters>
         <DownloadDialog>
           <template
