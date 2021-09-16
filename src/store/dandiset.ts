@@ -16,6 +16,7 @@ interface DandisetState {
 }
 
 const dandisetModule = defineModule({
+  namespaced: true,
   state: {
     publishDandiset: null,
     versions: null,

@@ -138,7 +138,7 @@ export default defineComponent({
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
     const publishedVersions = computed(() => store.state.dandiset.versions);
-    const currentVersion = computed(() => store.getters.version);
+    const currentVersion = computed(() => store.getters.dandiset.version);
 
     const selectedDownloadOption = ref('draft');
     const selectedVersion = ref(0);

@@ -124,7 +124,7 @@ export default defineComponent({
     );
 
     function setOwners(ownersToSet: User[]) {
-      store.commit.setOwners(ownersToSet);
+      store.commit.dandiset.setOwners(ownersToSet);
     }
 
     const throttledUpdate = debounce((async () => {

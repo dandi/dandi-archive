@@ -124,7 +124,7 @@ export default defineComponent({
   },
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
-    const currentVersion = computed(() => store.getters.version);
+    const currentVersion = computed(() => store.getters.dandiset.version);
 
     const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
       if (!currentDandiset.value) {

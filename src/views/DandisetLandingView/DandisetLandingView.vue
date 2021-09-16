@@ -95,7 +95,7 @@ export default defineComponent({
     const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
     const loading = computed(() => store.state.dandiset.loading);
     const schema = computed(() => store.state.dandiset.schema);
-    const userCanModifyDandiset = computed(() => store.getters.userCanModifyDandiset);
+    const userCanModifyDandiset = computed(() => store.getters.dandiset.userCanModifyDandiset);
 
     const user = computed(userFunc);
     const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
@@ -121,7 +121,7 @@ export default defineComponent({
     watch(() => props.identifier, async () => {
       const { identifier, version } = props;
       if (identifier) {
-        await store.dispatch.initializeDandisets({ identifier, version });
+        await store.dispatch.dandiset.initializeDandisets({ identifier, version });
       }
     }, { immediate: true });
 
@@ -129,14 +129,14 @@ export default defineComponent({
       const { identifier, version } = props;
       if (version) {
       // On version change, fetch the new dandiset (not initial)
-        await store.dispatch.fetchPublishDandiset({ identifier, version });
+        await store.dispatch.dandiset.fetchPublishDandiset({ identifier, version });
       } else {
-        await store.dispatch.fetchPublishDandiset({ identifier });
+        await store.dispatch.dandiset.fetchPublishDandiset({ identifier });
       }
       // If the above await call didn't result in publishDandiset being set, navigate to a default
       if (!currentDandiset.value) {
         // Omitting version will fetch the most recent version instead
-        await store.dispatch.fetchPublishDandiset({ identifier });
+        await store.dispatch.dandiset.fetchPublishDandiset({ identifier });
 
         if (currentDandiset.value) {
           navigateToVersion((currentDandiset.value as Version).version);

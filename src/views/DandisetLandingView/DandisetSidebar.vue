@@ -40,7 +40,7 @@ export default defineComponent({
   },
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
-    const currentVersion = computed(() => store.getters.version);
+    const currentVersion = computed(() => store.getters.dandiset.version);
 
     const otherVersions = computed(() => store.state.dandiset.versions?.filter(
       (version: Version) => version.version !== currentVersion.value,

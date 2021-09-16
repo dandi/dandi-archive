@@ -364,7 +364,7 @@ export default defineComponent({
         if (status === 200) {
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
-            await store.dispatch.fetchPublishDandiset({
+            await store.dispatch.dandiset.fetchPublishDandiset({
               identifier: data.dandiset.identifier,
               version: data.version,
             });
