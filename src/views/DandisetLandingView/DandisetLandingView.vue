@@ -13,14 +13,7 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-row no-gutters>
-          <v-col cols="10">
-            <DandisetSearchField />
-          </v-col>
-          <v-col>
-            <DandisetStats />
-          </v-col>
-        </v-row>
+        <DandisetSearchField />
       </v-toolbar>
       <v-container
         v-if="currentDandiset"
@@ -71,7 +64,6 @@ import {
 import { RawLocation } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import DandisetStats from '@/components/DandisetStats.vue';
 import { user as userFunc } from '@/rest';
 import { User, Version } from '@/types';
 import Meditor from './Meditor.vue';
@@ -84,7 +76,6 @@ export default defineComponent({
     Meditor,
     DandisetMain,
     DandisetSearchField,
-    DandisetStats,
     DandisetSidebar,
   },
   props: {

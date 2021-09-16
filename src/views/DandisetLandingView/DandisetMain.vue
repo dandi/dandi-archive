@@ -12,7 +12,7 @@
         </v-col>
       </v-row>
       <v-row class="mx-1">
-        <v-col cols="3">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <v-chip
             class="text-wrap py-1"
             style="text-align: center;"
@@ -35,19 +35,35 @@
             </span>
           </v-chip>
         </v-col>
-        <v-col cols="3">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
             Contact <strong>{{ currentDandiset.contact_person }}</strong>
           </span>
         </v-col>
-        <v-col cols="3">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+          <span>
+            <v-icon class="grey--text text--lighten-1">mdi-file</v-icon>
+            File Count <strong>{{ stats.asset_count }}</strong>
+          </span>
+        </v-col>
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+          <span>
+            <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
+            File Size <strong>{{ filesize(stats.size) }}</strong>
+          </span>
+        </v-col>
+      </v-row>
+      <v-row
+        class="mx-1"
+      >
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 6">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
             Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
           </span>
         </v-col>
-        <v-col cols="3">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 6">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-history</v-icon>
             Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
@@ -134,15 +150,13 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent, ref, computed, ComputedRef, Ref,
-} from '@vue/composition-api';
+import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
 
+import filesize from 'filesize';
 import moment from 'moment';
-
 import _ from 'lodash';
 
-import { Version } from '@/types';
+import { DandisetStats, Version } from '@/types';
 
 // TODO: delete DandisetContributors component after redesigned contributors list is implemented
 import DandisetContributors from './DandisetContributors.vue';
@@ -184,7 +198,13 @@ export default defineComponent({
       () => store.state.dandiset.publishDandiset,
     );
 
-    const currentTab: Ref<string> = ref('');
+    const stats: ComputedRef<DandisetStats|null> = computed(() => {
+      if (!currentDandiset.value) {
+        return null;
+      }
+      const { asset_count, size } = currentDandiset.value;
+      return { asset_count, size };
+    });
 
     function formatDate(date: string): string {
       return moment(date).format('LL');
@@ -227,7 +247,8 @@ export default defineComponent({
     return {
       currentDandiset,
       formatDate,
-      currentTab,
+      stats,
+      filesize,
 
       renderData,
       extraFields,

@@ -58,3 +58,8 @@ export interface Info {
   schema_url: string;
   schema_version: string;
 }
+
+export interface DandisetStats {
+  asset_count: number,
+  size: number,
+}
