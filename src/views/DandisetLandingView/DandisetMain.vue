@@ -90,7 +90,18 @@
       <DandisetContributors />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
-        {{ meta.description }}
+        <!-- Truncate text if necessary -->
+        <span v-if="meta.description.length > MAX_DESCRIPTION_LENGTH">
+          {{ description }}
+          <a
+            v-if="showFullDescription"
+            @click="showFullDescription = false"
+          > [ - see less ]</a>
+          <a
+            v-else
+            @click="showFullDescription = true"
+          > [ + see more ]</a></span>
+        <span v-else>{{ description }}</span>
       </v-row>
 
       <v-row class="justify-center">
@@ -164,7 +175,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
+import {
+  defineComponent, computed, ComputedRef, ref,
+} from '@vue/composition-api';
 
 import filesize from 'filesize';
 import moment from 'moment';
@@ -176,6 +189,9 @@ import { DandisetStats, Version } from '@/types';
 import DandisetContributors from './DandisetContributors.vue';
 import ListingComponent from './ListingComponent.vue';
 import ShareableLinkDialog from './ShareableLinkDialog.vue';
+
+// max description length before it's truncated and "see more" button is shown
+const MAX_DESCRIPTION_LENGTH = 400;
 
 // TODO: remove when redesign is implemented
 function renderData(data: any, schema: any): boolean {
@@ -222,6 +238,28 @@ export default defineComponent({
       return { asset_count, size };
     });
 
+    // whether or not the "see more" button has been pressed to reveal
+    // the full description
+    const showFullDescription = ref(false);
+    const description: ComputedRef<string> = computed(() => {
+      if (!currentDandiset.value) {
+        return '';
+      }
+      const fullDescription = currentDandiset.value.metadata?.description;
+      if (!fullDescription) {
+        return '';
+      }
+      if (fullDescription.length <= MAX_DESCRIPTION_LENGTH) {
+        return fullDescription;
+      }
+      if (showFullDescription.value) {
+        return currentDandiset.value.metadata?.description || '';
+      }
+      let shortenedDescription = fullDescription.substring(0, MAX_DESCRIPTION_LENGTH);
+      shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
+      return shortenedDescription;
+    });
+
     function formatDate(date: string): string {
       return moment(date).format('LL');
     }
@@ -265,6 +303,9 @@ export default defineComponent({
       formatDate,
       stats,
       filesize,
+      description,
+      showFullDescription,
+      MAX_DESCRIPTION_LENGTH,
 
       renderData,
       extraFields,
