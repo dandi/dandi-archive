@@ -1,3 +1,5 @@
+/* eslint-disable no-use-before-define */
+
 import { defineModule, localActionContext, localGetterContext } from 'direct-vuex';
 
 import axios from 'axios';
@@ -15,6 +17,11 @@ interface DandisetState {
   schema: any,
 }
 
+const dandisetGetterContext = (
+  args: [any, any, any, any],
+) => localGetterContext(args, dandisetModule);
+const dandisetActionContext = (context: any) => localActionContext(context, dandisetModule);
+
 const dandisetModule = defineModule({
   namespaced: true,
   state: {
@@ -25,13 +32,16 @@ const dandisetModule = defineModule({
     schema: null,
   } as DandisetState,
   getters: {
-    version(state: DandisetState): string {
+    version(...args): string {
+      const { state } = dandisetGetterContext(args);
       if (state.publishDandiset) {
         return state.publishDandiset.version;
       }
       return draftVersion;
     },
-    userCanModifyDandiset(state: DandisetState): boolean {
+    userCanModifyDandiset(...args): boolean {
+      const { state } = dandisetGetterContext(args);
+
       // published versions are never editable, and logged out users can never edit a dandiset
       if (state.publishDandiset?.metadata?.version !== draftVersion || !user()) {
         return false;
@@ -46,61 +56,71 @@ const dandisetModule = defineModule({
     },
   },
   mutations: {
-    setPublishDandiset(state: DandisetState, dandiset: Version) {
+    setPublishDandiset(state: DandisetState, dandiset: Version|null) {
       state.publishDandiset = dandiset;
     },
-    setVersions(state: DandisetState, versions: Version[]) {
+    setVersions(state: DandisetState, versions: Version[]|null) {
       state.versions = versions;
     },
-    setOwners(state: DandisetState, owners: User[]) {
+    setOwners(state: DandisetState, owners: User[]|null) {
       state.owners = owners;
     },
     setSchema(state: DandisetState, schema: any) {
       state.schema = schema;
     },
+    setLoading(state: DandisetState, loading: boolean) {
+      state.loading = loading;
+    },
   },
   actions: {
-    async uninitializeDandisets({ state, commit }) {
-      commit('setPublishDandiset', null);
-      commit('setVersions', null);
-      commit('setOwners', null);
-      state.loading = false;
+    async uninitializeDandisets(context: any) {
+      const { commit } = dandisetActionContext(context);
+
+      commit.setPublishDandiset(null);
+      commit.setVersions(null);
+      commit.setOwners(null);
+      commit.setLoading(false);
     },
-    async initializeDandisets({ dispatch }, { identifier, version }) {
-      await dispatch('uninitializeDandisets');
+    async initializeDandisets(context: any, { identifier, version }) {
+      const { dispatch } = dandisetActionContext(context);
+      await dispatch.uninitializeDandisets();
 
       // this can be done concurrently, don't await
-      dispatch('fetchDandisetVersions', { identifier });
-      await dispatch('fetchPublishDandiset', { identifier, version });
-      await dispatch('fetchOwners', identifier);
+      dispatch.fetchDandisetVersions({ identifier });
+      await dispatch.fetchPublishDandiset({ identifier, version });
+      await dispatch.fetchOwners(identifier);
     },
-    async fetchDandisetVersions({ state, commit }, { identifier }) {
-      state.loading = true;
+    async fetchDandisetVersions(context: any, { identifier }) {
+      const { commit } = dandisetActionContext(context);
+      commit.setLoading(true);
 
       const res = await publishRest.versions(identifier);
       if (res) {
         const { results } = res;
-        commit('setVersions', results || []);
+        commit.setVersions(results || []);
       }
 
-      state.loading = false;
+      commit.setLoading(false);
     },
-    async fetchPublishDandiset({ state, commit }, { identifier, version }) {
-      state.loading = true;
+    async fetchPublishDandiset(context: any, { identifier, version }) {
+      const { commit } = dandisetActionContext(context);
+      commit.setLoading(true);
 
       const sanitizedVersion = version
       || (await publishRest.mostRecentVersion(identifier))?.version;
 
       try {
         const data = await publishRest.specificVersion(identifier, sanitizedVersion);
-        commit('setPublishDandiset', data);
+        commit.setPublishDandiset(data);
       } catch (err) {
-        commit('setPublishDandiset', null);
+        commit.setPublishDandiset(null);
       }
 
-      state.loading = false;
+      commit.setLoading(false);
     },
-    async fetchSchema({ commit }) {
+    async fetchSchema(context: any) {
+      const { commit } = dandisetActionContext(context);
+
       const { schema_url: schemaUrl } = await publishRest.info();
       const res = await axios.get(schemaUrl);
 
@@ -110,22 +130,19 @@ const dandisetModule = defineModule({
 
       const schema = await RefParser.dereference(res.data);
 
-      commit('setSchema', schema);
+      commit.setSchema(schema);
     },
-    async fetchOwners({ state, commit }, identifier) {
-      state.loading = true;
+    async fetchOwners(context: any, identifier) {
+      const { commit } = dandisetActionContext(context);
+
+      commit.setLoading(true);
 
       const { data } = await publishRest.owners(identifier);
-      commit('setOwners', data);
+      commit.setOwners(data);
 
-      state.loading = false;
+      commit.setLoading(false);
     },
   },
 });
 
 export default dandisetModule;
-
-export const dandisetGetterContext = (
-  args: [any, any, any, any],
-) => localGetterContext(args, dandisetModule);
-export const dandisetActionContext = (context: any) => localActionContext(context, dandisetModule);
