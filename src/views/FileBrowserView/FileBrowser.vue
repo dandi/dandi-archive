@@ -49,7 +49,7 @@ export default {
   },
   methods: {
     fetchPublishDandiset() {
-      store.dispatch.fetchPublishDandiset({
+      store.dispatch.dandiset.fetchPublishDandiset({
         identifier: this.identifier,
         version: this.version,
       });
