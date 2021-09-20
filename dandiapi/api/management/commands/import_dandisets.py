@@ -43,7 +43,7 @@ def import_dandiset_from_response(api_url: str, dandiset_api_response: dict):
     # I can't think of a better way to uniquely identify dandisets
     # without being able to use identifiers.
     existing_dandiset = Version.objects.filter(name=dandiset_api_response['draft_version']['name'])
-    if existing_dandiset.first():
+    if existing_dandiset.exists():
         identifier = existing_dandiset.first().dandiset.identifier
         click.echo(
             f'Skipping {dandiset_api_response["draft_version"]["name"]} - dandiset {identifier} already exists with that name.'  # noqa: E501
