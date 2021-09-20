@@ -27,10 +27,22 @@ This script is a simple way to get test data into your DB without having to use 
 
 ### import_dandisets
 ```
-python manage.py import_dandisets [API_URL]
+python manage.py import_dandisets [API_URL] --all
 ```
 
 This imports all dandisets (versions + metadata only, no assets) from the dandi-api deployment
 living at `API_URL`. For example, to import all dandisets from the production server into your
 local dev environment, run `python manage.py import_dandisets http://api.dandiarchive.org` from
 your local terminal.
+
+```
+python manage.py import_dandisets [API_URL] --identifier 000005
+```
+
+This imports dandiset 000005 from `API_URL` into your local dev environment.
+
+```
+python manage.py import_dandisets [API_URL] --identifier 000005 --replace 000001
+```
+
+This imports dandiset 000005 from `API_URL` and replaces 000001 with it in your local dev environment.

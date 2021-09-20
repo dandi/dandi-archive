@@ -38,20 +38,32 @@ def import_versions_from_response(api_url: str, version_api_response: dict, dand
 
 
 @transaction.atomic
-def import_dandiset_from_response(api_url: str, dandiset_api_response: dict):
-    # Check if dandiset with this name already exists. If it does, skip it.
-    # I can't think of a better way to uniquely identify dandisets
-    # without being able to use identifiers.
-    existing_dandiset = Version.objects.filter(name=dandiset_api_response['draft_version']['name'])
-    if existing_dandiset.exists():
-        identifier = existing_dandiset.first().dandiset.identifier
-        click.echo(
-            f'Skipping {dandiset_api_response["draft_version"]["name"]} - dandiset {identifier} already exists with that name.'  # noqa: E501
+def import_dandiset_from_response(
+    api_url: str, dandiset_api_response: dict, dandiset_to_replace=None, skip_existing_names=True
+):
+    if skip_existing_names:
+        # Check if dandiset with this name already exists. If it does, skip it.
+        # I can't think of a better way to uniquely identify dandisets
+        # without being able to use identifiers.
+        existing_dandiset = Version.objects.filter(
+            name=dandiset_api_response['draft_version']['name']
         )
-        return
+        if existing_dandiset.exists():
+            identifier = existing_dandiset.first().dandiset.identifier
+            click.echo(
+                f'Skipping {dandiset_api_response["draft_version"]["name"]} - dandiset {identifier} already exists with that name.'  # noqa: E501
+            )
+            return
 
     identifier = dandiset_api_response['identifier']
-    dandiset = Dandiset()
+
+    # If replacing a dandiset, find the existing one and delete it first
+    if dandiset_to_replace is not None:
+        Dandiset.objects.get(id=dandiset_to_replace).delete()
+        dandiset = Dandiset(id=dandiset_to_replace)
+    else:
+        dandiset = Dandiset()
+
     dandiset.save()
 
     # get all versions associated with this dandiset
@@ -78,8 +90,21 @@ def import_dandisets_from_response(api_url: str, dandiset_api_response: dict):
 
 @click.command()
 @click.argument('api_url')
-def import_dandisets(api_url: str):
-    click.echo(f'Importing all dandisets from dandi-api deployment at {api_url}')
+@click.option('--all', is_flag=True, required=False, help='Download all dandisets.')
+@click.option('--identifier', required=False, help='The identifier of the dandiset to import.')
+@click.option('--replace', default=None, help='The dandiset to replace with the imported one.')
+def import_dandisets(api_url: str, all: bool, identifier: str, replace: str):
+    if all:
+        click.echo(f'Importing all dandisets from dandi-api deployment at {api_url}')
+        dandisets = requests.get(urljoin(api_url, '/api/dandisets/')).json()
+        import_dandisets_from_response(api_url, dandisets)
 
-    dandisets = requests.get(urljoin(api_url, '/api/dandisets/')).json()
-    import_dandisets_from_response(api_url, dandisets)
+    elif identifier:
+        click.echo(f'Importing dandiset {identifier} from dandi-api deployment at {api_url}')
+        dandiset = requests.get(urljoin(api_url, f'/api/dandisets/{identifier}/')).json()
+        import_dandiset_from_response(api_url, dandiset, replace, False)
+
+    else:
+        click.echo(
+            'Invalid options. Please specify --all or a specific dandiset to import with --identifier.'  # noqa: E501
+        )
