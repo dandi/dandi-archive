@@ -32,7 +32,7 @@ python manage.py import_dandisets [API_URL] --all
 
 This imports all dandisets (versions + metadata only, no assets) from the dandi-api deployment
 living at `API_URL`. For example, to import all dandisets from the production server into your
-local dev environment, run `python manage.py import_dandisets http://api.dandiarchive.org` from
+local dev environment, run `python manage.py import_dandisets https://api.dandiarchive.org` from
 your local terminal. Note that if a dandiset with the same identifier as the one being imported
 already exists, that dandiset will not be imported.
 
