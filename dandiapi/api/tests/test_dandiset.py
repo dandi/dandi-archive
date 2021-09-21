@@ -6,7 +6,7 @@ import pytest
 
 from dandiapi.api.models import Dandiset
 
-from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE
+from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE, UTC_ISO_TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -223,12 +223,12 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.metadata.name == name
+    assert dandiset.draft_version.name == name
 
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -241,6 +241,7 @@ def test_dandiset_rest_create(api_client, user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
             f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
@@ -311,12 +312,12 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.metadata.name == name
+    assert dandiset.draft_version.name == name
 
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -329,6 +330,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
             f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
@@ -413,12 +415,12 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     assert dandiset.versions.count() == 1
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
-    assert dandiset.draft_version.metadata.name == name
+    assert dandiset.draft_version.name == name
 
     # Verify that computed metadata was injected
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata.metadata == {
+    assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
             (
@@ -431,6 +433,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'id': f'DANDI:{dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
             f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
         ),

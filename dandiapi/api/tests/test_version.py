@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from guardian.shortcuts import assign_perm
 import pytest
@@ -7,33 +8,46 @@ import pytest
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
 
-from .fuzzy import TIMESTAMP_RE, URN_RE, VERSION_ID_RE
+from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
 
 @pytest.mark.django_db
-def test_version_make_version_nosave(dandiset):
+def test_version_next_published_version_nosave(dandiset):
     # Without saving, the output should be reproducible
-    version_str_1 = Version.make_version(dandiset)
-    version_str_2 = Version.make_version(dandiset)
+    version_str_1 = Version.next_published_version(dandiset)
+    version_str_2 = Version.next_published_version(dandiset)
     assert version_str_1 == version_str_2
     assert version_str_1 == VERSION_ID_RE
 
 
 @pytest.mark.django_db
-def test_version_make_version_save(mocker, dandiset, published_version_factory):
+def test_version_next_published_version_save(mocker, dandiset, published_version_factory):
     # Given an existing version at the current time, a different one should be allocated
-    make_version_spy = mocker.spy(Version, 'make_version')
+    next_published_version_spy = mocker.spy(Version, 'next_published_version')
     version_1 = published_version_factory(dandiset=dandiset)
-    make_version_spy.assert_called_once()
+    next_published_version_spy.assert_called_once()
 
-    version_str_2 = Version.make_version(dandiset)
+    version_str_2 = Version.next_published_version(dandiset)
     assert version_1.version != version_str_2
 
 
 @pytest.mark.django_db
-def test_draft_version_metadata_computed(draft_version, version_metadata):
-    original_metadata = version_metadata.metadata
-    draft_version.metadata = version_metadata
+def test_version_next_published_version_simultaneous_save(
+    dandiset_factory,
+    published_version_factory,
+):
+    dandiset_1 = dandiset_factory()
+    dandiset_2 = dandiset_factory()
+    version_1 = published_version_factory(dandiset=dandiset_1)
+    version_2 = published_version_factory(dandiset=dandiset_2)
+    # Different dandisets published at the same time should have the same version string
+    assert version_1.version == version_2.version
+
+
+@pytest.mark.django_db
+def test_draft_version_metadata_computed(draft_version: Version):
+    original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    draft_version.metadata = original_metadata
 
     # Save the version to add computed properties to the metadata
     draft_version.save()
@@ -46,7 +60,7 @@ def test_draft_version_metadata_computed(draft_version, version_metadata):
                 f'/versions/draft/assets/'
             )
         ],
-        'name': version_metadata.name,
+        'name': draft_version.name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': draft_version.version,
         'id': f'DANDI:{draft_version.dandiset.identifier}/{draft_version.version}',
@@ -54,7 +68,8 @@ def test_draft_version_metadata_computed(draft_version, version_metadata):
             f'https://dandiarchive.org/dandiset/'
             f'{draft_version.dandiset.identifier}/{draft_version.version}'
         ),
-        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
+        'dateCreated': draft_version.dandiset.created.isoformat(),
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -63,13 +78,13 @@ def test_draft_version_metadata_computed(draft_version, version_metadata):
     }
     expected_metadata['citation'] = draft_version.citation(expected_metadata)
 
-    assert draft_version.metadata.metadata == expected_metadata
+    assert draft_version.metadata == expected_metadata
 
 
 @pytest.mark.django_db
-def test_published_version_metadata_computed(published_version, version_metadata):
-    original_metadata = version_metadata.metadata
-    published_version.metadata = version_metadata
+def test_published_version_metadata_computed(published_version: Version):
+    original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    published_version.metadata = original_metadata
 
     # Save the version to add computed properties to the metadata
     published_version.save()
@@ -82,15 +97,17 @@ def test_published_version_metadata_computed(published_version, version_metadata
                 f'/{published_version.dandiset.identifier}/{published_version.version}/assets.yaml'
             )
         ],
-        'name': version_metadata.name,
+        'name': published_version.name,
         'identifier': f'DANDI:{published_version.dandiset.identifier}',
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
+        'doi': f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}',  # noqa: E501
         'url': (
             f'https://dandiarchive.org/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
-        '@context': 'https://raw.githubusercontent.com/dandi/schema/master/releases/0.4.4/context.json',  # noqa: E501
+        'dateCreated': published_version.dandiset.created.isoformat(),
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -99,90 +116,92 @@ def test_published_version_metadata_computed(published_version, version_metadata
     }
     expected_metadata['citation'] = published_version.citation(expected_metadata)
 
-    assert published_version.metadata.metadata == expected_metadata
+    assert published_version.metadata == expected_metadata
 
 
 @pytest.mark.django_db
-def test_version_metadata_citation(version):
-    name = version.metadata.metadata['name'].rstrip('.')
+def test_version_metadata_citation_draft(draft_version):
+    name = draft_version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
+    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
     assert (
-        version.metadata.metadata['citation']
-        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+        draft_version.metadata['citation']
+        == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
+    )
+
+
+@pytest.mark.django_db
+def test_version_metadata_citation_published(published_version):
+    name = published_version.metadata['name'].rstrip('.')
+    year = datetime.now().year
+    url = f'https://doi.org/{published_version.doi}'
+    assert (
+        published_version.metadata['citation']
+        == f'{name} ({year}). (Version {published_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
     )
 
 
 @pytest.mark.django_db
 def test_version_metadata_citation_no_contributors(version):
-    version.metadata.metadata['contributor'] = []
+    version.metadata['contributor'] = []
     version.save()
 
-    name = version.metadata.metadata['name'].rstrip('.')
+    name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata.metadata['citation']
-        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
 @pytest.mark.django_db
 def test_version_metadata_citation_contributor_not_in_citation(version):
-    version.metadata.metadata['contributor'] = [
+    version.metadata['contributor'] = [
         {'name': 'Jane Doe'},
         {'name': 'John Doe', 'includeInCitation': False},
     ]
     version.save()
 
-    name = version.metadata.metadata['name'].rstrip('.')
+    name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata.metadata['citation']
-        == f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
 @pytest.mark.django_db
 def test_version_metadata_citation_contributor(version):
-    version.metadata.metadata['contributor'] = [{'name': 'Doe, Jane', 'includeInCitation': True}]
+    version.metadata['contributor'] = [{'name': 'Doe, Jane', 'includeInCitation': True}]
     version.save()
 
-    name = version.metadata.metadata['name'].rstrip('.')
+    name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata.metadata['citation']
-        == f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. '
-        f'DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
 @pytest.mark.django_db
 def test_version_metadata_citation_multiple_contributors(version):
-    version.metadata.metadata['contributor'] = [
+    version.metadata['contributor'] = [
         {'name': 'John Doe', 'includeInCitation': True},
         {'name': 'Jane Doe', 'includeInCitation': True},
     ]
     version.save()
 
-    name = version.metadata.metadata['name'].rstrip('.')
+    name = version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{version.dandiset.identifier}/{version.version}'
-    assert (
-        version.metadata.metadata['citation']
-        == f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
-        f'DANDI archive. {url}'
+    assert version.metadata['citation'].startswith(
+        f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
+        f'DANDI archive. '
     )
 
 
 @pytest.mark.django_db
 def test_version_metadata_context(version):
-    version.metadata.metadata['schemaVersion'] = '6.6.6'
+    version.metadata['schemaVersion'] = '6.6.6'
     version.save()
 
-    assert version.metadata.metadata['@context'] == (
+    assert version.metadata['@context'] == (
         'https://raw.githubusercontent.com/dandi/schema/master/releases/6.6.6/context.json'
     )
 
@@ -257,13 +276,13 @@ def test_version_publish_version(draft_version, asset):
     publish_version.save()
 
     assert publish_version.dandiset == draft_version.dandiset
-    assert publish_version.metadata.metadata == {
-        **draft_version.metadata.metadata,
+    assert publish_version.metadata == {
+        **draft_version.metadata,
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -276,7 +295,8 @@ def test_version_publish_version(draft_version, asset):
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
@@ -288,7 +308,7 @@ def test_version_publish_version(draft_version, asset):
             f'https://dandiarchive.org/dandiset/{publish_version.dandiset.identifier}'
             f'/{publish_version.version}'
         ),
-        'citation': publish_version.citation(publish_version.metadata.metadata),
+        'citation': publish_version.citation(publish_version.metadata),
         'doi': fake_doi,
         # The published_version cannot have a properly defined assetsSummary yet, since that would
         # require having created rows the Asset-to-Version join table, which is a side affect.
@@ -331,7 +351,7 @@ def test_version_rest_retrieve(api_client, version):
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
         ).data
-        == version.metadata.metadata
+        == version.metadata
     )
 
 
@@ -351,7 +371,7 @@ def test_version_rest_info(api_client, version):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'asset_count': 0,
-        'metadata': version.metadata.metadata,
+        'metadata': version.metadata,
         'size': version.size,
         'status': 'Pending',
         'asset_validation_errors': [],
@@ -405,7 +425,7 @@ def test_version_rest_info_with_asset(
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'asset_count': 1,
-        'metadata': version.metadata.metadata,
+        'metadata': version.metadata,
         'size': version.size,
         'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
         'asset_validation_errors': expected_validation_error,
@@ -420,7 +440,13 @@ def test_version_rest_update(api_client, user, draft_version):
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
-    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+    new_metadata = {
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+        # This should be stripped out
+        'dateCreated': 'foobar',
+    }
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
@@ -436,6 +462,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -474,8 +501,8 @@ def test_version_rest_update(api_client, user, draft_version):
     end_time = draft_version.modified
     assert start_time < end_time
 
-    assert draft_version.metadata.metadata == saved_metadata
-    assert draft_version.metadata.name == new_name
+    assert draft_version.metadata == saved_metadata
+    assert draft_version.name == new_name
 
 
 @pytest.mark.django_db
@@ -505,6 +532,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -538,8 +566,8 @@ def test_version_rest_update_large(api_client, user, draft_version):
     }
 
     draft_version.refresh_from_db()
-    assert draft_version.metadata.metadata == saved_metadata
-    assert draft_version.metadata.name == new_name
+    assert draft_version.metadata == saved_metadata
+    assert draft_version.name == new_name
 
 
 @pytest.mark.django_db
@@ -617,13 +645,13 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
     # The asset should be the same after publishing
     assert asset.asset_id == published_asset.asset_id
 
-    assert published_version.metadata.metadata == {
-        **draft_version.metadata.metadata,
+    assert published_version.metadata == {
+        **draft_version.metadata,
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
-            'endDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -636,7 +664,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
             ],
             'schemaKey': 'PublishActivity',
         },
-        'datePublished': TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
             f'{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
@@ -648,7 +676,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
             f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}'
             f'/{published_version.version}'
         ),
-        'citation': published_version.citation(published_version.metadata.metadata),
+        'citation': published_version.citation(published_version.metadata),
         'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
         # Once the assets are linked, assetsSummary should be computed properly
         'assetsSummary': {
@@ -717,15 +745,15 @@ def test_version_rest_publish_assets(
     assert new_draft_asset.asset_id == old_draft_asset.asset_id
     assert new_draft_asset.path == old_draft_asset.path
     assert new_draft_asset.blob == old_draft_asset.blob
-    assert new_draft_asset.metadata.metadata == {
-        **old_draft_asset.metadata.metadata,
-        'datePublished': TIMESTAMP_RE,
+    assert new_draft_asset.metadata == {
+        **old_draft_asset.metadata,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
         'publishedBy': {
             'id': URN_RE,
             'name': 'DANDI publish',
-            'startDate': TIMESTAMP_RE,
+            'startDate': UTC_ISO_TIMESTAMP_RE,
             # TODO endDate needs to be defined before publish is complete
-            'endDate': TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {
                     'id': URN_RE,
@@ -744,7 +772,7 @@ def test_version_rest_publish_assets(
     assert new_published_asset.asset_id == old_published_asset.asset_id
     assert new_published_asset.path == old_published_asset.path
     assert new_published_asset.blob == old_published_asset.blob
-    assert new_published_asset.metadata.metadata == old_published_asset.metadata.metadata
+    assert new_published_asset.metadata == old_published_asset.metadata
 
 
 @pytest.mark.django_db
@@ -794,3 +822,50 @@ def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, 
     )
     assert resp.status_code == 400
     assert resp.data == 'Dandiset metadata or asset metadata is not valid'
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_published_not_admin(api_client, user, published_version):
+    assign_perm('owner', user, published_version.dandiset)
+    api_client.force_authenticate(user=user)
+    response = api_client.delete(
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/'
+    )
+    assert response.status_code == 403
+    assert response.data == 'Cannot delete published versions'
+    assert published_version in Version.objects.all()
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_published_admin(api_client, admin_user, published_version):
+    api_client.force_authenticate(user=admin_user)
+    response = api_client.delete(
+        f'/api/dandisets/{published_version.dandiset.identifier}'
+        f'/versions/{published_version.version}/'
+    )
+    assert response.status_code == 204
+    assert not Version.objects.all()
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_draft_not_admin(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    response = api_client.delete(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
+    )
+    assert response.status_code == 403
+    assert response.data == 'Cannot delete draft versions'
+    assert draft_version in Version.objects.all()
+
+
+@pytest.mark.django_db
+def test_version_rest_delete_draft_admin(api_client, admin_user, draft_version):
+    api_client.force_authenticate(user=admin_user)
+    response = api_client.delete(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
+    )
+    assert response.status_code == 403
+    assert response.data == 'Cannot delete draft versions'
+    assert draft_version in Version.objects.all()

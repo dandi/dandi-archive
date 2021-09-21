@@ -2,6 +2,8 @@ import logging
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import OuterRef, Q, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
@@ -19,7 +21,7 @@ from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
-from dandiapi.api.models import Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.tasks import validate_version_metadata
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -70,7 +72,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
-    search_fields = ['versions__metadata__metadata']
+    search_fields = ['versions__metadata']
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
@@ -101,7 +103,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
         responses={200: DandisetDetailSerializer()},
-        manual_parameters=[DANDISET_PK_PARAM],
         operation_summary='Create a new dandiset.',
         operation_description='',
     )
@@ -131,13 +132,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             ],
             **metadata,
         }
-
-        version_metadata, created = VersionMetadata.objects.get_or_create(
-            name=name,
-            metadata=metadata,
-        )
-        if created:
-            version_metadata.save()
 
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
@@ -177,7 +171,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         assign_perm('owner', request.user, dandiset)
 
         # Create new draft version
-        version = Version(dandiset=dandiset, metadata=version_metadata, version='draft')
+        version = Version(dandiset=dandiset, name=name, metadata=metadata, version='draft')
         version.save()
 
         validate_version_metadata.delay(version.id)
@@ -239,20 +233,18 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             def get_user_or_400(username):
-                try:
-                    # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
-                    # so it is not empowered to do a more powerful query like:
-                    # SocialAccount.objects.get(extra_data__login=username)
-                    # We resort to doing this awkward search instead.
-                    for social_account in SocialAccount.objects.filter(
-                        extra_data__icontains=username
-                    ):
-                        if social_account.extra_data['login'] == username:
-                            return social_account.user
-                    else:
-                        raise SocialAccount.DoesNotExist()
-                except SocialAccount.DoesNotExist:
-                    raise ValidationError(f'User {username} not found')
+                # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
+                # so it is not empowered to do a more powerful query like:
+                # SocialAccount.objects.get(extra_data__login=username)
+                # We resort to doing this awkward search instead.
+                for social_account in SocialAccount.objects.filter(extra_data__icontains=username):
+                    if social_account.extra_data['login'] == username:
+                        return social_account.user
+                else:
+                    try:
+                        return User.objects.get(username=username)
+                    except ObjectDoesNotExist:
+                        raise ValidationError(f'User {username} not found')
 
             owners = [
                 get_user_or_400(username=owner['username']) for owner in serializer.validated_data

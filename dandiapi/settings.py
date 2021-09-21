@@ -49,7 +49,11 @@ class DandiMixin(ConfigMixin):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
-    DANDI_SCHEMA_VERSION = values.Value(environ_required=True)
+
+    # This is where the schema version should be set.
+    # It can optionally be overwritten with the environment variable, but that should only be
+    # considered a temporary fix.
+    DANDI_SCHEMA_VERSION = values.Value(default='0.5.2', environ=True)
 
     DANDI_DOI_API_URL = values.URLValue(environ=True)
     DANDI_DOI_API_USER = values.Value(environ=True)
@@ -67,7 +71,9 @@ class DandiMixin(ConfigMixin):
     #
     # When Brian Helba is able to resolve this problem upstream (in
     # django-composed-configuration) we can remove this setting.
-    SWAGGER_SETTINGS = {}
+    SWAGGER_SETTINGS = {
+        'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.swagger.DANDISwaggerAutoSchema',
+    }
 
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
@@ -76,9 +82,6 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
 
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
-    MINIO_STORAGE_MEDIA_BUCKET_NAME = 'test-django-storage'
-    MINIO_STORAGE_MEDIA_URL = 'http://localhost:9000/test-django-storage'
-
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
 

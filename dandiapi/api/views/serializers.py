@@ -1,13 +1,13 @@
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
-from dandiapi.api.models import Asset, AssetBlob, AssetMetadata, Dandiset, Version, VersionMetadata
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 
 
 def extract_contact_person(version):
     """Extract a version's contact person from its metadata."""
     # TODO: move this logic into dandischema since it is schema-dependant
-    contributors = version.metadata.metadata.get('contributor')
+    contributors = version.metadata.get('contributor')
     if contributors is not None:
         for contributor in contributors:
             name = contributor.get('name')
@@ -52,7 +52,7 @@ class DandisetSerializer(serializers.ModelSerializer):
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VersionMetadata
+        model = Version
         fields = ['metadata', 'name']
         # By default, validators contains a single UniqueTogether constraint.
         # This will fail serialization if the version metadata already exists,
@@ -98,7 +98,6 @@ class VersionDetailSerializer(VersionSerializer):
             'contact_person',
         ]
 
-    metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
     status = serializers.CharField(source='publish_status')
 
     # rename this field in the serializer to differentiate from asset_validation_errors
@@ -117,12 +116,6 @@ class AssetBlobSerializer(serializers.ModelSerializer):
             'sha256',
             'size',
         ]
-
-
-class AssetMetadataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssetMetadata
-        fields = ['metadata']
 
 
 class AssetValidationSerializer(serializers.ModelSerializer):
@@ -147,8 +140,6 @@ class AssetSerializer(serializers.ModelSerializer):
 class AssetDetailSerializer(AssetSerializer):
     class Meta(AssetSerializer.Meta):
         fields = AssetSerializer.Meta.fields + ['metadata']
-
-    metadata = serializers.SlugRelatedField(read_only=True, slug_field='metadata')
 
 
 class AssetFolderSerializer(serializers.Serializer):

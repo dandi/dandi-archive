@@ -7,6 +7,7 @@ from django.db.transaction import atomic
 import jsonschema.exceptions
 
 from dandiapi.api.checksum import calculate_sha256_checksum
+from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
@@ -87,13 +88,13 @@ class ValidationError(Exception):
 # depending on which version the asset belongs to.
 def validate_asset_metadata(asset_id: int) -> None:
     logger.info('Validating asset metadata for asset %s', asset_id)
-    asset = Asset.objects.get(id=asset_id)
+    asset: Asset = Asset.objects.get(id=asset_id)
 
     asset.status = Asset.Status.VALIDATING
     asset.save()
 
     try:
-        metadata = asset.published_metadata().metadata
+        metadata = asset.published_metadata()
         validate(metadata, schema_key='PublishedAsset')
     except Exception as e:
         logger.error('Error while validating asset %s', asset_id)
@@ -127,7 +128,7 @@ def validate_version_metadata(version_id: int) -> None:
 
     try:
         publish_version = version.publish_version
-        metadata = publish_version.metadata.metadata
+        metadata = publish_version.metadata
 
         # Inject a dummy DOI so the metadata is valid
         metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
@@ -152,3 +153,8 @@ def validate_version_metadata(version_id: int) -> None:
     version.status = Version.Status.VALID
     version.validation_errors = []
     version.save()
+
+
+@shared_task
+def delete_doi_task(doi: str) -> None:
+    delete_doi(doi)

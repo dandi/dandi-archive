@@ -22,7 +22,7 @@ def test_write_dandiset_jsonld(storage: Storage, version: Version):
     AssetBlob.blob.field.storage = storage
 
     write_dandiset_jsonld(version)
-    expected = JSONRenderer().render(version.metadata.metadata)
+    expected = JSONRenderer().render(version.metadata)
 
     dandiset_jsonld_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -42,7 +42,7 @@ def test_write_assets_jsonld(storage: Storage, version: Version, asset_factory):
     version.assets.add(asset_factory())
 
     write_assets_jsonld(version)
-    expected = JSONRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
+    expected = JSONRenderer().render([asset.metadata for asset in version.assets.all()])
 
     assets_jsonld_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -63,10 +63,10 @@ def test_write_collection_jsonld(storage: Storage, version: Version, asset):
     write_collection_jsonld(version)
     expected = JSONRenderer().render(
         {
-            '@context': version.metadata.metadata['@context'],
-            'id': version.metadata.metadata['id'],
+            '@context': version.metadata['@context'],
+            'id': version.metadata['id'],
             '@type': 'prov:Collection',
-            'hasMember': [asset.metadata.metadata['id']],
+            'hasMember': [asset.metadata['id']],
         }
     )
 
@@ -85,7 +85,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
     AssetBlob.blob.field.storage = storage
 
     write_dandiset_yaml(version)
-    expected = YAMLRenderer().render(version.metadata.metadata)
+    expected = YAMLRenderer().render(version.metadata)
 
     dandiset_yaml_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -105,7 +105,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     version.assets.add(asset_factory())
 
     write_assets_yaml(version)
-    expected = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
+    expected = YAMLRenderer().render([asset.metadata for asset in version.assets.all()])
 
     assets_yaml_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -129,7 +129,7 @@ def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
     storage.save(dandiset_yaml_path, ContentFile(b'wrong contents'))
 
     write_dandiset_yaml(version)
-    expected = YAMLRenderer().render(version.metadata.metadata)
+    expected = YAMLRenderer().render(version.metadata)
 
     with storage.open(dandiset_yaml_path) as f:
         assert f.read() == expected
@@ -152,7 +152,7 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
     write_assets_yaml(version)
-    expected = YAMLRenderer().render([asset.metadata.metadata for asset in version.assets.all()])
+    expected = YAMLRenderer().render([asset.metadata for asset in version.assets.all()])
 
     with storage.open(assets_yaml_path) as f:
         assert f.read() == expected
