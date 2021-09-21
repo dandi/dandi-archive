@@ -105,13 +105,19 @@ def import_dandisets_from_response(api_url: str, dandiset_api_response: dict):
 @click.option('--offset', default=0, help="Offset to add to each new dandiset's identifier.")
 @transaction.atomic
 def import_dandisets(api_url: str, all: bool, identifier: str, replace: str, offset=0):
+    """Click command to import dandisets from another server deployment.
+
+    NOTE: This command does not run validation on the imported dandisets.
+    """
+
+    # Save the current postgres sequence value and set it with the offset
     original_sequence_value = get_sequence_value()
     set_sequence_value(original_sequence_value + offset)
+
     if all:
         click.echo(f'Importing all dandisets from dandi-api deployment at {api_url}')
         dandisets = requests.get(urljoin(api_url, '/api/dandisets/')).json()
         import_dandisets_from_response(api_url, dandisets)
-        set_sequence_value(original_sequence_value)
 
     elif identifier:
         click.echo(f'Importing dandiset {identifier} from dandi-api deployment at {api_url}')
@@ -121,9 +127,11 @@ def import_dandisets(api_url: str, all: bool, identifier: str, replace: str, off
             dandiset,
             dandiset_to_replace=replace,
         )
-        set_sequence_value(original_sequence_value)
 
     else:
         click.echo(
             'Invalid options. Please specify --all or a specific dandiset to import with --identifier.'  # noqa: E501
         )
+
+    # Restore the original sequence value
+    set_sequence_value(original_sequence_value)
