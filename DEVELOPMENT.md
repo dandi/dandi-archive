@@ -36,6 +36,15 @@ local dev environment, run `python manage.py import_dandisets http://api.dandiar
 your local terminal.
 
 ```
+python manage.py import_dandisets [API_URL] --all --offset 100000
+```
+
+This imports all dandisets (versions + metadata only, no assets) from the dandi-api deployment
+living at `API_URL` and offsets their identifiers by 100000. In this case, if the most recent dandiset
+in your local deployment has an identifier of 0000020, the first imported dandiset would have an
+identifier of 100020, second would have an identifier of 100021, etc.
+
+```
 python manage.py import_dandisets [API_URL] --identifier 000005
 ```
 
