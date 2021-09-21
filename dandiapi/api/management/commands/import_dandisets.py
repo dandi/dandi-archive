@@ -6,6 +6,7 @@ import djclick as click
 import requests
 
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.tasks import validate_version_metadata
 
 
 @transaction.atomic
@@ -50,6 +51,9 @@ def import_versions_from_response(api_url: str, version_api_response: dict, dand
             metadata=metadata,
         )
         version.save()
+
+        # validate the metadata after the transaction is commmited
+        transaction.on_commit(lambda: validate_version_metadata.delay(version.id))
 
     # Handle API pagination
     if version_api_response.get('next'):
@@ -105,11 +109,7 @@ def import_dandisets_from_response(api_url: str, dandiset_api_response: dict):
 @click.option('--offset', default=0, help="Offset to add to each new dandiset's identifier.")
 @transaction.atomic
 def import_dandisets(api_url: str, all: bool, identifier: str, replace: str, offset=0):
-    """Click command to import dandisets from another server deployment.
-
-    NOTE: This command does not run validation on the imported dandisets.
-    """
-
+    """Click command to import dandisets from another server deployment."""
     # Save the current postgres sequence value and set it with the offset
     original_sequence_value = get_sequence_value()
     set_sequence_value(original_sequence_value + offset)
