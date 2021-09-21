@@ -6,7 +6,6 @@ import djclick as click
 import requests
 
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.tasks import validate_version_metadata
 
 
 @transaction.atomic
@@ -60,25 +59,8 @@ def import_versions_from_response(api_url: str, version_api_response: dict, dand
 
 @transaction.atomic
 def import_dandiset_from_response(
-    api_url: str,
-    dandiset_api_response: dict,
-    dandiset_to_replace=None,
-    skip_existing_names=True,
+    api_url: str, dandiset_api_response: dict, dandiset_to_replace=None
 ):
-    if skip_existing_names:
-        # Check if dandiset with this name already exists. If it does, skip it.
-        # I can't think of a better way to uniquely identify dandisets
-        # without being able to use identifiers.
-        existing_dandiset = Version.objects.filter(
-            name=dandiset_api_response['draft_version']['name']
-        )
-        if existing_dandiset.exists():
-            identifier = existing_dandiset.first().dandiset.identifier
-            click.echo(
-                f'Skipping {dandiset_api_response["draft_version"]["name"]} - dandiset {identifier} already exists with that name.'  # noqa: E501
-            )
-            return
-
     identifier = dandiset_api_response['identifier']
 
     # If replacing a dandiset, find the existing one and delete it first
@@ -104,7 +86,7 @@ def import_dandiset_from_response(
 def import_dandisets_from_response(api_url: str, dandiset_api_response: dict):
     """Import dandisets given a response from /api/dandisets/."""
     for result in dandiset_api_response['results']:
-        import_dandiset_from_response(api_url, result, skip_existing_names=False)
+        import_dandiset_from_response(api_url, result)
 
     # Handle API pagination
     if dandiset_api_response.get('next'):
@@ -138,7 +120,6 @@ def import_dandisets(api_url: str, all: bool, identifier: str, replace: str, off
             api_url,
             dandiset,
             dandiset_to_replace=replace,
-            skip_existing_names=False,
         )
         set_sequence_value(original_sequence_value)
 
