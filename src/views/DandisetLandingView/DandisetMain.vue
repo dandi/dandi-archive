@@ -33,7 +33,7 @@
                 color="primary"
                 v-on="on"
               >
-                mdi-share
+                mdi-share-variant
               </v-icon>
             </template>
 
