@@ -17,7 +17,7 @@
     "@sentry/integrations": "^6.3.6",
     "@vue/composition-api": "^1.0.0-rc.8",
     "ajv": "^8.3.0",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "core-js": "^3.12.1",
     "filesize": "^6.3.0",
     "js-yaml": "^4.1.0",
