@@ -38,8 +38,7 @@
             </template>
 
             <v-card>
-              <v-card-title class="text-subtitle-2 font-weight-bold">
-                SHARE THIS ARTICLE
+              <v-card-title>
                 <v-btn
                   icon
                   x-small
@@ -84,6 +83,7 @@
                       network="twitter"
                       :url="permalink"
                       :title="meta.name"
+                      :hashtags="hashtags"
                     >
                       <v-icon
                         class="mr-1"
@@ -440,6 +440,7 @@ export default {
         'description',
         'identifier',
       ],
+      hashtags: 'dandi',
     };
   },
   computed: {
