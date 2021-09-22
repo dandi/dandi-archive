@@ -52,8 +52,8 @@ def calculate_sha256(blob_id: int) -> None:
 @shared_task
 @atomic
 def write_manifest_files(version_id: int) -> None:
-    logger.info('Writing manifests for version %s', version_id)
     version: Version = Version.objects.get(id=version_id)
+    logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
 
     write_dandiset_yaml(version, logger=logger)
     write_assets_yaml(version, logger=logger)
