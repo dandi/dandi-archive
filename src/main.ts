@@ -3,7 +3,7 @@ import Vue from 'vue';
 import { provide } from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
 import VueGtag from 'vue-gtag';
-import VueSocialSharing from 'vue-social-sharing'
+import VueSocialSharing from 'vue-social-sharing';
 
 // @ts-ignore missing definitions
 import { vuetify } from '@girder/components/src';
