@@ -20,30 +20,109 @@
         class="mx-2"
         align="center"
       >
+        <!--        <v-col>-->
+        <!--          Get shareable link-->
+        <!--          <v-menu-->
+        <!--            offset-y-->
+        <!--            :close-on-content-click="false"-->
+        <!--            min-width="420"-->
+        <!--            max-width="420"-->
+        <!--          >-->
+        <!--            <template #activator="{ on }">-->
+        <!--              <v-icon-->
+        <!--                color="primary"-->
+        <!--                v-on="on"-->
+        <!--              >-->
+        <!--                mdi-link-->
+        <!--              </v-icon>-->
+        <!--            </template>-->
+        <!--            <v-card>-->
+        <!--              <CopyText-->
+        <!--                class="pa-2"-->
+        <!--                :text="permalink"-->
+        <!--                icon-hover-text="Copy permalink to clipboard"-->
+        <!--              />-->
+        <!--            </v-card>-->
+        <!--          </v-menu>-->
+        <!--        </v-col>-->
         <v-col>
-          Get shareable link
-          <v-menu
+          Share
+          <v-dialog
+            v-model="dialog"
             offset-y
-            :close-on-content-click="false"
             min-width="420"
-            max-width="420"
+            max-width="500"
           >
             <template #activator="{ on }">
               <v-icon
                 color="primary"
                 v-on="on"
               >
-                mdi-link
+                mdi-share
               </v-icon>
             </template>
+
             <v-card>
-              <CopyText
-                class="pa-2"
-                :text="permalink"
-                icon-hover-text="Copy permalink to clipboard"
-              />
+              <v-card-title class="text-subtitle-2 font-weight-bold">
+                SHARE THIS ARTICLE
+                <v-btn
+                  icon
+                  x-small
+                  :right="true"
+                  :absolute="true"
+                  @click="dialog = false"
+                >
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-title>
+              <v-card-title class="text-h6">
+                {{ meta.name }}
+              </v-card-title>
+              <v-card-text>
+                <div>
+                  <span
+                    v-for="author in contributors"
+                    :key="author.name + author.identifier"
+                    class="text-body-1"
+                  >
+                    {{ author.name }}
+                  </span>
+                </div>
+              </v-card-text>
+              <v-card-text>
+                <span class="font-weight-black">
+                  Share this article:
+                </span>
+                <CopyText
+                  class="pa-2"
+                  :text="permalink"
+                  icon-hover-text="Copy permalink to clipboard"
+                />
+              </v-card-text>
+              <v-divider class="mx-4" />
+              <v-card-actions>
+                <v-list-item class="grow">
+                  <v-row
+                    align="center"
+                  >
+                    <ShareNetwork
+                      network="twitter"
+                      :url="permalink"
+                      :title="meta.name"
+                    >
+                      <v-icon
+                        class="mr-1"
+                        color="blue"
+                        large
+                      >
+                        mdi-twitter
+                      </v-icon>
+                    </ShareNetwork>
+                  </v-row>
+                </v-list-item>
+              </v-card-actions>
             </v-card>
-          </v-menu>
+          </v-dialog>
         </v-col>
         <v-col v-if="meta.citation">
           Cite as
@@ -379,12 +458,14 @@ export default {
   },
   data() {
     return {
+      dialog: false,
       titleClasses: 'mx-1',
       mainFields: [
         'name',
         'description',
         'identifier',
       ],
+      // twitterUser: 'sanu_ann',
     };
   },
   computed: {
@@ -432,8 +513,8 @@ export default {
     },
     publishDisabled() {
       return !!(this.publishDandiset.version_validation_errors.length
-        || this.publishDandiset.asset_validation_errors.length
-        || this.publishDisabledMessage);
+          || this.publishDandiset.asset_validation_errors.length
+          || this.publishDisabledMessage);
     },
     metadataButtonText() {
       return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
@@ -473,7 +554,7 @@ export default {
           val.forEach((each_val) => {
             if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
               /* eslint no-param-reassign:["error",
-              {"ignorePropertyModificationsFor":["each_val"] }] */
+                  {"ignorePropertyModificationsFor":["each_val"] }] */
               delete each_val.schemaKey;
             }
           });
