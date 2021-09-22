@@ -465,7 +465,6 @@ export default {
         'description',
         'identifier',
       ],
-      // twitterUser: 'sanu_ann',
     };
   },
   computed: {
