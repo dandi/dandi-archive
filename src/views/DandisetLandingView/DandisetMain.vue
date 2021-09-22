@@ -528,7 +528,7 @@ export default {
           val.forEach((each_val) => {
             if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
               /* eslint no-param-reassign:["error",
-                  {"ignorePropertyModificationsFor":["each_val"] }] */
+              {"ignorePropertyModificationsFor":["each_val"] }] */
               delete each_val.schemaKey;
             }
           });
