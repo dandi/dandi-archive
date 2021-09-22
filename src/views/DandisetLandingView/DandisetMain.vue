@@ -488,8 +488,8 @@ export default {
     },
     publishDisabled() {
       return !!(this.publishDandiset.version_validation_errors.length
-          || this.publishDandiset.asset_validation_errors.length
-          || this.publishDisabledMessage);
+        || this.publishDandiset.asset_validation_errors.length
+        || this.publishDisabledMessage);
     },
     metadataButtonText() {
       return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
@@ -529,7 +529,7 @@ export default {
           val.forEach((each_val) => {
             if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
               /* eslint no-param-reassign:["error",
-                  {"ignorePropertyModificationsFor":["each_val"] }] */
+              {"ignorePropertyModificationsFor":["each_val"] }] */
               delete each_val.schemaKey;
             }
           });
