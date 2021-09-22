@@ -1,13 +1,20 @@
 from django.contrib import admin
+from girder_utils.admin import ReadonlyTabularInline
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+
+
+class VersionInline(ReadonlyTabularInline):
+    model = Version
+    fields = ['version', 'name', 'status']
 
 
 @admin.register(Dandiset)
 class DandisetAdmin(GuardedModelAdmin):
     list_display = ['identifier', 'modified', 'created']
     readonly_fields = ['identifier', 'created']
+    inlines = [VersionInline]
 
 
 class AssetInline(admin.TabularInline):
