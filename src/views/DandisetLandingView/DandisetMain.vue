@@ -20,31 +20,6 @@
         class="mx-2"
         align="center"
       >
-        <!--        <v-col>-->
-        <!--          Get shareable link-->
-        <!--          <v-menu-->
-        <!--            offset-y-->
-        <!--            :close-on-content-click="false"-->
-        <!--            min-width="420"-->
-        <!--            max-width="420"-->
-        <!--          >-->
-        <!--            <template #activator="{ on }">-->
-        <!--              <v-icon-->
-        <!--                color="primary"-->
-        <!--                v-on="on"-->
-        <!--              >-->
-        <!--                mdi-link-->
-        <!--              </v-icon>-->
-        <!--            </template>-->
-        <!--            <v-card>-->
-        <!--              <CopyText-->
-        <!--                class="pa-2"-->
-        <!--                :text="permalink"-->
-        <!--                icon-hover-text="Copy permalink to clipboard"-->
-        <!--              />-->
-        <!--            </v-card>-->
-        <!--          </v-menu>-->
-        <!--        </v-col>-->
         <v-col>
           Share
           <v-dialog
