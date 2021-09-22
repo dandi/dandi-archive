@@ -55,10 +55,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
     expected_metadata = {
         **original_metadata,
         'manifestLocation': [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/draft/assets.yaml'  # noqa: E501
         ],
         'name': draft_version.name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
@@ -452,10 +449,7 @@ def test_version_rest_update(api_client, user, draft_version):
     saved_metadata = {
         **new_metadata,
         'manifestLocation': [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/draft/assets.yaml'  # noqa: E501
         ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
@@ -522,10 +516,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
     saved_metadata = {
         **new_metadata,
         'manifestLocation': [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/draft/assets.yaml'  # noqa: E501
         ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',

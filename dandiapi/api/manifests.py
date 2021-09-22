@@ -47,13 +47,6 @@ def s3_url(path: str):
 
 def manifest_location(version: Version):
     """Calculate the manifestLocation field for a Version."""
-    if version.version == 'draft':
-        return [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
-        ]
     return [s3_url(assets_yaml_path(version))]
 
 
