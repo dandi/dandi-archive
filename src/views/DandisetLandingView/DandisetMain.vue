@@ -487,8 +487,8 @@ export default {
     },
     publishDisabled() {
       return !!(this.publishDandiset.version_validation_errors.length
-          || this.publishDandiset.asset_validation_errors.length
-          || this.publishDisabledMessage);
+        || this.publishDandiset.asset_validation_errors.length
+        || this.publishDisabledMessage);
     },
     metadataButtonText() {
       return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
