@@ -1,0 +1,114 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "0 0 * * *"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+      rabbitmq:
+        image: rabbitmq:management
+        ports:
+          - 5672:5672
+      minio:
+        # This image does not require any command arguments (which GitHub Actions don't support)
+        image: bitnami/minio:latest
+        env:
+          MINIO_ACCESS_KEY: minioAccessKey
+          MINIO_SECRET_KEY: minioSecretKey
+        ports:
+          - 9000:9000
+    env:
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+      DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
+      DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
+      CLIENT_URL: http://localhost:8085
+      VUE_APP_PUBLISH_API_ROOT: http://localhost:8000/api/
+      VUE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
+      VUE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
+
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+          cache: 'yarn'
+
+      - name: Install web app
+        if: steps.yarn-cache.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile --prefer-offline
+
+      - name: Lint web app
+        run: yarn run lint --no-fix --max-warnings=0
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Upgrade pip
+        run: pip install -U pip
+
+      - name: Install Python packages
+        run: pip install --upgrade pip
+
+      - name: Clone dandi-api
+        run: git clone https://github.com/dandi/dandi-api.git
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ hashFiles('dandi-api/requirements.txt') }}-${{ hashFiles('dandi-api/setup.py') }}
+
+      - name: Create virtual environment
+        run: python3 -m venv install_env
+
+      - name: Install dandi-api
+        run: |
+          source install_env/bin/activate
+          pip install --upgrade --upgrade-strategy eager ./dandi-api[dev]
+
+      - name: Apply migrations to API server
+        run: |
+          source ../install_env/bin/activate
+          python manage.py migrate
+        working-directory: dandi-api
+
+      - name: Install E2E tests
+        run: yarn install --frozen-lockfile
+        working-directory: test
+
+      - name: Lint E2E tests
+        run: yarn run lint --no-fix --max-warnings=0
+        working-directory: test
+
+      - name: Run E2E tests
+        run: |
+          # start vue dev server and wait for it to start
+          yarn --cwd .. run serve 2> /dev/null &
+          while ! nc -z localhost 8085; do
+            sleep 3
+          done
+
+          # activate virtual env and start the dandi-api server
+          source ../install_env/bin/activate
+          python ../dandi-api/manage.py runserver &
+
+          # run the E2E tests
+          yarn run test
+        working-directory: test
