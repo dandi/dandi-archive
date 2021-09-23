@@ -71,13 +71,17 @@
       <v-row
         class="mx-1"
       >
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 6">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 4">
+          Share
+          <ShareDialog />
+        </v-col>
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 4">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
             Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 6">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 4">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-history</v-icon>
             Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
@@ -183,13 +187,14 @@ import filesize from 'filesize';
 import moment from 'moment';
 import _ from 'lodash';
 
-import { DandisetStats } from '@/types';
 import store from '@/store';
+import { DandisetStats } from '@/types';
 
 // TODO: delete DandisetContributors component after redesigned contributors list is implemented
 import DandisetContributors from './DandisetContributors.vue';
 import ListingComponent from './ListingComponent.vue';
 import ShareableLinkDialog from './ShareableLinkDialog.vue';
+import ShareDialog from './ShareDialog.vue';
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
@@ -210,6 +215,7 @@ export default defineComponent({
   components: {
     ListingComponent,
     ShareableLinkDialog,
+    ShareDialog,
     // TODO: delete DandisetContributors component after redesigned contributors list is implemented
     DandisetContributors,
   },
