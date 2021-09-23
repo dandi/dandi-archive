@@ -104,6 +104,15 @@
         </v-btn>
       </v-row>
     </div>
+
+    <div class="mt-6 mb-4">
+      <v-row
+        no-gutters
+        class="justify-center"
+      >
+        <ShareDialog />
+      </v-row>
+    </div>
   </v-card>
 </template>
 
@@ -115,12 +124,14 @@ import store from '@/store';
 
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
+import ShareDialog from './ShareDialog.vue';
 
 export default defineComponent({
   name: 'DandisetActions',
   components: {
     CiteAsDialog,
     DownloadDialog,
+    ShareDialog,
   },
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.publishDandiset);

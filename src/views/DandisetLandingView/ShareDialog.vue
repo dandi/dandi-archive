@@ -1,80 +1,87 @@
 <template>
-  <v-dialog
-    v-model="dialog"
-    offset-y
-    min-width="420"
-    max-width="500"
+  <v-btn
+    outlined
+    class="justify-center"
   >
-    <template #activator="{ on }">
-      <v-icon
-        color="primary"
-        v-on="on"
-      >
-        mdi-share-variant
-      </v-icon>
-    </template>
-
-    <v-card>
-      <v-card-title>
-        <v-btn
-          icon
-          x-small
-          :right="true"
-          :absolute="true"
-          @click="dialog = false"
-        >
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
-      <v-card-title class="text-h6">
-        {{ meta.name }}
-      </v-card-title>
-      <v-card-text>
-        <div>
-          <span
-            v-for="author in meta.contributor"
-            :key="author.name + author.identifier"
-            class="text-body-1"
+    <v-dialog
+      v-model="dialog"
+      offset-y
+      min-width="420"
+      max-width="500"
+    >
+      <template #activator="{ on }">
+        <div v-on="on">
+          <v-icon
+            color="primary"
           >
-            {{ author.name }}
-          </span>
+            mdi-share-variant
+          </v-icon>
+          Share
         </div>
-      </v-card-text>
-      <v-card-text>
-        <span class="font-weight-black">
-          Share this article:
-        </span>
-        <CopyText
-          class="pa-2"
-          :text="permalink"
-          icon-hover-text="Copy permalink to clipboard"
-        />
-      </v-card-text>
-      <v-divider class="mx-4" />
-      <v-card-actions>
-        <v-list-item class="grow">
-          <v-row
-            align="center"
+      </template>
+
+      <v-card>
+        <v-card-title>
+          <v-btn
+            icon
+            x-small
+            :right="true"
+            :absolute="true"
+            @click="dialog = false"
           >
-            <ShareNetwork
-              network="twitter"
-              :url="permalink"
-              :title="meta.name"
-              :hashtags="hashtags"
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-title class="text-h6">
+          {{ meta.name }}
+        </v-card-title>
+        <v-card-text>
+          <div>
+            <span
+              v-for="author in meta.contributor"
+              :key="author.name + author.identifier"
+              class="text-body-1"
             >
-              <v-icon
-                class="mr-1"
-                color="blue"
-                large
+              {{ author.name }}
+            </span>
+          </div>
+        </v-card-text>
+        <v-card-text>
+          <span class="font-weight-black">
+            Share this article:
+          </span>
+          <CopyText
+            class="pa-2"
+            :text="permalink"
+            icon-hover-text="Copy permalink to clipboard"
+          />
+        </v-card-text>
+        <v-divider class="mx-4" />
+        <v-card-actions>
+          <v-list-item class="grow">
+            <v-row
+              align="center"
+            >
+              <ShareNetwork
+                network="twitter"
+                :url="permalink"
+                :title="meta.name"
+                :hashtags="hashtags"
               >
-                mdi-twitter
-              </v-icon>
-            </ShareNetwork>
-          </v-row>
-        </v-list-item>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+                <v-icon
+                  class="mr-1"
+                  color="blue"
+                  large
+                >
+                  mdi-twitter
+                </v-icon>
+              </ShareNetwork>
+            </v-row>
+          </v-list-item>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-btn>
 </template>
 
 <script lang="ts">
