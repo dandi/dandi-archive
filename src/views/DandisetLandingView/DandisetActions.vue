@@ -110,7 +110,12 @@
         no-gutters
         class="justify-center"
       >
-        <ShareDialog />
+        <v-btn
+          outlined
+          class="justify-center"
+        >
+          <ShareDialog text="Share" />
+        </v-btn>
       </v-row>
     </div>
   </v-card>

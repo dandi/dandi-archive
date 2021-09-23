@@ -22,6 +22,7 @@
                 </v-icon>
               </template>
             </ShareableLinkDialog>
+            <ShareDialog v-if="$vuetify.breakpoint.xs" />
           </h1>
         </v-col>
       </v-row>
@@ -190,6 +191,7 @@ import { DandisetStats } from '@/types';
 import DandisetContributors from './DandisetContributors.vue';
 import ListingComponent from './ListingComponent.vue';
 import ShareableLinkDialog from './ShareableLinkDialog.vue';
+import ShareDialog from './ShareDialog.vue';
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
@@ -210,6 +212,7 @@ export default defineComponent({
   components: {
     ListingComponent,
     ShareableLinkDialog,
+    ShareDialog,
     // TODO: delete DandisetContributors component after redesigned contributors list is implemented
     DandisetContributors,
   },
