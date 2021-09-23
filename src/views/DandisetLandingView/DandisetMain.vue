@@ -91,7 +91,7 @@
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
         <!-- Truncate text if necessary -->
-        <span v-if="meta.description.length > MAX_DESCRIPTION_LENGTH">
+        <span v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)">
           {{ description }}
           <a
             v-if="showFullDescription"
