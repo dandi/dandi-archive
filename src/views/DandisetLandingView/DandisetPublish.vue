@@ -188,16 +188,20 @@
       </v-menu>
     </v-row>
     <v-row>
-      <v-subheader class="black--text text-h5">
+      <v-subheader class="mb-2 black--text text-h5">
         This Version
       </v-subheader>
     </v-row>
     <v-row
       class="pa-2 mb-5 text-body-2 align-center"
       style="border-top: thin solid rgba(0, 0, 0, 0.12);
-               border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+             border-bottom: thin solid rgba(0, 0, 0, 0.12);
+             text-align: center;"
     >
-      <v-col cols="5">
+      <v-col
+        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        style=""
+      >
         {{ formatDate(currentDandiset.modified) }}
       </v-col>
       <v-col>
@@ -205,7 +209,7 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-subheader class="black--text text-h5">
+      <v-subheader class="mb-2 black--text text-h5">
         Other Versions
       </v-subheader>
     </v-row>
@@ -214,12 +218,15 @@
       :key="i"
       class="pa-2 text-body-2 align-center justify-center"
       style="border-top: thin solid rgba(0, 0, 0, 0.12);
-             border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+             border-bottom: thin solid rgba(0, 0, 0, 0.12);
+             text-align: center;"
     >
-      <v-col cols="5">
+      <v-col
+        :cols="$vuetify.breakpoint.md ? 12 : 4"
+      >
         {{ formatDate(version.modified) }}
       </v-col>
-      <v-col style="text-align: center;">
+      <v-col>
         <v-btn
           outlined
           @click="setVersion(version)"
