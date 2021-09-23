@@ -1,3 +1,5 @@
+import { Dandiset as DandisetMetadata } from './schema';
+
 export interface User {
   username: string,
   name: string,
@@ -25,7 +27,7 @@ export interface Version {
   created: string,
   modified: string,
   dandiset: Dandiset,
-  metadata?: object,
+  metadata?: DandisetMetadata,
 }
 
 export interface Asset {

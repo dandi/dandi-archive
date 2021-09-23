@@ -29,3 +29,12 @@ yarn run lint
 In order to run all tests, you should create a new branch from the main repository (not from your fork) and create a PR to the `master` branch. If you don't have permission to do so, please ask one of the maintainers to create a new branch from the dandi repository and use your own fork to edit the code. 
 
 Once the tests finish, you will be able to see your changes via a Netlify deploy preview, using testing datasets from the staging deployment (https://gui-staging.dandiarchive.org/).
+
+
+### Schema Migration
+The web app uses TypeScript typings (src/types/schema.ts) automatically generated from the dandiset metadata JSON Schema (see https://github.com/dandi/schema). To change the schema version used (and as a result, the types), use the `yarn migrate` command.
+
+For example, to migrate to schema version 0.5.1, run:
+```bash
+yarn migrate 0.5.1
+```

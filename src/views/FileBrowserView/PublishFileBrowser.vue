@@ -140,6 +140,51 @@
                 </v-btn>
               </v-list-item-action>
 
+              <v-list-item-action v-if="item.asset_id">
+                <v-menu
+                  bottom
+                  left
+                >
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      v-if="item.services.length"
+                      color="primary"
+                      icon
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-else
+                      color="primary"
+                      disabled
+                      icon
+                    >
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list dense>
+                    <v-subheader
+                      v-if="item.services.length"
+                      class="font-weight-medium"
+                    >
+                      EXTERNAL SERVICES
+                    </v-subheader>
+
+                    <v-list-item
+                      v-for="el in item.services"
+                      :key="el.name"
+                      :href="el.url"
+                    >
+                      <v-list-item-title class="font-weight-light">
+                        {{ el.name }}
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-list-item-action>
+
               <v-list-item-action
                 v-if="item.size"
                 class="justify-end"
@@ -172,6 +217,22 @@ const sortByName = (a, b) => {
   }
   return 0;
 };
+
+const EXTERNAL_SERVICES = [
+  {
+    name: 'Bioimagesuite/Viewer',
+    regex: '.nii(.gz)?$',
+    maxsize: 1e9,
+    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
+  },
+
+  {
+    name: 'MetaCell/NWBExplorer',
+    regex: '.nwb$',
+    maxsize: 1e9,
+    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
+  },
+];
 
 export default {
   name: 'PublishFileBrowser',
@@ -227,7 +288,16 @@ export default {
             (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
           ).sort(sortByName),
           ...Object.keys(data.files).map(
-            (key) => ({ ...data.files[key], name: key, folder: false }),
+            (key) => {
+              const { asset_id, size } = data.files[key];
+              const services = this.getExternalServices(asset_id, key, size);
+              return {
+                ...data.files[key],
+                name: key,
+                folder: false,
+                services,
+              };
+            },
           ).sort(sortByName),
         ];
       },
@@ -276,6 +346,16 @@ export default {
 
     downloadURI(asset_id) {
       return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+    },
+
+    getExternalServices(asset_id, name, size) {
+      const { identifier, version } = this;
+      return EXTERNAL_SERVICES
+        .filter((service) => new RegExp(service.regex).test(name) && size <= service.maxsize)
+        .map((service) => ({
+          name: service.name,
+          url: `${service.endpoint}${publishRest.assetDownloadURI(identifier, version, asset_id)}`,
+        }));
     },
 
     assetMetadataURI(asset_id) {
