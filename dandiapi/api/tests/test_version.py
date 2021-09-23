@@ -55,10 +55,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
     expected_metadata = {
         **original_metadata,
         'manifestLocation': [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
+            f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': draft_version.name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
@@ -298,8 +295,7 @@ def test_version_publish_version(draft_version, asset):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
-            f'{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',  # noqa: E501
         ],
         'identifier': f'DANDI:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
@@ -452,10 +448,7 @@ def test_version_rest_update(api_client, user, draft_version):
     saved_metadata = {
         **new_metadata,
         'manifestLocation': [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
+            f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
@@ -522,10 +515,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
     saved_metadata = {
         **new_metadata,
         'manifestLocation': [
-            (
-                f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}'
-                f'/versions/draft/assets/'
-            )
+            f'https://api.dandiarchive.org/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
@@ -666,8 +656,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/'
-            f'{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
         ],
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': published_version.version,

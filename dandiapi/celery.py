@@ -1,6 +1,6 @@
 import os
 
-from celery import Celery
+from celery import Celery, signals
 import configurations.importer
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dandiapi.settings'
@@ -14,3 +14,10 @@ app = Celery(config_source='django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
+
+
+@signals.import_modules.connect
+def _register_scheduled_tasks(sender, **kwargs):
+    from dandiapi.api.scheduled_tasks import register_scheduled_tasks
+
+    register_scheduled_tasks(sender, **kwargs)
