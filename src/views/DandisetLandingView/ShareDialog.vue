@@ -44,7 +44,7 @@
       </v-card-text>
       <v-card-text>
         <span class="font-weight-black">
-          Share this article:
+          Share this dandiset:
         </span>
         <CopyText
           class="pa-2"
@@ -82,6 +82,7 @@
 <script lang="ts">
 import { defineComponent, computed, ref } from '@vue/composition-api';
 
+import CopyText from '@/components/CopyText.vue';
 import store from '@/store';
 import { dandiUrl } from '@/utils/constants';
 
@@ -90,6 +91,7 @@ const hashtags = 'dandi';
 
 export default defineComponent({
   name: 'ShareDialog',
+  components: { CopyText },
   props: {
     text: {
       type: String,
