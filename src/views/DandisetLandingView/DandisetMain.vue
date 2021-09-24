@@ -8,20 +8,6 @@
         <v-col>
           <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
             {{ meta.name }}
-            <ShareableLinkDialog>
-              <template
-                #activator="{ on }"
-                class="justify-left"
-              >
-                <v-icon
-                  color="primary"
-                  left
-                  v-on="on"
-                >
-                  mdi-link
-                </v-icon>
-              </template>
-            </ShareableLinkDialog>
             <ShareDialog v-if="$vuetify.breakpoint.xs" />
           </h1>
         </v-col>
@@ -190,7 +176,6 @@ import { DandisetStats } from '@/types';
 // TODO: delete DandisetContributors component after redesigned contributors list is implemented
 import DandisetContributors from './DandisetContributors.vue';
 import ListingComponent from './ListingComponent.vue';
-import ShareableLinkDialog from './ShareableLinkDialog.vue';
 import ShareDialog from './ShareDialog.vue';
 
 // max description length before it's truncated and "see more" button is shown
@@ -211,7 +196,6 @@ export default defineComponent({
   name: 'DandisetMain',
   components: {
     ListingComponent,
-    ShareableLinkDialog,
     ShareDialog,
     // TODO: delete DandisetContributors component after redesigned contributors list is implemented
     DandisetContributors,

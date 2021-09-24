@@ -9,7 +9,7 @@
       Dandiset Actions
     </div>
 
-    <!-- Download, Shareable Link, and Cite As buttons -->
+    <!-- Download and Cite As buttons -->
     <div class="my-4">
       <v-row no-gutters>
         <DownloadDialog>
@@ -105,6 +105,7 @@
       </v-row>
     </div>
 
+    <!-- Share button -->
     <div class="mt-6 mb-4">
       <v-row
         no-gutters
