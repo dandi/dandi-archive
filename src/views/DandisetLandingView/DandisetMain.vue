@@ -183,10 +183,6 @@ const MAX_DESCRIPTION_LENGTH = 400;
 
 // TODO: remove when redesign is implemented
 function renderData(data: any, schema: any): boolean {
-  if (schema.title === 'Dandiset contributors' && _.isEmpty(data)) {
-    this.extraFields.contributor = 'No funding information available';
-    return true;
-  }
   if (data === null || _.isEmpty(data)) {
     return false;
   }
