@@ -3,6 +3,7 @@ import Vue from 'vue';
 import { provide } from '@vue/composition-api';
 import { sync } from 'vuex-router-sync';
 import VueGtag from 'vue-gtag';
+import VueSocialSharing from 'vue-social-sharing';
 
 // @ts-ignore missing definitions
 import { vuetify } from '@girder/components/src';
@@ -28,11 +29,13 @@ Sentry.init({
   integrations: [new Integrations.Vue({ Vue, logErrors: true })],
 });
 
-sync(store, router);
+sync(store.original, router);
 
 Vue.use(VueGtag, {
   config: { id: 'UA-146135810-2' },
 }, router);
+
+Vue.use(VueSocialSharing);
 
 async function loadUser() {
   return publishRest.restoreLogin();
@@ -45,7 +48,7 @@ loadUser().then(() => {
     },
     router,
     render: (h) => h(App),
-    store,
+    store: store.original,
     // @ts-ignore: missing definitions because Vue.use(Vuetify) is in a .js file
     vuetify,
   }).$mount('#app');
