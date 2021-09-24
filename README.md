@@ -1,4 +1,4 @@
-# dandiarchive [![CircleCI](https://circleci.com/gh/dandi/dandiarchive/tree/master.svg?style=svg)](https://circleci.com/gh/dandi/dandiarchive/tree/master)
+# dandiarchive ![ci](https://github.com/dandi/dandiarchive/actions/workflows/ci.yml/badge.svg)
 The DANDI Archive web client.
 
 ## Web App
