@@ -1,221 +1,224 @@
 <template>
-  <div>
-    <v-progress-linear
-      v-if="!currentDandiset"
-      indeterminate
-    />
-    <v-container v-else>
-      <v-dialog
-        v-if="!!itemToDelete"
-        v-model="itemToDelete"
-        persistent
-        max-width="60vh"
-      >
+  <v-progress-linear
+    v-if="!currentDandiset"
+    indeterminate
+  />
+  <v-container v-else>
+    <v-dialog
+      v-if="!!itemToDelete"
+      v-model="itemToDelete"
+      persistent
+      max-width="60vh"
+    >
+      <v-card>
+        <v-card-title class="text-h5">
+          Really delete this asset?
+        </v-card-title>
+
+        <v-card-text>
+          Are you sure you want to delete asset <span
+            class="font-italic"
+          >{{ itemToDelete.name }}</span>?
+          <strong>This action cannot be undone.</strong>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            @click="itemToDelete = null"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="error"
+            @click="deleteAsset(itemToDelete)"
+          >
+            Yes
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-row>
+      <v-col :cols="12">
         <v-card>
-          <v-card-title class="text-h5">
-            Really delete this asset?
-          </v-card-title>
-
-          <v-card-text>
-            Are you sure you want to delete asset <span
-              class="font-italic"
-            >{{ itemToDelete.name }}</span>?
-            <strong>This action cannot be undone.</strong>
-          </v-card-text>
-
-          <v-card-actions>
-            <v-spacer />
+          <v-card-title>
             <v-btn
-              @click="itemToDelete = null"
+              icon
+              exact
+              :to="{
+                name: 'dandisetLanding',
+                params: { identifier, version },
+              }"
             >
-              Cancel
+              <v-icon>mdi-home</v-icon>
             </v-btn>
-            <v-btn
-              color="error"
-              @click="deleteAsset(itemToDelete)"
-            >
-              Yes
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-      <v-row>
-        <v-col :cols="12">
-          <v-card>
-            <v-card-title>
-              <v-btn
-                icon
-                exact
-                :to="{
-                  name: 'dandisetLanding',
-                  params: { identifier, version },
-                }"
-              >
-                <v-icon>mdi-home</v-icon>
-              </v-btn>
-              <v-divider
-                vertical
-                class="ml-2 mr-3"
-              />
-              <router-link
-                :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
-                style="text-decoration: none;"
-                class="mx-2"
-              >
-                {{ identifier }}
-              </router-link>
-
-              <template v-for="(part, i) in splitLocation">
-                <template v-if="part">
-                  /
-                  <router-link
-                    :key="part"
-                    :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
-                    style="text-decoration: none;"
-                    class="mx-2"
-                  >
-                    {{ part }}
-                  </router-link>
-                </template>
-              </template>
-              <span class="ml-auto">
-                <b>Size</b>
-              </span>
-            </v-card-title>
-            <v-progress-linear
-              v-if="$asyncComputed.items.updating"
-              indeterminate
+            <v-divider
+              vertical
+              class="ml-2 mr-3"
             />
-            <v-divider v-else />
-            <v-list>
-              <v-list-item
-                v-for="item in items"
-                :key="item.name"
+            <router-link
+              :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
+              style="text-decoration: none;"
+              class="mx-2"
+            >
+              {{ identifier }}
+            </router-link>
+
+            <template v-for="(part, i) in splitLocation">
+              <template v-if="part">
+                /
+                <router-link
+                  :key="part"
+                  :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
+                  style="text-decoration: none;"
+                  class="mx-2"
+                >
+                  {{ part }}
+                </router-link>
+              </template>
+            </template>
+            <span class="ml-auto">
+              <b>Size</b>
+            </span>
+          </v-card-title>
+          <v-progress-linear
+            v-if="updating"
+            indeterminate
+          />
+          <v-divider v-else />
+          <v-list>
+            <v-list-item
+              v-for="item in items"
+              :key="item.name"
+              color="primary"
+              @click="selectPath(item)"
+            >
+              <v-icon
+                class="mr-2"
                 color="primary"
-                @click="selectPath(item)"
               >
-                <v-icon
-                  class="mr-2"
-                  color="primary"
+                <template v-if="item.folder">
+                  mdi-folder
+                </template>
+                <template v-else>
+                  mdi-file
+                </template>
+              </v-icon>
+              {{ item.name }}
+              <v-spacer />
+
+              <v-list-item-action>
+                <v-btn
+                  v-if="showDelete(item)"
+                  icon
+                  @click="itemToDelete = item"
                 >
-                  <template v-if="item.folder">
-                    mdi-folder
-                  </template>
-                  <template v-else>
-                    mdi-file
-                  </template>
-                </v-icon>
-                {{ item.name }}
-                <v-spacer />
+                  <v-icon color="error">
+                    mdi-delete
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
 
-                <v-list-item-action>
-                  <v-btn
-                    v-if="showDelete(item)"
-                    icon
-                    @click="itemToDelete = item"
-                  >
-                    <v-icon color="error">
-                      mdi-delete
-                    </v-icon>
-                  </v-btn>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset_id">
-                  <v-btn
-                    icon
-                    :href="downloadURI(item.asset_id)"
-                  >
-                    <v-icon color="primary">
-                      mdi-download
-                    </v-icon>
-                  </v-btn>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset_id">
-                  <v-btn
-                    icon
-                    :href="assetMetadataURI(item.asset_id)"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <v-icon color="primary">
-                      mdi-information
-                    </v-icon>
-                  </v-btn>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset_id">
-                  <v-menu
-                    bottom
-                    left
-                  >
-                    <template #activator="{ on, attrs }">
-                      <v-btn
-                        v-if="item.services.length"
-                        color="primary"
-                        icon
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        <v-icon>mdi-dots-vertical</v-icon>
-                      </v-btn>
-                      <v-btn
-                        v-else
-                        color="primary"
-                        disabled
-                        icon
-                      >
-                        <v-icon>mdi-dots-vertical</v-icon>
-                      </v-btn>
-                    </template>
-                    <v-list dense>
-                      <v-subheader
-                        v-if="item.services.length"
-                        class="font-weight-medium"
-                      >
-                        EXTERNAL SERVICES
-                      </v-subheader>
-
-                      <v-list-item
-                        v-for="el in item.services"
-                        :key="el.name"
-                        :href="el.url"
-                      >
-                        <v-list-item-title class="font-weight-light">
-                          {{ el.name }}
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </v-list-item-action>
-
-                <v-list-item-action
-                  v-if="item.size"
-                  class="justify-end"
-                  :style="{width: '4.5em'}"
+              <v-list-item-action v-if="item.asset_id">
+                <v-btn
+                  icon
+                  :href="downloadURI(item.asset_id)"
                 >
-                  {{ fileSize(item) }}
-                </v-list-item-action>
-              </v-list-item>
-            </v-list>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
-  </div>
+                  <v-icon color="primary">
+                    mdi-download
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
+
+              <v-list-item-action v-if="item.asset_id">
+                <v-btn
+                  icon
+                  :href="assetMetadataURI(item.asset_id)"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <v-icon color="primary">
+                    mdi-information
+                  </v-icon>
+                </v-btn>
+              </v-list-item-action>
+
+              <v-list-item-action v-if="item.asset_id">
+                <v-menu
+                  bottom
+                  left
+                >
+                  <template #activator="{ on, attrs }">
+                    <v-btn
+                      v-if="item.services.length"
+                      color="primary"
+                      icon
+                      v-bind="attrs"
+                      v-on="on"
+                    >
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-else
+                      color="primary"
+                      disabled
+                      icon
+                    >
+                      <v-icon>mdi-dots-vertical</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list dense>
+                    <v-subheader
+                      v-if="item.services.length"
+                      class="font-weight-medium"
+                    >
+                      EXTERNAL SERVICES
+                    </v-subheader>
+
+                    <v-list-item
+                      v-for="el in item.services"
+                      :key="el.name"
+                      :href="el.url"
+                    >
+                      <v-list-item-title class="font-weight-light">
+                        {{ el.name }}
+                      </v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-list-item-action>
+
+              <v-list-item-action
+                v-if="item.size"
+                class="justify-end"
+                :style="{width: '4.5em'}"
+              >
+                {{ fileSize(item) }}
+              </v-list-item-action>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
-<script>
+<script lang="ts">
 import filesize from 'filesize';
+import {
+  defineComponent, computed, ref, watchEffect, Ref,
+} from '@vue/composition-api';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
+import { draftVersion } from '@/utils/constants';
+import { AssetStats } from '@/types';
 
 const parentDirectory = '..';
 const rootDirectory = '';
 
-const sortByName = (a, b) => {
+const sortByName = (a: any, b: any) => {
   if (a.name > b.name) {
     return 1;
   }
@@ -241,7 +244,7 @@ const EXTERNAL_SERVICES = [
   },
 ];
 
-export default {
+export default defineComponent({
   name: 'FileBrowser',
   props: {
     identifier: {
@@ -253,157 +256,123 @@ export default {
       required: true,
     },
   },
-  data() {
-    return {
-      rootDirectory,
-      location: rootDirectory,
-      owners: [],
-      itemToDelete: null,
-    };
-  },
-  computed: {
-    splitLocation() {
-      return this.location.split('/');
-    },
+  setup(props) {
+    const location = ref(rootDirectory);
+    const owners: Ref<string[]> = ref([]);
+    const itemToDelete = ref(null);
+    const updating = ref(false);
 
-    me() {
-      return dandiRest.user ? dandiRest.user.username : null;
-    },
+    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const splitLocation = computed(() => location.value.split('/'));
 
-    isAdmin() {
-      return this.me && dandiRest.user.admin;
-    },
+    const items: Ref<AssetStats[]|null> = ref(null);
 
-    isOwner() {
-      return this.me && this.owners.includes(this.me);
-    },
+    async function getAssets() {
+      const { version, identifier } = props;
 
-    currentDandiset() {
-      return store.state.dandiset.dandiset;
-    },
-  },
-  asyncComputed: {
-    items: {
-      async get() {
-        const { version, identifier, location } = this;
+      const data = await dandiRest.assetPaths(identifier, version, location.value);
+      owners.value = (await dandiRest.owners(identifier)).data
+        .map((x) => x.username);
 
-        const data = await dandiRest.assetPaths(identifier, version, location);
-        this.owners = (await dandiRest.owners(identifier)).data
-          .map((x) => x.username);
-
-        return [
-          ...location !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
-          ...Object.keys(data.folders).map(
-            (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
-          ).sort(sortByName),
-          ...Object.keys(data.files).map(
-            (key) => {
-              const { asset_id, size } = data.files[key];
-              const services = this.getExternalServices(asset_id, key, size);
-              return {
-                ...data.files[key],
-                name: key,
-                folder: false,
-                services,
-              };
-            },
-          ).sort(sortByName),
-        ];
-      },
-      default: null,
-    },
-  },
-  watch: {
-    location(location) {
-      const { location: existingLocation } = this.$route.query;
-
-      // Update route when location changes
-      if (existingLocation === location) { return; }
-      this.$router.push({
-        ...this.$route,
-        query: { location },
-      });
-    },
-    items(items) {
-      if (items && !items.length) {
-        // If the API call returns no items, go back to the root (shouldn't normally happen)
-        this.location = rootDirectory;
-      }
-    },
-    $route: {
-      immediate: true,
-      handler(route) {
-        this.location = route.query.location || rootDirectory;
-      },
-    },
-  },
-  async created() {
-    // Don't extract currentDandiset, for reactivity
-    const { identifier, version } = this;
-    if (!this.currentDandiset) {
-      this.fetchDandiset({ identifier, version });
+      items.value = [
+        ...location.value !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
+        ...Object.keys(data.folders).map(
+          (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
+        ).sort(sortByName),
+        ...Object.keys(data.files).map(
+          (key) => {
+            const { asset_id, size } = data.files[key];
+            return {
+              ...data.files[key],
+              name: key,
+              folder: false,
+              services: EXTERNAL_SERVICES
+                .filter((service) => new RegExp(service.regex).test(key) && size <= service.maxsize)
+                .map((service) => ({
+                  name: service.name,
+                  url: `${service.endpoint}${dandiRest.assetDownloadURI(identifier, version, asset_id)}`,
+                })),
+            };
+          },
+        ).sort(sortByName),
+      ];
     }
-  },
-  methods: {
-    locationSlice(index) {
-      return `${this.splitLocation.slice(0, index + 1).join('/')}/`;
-    },
-    selectPath(item) {
+
+    watchEffect(async () => {
+      updating.value = true;
+      await getAssets();
+      updating.value = false;
+    }, { flush: 'sync' });
+
+    function downloadURI(asset_id: string): string {
+      return dandiRest.assetDownloadURI(props.identifier, props.version, asset_id);
+    }
+
+    function selectPath(item: any) {
       const { name, folder } = item;
 
       if (!folder) { return; }
       if (name === parentDirectory) {
-        const slicedLocation = this.location.split('/').slice(0, -2);
-        this.location = slicedLocation.length ? `${slicedLocation.join('/')}/` : '';
+        const slicedLocation = location.value.split('/').slice(0, -2);
+        location.value = slicedLocation.length ? `${slicedLocation.join('/')}/` : '';
       } else {
-        this.location = `${this.location}${name}`;
+        location.value = `${location.value}${name}`;
       }
-    },
+    }
 
-    downloadURI(asset_id) {
-      return dandiRest.assetDownloadURI(this.identifier, this.version, asset_id);
-    },
+    function locationSlice(index: number): string {
+      return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
+    }
 
-    getExternalServices(asset_id, name, size) {
-      const { identifier, version } = this;
-      return EXTERNAL_SERVICES
-        .filter((service) => new RegExp(service.regex).test(name) && size <= service.maxsize)
-        .map((service) => ({
-          name: service.name,
-          url: `${service.endpoint}${dandiRest.assetDownloadURI(identifier, version, asset_id)}`,
-        }));
-    },
+    function assetMetadataURI(asset_id: string): string {
+      return dandiRest.assetMetadataURI(props.identifier, props.version, asset_id);
+    }
 
-    assetMetadataURI(asset_id) {
-      return dandiRest.assetMetadataURI(this.identifier, this.version, asset_id);
-    },
-
-    fileSize(item) {
+    function fileSize(item: any): string {
       return filesize(item.size, { round: 1, base: 10, standard: 'iec' });
-    },
+    }
 
-    showDelete(item) {
-      return this.version === 'draft' && !item.folder && (this.isAdmin || this.isOwner);
-    },
+    function showDelete(item: any): boolean {
+      return props.version === draftVersion
+      && !item.folder
+      && !!(dandiRest.user?.admin || (
+        dandiRest.user && owners.value.includes(dandiRest.user?.username)));
+    }
 
-    async deleteAsset(item) {
+    async function deleteAsset(item: any) {
       const { asset_id } = item;
       if (asset_id !== undefined) {
         // Delete the asset on the server.
-        await dandiRest.deleteAsset(this.identifier, this.version, asset_id);
-
-        // Recompute the items to display in the browser.
-        this.$asyncComputed.items.update();
+        await dandiRest.deleteAsset(props.identifier, props.version, asset_id);
+        updating.value = true;
+        await getAssets();
+        updating.value = false;
       }
-      this.itemToDelete = null;
-    },
+      itemToDelete.value = null;
+    }
 
-    fetchDandiset() {
-      store.dispatch.dandiset.fetchDandiset({
-        identifier: this.identifier,
-        version: this.version,
+    if (!currentDandiset.value) {
+      store.dispatch.dandiset.fetchPublishDandiset({
+        identifier: props.identifier,
+        version: props.version,
       });
-    },
+    }
+
+    return {
+      deleteAsset,
+      showDelete,
+      fileSize,
+      assetMetadataURI,
+      locationSlice,
+      selectPath,
+      downloadURI,
+      currentDandiset,
+      itemToDelete,
+      rootDirectory,
+      splitLocation,
+      updating,
+      items,
+    };
   },
-};
+});
 </script>

@@ -99,7 +99,8 @@ const dandiRest = new Vue({
         throw error;
       }
     },
-    async assetPaths(identifier: string, version: string, location: string): Promise<string[]> {
+    // TODO: define return type here
+    async assetPaths(identifier: string, version: string, location: string): Promise<any> {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
