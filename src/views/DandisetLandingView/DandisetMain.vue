@@ -498,6 +498,10 @@ export default {
       await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
     },
     renderData(data, schema) {
+      if (schema.title === 'Dandiset contributors' && _.isEmpty(data)) {
+        this.extraFields.contributor = 'No funding information available';
+        return true;
+      }
       if (data === null || _.isEmpty(data)) {
         return false;
       }
