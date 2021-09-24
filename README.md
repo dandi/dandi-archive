@@ -1,4 +1,4 @@
-# dandiarchive ![ci](https://github.com/dandi/dandiarchive/actions/workflows/ci.yml/badge.svg)
+# dandiarchive ![ci](https://github.com/dandi/dandiarchive/actions/workflows/ci.yml/badge.svg) [![Netlify Status](https://api.netlify.com/api/v1/badges/e7424684-fbdb-4b77-a546-d5757a0f7552/deploy-status)](https://app.netlify.com/sites/gui-dandiarchive-org/deploys)
 The DANDI Archive web client.
 
 ## Web App
