@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { mapState, mapActions } from 'vuex';
+import store from '@/store';
 import { draftVersion } from '@/utils/constants';
 import PublishFileBrowser from './PublishFileBrowser.vue';
 
@@ -36,7 +36,9 @@ export default {
     };
   },
   computed: {
-    ...mapState('dandiset', ['publishDandiset']),
+    publishDandiset() {
+      return store.state.dandiset.publishDandiset;
+    },
   },
   async created() {
     // Don't extract publishDandiset, for reactivity
@@ -46,7 +48,12 @@ export default {
     }
   },
   methods: {
-    ...mapActions('dandiset', ['fetchPublishDandiset']),
+    fetchPublishDandiset() {
+      store.dispatch.dandiset.fetchPublishDandiset({
+        identifier: this.identifier,
+        version: this.version,
+      });
+    },
   },
 };
 </script>

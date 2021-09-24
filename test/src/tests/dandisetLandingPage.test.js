@@ -1,6 +1,4 @@
-import {
-  vBtn, vChip, vListItem,
-} from 'jest-puppeteer-vuetify';
+import { vChip, vListItem } from 'jest-puppeteer-vuetify';
 import {
   uniqueId,
   registerNewUser,
@@ -30,24 +28,10 @@ describe('dandiset landing page', () => {
     await expect(page).not.toContainXPath(vChip(otherUser));
     await expect(page).toContainXPath(vChip(owner));
 
-    // click the manage button
-    await expect(page).toClickXPath(vBtn('Manage'));
-
-    // otherUser should not be in the list of owners (yet)
-    await expect(page).not.toMatch(otherUser);
-
-    // owner should be in the list of owners
-    await expect(page).toMatch(owner);
-
     // search for otherUser and add them as an owner
-    await expect(page).toFillXPath('//input[@placeholder="Search by first name, last name or username"]', otherUser);
+    await expect(page).toFillXPath('//input[@placeholder="enter email address"]', otherUser);
     await waitForRequestsToFinish();
     await expect(page).toClickXPath(vListItem(otherUser));
-
-    // otherUser should be in the list of owners now
-    await expect(page).toMatch(otherUser);
-
-    await expect(page).toClickXPath(vBtn('Save Changes'));
 
     await waitForRequestsToFinish();
 

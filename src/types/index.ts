@@ -17,17 +17,24 @@ export interface Dandiset {
   contact_person?: string,
 }
 
+export interface ValidationError {
+  field: string,
+  message: string,
+}
+
 export interface Version {
   version: string,
   name: string,
   asset_count: number,
   size: number,
-  status: 'Pending' | 'Validating' | 'Valid' | 'Invalid',
+  status: 'Pending' | 'Validating' | 'Valid' | 'Invalid' | 'Published',
   validation_error?: string,
   created: string,
   modified: string,
   dandiset: Dandiset,
   metadata?: DandisetMetadata,
+  asset_validation_errors: ValidationError[],
+  version_validation_errors: ValidationError[],
 }
 
 export interface Asset {
@@ -50,4 +57,9 @@ export interface Paginated<T> {
 export interface Info {
   schema_url: string;
   schema_version: string;
+}
+
+export interface DandisetStats {
+  asset_count: number,
+  size: number,
 }

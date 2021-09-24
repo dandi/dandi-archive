@@ -201,9 +201,9 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
 import filesize from 'filesize';
 import { publishRest } from '@/rest';
+import store from '@/store';
 
 const parentDirectory = '..';
 const rootDirectory = '';
@@ -271,7 +271,9 @@ export default {
       return this.me && this.owners.includes(this.me);
     },
 
-    ...mapState('dandiset', ['publishDandiset']),
+    publishDandiset() {
+      return store.state.dandiset.publishDandiset;
+    },
   },
   asyncComputed: {
     items: {
