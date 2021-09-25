@@ -102,7 +102,7 @@
             class="mb-4"
           >
             <v-card-text
-              v-if="meta.keywords.length"
+              v-if="meta.keywords && meta.keywords.length"
               style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
             >
               Keywords:
@@ -116,7 +116,7 @@
               </v-chip>
             </v-card-text>
 
-            <v-card-text v-if="meta.license.length">
+            <v-card-text v-if="meta.license && meta.license.length">
               Licenses:
               <v-chip
                 v-for="(license, i) in meta.license"
