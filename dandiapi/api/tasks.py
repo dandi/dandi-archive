@@ -106,7 +106,7 @@ def validate_asset_metadata(asset_id: int) -> None:
         else:
             # parse the pydantic ValidationError:
             asset.validation_errors = [
-                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors()
+                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors
             ]
 
         asset.save()
@@ -144,7 +144,7 @@ def validate_version_metadata(version_id: int) -> None:
         else:
             # parse the pydantic ValidationError:
             version.validation_errors = [
-                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors()
+                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors
             ]
 
         version.save()
