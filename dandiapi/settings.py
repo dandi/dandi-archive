@@ -75,6 +75,10 @@ class DandiMixin(ConfigMixin):
         'DEFAULT_AUTO_SCHEMA_CLASS': 'dandiapi.swagger.DANDISwaggerAutoSchema',
     }
 
+    # Some tasks working with lots of data need lots of memory, so we need to artificially lower
+    # the number of concurrent tasks (default is 8) to keep memory usage down.
+    CELERY_WORKER_CONCURRENCY = values.IntegerValue(environ=True, default=8)
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
@@ -106,7 +110,3 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
 # the API server is running in (production/local or staging).
 class HerokuStagingConfiguration(HerokuProductionConfiguration):
     OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.StagingApplication'
-
-    # We are using cheaper Heroku dynos for staging, so we need to artificially lower the number
-    # of concurrent tasks (default is 8) to keep memory usage down.
-    CELERY_WORKER_CONCURRENCY = 2
