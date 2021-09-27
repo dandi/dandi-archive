@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -23,6 +24,7 @@ if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # frequently point to localhost.
     os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
+import dandischema.exceptions
 from dandischema.metadata import validate
 
 logger = get_task_logger(__name__)
@@ -62,24 +64,12 @@ def write_manifest_files(version_id: int) -> None:
     write_collection_jsonld(version, logger=logger)
 
 
-def format_as_index(indices):
-    """Render a JSON schema path as a series of indices."""
-    if not indices:
-        return ''
-    return '[%s]' % ']['.join(repr(index) for index in indices)
+def encode_pydantic_error(error) -> Dict[str, str]:
+    return {'field': error['loc'][0], 'message': error['msg']}
 
 
-def format_validation_error(error: jsonschema.exceptions.ValidationError):
-    """
-    Succinctly format a ValidationError.
-
-    The default __str__ for ValidationError includes the entire schema, so we simplify it.
-    """
-    return f'{error.message}\nSee: metadata{format_as_index(error.relative_path)}'  # noqa: B306
-
-
-class ValidationError(Exception):
-    pass
+def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> Dict[str, str]:
+    return {'field': '.'.join([str(p) for p in error.path]), 'message': error.message}
 
 
 @shared_task
@@ -95,20 +85,29 @@ def validate_asset_metadata(asset_id: int) -> None:
 
     try:
         metadata = asset.published_metadata()
-        validate(metadata, schema_key='PublishedAsset')
-    except Exception as e:
+        validate(metadata, schema_key='PublishedAsset', json_validation=True)
+    except dandischema.exceptions.ValidationError as e:
         logger.error('Error while validating asset %s', asset_id)
-        logger.error(str(e))
         asset.status = Asset.Status.INVALID
 
-        if type(e) is ValueError:
-            asset.validation_errors = [{'field': '', 'message': str(e)}]
-        else:
-            # parse the pydantic ValidationError:
-            asset.validation_errors = [
-                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors
-            ]
-
+        validation_errors = []
+        for error in e.errors:
+            if type(error) is dict:
+                # pydantic validation errors come in dicts
+                validation_errors.append(encode_pydantic_error(error))
+            else:
+                # The jsonschema validation errors are wrapped in an extra list
+                # We need to unwrap them before we can deal with them
+                error = error[0]
+                validation_errors.append(encode_jsonschema_error(error))
+        asset.validation_errors = validation_errors
+        asset.save()
+        return
+    except ValueError as e:
+        # A bare ValueError is thrown when dandischema generates its own exceptions, like a
+        # mismatched schemaVersion.
+        asset.status = Asset.Status.INVALID
+        asset.validation_errors = [{'field': '', 'message': str(e)}]
         asset.save()
         return
     logger.info('Successfully validated asset %s', asset_id)
@@ -133,20 +132,29 @@ def validate_version_metadata(version_id: int) -> None:
         # Inject a dummy DOI so the metadata is valid
         metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
 
-        validate(metadata, schema_key='PublishedDandiset')
-    except Exception as e:
+        validate(metadata, schema_key='PublishedDandiset', json_validation=True)
+    except dandischema.exceptions.ValidationError as e:
         logger.error('Error while validating version %s', version_id)
-        logger.error(str(e))
         version.status = Version.Status.INVALID
 
-        if type(e) is ValueError:
-            version.validation_errors = [{'field': '', 'message': str(e)}]
-        else:
-            # parse the pydantic ValidationError:
-            version.validation_errors = [
-                {'field': err['loc'][0], 'message': err['msg']} for err in e.errors
-            ]
-
+        validation_errors = []
+        for error in e.errors:
+            if type(error) is dict:
+                # pydantic validation errors come in dicts
+                validation_errors.append(encode_pydantic_error(error))
+            else:
+                # The jsonschema validation errors are wrapped in an extra list
+                # We need to unwrap them before we can deal with them
+                error = error[0]
+                validation_errors.append(encode_jsonschema_error(error))
+        version.validation_errors = validation_errors
+        version.save()
+        return
+    except ValueError as e:
+        # A bare ValueError is thrown when dandischema generates its own exceptions, like a
+        # mismatched schemaVersion.
+        version.status = Version.Status.INVALID
+        version.validation_errors = [{'field': '', 'message': str(e)}]
         version.save()
         return
     logger.info('Successfully validated version %s', version_id)
