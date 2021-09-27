@@ -50,7 +50,7 @@ export default defineComponent({
   setup(props, ctx) {
     const store = ctx.root.$store;
     const contributors: ComputedRef<DandisetContributors> = computed(
-      () => store.state.dandiset.publishDandiset.metadata.contributor,
+      () => store.state.dandiset.dandiset.metadata.contributor,
     );
 
     return {

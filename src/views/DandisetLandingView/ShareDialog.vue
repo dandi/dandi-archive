@@ -99,7 +99,7 @@ export default defineComponent({
     },
   },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const currentVersion = computed(() => store.getters.dandiset.version);
     const meta = computed(() => currentDandiset.value?.metadata);
     const permalink = computed(() => {

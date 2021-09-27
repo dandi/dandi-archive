@@ -33,7 +33,7 @@ export default defineComponent({
     CopyText,
   },
   setup() {
-    const citation = computed(() => store.state.dandiset.publishDandiset?.metadata?.citation);
+    const citation = computed(() => store.state.dandiset.dandiset?.metadata?.citation);
     return {
       citation,
     };

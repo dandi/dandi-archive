@@ -301,8 +301,8 @@ export default defineComponent({
       autoFixArrayItems: false,
       disableAll: props.readonly,
     }));
-    const publishDandiset = computed(() => store.state.dandiset.publishDandiset);
-    const id = computed(() => publishDandiset.value?.dandiset.identifier);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
+    const id = computed(() => currentDandiset.value?.dandiset.identifier);
 
     const basicRef: Ref<any> = ref(null);
     const complexRef: Ref<any> = ref(null);
@@ -351,20 +351,20 @@ export default defineComponent({
     };
 
     async function save() {
-      if (!id.value || !publishDandiset.value?.version) {
+      if (!id.value || !currentDandiset.value?.version) {
         return;
       }
       const dandiset = editorInterface.getModel();
 
       try {
         const { status, data } = await dandiRest.saveDandiset(
-          id.value, publishDandiset.value.version, dandiset,
+          id.value, currentDandiset.value.version, dandiset,
         );
 
         if (status === 200) {
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
-            await store.dispatch.dandiset.fetchPublishDandiset({
+            await store.dispatch.dandiset.fetchDandiset({
               identifier: data.dandiset.identifier,
               version: data.version,
             });

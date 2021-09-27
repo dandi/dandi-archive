@@ -10,7 +10,7 @@ import { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 
 interface DandisetState {
-  publishDandiset: Version|null;
+  dandiset: Version|null;
   versions: Version[]|null,
   loading: boolean,
   owners: User[]|null,
@@ -25,7 +25,7 @@ const dandisetActionContext = (context: any) => localActionContext(context, dand
 const dandisetModule = defineModule({
   namespaced: true,
   state: {
-    publishDandiset: null,
+    dandiset: null,
     versions: null,
     loading: false, // No mutation, as we don't want this mutated by the user
     owners: null,
@@ -34,8 +34,8 @@ const dandisetModule = defineModule({
   getters: {
     version(...args): string {
       const { state } = dandisetGetterContext(args);
-      if (state.publishDandiset) {
-        return state.publishDandiset.version;
+      if (state.dandiset) {
+        return state.dandiset.version;
       }
       return draftVersion;
     },
@@ -43,7 +43,7 @@ const dandisetModule = defineModule({
       const { state } = dandisetGetterContext(args);
 
       // published versions are never editable, and logged out users can never edit a dandiset
-      if (state.publishDandiset?.metadata?.version !== draftVersion || !user()) {
+      if (state.dandiset?.metadata?.version !== draftVersion || !user()) {
         return false;
       }
       // if they're an admin, they can edit any dandiset
@@ -56,8 +56,8 @@ const dandisetModule = defineModule({
     },
   },
   mutations: {
-    setPublishDandiset(state: DandisetState, dandiset: Version|null) {
-      state.publishDandiset = dandiset;
+    setDandiset(state: DandisetState, dandiset: Version|null) {
+      state.dandiset = dandiset;
     },
     setVersions(state: DandisetState, versions: Version[]|null) {
       state.versions = versions;
@@ -76,7 +76,7 @@ const dandisetModule = defineModule({
     async uninitializeDandisets(context: any) {
       const { commit } = dandisetActionContext(context);
 
-      commit.setPublishDandiset(null);
+      commit.setDandiset(null);
       commit.setVersions(null);
       commit.setOwners(null);
       commit.setLoading(false);
@@ -87,7 +87,7 @@ const dandisetModule = defineModule({
 
       // this can be done concurrently, don't await
       dispatch.fetchDandisetVersions({ identifier });
-      await dispatch.fetchPublishDandiset({ identifier, version });
+      await dispatch.fetchDandiset({ identifier, version });
       await dispatch.fetchOwners(identifier);
     },
     async fetchDandisetVersions(context: any, { identifier }) {
@@ -102,7 +102,7 @@ const dandisetModule = defineModule({
 
       commit.setLoading(false);
     },
-    async fetchPublishDandiset(context: any, { identifier, version }) {
+    async fetchDandiset(context: any, { identifier, version }) {
       const { commit } = dandisetActionContext(context);
       commit.setLoading(true);
 
@@ -111,9 +111,9 @@ const dandisetModule = defineModule({
 
       try {
         const data = await dandiRest.specificVersion(identifier, sanitizedVersion);
-        commit.setPublishDandiset(data);
+        commit.setDandiset(data);
       } catch (err) {
-        commit.setPublishDandiset(null);
+        commit.setDandiset(null);
       }
 
       commit.setLoading(false);

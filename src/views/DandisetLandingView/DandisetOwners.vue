@@ -103,7 +103,7 @@ export default defineComponent({
     },
   },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const owners = computed(() => store.state.dandiset.owners);
 
     const search = ref('');
