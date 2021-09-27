@@ -202,7 +202,7 @@
 
 <script>
 import filesize from 'filesize';
-import { publishRest } from '@/rest';
+import { dandiRest } from '@/rest';
 import store from '@/store';
 
 const parentDirectory = '..';
@@ -260,11 +260,11 @@ export default {
     },
 
     me() {
-      return publishRest.user ? publishRest.user.username : null;
+      return dandiRest.user ? dandiRest.user.username : null;
     },
 
     isAdmin() {
-      return this.me && publishRest.user.admin;
+      return this.me && dandiRest.user.admin;
     },
 
     isOwner() {
@@ -280,8 +280,8 @@ export default {
       async get() {
         const { version, identifier, location } = this;
 
-        const data = await publishRest.assetPaths(identifier, version, location);
-        this.owners = (await publishRest.owners(identifier)).data
+        const data = await dandiRest.assetPaths(identifier, version, location);
+        this.owners = (await dandiRest.owners(identifier)).data
           .map((x) => x.username);
 
         return [
@@ -347,7 +347,7 @@ export default {
     },
 
     downloadURI(asset_id) {
-      return publishRest.assetDownloadURI(this.identifier, this.version, asset_id);
+      return dandiRest.assetDownloadURI(this.identifier, this.version, asset_id);
     },
 
     getExternalServices(asset_id, name, size) {
@@ -356,12 +356,12 @@ export default {
         .filter((service) => new RegExp(service.regex).test(name) && size <= service.maxsize)
         .map((service) => ({
           name: service.name,
-          url: `${service.endpoint}${publishRest.assetDownloadURI(identifier, version, asset_id)}`,
+          url: `${service.endpoint}${dandiRest.assetDownloadURI(identifier, version, asset_id)}`,
         }));
     },
 
     assetMetadataURI(asset_id) {
-      return publishRest.assetMetadataURI(this.identifier, this.version, asset_id);
+      return dandiRest.assetMetadataURI(this.identifier, this.version, asset_id);
     },
 
     fileSize(item) {
@@ -376,7 +376,7 @@ export default {
       const { asset_id } = item;
       if (asset_id !== undefined) {
         // Delete the asset on the server.
-        await publishRest.deleteAsset(this.identifier, this.version, asset_id);
+        await dandiRest.deleteAsset(this.identifier, this.version, asset_id);
 
         // Recompute the items to display in the browser.
         this.$asyncComputed.items.update();

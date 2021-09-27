@@ -5,7 +5,7 @@ import { defineModule, localActionContext, localGetterContext } from 'direct-vue
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
-import { publishRest, user } from '@/rest';
+import { dandiRest, user } from '@/rest';
 import { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 
@@ -94,7 +94,7 @@ const dandisetModule = defineModule({
       const { commit } = dandisetActionContext(context);
       commit.setLoading(true);
 
-      const res = await publishRest.versions(identifier);
+      const res = await dandiRest.versions(identifier);
       if (res) {
         const { results } = res;
         commit.setVersions(results || []);
@@ -107,10 +107,10 @@ const dandisetModule = defineModule({
       commit.setLoading(true);
 
       const sanitizedVersion = version
-      || (await publishRest.mostRecentVersion(identifier))?.version;
+      || (await dandiRest.mostRecentVersion(identifier))?.version;
 
       try {
-        const data = await publishRest.specificVersion(identifier, sanitizedVersion);
+        const data = await dandiRest.specificVersion(identifier, sanitizedVersion);
         commit.setPublishDandiset(data);
       } catch (err) {
         commit.setPublishDandiset(null);
@@ -121,7 +121,7 @@ const dandisetModule = defineModule({
     async fetchSchema(context: any) {
       const { commit } = dandisetActionContext(context);
 
-      const { schema_url: schemaUrl } = await publishRest.info();
+      const { schema_url: schemaUrl } = await dandiRest.info();
       const res = await axios.get(schemaUrl);
 
       if (res.status !== 200) {
@@ -137,7 +137,7 @@ const dandisetModule = defineModule({
 
       commit.setLoading(true);
 
-      const { data } = await publishRest.owners(identifier);
+      const { data } = await dandiRest.owners(identifier);
       commit.setOwners(data);
 
       commit.setLoading(false);

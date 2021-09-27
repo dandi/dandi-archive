@@ -230,7 +230,7 @@ import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 
-import { publishRest } from '@/rest';
+import { dandiRest } from '@/rest';
 import store from '@/store';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
@@ -357,7 +357,7 @@ export default defineComponent({
       const dandiset = editorInterface.getModel();
 
       try {
-        const { status, data } = await publishRest.saveDandiset(
+        const { status, data } = await dandiRest.saveDandiset(
           id.value, publishDandiset.value.version, dandiset,
         );
 

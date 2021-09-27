@@ -23,7 +23,7 @@
 import { defineComponent, ref } from '@vue/composition-api';
 
 import CopyText from '@/components/CopyText.vue';
-import { publishRest } from '@/rest';
+import { dandiRest } from '@/rest';
 
 export default defineComponent({
   name: 'ApiKeyItem',
@@ -32,10 +32,10 @@ export default defineComponent({
     const apiKey = ref('');
 
     async function fetchApiKey() {
-      apiKey.value = await publishRest.getApiKey();
+      apiKey.value = await dandiRest.getApiKey();
     }
     async function refreshApiKey() {
-      apiKey.value = await publishRest.newApiKey();
+      apiKey.value = await dandiRest.newApiKey();
     }
 
     // fetch API key when component is created

@@ -22,7 +22,7 @@ try {
   oauthClient = null;
 }
 
-const publishRest = new Vue({
+const dandiRest = new Vue({
   data(): { client: AxiosInstance, user: User | null } {
     return {
       client,
@@ -211,4 +211,15 @@ client.interceptors.request.use((config) => ({
   },
 }));
 
-export default publishRest;
+const user = () => dandiRest.user;
+const loggedIn = () => !!user();
+const insideIFrame = (): boolean => window.self !== window.top;
+const cookiesEnabled = (): boolean => navigator.cookieEnabled;
+
+export {
+  dandiRest,
+  loggedIn,
+  user,
+  insideIFrame,
+  cookiesEnabled,
+};

@@ -127,7 +127,7 @@ import {
   cookiesEnabled as cookiesEnabledFunc,
   loggedIn as loggedInFunc,
   insideIFrame as insideIFrameFunc,
-  publishRest,
+  dandiRest,
 } from '@/rest';
 import { dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
@@ -177,7 +177,7 @@ export default defineComponent({
     ];
 
     function login() {
-      publishRest.login();
+      dandiRest.login();
     }
 
     return {
