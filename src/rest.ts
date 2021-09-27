@@ -6,11 +6,11 @@ import {
 } from '@/types';
 
 // Ensure contains trailing slash
-const publishApiRoot = process.env.VUE_APP_PUBLISH_API_ROOT.endsWith('/')
-  ? process.env.VUE_APP_PUBLISH_API_ROOT
-  : `${process.env.VUE_APP_PUBLISH_API_ROOT}/`;
+const dandiApiRoot = process.env.VUE_APP_DANDI_API_ROOT.endsWith('/')
+  ? process.env.VUE_APP_DANDI_API_ROOT
+  : `${process.env.VUE_APP_DANDI_API_ROOT}/`;
 
-const client = axios.create({ baseURL: publishApiRoot });
+const client = axios.create({ baseURL: dandiApiRoot });
 
 let oauthClient: OAuthClient|null;
 try {
@@ -187,13 +187,13 @@ const dandiRest = new Vue({
       return data;
     },
     assetDownloadURI(identifier: string, version: string, uuid: string) {
-      return `${publishApiRoot}assets/${uuid}/download/`;
+      return `${dandiApiRoot}assets/${uuid}/download/`;
     },
     assetMetadataURI(identifier: string, version: string, uuid: string) {
-      return `${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}`;
+      return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}`;
     },
     async deleteAsset(identifier: string, version: string, uuid: string): Promise<AxiosResponse> {
-      return client.delete(`${publishApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`);
+      return client.delete(`${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`);
     },
   },
 });
