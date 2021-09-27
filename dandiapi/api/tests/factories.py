@@ -60,6 +60,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
         metadata = {
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaKey': 'Dandiset',
             'description': faker.Faker().sentence(),
             'contributor': [
                 {
@@ -142,6 +143,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'encodingFormat': 'application/x-nwb',
+            'schemaKey': 'Asset',
         }
         # Remove faked data that might conflict with the schema types
         for key in ['approach', 'about', 'name']:
