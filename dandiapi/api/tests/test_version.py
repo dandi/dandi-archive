@@ -440,6 +440,13 @@ def test_version_rest_update(api_client, user, draft_version):
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
+        'contributor': [
+            {
+                'name': 'Bogart, Humphrey',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+            }
+        ],
         # This should be stripped out
         'dateCreated': 'foobar',
     }
@@ -473,7 +480,7 @@ def test_version_rest_update(api_client, user, draft_version):
             'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': 'Bogart, Humphrey',
         },
         'version': draft_version.version,
         'name': new_name,
@@ -485,7 +492,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'status': 'Pending',
         'asset_validation_errors': [],
         'version_validation_errors': [],
-        'contact_person': '',
+        'contact_person': 'Bogart, Humphrey',
     }
 
     # The version modified date should be updated
@@ -509,6 +516,13 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'num': 123,
         'list': ['a', 'b', 'c'],
         'very_large': 'words' * 10,
+        'contributor': [
+            {
+                'name': 'Vargas, Getúlio',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+            }
+        ],
     }
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
@@ -540,7 +554,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
             'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': 'Vargas, Getúlio',
         },
         'version': draft_version.version,
         'name': new_name,
@@ -552,7 +566,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'status': 'Pending',
         'asset_validation_errors': [],
         'version_validation_errors': [],
-        'contact_person': '',
+        'contact_person': 'Vargas, Getúlio',
     }
 
     draft_version.refresh_from_db()
