@@ -61,7 +61,13 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
             **faker.Faker().pydict(value_types=['str', 'float', 'int']),
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'description': faker.Faker().sentence(),
-            'contributor': [{'roleName': ['dcite:ContactPerson']}],
+            'contributor': [
+                {
+                    'name': f'{faker.Faker().last_name()}, {faker.Faker().first_name()}',
+                    'roleName': ['dcite:ContactPerson'],
+                    'schemaKey': 'Person',
+                }
+            ],
             'license': ['spdx:CC0-1.0'],
         }
         # Remove faked data that might conflict with the schema types
