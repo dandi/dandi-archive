@@ -116,7 +116,9 @@ def test_validate_asset_metadata_no_encoding_format(asset: Asset):
     asset.refresh_from_db()
 
     assert asset.status == Asset.Status.INVALID
-    assert asset.validation_errors == [{'field': 'encodingFormat', 'message': 'field required'}]
+    assert asset.validation_errors == [
+        {'field': '', 'message': "'encodingFormat' is a required property"}
+    ]
 
 
 @pytest.mark.django_db
@@ -145,7 +147,7 @@ def test_validate_asset_metadata_malformed_keywords(asset: Asset):
 
     assert asset.status == Asset.Status.INVALID
     assert asset.validation_errors == [
-        {'field': 'keywords', 'message': 'value is not a valid list'}
+        {'field': 'keywords', 'message': "'foo' is not of type 'array'"}
     ]
 
 
@@ -210,7 +212,9 @@ def test_validate_version_metadata_no_description(version: Version, asset: Asset
     version.refresh_from_db()
 
     assert version.status == Version.Status.INVALID
-    assert version.validation_errors == [{'field': 'description', 'message': 'field required'}]
+    assert version.validation_errors == [
+        {'field': '', 'message': "'description' is a required property"}
+    ]
 
 
 @pytest.mark.django_db
@@ -226,5 +230,5 @@ def test_validate_version_metadata_malformed_license(version: Version, asset: As
 
     assert version.status == Version.Status.INVALID
     assert version.validation_errors == [
-        {'field': 'license', 'message': 'value is not a valid list'}
+        {'field': 'license', 'message': "'foo' is not of type 'array'"}
     ]
