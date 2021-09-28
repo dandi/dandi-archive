@@ -75,17 +75,13 @@ def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> Dic
 def collect_validation_errors(
     error: dandischema.exceptions.ValidationError,
 ) -> List[Dict[str, str]]:
-    validation_errors = []
-    for error in error.errors:
-        if type(error) is dict:
-            # pydantic validation errors come in dicts
-            validation_errors.append(encode_pydantic_error(error))
-        else:
-            # The jsonschema validation errors are wrapped in an extra list
-            # We need to unwrap them before we can deal with them
-            error = error[0]
-            validation_errors.append(encode_jsonschema_error(error))
-    return validation_errors
+    if type(error) is dandischema.exceptions.PydanticValidationError:
+        encoder = encode_pydantic_error
+    elif type(error) is dandischema.exceptions.JsonschemaValidationError:
+        encoder = encode_jsonschema_error
+    else:
+        raise error
+    return [encoder(error) for error in error.errors]
 
 
 @shared_task
