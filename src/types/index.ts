@@ -67,13 +67,13 @@ export interface DandisetStats {
 export interface AssetStats {
   folder: boolean,
   name: string,
-  created: string|undefined,
-  modified: string|undefined,
-  size: number|undefined,
+  created?: string,
+  modified?: string,
+  size?: number,
 }
 
 export interface AssetFolder extends AssetStats {
-  num_files: number|undefined,
+  num_files?: number,
 }
 
 export interface AssetServices {
