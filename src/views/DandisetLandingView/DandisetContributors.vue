@@ -12,7 +12,7 @@
         >
           <a
             v-if="author.identifier"
-            :href="author.identifier"
+            :href="'https://orcid.org/' + author.identifier"
             target="_blank"
           >
             <img
