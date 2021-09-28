@@ -327,7 +327,7 @@ def test_version_rest_list(api_client, version):
                     'identifier': version.dandiset.identifier,
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
-                    'contact_person': '',
+                    'contact_person': version.metadata['contributor'][0]['name'],
                 },
                 'version': version.version,
                 'name': version.name,
@@ -360,7 +360,7 @@ def test_version_rest_info(api_client, version):
             'identifier': version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': version.metadata['contributor'][0]['name'],
         },
         'version': version.version,
         'name': version.name,
@@ -372,7 +372,7 @@ def test_version_rest_info(api_client, version):
         'status': 'Pending',
         'asset_validation_errors': [],
         'version_validation_errors': [],
-        'contact_person': '',
+        'contact_person': version.metadata['contributor'][0]['name'],
     }
 
 
@@ -414,7 +414,7 @@ def test_version_rest_info_with_asset(
             'identifier': version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': version.metadata['contributor'][0]['name'],
         },
         'version': version.version,
         'name': version.name,
@@ -426,7 +426,7 @@ def test_version_rest_info_with_asset(
         'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
         'asset_validation_errors': expected_validation_error,
         'version_validation_errors': [],
-        'contact_person': '',
+        'contact_person': version.metadata['contributor'][0]['name'],
     }
 
 
@@ -440,6 +440,13 @@ def test_version_rest_update(api_client, user, draft_version):
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
+        'contributor': [
+            {
+                'name': 'Bogart, Humphrey',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+            }
+        ],
         # This should be stripped out
         'dateCreated': 'foobar',
     }
@@ -473,7 +480,7 @@ def test_version_rest_update(api_client, user, draft_version):
             'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': 'Bogart, Humphrey',
         },
         'version': draft_version.version,
         'name': new_name,
@@ -485,7 +492,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'status': 'Pending',
         'asset_validation_errors': [],
         'version_validation_errors': [],
-        'contact_person': '',
+        'contact_person': 'Bogart, Humphrey',
     }
 
     # The version modified date should be updated
@@ -509,6 +516,13 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'num': 123,
         'list': ['a', 'b', 'c'],
         'very_large': 'words' * 10,
+        'contributor': [
+            {
+                'name': 'Vargas, Getúlio',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+            }
+        ],
     }
     year = datetime.now().year
     url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
@@ -540,7 +554,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
             'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': 'Vargas, Getúlio',
         },
         'version': draft_version.version,
         'name': new_name,
@@ -552,7 +566,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'status': 'Pending',
         'asset_validation_errors': [],
         'version_validation_errors': [],
-        'contact_person': '',
+        'contact_person': 'Vargas, Getúlio',
     }
 
     draft_version.refresh_from_db()
@@ -616,7 +630,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
             'identifier': draft_version.dandiset.identifier,
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
-            'contact_person': '',
+            'contact_person': draft_version.metadata['contributor'][0]['name'],
         },
         'version': VERSION_ID_RE,
         'name': draft_version.name,

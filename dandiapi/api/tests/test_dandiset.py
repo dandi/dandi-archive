@@ -63,10 +63,12 @@ def test_dandiset_versions(
     empty = dandiset_factory()
 
     # Dandiset with a draft version only.
-    draft = draft_version_factory().dandiset
+    draft_version = draft_version_factory()
+    draft = draft_version.dandiset
 
     # Dandiset with a published version only.
-    published = published_version_factory().dandiset
+    published_version = published_version_factory()
+    published = published_version.dandiset
 
     assert api_client.get('/api/dandisets/').data == {
         'count': 3,
@@ -85,7 +87,7 @@ def test_dandiset_versions(
                 'identifier': draft.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                'contact_person': '',
+                'contact_person': draft_version.metadata['contributor'][0]['name'],
                 'draft_version': {
                     'version': draft.draft_version.version,
                     'name': draft.draft_version.name,
@@ -98,17 +100,16 @@ def test_dandiset_versions(
                         'identifier': draft.identifier,
                         'created': TIMESTAMP_RE,
                         'modified': TIMESTAMP_RE,
-                        'contact_person': '',
+                        'contact_person': draft_version.metadata['contributor'][0]['name'],
                     },
                 },
                 'most_recent_published_version': None,
-                'contact_person': '',
             },
             {
                 'identifier': published.identifier,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                'contact_person': '',
+                'contact_person': published_version.metadata['contributor'][0]['name'],
                 'draft_version': None,
                 'most_recent_published_version': {
                     'version': published.most_recent_published_version.version,
@@ -122,7 +123,7 @@ def test_dandiset_versions(
                         'identifier': published.identifier,
                         'created': TIMESTAMP_RE,
                         'modified': TIMESTAMP_RE,
-                        'contact_person': '',
+                        'contact_person': published_version.metadata['contributor'][0]['name'],
                     },
                 },
             },

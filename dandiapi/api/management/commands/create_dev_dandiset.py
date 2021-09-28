@@ -23,6 +23,7 @@ def create_dev_dandiset(name: str, owner: str):
     # Create the draft version
     version_metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaKey': 'Dandiset',
         'description': 'An informative description',
         'license': ['spdx:CC0-1.0'],
         'contributor': [
@@ -59,6 +60,7 @@ def create_dev_dandiset(name: str, owner: str):
     asset_metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'text/plain',
+        'schemaKey': 'Asset',
     }
     asset = Asset(blob=asset_blob, metadata=asset_metadata, path='foo/bar.txt')
     asset.save()

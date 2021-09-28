@@ -53,7 +53,7 @@ class DandiMixin(ConfigMixin):
     # This is where the schema version should be set.
     # It can optionally be overwritten with the environment variable, but that should only be
     # considered a temporary fix.
-    DANDI_SCHEMA_VERSION = values.Value(default='0.5.2', environ=True)
+    DANDI_SCHEMA_VERSION = values.Value(default='0.6.0', environ=True)
 
     DANDI_DOI_API_URL = values.URLValue(environ=True)
     DANDI_DOI_API_USER = values.Value(environ=True)
