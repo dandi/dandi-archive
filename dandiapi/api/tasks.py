@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, List
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -72,6 +72,22 @@ def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> Dic
     return {'field': '.'.join([str(p) for p in error.path]), 'message': error.message}
 
 
+def collect_validation_errors(
+    error: dandischema.exceptions.ValidationError,
+) -> List[Dict[str, str]]:
+    validation_errors = []
+    for error in error.errors:
+        if type(error) is dict:
+            # pydantic validation errors come in dicts
+            validation_errors.append(encode_pydantic_error(error))
+        else:
+            # The jsonschema validation errors are wrapped in an extra list
+            # We need to unwrap them before we can deal with them
+            error = error[0]
+            validation_errors.append(encode_jsonschema_error(error))
+    return validation_errors
+
+
 @shared_task
 @atomic
 # This method takes both a version_id and an asset_id because asset metadata renders differently
@@ -90,16 +106,7 @@ def validate_asset_metadata(asset_id: int) -> None:
         logger.error('Error while validating asset %s', asset_id)
         asset.status = Asset.Status.INVALID
 
-        validation_errors = []
-        for error in e.errors:
-            if type(error) is dict:
-                # pydantic validation errors come in dicts
-                validation_errors.append(encode_pydantic_error(error))
-            else:
-                # The jsonschema validation errors are wrapped in an extra list
-                # We need to unwrap them before we can deal with them
-                error = error[0]
-                validation_errors.append(encode_jsonschema_error(error))
+        validation_errors = collect_validation_errors(e)
         asset.validation_errors = validation_errors
         asset.save()
         return
@@ -137,16 +144,7 @@ def validate_version_metadata(version_id: int) -> None:
         logger.error('Error while validating version %s', version_id)
         version.status = Version.Status.INVALID
 
-        validation_errors = []
-        for error in e.errors:
-            if type(error) is dict:
-                # pydantic validation errors come in dicts
-                validation_errors.append(encode_pydantic_error(error))
-            else:
-                # The jsonschema validation errors are wrapped in an extra list
-                # We need to unwrap them before we can deal with them
-                error = error[0]
-                validation_errors.append(encode_jsonschema_error(error))
+        validation_errors = collect_validation_errors(e)
         version.validation_errors = validation_errors
         version.save()
         return
