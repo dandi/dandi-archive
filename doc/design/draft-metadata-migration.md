@@ -6,7 +6,7 @@ server. Any other versions need to be migrated to this version for any display o
 
 This proposal only applies to the `schemaVersion` of dandiset metadata, not asset metadata.
 
-1. The API should provide `GET /dandisets/{dandiset_pk}/versions/{version}/migrated/` endpoint, which would return the migrated metadata of the version, and a description of changes and warnings.
+1. The API should provide `GET /dandisets/{dandiset_pk}/versions/{version}/migrated/` endpoint, which would return the metadata of the version after migrating it to the current schemaVersion, and a description of changes and warnings.
    For up to date metadata, this is obviously a no-op.
    The meditor would use this endpoint to fetch the draft metadata whenever it is opened, which ensures that editing a draft with out of date schema version will implicitly migrate it.
    This endpoint can also be used to get the metadata of published versions as if they were migrated.
