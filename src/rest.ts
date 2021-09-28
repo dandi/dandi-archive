@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import Vue from 'vue';
 import OAuthClient from '@girder/oauth-client';
 import {
-  Asset, Dandiset, Paginated, User, Version, Info,
+  Asset, Dandiset, Paginated, User, Version, Info, AssetFile, AssetFolder,
 } from '@/types';
 
 // Ensure contains trailing slash
@@ -99,8 +99,11 @@ const dandiRest = new Vue({
         throw error;
       }
     },
-    // TODO: define return type here
-    async assetPaths(identifier: string, version: string, location: string): Promise<any> {
+    async assetPaths(
+      identifier: string,
+      version: string,
+      location: string,
+    ): Promise<{ folders: AssetFolder[], files: AssetFile[] }> {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
