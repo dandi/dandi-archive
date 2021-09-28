@@ -32,24 +32,22 @@
   </v-menu>
 </template>
 
-<script>
-import { publishRest, user } from '@/rest';
+<script lang="ts">
+import { computed, defineComponent } from '@vue/composition-api';
+
+import { publishRest, user as userFunc } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
-export default {
+export default defineComponent({
   name: 'UserMenu',
   components: {
     ApiKeyItem,
   },
-  data() {
-    return {
-    };
-  },
-  computed: {
-    user,
-    userInitials() {
-      if (this.user) {
-        const { name } = this.user;
+  setup() {
+    const user = computed(userFunc);
+    const userInitials = computed(() => {
+      if (user.value) {
+        const { name } = user.value;
         if (name) {
           const name_parts = name.split(' ');
           if (name_parts.length >= 2) {
@@ -60,19 +58,18 @@ export default {
             );
           }
         }
-        // If first name + last name aren't specified, try to use the login instead
-        const { login } = this.user;
-        if (login) {
-          return login.slice(0, 2);
-        }
       }
       return '??';
-    },
-  },
-  methods: {
-    async logout() {
+    });
+
+    async function logout() {
       await publishRest.logout();
-    },
+    }
+
+    return {
+      userInitials,
+      logout,
+    };
   },
-};
+});
 </script>
