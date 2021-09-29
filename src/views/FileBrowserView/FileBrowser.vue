@@ -298,6 +298,8 @@ export default defineComponent({
       ];
     }
 
+    // Force the watcher  to run synchronously to prevent it from triggering itself infinitely
+    // when it modifies `updating`. If we were using Vue 3, we'd use watchSyncEffect instead
     watchEffect(async () => {
       updating.value = true;
       await getAssets();
