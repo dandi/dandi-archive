@@ -213,7 +213,7 @@ export default defineComponent({
   setup(props) {
     const { meta, schema } = props;
 
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
 
     const stats: ComputedRef<DandisetStats|null> = computed(() => {
       if (!currentDandiset.value) {
