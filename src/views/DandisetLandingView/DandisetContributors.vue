@@ -16,7 +16,7 @@
         >
           <a
             v-if="author.identifier"
-            :href="'https://orcid.org/' + author.identifier"
+            :href="author.identifier"
             target="_blank"
           >
             <img
