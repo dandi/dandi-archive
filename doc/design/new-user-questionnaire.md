@@ -13,6 +13,7 @@ Three new columns, `status`, `questionnaire_form`, and `rejection_reason` will b
 - /users/me needs to include the user's current status
 - A [Django group](https://docs.djangoproject.com/en/3.2/topics/auth/default/#groups), `approved_users`, will be created. Only users in this group will have access to protected endpoints.
 - Only approved users can create and edit dandisets.
+- /users/search endpoint will only return users in the `approved_users` group.
 
 ### Changes to frontend
 - Configuration so the frontend knows where to find SSR pages
