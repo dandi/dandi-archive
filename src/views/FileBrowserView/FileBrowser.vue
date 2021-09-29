@@ -262,7 +262,7 @@ export default defineComponent({
     const itemToDelete = ref(null);
     const updating = ref(false);
 
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const splitLocation = computed(() => location.value.split('/'));
 
     const items: Ref<AssetStats[]|null> = ref(null);
@@ -352,7 +352,7 @@ export default defineComponent({
     }
 
     if (!currentDandiset.value) {
-      store.dispatch.dandiset.fetchPublishDandiset({
+      store.dispatch.dandiset.fetchDandiset({
         identifier: props.identifier,
         version: props.version,
       });
