@@ -1,3 +1,7 @@
+/*####################################################################################
+# TODO: This is just a temporary stopgap until the contributors list is implemented  #
+# as seen in the DLP redesign. This component should be removed at that point.       #
+####################################################################################*/
 <template>
   <div>
     <v-row
@@ -42,16 +46,38 @@
 </template>
 
 <script lang="ts">
-import { DandisetContributors } from '@/types/schema';
 import { computed, ComputedRef, defineComponent } from '@vue/composition-api';
+
+import store from '@/store';
+import { DandisetContributors, Organization, Person } from '@/types/schema';
 
 export default defineComponent({
   name: 'DandisetContributors',
-  setup(props, ctx) {
-    const store = ctx.root.$store;
-    const contributors: ComputedRef<DandisetContributors> = computed(
-      () => store.state.dandiset.dandiset.metadata.contributor,
-    );
+  setup() {
+    const contributors: ComputedRef<DandisetContributors|null> = computed(() => {
+      const persons = store.state.dandiset.dandiset?.metadata?.contributor.filter((author: Person|Organization) => author.schemaKey === 'Person' && author.includeInCitation);
+      if (!persons) {
+        return null;
+      }
+      const authors: any = persons.map(
+        (author: Person|Organization, index: number) => {
+          let affiliations = '';
+          let orcid_id = author.identifier;
+          if ((author.affiliation as any)?.length) {
+            affiliations = (author.affiliation as any).map((a: any) => a.name).join(', ');
+          }
+          let author_name = author.name;
+          if (index < persons.length - 1) {
+            author_name = `${author.name};`;
+          }
+          if (orcid_id) {
+            orcid_id = `https://orcid.org/${orcid_id}`;
+          }
+          return { name: author_name, identifier: orcid_id, affiliation: affiliations };
+        },
+      );
+      return authors;
+    });
 
     return {
       contributors,
