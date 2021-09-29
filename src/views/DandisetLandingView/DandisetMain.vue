@@ -261,7 +261,9 @@ export default defineComponent({
       const contributorList = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
       if (contributorList.length) {
         extra_obj.contributor = contributorList;
-      } else extra_obj.contributor = 'No funding information available';
+      } else {
+        extra_obj.contributor = 'No funding information available';
+      }
       delete extra_obj.assetsSummary.schemaKey;
       delete extra_obj.assetsSummary.numberOfBytes;
       delete extra_obj.assetsSummary.numberOfFiles;
