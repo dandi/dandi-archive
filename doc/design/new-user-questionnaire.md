@@ -18,6 +18,8 @@ Three new columns, `status`, `questionnaire_form`, and `rejection_reason` will b
 ### Changes to frontend
 - Configuration so the frontend knows where to find SSR pages
 - User avatar circley thing needs to show user's current status
+   -  This will come in the form of a red notification dot with a popover explaining what actions the user needs to take to be approved. 
+   -  If an unverified user is logged in and tries to do something that requires verification (edit metadata, upload a new dandiset, etc.) then the appropriate button would be grayed out, with a popover message saying they need to be verified, and to either fill out the questionnaire or email the admins (depending on what steps they've completed so far).
 
 ### New views
 - SSR rendered pages for questionnaire form, pending approval page, rejected page, and admin approval page.
