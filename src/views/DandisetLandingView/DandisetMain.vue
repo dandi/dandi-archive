@@ -258,7 +258,12 @@ export default defineComponent({
       const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version', 'id', 'keywords', 'schemaKey'];
       extra = extra.filter((n) => !remove_list.includes(n));
       const extra_obj: any = extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
-      extra_obj.contributor = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
+      const contributorList = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
+      if (contributorList.length) {
+        extra_obj.contributor = contributorList;
+      } else {
+        extra_obj.contributor = 'No funding information available';
+      }
       delete extra_obj.assetsSummary.schemaKey;
       delete extra_obj.assetsSummary.numberOfBytes;
       delete extra_obj.assetsSummary.numberOfFiles;
