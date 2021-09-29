@@ -136,7 +136,7 @@ export default defineComponent({
   name: 'DownloadDialog',
   components: { CopyText },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const publishedVersions = computed(() => store.state.dandiset.versions);
     const currentVersion = computed(() => store.getters.dandiset.version);
 

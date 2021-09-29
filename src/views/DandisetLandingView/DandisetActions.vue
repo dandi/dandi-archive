@@ -140,7 +140,7 @@ export default defineComponent({
     ShareDialog,
   },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const currentVersion = computed(() => store.getters.dandiset.version);
 
     const fileBrowserLink: ComputedRef<Location|null> = computed(() => {

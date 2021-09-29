@@ -35,7 +35,7 @@
 <script lang="ts">
 import { computed, defineComponent } from '@vue/composition-api';
 
-import { publishRest, user as userFunc } from '@/rest';
+import { user as userFunc, dandiRest } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
 export default defineComponent({
@@ -63,7 +63,7 @@ export default defineComponent({
     });
 
     async function logout() {
-      await publishRest.logout();
+      await dandiRest.logout();
     }
 
     return {

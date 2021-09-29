@@ -35,7 +35,7 @@
 import { defineComponent, ref, computed } from '@vue/composition-api';
 import filesize from 'filesize';
 
-import { publishRest } from '@/rest';
+import { dandiRest } from '@/rest';
 import SingleStat from '@/views/HomeView/SingleStat.vue';
 
 export default defineComponent({
@@ -58,7 +58,7 @@ export default defineComponent({
     ]);
 
     // equivalent of async created method in options API
-    publishRest.stats().then((data) => {
+    dandiRest.stats().then((data) => {
       dandisets.value = data.dandiset_count;
       users.value = data.user_count;
       size.value = data.size;

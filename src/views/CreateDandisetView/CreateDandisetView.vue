@@ -41,7 +41,7 @@
 
 <script lang="ts">
 import { defineComponent, computed, ref } from '@vue/composition-api';
-import { publishRest, loggedIn } from '@/rest';
+import { dandiRest, loggedIn } from '@/rest';
 
 export default defineComponent({
   name: 'CreateDandisetView',
@@ -55,7 +55,7 @@ export default defineComponent({
     }
 
     async function registerDandiset() {
-      const { data } = await publishRest.createDandiset(name.value, description.value);
+      const { data } = await dandiRest.createDandiset(name.value, description.value);
       const { identifier } = data;
       ctx.root.$router.push({ name: 'dandisetLanding', params: { identifier } });
     }

@@ -245,7 +245,7 @@ import {
 
 import moment from 'moment';
 
-import { publishRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
+import { dandiRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
 import store from '@/store';
 import { User, Version } from '@/types';
 
@@ -282,7 +282,7 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
-    const currentDandiset = computed(() => store.state.dandiset.publishDandiset);
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const currentVersion = computed(() => store.getters.dandiset.version);
 
     const otherVersions: ComputedRef<Version[]|undefined> = computed(
@@ -355,7 +355,7 @@ export default defineComponent({
           },
         } as RawLocation);
 
-        store.dispatch.dandiset.fetchPublishDandiset({
+        store.dispatch.dandiset.fetchDandiset({
           identifier: currentDandiset.value?.dandiset.identifier,
           version: newVersion,
         });
@@ -364,7 +364,7 @@ export default defineComponent({
 
     async function publish() {
       if (currentDandiset.value) {
-        const version = await publishRest.publish(currentDandiset.value.dandiset.identifier);
+        const version = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
         // re-initialize the dataset to load the newly published version
         await store.dispatch.dandiset.initializeDandisets({
           identifier: currentDandiset.value?.dandiset.identifier,

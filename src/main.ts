@@ -21,7 +21,7 @@ import '@/title';
 import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
-import { publishRest } from '@/rest';
+import { dandiRest } from '@/rest';
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
@@ -38,7 +38,7 @@ Vue.use(VueGtag, {
 Vue.use(VueSocialSharing);
 
 async function loadUser() {
-  return publishRest.restoreLogin();
+  return dandiRest.restoreLogin();
 }
 
 loadUser().then(() => {
