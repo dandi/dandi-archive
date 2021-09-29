@@ -45,7 +45,7 @@ user hasn't filled out the questionnaire yet, the button will say "COMPLETE SIGN
 
 ### Proposed admin approval process
 1) A user signs up as described in steps 1-4 in the previous section.
-2) An email is sent to DANDI admins with a link to an SSR page that lists the user's info (name, email, GitHub account, etc) as well as their answers to the questionnaire. The page will contain two buttons - "APPROVE" or "REJECT" - and a textbox underneath the "REJECT" button entitled "Rejection Reason".
+2) An email is sent to DANDI admins with a link to an SSR page that lists the user's info (name, email, GitHub account, etc), their current `status`, as well as their answers to the questionnaire. The page will contain two buttons - "APPROVE" or "REJECT" - and a textbox underneath the "REJECT" button entitled "Rejection Reason".
 3)
     a) The admin decides to approve the user and clicks "APPROVE". This updates the user's `status` field to `APPROVED` and adds them to the `approved_users` group, granting them full access to DANDI.
     <br>
