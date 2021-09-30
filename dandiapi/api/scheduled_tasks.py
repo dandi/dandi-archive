@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.db.transaction import atomic
 
 from dandiapi.api.models import Version
-from dandiapi.api.tasks import write_manifest_files, validate_version_metadata
+from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 
 logger = get_task_logger(__name__)
 

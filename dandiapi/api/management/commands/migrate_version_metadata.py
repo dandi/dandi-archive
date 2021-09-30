@@ -3,7 +3,6 @@ from django.conf import settings
 import djclick as click
 
 from dandiapi.api.models import Version
-from dandiapi.api.tasks import validate_version_metadata
 
 
 @click.command()

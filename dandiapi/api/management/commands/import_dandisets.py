@@ -5,7 +5,6 @@ import djclick as click
 import requests
 
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.tasks import validate_version_metadata
 
 
 @transaction.atomic
