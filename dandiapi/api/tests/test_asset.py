@@ -300,6 +300,9 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     end_time = draft_version.modified
     assert start_time < end_time
 
+    # Adding an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
 
 @pytest.mark.django_db
 def test_asset_create_no_valid_blob(api_client, user, draft_version):
@@ -444,6 +447,9 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     end_time = draft_version.modified
     assert start_time < end_time
 
+    # Updating an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
 
 @pytest.mark.django_db
 def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
@@ -536,6 +542,9 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
     draft_version.refresh_from_db()
     end_time = draft_version.modified
     assert start_time < end_time
+
+    # Deleting an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
 
 
 @pytest.mark.django_db

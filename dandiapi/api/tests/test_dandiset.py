@@ -4,7 +4,7 @@ from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.models import Dandiset
+from dandiapi.api.models import Dandiset, Version
 
 from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE, UTC_ISO_TIMESTAMP_RE
 
@@ -225,6 +225,7 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
     assert dandiset.draft_version.name == name
+    assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
     year = datetime.now().year
@@ -311,6 +312,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
     assert dandiset.draft_version.name == name
+    assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
     year = datetime.now().year
@@ -411,6 +413,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     assert dandiset.most_recent_published_version is None
     assert dandiset.draft_version.version == 'draft'
     assert dandiset.draft_version.name == name
+    assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
     year = datetime.now().year
