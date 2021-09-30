@@ -1,6 +1,6 @@
 <template>
   <v-form
-    width="100vh"
+    style="width: 100vw;"
     @submit="performSearch"
   >
     <v-text-field

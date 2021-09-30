@@ -13,42 +13,43 @@
     </template>
     <template v-else>
       <v-toolbar class="grey darken-2 white--text">
-        <v-row>
-          <v-col cols="12">
-            <DandisetSearchField />
-          </v-col>
-        </v-row>
+        <DandisetSearchField />
       </v-toolbar>
       <v-container
         v-if="currentDandiset"
         fluid
-        class="grey lighten-4"
+        class="grey lighten-4 pa-0"
       >
         <v-progress-linear
           v-if="!currentDandiset || loading"
           indeterminate
         />
-        <v-row>
+        <v-row no-gutters>
           <v-col>
             <DandisetMain
               :schema="schema"
               :meta="meta"
-              :user-can-modify-dandiset="userCanModifyDandiset"
               @edit="edit = true"
             />
           </v-col>
           <v-col
             v-if="!$vuetify.breakpoint.smAndDown"
-            cols="3"
+            cols="2"
           >
-            <DandisetDetails />
+            <DandisetSidebar
+              :user-can-modify-dandiset="userCanModifyDandiset"
+              @edit="edit = true"
+            />
           </v-col>
         </v-row>
         <v-row v-if="$vuetify.breakpoint.smAndDown">
           <v-col
             cols="12"
           >
-            <DandisetDetails />
+            <DandisetSidebar
+              :user-can-modify-dandiset="userCanModifyDandiset"
+              @edit="edit = true"
+            />
           </v-col>
         </v-row>
       </v-container>
@@ -56,22 +57,28 @@
   </div>
 </template>
 
-<script>
-import { mapState } from 'vuex';
+<script lang="ts">
+import {
+  defineComponent, ref, computed, watchEffect, watch,
+} from '@vue/composition-api';
+import { RawLocation } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { publishRest, user } from '@/rest';
+import { user as userFunc } from '@/rest';
+import store from '@/store';
+import { Version } from '@/types';
+import { draftVersion } from '@/utils/constants';
 import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
-import DandisetDetails from './DandisetDetails.vue';
+import DandisetSidebar from './DandisetSidebar.vue';
 
-export default {
+export default defineComponent({
   name: 'DandisetLandingView',
   components: {
     Meditor,
     DandisetMain,
     DandisetSearchField,
-    DandisetDetails,
+    DandisetSidebar,
   },
   props: {
     identifier: {
@@ -84,89 +91,72 @@ export default {
       default: null,
     },
   },
-  data() {
-    return {
-      edit: false,
-      readonly: false,
-    };
-  },
-  computed: {
-    currentDandiset() {
-      return this.publishDandiset;
-    },
-    meta() {
-      if (this.publishDandiset) {
-        return this.publishDandiset.metadata;
-      }
+  setup(props, ctx) {
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
+    const loading = computed(() => store.state.dandiset.loading);
+    const schema = computed(() => store.state.dandiset.schema);
+    const userCanModifyDandiset = computed(() => store.getters.dandiset.userCanModifyDandiset);
 
-      return {};
-    },
-    ...mapState('dandiset', {
-      publishDandiset: (state) => state.publishDandiset,
-      loading: (state) => state.loading,
-      dandisetVersions: (state) => state.versions,
-      schema: (state) => state.schema,
-    }),
-    user,
-  },
-  asyncComputed: {
-    userCanModifyDandiset: {
-      async get() {
-        // published versions are never editable
-        if (this.publishDandiset?.metadata.version !== 'draft') {
-          return false;
-        }
+    const user = computed(userFunc);
+    const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
 
-        if (!this.user) {
-          return false;
-        }
+    const edit = ref(false);
+    const readonly = ref(false);
 
-        if (this.user.admin) {
-          return true;
-        }
-
-        const { identifier } = this.publishDandiset.dandiset;
-        const { data: owners } = await publishRest.owners(identifier);
-        const userExists = owners.find((owner) => owner.username === this.user.username);
-        return !!userExists;
-      },
-      default: false,
-    },
-  },
-  watch: {
-    identifier: {
-      immediate: true,
-      async handler(identifier) {
-        const { version } = this;
-        await this.$store.dispatch('dandiset/initializeDandisets', { identifier, version });
-        // TODO: check for invalid versions here
-      },
-    },
-    async version(version) {
-      // On version change, fetch the new dandiset (not initial)
-      const { identifier } = this;
-      await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier, version });
-      // If the above await call didn't result in publishDandiset being set, navigate to a default
-      if (!this.publishDandiset) {
-        // Omitting version will fetch the most recent version instead
-        await this.$store.dispatch('dandiset/fetchPublishDandiset', { identifier });
-        this.navigateToVersion(this.publishDandiset.version);
-      }
-    },
-  },
-  methods: {
-    navigateToVersion(version) {
-      if (this.$route.params.version === version) return;
+    function navigateToVersion(versionToNavigateTo: string) {
+      if (ctx.root.$route.params.version === versionToNavigateTo) return;
 
       const route = {
-        ...this.$route,
+        ...ctx.root.$route,
         params: {
-          ...this.$route.params,
-          version,
+          ...ctx.root.$route.params,
+          versionToNavigateTo,
         },
-      };
-      this.$router.replace(route);
-    },
+      } as RawLocation;
+      ctx.root.$router.replace(route);
+    }
+
+    // () => props.identifier is needed since we're using Vue 2
+    // https://stackoverflow.com/a/59127059
+    watch(() => props.identifier, async () => {
+      const { identifier, version } = props;
+      if (identifier) {
+        await store.dispatch.dandiset.initializeDandisets({ identifier, version });
+      }
+    }, { immediate: true });
+
+    watchEffect(async () => {
+      const { identifier, version } = props;
+      if (version) {
+      // On version change, fetch the new dandiset (not initial)
+        await store.dispatch.dandiset.fetchDandiset({ identifier, version });
+      } else {
+        await store.dispatch.dandiset.fetchDandiset({ identifier });
+      }
+      // If the above await call didn't result in dandiset being set, navigate to a default
+      if (!currentDandiset.value) {
+        // Omitting version will fetch the most recent version instead
+        await store.dispatch.dandiset.fetchDandiset({ identifier });
+
+        if (currentDandiset.value) {
+          navigateToVersion((currentDandiset.value as Version).version);
+        } else {
+          // if all else fails, navigate to the draft version
+          navigateToVersion(draftVersion);
+        }
+      }
+    });
+
+    return {
+      currentDandiset,
+      loading,
+      schema,
+      user,
+      userCanModifyDandiset,
+      edit,
+      readonly,
+      meta,
+    };
   },
-};
+});
 </script>

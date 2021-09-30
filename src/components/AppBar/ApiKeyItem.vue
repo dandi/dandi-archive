@@ -19,32 +19,32 @@
   </v-list-item>
 </template>
 
-<script>
-import CopyText from '@/components/CopyText.vue';
-import { publishRest } from '@/rest';
+<script lang="ts">
+import { defineComponent, ref } from '@vue/composition-api';
 
-export default {
+import CopyText from '@/components/CopyText.vue';
+import { dandiRest } from '@/rest';
+
+export default defineComponent({
   name: 'ApiKeyItem',
-  components: {
-    CopyText,
-  },
-  data() {
+  components: { CopyText },
+  setup() {
+    const apiKey = ref('');
+
+    async function fetchApiKey() {
+      apiKey.value = await dandiRest.getApiKey();
+    }
+    async function refreshApiKey() {
+      apiKey.value = await dandiRest.newApiKey();
+    }
+
+    // fetch API key when component is created
+    fetchApiKey();
+
     return {
-      apiKey: null,
+      apiKey,
+      refreshApiKey,
     };
   },
-  created() {
-    this.fetchApiKey();
-  },
-  methods: {
-    // gets the logged-in user's existing API key (and creates one if it doesn't exist)
-    async fetchApiKey() {
-      this.apiKey = await publishRest.getApiKey();
-    },
-    // gets a new API key for the logged-in user and deletes the old one
-    async refreshApiKey() {
-      this.apiKey = await publishRest.newApiKey();
-    },
-  },
-};
+});
 </script>

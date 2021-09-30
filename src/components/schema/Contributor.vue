@@ -1,6 +1,9 @@
 <template>
   <div>
-    <v-expansion-panels>
+    <template v-if="isString">
+      {{ data }}
+    </template>
+    <v-expansion-panels v-else>
       <template v-for="contributor in data">
         <v-expansion-panel :key="contributor.name">
           <v-expansion-panel-header>{{ contributor.name }}</v-expansion-panel-header>
@@ -34,6 +37,11 @@ export default {
       // The data at the matching level of schema
       type: [Object, Number, String, Array],
       required: true,
+    },
+  },
+  computed: {
+    isString() {
+      return typeof this.data === 'string';
     },
   },
 };

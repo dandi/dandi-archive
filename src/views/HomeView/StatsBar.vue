@@ -31,40 +31,42 @@
   </v-container>
 </template>
 
-<script>
-import { publishRest } from '@/rest';
+<script lang="ts">
+import { defineComponent, ref, computed } from '@vue/composition-api';
 import filesize from 'filesize';
+
+import { dandiRest } from '@/rest';
 import SingleStat from '@/views/HomeView/SingleStat.vue';
 
-export default {
+export default defineComponent({
   name: 'StatsBar',
   components: { SingleStat },
-  data() {
+  setup() {
+    const dandisets = ref(0);
+    const users = ref(0);
+    const size = ref(0);
+
+    const stats = computed(() => [
+      {
+        name: 'dandisets',
+        value: dandisets.value,
+        description: 'A DANDI dataset including files and dataset-level metadata',
+        href: '/#/dandiset',
+      },
+      { name: 'users', value: users.value },
+      { name: 'total data size', value: filesize(size.value, { round: 0, base: 10, standard: 'iec' }) },
+    ]);
+
+    // equivalent of async created method in options API
+    dandiRest.stats().then((data) => {
+      dandisets.value = data.dandiset_count;
+      users.value = data.user_count;
+      size.value = data.size;
+    });
+
     return {
-      dandisets: 0,
-      users: 0,
-      size: 0,
+      stats,
     };
   },
-  computed: {
-    stats() {
-      return [
-        {
-          name: 'dandisets',
-          value: this.dandisets,
-          description: 'A DANDI dataset including files and dataset-level metadata',
-          href: '/#/dandiset',
-        },
-        { name: 'users', value: this.users },
-        { name: 'total data size', value: filesize(this.size, { round: 0, base: 10, standard: 'iec' }) },
-      ];
-    },
-  },
-  async created() {
-    const data = await publishRest.stats();
-    this.dandisets = data.dandiset_count;
-    this.users = data.user_count;
-    this.size = data.size;
-  },
-};
+});
 </script>
