@@ -48,7 +48,8 @@ def calculate_sha256(blob_id: int) -> None:
 
     # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
     for asset in asset_blob.assets.all():
-        validate_asset_metadata.delay(asset.id)
+        # validate_asset_metadata runs very quickly, no need to delay it
+        validate_asset_metadata(asset.id)
 
 
 @shared_task
