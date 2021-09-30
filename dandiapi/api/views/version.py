@@ -82,9 +82,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         version.name = name
         version.metadata = metadata
+        version.status = Version.Status.PENDING
         version.save()
-
-        validate_version_metadata.delay(version.id)
 
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)

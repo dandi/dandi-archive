@@ -201,11 +201,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         asset.save()
         version.assets.add(asset)
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        validate_version_metadata.delay(version.id)
 
         # Trigger an asset metadata validation immediately
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
@@ -282,11 +281,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 version.assets.add(new_asset)
                 version.assets.remove(old_asset)
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        validate_version_metadata.delay(version.id)
 
         # Trigger an asset metadata validation
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
@@ -321,11 +319,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         version.assets.remove(asset)
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        validate_version_metadata.delay(version.id)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 

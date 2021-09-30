@@ -27,13 +27,10 @@ def import_versions_from_response(api_url: str, version_api_response: dict, dand
             name=result['name'],
             version=result['version'],
             doi=result.get('doi'),
-            status=result['status'],
+            status=Version.Status.PENDING,
             metadata=metadata,
         )
         version.save()
-
-        # validate the metadata after the transaction is commmited
-        transaction.on_commit(lambda: validate_version_metadata.delay(version.id))
 
     # Handle API pagination
     if version_api_response.get('next'):

@@ -171,10 +171,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         assign_perm('owner', request.user, dandiset)
 
         # Create new draft version
-        version = Version(dandiset=dandiset, name=name, metadata=metadata, version='draft')
+        version = Version(
+            dandiset=dandiset,
+            name=name,
+            metadata=metadata,
+            version='draft',
+            status=Version.Status.PENDING,
+        )
         version.save()
-
-        validate_version_metadata.delay(version.id)
 
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
