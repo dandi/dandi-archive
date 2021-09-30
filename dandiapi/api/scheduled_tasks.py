@@ -34,5 +34,5 @@ def validate_draft_version_metadata():
 
 def register_scheduled_tasks(sender, **kwargs):
     """Register tasks with a celery beat schedule."""
-    # Check for any draft versions that need validation every 2 minutes
-    sender.add_periodic_task(crontab(minute='*/2'), validate_draft_version_metadata.s())
+    # Check for any draft versions that need validation every minute
+    sender.add_periodic_task(crontab(), validate_draft_version_metadata.s())
