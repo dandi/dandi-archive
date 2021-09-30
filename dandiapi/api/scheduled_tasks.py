@@ -3,10 +3,11 @@ Define and register any scheduled celery tasks.
 
 This module is imported from celery.py in a post-app-load hook.
 """
+from datetime import timedelta
 
 from celery import shared_task
-from celery.schedules import crontab
 from celery.utils.log import get_task_logger
+from django.conf import settings
 from django.db.transaction import atomic
 
 from dandiapi.api.models import Version
@@ -35,4 +36,7 @@ def validate_draft_version_metadata():
 def register_scheduled_tasks(sender, **kwargs):
     """Register tasks with a celery beat schedule."""
     # Check for any draft versions that need validation every minute
-    sender.add_periodic_task(crontab(), validate_draft_version_metadata.s())
+    sender.add_periodic_task(
+        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
+        validate_draft_version_metadata.s(),
+    )
