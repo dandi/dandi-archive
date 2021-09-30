@@ -51,7 +51,7 @@
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
-            File Size <strong>{{ filesize(stats.size, { round: 1, base: 10, standard: 'iec' }) }}</strong>
+            File Size <strong>{{ stats.size }}</strong>
           </span>
         </v-col>
       </v-row>
@@ -220,7 +220,7 @@ export default defineComponent({
         return null;
       }
       const { asset_count, size } = currentDandiset.value;
-      return { asset_count, size };
+      return { asset_count, filesize(size, { round: 1, base: 10, standard: 'iec' }) };
     });
 
     // whether or not the "see more" button has been pressed to reveal
