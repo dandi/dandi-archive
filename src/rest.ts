@@ -103,7 +103,7 @@ const dandiRest = new Vue({
       identifier: string,
       version: string,
       location: string,
-    ): Promise<{ folders: AssetFolder[], files: AssetFile[] }> {
+    ): Promise<{ folders: Record<string, AssetFolder>, files: Record<string, AssetFile> }> {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {

@@ -270,27 +270,31 @@ export default defineComponent({
     async function getAssets() {
       const { version, identifier } = props;
 
-      const data = await dandiRest.assetPaths(identifier, version, location.value);
+      const { files, folders } = await dandiRest.assetPaths(identifier, version, location.value);
       owners.value = (await dandiRest.owners(identifier)).data
         .map((x) => x.username);
 
       items.value = [
         ...location.value !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
-        ...Object.keys(data.folders).map(
-          (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
+        ...Object.keys(folders).map(
+          (key: string) => ({ ...folders[key], name: `${key}/`, folder: true }),
         ).sort(sortByName),
-        ...Object.keys(data.files).map(
+        ...Object.keys(files).map(
           (key) => {
-            const { asset_id, size } = data.files[key];
+            const file = files[key];
             return {
-              ...data.files[key],
+              ...file,
               name: key,
               folder: false,
               services: EXTERNAL_SERVICES
-                .filter((service) => new RegExp(service.regex).test(key) && size <= service.maxsize)
+                .filter(
+                  (service) => file?.size
+                  && new RegExp(service.regex).test(key)
+                  && file.size <= service.maxsize,
+                )
                 .map((service) => ({
                   name: service.name,
-                  url: `${service.endpoint}${dandiRest.assetDownloadURI(identifier, version, asset_id)}`,
+                  url: `${service.endpoint}${dandiRest.assetDownloadURI(identifier, version, file?.asset_id || '')}`,
                 })),
             };
           },
