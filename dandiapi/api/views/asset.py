@@ -26,7 +26,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadata
+from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     PATH_PREFIX_PARAM,
@@ -201,16 +201,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         asset.save()
         version.assets.add(asset)
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
 
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        validate_version_metadata.delay(version.id)
-
-        # Trigger an asset metadata validation
+        # Trigger an asset metadata validation immediately
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
         # just in case we are using an existing blob that has already computed its digest.
-        validate_asset_metadata.delay(asset.id)
+        # We do not bother to delay it because it should run very quickly.
+        validate_asset_metadata(asset.id)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -281,16 +281,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 version.assets.add(new_asset)
                 version.assets.remove(old_asset)
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        validate_version_metadata.delay(version.id)
 
         # Trigger an asset metadata validation
         # This will fail if the digest hasn't been calculated yet, but we still need to try now
         # just in case we are using an existing blob that has already computed its digest.
-        validate_asset_metadata.delay(new_asset.id)
+        # We do not bother to delay it because it should run very quickly.
+        validate_asset_metadata(new_asset.id)
 
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -319,11 +319,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
         version.assets.remove(asset)
 
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        validate_version_metadata.delay(version.id)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 

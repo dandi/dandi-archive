@@ -22,7 +22,6 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.tasks import validate_version_metadata
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     DandisetDetailSerializer,
@@ -171,10 +170,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         assign_perm('owner', request.user, dandiset)
 
         # Create new draft version
-        version = Version(dandiset=dandiset, name=name, metadata=metadata, version='draft')
+        version = Version(
+            dandiset=dandiset,
+            name=name,
+            metadata=metadata,
+            version='draft',
+            status=Version.Status.PENDING,
+        )
         version.save()
-
-        validate_version_metadata.delay(version.id)
 
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -61,6 +61,8 @@ class DandiMixin(ConfigMixin):
     DANDI_DOI_API_PREFIX = values.Value(environ=True)
     DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
 
+    DANDI_VALIDATION_JOB_INTERVAL = values.IntegerValue(environ=True, default=60)
+
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
 

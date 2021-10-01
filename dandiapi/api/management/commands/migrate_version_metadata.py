@@ -3,7 +3,6 @@ from django.conf import settings
 import djclick as click
 
 from dandiapi.api.models import Version
-from dandiapi.api.tasks import validate_version_metadata
 
 
 @click.command()
@@ -25,7 +24,7 @@ def migrate_version_metadata(to_version: str):
             print(e)
             continue
 
-        version.metadata = metanew
-        version.save()
-
-        validate_version_metadata.delay(version.id)
+        if version.metadata != metanew:
+            version.metadata = metanew
+            version.status = Version.Status.PENDING
+            version.save()
