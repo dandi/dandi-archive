@@ -19,18 +19,18 @@ logger = get_task_logger(__name__)
 @shared_task
 @atomic
 def validate_draft_version_metadata():
-    logger.info('Checking for draft versions that need validation')
     # Select only the id of draft versions that have status PENDING
     pending_draft_versions = (
         Version.objects.filter(status=Version.Status.PENDING).filter(version='draft').values('id')
     )
-    logger.info('Found %s versions to validate', pending_draft_versions.count())
-    for draft_version in pending_draft_versions:
-        validate_version_metadata.delay(draft_version['id'])
+    if pending_draft_versions.count() > 0:
+        logger.info('Found %s versions to validate', pending_draft_versions.count())
+        for draft_version in pending_draft_versions:
+            validate_version_metadata.delay(draft_version['id'])
 
-        # Revalidation should be triggered every time a version is modified,
-        # so now is a good time to write out the manifests as well.
-        write_manifest_files.delay(draft_version['id'])
+            # Revalidation should be triggered every time a version is modified,
+            # so now is a good time to write out the manifests as well.
+            write_manifest_files.delay(draft_version['id'])
 
 
 def register_scheduled_tasks(sender, **kwargs):
