@@ -218,7 +218,7 @@ import { AssetStats } from '@/types';
 const parentDirectory = '..';
 const rootDirectory = '';
 
-const sortByName = (a: any, b: any) => {
+const sortByName = (a: AssetStats, b: AssetStats) => {
   if (a.name > b.name) {
     return 1;
   }
