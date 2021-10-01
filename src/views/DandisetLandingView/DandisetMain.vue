@@ -51,7 +51,7 @@
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
-            File Size <strong>{{ filesize(stats.size) }}</strong>
+            File Size <strong>{{ transformFilesize(stats.size) }}</strong>
           </span>
         </v-col>
       </v-row>
@@ -215,6 +215,8 @@ export default defineComponent({
 
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
 
+    const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
+
     const stats: ComputedRef<DandisetStats|null> = computed(() => {
       if (!currentDandiset.value) {
         return null;
@@ -292,7 +294,7 @@ export default defineComponent({
       currentDandiset,
       formatDate,
       stats,
-      filesize,
+      transformFilesize,
       description,
       showFullDescription,
       MAX_DESCRIPTION_LENGTH,
