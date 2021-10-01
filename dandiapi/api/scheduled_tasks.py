@@ -30,7 +30,7 @@ def validate_draft_version_metadata():
 
         # Revalidation should be triggered every time a version is modified,
         # so now is a good time to write out the manifests as well.
-        write_manifest_files.delay(draft_version.id)
+        write_manifest_files.delay(draft_version['id'])
 
 
 def register_scheduled_tasks(sender, **kwargs):
