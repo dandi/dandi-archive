@@ -39,7 +39,14 @@
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
-            Contact <strong>{{ currentDandiset.contact_person }}</strong>
+            <template
+              v-if="['', ','].includes(currentDandiset.contact_person.trim())"
+            >
+              No contact information
+            </template>
+            <template v-else>
+              Contact <strong>{{ currentDandiset.contact_person }}</strong>
+            </template>
           </span>
         </v-col>
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
