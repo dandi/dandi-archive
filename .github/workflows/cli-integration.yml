@@ -85,3 +85,18 @@ jobs:
         run: |
           python -m pytest -s -v --dandi-api \
             "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
+        env:
+          DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
+
+      - name: Dump Docker Compose logs
+        if: failure()
+        run: |
+          docker-compose \
+            -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
+            logs --timestamps
+
+      - name: Shut down Docker Compose
+        run: |
+          docker-compose \
+            -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
+            down -v
