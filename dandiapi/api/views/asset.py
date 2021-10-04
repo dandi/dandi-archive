@@ -353,7 +353,9 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         (to refer to the root folder) must be the empty string.
         """
         path_prefix: str = self.request.query_params.get('path_prefix') or ''
-        qs = self.get_queryset().select_related('blob').filter(path__startswith=path_prefix)
+        qs = self.paginate_queryset(
+            self.get_queryset().select_related('blob').filter(path__startswith=path_prefix)
+        )
 
         folders = {}
         files = {}
@@ -385,6 +387,6 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                     entry['modified'] = max(entry['modified'], asset.modified)  # latest
 
         paths = AssetPathsSerializer({'folders': folders, 'files': files})
-        return Response(paths.data)
+        return self.get_paginated_response(paths.data)
 
     # TODO: add create to forge an asset from a validation
