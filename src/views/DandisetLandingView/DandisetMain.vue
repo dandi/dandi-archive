@@ -40,7 +40,7 @@
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
             <template
-              v-if="['', ','].includes(currentDandiset.contact_person.trim())"
+              v-if="!currentDandiset.contact_person"
             >
               No contact information
             </template>
