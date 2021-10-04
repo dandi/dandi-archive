@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
-    "@girder/components": "~2.2.5",
     "@girder/oauth-client": "^0.7.7",
     "@koumoul/vjsf": "^2.5.2",
     "@sentry/browser": "^6.3.6",
@@ -28,7 +27,6 @@
     "vue": "^2.6.11",
     "vue-cookie-law": "^1.13.3",
     "vue-gtag": "^1.16.1",
-    "vue-json-pretty": "^1.8.0",
     "vue-router": "^3.5.1",
     "vue-social-sharing": "^3.0.8",
     "vuetify": "~2.3.6",
