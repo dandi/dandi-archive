@@ -1,11 +1,22 @@
 from django.contrib import admin
-from girder_utils.admin import ReadonlyTabularInline
+from django.contrib.admin.options import TabularInline
+from django.forms.models import BaseInlineFormSet
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
 
 
-class VersionInline(ReadonlyTabularInline):
+class LimitedFormset(BaseInlineFormSet):
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs[:10]
+
+
+class LimitedTabularInline(TabularInline):
+    formset = LimitedFormset
+
+
+class VersionInline(LimitedTabularInline):
     model = Version
     fields = ['version', 'name', 'status']
 
@@ -17,7 +28,7 @@ class DandisetAdmin(GuardedModelAdmin):
     inlines = [VersionInline]
 
 
-class AssetInline(admin.TabularInline):
+class AssetInline(LimitedTabularInline):
     model = Asset.versions.through
 
 
@@ -34,7 +45,7 @@ class AssetBlobAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'blob_id']
 
 
-class AssetBlobInline(admin.TabularInline):
+class AssetBlobInline(LimitedTabularInline):
     model = AssetBlob
 
 
