@@ -207,13 +207,14 @@
 <script lang="ts">
 import filesize from 'filesize';
 import {
-  defineComponent, computed, ref, watchEffect, Ref,
+  defineComponent, computed, ref, watchEffect, Ref, watch,
 } from '@vue/composition-api';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
 import { draftVersion } from '@/utils/constants';
 import { AssetStats } from '@/types';
+import { RawLocation } from 'vue-router';
 
 const parentDirectory = '..';
 const rootDirectory = '';
@@ -256,7 +257,12 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props) {
+  setup(props, ctx) {
+    // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
+    // https://next.router.vuejs.org/api/#useroute
+    const route = ctx.root.$route;
+    const router = ctx.root.$router;
+
     const location = ref(rootDirectory);
     const owners: Ref<string[]> = ref([]);
     const itemToDelete = ref(null);
@@ -309,6 +315,27 @@ export default defineComponent({
       await getAssets();
       updating.value = false;
     }, { flush: 'sync' });
+
+    watch(location, () => {
+      const { location: existingLocation } = route.query;
+      // Update route when location changes
+      if (existingLocation === location.value) { return; }
+      router.push({
+        ...route,
+        query: { location: location.value },
+      } as RawLocation);
+    });
+
+    watch(items, () => {
+      if (items.value && !items.value.length) {
+        // If the API call returns no items, go back to the root (shouldn't normally happen)
+        location.value = rootDirectory;
+      }
+    });
+
+    watch(() => route, () => {
+      location.value = route.query.location as string || rootDirectory;
+    }, { immediate: true });
 
     function downloadURI(asset_id: string): string {
       return dandiRest.assetDownloadURI(props.identifier, props.version, asset_id);
