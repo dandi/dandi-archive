@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.contrib.admin.options import TabularInline
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 from django.forms.models import BaseInlineFormSet
 from guardian.admin import GuardedModelAdmin
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, UserMetadata, Version
 
 
 class LimitedFormset(BaseInlineFormSet):
@@ -71,3 +73,11 @@ class AssetAdmin(admin.ModelAdmin):
 class UploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
     list_display_links = ['id', 'upload_id']
+
+
+class UserMetadataInline(TabularInline):
+    model = UserMetadata
+    fields = ['status', 'questionnaire_form', 'rejection_reason']
+
+
+UserAdmin.inlines = [UserMetadataInline]
