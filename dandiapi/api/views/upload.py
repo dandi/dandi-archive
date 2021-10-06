@@ -10,12 +10,12 @@ from rest_framework import serializers, status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
 
 from dandiapi.api.models import AssetBlob, Upload
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
@@ -104,7 +104,7 @@ def blob_read_view(request: Request) -> HttpResponseBase:
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def upload_initialize_view(request: Request) -> HttpResponseBase:
     """
     Initialize a multipart upload.
@@ -149,7 +149,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
@@ -192,7 +192,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
     """
     Verify that an upload completed successfully and mint a new AssetBlob.

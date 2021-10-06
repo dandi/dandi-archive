@@ -7,9 +7,9 @@ from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from dandiapi.api.permissions import IsApproved
 
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
@@ -50,7 +50,7 @@ def social_account_to_dict(social_account: SocialAccount):
 )
 @api_view(['GET'])
 @parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def users_me_view(request: Request) -> HttpResponseBase:
     """Get the currently authenticated user."""
     if request.user.socialaccount_set.count() == 1:
@@ -69,7 +69,7 @@ def users_me_view(request: Request) -> HttpResponseBase:
 )
 @api_view(['GET'])
 @parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def users_search_view(request: Request) -> HttpResponseBase:
     """Search for a user."""
     request_serializer = UserSerializer(data=request.query_params)

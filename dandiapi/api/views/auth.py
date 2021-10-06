@@ -5,9 +5,10 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from dandiapi.api.permissions import IsApproved
 
 
 @swagger_auto_schema(
@@ -15,7 +16,7 @@ from rest_framework.response import Response
     responses={200: 'The user token'},
 )
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def auth_token_view(request: Request) -> HttpResponseBase:
     if request.method == 'GET':
         token = get_object_or_404(Token, user=request.user)

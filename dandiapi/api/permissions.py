@@ -1,0 +1,29 @@
+from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
+
+from dandiapi.api.models.user import UserMetadata
+
+
+class IsApproved(IsAuthenticated):
+    def has_permission(self, request, view):
+        return bool(
+            super().has_permission(request, view)
+            and (
+                request.user.is_superuser
+                or request.user.metadata.status == UserMetadata.Status.APPROVED
+            )
+        )
+
+
+class IsApprovedOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.method in SAFE_METHODS
+            or (
+                request.user
+                and request.user.is_authenticated
+                and (
+                    request.user.is_superuser
+                    or request.user.metadata.status == UserMetadata.Status.APPROVED
+                )
+            )
+        )

@@ -3,13 +3,13 @@ from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api import doi
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import delete_doi_task, write_manifest_files
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -23,7 +23,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     queryset = Version.objects.all().select_related('dandiset').order_by('created')
     queryset_detail = queryset
 
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = VersionSerializer
     serializer_detail_class = VersionDetailSerializer
     pagination_class = DandiPagination
