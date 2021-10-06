@@ -72,7 +72,7 @@ If `.checksum` already exists, it is updated with the new file+ETag and the fina
 
 The API server then recursively travels up another level and creates `/zarr_checksums/foobar/1/2/.checksum`.
 This `.checksum` will contain an entry for the directory `3` and the final checksum from `3/.checksum`.
-This recursion continues all the way to the top, yielding a `/zarr/checksums/foobar/.checksum` file which contains an aggregated checksum for the entire zarr file.
+This recursion continues all the way to the top, yielding a `/zarr_checksums/foobar/.checksum` file which contains an aggregated checksum for the entire zarr file.
 
 ### .checksum file format
 
