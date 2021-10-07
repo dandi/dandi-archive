@@ -52,9 +52,9 @@
         <td>{{ upload.id }}</td>
         <td>{{ upload.upload_id }}</td>
         <td>{{ upload.size }}</td>
-        <td>{% if upload.exists %} {{ upload.actual_size }} {% else %} Doesn't exist {% endif %}</td>
+        <td>{% if upload.object_key_exists %} {{ upload.actual_size }} {% else %} Doesn't exist {% endif %}</td>
         <td>{{ upload.etag }}</td>
-        <td>{% if upload.exists %} {{ upload.actual_etag }} {% else %} Doesn't exist {% endif %}</td>
+        <td>{% if upload.object_key_exists %} {{ upload.actual_etag }} {% else %} Doesn't exist {% endif %}</td>
         <td>{{ upload.created }}</td>
         <td>{{ upload.modified }}</td>
       </tr>
