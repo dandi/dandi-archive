@@ -59,10 +59,10 @@
     {% endif %}
   </div>
 
-  {% if non_valid_assets %}
   <div>
     <h1>Non-valid Assets</h1>
     <p>There are currently {{ non_valid_asset_count }} Assets that are not valid.</p>
+    {% if non_valid_assets %}
     <table>
       <caption>
         Some Assets that are not valid
@@ -71,7 +71,7 @@
         <tr>
           <td>ID</td>
           <td>Asset ID</td>
-          <td>Asset Path</td>
+          <td>Path</td>
           <td>Status</td>
           <td>Validation Errors</td>
           <td>Metadata</td>
@@ -100,10 +100,8 @@
       </tr>
       {% endfor %}
     </table>
+    {% endif %}
   </div>
-  {% else %}
-  <div>No invalid assets to show!</div>
-  {% endif %}
 
 </div>
 {% endblock %}
