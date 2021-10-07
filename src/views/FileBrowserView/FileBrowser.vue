@@ -260,7 +260,7 @@ export default defineComponent({
   setup(props, ctx) {
     // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
     // https://next.router.vuejs.org/api/#useroute
-    const route = computed(() => ctx.root.$route);
+    const route = ctx.root.$route;
     const router = ctx.root.$router;
 
     const location = ref(rootDirectory);
@@ -317,11 +317,11 @@ export default defineComponent({
     }, { flush: 'sync' });
 
     watch(location, () => {
-      const { location: existingLocation } = route.value.query;
+      const { location: existingLocation } = route.query;
       // Update route when location changes
       if (existingLocation === location.value) { return; }
       router.push({
-        ...route.value,
+        ...route,
         query: { location: location.value },
       } as RawLocation);
     });
@@ -333,8 +333,8 @@ export default defineComponent({
       }
     });
 
-    watch(route, () => {
-      location.value = route.value.query.location as string || rootDirectory;
+    watch(() => route, () => {
+      location.value = route.query.location as string || rootDirectory;
     }, { immediate: true });
 
     function downloadURI(asset_id: string): string {
