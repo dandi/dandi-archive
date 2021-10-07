@@ -87,7 +87,7 @@
             indeterminate
           />
           <v-divider v-else />
-          <v-list>
+          <v-list v-if="!updating">
             <v-list-item
               v-for="item in items"
               :key="item.name"
@@ -207,7 +207,7 @@
 <script lang="ts">
 import filesize from 'filesize';
 import {
-  defineComponent, computed, ref, watchEffect, Ref, watch,
+  defineComponent, computed, ref, Ref, watch,
 } from '@vue/composition-api';
 
 import { dandiRest } from '@/rest';
@@ -308,14 +308,6 @@ export default defineComponent({
       ];
     }
 
-    // Force the watcher  to run synchronously to prevent it from triggering itself infinitely
-    // when it modifies `updating`. If we were using Vue 3, we'd use watchSyncEffect instead
-    watchEffect(async () => {
-      updating.value = true;
-      await getAssets();
-      updating.value = false;
-    }, { flush: 'sync' });
-
     watch(location, () => {
       const { location: existingLocation } = route.value.query;
       // Update route when location changes
@@ -333,8 +325,11 @@ export default defineComponent({
       }
     });
 
-    watch(route, () => {
+    watch(route, async () => {
       location.value = route.value.query.location as string || rootDirectory;
+      updating.value = true;
+      await getAssets();
+      updating.value = false;
     }, { immediate: true });
 
     function downloadURI(asset_id: string): string {
