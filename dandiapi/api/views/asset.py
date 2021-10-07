@@ -197,6 +197,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             path=path,
             blob=asset_blob,
             metadata=metadata,
+            status=Asset.Status.PENDING,
         )
         asset.save()
         version.assets.add(asset)
@@ -206,11 +207,15 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        # Trigger an asset metadata validation immediately
-        # This will fail if the digest hasn't been calculated yet, but we still need to try now
-        # just in case we are using an existing blob that has already computed its digest.
-        # We do not bother to delay it because it should run very quickly.
-        validate_asset_metadata(asset.id)
+        # Refresh the blob to be sure the sha256 values is up to date
+        asset.blob.refresh_from_db()
+        # If the blob is still waiting to have it's checksum calculated, there's no point in
+        # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+        # calculated, it will revalidate this asset.
+        # If the blob already has a sha256, then the asset metadata is ready to validate.
+        if asset.blob.sha256 is not None:
+            # We do not bother to delay it because it should run very quickly.
+            validate_asset_metadata(asset.id)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -274,6 +279,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                     blob=asset_blob,
                     metadata=metadata,
                     previous=old_asset,
+                    status=Asset.Status.PENDING,
                 )
                 new_asset.save()
 
@@ -286,11 +292,15 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        # Trigger an asset metadata validation
-        # This will fail if the digest hasn't been calculated yet, but we still need to try now
-        # just in case we are using an existing blob that has already computed its digest.
-        # We do not bother to delay it because it should run very quickly.
-        validate_asset_metadata(new_asset.id)
+        # Refresh the blob to be sure the sha256 values is up to date
+        new_asset.blob.refresh_from_db()
+        # If the blob is still waiting to have it's checksum calculated, there's no point in
+        # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+        # calculated, it will revalidate this asset.
+        # If the blob already has a sha256, then the asset metadata is ready to validate.
+        if new_asset.blob.sha256 is not None:
+            # We do not bother to delay it because it should run very quickly.
+            validate_asset_metadata(new_asset.id)
 
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
