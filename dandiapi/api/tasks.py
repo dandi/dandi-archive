@@ -30,7 +30,7 @@ from dandischema.metadata import validate
 logger = get_task_logger(__name__)
 
 
-@shared_task
+@shared_task(queue='calculate_sha256')
 @atomic
 def calculate_sha256(blob_id: int) -> None:
     logger.info('Starting sha256 calculation for blob %s', blob_id)
