@@ -2,7 +2,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, OuterRef, Q
 from django.views.generic.base import TemplateView
 
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Upload, Version
 
 
 class DashboardView(TemplateView):
@@ -17,6 +17,9 @@ class DashboardView(TemplateView):
         non_valid_assets = self._non_valid_assets()
         context['non_valid_asset_count'] = non_valid_assets.count()
         context['non_valid_assets'] = non_valid_assets[:10]
+        uploads = self._uploads()
+        context['upload_count'] = uploads.count()
+        context['uploads'] = uploads[:10]
 
         return context
 
@@ -46,3 +49,6 @@ class DashboardView(TemplateView):
             .filter(has_version=True)
             .filter(~Q(status=Asset.Status.VALID))
         )
+
+    def _uploads(self):
+        return Upload.objects.annotate()
