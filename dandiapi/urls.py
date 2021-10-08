@@ -6,6 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
+from dandiapi.api.dashboard import DashboardView
 from dandiapi.api.views import (
     AssetViewSet,
     DandisetViewSet,
@@ -98,6 +99,7 @@ urlpatterns = [
     path('api/users/search/', users_search_view),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
+    path('dashboard/', DashboardView.as_view()),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

@@ -1,0 +1,115 @@
+{% extends "admin/base.html" %}
+
+{% block title %} Data Dashboard {% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <div>
+    <h1>Orphaned Assets</h1>
+    <p>There are currently {{ orphaned_asset_count }} Assets with no associated Versions.</p>
+    {% if orphaned_asset_count %}
+    <p>They can be cleaned up with the collect_garbage script.</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <h1>Orphaned AssetBlobs</h1>
+    <p>There are currently {{ orphaned_asset_blob_count }} AssetBlobs with no associated Assets.</p>
+    {% if orphaned_asset_blob_count %}
+    <p>They can be cleaned up with the collect_garbage script.</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <h1>Orphaned Uploads</h1>
+    <p>There are currently {{ upload_count }} Uploads.</p>
+    {% if uploads %}
+    <p>They may simply be very recent and currently uploading, or they might be abandoned.</p>
+    <table>
+      <caption>
+        Some Uploads
+      </caption>
+      <thead>
+        <tr>
+          <td>ID</td>
+          <td>Upload ID</td>
+          <td>Size (reported)</td>
+          <td>Size (actual)</td>
+          <td>ETag (reported)</td>
+          <td>ETag (actual)</td>
+          <td>Created</td>
+          <td>Modified</td>
+        </tr>
+      </thead>
+      {% for upload in uploads %}
+      <tr>
+        <td>{{ upload.id }}</td>
+        <td>{{ upload.upload_id }}</td>
+        <td>{{ upload.size }}</td>
+        <td>{% if upload.object_key_exists %} {{ upload.actual_size }} {% else %} Doesn't exist {% endif %}</td>
+        <td>{{ upload.etag }}</td>
+        <td>{% if upload.object_key_exists %} {{ upload.actual_etag }} {% else %} Doesn't exist {% endif %}</td>
+        <td>{{ upload.created }}</td>
+        <td>{{ upload.modified }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+  </div>
+
+  <div>
+    <h1>Non-valid Assets</h1>
+    <p>There are currently {{ non_valid_asset_count }} Assets that are not valid.</p>
+    {% if non_valid_assets %}
+    <table>
+      <caption>
+        Some Assets that are not valid
+      </caption>
+      <thead>
+        <tr>
+          <td>ID</td>
+          <td>Asset ID</td>
+          <td>Path</td>
+          <td>Status</td>
+          <td>Validation Errors</td>
+          <td>Metadata</td>
+          <td>Blob ID</td>
+          <td>Size</td>
+          <td>SHA256</td>
+          <td>Versions</td>
+          <td>Created</td>
+          <td>Modified</td>
+        </tr>
+      </thead>
+      {% for asset in non_valid_assets %}
+      <tr>
+        <td>{{ asset.id }}</td>
+        <td>{{ asset.asset_id }}</td>
+        <td>{{ asset.path }}</td>
+        <td>{{ asset.status }}</td>
+        <td>{{ asset.validation_errors }}</td>
+        <td>{{ asset.metadata }}</td>
+        <td>{{ asset.blob.blob_id }}</td>
+        <td>{{ asset.size }}</td>
+        <td>{{ asset.blob.sha256 }}</td>
+        <td>
+          {% for version in asset.versions.all %}
+          {{ version.dandiset.identifier }}/{{ version.version }},
+          {% endfor %}
+        </td>
+        <td>{{ asset.created }}</td>
+        <td>{{ asset.modified }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
