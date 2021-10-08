@@ -12,6 +12,7 @@ services:
     image: rabbitmq:management
     ports:
       - ${DOCKER_RABBITMQ_PORT-5672}:5672
+      - ${DOCKER_RABBITMQ_CONSOLE_PORT-15672}:15672
 
   minio:
     image: minio/minio:latest
