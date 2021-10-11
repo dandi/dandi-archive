@@ -2,6 +2,7 @@
 There are several kinds of data that exist without being included in a dandiset, meaning they are simply taking up space in the system.
 These data should be cleaned up automatically after some time.
 
+# Data types
 ## Uploads
 As part of the multipart upload process, an `Upload` database record is created to track the status of the upload.
 `Upload`s can be orphaned when a client aborts the upload process before creating an `AssetBlob` from the `Upload`.
@@ -40,3 +41,12 @@ Identifying problematic objects requires iterating over every blob in the archiv
 Orphaned S3 objects should not be cleaned up automatically, as they are likely a symptom of a bug.
 Instead, they should be investigated manually as they occurr.
 There should be a scheduled job that runs and reports orphaned blobs somewhere, either throwing an exception to be reported in Sentry, or be saving some data somewhere to be displayed in the admin data dashboard.
+
+# Implementation
+All of these garbage collection operations should be added to the `collect_garbage` script.
+
+The actual implementation of these operations should be added to `dandiapi.api.garbage`.
+
+After thoroughly testing the script by hand in staging/production, a Celery Beat task should be created that checks for stale data nightly.
+
+All of these numbers should be available in the admin data dashboard so that we can independently verify that the scheduled task is working correctly.
