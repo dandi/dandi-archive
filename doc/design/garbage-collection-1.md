@@ -32,15 +32,15 @@ Unreferenced `Asset`s should be removed after 30 days, just in case a user accid
 
 ## S3 objects
 Hypothetically, we might at some point encounter a desynchronization between objects stored in S3 and references stored in the database.
-Specifically, we should clean up any blobs stored in S3 that do not have corresponding `AssetBlob`s.
-Dealing with `AssetBlob`s that don't have an S3 object is likely to be a case of data loss, and isn't really a garbage collection operation.
+We should identify up any objects stored in S3 that do not have corresponding `AssetBlob`s.
+We should also identify and `AssetBlob`s that do not have corresponding objects in S3.
 
 Deleting the blobs is an easy API call.
 Identifying problematic objects requires iterating over every blob in the archive, which would take a while.
 
-Orphaned S3 objects should not be cleaned up automatically, as they are likely a symptom of a bug.
-Instead, they should be investigated manually as they occurr.
-There should be a scheduled job that runs and reports orphaned blobs somewhere, either throwing an exception to be reported in Sentry, or be saving some data somewhere to be displayed in the admin data dashboard.
+Orphaned data should not be cleaned up automatically, as they are likely a symptom of a bug.
+Instead, they should be investigated manually as they occur.
+There should be a scheduled job that runs and reports orphaned data somewhere, either throwing an exception to be reported in Sentry, or be saving some data somewhere to be displayed in the admin data dashboard.
 
 # Implementation
 All of these garbage collection operations should be added to the `collect_garbage` script.
