@@ -1,6 +1,7 @@
 import logging
 
 from allauth.socialaccount.models import SocialAccount
+from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
@@ -118,6 +119,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Only inject a schemaVersion and default contributor field if they are
         # not specified in the metadata
         metadata = {
+            'schemaKey': 'Dandiset',
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'contributor': [
                 {
@@ -131,6 +133,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             ],
             **metadata,
         }
+        # Run the metadata through the pydantic model to automatically include any boilerplate
+        # like the access or repository fields
+        metadata = PydanticDandiset.unvalidated(**metadata).json_dict()
 
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
