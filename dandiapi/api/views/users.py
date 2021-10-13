@@ -32,7 +32,7 @@ def user_to_dict(user: User):
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
         'status': user.metadata.status,
-        'created': user.created,
+        'created': user.date_joined,
     }
 
 
@@ -90,7 +90,9 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     # Perform a search, excluding any inactive users
     social_accounts = SocialAccount.objects.filter(
-        extra_data__icontains=username, user__is_active=True
+        extra_data__icontains=username,
+        user__is_active=True,
+        user__metadata__status=UserMetadata.Status.APPROVED,
     )[:10]
     users = [social_account_to_dict(social_account) for social_account in social_accounts]
 
@@ -105,6 +107,7 @@ def users_search_view(request: Request) -> HttpResponseBase:
             for user in User.objects.filter(username__icontains=username).filter(
                 ~Q(username='AnonymousUser'),
                 is_active=True,
+                metadata__status=UserMetadata.Status.APPROVED,
             )[:10]
         ]
 
