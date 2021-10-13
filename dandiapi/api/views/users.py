@@ -3,14 +3,21 @@ from __future__ import annotations
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.http.response import HttpResponseBase
+from django.http import HttpRequest, HttpResponse
+from django.http.response import HttpResponseBase, HttpResponseRedirect
+from django.shortcuts import render
+from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 from drf_yasg.utils import swagger_auto_schema
+from oauth2_provider.views.base import AuthorizationView
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import JSONParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from dandiapi.api.permissions import IsApproved
 
+from dandiapi.api.models import UserMetadata
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
 
@@ -24,6 +31,7 @@ def user_to_dict(user: User):
         'admin': user.is_superuser,
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
+        'status': user.metadata.status,
     }
 
 
@@ -41,6 +49,7 @@ def social_account_to_dict(social_account: SocialAccount):
         'admin': user.is_superuser,
         'username': username,
         'name': name,
+        'status': user.metadata.status,
     }
 
 
@@ -50,7 +59,7 @@ def social_account_to_dict(social_account: SocialAccount):
 )
 @api_view(['GET'])
 @parser_classes([JSONParser])
-@permission_classes([IsApproved])
+@permission_classes([IsAuthenticated])
 def users_me_view(request: Request) -> HttpResponseBase:
     """Get the currently authenticated user."""
     if request.user.socialaccount_set.count() == 1:
@@ -98,3 +107,52 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     response_serializer = UserDetailSerializer(users, many=True)
     return Response(response_serializer.data)
+
+
+@require_http_methods(['GET'])
+def authorize_view(request: HttpRequest) -> HttpResponse:
+    """Override authorization endpoint to handle user questionnaire."""
+    user: User = request.user
+    if (
+        user.is_authenticated
+        and not user.is_superuser
+        and user.metadata.status == UserMetadata.Status.INCOMPLETE
+    ):
+        # send user to questionnaire if they haven't filled it out yet
+        return HttpResponseRedirect(
+            f'{reverse("user-questionnaire")}' f'?{request.META["QUERY_STRING"]}'
+        )
+    # otherwise, continue with normal authorization workflow
+    return AuthorizationView.as_view()(request)
+
+
+QUESTIONS = [
+    'First Name',
+    'Last Name',
+    'What do you plan to use DANDI for?',
+    'Please list any affiliations you have.',
+]
+
+
+@swagger_auto_schema()
+@api_view(['GET', 'POST'])
+@require_http_methods(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
+    if request.method == 'POST':
+        user_metadata: UserMetadata = request.user.metadata
+        user_metadata.questionnaire_form = {}
+        req_body = request.POST.dict()
+        for question in QUESTIONS:
+            user_metadata.questionnaire_form[question] = req_body[question]
+        user_metadata.status = UserMetadata.Status.PENDING
+        user_metadata.save()
+        # pass on OAuth query string params to auth endpoint
+        return HttpResponseRedirect(
+            f'{reverse("authorize").rstrip("/")}/?{request.META["QUERY_STRING"]}'
+        )
+    return render(
+        request,
+        'api/account/questionnaire_form.html',
+        {'questions': QUESTIONS, 'query_params': request.GET.dict()},
+    )

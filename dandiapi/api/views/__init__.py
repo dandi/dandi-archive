@@ -9,13 +9,14 @@ from .upload import (
     upload_initialize_view,
     upload_validate_view,
 )
-from .users import users_me_view, users_search_view
+from .users import authorize_view, user_questionnaire_form_view, users_me_view, users_search_view
 from .version import VersionViewSet
 
 __all__ = [
     'AssetViewSet',
     'DandisetViewSet',
     'VersionViewSet',
+    'authorize_view',
     'asset_download_view',
     'asset_metadata_view',
     'auth_token_view',
@@ -24,6 +25,7 @@ __all__ = [
     'upload_complete_view',
     'upload_validate_view',
     'users_me_view',
+    'user_questionnaire_form_view',
     'users_search_view',
     'stats_view',
     'info_view',

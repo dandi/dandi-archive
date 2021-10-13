@@ -1,0 +1,26 @@
+{% extends 'api/account/base.html' %}
+
+{% block body %}
+  <h5>Welcome to DANDI! Please take a moment to fill out this form.</h5>
+  <form method="POST">
+    {% csrf_token %}
+    {{ form }}
+    <div class="row">
+      <div class="col m6 offset-m3 s12 ">
+        {% for question in questions %}
+          <div class="input-field">
+            <input name="{{ question }}" type="text">
+            <label class="active" for="name">{{ question }}</label>
+          </div>
+        {% endfor %}
+        {% for name, value in query_params.items %}
+          <input type="hidden" name="{{ name }}" value="{{ value }}">
+        {% endfor %}
+        <button id="btn" class="btn waves-effect waves-light" type="submit">
+          <span>Submit</span>
+          <i class="material-icons right">send</i>
+        </button>
+      </div>
+    </div>
+  </form>
+{% endblock body %}

@@ -14,12 +14,14 @@ from dandiapi.api.views import (
     asset_download_view,
     asset_metadata_view,
     auth_token_view,
+    authorize_view,
     blob_read_view,
     info_view,
     stats_view,
     upload_complete_view,
     upload_initialize_view,
     upload_validate_view,
+    user_questionnaire_form_view,
     users_me_view,
     users_search_view,
 )
@@ -97,9 +99,15 @@ urlpatterns = [
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),
+    re_path(
+        r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
+    ),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view()),
+    # this url overrides the authorize url in oauth2_provider.urls to
+    # support our user signup workflow
+    re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
