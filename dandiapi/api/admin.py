@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.options import TabularInline
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
 from django.forms.models import BaseInlineFormSet
 from guardian.admin import GuardedModelAdmin
 
