@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from dandiapi.api.mail import send_registered_notice_email
+from dandiapi.api.models import UserMetadata
 
 
 @receiver(check_request_enabled, dispatch_uid='cors_allow_anyone_read_only')
@@ -23,6 +24,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 @receiver(user_signed_up)
 def user_signed_up_listener(sender, user, **kwargs):
-    """Send a registration notice email whenever a user signs up."""
+    """Send a registration notice email and create UserMetadata whenever a user signs up."""
+    UserMetadata.objects.create(user=user)
     for socialaccount in user.socialaccount_set.all():
         send_registered_notice_email(user, socialaccount)
