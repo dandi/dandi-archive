@@ -84,6 +84,7 @@
     <div v-if="!insideIFrame">
       <template v-if="loggedIn">
         <v-btn
+          :disabled="!approved"
           :to="{ name: 'createDandiset' }"
           exact
           class="mx-3"
@@ -141,6 +142,8 @@ export default defineComponent({
       return JSON.stringify({ name, query, params });
     });
 
+    const approved = computed(() => dandiRest.user?.status === 'APPROVED');
+
     const cookiesEnabled = computed(cookiesEnabledFunc);
     const loggedIn = computed(loggedInFunc);
     const insideIFrame = computed(insideIFrameFunc);
@@ -187,6 +190,7 @@ export default defineComponent({
       cookiesEnabled,
       insideIFrame,
       loggedIn,
+      approved,
     };
   },
 });
