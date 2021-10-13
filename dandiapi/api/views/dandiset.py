@@ -118,6 +118,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Only inject a schemaVersion and default contributor field if they are
         # not specified in the metadata
         metadata = {
+            'schemaKey': 'Dandiset',
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'contributor': [
                 {
