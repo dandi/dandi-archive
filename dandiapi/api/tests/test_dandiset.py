@@ -248,6 +248,8 @@ def test_dandiset_rest_create(api_client, user):
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
+        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
+        'repository': 'https://dandiarchive.org/',
         'contributor': [
             {
                 'name': 'Doe, John',
@@ -336,6 +338,8 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
+        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
+        'repository': 'https://dandiarchive.org/',
         'contributor': [
             {
                 'name': 'Doe, John',
@@ -437,6 +441,8 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
+        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
+        'repository': 'https://dandiarchive.org/',
         'contributor': [
             {
                 'name': 'Jane Doe',
