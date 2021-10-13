@@ -32,6 +32,7 @@ def user_to_dict(user: User):
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
         'status': user.metadata.status,
+        'created': user.created,
     }
 
 
@@ -44,12 +45,14 @@ def social_account_to_dict(social_account: SocialAccount):
     # We are assuming that login is a required field for GitHub users
     username = social_account.extra_data['login']
     name = social_account.extra_data.get('name') or name
+    created = social_account.extra_data.get('created_at')
 
     return {
         'admin': user.is_superuser,
         'username': username,
         'name': name,
         'status': user.metadata.status,
+        'created': created,
     }
 
 
