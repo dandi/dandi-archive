@@ -51,7 +51,7 @@
               network="twitter"
               :url="permalink"
               :title="meta.name"
-              :hashtags="hashtags"
+              :twitter-user="twitterUser"
             >
               <v-icon
                 class="mr-1"
@@ -75,8 +75,8 @@ import CopyText from '@/components/CopyText.vue';
 import store from '@/store';
 import { dandiUrl } from '@/utils/constants';
 
-// comma-delimited string of hashtags to be used in twitter share
-const hashtags = 'dandi';
+// Twitter user to mention
+const twitterUser = 'DANDIarchive';
 
 export default defineComponent({
   name: 'ShareDialog',
@@ -101,7 +101,7 @@ export default defineComponent({
     const dialog = ref(false);
 
     return {
-      dialog, hashtags, meta, permalink,
+      dialog, twitterUser, meta, permalink,
     };
   },
 });
