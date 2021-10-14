@@ -6,7 +6,8 @@ from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
 
-from dandiapi.api.models import Asset, AssetBlob, Upload, Version
+from dandiapi.api.mail import send_approved_user_message
+from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
 
 
@@ -65,6 +66,7 @@ def user_approval_view(request, username: str):
         raise PermissionDenied()
 
     user = User.objects.filter(username=username).select_related('metadata').first()
+    social_account = user.socialaccount_set.first()
 
     if user is None:
         raise Http404('User not found')
@@ -76,7 +78,8 @@ def user_approval_view(request, username: str):
             user.metadata.rejection_reason = req_body.get('rejection_reason')
         user.metadata.save()
 
-    social_account = user.socialaccount_set.first()
+        if user.metadata.status == UserMetadata.Status.APPROVED:
+            send_approved_user_message(user, social_account)
 
     return render(
         request,
