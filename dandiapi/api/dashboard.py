@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
 
-from dandiapi.api.mail import send_approved_user_message
+from dandiapi.api.mail import send_approved_user_message, send_rejected_user_message
 from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
 
@@ -80,6 +80,8 @@ def user_approval_view(request, username: str):
 
         if user.metadata.status == UserMetadata.Status.APPROVED:
             send_approved_user_message(user, social_account)
+        elif user.metadata.status == UserMetadata.Status.REJECTED:
+            send_rejected_user_message(user, social_account)
 
     return render(
         request,

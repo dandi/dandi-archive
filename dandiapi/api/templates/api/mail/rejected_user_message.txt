@@ -1,0 +1,13 @@
+Dear {{ name }} (Github ID: {{ github_id }}),
+
+Your DANDI account has been denied approval.
+{% if rejection_reason %}
+    Reason:
+    {{ rejection_reason }}
+{% endif %}
+
+If you would like to appeal this decision, please contact the DANDI admins at help@dandiarchive.org.
+
+Sincerely,
+
+The DANDI team

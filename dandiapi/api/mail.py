@@ -101,3 +101,37 @@ def send_approved_user_message(user: User, socialaccount: SocialAccount):
     messages = [build_approved_user_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
+
+
+def build_rejected_user_message(user: User, socialaccount: SocialAccount = None):
+    # import here to avoid circular dependency
+    from dandiapi.api.views.users import social_account_to_dict, user_to_dict
+
+    logger.info(f'Sending rejected user message to {user}')
+    if socialaccount is None:
+        native_user = user_to_dict(user)
+        render_context = {
+            'name': native_user['name'],
+            'github_id': None,
+            'rejection_reason': user.metadata.rejection_reason,
+        }
+    else:
+        social_user = social_account_to_dict(user)
+        render_context = {
+            'name': social_user['name'],
+            'github_id': social_user['username'],
+            'rejection_reason': user.metadata.rejection_reason,
+        }
+    return build_message(
+        subject='Your DANDI Account',
+        message=render_to_string('api/mail/rejected_user_message.txt', render_context),
+        to=[user.email],
+        html_message=render_to_string('api/mail/rejected_user_message.html', render_context),
+    )
+
+
+def send_rejected_user_message(user: User, socialaccount: SocialAccount):
+    logger.info(f'Sending rejected user message to {user}')
+    messages = [build_rejected_user_message(user, socialaccount)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
