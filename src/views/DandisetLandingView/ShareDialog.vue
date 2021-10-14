@@ -32,19 +32,8 @@
         {{ meta.name }}
       </v-card-title>
       <v-card-text>
-        <div>
-          <span
-            v-for="author in meta.contributor"
-            :key="author.name + author.identifier"
-            class="text-body-1"
-          >
-            {{ author.name }}
-          </span>
-        </div>
-      </v-card-text>
-      <v-card-text>
         <span class="font-weight-black">
-          Share this dandiset:
+          Share this dandiset with this link:
         </span>
         <CopyText
           class="pa-2"
