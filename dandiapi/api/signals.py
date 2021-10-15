@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
-from dandiapi.api.mail import send_registered_notice_email
+from dandiapi.api.mail import send_new_user_message_email, send_registered_notice_email
 from dandiapi.api.models import UserMetadata
 
 
@@ -28,3 +28,4 @@ def user_signed_up_listener(sender, user, **kwargs):
     UserMetadata.objects.create(user=user)
     for socialaccount in user.socialaccount_set.all():
         send_registered_notice_email(user, socialaccount)
+        send_new_user_message_email(user, socialaccount)

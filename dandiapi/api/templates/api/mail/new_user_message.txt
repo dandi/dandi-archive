@@ -1,0 +1,5 @@
+A new user ({{ username }}) has signed up for DANDI.
+
+Please proceed to the following URL to approve or reject their account:
+
+https://api.dandiarchive.org/dashboard/{{ username }}
