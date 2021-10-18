@@ -85,8 +85,8 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
 
 
 def send_new_user_message_email(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending registration message to {user}')
-    messages = [build_registered_message(user, socialaccount)]
+    logger.info(f'Sending new user message for {user} to admins')
+    messages = [build_new_user_messsage(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
 
@@ -103,7 +103,7 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
             'github_id': None,
         }
     else:
-        social_user = social_account_to_dict(user)
+        social_user = social_account_to_dict(socialaccount)
         render_context = {
             'name': social_user['name'],
             'github_id': social_user['username'],
@@ -136,7 +136,7 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
             'rejection_reason': user.metadata.rejection_reason,
         }
     else:
-        social_user = social_account_to_dict(user)
+        social_user = social_account_to_dict(socialaccount)
         render_context = {
             'name': social_user['name'],
             'github_id': social_user['username'],
