@@ -2,12 +2,15 @@ from allauth.account.signals import user_signed_up
 from django.contrib.auth.models import User
 import pytest
 
+from dandiapi.api.models import UserMetadata
+
 
 def serialize_social_account(social_account):
     return {
         'username': social_account.extra_data['login'],
         'name': social_account.extra_data['name'],
         'admin': social_account.user.is_superuser,
+        'status': social_account.user.metadata.status,
     }
 
 
@@ -19,11 +22,17 @@ def test_user_registration_email(social_account, mailoutbox):
     # This is hard to emulate, so we just send the signal manually.
     user_signed_up.send(sender=User, user=user)
 
-    assert len(mailoutbox) == 1
+    assert len(mailoutbox) == 2
 
     email = mailoutbox[0]
     assert email.subject == f'DANDI: New user registered: {user.email}'
     assert email.to == ['dandi@mit.edu', user.email]
+    assert '<p>' not in email.body
+    assert all(len(_) < 100 for _ in email.body.splitlines())
+
+    email = mailoutbox[1]
+    assert email.subject == f'DANDI: New user registration to review: {user.username}'
+    assert email.to == ['dandi@mit.edu']
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
@@ -45,6 +54,7 @@ def test_user_me(api_client, social_account):
 def test_user_me_admin(api_client, admin_user, social_account_factory):
     api_client.force_authenticate(user=admin_user)
     social_account = social_account_factory(user=admin_user)
+    UserMetadata.objects.create(user=admin_user)
 
     assert (
         api_client.get(
