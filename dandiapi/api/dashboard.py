@@ -1,8 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, OuterRef, Q
-from django.http.response import Http404
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
 
@@ -65,11 +64,8 @@ def user_approval_view(request, username: str):
     if not request.user.is_superuser:
         raise PermissionDenied()
 
-    user = User.objects.filter(username=username).select_related('metadata').first()
+    user = get_object_or_404(User.objects.select_related('metadata'), username=username)
     social_account = user.socialaccount_set.first()
-
-    if user is None:
-        raise Http404('User not found')
 
     if request.method == 'POST':
         req_body = request.POST.dict()
