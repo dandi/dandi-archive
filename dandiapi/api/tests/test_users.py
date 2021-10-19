@@ -1,5 +1,3 @@
-from allauth.account.signals import user_signed_up
-from django.contrib.auth.models import User
 import pytest
 
 from dandiapi.api.models import UserMetadata
@@ -19,9 +17,11 @@ def serialize_social_account(social_account):
 def test_user_registration_email(social_account, mailoutbox, api_client):
     user = social_account.user
     api_client.force_authenticate(user=user)
-    api_client.post('/api/users/questionnaire-form/', {
-        question: f'answer_{i}' for i, question in enumerate(QUESTIONS)
-    }, format='json')
+    api_client.post(
+        '/api/users/questionnaire-form/',
+        {question: f'answer_{i}' for i, question in enumerate(QUESTIONS)},
+        format='json',
+    )
 
     assert len(mailoutbox) == 2
 
