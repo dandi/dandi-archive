@@ -123,9 +123,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     def get_queryset(self):
         sortfield = self.request.query_params.get('sort', 'created')
         if sortfield not in ('created', 'modified', 'path'):
-            sortfield = 'created'
-        if self.request.query_params.get('direction', None) == 'desc':
+            raise ValidationError(
+                f"Invalid sort field {sortfield!r}; valid values are 'created',"
+                " 'modified', and 'path'"
+            )
+        sortdir = self.request.query_params.get('direction', 'asc')
+        if sortdir == 'desc':
             sortfield = f'-{sortfield}'
+        elif sortdir != 'asc':
+            raise ValidationError(
+                f"Invalid sort direction {sortdir!r}; valid values are 'asc' and 'desc'"
+            )
         return Asset.objects.all().order_by(sortfield)
 
     @swagger_auto_schema(
