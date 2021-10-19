@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 import pytest
 
 from dandiapi.api.models import UserMetadata
+from dandiapi.api.views.users import QUESTIONS
 
 
 def serialize_social_account(social_account):
@@ -15,12 +16,12 @@ def serialize_social_account(social_account):
 
 
 @pytest.mark.django_db
-def test_user_registration_email(social_account, mailoutbox):
+def test_user_registration_email(social_account, mailoutbox, api_client):
     user = social_account.user
-
-    # The sign up signal is only sent when the user registers through an API call.
-    # This is hard to emulate, so we just send the signal manually.
-    user_signed_up.send(sender=User, user=user)
+    api_client.force_authenticate(user=user)
+    api_client.post('/api/users/questionnaire-form/', {
+        question: f'answer_{i}' for i, question in enumerate(QUESTIONS)
+    }, format='json')
 
     assert len(mailoutbox) == 2
 

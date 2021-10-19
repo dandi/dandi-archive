@@ -153,7 +153,7 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         user_metadata.questionnaire_form = {}
         req_body = request.POST.dict()
         for question in QUESTIONS:
-            user_metadata.questionnaire_form[question] = req_body[question]
+            user_metadata.questionnaire_form[question] = req_body.get(question)
         user_metadata.status = UserMetadata.Status.PENDING
         user_metadata.save()
 
