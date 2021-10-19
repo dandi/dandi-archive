@@ -109,8 +109,6 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
-    queryset = Asset.objects.all().order_by('created')
-
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
@@ -121,6 +119,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    def get_queryset(self):
+        sortfield = self.request.query_params.get('sort', 'created')
+        if sortfield not in ('created', 'modified', 'path'):
+            sortfield = 'created'
+        if self.request.query_params.get('direction', None) == 'desc':
+            sortfield = f'-{sortfield}'
+        return Asset.objects.all().order_by(sortfield)
 
     @swagger_auto_schema(
         responses={
