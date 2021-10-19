@@ -134,10 +134,10 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
 
 
 QUESTIONS = [
-    'First Name',
-    'Last Name',
-    'What do you plan to use DANDI for?',
-    'Please list any affiliations you have.',
+    {'question': 'First Name', 'max_length': 100},
+    {'question': 'Last Name', 'max_length': 100},
+    {'question': 'What do you plan to use DANDI for?', 'max_length': 1000},
+    {'question': 'Please list any affiliations you have.', 'max_length': 1000},
 ]
 
 
@@ -153,7 +153,9 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         user_metadata.questionnaire_form = {}
         req_body = request.POST.dict()
         for question in QUESTIONS:
-            user_metadata.questionnaire_form[question] = req_body.get(question)
+            user_metadata.questionnaire_form[question['question']] = req_body.get(
+                question['question']
+            )[: question['max_length']]
         user_metadata.status = UserMetadata.Status.PENDING
         user_metadata.save()
 

@@ -2,25 +2,51 @@
 
 {% block body %}
   <h5>Welcome to DANDI! Please take a moment to fill out this form.</h5>
-  <form method="POST">
+  <form method="POST" class="col s12">
     {% csrf_token %}
     {{ form }}
     <div class="row">
-      <div class="col m6 offset-m3 s12 ">
+      <div class="col m6 offset-m3 s12">
         {% for question in questions %}
           <div class="input-field">
-            <input name="{{ question }}" type="text">
-            <label class="active" for="name">{{ question }}</label>
+            <input id="{{ question.question }}" name="{{ question.question }}" type="text" data-length="{{ question.max_length }}" class="validate">
+            <label class="active" for="{{ question.question }}">{{ question.question }}</label>
           </div>
         {% endfor %}
         {% for name, value in query_params.items %}
           <input type="hidden" name="{{ name }}" value="{{ value }}">
         {% endfor %}
-        <button id="btn" class="btn waves-effect waves-light blue" type="submit">
+        <button id="btn" class="btn waves-effect waves-light blue" type="submit" disabled>
           <span>Submit</span>
           <i class="material-icons right">send</i>
         </button>
       </div>
     </div>
   </form>
+
+  <script>
+    // Length validation
+    document.addEventListener('DOMContentLoaded', () => {
+      const elems = document.querySelectorAll('.validate');
+      elems.forEach((elem) => {
+        M.CharacterCounter.init(elem); // init character counter for each text box
+        elem.addEventListener('keyup', (e) => {
+          // List of CSS classes on each input element. Materialize CSS will automatically assign
+          // the 'invalid' class to any input that exceeds it's max data-length.
+          const classList = Array.from(elems).map(elem => elem.classList).reduce((a, b) => [...a, ...b], []);
+
+          // List of lengths of each input, used to ensure no inputs are blank
+          const inputLengths = Array.from(elems).map(elem => elem.value.length);
+
+          // Disable submit button if any inputs exceed their max lengths OR are empty
+          if (classList.includes('invalid') || inputLengths.includes(0)) {
+            document.getElementById('btn').setAttribute('disabled', true);
+          } else {
+            document.getElementById('btn').removeAttribute('disabled');
+          }
+        });
+      });
+    });
+  </script>
+
 {% endblock body %}

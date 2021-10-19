@@ -23,7 +23,7 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
     api_client.force_authenticate(user=user)
     api_client.post(
         '/api/users/questionnaire-form/',
-        {question: f'answer_{i}' for i, question in enumerate(QUESTIONS)},
+        {f'question_{i}': f'answer_{i}' for i in range(len(QUESTIONS))},
         format='json',
     )
 
