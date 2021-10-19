@@ -1,6 +1,7 @@
 from allauth.account.signals import user_signed_up
 from corsheaders.signals import check_request_enabled
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
@@ -25,7 +26,11 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 @receiver(user_signed_up)
 def user_signed_up_listener(sender, user, **kwargs):
     """Send a registration notice email and create UserMetadata whenever a user signs up."""
-    UserMetadata.objects.get_or_create(user=user)
+    if settings.AUTO_APPROVE_USERS:
+        status = UserMetadata.Status.APPROVED
+    else:
+        status = UserMetadata.Status.INCOMPLETE
+    UserMetadata.objects.get_or_create(user=user, status=status)
     for socialaccount in user.socialaccount_set.all():
         send_registered_notice_email(user, socialaccount)
         send_new_user_message_email(user, socialaccount)
