@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -91,7 +90,7 @@ def test_published_version_metadata_computed(published_version: Version):
         **original_metadata,
         'manifestLocation': [
             (
-                f'http://{os.getenv("DJANGO_MINIO_STORAGE_ENDPOINT")}/test-dandiapi-dandisets'
+                f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets'
                 f'/test-prefix/dandisets/{published_version.dandiset.identifier}'
                 f'/{published_version.version}/assets.yaml'
             )
@@ -297,7 +296,7 @@ def test_version_publish_version(draft_version, asset):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://{os.getenv("DJANGO_MINIO_STORAGE_ENDPOINT")}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',  # noqa: E501
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',  # noqa: E501
         ],
         'identifier': f'DANDI:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
@@ -674,7 +673,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://{os.getenv("DJANGO_MINIO_STORAGE_ENDPOINT")}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
         ],
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': published_version.version,
