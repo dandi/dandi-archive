@@ -1,4 +1,8 @@
+from django.contrib.auth.models import User
 import pytest
+from rest_framework.exceptions import ErrorDetail
+from rest_framework.response import Response
+from rest_framework.test import APIClient
 
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.views.users import QUESTIONS
@@ -155,3 +159,83 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
         ).data
         == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
     )
+
+
+@pytest.mark.parametrize(
+    'status,expected_status_code,expected_search_results_value',
+    [
+        (
+            UserMetadata.Status.APPROVED,
+            200,
+            [
+                {
+                    'admin': False,
+                    'username': 'john.doe@dandi.test',
+                    'name': 'John Doe',
+                    'status': UserMetadata.Status.APPROVED,
+                }
+            ],
+        ),
+        (
+            UserMetadata.Status.PENDING,
+            403,
+            {
+                'detail': ErrorDetail(
+                    string='You do not have permission to perform this action.',
+                    code='permission_denied',
+                )
+            },
+        ),
+        (
+            UserMetadata.Status.INCOMPLETE,
+            403,
+            {
+                'detail': ErrorDetail(
+                    string='You do not have permission to perform this action.',
+                    code='permission_denied',
+                )
+            },
+        ),
+        (
+            UserMetadata.Status.REJECTED,
+            403,
+            {
+                'detail': ErrorDetail(
+                    string='You do not have permission to perform this action.',
+                    code='permission_denied',
+                )
+            },
+        ),
+    ],
+)
+@pytest.mark.django_db
+def test_user_status(
+    api_client: APIClient,
+    user: User,
+    status: str,
+    expected_status_code: int,
+    expected_search_results_value: dict,
+):
+    user_metadata: UserMetadata = user.metadata
+    user_metadata.status = status
+    user_metadata.save()
+
+    user.first_name = 'John'
+    user.last_name = 'Doe'
+    user.username = 'john.doe@dandi.test'
+    user.save()
+    api_client.force_authenticate(user=user)
+
+    # test that only APPROVED users can create dandisets
+    name = 'Test Dandiset'
+    metadata = {'foo': 'bar'}
+    response: Response = api_client.post(
+        '/api/dandisets/', {'name': name, 'metadata': metadata}, format='json'
+    )
+    assert response.status_code == expected_status_code
+
+    # test that only APPROVED users show up in search
+    response: Response = api_client.get(
+        '/api/users/search/?', {'username': user.username}, format='json'
+    )
+    assert response.data == expected_search_results_value
