@@ -5,7 +5,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
-from dandiapi.api.mail import send_new_user_message_email, send_registered_notice_email
 from dandiapi.api.models import UserMetadata
 
 
@@ -24,12 +23,9 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 @receiver(user_signed_up)
 def user_signed_up_listener(sender, user, **kwargs):
-    """Send a registration notice email and create UserMetadata whenever a user signs up."""
+    """Create UserMetadata whenever a user signs up."""
     if settings.AUTO_APPROVE_USERS:
         status = UserMetadata.Status.APPROVED
     else:
         status = UserMetadata.Status.INCOMPLETE
     UserMetadata.objects.get_or_create(user=user, status=status)
-    for socialaccount in user.socialaccount_set.all():
-        send_registered_notice_email(user, socialaccount)
-        send_new_user_message_email(user, socialaccount)

@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from dandiapi.api.mail import send_new_user_message_email, send_registered_notice_email
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
@@ -147,12 +148,24 @@ QUESTIONS = [
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         user_metadata: UserMetadata = request.user.metadata
+        questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
+
         user_metadata.questionnaire_form = {}
         req_body = request.POST.dict()
         for question in QUESTIONS:
             user_metadata.questionnaire_form[question] = req_body[question]
         user_metadata.status = UserMetadata.Status.PENDING
         user_metadata.save()
+
+        # Only send emails when the user fills out the questionnaire for the first time.
+        # If they go back later and update it for whatever reason, they should not receive
+        # another email confirming their registration.
+        if not questionnaire_already_filled_out:
+            # send email indicating the user has signed up
+            for socialaccount in request.user.socialaccount_set.all():
+                send_registered_notice_email(request.user, socialaccount)
+                send_new_user_message_email(request.user, socialaccount)
+
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
             f'{reverse("authorize").rstrip("/")}/?{request.META["QUERY_STRING"]}'
