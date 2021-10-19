@@ -150,12 +150,13 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         user_metadata: UserMetadata = request.user.metadata
         questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
 
-        user_metadata.questionnaire_form = {}
         req_body = request.POST.dict()
-        for question in QUESTIONS:
-            user_metadata.questionnaire_form[question['question']] = req_body.get(
-                question['question']
-            )[: question['max_length']]
+        user_metadata.questionnaire_form = {
+            question['question']: req_body.get(question['question'])[: question['max_length']]
+            if req_body.get(question['question']) is not None
+            else None
+            for question in QUESTIONS
+        }
         user_metadata.status = UserMetadata.Status.PENDING
         user_metadata.save()
 
