@@ -1,3 +1,4 @@
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, OuterRef, Q
@@ -64,8 +65,8 @@ def user_approval_view(request, username: str):
     if not request.user.is_superuser:
         raise PermissionDenied()
 
-    user = get_object_or_404(User.objects.select_related('metadata'), username=username)
-    social_account = user.socialaccount_set.first()
+    user: User = get_object_or_404(User.objects.select_related('metadata'), username=username)
+    social_account: SocialAccount = user.socialaccount_set.first()
 
     if request.method == 'POST':
         req_body = request.POST.dict()
@@ -78,6 +79,8 @@ def user_approval_view(request, username: str):
             send_approved_user_message(user, social_account)
         elif user.metadata.status == UserMetadata.Status.REJECTED:
             send_rejected_user_message(user, social_account)
+            user.is_active = False
+            user.save()
 
     return render(
         request,
