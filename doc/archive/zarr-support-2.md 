@@ -1,0 +1,97 @@
+# ARCHIVED
+This design doc has been archived in favor of more up to date design documents.
+See https://github.com/dandi/dandi-api/pull/295 for discussion.
+
+# Abstract
+Zarr files are stored in their entirety in S3.
+Zarr files are represented by a single Asset through the API.
+A treehash is computed as the zarr file is uploaded.
+Each node in the treehash in the hash is stored in S3 to avoid bloating the DB.
+When published, the zarr file is copied to a separate location in the bucket so that changes to the draft cannot affect the published file.
+
+# Requirements
+
+1. Zarr files are stored in a "directory" in S3.
+1. Each zarr file corresponds to a single Asset.
+1. The CLI uses some kind of tree hashing scheme to compute a checksum for the entire zarr file.
+1. The API verifies the checksum _immediately_ after upload.
+1. The system can theoretically handle zarr files with ~1 million subfiles, each of size 64 * 64 * 64 bytes ~= 262 kilobytes.
+1. Zarr metadata must be mutable for zarr files in draft dandisets.
+
+# Implementation
+
+## API endpoints
+
+* POST /api/zarr_files/
+  Start a new zarr file.
+  Returns a zarr ID
+* GET /api/zarr_files/{zarr_id}/
+  Returns some information about the zarr file, like name, S3 path+url, and checksum
+* POST /api/zarr_files/{zarr_id}/batch/start/
+  Ask to upload a batch of subfiles as part of the zarr file.
+  No more batch uploads are permitted until this one is completed or aborted.
+  Requires a list of file paths and ETags (md5 checksums)
+  The file paths may include already uploaded files; this is how updates are done.
+  Returns a list of presigned upload URLs
+* POST /api/zarr_files/{zarr_id}/batch/complete/
+  Completes an upload of a batch of subfiles.
+  Fail if any of the checksums do not match.
+  Also, recursively update the tree hash for every parent node for each child.
+* DELETE /api/zarr_files/{zarr_id}/batch/
+  Cancels a batch upload.
+  Any files already uploaded are deleted.
+  A new batch upload can then be started.
+* DELETE /api/zarr_files/{zarr_id}/batch/delete/
+  Deletes subfiles from S3, and updates the treehash accordingly.
+  Requires a list of file paths
+
+* POST /api/dandisets/{...}/versions/{...}/assets/zarr/{zarr_id}/
+  Creates a new Asset that points to this zarr data.
+  Return an asset ID
+
+## Upload flow
+
+TODO the only gotcha is that published zarr files can't be uploaded to/updated/deleted from
+The slowest API request in the upload flow is the `.../batch/complete/` operation, since it needs to update several `.checksum` files in S3.
+I recommend that the CLI dynamically adjust batch size to keep the `.../batch/complete/` operation under 30s.
+
+## Modification flow
+
+TODO this is basically the same as the upload flow, but with deletes allowed.
+
+## Hashing scheme
+
+To avoid having to store a checksum for every directory in every zarr file, we will delegate the storage of the checksums to S3.
+Update times will be substantially slower since each level of the tree needs to be updated.
+Storage costs will be offloaded to S3, and the treehash will be conveniently accessible to clients.
+
+Let's say the zarr files are kept under `/zarr/{zarr_id}/...` in S3.
+A subfile `1/2/3/4.txt` of zarr file `foobar` would be kept at `/zarr/foobar/1/2/3/4.txt`.
+The ETag can be trivially determined by a `HEAD` request to that S3 object.
+
+After this subfile is uploaded, the API server creates a file `/zarr_checksums/foobar/1/2/3/.checksum` if it doesn't already exist (note the altered prefix).
+This file contains a list of all the files/directories currently in the directory, their checksums, and an aggregated checksum of the entire directory contents.
+If `.checksum` already exists, it is updated with the new file+ETag and the final checksum is updated.
+
+The API server then recursively travels up another level and creates `/zarr_checksums/foobar/1/2/.checksum`.
+This `.checksum` will contain an entry for the directory `3` and the final checksum from `3/.checksum`.
+This recursion continues all the way to the top, yielding a `/zarr_checksums/foobar/.checksum` file which contains an aggregated checksum for the entire zarr file.
+
+### .checksum file format
+
+TODO
+TODO include sha256 as it is calculated? are we even calculating sha256 for zarr files?
+
+### Treehash algorithm
+
+TODO it obviously needs to include all the checksums for all the files in the directory, but assembled how?
+
+## Publishing
+
+When a dandiset containing a zarr file is published, normal Assets are simply added to the new published dandiset, which is a DB only operation and therefore very fast.
+This doesn't work for zarr files, since we want to make sure that subsequent modifications to the draft zarr file don't impact the published zarr file.
+
+Fortunately, fast publishing is not a requirement for dandisets, just a happy coincidedence of our deduplication scheme.
+On publish, simply trigger a job that copies the zarr file S3 data to a new location (TODO where is that exactly?).
+Immediately after publishing, the zarr data will be incomplete while the S3 copy is still in progress.
+The UI communicates the current status of the published version and alerts the user that because their dandiset contains zarr files, publish may take some time.
