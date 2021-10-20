@@ -206,6 +206,40 @@ def test_asset_rest_list(api_client, version, asset):
     }
 
 
+@pytest.mark.parametrize(
+    'order_param,ordering',
+    [
+        ('created', ['b', 'a', 'c']),
+        ('-created', ['c', 'a', 'b']),
+        # Modified is same as created
+        ('modified', ['b', 'a', 'c']),
+        ('-modified', ['c', 'a', 'b']),
+        ('path', ['a', 'b', 'c']),
+        ('-path', ['c', 'b', 'a']),
+    ],
+    ids=['created', '-created', 'modified', '-modified', 'path', '-path'],
+)
+@pytest.mark.django_db
+def test_asset_rest_list_ordering(api_client, version, asset_factory, order_param, ordering):
+    # Create asset B first so that the path ordering is different from the created ordering.
+    b = asset_factory(path='b')
+    a = asset_factory(path='a')
+    c = asset_factory(path='c')
+    version.assets.add(a)
+    version.assets.add(b)
+    version.assets.add(c)
+
+    results = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        data={'order': order_param},
+    ).data['results']
+
+    # Summarize the returned asset objects with their path, so that we can parametrize the
+    # expected results easier.
+    result_paths = [asset['path'] for asset in results]
+    assert result_paths == ordering
+
+
 @pytest.mark.django_db
 def test_asset_rest_retrieve(api_client, version, asset):
     version.assets.add(asset)
