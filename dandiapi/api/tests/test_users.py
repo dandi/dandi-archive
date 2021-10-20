@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from dandiapi.api.models import UserMetadata
-from dandiapi.api.views.users import QUESTIONS
+from dandiapi.api.views.auth import QUESTIONS
 
 
 def serialize_social_account(social_account):

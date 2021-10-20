@@ -1,5 +1,5 @@
 from .asset import AssetViewSet, asset_download_view, asset_metadata_view
-from .auth import auth_token_view
+from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .info import info_view
 from .stats import stats_view
@@ -9,7 +9,7 @@ from .upload import (
     upload_initialize_view,
     upload_validate_view,
 )
-from .users import authorize_view, user_questionnaire_form_view, users_me_view, users_search_view
+from .users import users_me_view, users_search_view
 from .version import VersionViewSet
 
 __all__ = [
