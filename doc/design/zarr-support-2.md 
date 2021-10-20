@@ -1,5 +1,8 @@
-# Abstract
+# ARCHIVED
+This design doc has been archived in favor of more up to date design documents.
+See https://github.com/dandi/dandi-api/pull/295 for discussion.
 
+# Abstract
 Zarr files are stored in their entirety in S3.
 Zarr files are represented by a single Asset through the API.
 A treehash is computed as the zarr file is uploaded.
