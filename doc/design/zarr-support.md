@@ -1,3 +1,8 @@
+# ARCHIVED
+This design doc has been archived in favor of more up to date design documents.
+See https://github.com/dandi/dandi-api/pull/295 for discussion.
+
+# Zarr support
 The Zarr format is being used by NGFF to support the next generation of microscopy data. This involves a potentially
 nested folder structure with named files inside the folder. In the DANDI this would mean:
 
