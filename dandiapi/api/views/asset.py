@@ -102,6 +102,7 @@ class AssetRequestSerializer(serializers.Serializer):
 
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
+    order = filters.OrderingFilter(fields=['created', 'modified', 'path'])
 
     class Meta:
         model = Asset
