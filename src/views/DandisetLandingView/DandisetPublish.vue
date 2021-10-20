@@ -25,11 +25,13 @@
         <v-card-actions>
           <v-btn
             color="error"
+            depressed
             @click="publish()"
           >
             Yes
           </v-btn>
           <v-btn
+            depressed
             @click="showPublishWarningDialog = false"
           >
             No, take me back
