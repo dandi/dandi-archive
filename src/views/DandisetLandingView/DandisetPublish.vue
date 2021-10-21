@@ -404,7 +404,7 @@ export default defineComponent({
     // Show warning message above publish button if user
     // is an admin but not an owner of the dandiset
     const showPublishWarning: ComputedRef<boolean> = computed(
-      () => !!(user.value?.admin && !isOwner.value),
+      () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
     );
 
     const showPublishWarningDialog = ref(false);
