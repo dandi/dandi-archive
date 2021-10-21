@@ -5,6 +5,7 @@ export interface User {
   name: string,
   admin?: boolean,
   status: 'INCOMPLETE' | 'PENDING' | 'APPROVED' | 'REJECTED',
+  approved: boolean,
 }
 
 export interface Dandiset {

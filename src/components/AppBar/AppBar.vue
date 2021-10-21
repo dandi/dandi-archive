@@ -142,8 +142,6 @@ export default defineComponent({
       return JSON.stringify({ name, query, params });
     });
 
-    const approved = computed(() => dandiRest.user?.status === 'APPROVED');
-
     const cookiesEnabled = computed(cookiesEnabledFunc);
     const loggedIn = computed(loggedInFunc);
     const insideIFrame = computed(insideIFrameFunc);
@@ -190,7 +188,7 @@ export default defineComponent({
       cookiesEnabled,
       insideIFrame,
       loggedIn,
-      approved,
+      approved: dandiRest.user?.approved,
     };
   },
 });
