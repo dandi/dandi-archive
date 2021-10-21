@@ -95,7 +95,6 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
     # import here to avoid circular dependency
     from dandiapi.api.views.users import social_account_to_dict, user_to_dict
 
-    logger.info(f'Sending approved user message to {user}')
     if socialaccount is None:
         native_user = user_to_dict(user)
         render_context = {
@@ -127,7 +126,6 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
     # import here to avoid circular dependency
     from dandiapi.api.views.users import social_account_to_dict, user_to_dict
 
-    logger.info(f'Sending rejected user message to {user}')
     if socialaccount is None:
         native_user = user_to_dict(user)
         render_context = {
