@@ -390,6 +390,9 @@ export default defineComponent({
     );
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
+      if (!store.state.dandiset.owners) {
+        return true;
+      }
       // always show the publish button to admins
       if (user.value?.admin) {
         return false;
