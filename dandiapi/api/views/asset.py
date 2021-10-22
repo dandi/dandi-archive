@@ -20,12 +20,12 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
@@ -112,7 +112,7 @@ class AssetFilter(filters.FilterSet):
 class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
     queryset = Asset.objects.all().order_by('created')
 
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
     pagination_class = DandiPagination

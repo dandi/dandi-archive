@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 import factory
 import faker
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, UserMetadata, Version
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -18,6 +18,10 @@ class UserFactory(factory.django.DjangoModelFactory):
     email = factory.Faker('safe_email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
+
+    @factory.post_generation
+    def post(self, create, extracted, **kwargs):
+        UserMetadata.objects.create(user=self, status=UserMetadata.Status.APPROVED)
 
 
 class SocialAccountFactory(factory.django.DjangoModelFactory):

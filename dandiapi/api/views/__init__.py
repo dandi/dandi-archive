@@ -1,5 +1,5 @@
 from .asset import AssetViewSet, asset_download_view, asset_metadata_view
-from .auth import auth_token_view
+from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .info import info_view
 from .stats import stats_view
@@ -16,6 +16,7 @@ __all__ = [
     'AssetViewSet',
     'DandisetViewSet',
     'VersionViewSet',
+    'authorize_view',
     'asset_download_view',
     'asset_metadata_view',
     'auth_token_view',
@@ -24,6 +25,7 @@ __all__ = [
     'upload_complete_view',
     'upload_validate_view',
     'users_me_view',
+    'user_questionnaire_form_view',
     'users_search_view',
     'stats_view',
     'info_view',

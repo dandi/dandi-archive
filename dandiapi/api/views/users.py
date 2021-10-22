@@ -11,6 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from dandiapi.api.models import UserMetadata
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
 
@@ -24,6 +26,8 @@ def user_to_dict(user: User):
         'admin': user.is_superuser,
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
+        'status': user.metadata.status,
+        'created': user.date_joined,
     }
 
 
@@ -36,11 +40,14 @@ def social_account_to_dict(social_account: SocialAccount):
     # We are assuming that login is a required field for GitHub users
     username = social_account.extra_data['login']
     name = social_account.extra_data.get('name') or name
+    created = social_account.extra_data.get('created_at')
 
     return {
         'admin': user.is_superuser,
         'username': username,
         'name': name,
+        'status': user.metadata.status,
+        'created': created,
     }
 
 
@@ -69,7 +76,7 @@ def users_me_view(request: Request) -> HttpResponseBase:
 )
 @api_view(['GET'])
 @parser_classes([JSONParser])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsApproved])
 def users_search_view(request: Request) -> HttpResponseBase:
     """Search for a user."""
     request_serializer = UserSerializer(data=request.query_params)
@@ -78,7 +85,9 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     # Perform a search, excluding any inactive users
     social_accounts = SocialAccount.objects.filter(
-        extra_data__icontains=username, user__is_active=True
+        extra_data__icontains=username,
+        user__is_active=True,
+        user__metadata__status=UserMetadata.Status.APPROVED,
     )[:10]
     users = [social_account_to_dict(social_account) for social_account in social_accounts]
 
@@ -93,6 +102,7 @@ def users_search_view(request: Request) -> HttpResponseBase:
             for user in User.objects.filter(username__icontains=username).filter(
                 ~Q(username='AnonymousUser'),
                 is_active=True,
+                metadata__status=UserMetadata.Status.APPROVED,
             )[:10]
         ]
 

@@ -26,6 +26,7 @@ class UserDetailSerializer(serializers.Serializer):
     username = serializers.CharField(validators=[UnicodeUsernameValidator()])
     name = serializers.CharField(validators=[UnicodeUsernameValidator()])
     admin = serializers.BooleanField()
+    status = serializers.CharField()
 
 
 class DandisetSerializer(serializers.ModelSerializer):

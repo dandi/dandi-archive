@@ -16,13 +16,13 @@ from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     DandisetDetailSerializer,
@@ -68,7 +68,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]

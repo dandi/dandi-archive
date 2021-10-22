@@ -81,6 +81,9 @@ class DandiMixin(ConfigMixin):
     # the number of concurrent tasks (default is 8) to keep memory usage down.
     CELERY_WORKER_CONCURRENCY = values.IntegerValue(environ=True, default=8)
 
+    # Automatically approve new users by default
+    AUTO_APPROVE_USERS = True
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
@@ -102,6 +105,9 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
+
+    # Require admin approval for new users in production/staging
+    AUTO_APPROVE_USERS = False
 
 
 # NOTE: The staging configuration uses a custom OAuth toolkit `Application` model

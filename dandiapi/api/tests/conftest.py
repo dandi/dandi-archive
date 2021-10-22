@@ -10,6 +10,8 @@ from pytest_factoryboy import register
 from rest_framework.test import APIClient
 from storages.backends.s3boto3 import S3Boto3Storage
 
+from dandiapi.api.models import UserMetadata
+
 from .factories import (
     AssetBlobFactory,
     DandisetFactory,
@@ -62,6 +64,7 @@ def api_client() -> APIClient:
 
 @pytest.fixture
 def authenticated_api_client(user) -> APIClient:
+    UserMetadata.objects.create(user=user)
     client = APIClient()
     client.force_authenticate(user=user)
     return client
