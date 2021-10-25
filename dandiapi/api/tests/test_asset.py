@@ -62,9 +62,9 @@ def test_asset_rest_path(
 
     # Do folder assertions
     for folder_path in expected['folders']:
-        assert folder_path in paths['folders']
+        assert folder_path in paths['results']['folders']
 
-        folder_entry = paths['folders'][folder_path]
+        folder_entry = paths['results']['folders'][folder_path]
         folder_assets = list(
             Asset.objects.all().filter(path__startswith=f'{query_prefix}{folder_path}')
         )
@@ -81,10 +81,10 @@ def test_asset_rest_path(
 
     # Do file assertions
     for file_path in expected['files']:
-        assert file_path in paths['files']
+        assert file_path in paths['results']['files']
 
         asset: Asset = Asset.objects.get(path=f'{query_prefix}{file_path}')
-        assert paths['files'][file_path] == AssetSerializer(asset).data
+        assert paths['results']['files'][file_path] == AssetSerializer(asset).data
 
 
 @pytest.mark.django_db
