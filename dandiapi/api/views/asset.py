@@ -10,10 +10,13 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
+from typing import Union
+from urllib.parse import urlencode
 
 from django.db import models, transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -364,10 +367,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         (to refer to the root folder) must be the empty string.
         """
         path_prefix: str = self.request.query_params.get('path_prefix') or ''
+        page: int = int(self.request.query_params.get('page') or '1')
+        page_size: int = int(
+            self.request.query_params.get('page_size') or DandiPagination.page_size
+        )
         qs = self.get_queryset().select_related('blob').filter(path__startswith=path_prefix)
 
-        folders = {}
-        files = {}
+        assets: dict[str, Union[Asset, dict]] = {}
 
         for asset in qs:
             # Get the remainder of the path after path_prefix
@@ -378,12 +384,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             is_folder = folder_index >= 0
 
             if not is_folder:
-                files[base_path] = AssetSerializer(asset).data
+                assets[base_path] = asset
             else:
                 base_path = base_path[:folder_index]
-                entry = folders.get(base_path)
+                entry = assets.get(base_path)
                 if entry is None:
-                    folders[base_path] = {
+                    assets[base_path] = {
                         'size': asset.size,
                         'num_files': 1,
                         'created': asset.created,
@@ -395,7 +401,32 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                     entry['created'] = min(entry['created'], asset.created)  # earliest
                     entry['modified'] = max(entry['modified'], asset.modified)  # latest
 
-        paths = AssetPathsSerializer({'folders': folders, 'files': files})
-        return Response(paths.data)
+        asset_count = len(assets)
+
+        # Paginate response
+        assets = dict(list(assets.items())[(page - 1) * page_size : page * page_size])
+        paths = AssetPathsSerializer(
+            {
+                'folders': {k: v for k, v in assets.items() if not isinstance(v, Asset)},
+                'files': {k: v for k, v in assets.items() if isinstance(v, Asset)},
+            }
+        )
+        url_kwargs = {
+            'versions__dandiset__pk': versions__dandiset__pk,
+            'versions__version': versions__version,
+        }
+        url = reverse('asset-paths', kwargs=url_kwargs)
+        max_page = asset_count // page_size
+        next_page = page + 1 if page + 1 <= max_page else None
+        prev_page = page - 1 if page - 1 > 0 else None
+        next_url = None
+        prev_url = None
+        if next_page is not None:
+            next_url = f'{url}?{urlencode({"page": next_page, "page_size": page_size})}'
+        if prev_page is not None:
+            prev_url = f'{url}?{urlencode({"page": prev_page, "page_size": page_size})}'
+
+        resp = {'results': paths.data, 'count': asset_count, 'next': next_url, 'previous': prev_url}
+        return Response(resp)
 
     # TODO: add create to forge an asset from a validation
