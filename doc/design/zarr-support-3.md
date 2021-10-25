@@ -33,6 +33,12 @@ Until the plan is finished and implemented, publishing dandisets with zarr archi
 
   Returns some information about the zarr archive, like name, S3 path+url, and checksum
 
+* **GET /api/zarr/{zarr_id}/{path}**
+
+  When the path exists in S3, returns some information about the zarr file, like name, S3 path+url, and checksum.
+  When the path is a directory in S3, returns a paginated list of files and directories. 
+  Returns 404 if the path is not present in S3.
+
 * **GET /api/zarr/{zarr_id}/upload/**
 
   Returns a 204 if an upload is in progress, or a 404 if an upload is not in progress.
@@ -64,9 +70,10 @@ Until the plan is finished and implemented, publishing dandisets with zarr archi
   Deletes zarr files from S3, and updates the tree hash accordingly.
   Requires a list of file paths
 
-* **POST /api/dandisets/{...}/versions/{...}/assets/zarr/{zarr_id}/**
+* **POST /api/dandisets/{...}/versions/{...}/assets/**
 
-  Creates a new Asset that points to the zarr archive.
+  Augments the existing endpoint to create a new Asset that points to the zarr archive.
+  Requires a `zarr_id` in the request body instead of a `blob_id`.
   Return an asset ID
 
 When added to a dandiset, zarr archives will appear as a normal `Asset` in all the asset API endpoints.
