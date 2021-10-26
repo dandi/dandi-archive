@@ -106,8 +106,8 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
 
-    # Require admin approval for new users in production/staging
-    AUTO_APPROVE_USERS = False
+    # TODO: Require admin approval for new users in production/staging once we're ready
+    # AUTO_APPROVE_USERS = False
 
 
 # NOTE: The staging configuration uses a custom OAuth toolkit `Application` model
