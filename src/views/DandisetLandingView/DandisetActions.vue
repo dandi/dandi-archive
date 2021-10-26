@@ -29,7 +29,7 @@
               >
                 mdi-download
               </v-icon>
-              Download
+              <span>Download</span>
               <v-spacer />
               <v-icon right>
                 mdi-chevron-down
@@ -56,7 +56,7 @@
               >
                 mdi-format-quote-close
               </v-icon>
-              Cite As
+              <span>Cite As</span>
               <v-spacer />
               <v-icon right>
                 mdi-chevron-down
@@ -82,7 +82,7 @@
           >
             mdi-folder
           </v-icon>
-          Files
+          <span>Files</span>
           <v-spacer />
         </v-btn>
       </v-row>
@@ -99,7 +99,7 @@
           >
             mdi-note-text
           </v-icon>
-          Metadata
+          <span>Metadata</span>
           <v-spacer />
         </v-btn>
       </v-row>
@@ -166,3 +166,11 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.v-btn--outlined {
+  border: thin solid #E0E0E0;
+  color: #424242;
+  font-weight: 400;
+}
+</style>
