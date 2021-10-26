@@ -81,8 +81,6 @@
       </v-row>
 
       <v-divider />
-      <!-- TODO: delete this component after redesigned contributors list is implemented -->
-      <DandisetContributors />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
         <!-- Truncate text if necessary -->
@@ -182,8 +180,6 @@ import moment from 'moment';
 import store from '@/store';
 import { DandisetStats } from '@/types';
 
-// TODO: delete DandisetContributors component after redesigned contributors list is implemented
-
 import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
 import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
 import ContributorsTab from '@/components/DLP/ContributorsTab.vue';
@@ -192,7 +188,6 @@ import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
 import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
 import ShareDialog from './ShareDialog.vue';
 import ListingComponent from './ListingComponent.vue';
-import DandisetContributors from './DandisetContributors.vue';
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
@@ -234,8 +229,6 @@ export default defineComponent({
   components: {
     ListingComponent,
     ShareDialog,
-    // TODO: delete DandisetContributors component after redesigned contributors list is implemented
-    DandisetContributors,
     AccessInformationTab,
     AssetSummaryTab,
     ContributorsTab,

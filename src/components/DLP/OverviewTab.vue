@@ -1,27 +1,44 @@
 <template>
   <div>
     <v-card outlined>
-      <v-card-title>
-        <v-icon class="mr-3">
+      <v-card-title class="font-weight-regular">
+        <v-icon class="mr-3 grey--text text--lighten-1">
           mdi-account-multiple
         </v-icon>
         Contributors
       </v-card-title>
-      <v-chip
-        v-for="(contributor, i) in contributors"
-        :key="i"
-        style="margin: 5px;"
-        outlined
-      >
-        {{ contributor.name }}
-      </v-chip>
+      <div class="px-2 mb-2">
+        <v-chip
+          v-for="(contributor, i) in contributors"
+          :key="i"
+          style="margin: 5px;"
+          outlined
+          close-icon="mdi-card-account-mail"
+          :close="contactPeople.has(contributor.name)"
+        >
+          {{ contributor.name }}
+          <a
+            v-if="contributor.identifier"
+            :href="`https://orcid.org/${contributor.identifier}`"
+            target="_blank"
+            class="mx-1"
+          >
+            <img
+              alt="ORCID logo"
+              src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+              width="16"
+              height="16"
+            >
+          </a>
+        </v-chip>
+      </div>
     </v-card>
 
     <v-row>
       <v-col cols="4">
         <v-card outlined>
-          <v-card-title>
-            <v-icon class="mr-3">
+          <v-card-title class="font-weight-regular">
+            <v-icon class="mr-3 grey--text text--lighten-1">
               mdi-notebook-outline
             </v-icon>
             Subject matter
@@ -40,8 +57,8 @@
 
       <v-col cols="4">
         <v-card outlined>
-          <v-card-title>
-            <v-icon class="mr-3">
+          <v-card-title class="font-weight-regular">
+            <v-icon class="mr-3 grey--text text--lighten-1">
               mdi-account-question
             </v-icon>
             Access Information
@@ -60,8 +77,8 @@
 
       <v-col cols="4">
         <v-card outlined>
-          <v-card-title>
-            <v-icon class="mr-3">
+          <v-card-title class="font-weight-regular">
+            <v-icon class="mr-3 grey--text text--lighten-1">
               mdi-book
             </v-icon>
             Related resources
@@ -84,7 +101,6 @@
 <script lang="ts">
 import {
   AccessInformation,
-  DandisetContributors,
   DandisetMetadata,
   RelatedResource,
   SubjectMatterOfTheDataset,
@@ -110,7 +126,11 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const contributors: ComputedRef<DandisetContributors> = computed(() => props.meta.contributor);
+    const contributors = computed(
+      () => props.meta.contributor.filter(
+        (contributor) => !!(contributor.includeInCitation),
+      ),
+    );
     const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
       () => props.meta.about,
     );
@@ -121,11 +141,18 @@ export default defineComponent({
       () => props.meta.relatedResource,
     );
 
+    const contactPeople = computed(
+      () => new Set(contributors.value
+        .filter((contributor) => contributor.roleName?.includes('dcite:ContactPerson'))
+        .map((contributor) => contributor.name)),
+    );
+
     return {
       contributors,
       subjectMatter,
       accessInformation,
       relatedResources,
+      contactPeople,
     };
   },
 });
