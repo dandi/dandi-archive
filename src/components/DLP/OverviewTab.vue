@@ -49,7 +49,28 @@
               v-for="(item, i) in subjectMatter"
               :key="i"
             >
-              {{ item.name }}
+              <MetadataListItem>
+                <v-row
+                  no-gutters
+                  class="justify-space-between"
+                >
+                  <v-col
+                    cols="6"
+                    class="grey--text text--darken-3"
+                  >
+                    {{ item.name }}
+                  </v-col>
+                  <v-col
+                    cols="6"
+                    class="pl-1 text-end font-weight-light"
+                  >
+                    {{ item.identifier }}
+                  </v-col>
+                </v-row>
+                <span class="text-caption grey--text text--darken-1">
+                  {{ item.schemaKey.toUpperCase() }}
+                </span>
+              </MetadataListItem>
             </v-list-item>
           </v-list>
         </v-card>
@@ -111,10 +132,11 @@ import {
   defineComponent, PropType,
 } from '@vue/composition-api';
 
+import MetadataListItem from '@/components/DLP/MetadataListItem.vue';
+
 export default defineComponent({
   name: 'OverviewTab',
-  components: {
-  },
+  components: { MetadataListItem },
   props: {
     schema: {
       type: Object,
