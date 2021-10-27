@@ -61,13 +61,9 @@ def _write_manifest_file(path: str, metadata, logger):
     # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
     storage = AssetBlob.blob.field.storage
 
-    if storage.exists(path):
-        if logger:
-            logger.info('%s already exists, deleting it', path)
-        storage.delete(path)
     if logger:
         logger.info('Saving %s', path)
-    storage.save(path, ContentFile(metadata))
+    storage._save(path, ContentFile(metadata))
 
 
 def write_dandiset_jsonld(version: Version, logger=None):
