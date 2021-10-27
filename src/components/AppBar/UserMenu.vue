@@ -19,7 +19,7 @@
       id="user-menu"
       dense
     >
-      <ApiKeyItem />
+      <ApiKeyItem v-if="approved" />
       <v-list-item @click="logout">
         <v-list-item-content>
           Logout
@@ -68,6 +68,7 @@ export default defineComponent({
 
     return {
       userInitials,
+      approved: dandiRest.user?.approved,
       logout,
     };
   },
