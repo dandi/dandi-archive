@@ -64,8 +64,9 @@ const dandiRest = new Vue({
       }
     },
     async me(): Promise<User> {
-      const { data } = await client.get('users/me/');
-      return data;
+      const { data: user } = await client.get('users/me/');
+      user.approved = user.status === 'APPROVED';
+      return user;
     },
     async newApiKey(): Promise<string> {
       const { data } = await client.post('auth/token/');

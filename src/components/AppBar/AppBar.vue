@@ -84,6 +84,7 @@
     <div v-if="!insideIFrame">
       <template v-if="loggedIn">
         <v-btn
+          :disabled="!approved"
           :to="{ name: 'createDandiset' }"
           exact
           class="mx-3"
@@ -187,6 +188,7 @@ export default defineComponent({
       cookiesEnabled,
       insideIFrame,
       loggedIn,
+      approved: dandiRest.user?.approved,
     };
   },
 });

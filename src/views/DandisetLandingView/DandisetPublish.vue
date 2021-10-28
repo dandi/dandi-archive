@@ -1,8 +1,44 @@
 <template>
   <v-card
     outlined
-    class="mt-4 pa-3"
+    class="mt-4 px-3"
   >
+    <v-dialog
+      v-if="showPublishWarningDialog"
+      v-model="showPublishWarningDialog"
+      persistent
+      max-width="60vh"
+    >
+      <v-card class="pb-3">
+        <v-card-title class="text-h5 font-weight-light">
+          WARNING
+        </v-card-title>
+        <v-divider class="my-3" />
+        <v-card-text>
+          This action will force publish this Dandiset, potentially
+          before the owners are prepared to do so.
+        </v-card-text>
+        <v-card-text>
+          Would you like to proceed?
+        </v-card-text>
+
+        <v-card-actions>
+          <v-btn
+            color="error"
+            depressed
+            @click="publish()"
+          >
+            Yes
+          </v-btn>
+          <v-btn
+            depressed
+            @click="showPublishWarningDialog = false"
+          >
+            No, take me back
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-row
       v-if="!publishButtonHidden"
       class="mb-4"
@@ -14,12 +50,34 @@
       >
         <template #activator="{ on }">
           <div
+            class="px-1 pt-3"
             style="width: 100%"
             v-on="on"
           >
+            <v-row
+              v-if="showPublishWarning"
+              class="text-caption error--text align-center mb-3"
+              no-gutters
+            >
+              <v-col
+                cols="1"
+                class="mr-2"
+              >
+                <v-icon color="error">
+                  mdi-alert-circle
+                </v-icon>
+              </v-col>
+              <v-col>
+                <span>
+                  As an <span class="font-weight-bold">admin</span>,
+                  you may publish Dandisets without being an owner.
+                </span>
+              </v-col>
+            </v-row>
             <v-btn
               block
-              color="success"
+              :color="showPublishWarning ? 'error' : 'success'"
+              depressed
               :disabled="publishButtonDisabled"
               @click="publish"
             >
@@ -35,7 +93,7 @@
 
     <v-row
       v-if="currentDandiset.version_validation_errors.length "
-      class="mb-4"
+      class="mb-4 px-1"
       no-gutters
     >
       <v-menu
@@ -240,7 +298,7 @@
 
 <script lang="ts">
 import {
-  defineComponent, computed, ComputedRef,
+  defineComponent, computed, ComputedRef, ref,
 } from '@vue/composition-api';
 
 import moment from 'moment';
@@ -304,13 +362,13 @@ export default defineComponent({
       if (!loggedIn.value) {
         return 'You must be logged in to edit.';
       }
-      if (isOwner.value && currentVersion.value !== draftVersion) {
+      if ((isOwner.value || user.value?.admin) && currentVersion.value !== draftVersion) {
         return 'Only draft versions can be published.';
       }
       // NOTE: must access the prop directly instead of destructuring to preserve reactivity
       // i.e. `const { userCanModifyDandiset } = props;` won't be reactive
       // See https://github.com/vuejs/composition-api/issues/156
-      if (!props.userCanModifyDandiset) {
+      if (!props.userCanModifyDandiset && !user.value?.admin) {
         return 'You do not have permission to edit this dandiset.';
       }
       if (currentDandiset.value?.status === 'Pending') {
@@ -332,12 +390,24 @@ export default defineComponent({
     );
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
-      const { owners } = store.state.dandiset;
-      // Hide the publish button if the user is not an owner of the dandiset
-      return !(loggedIn.value && !!(owners?.find(
-        (owner: User) => owner.username === user.value?.username,
-      )));
+      if (!store.state.dandiset.owners) {
+        return true;
+      }
+      // always show the publish button to admins
+      if (user.value?.admin) {
+        return false;
+      }
+      // otherwise, only show it when the logged in user is an owner
+      return !isOwner.value;
     });
+
+    // Show warning message above publish button if user
+    // is an admin but not an owner of the dandiset
+    const showPublishWarning: ComputedRef<boolean> = computed(
+      () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
+    );
+
+    const showPublishWarningDialog = ref(false);
 
     function formatDate(date: string): string {
       return moment(date).format('ll');
@@ -364,6 +434,12 @@ export default defineComponent({
 
     async function publish() {
       if (currentDandiset.value) {
+        // If user is an admin but not an owner, display the warning dialog before publishing
+        if (showPublishWarning.value && !showPublishWarningDialog.value) {
+          showPublishWarningDialog.value = true;
+          return;
+        }
+
         const version = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
         // re-initialize the dataset to load the newly published version
         await store.dispatch.dandiset.initializeDandisets({
@@ -387,6 +463,8 @@ export default defineComponent({
       getValidationErrorIcon,
       publish,
       draftVersion,
+      showPublishWarning,
+      showPublishWarningDialog,
     };
   },
 });
