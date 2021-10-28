@@ -10,9 +10,9 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
-from typing import Union
 from urllib.parse import urlencode
 
+from django.core.paginator import Page, Paginator
 from django.db import models, transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -73,6 +73,47 @@ def _download_asset(asset: Asset):
         return HttpResponseRedirect(url)
     else:
         raise ValueError(f'Unknown storage {storage}')
+
+
+def _paginate_asset_paths(
+    items: list, page: int, page_size: int, versions__dandiset__pk: str, versions__version: str
+) -> dict:
+    """Paginates a list of files and folders to be returned by the asset paths endpoint."""
+    if page_size > DandiPagination.max_page_size:
+        page_size = DandiPagination.max_page_size
+
+    asset_count: int = len(items)
+
+    paths_paginator: Paginator = Paginator(list(items.items()), page_size)
+    assets_page: Page = paths_paginator.page(page)
+
+    # Divide into folders and files
+    paths = {'folders': {}, 'files': {}}
+    folder_files = [paths['folders'], paths['files']]
+
+    # Note that this loop runs in constant time, since the length of assets_page
+    # will never exceed DandiPagination.max_page_size.
+    for k, v in dict(assets_page).items():
+        folder_files[int(isinstance(v, Asset))][k] = v
+
+    paths = AssetPathsSerializer(paths)
+
+    # generate other parameters for the paginated response
+    url_kwargs = {
+        'versions__dandiset__pk': versions__dandiset__pk,
+        'versions__version': versions__version,
+    }
+    url = reverse('asset-paths', kwargs=url_kwargs)
+    next_page = page + 1 if page + 1 <= paths_paginator.num_pages else None
+    prev_page = page - 1 if page - 1 > 0 else None
+    next_url = None
+    prev_url = None
+    if next_page is not None:
+        next_url = f'{url}?{urlencode({"page": next_page, "page_size": page_size})}'
+    if prev_page is not None:
+        prev_url = f'{url}?{urlencode({"page": prev_page, "page_size": page_size})}'
+
+    return {'results': paths.data, 'count': asset_count, 'next': next_url, 'previous': prev_url}
 
 
 @swagger_auto_schema(
@@ -371,12 +412,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         page_size: int = int(
             self.request.query_params.get('page_size') or DandiPagination.page_size
         )
-        if page_size > DandiPagination.max_page_size:
-            page_size = DandiPagination.max_page_size
 
-        qs = self.get_queryset().select_related('blob').filter(path__startswith=path_prefix).order_by('path')
+        qs = (
+            self.get_queryset()
+            .select_related('blob')
+            .filter(path__startswith=path_prefix)
+            .order_by('path')
+        )
 
-        assets: dict[str, Union[Asset, dict]] = {}
+        folders: dict[str, dict] = {}
+        files: dict[str, Asset] = {}
 
         for asset in qs:
             # Get the remainder of the path after path_prefix
@@ -387,12 +432,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             is_folder = folder_index >= 0
 
             if not is_folder:
-                assets[base_path] = asset
+                files[base_path] = asset
             else:
                 base_path = base_path[:folder_index]
-                entry = assets.get(base_path)
+                entry = folders.get(base_path)
                 if entry is None:
-                    assets[base_path] = {
+                    folders[base_path] = {
                         'size': asset.size,
                         'num_files': 1,
                         'created': asset.created,
@@ -404,32 +449,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                     entry['created'] = min(entry['created'], asset.created)  # earliest
                     entry['modified'] = max(entry['modified'], asset.modified)  # latest
 
-        asset_count = len(assets)
-
-        # Paginate response
-        assets = dict(list(assets.items())[(page - 1) * page_size : page * page_size])
-        paths = AssetPathsSerializer(
-            {
-                'folders': {k: v for k, v in assets.items() if not isinstance(v, Asset)},
-                'files': {k: v for k, v in assets.items() if isinstance(v, Asset)},
-            }
+        items = folders
+        items.update(files)
+        resp = _paginate_asset_paths(
+            items, page, page_size, versions__dandiset__pk, versions__version
         )
-        url_kwargs = {
-            'versions__dandiset__pk': versions__dandiset__pk,
-            'versions__version': versions__version,
-        }
-        url = reverse('asset-paths', kwargs=url_kwargs)
-        max_page = asset_count // page_size
-        next_page = page + 1 if page + 1 <= max_page else None
-        prev_page = page - 1 if page - 1 > 0 else None
-        next_url = None
-        prev_url = None
-        if next_page is not None:
-            next_url = f'{url}?{urlencode({"page": next_page, "page_size": page_size})}'
-        if prev_page is not None:
-            prev_url = f'{url}?{urlencode({"page": prev_page, "page_size": page_size})}'
-
-        resp = {'results': paths.data, 'count': asset_count, 'next': next_url, 'previous': prev_url}
         return Response(resp)
 
     # TODO: add create to forge an asset from a validation
