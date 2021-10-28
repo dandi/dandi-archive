@@ -374,7 +374,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if page_size > DandiPagination.max_page_size:
             page_size = DandiPagination.max_page_size
 
-        qs = self.get_queryset().select_related('blob').filter(path__startswith=path_prefix)
+        qs = self.get_queryset().select_related('blob').filter(path__startswith=path_prefix).order_by('path')
 
         assets: dict[str, Union[Asset, dict]] = {}
 
