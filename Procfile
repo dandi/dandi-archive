@@ -6,5 +6,5 @@ web: gunicorn --bind 0.0.0.0:$PORT dandiapi.wsgi
 # This is OK for now because of how lightweight all high priority tasks currently are,
 # but we may need to switch back to a dedicated worker in the future.
 # The queue `celery` is the default queue. Right now the only named queue is `calculate_sha256`.
-priority-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery -B
+worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery -B
 checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q calculate_sha256
