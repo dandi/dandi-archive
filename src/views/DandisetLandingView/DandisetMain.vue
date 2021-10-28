@@ -8,7 +8,7 @@
         <v-col>
           <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
             {{ meta.name }}
-            <ShareDialog v-if="$vuetify.breakpoint.xs" />
+            <ShareDialog />
           </h1>
         </v-col>
       </v-row>
