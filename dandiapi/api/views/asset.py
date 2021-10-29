@@ -20,11 +20,12 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
@@ -97,7 +98,8 @@ def asset_metadata_view(request, asset_id):
 
 class AssetRequestSerializer(serializers.Serializer):
     metadata = serializers.JSONField()
-    blob_id = serializers.UUIDField()
+    blob_id = serializers.UUIDField(required=False)
+    zarr_id = serializers.UUIDField(required=False)
 
 
 class AssetFilter(filters.FilterSet):
@@ -177,7 +179,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+        if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
+            asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+            zarr_archive = None
+        elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
+            asset_blob = None
+            zarr_archive = get_object_or_404(
+                ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
+            )
+        else:
+            raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:
@@ -197,6 +208,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         asset = Asset(
             path=path,
             blob=asset_blob,
+            zarr=zarr_archive,
             metadata=metadata,
             status=Asset.Status.PENDING,
         )
@@ -208,15 +220,19 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        # Refresh the blob to be sure the sha256 values is up to date
-        asset.blob.refresh_from_db()
-        # If the blob is still waiting to have it's checksum calculated, there's no point in
-        # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-        # calculated, it will revalidate this asset.
-        # If the blob already has a sha256, then the asset metadata is ready to validate.
-        if asset.blob.sha256 is not None:
-            # We do not bother to delay it because it should run very quickly.
-            validate_asset_metadata(asset.id)
+        if asset.is_blob:
+            # Refresh the blob to be sure the sha256 values is up to date
+            asset.blob.refresh_from_db()
+            # If the blob is still waiting to have it's checksum calculated, there's no point in
+            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+            # calculated, it will revalidate this asset.
+            # If the blob already has a sha256, then the asset metadata is ready to validate.
+            if asset.blob.sha256 is not None:
+                # We do not bother to delay it because it should run very quickly.
+                validate_asset_metadata(asset.id)
+        elif asset.is_zarr:
+            # TODO what to do here?
+            pass
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -249,7 +265,16 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+        if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
+            asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+            zarr_archive = None
+        elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
+            asset_blob = None
+            zarr_archive = get_object_or_404(
+                ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
+            )
+        else:
+            raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:
@@ -258,7 +283,11 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Strip away any computed fields
         metadata = Asset.strip_metadata(metadata)
 
-        if metadata == old_asset.metadata and asset_blob == old_asset.blob:
+        if (
+            metadata == old_asset.metadata
+            and asset_blob == old_asset.blob
+            and zarr_archive == zarr_archive
+        ):
             # No changes, don't create a new asset
             new_asset = old_asset
         else:
@@ -278,6 +307,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 new_asset = Asset(
                     path=path,
                     blob=asset_blob,
+                    zarr=zarr_archive,
                     metadata=metadata,
                     previous=old_asset,
                     status=Asset.Status.PENDING,
@@ -293,15 +323,19 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        # Refresh the blob to be sure the sha256 values is up to date
-        new_asset.blob.refresh_from_db()
-        # If the blob is still waiting to have it's checksum calculated, there's no point in
-        # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-        # calculated, it will revalidate this asset.
-        # If the blob already has a sha256, then the asset metadata is ready to validate.
-        if new_asset.blob.sha256 is not None:
-            # We do not bother to delay it because it should run very quickly.
-            validate_asset_metadata(new_asset.id)
+        if new_asset.is_blob:
+            # Refresh the blob to be sure the sha256 values is up to date
+            new_asset.blob.refresh_from_db()
+            # If the blob is still waiting to have it's checksum calculated, there's no point in
+            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+            # calculated, it will revalidate this asset.
+            # If the blob already has a sha256, then the asset metadata is ready to validate.
+            if new_asset.blob.sha256 is not None:
+                # We do not bother to delay it because it should run very quickly.
+                validate_asset_metadata(new_asset.id)
+        elif new_asset.is_zarr:
+            # TODO what to do here?
+            pass
 
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
