@@ -11,6 +11,7 @@ from dandiapi.api.views import (
     AssetViewSet,
     DandisetViewSet,
     VersionViewSet,
+    ZarrViewSet,
     asset_download_view,
     asset_metadata_view,
     auth_token_view,
@@ -45,6 +46,7 @@ router = ExtendedSimpleRouter()
         ],
     )
 )
+router.register('zarr', ZarrViewSet, basename='zarr')
 
 
 schema_view = get_schema_view(
