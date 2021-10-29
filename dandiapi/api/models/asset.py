@@ -10,6 +10,7 @@ from django.contrib.postgres.indexes import HashIndex
 from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -86,7 +87,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512)
-    blob = models.ForeignKey(AssetBlob, related_name='assets', on_delete=models.CASCADE)
+    blob = models.ForeignKey(
+        AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
+    )
+    zarr = models.ForeignKey(
+        'ZarrArchive', related_name='assets', on_delete=models.CASCADE, null=True, blank=True
+    )
     metadata = models.JSONField(blank=True, default=dict)
     versions = models.ManyToManyField(Version, related_name='assets')
     status = models.CharField(
@@ -104,13 +110,40 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     )
     published = models.BooleanField(default=False)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name='exactly-one-blob',
+                check=Q(blob__isnull=True, zarr__isnull=False)
+                | Q(blob__isnull=False, zarr__isnull=True),
+            )
+        ]
+
+    @property
+    def is_blob(self):
+        return self.blob is not None and self.zarr is None
+
+    @property
+    def is_zarr(self):
+        return self.zarr is not None and self.blob is None
+
     @property
     def size(self):
-        return self.blob.size
+        if self.is_blob:
+            return self.blob.size
+        else:
+            return self.zarr.size
 
     @property
     def sha256(self):
         return self.blob.sha256
+
+    @property
+    def digest(self) -> Dict[str, str]:
+        if self.is_blob:
+            return self.blob.digest
+        else:
+            return self.zarr.digest
 
     def _populate_metadata(self):
         # TODO use http://localhost:8000 for local deployments
@@ -118,16 +151,19 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'asset-direct-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
-        blob_url = self.blob.s3_url
+        if self.is_blob:
+            s3_url = self.blob.s3_url
+        else:
+            s3_url = self.zarr.s3_path('')
 
         metadata = {
             **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),
-            'contentUrl': [download_url, blob_url],
-            'contentSize': self.blob.size,
-            'digest': self.blob.digest,
+            'contentUrl': [download_url, s3_url],
+            'contentSize': self.size,
+            'digest': self.digest,
         }
         if 'schemaVersion' in metadata:
             schema_version = metadata['schemaVersion']
