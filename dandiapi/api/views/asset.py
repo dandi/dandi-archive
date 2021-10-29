@@ -12,9 +12,10 @@ except ImportError:
 import os.path
 from urllib.parse import urlencode
 
-from django.core.paginator import Page, Paginator
+from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import models, transaction
 from django.http import HttpResponseRedirect, JsonResponse
+from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -85,7 +86,11 @@ def _paginate_asset_paths(
     asset_count: int = len(items)
 
     paths_paginator: Paginator = Paginator(list(items.items()), page_size)
-    assets_page: Page = paths_paginator.page(page)
+
+    try:
+        assets_page: Page = paths_paginator.page(page)
+    except EmptyPage:
+        raise Http404()
 
     # Divide into folders and files
     folders = {}
@@ -99,7 +104,7 @@ def _paginate_asset_paths(
         else:
             folders[k] = v
 
-    paths = AssetPathsSerializer({'folders': folders, 'files': 'files'})
+    paths = AssetPathsSerializer({'folders': folders, 'files': files})
 
     # generate other parameters for the paginated response
     url_kwargs = {
