@@ -88,15 +88,18 @@ def _paginate_asset_paths(
     assets_page: Page = paths_paginator.page(page)
 
     # Divide into folders and files
-    paths = {'folders': {}, 'files': {}}
-    folder_files = [paths['folders'], paths['files']]
+    folders = {}
+    files = {}
 
     # Note that this loop runs in constant time, since the length of assets_page
     # will never exceed DandiPagination.max_page_size.
     for k, v in dict(assets_page).items():
-        folder_files[int(isinstance(v, Asset))][k] = v
+        if isinstance(v, Asset):
+            files[k] = v
+        else:
+            folders[k] = v
 
-    paths = AssetPathsSerializer(paths)
+    paths = AssetPathsSerializer({'folders': folders, 'files': 'files'})
 
     # generate other parameters for the paginated response
     url_kwargs = {
