@@ -25,7 +25,7 @@ class DandiMixin(ConfigMixin):
     DANDI_ALLOW_LOCALHOST_URLS = False
 
     @staticmethod
-    def before_binding(configuration: Type[ComposedConfiguration]):
+    def mutate_configuration(configuration: Type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'dandiapi.api.apps.PublishConfig',
