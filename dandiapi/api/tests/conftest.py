@@ -22,6 +22,8 @@ from .factories import (
     SocialAccountFactory,
     UploadFactory,
     UserFactory,
+    ZarrArchiveFactory,
+    ZarrUploadFileFactory,
 )
 
 if TYPE_CHECKING:
@@ -40,6 +42,8 @@ register(DraftVersionFactory, _name='draft_version')
 register(UserFactory)
 register(SocialAccountFactory)
 register(UploadFactory)
+register(ZarrArchiveFactory)
+register(ZarrUploadFileFactory)
 
 
 @pytest.fixture(params=[DraftAssetFactory, PublishedAssetFactory], ids=['draft', 'published'])

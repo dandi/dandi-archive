@@ -4,10 +4,20 @@ import hashlib
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core import files as django_files
 import factory
 import faker
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, UserMetadata, Version
+from dandiapi.api.models import (
+    Asset,
+    AssetBlob,
+    Dandiset,
+    Upload,
+    UserMetadata,
+    Version,
+    ZarrArchive,
+    ZarrUploadFile,
+)
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -176,6 +186,40 @@ class UploadFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def size(self):
         return self.blob.size
+
+    @factory.lazy_attribute
+    def etag(self):
+        h = hashlib.md5()
+        h.update(self.blob.read())
+        self.blob.seek(0)
+        return h.hexdigest()
+
+
+class ZarrArchiveFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ZarrArchive
+
+    zarr_id = factory.Faker('uuid4')
+    name = factory.Faker('catch_phrase')
+
+
+class ZarrUploadFileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ZarrUploadFile
+
+    zarr_archive = factory.SubFactory(ZarrArchiveFactory)
+
+    @factory.lazy_attribute
+    def path(self):
+        # No / prefix
+        return faker.Faker().file_path(extension='nwb')[1:]
+
+    @factory.lazy_attribute
+    def blob(self):
+        return django_files.File(
+            django_files.base.ContentFile(faker.Faker().binary(length=100)).file,
+            self.zarr_archive.s3_path(self.path),
+        )
 
     @factory.lazy_attribute
     def etag(self):
