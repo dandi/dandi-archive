@@ -49,6 +49,8 @@ class DandiMixin(ConfigMixin):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
+    DANDI_ZARR_PREFIX_NAME = values.Value(defult='zarr', environ=True)
+    DANDI_ZARR_CHECKSUM_PREFIX_NAME = values.Value(default='zarr-checksums', environ=True)
 
     # This is where the schema version should be set.
     # It can optionally be overwritten with the environment variable, but that should only be
@@ -93,6 +95,8 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
+    DANDI_ZARR_PREFIX_NAME = 'test-zarr'
+    DANDI_ZARR_CHECKSUM_PREFIX_NAME = 'test-zarr-checksums'
 
     # This makes the dandischema pydantic model allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
