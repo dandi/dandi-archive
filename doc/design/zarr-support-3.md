@@ -6,10 +6,6 @@ A tree hash is computed as the zarr archive is uploaded.
 Each node in the tree hash in the hash is stored in S3 to avoid bloating the DB.
 Zarr archives as a whole are too big to be copied.
 
-## Publishing support
-We have not yet finalized a plan for publishing zarr archives, so this design is a stopgap measure to support uploading in the meantime.
-Until the plan is finished and implemented, publishing dandisets with zarr archives will simply not be permitted.
-
 # Requirements
 1. Zarr archives are stored in a "directory" in S3.
 1. Each zarr archive corresponds to a single Asset.
@@ -18,7 +14,7 @@ Until the plan is finished and implemented, publishing dandisets with zarr archi
 1. The system can theoretically handle zarr files with ~1 million subfiles, each of size 64 * 64 * 64 bytes ~= 262 kilobytes.
 1. Zarr metadata must be mutable for zarr files in draft dandisets.
 1. Zarr archives must not be copied, as they are too large to reasonably store multiple copies.
-1. Publishing dandisets with zarr archives is not a requirement at this time.
+1. Zarr archives are immutable as long as they are contained by a published dandiset.
 
 # Implementation
 
@@ -142,8 +138,9 @@ Every update to a `.checksum` file also requires updating the `.checksum` of the
 This bubbles up to the top of the zarr archive, where the final `.checksum` for the entire archive can be found.
 
 # Publishing support
-Any dandiset that contains a zarr file cannot be published.
+After a dandiset that contains a zarr archive is published, that zarr archive is immutable.
+This ensures that published dandisets are truly immutable.
 
-The publish button will be disabled in the GUI with a notice to that effect.
+Immutability is enforced by disabled the upload and delete endpoints for the zarr archive.
 
-The CLI should also alert the user before they upload a zarr file to a dandiset that this will render the dandiset unpublishable.
+The client needs to agressively inform users that publishing a dandiset with a zarr archive will render that zarr archive immutable.
