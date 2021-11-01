@@ -11,6 +11,7 @@ import * as Integrations from '@sentry/integrations';
 
 // Import plugins first (order may matter)
 import '@/plugins/composition';
+import '@/plugins/asyncComputed';
 
 // Import custom behavior
 import '@/title';

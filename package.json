@@ -25,6 +25,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "vue": "^2.6.11",
+    "vue-async-computed": "^3.9.0",
     "vue-cookie-law": "^1.13.3",
     "vue-gtag": "^1.16.1",
     "vue-router": "^3.5.1",
