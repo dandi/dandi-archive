@@ -90,7 +90,46 @@
               v-for="(item, i) in accessInformation"
               :key="i"
             >
-              {{ item.status }}
+              <MetadataListItem>
+                <v-row
+                  no-gutters
+                  class="justify-space-between"
+                >
+                  <v-col
+                    cols="9"
+                    class="grey--text text--darken-3"
+                  >
+                    {{ item.description }}
+                    <br>
+                    <span class="text-caption grey--text text--darken-1">
+                      {{ item.status }}
+                    </span>
+                  </v-col>
+                  <v-col
+                    v-if="item.contactPoint"
+                    class="pl-1 text-end font-weight-light"
+                  >
+                    <v-btn
+                      v-if="item.contactPoint.url"
+                      icon
+                      :href="item.contactPoint.url"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <v-icon>mdi-link</v-icon>
+                    </v-btn>
+                    <v-btn
+                      v-if="item.contactPoint.email"
+                      icon
+                      :href="`mailto:${item.contactPoint.email}`"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <v-icon>mdi-email</v-icon>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </MetadataListItem>
             </v-list-item>
           </v-list>
         </v-card>
