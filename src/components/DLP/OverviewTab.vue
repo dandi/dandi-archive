@@ -194,6 +194,70 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <v-card
+      outlined
+    >
+      <v-card-title class="font-weight-regular">
+        <v-icon class="mr-3 grey--text text--lighten-1">
+          mdi-clipboard-list
+        </v-icon>
+        Asset Summary
+      </v-card-title>
+      <v-list
+        style="column-count: 3;"
+        class="px-3"
+      >
+        <div
+          v-for="([type, items], i) in Object.entries(assetSummary)"
+          :key="i"
+        >
+          <div
+            class="d-inline-block"
+            style="width: 100%;"
+          >
+            <span class="font-weight-bold">
+              {{ type }}
+            </span>
+            <MetadataListItem
+              v-for="(item, ii) in items"
+              :key="ii"
+              :title="type"
+              background-color="grey lighten-4"
+            >
+              <v-row
+                no-gutters
+                class="align-center py-0"
+                style="min-height: 2em;"
+              >
+                <v-col
+                  cols="10"
+                >
+                  <span>{{ item.name || item }}</span>
+                </v-col>
+                <v-col>
+                  <v-btn
+                    v-if="isURL(item.identifier)"
+                    icon
+                    :href="item.identifier"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <v-icon>mdi-link</v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
+              <span
+                v-if="!isURL(item.identifier)"
+                class="text-caption grey--text text--darken-1"
+              >
+                {{ item.identifier }}
+              </span>
+            </MetadataListItem>
+          </div>
+        </div>
+      </v-list>
+    </v-card>
   </div>
 </template>
 
@@ -211,6 +275,29 @@ import {
 } from '@vue/composition-api';
 
 import MetadataListItem from '@/components/DLP/MetadataListItem.vue';
+
+const ASSET_SUMMARY_BLACKLIST = new Set([
+  'numberOfBytes',
+  'numberOfFiles',
+  'numberOfSubjects',
+  'numberOfSamples',
+  'numberOfCells',
+  'schemaKey',
+]);
+
+/**
+ * Determines if the given string is a URL
+ */
+function isURL(str: string): boolean {
+  let url;
+  try {
+    url = new URL(str);
+  } catch (e) {
+    return false;
+  }
+
+  return url.protocol === 'http:' || url.protocol === 'https:';
+}
 
 export default defineComponent({
   name: 'OverviewTab',
@@ -240,6 +327,18 @@ export default defineComponent({
     const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
       () => props.meta.relatedResource,
     );
+    const assetSummary = computed(
+      () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
+        // filter out assetSummary fields we don't want to display
+        ([key]) => !ASSET_SUMMARY_BLACKLIST.has(key),
+      ).map(
+        // convert from camelCase to space-delimited string (i.e. "dataStandard" to "data Standard")
+        ([key, value]) => [key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`), value],
+      ).map(
+        // capitalize the first letter in the string
+        ([key, value]: any) => [key.charAt(0).toUpperCase() + key.slice(1), value],
+      )),
+    );
 
     const contactPeople = computed(
       () => new Set(contributors.value
@@ -252,7 +351,9 @@ export default defineComponent({
       subjectMatter,
       accessInformation,
       relatedResources,
+      assetSummary,
       contactPeople,
+      isURL,
     };
   },
 });
