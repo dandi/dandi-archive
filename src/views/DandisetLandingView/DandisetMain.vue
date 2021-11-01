@@ -2,6 +2,7 @@
   <div>
     <v-card
       class="px-3"
+      color="grey lighten-5"
       outlined
     >
       <v-row class="mx-2 my-2 mb-0">
@@ -140,6 +141,7 @@
 
       <v-tabs
         v-model="currentTab"
+        background-color="grey lighten-5"
         class="ml-3"
         show-arrows
       >
