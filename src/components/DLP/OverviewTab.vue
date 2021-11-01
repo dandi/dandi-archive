@@ -149,7 +149,46 @@
               v-for="(item, i) in relatedResources"
               :key="i"
             >
-              {{ item.url }}
+              <MetadataListItem>
+                <v-row
+                  no-gutters
+                  class="justify-space-between"
+                >
+                  <v-col
+                    cols="9"
+                    class="grey--text text--darken-3"
+                  >
+                    {{ item.name }}
+                    <br>
+                    <span
+                      class="text-caption grey--text text--darken-1 related-resource"
+                    >
+                      <span>ID: </span>{{ item.identifier }}
+                    </span>
+                    <br>
+                    <span class="text-caption grey--text text--darken-1">
+                      <span>Repo: </span>{{ item.repository }}
+                    </span>
+                    <br>
+                    <span class="text-caption grey--text text--darken-1">
+                      <span>Relation: </span>{{ item.relation }}
+                    </span>
+                  </v-col>
+                  <v-col
+                    v-if="item.url"
+                    class="pl-1 text-end font-weight-light"
+                  >
+                    <v-btn
+                      icon
+                      :href="item.url"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <v-icon>mdi-link</v-icon>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </MetadataListItem>
             </v-list-item>
           </v-list>
         </v-card>
