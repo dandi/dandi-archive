@@ -6,13 +6,13 @@ import VueGtag from 'vue-gtag';
 import VueSocialSharing from 'vue-social-sharing';
 
 // @ts-ignore missing definitions
-import { vuetify } from '@girder/components/src';
 import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
 
 // Import plugins first (order may matter)
 import '@/plugins/composition';
-import '@/plugins/girder';
+import '@/plugins/asyncComputed';
+import vuetify from '@/plugins/vuetify';
 
 // Import custom behavior
 import '@/title';
