@@ -12,6 +12,7 @@ import * as Integrations from '@sentry/integrations';
 // Import plugins first (order may matter)
 import '@/plugins/composition';
 import '@/plugins/asyncComputed';
+import vuetify from '@/plugins/vuetify';
 
 // Import custom behavior
 import '@/title';
@@ -21,7 +22,6 @@ import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
 import { dandiRest } from '@/rest';
-import vuetify from './plugins/vuetify';
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
