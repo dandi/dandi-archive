@@ -293,10 +293,12 @@ export default {
   asyncComputed: {
     items: {
       async get() {
-        const { version, identifier, location } = this;
+        const {
+          version, identifier, location, page,
+        } = this;
 
         const { folders, files, count } = await dandiRest.assetPaths(
-          identifier, version, location, this.page, FILES_PER_PAGE,
+          identifier, version, location, page, FILES_PER_PAGE,
         );
         this.owners = (await dandiRest.owners(identifier)).data
           .map((x) => x.username);
