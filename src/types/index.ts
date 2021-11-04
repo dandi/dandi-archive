@@ -65,3 +65,26 @@ export interface DandisetStats {
   asset_count: number,
   size: number,
 }
+
+export interface AssetStats {
+  folder: boolean,
+  name: string,
+  created?: string,
+  modified?: string,
+  size?: number,
+}
+
+export interface AssetFolder extends AssetStats {
+  num_files?: number,
+}
+
+export interface AssetServices {
+  name: string,
+  url: string,
+}
+
+export interface AssetFile extends AssetStats {
+  asset_id: string,
+  path: string,
+  services: AssetServices[],
+}

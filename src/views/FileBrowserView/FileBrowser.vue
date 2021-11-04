@@ -202,6 +202,10 @@
           </v-card>
         </v-col>
       </v-row>
+      <v-pagination
+        v-model="page"
+        :length="pages"
+      />
     </v-container>
   </div>
 </template>
@@ -214,6 +218,8 @@ import store from '@/store';
 
 const parentDirectory = '..';
 const rootDirectory = '';
+
+const FILES_PER_PAGE = 15;
 
 const sortByName = (a, b) => {
   if (a.name > b.name) {
@@ -259,6 +265,8 @@ export default {
       location: rootDirectory,
       owners: [],
       itemToDelete: null,
+      page: 1,
+      pages: 0,
     };
   },
   computed: {
@@ -285,23 +293,28 @@ export default {
   asyncComputed: {
     items: {
       async get() {
-        const { version, identifier, location } = this;
+        const {
+          version, identifier, location, page,
+        } = this;
 
-        const data = await dandiRest.assetPaths(identifier, version, location);
+        const { folders, files, count } = await dandiRest.assetPaths(
+          identifier, version, location, page, FILES_PER_PAGE,
+        );
         this.owners = (await dandiRest.owners(identifier)).data
           .map((x) => x.username);
+        this.pages = Math.ceil(count / FILES_PER_PAGE);
 
         return [
           ...location !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
-          ...Object.keys(data.folders).map(
-            (key) => ({ ...data.folders[key], name: `${key}/`, folder: true }),
+          ...Object.keys(folders).map(
+            (key) => ({ ...folders[key], name: `${key}/`, folder: true }),
           ).sort(sortByName),
-          ...Object.keys(data.files).map(
+          ...Object.keys(files).map(
             (key) => {
-              const { asset_id, size } = data.files[key];
+              const { asset_id, size } = files[key];
               const services = this.getExternalServices(asset_id, key, size);
               return {
-                ...data.files[key],
+                ...files[key],
                 name: key,
                 folder: false,
                 services,
@@ -316,6 +329,9 @@ export default {
   watch: {
     location(location) {
       const { location: existingLocation } = this.$route.query;
+
+      // Reset page to 1 when location changes
+      this.page = 1;
 
       // Update route when location changes
       if (existingLocation === location) { return; }
