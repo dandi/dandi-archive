@@ -330,6 +330,9 @@ export default {
     location(location) {
       const { location: existingLocation } = this.$route.query;
 
+      // Reset page to 1 when location changes
+      this.page = 1;
+
       // Update route when location changes
       if (existingLocation === location) { return; }
       this.$router.push({
