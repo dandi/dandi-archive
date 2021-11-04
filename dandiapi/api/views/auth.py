@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
+from json.decoder import JSONDecodeError
+
 from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse
-from django.http.response import HttpResponseBase, HttpResponseRedirect
+from django.http.response import Http404, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -34,6 +37,14 @@ def auth_token_view(request: Request) -> HttpResponseBase:
     return Response(token.key)
 
 
+QUESTIONS = [
+    {'question': 'First Name', 'max_length': 100},
+    {'question': 'Last Name', 'max_length': 100},
+    {'question': 'What do you plan to use DANDI for?', 'max_length': 1000},
+    {'question': 'Please list any affiliations you have.', 'max_length': 1000},
+]
+
+
 @require_http_methods(['GET'])
 def authorize_view(request: HttpRequest) -> HttpResponse:
     """Override authorization endpoint to handle user questionnaire."""
@@ -45,18 +56,11 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
     ):
         # send user to questionnaire if they haven't filled it out yet
         return HttpResponseRedirect(
-            f'{reverse("user-questionnaire")}' f'?{request.META["QUERY_STRING"]}'
+            f'{reverse("user-questionnaire")}'
+            f'?{request.META["QUERY_STRING"]}&QUESTIONS={json.dumps(QUESTIONS)}'
         )
     # otherwise, continue with normal authorization workflow
     return AuthorizationView.as_view()(request)
-
-
-QUESTIONS = [
-    {'question': 'First Name', 'max_length': 100},
-    {'question': 'Last Name', 'max_length': 100},
-    {'question': 'What do you plan to use DANDI for?', 'max_length': 1000},
-    {'question': 'Please list any affiliations you have.', 'max_length': 1000},
-]
 
 
 @swagger_auto_schema()
@@ -64,8 +68,9 @@ QUESTIONS = [
 @require_http_methods(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
+    user: User = request.user
     if request.method == 'POST':
-        user_metadata: UserMetadata = request.user.metadata
+        user_metadata: UserMetadata = user.metadata
         questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
 
         # we can't use Django forms here because we're using a JSONField, so we have
@@ -85,16 +90,23 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         # another email confirming their registration.
         if not questionnaire_already_filled_out:
             # send email indicating the user has signed up
-            for socialaccount in request.user.socialaccount_set.all():
-                send_registered_notice_email(request.user, socialaccount)
-                send_new_user_message_email(request.user, socialaccount)
+            for socialaccount in user.socialaccount_set.all():
+                send_registered_notice_email(user, socialaccount)
+                send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
             f'{reverse("authorize").rstrip("/")}/?{request.META["QUERY_STRING"]}'
         )
+
+    try:
+        # questions to display in the form
+        questions = json.loads(request.GET.get('QUESTIONS'))
+    except JSONDecodeError:
+        raise Http404()
+
     return render(
         request,
         'api/account/questionnaire_form.html',
-        {'questions': QUESTIONS, 'query_params': request.GET.dict()},
+        {'questions': questions, 'query_params': request.GET.dict()},
     )
