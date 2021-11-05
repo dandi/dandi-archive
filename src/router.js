@@ -1,6 +1,5 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
 
 import HomeView from '@/views/HomeView/HomeView.vue';
 import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
@@ -8,6 +7,8 @@ import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
 import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView.vue';
 import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
 import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
+import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
+import MetadataView from '@/views/MetadataView/MetadataView.vue';
 
 Vue.use(Router);
 
@@ -43,6 +44,12 @@ export default new Router({
       name: 'fileBrowser',
       props: true,
       component: FileBrowser,
+    },
+    {
+      path: '/dandiset/:identifier/:version/metadata',
+      name: 'metadata',
+      props: true,
+      component: MetadataView,
     },
     {
       path: '/dandiset/:identifier/:version?',

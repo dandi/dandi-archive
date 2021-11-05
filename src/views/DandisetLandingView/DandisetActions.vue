@@ -90,8 +90,8 @@
         <v-btn
           id="view-edit-metadata"
           outlined
-          style="width: 100%"
-          @click="$emit('edit')"
+          block
+          :to="meditorLink"
         >
           <v-icon
             left
@@ -158,10 +158,23 @@ export default defineComponent({
       };
     });
 
+    const meditorLink: ComputedRef<Location|null> = computed(() => {
+      if (!currentDandiset.value) {
+        return null;
+      }
+      const version: string = currentVersion.value;
+      const { identifier } = currentDandiset.value.dandiset;
+      return {
+        name: 'metadata',
+        params: { identifier, version },
+      };
+    });
+
     return {
       currentDandiset,
       currentVersion,
       fileBrowserLink,
+      meditorLink,
     };
   },
 });
