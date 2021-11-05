@@ -440,6 +440,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             is_folder = folder_index >= 0
 
             if not is_folder:
+                # Ensure base_path is entire filename
+                base_path = asset.path[asset.path.rfind('/') + 1 :]
                 files[base_path] = asset
             else:
                 base_path = base_path[:folder_index]
