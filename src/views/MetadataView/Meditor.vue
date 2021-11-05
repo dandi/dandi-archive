@@ -46,21 +46,12 @@
             {{ basicModel.name }}
           </v-card-title>
           <v-card-actions class="pt-0">
-            <v-tooltip bottom>
-              <template #activator="{ on }">
-                <v-btn
-                  icon
-                  color="secondary"
-                  v-on="on"
-                  @click="exitMeditor"
-                >
-                  <v-icon>
-                    mdi-arrow-left
-                  </v-icon>
-                </v-btn>
-              </template>
-              <span>Cancel</span>
-            </v-tooltip>
+            <v-btn
+              icon
+              @click="exitMeditor"
+            >
+              <v-icon>mdi-home</v-icon>
+            </v-btn>
             <v-tooltip bottom>
               <template #activator="{ on }">
                 <v-btn
@@ -235,6 +226,7 @@ import store from '@/store';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
 import MeditorTransactionTracker from '@/utils/transactions';
+import { Location } from 'vue-router';
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
@@ -285,8 +277,6 @@ export default defineComponent({
       complexModelValidation,
     } = editorInterface;
 
-    const closeEditor = () => { ctx.emit('close'); };
-
     function sectionButtonColor(propKey: string) {
       const sectionValid = complexModelValidation[propKey];
       if (sectionValid !== undefined && !sectionValid) {
@@ -308,6 +298,17 @@ export default defineComponent({
     const complexRef: Ref<any> = ref(null);
 
     const TransactionTracker = new MeditorTransactionTracker(editorInterface);
+
+    const closeEditor = () => {
+      const newRoute: Location = {
+        name: 'dandisetLanding',
+        params: {
+          identifier: id.value || '',
+          version: currentDandiset.value?.version || '',
+        },
+      };
+      ctx.root.$router.push(newRoute);
+    };
 
     const undoChange = () => {
       // Undo the change and then trigger revalidation of the form. The return value of undo()
