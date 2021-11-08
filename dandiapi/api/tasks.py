@@ -4,11 +4,13 @@ from typing import Dict, List
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
 from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.doi import delete_doi
+from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
@@ -16,7 +18,7 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, UserMetadata, Version
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # If this environment variable is set, the pydantic model will allow URLs with localhost
@@ -161,3 +163,12 @@ def validate_version_metadata(version_id: int) -> None:
 @shared_task
 def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
+
+
+@shared_task
+def send_pending_users_email() -> None:
+    """Send an email to admins listing users with status set to PENDING"""
+    pending_users = User.objects.select_related('metadata').filter(
+        metadata__status=UserMetadata.Status.PENDING
+    )
+    send_pending_users_message(pending_users)
