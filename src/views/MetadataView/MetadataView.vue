@@ -4,6 +4,7 @@
     v-page-title="meta.name"
   >
     <meditor
+      v-if="renderMeditor"
       :schema="schema"
       :model="meta"
       :readonly="!userCanModifyDandiset"
@@ -14,7 +15,7 @@
 
 <script lang="ts">
 import {
-  defineComponent, computed,
+  defineComponent, computed, watchEffect, ref,
 } from '@vue/composition-api';
 
 import store from '@/store';
@@ -40,15 +41,28 @@ export default defineComponent({
     const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
     const userCanModifyDandiset = computed(() => store.getters.dandiset.userCanModifyDandiset);
 
-    if (!currentDandiset.value) {
-      const { identifier, version } = props;
-      store.dispatch.dandiset.fetchDandiset({ identifier, version });
-    }
+    const renderMeditor = ref(true);
+
+    watchEffect(async () => {
+      if (
+        !currentDandiset.value
+      || currentDandiset.value.dandiset.identifier !== props.identifier
+      || currentDandiset.value.version !== props.version) {
+        // force vjsf to rerender the meditor
+        renderMeditor.value = false;
+
+        const { identifier, version } = props;
+        await store.dispatch.dandiset.fetchDandiset({ identifier, version });
+
+        renderMeditor.value = true;
+      }
+    });
 
     return {
       schema,
       meta,
       userCanModifyDandiset,
+      renderMeditor,
     };
   },
 });
