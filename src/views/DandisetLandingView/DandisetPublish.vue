@@ -163,7 +163,7 @@
           </v-list>
           <v-btn
             color="primary"
-            @click="$emit('edit')"
+            :to="meditorLink"
           >
             Fix issues
           </v-btn>
@@ -308,7 +308,7 @@ import store from '@/store';
 import { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
-import { RawLocation } from 'vue-router';
+import { Location, RawLocation } from 'vue-router';
 
 function getValidationErrorIcon(errorField: string): string {
   const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
@@ -407,6 +407,18 @@ export default defineComponent({
       () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
     );
 
+    const meditorLink: ComputedRef<Location|null> = computed(() => {
+      if (!currentDandiset.value) {
+        return null;
+      }
+      const version: string = currentVersion.value;
+      const { identifier } = currentDandiset.value.dandiset;
+      return {
+        name: 'metadata',
+        params: { identifier, version },
+      } as Location;
+    });
+
     const showPublishWarningDialog = ref(false);
 
     function formatDate(date: string): string {
@@ -460,6 +472,7 @@ export default defineComponent({
       publishDisabledMessage,
       publishButtonDisabled,
       publishButtonHidden,
+      meditorLink,
       getValidationErrorIcon,
       publish,
       draftVersion,

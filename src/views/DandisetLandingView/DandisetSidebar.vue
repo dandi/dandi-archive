@@ -1,14 +1,11 @@
 <template>
   <div>
-    <DandisetActions
-      @edit="$emit('edit')"
-    />
+    <DandisetActions />
     <DandisetOwners
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
     <DandisetPublish
       :user-can-modify-dandiset="userCanModifyDandiset"
-      @edit="$emit('edit')"
     />
   </div>
 </template>

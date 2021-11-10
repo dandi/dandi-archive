@@ -1,65 +1,49 @@
 <template>
-  <div
-    v-if="schema"
-    v-page-title="meta.name"
-  >
-    <template v-if="edit && Object.entries(meta).length">
-      <meditor
-        :schema="schema"
-        :model="meta"
-        :readonly="!userCanModifyDandiset"
-        @close="edit = false"
+  <div>
+    <v-toolbar class="grey darken-2 white--text">
+      <DandisetSearchField />
+    </v-toolbar>
+    <v-container
+      v-if="currentDandiset"
+      fluid
+      class="grey lighten-4 pa-0"
+    >
+      <v-progress-linear
+        v-if="!currentDandiset || loading"
+        indeterminate
       />
-    </template>
-    <template v-else>
-      <v-toolbar class="grey darken-2 white--text">
-        <DandisetSearchField />
-      </v-toolbar>
-      <v-container
-        v-if="currentDandiset"
-        fluid
-        class="grey lighten-4 pa-0"
-      >
-        <v-progress-linear
-          v-if="!currentDandiset || loading"
-          indeterminate
-        />
-        <v-row no-gutters>
-          <v-col>
-            <DandisetMain
-              :schema="schema"
-              :meta="meta"
-              @edit="edit = true"
-            />
-          </v-col>
-          <v-col
-            v-if="!$vuetify.breakpoint.smAndDown"
-            cols="2"
-          >
-            <DandisetSidebar
-              :user-can-modify-dandiset="userCanModifyDandiset"
-              @edit="edit = true"
-            />
-          </v-col>
-        </v-row>
-        <v-row v-if="$vuetify.breakpoint.smAndDown">
-          <v-col
-            cols="12"
-          >
-            <DandisetSidebar
-              :user-can-modify-dandiset="userCanModifyDandiset"
-              @edit="edit = true"
-            />
-          </v-col>
-        </v-row>
-      </v-container>
-    </template>
+      <v-row no-gutters>
+        <v-col>
+          <DandisetMain
+            :schema="schema"
+            :meta="meta"
+          />
+        </v-col>
+        <v-col
+          v-if="!$vuetify.breakpoint.smAndDown"
+          cols="2"
+        >
+          <DandisetSidebar
+            :user-can-modify-dandiset="userCanModifyDandiset"
+          />
+        </v-col>
+      </v-row>
+      <v-row v-if="$vuetify.breakpoint.smAndDown">
+        <v-col
+          cols="12"
+        >
+          <DandisetSidebar
+            :user-can-modify-dandiset="userCanModifyDandiset"
+          />
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 
 <script lang="ts">
 import {
-  defineComponent, ref, computed, watchEffect, watch,
+  defineComponent, computed, watchEffect, watch,
 } from '@vue/composition-api';
 import { RawLocation } from 'vue-router';
 
@@ -68,14 +52,12 @@ import { user as userFunc } from '@/rest';
 import store from '@/store';
 import { Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
-import Meditor from './Meditor.vue';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
 export default defineComponent({
   name: 'DandisetLandingView',
   components: {
-    Meditor,
     DandisetMain,
     DandisetSearchField,
     DandisetSidebar,
@@ -99,9 +81,6 @@ export default defineComponent({
 
     const user = computed(userFunc);
     const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
-
-    const edit = ref(false);
-    const readonly = ref(false);
 
     function navigateToVersion(versionToNavigateTo: string) {
       if (ctx.root.$route.params.version === versionToNavigateTo) return;
@@ -153,8 +132,6 @@ export default defineComponent({
       schema,
       user,
       userCanModifyDandiset,
-      edit,
-      readonly,
       meta,
     };
   },
