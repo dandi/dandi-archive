@@ -41,7 +41,11 @@ async function loadUser() {
   return dandiRest.restoreLogin();
 }
 
-loadUser().then(() => {
+async function loadSchema() {
+  await store.dispatch.dandiset.fetchSchema();
+}
+
+Promise.all([loadUser(), loadSchema()]).then(() => {
   new Vue({
     setup() {
       provide('store', store);
