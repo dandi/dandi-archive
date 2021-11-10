@@ -13,16 +13,12 @@
 import AppBar from '@/components/AppBar/AppBar.vue';
 import DandiFooter from '@/components/DandiFooter.vue';
 import UserStatusBanner from '@/components/UserStatusBanner.vue';
-import store from '@/store';
 
 export default {
   components: {
     AppBar,
     DandiFooter,
     UserStatusBanner,
-  },
-  created() {
-    store.dispatch.dandiset.fetchSchema();
   },
 };
 </script>
