@@ -26,6 +26,9 @@ class DashboardView(TemplateView):
         uploads = self._uploads()
         context['upload_count'] = uploads.count()
         context['uploads'] = uploads[:10]
+        users = self._users()
+        context['user_count'] = users.count()
+        context['users'] = users
 
         return context
 
@@ -58,6 +61,9 @@ class DashboardView(TemplateView):
 
     def _uploads(self):
         return Upload.objects.annotate()
+
+    def _users(self):
+        return User.objects.select_related('metadata').order_by('-date_joined')
 
 
 @require_http_methods(['GET', 'POST'])
