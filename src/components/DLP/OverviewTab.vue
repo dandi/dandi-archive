@@ -47,7 +47,7 @@
 
       <v-list
         class="pl-4"
-        style="column-count: 4;"
+        :style="`column-count: ${Math.min(Math.ceil(fundingInformation.length / 2), 4)};`"
       >
         <div
           v-for="(item, i) in fundingInformation"
