@@ -34,6 +34,100 @@
       </div>
     </v-card>
 
+    <v-card
+      outlined
+      class="mt-3"
+    >
+      <v-card-title class="font-weight-regular">
+        <v-icon class="mr-3 grey--text text--lighten-1">
+          mdi-currency-usd
+        </v-icon>
+        Funding information
+      </v-card-title>
+
+      <v-list
+        class="pl-4"
+        style="column-count: 4;"
+      >
+        <div
+          v-for="(item, i) in fundingInformation"
+          :key="i"
+          class="my-2"
+        >
+          <div
+            class="d-inline-block"
+            style="width: 100%;"
+          >
+            <MetadataListItem>
+              <v-row
+                no-gutters
+                class="justify-space-between"
+              >
+                <v-col
+                  cols="9"
+                  class="grey--text text--darken-3"
+                >
+                  <div class="mb-1">
+                    {{ item.name }}
+                  </div>
+                  <div
+                    v-if="item.awardNumber"
+                    class="text-caption grey--text text--darken-1"
+                  >
+                    <strong>Award Number: </strong>{{ item.awardNumber }}
+                  </div>
+                  <div
+                    v-if="item.roleName && item.roleName.length"
+                    class="text-caption grey--text text--darken-1"
+                  >
+                    <strong>Roles: </strong>
+                    <div
+                      v-for="(role, ii) in item.roleName"
+                      :key="ii"
+                      class="ml-4"
+                    >
+                      - {{ role }}
+                    </div>
+                  </div>
+                  <div
+                    v-if="item.contactPoint && item.contactPoint.length"
+                    class="text-caption grey--text text--darken-1"
+                  >
+                    <strong>Contact points: </strong>
+                    <div
+                      v-for="(contact, ii) in item.contactPoint"
+                      :key="ii"
+                      class="ml-4"
+                    >
+                      <span>
+                        -
+                        <a :href="`mailto:${contact.email}`">{{ contact.email }}</a>
+                        /
+                        <a :href="contact.url">{{ contact.url }}</a>
+                      </span>
+                    </div>
+                  </div>
+                </v-col>
+                <v-col
+                  v-if="item.url"
+                  class="pl-1 text-end font-weight-light"
+                >
+                  <v-btn
+                    icon
+                    :href="item.url"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <v-icon>mdi-link</v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </MetadataListItem>
+          </div>
+        </div>
+      </v-list>
+    </v-card>
+
     <v-row>
       <v-col cols="4">
         <v-card outlined>
@@ -315,9 +409,17 @@ export default defineComponent({
   setup(props) {
     const contributors = computed(
       () => props.meta.contributor.filter(
-        (contributor) => !!(contributor.includeInCitation),
+        (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
       ),
     );
+    const fundingInformation = computed(
+      () => props.meta.contributor?.filter(
+        (contributor) => !!(contributor.schemaKey === 'Organization')
+        // Only include organizations with "Sponsor" or "Funder" roles in Funding Information
+        && (contributor.roleName?.includes('dcite:Funder') || contributor.roleName?.includes('dcite:Sponsor')),
+      ),
+    );
+
     const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
       () => props.meta.about,
     );
@@ -348,6 +450,7 @@ export default defineComponent({
 
     return {
       contributors,
+      fundingInformation,
       subjectMatter,
       accessInformation,
       relatedResources,
