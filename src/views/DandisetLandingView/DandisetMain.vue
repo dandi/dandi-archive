@@ -137,7 +137,9 @@
         </v-col>
       </v-row>
 
-      <v-tabs
+      <!-- TODO: Re-enable these tab components when the others are complete -->
+
+      <!-- <v-tabs
         v-model="currentTab"
         background-color="grey lighten-5"
         class="ml-3"
@@ -153,7 +155,7 @@
           <v-icon>{{ tab.icon }}</v-icon>
           {{ tab.name }}
         </v-tab>
-      </v-tabs>
+      </v-tabs> -->
     </v-card>
 
     <!-- Dynamically render component based on current tab -->
@@ -278,7 +280,7 @@ export default defineComponent({
     });
     const meta = computed(() => currentDandiset.value?.metadata);
 
-    const currentTab = ref('');
+    const currentTab = ref(0);
 
     function formatDate(date: string): string {
       return moment(date).format('LL');
