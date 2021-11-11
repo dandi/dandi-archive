@@ -1,6 +1,9 @@
 <template>
   <div>
-    <v-card outlined>
+    <v-card
+      outlined
+      height="100%"
+    >
       <v-card-title class="font-weight-regular">
         <v-icon class="mr-3 grey--text text--lighten-1">
           mdi-account-multiple
@@ -130,7 +133,10 @@
 
     <v-row>
       <v-col cols="4">
-        <v-card outlined>
+        <v-card
+          outlined
+          height="100%"
+        >
           <v-card-title class="font-weight-regular">
             <v-icon class="mr-3 grey--text text--lighten-1">
               mdi-notebook-outline
@@ -171,7 +177,10 @@
       </v-col>
 
       <v-col cols="4">
-        <v-card outlined>
+        <v-card
+          outlined
+          height="100%"
+        >
           <v-card-title class="font-weight-regular">
             <v-icon class="mr-3 grey--text text--lighten-1">
               mdi-account-question
@@ -230,7 +239,10 @@
       </v-col>
 
       <v-col cols="4">
-        <v-card outlined>
+        <v-card
+          outlined
+          height="100%"
+        >
           <v-card-title class="font-weight-regular">
             <v-icon class="mr-3 grey--text text--lighten-1">
               mdi-book
