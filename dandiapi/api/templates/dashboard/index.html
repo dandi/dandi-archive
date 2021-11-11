@@ -141,7 +141,7 @@
         <td>{{ user.first_name }}</td>
         <td>{{ user.last_name }}</td>
         <td>{{ user.date_joined }}</td>
-        <td>{{ user.metadata.status }}</td>
+        <td><a href="{% url 'user-approval' user.username %}">{{ user.metadata.status }}</a></td>
       </tr>
       {% endfor %}
     </table>
