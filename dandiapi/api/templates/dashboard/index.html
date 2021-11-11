@@ -133,6 +133,7 @@
           <td>First name</td>
           <td>Last name</td>
           <td>Date joined</td>
+          <td>Status</td>
         </tr>
       </thead>
       {% for user in users %}
@@ -140,6 +141,7 @@
         <td>{{ user.first_name }}</td>
         <td>{{ user.last_name }}</td>
         <td>{{ user.date_joined }}</td>
+        <td>{{ user.metadata.status }}</td>
       </tr>
       {% endfor %}
     </table>
