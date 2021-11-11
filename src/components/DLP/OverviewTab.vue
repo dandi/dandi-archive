@@ -1,6 +1,7 @@
 <template>
   <div>
     <v-card
+      v-if="contributors && contributors.length"
       outlined
       height="100%"
     >
@@ -38,6 +39,7 @@
     </v-card>
 
     <v-card
+      v-if="fundingInformation && fundingInformation.length"
       outlined
       class="mt-3"
     >
@@ -132,7 +134,7 @@
     </v-card>
 
     <v-row>
-      <v-col cols="4">
+      <v-col v-if="subjectMatter && subjectMatter.length">
         <v-card
           outlined
           height="100%"
@@ -176,7 +178,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="4">
+      <v-col v-if="accessInformation && accessInformation.length">
         <v-card
           outlined
           height="100%"
@@ -238,7 +240,7 @@
         </v-card>
       </v-col>
 
-      <v-col cols="4">
+      <v-col v-if="relatedResources && relatedResources.length">
         <v-card
           outlined
           height="100%"
@@ -302,6 +304,7 @@
     </v-row>
 
     <v-card
+      v-if="assetSummary"
       outlined
     >
       <v-card-title class="font-weight-regular">
@@ -420,7 +423,7 @@ export default defineComponent({
   },
   setup(props) {
     const contributors = computed(
-      () => props.meta.contributor.filter(
+      () => props.meta.contributor?.filter(
         (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
       ),
     );
