@@ -63,7 +63,11 @@ class DashboardView(TemplateView):
         return Upload.objects.annotate()
 
     def _users(self):
-        return User.objects.select_related('metadata').order_by('-date_joined')
+        return (
+            User.objects.select_related('metadata')
+            .filter(metadata__status=UserMetadata.Status.APPROVED)
+            .order_by('-date_joined')
+        )
 
 
 @require_http_methods(['GET', 'POST'])
