@@ -22,7 +22,6 @@
             :href="githubLink"
             target="_blank"
             rel="noopener"
-            v-on="on"
           >{{ version }}</a>
         </v-col>
         <v-col>
