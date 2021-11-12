@@ -36,7 +36,7 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
     email = mailoutbox[1]
-    assert email.subject == f'DANDI: New user registration to review: {user.username}'
+    assert email.subject == f'DANDI: Review new user: {user.username}'
     assert email.to == ['dandi@mit.edu']
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())

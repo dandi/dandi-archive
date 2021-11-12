@@ -77,7 +77,7 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
     }
     # Email sent to the DANDI list when a new user logs in for the first time
     return build_message(
-        subject=f'DANDI: New user registration to review: {user.username}',
+        subject=f'DANDI: Review new user: {user.username}',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
         to=['dandi@mit.edu'],
         html_message=render_to_string('api/mail/new_user_message.html', render_context),
