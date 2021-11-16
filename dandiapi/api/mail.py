@@ -167,7 +167,7 @@ def build_pending_users_message(users: Union[QuerySet, List[User]]):
 
 
 def send_pending_users_message(users: Union[QuerySet, List[User]]):
-    logger.info(f'Sending pending users message to admins at dandi@mit.edu')
+    logger.info('Sending pending users message to admins at dandi@mit.edu')
     messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
