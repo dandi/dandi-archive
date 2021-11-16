@@ -168,7 +168,5 @@ def delete_doi_task(doi: str) -> None:
 @shared_task
 def send_pending_users_email() -> None:
     """Send an email to admins listing users with status set to PENDING."""
-    pending_users = User.objects.select_related('metadata').filter(
-        metadata__status=UserMetadata.Status.PENDING
-    )
+    pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)
     send_pending_users_message(pending_users)
