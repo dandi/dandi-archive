@@ -97,7 +97,7 @@
 <script>
 import { mapState } from 'vuex';
 import { loggedIn, user } from '@/rest';
-import DandisetOwnersDialog from './DandisetOwnersDialog.vue';
+import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
 
 export default {
   name: 'DandisetOwners',
