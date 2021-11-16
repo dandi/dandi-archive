@@ -46,7 +46,8 @@
     >
       <v-dialog
         v-model="ownerDialog"
-        width="50%"
+        width="80%"
+        persistent
       >
         <template #activator="{ on }">
           <v-tooltip
