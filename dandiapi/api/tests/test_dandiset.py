@@ -58,9 +58,9 @@ def test_dandiset_rest_list(api_client, dandiset):
     [
         ('', ['published']),
         ('?draft=true', ['draft', 'published']),
-        ('?empty=true', ['published']),
-        ('?draft=true&empty=true', ['empty', 'draft', 'published']),
-        ('?empty=true&draft=true', ['empty', 'draft', 'published']),
+        ('?empty=true', ['published', 'erased']),
+        ('?draft=true&empty=true', ['empty', 'draft', 'published', 'erased']),
+        ('?empty=true&draft=true', ['empty', 'draft', 'published', 'erased']),
         ('?draft=false&empty=false', ['published']),
     ],
     ids=[
@@ -89,19 +89,21 @@ def test_dandiset_versions(
     draft_version_factory(dandiset=empty_dandiset)
 
     # Dandiset with populated draft
-    # draft_version = draft_version_factory()
-    # draft = draft_version.dandiset
     draft_dandiset = dandiset_factory()
     draft_version = draft_version_factory(dandiset=draft_dandiset)
     draft_version.assets.add(asset_factory())
 
     # Dandiset with published version
-    # published_version = published_version_factory()
-    # published = published_version.dandiset
     published_dandiset = dandiset_factory()
     draft_version = draft_version_factory(dandiset=published_dandiset)
     draft_version.assets.add(asset_factory())
     published_version = published_version_factory(dandiset=published_dandiset)
+    published_version.assets.add(asset_factory())
+
+    # Dandiset with published version and empty draft
+    erased_dandiset = dandiset_factory()
+    draft_version_factory(dandiset=erased_dandiset)
+    published_version = published_version_factory(dandiset=erased_dandiset)
     published_version.assets.add(asset_factory())
 
     def expected_serialization(dandiset: Dandiset):
@@ -153,6 +155,7 @@ def test_dandiset_versions(
         'empty': expected_serialization(empty_dandiset),
         'draft': expected_serialization(draft_dandiset),
         'published': expected_serialization(published_dandiset),
+        'erased': expected_serialization(erased_dandiset),
     }
 
     expected_results = [possible_results[result] for result in results]

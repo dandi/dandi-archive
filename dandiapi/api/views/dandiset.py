@@ -98,16 +98,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     version_count__gt=1
                 )
             if not show_empty:
-                # Only include dandisets that have assets.
-                # It is enough to check the draft version, since any published version is required
-                # to have assets in it.
-                draft_version = (
+                # Only include dandisets that have assets in their most recent version.
+                most_recent_version = (
                     Version.objects.filter(dandiset=OuterRef('pk'))
-                    .filter(version='draft')
-                    .annotate(asset_count=Count('assets'))
+                    .order_by('created')
+                    .annotate(asset_count=Count('assets'))[:1]
                 )
                 queryset = queryset.annotate(
-                    draft_asset_count=Subquery(draft_version.values('asset_count'))
+                    draft_asset_count=Subquery(most_recent_version.values('asset_count'))
                 )
                 queryset = queryset.filter(draft_asset_count__gt=0)
         return queryset
