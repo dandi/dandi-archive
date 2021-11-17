@@ -55,6 +55,13 @@ Adding questions such as:
 
 may help to stem the tide of abandoned dandisets.
 
+The collaborators question, answered positively, would add a badge to the
+dandiset's landing page and search result display indicating the call for
+collaboration.
+
+The anticipation date question would delay considering the dandiset abandoned
+until after that date.
+
 ### Enable deletion of dandisets
 
 Part of the problem may be that people simply cannot delete their own abanonded
