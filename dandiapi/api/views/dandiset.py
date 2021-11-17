@@ -5,7 +5,7 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -82,9 +82,34 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # TODO: This will filter the dandisets list if there is a query parameter user=me.
         # This is not a great solution but it is needed for the My Dandisets page.
         queryset = Dandiset.objects.all().order_by('created')
-        user_kwarg = self.request.query_params.get('user', None)
-        if user_kwarg == 'me':
-            return get_objects_for_user(self.request.user, 'owner', queryset, with_superuser=False)
+        if self.action == 'list':
+            user_kwarg = self.request.query_params.get('user', None)
+            if user_kwarg == 'me':
+                queryset = get_objects_for_user(
+                    self.request.user, 'owner', queryset, with_superuser=False
+                )
+            # Same deal for filtering out draft or empty dandisets
+            show_draft = self.request.query_params.get('draft', 'false') == 'true'
+            show_empty = self.request.query_params.get('empty', 'false') == 'true'
+
+            if not show_draft:
+                # Only include dandisets that have more than one version, i.e. published dandisets.
+                queryset = queryset.annotate(version_count=Count('versions')).filter(
+                    version_count__gt=1
+                )
+            if not show_empty:
+                # Only include dandisets that have assets.
+                # It is enough to check the draft version, since any published version is required
+                # to have assets in it.
+                draft_version = (
+                    Version.objects.filter(dandiset=OuterRef('pk'))
+                    .filter(version='draft')
+                    .annotate(asset_count=Count('assets'))
+                )
+                queryset = queryset.annotate(
+                    draft_asset_count=Subquery(draft_version.values('asset_count'))
+                )
+                queryset = queryset.filter(draft_asset_count__gt=0)
         return queryset
 
     def get_object(self):
