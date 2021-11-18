@@ -56,17 +56,17 @@ def test_dandiset_rest_list(api_client, dandiset):
 @pytest.mark.parametrize(
     ('params', 'results'),
     [
-        ('', ['published']),
-        ('?draft=true', ['draft', 'published']),
-        ('?empty=true', ['published', 'erased']),
+        ('', ['empty', 'draft', 'published', 'erased']),
+        ('?draft=false', ['published', 'erased']),
+        ('?empty=false', ['draft', 'published']),
         ('?draft=true&empty=true', ['empty', 'draft', 'published', 'erased']),
         ('?empty=true&draft=true', ['empty', 'draft', 'published', 'erased']),
         ('?draft=false&empty=false', ['published']),
     ],
     ids=[
         'nothing',
-        'draft-only',
         'empty-only',
+        'draft-only',
         'draft-empty',
         'empty-draft',
         'draft-false-empty-false',

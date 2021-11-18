@@ -89,8 +89,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     self.request.user, 'owner', queryset, with_superuser=False
                 )
             # Same deal for filtering out draft or empty dandisets
-            show_draft = self.request.query_params.get('draft', 'false') == 'true'
-            show_empty = self.request.query_params.get('empty', 'false') == 'true'
+            show_draft = self.request.query_params.get('draft', 'true') == 'true'
+            show_empty = self.request.query_params.get('empty', 'true') == 'true'
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
