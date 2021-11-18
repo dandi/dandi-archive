@@ -122,9 +122,9 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
     api_client.force_authenticate(user=user)
 
     usernames = [
-        'jane_bar',
-        'jane_doe',
-        'jane_foo',
+        'odysseus_bar',
+        'odysseus_doe',
+        'odysseus_foo',
         # Some extra users to be filtered out
         'john_bar',
         'john_doe',
@@ -136,7 +136,7 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
     assert (
         api_client.get(
             '/api/users/search/?',
-            {'username': 'jane'},
+            {'username': 'odysseus'},
             format='json',
         ).data
         == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
@@ -147,14 +147,14 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
 def test_user_search_limit_enforced(api_client, user, user_factory, social_account_factory):
     api_client.force_authenticate(user=user)
 
-    usernames = [f'jane_{i:02}' for i in range(0, 20)]
+    usernames = [f'odysseus_{i:02}' for i in range(0, 20)]
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
     assert (
         api_client.get(
             '/api/users/search/?',
-            {'username': 'jane'},
+            {'username': 'odysseus'},
             format='json',
         ).data
         == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
