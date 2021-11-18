@@ -36,7 +36,7 @@ def test_dandiset_published_count(
 
 @pytest.mark.django_db
 def test_dandiset_rest_list(api_client, dandiset):
-    assert api_client.get('/api/dandisets/').data == {
+    assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
         'count': 1,
         'next': None,
         'previous': None,
@@ -53,81 +53,118 @@ def test_dandiset_rest_list(api_client, dandiset):
     }
 
 
+@pytest.mark.parametrize(
+    ('params', 'results'),
+    [
+        ('', ['empty', 'draft', 'published', 'erased']),
+        ('?draft=false', ['published', 'erased']),
+        ('?empty=false', ['draft', 'published']),
+        ('?draft=true&empty=true', ['empty', 'draft', 'published', 'erased']),
+        ('?empty=true&draft=true', ['empty', 'draft', 'published', 'erased']),
+        ('?draft=false&empty=false', ['published']),
+    ],
+    ids=[
+        'nothing',
+        'empty-only',
+        'draft-only',
+        'draft-empty',
+        'empty-draft',
+        'draft-false-empty-false',
+    ],
+)
 @pytest.mark.django_db
 def test_dandiset_versions(
-    api_client, dandiset_factory, draft_version_factory, published_version_factory
+    api_client,
+    dandiset_factory,
+    draft_version_factory,
+    published_version_factory,
+    asset_factory,
+    params,
+    results,
 ):
     # Create some dandisets of different kinds.
     #
-    # Empty dandiset.
-    empty = dandiset_factory()
+    # Dandiset with empty draft
+    empty_dandiset = dandiset_factory()
+    draft_version_factory(dandiset=empty_dandiset)
 
-    # Dandiset with a draft version only.
-    draft_version = draft_version_factory()
-    draft = draft_version.dandiset
+    # Dandiset with populated draft
+    draft_dandiset = dandiset_factory()
+    draft_version = draft_version_factory(dandiset=draft_dandiset)
+    draft_version.assets.add(asset_factory())
 
-    # Dandiset with a published version only.
-    published_version = published_version_factory()
-    published = published_version.dandiset
+    # Dandiset with published version
+    published_dandiset = dandiset_factory()
+    draft_version = draft_version_factory(dandiset=published_dandiset)
+    draft_version.assets.add(asset_factory())
+    published_version = published_version_factory(dandiset=published_dandiset)
+    published_version.assets.add(asset_factory())
 
-    assert api_client.get('/api/dandisets/').data == {
-        'count': 3,
+    # Dandiset with published version and empty draft
+    erased_dandiset = dandiset_factory()
+    draft_version_factory(dandiset=erased_dandiset)
+    published_version = published_version_factory(dandiset=erased_dandiset)
+    published_version.assets.add(asset_factory())
+
+    def expected_serialization(dandiset: Dandiset):
+        draft_version = dandiset.draft_version
+        published_version = dandiset.most_recent_published_version
+        contact_person = (published_version or draft_version).metadata['contributor'][0]['name']
+        return {
+            'identifier': dandiset.identifier,
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+            'contact_person': contact_person,
+            'draft_version': {
+                'version': draft_version.version,
+                'name': draft_version.name,
+                'asset_count': draft_version.asset_count,
+                'size': draft_version.size,
+                'status': 'Pending',
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'dandiset': {
+                    'identifier': dandiset.identifier,
+                    'created': TIMESTAMP_RE,
+                    'modified': TIMESTAMP_RE,
+                    'contact_person': contact_person,
+                },
+            }
+            if draft_version is not None
+            else None,
+            'most_recent_published_version': {
+                'version': published_version.version,
+                'name': published_version.name,
+                'asset_count': published_version.asset_count,
+                'size': published_version.size,
+                'status': 'Pending',
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'dandiset': {
+                    'identifier': dandiset.identifier,
+                    'created': TIMESTAMP_RE,
+                    'modified': TIMESTAMP_RE,
+                    'contact_person': contact_person,
+                },
+            }
+            if published_version is not None
+            else None,
+        }
+
+    possible_results = {
+        'empty': expected_serialization(empty_dandiset),
+        'draft': expected_serialization(draft_dandiset),
+        'published': expected_serialization(published_dandiset),
+        'erased': expected_serialization(erased_dandiset),
+    }
+
+    expected_results = [possible_results[result] for result in results]
+
+    assert api_client.get(f'/api/dandisets/{params}').json() == {
+        'count': len(results),
         'next': None,
         'previous': None,
-        'results': [
-            {
-                'identifier': empty.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': '',
-                'draft_version': None,
-                'most_recent_published_version': None,
-            },
-            {
-                'identifier': draft.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': draft_version.metadata['contributor'][0]['name'],
-                'draft_version': {
-                    'version': draft.draft_version.version,
-                    'name': draft.draft_version.name,
-                    'asset_count': draft.draft_version.asset_count,
-                    'size': draft.draft_version.size,
-                    'status': 'Pending',
-                    'created': TIMESTAMP_RE,
-                    'modified': TIMESTAMP_RE,
-                    'dandiset': {
-                        'identifier': draft.identifier,
-                        'created': TIMESTAMP_RE,
-                        'modified': TIMESTAMP_RE,
-                        'contact_person': draft_version.metadata['contributor'][0]['name'],
-                    },
-                },
-                'most_recent_published_version': None,
-            },
-            {
-                'identifier': published.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': published_version.metadata['contributor'][0]['name'],
-                'draft_version': None,
-                'most_recent_published_version': {
-                    'version': published.most_recent_published_version.version,
-                    'name': published.most_recent_published_version.name,
-                    'asset_count': published.most_recent_published_version.asset_count,
-                    'size': published.most_recent_published_version.size,
-                    'status': 'Pending',
-                    'created': TIMESTAMP_RE,
-                    'modified': TIMESTAMP_RE,
-                    'dandiset': {
-                        'identifier': published.identifier,
-                        'created': TIMESTAMP_RE,
-                        'modified': TIMESTAMP_RE,
-                        'contact_person': published_version.metadata['contributor'][0]['name'],
-                    },
-                },
-            },
-        ],
+        'results': expected_results,
     }
 
 
@@ -138,7 +175,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
     dandiset_factory()
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, dandiset)
-    assert api_client.get('/api/dandisets/?user=me').data == {
+    assert api_client.get('/api/dandisets/?user=me&draft=true&empty=true').data == {
         'count': 1,
         'next': None,
         'previous': None,
@@ -744,9 +781,10 @@ def test_dandiset_rest_search_empty_query(api_client):
 
 @pytest.mark.django_db
 def test_dandiset_rest_search_identifier(api_client, draft_version):
-    results = api_client.get('/api/dandisets/', {'search': draft_version.dandiset.identifier}).data[
-        'results'
-    ]
+    results = api_client.get(
+        '/api/dandisets/',
+        {'search': draft_version.dandiset.identifier, 'draft': 'true', 'empty': 'true'},
+    ).data['results']
     assert len(results) == 1
     assert results[0]['identifier'] == draft_version.dandiset.identifier
 
