@@ -141,7 +141,7 @@ export default defineComponent({
     // https://next.router.vuejs.org/api/#useroute
     const route = ctx.root.$route;
 
-    const showDrafts = ref(false);
+    const showDrafts = ref(true);
     const showEmpty = ref(false);
     const sortOption = ref(Number(route.query.sortOption) || 0);
     const sortDir = ref(Number(route.query.sortDir || -1));
