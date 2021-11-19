@@ -22,9 +22,8 @@ describe('dandisets page', () => {
     await expect(page).toClickXPath(vIcon('mdi-cog'));
     // Wait for the settings menu to open
     await page.waitForTimeout(500);
-    await expect(page).toClickXPath('//label[.= "Empty Dandisets"]')
+    await expect(page).toClickXPath('//label[.= "Empty Dandisets"]');
     await waitForRequestsToFinish();
-    
 
     await expect(page).toMatch(name);
     await expect(page).toMatch(`DANDI:${identifier}`);
