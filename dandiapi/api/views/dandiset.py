@@ -32,10 +32,10 @@ from dandiapi.api.views.serializers import (
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified']
+    ordering_fields = ['id', 'name', 'modified', "size"]
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are id, -id, name, -name, modified, and -modified.'
+        'Options are id, -id, name, -name, modified, -modified, size and -size.'
     )
 
     def filter_queryset(self, request, queryset, view):
@@ -64,6 +64,14 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     modified_version=Subquery(latest_version.values('modified'))
                 )
                 return queryset.order_by(f'{ordering}_version')
+            elif ordering.endswith('size'):
+                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
+                    '-created'
+                )[:1]
+                queryset = queryset.annotate(
+                    size=Subquery(latest_version.values('metadata__assetsSummary__numberOfBytes'))
+                )
+                return queryset.order_by("size")
         return queryset
 
 
