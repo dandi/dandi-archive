@@ -99,6 +99,7 @@ import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
+import { draftVersion } from '@/utils/constants';
 
 const DANDISETS_PER_PAGE = 8;
 
@@ -175,6 +176,10 @@ export default defineComponent({
     const pages = computed(() => {
       const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
       return Math.ceil(totalDandisets / DANDISETS_PER_PAGE) || 1;
+    });
+
+    watch([showDrafts, showEmpty], () => {
+      page.value = 1;
     });
 
     const queryParams = computed(() => ({
