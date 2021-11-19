@@ -99,7 +99,6 @@ import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
-import { draftVersion } from '@/utils/constants';
 
 const DANDISETS_PER_PAGE = 8;
 
