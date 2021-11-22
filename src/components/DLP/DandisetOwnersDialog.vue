@@ -1,11 +1,13 @@
 <template>
   <v-card
     class="flex-grow-0"
-    max-height="90vh"
+    :max-height="$vuetify.breakpoint.xs ? undefined : '90vh'"
+    :height="$vuetify.breakpoint.xs ? '100%' : undefined"
   >
     <v-card-title class="justify-space-between">
       <span class="font-weight-light">Manage Owners</span>
       <v-btn
+        :small="$vuetify.breakpoint.xs"
         color="info"
         elevation="0"
         @click="save() && $emit('close')"
@@ -18,7 +20,7 @@
 
     <v-row no-gutters>
       <v-col
-        cols="6"
+        :cols="$vuetify.breakpoint.xs ? 12 : 6"
         class="d-flex flex-column"
       >
         <div class="mx-3 mt-4 mb-2">
