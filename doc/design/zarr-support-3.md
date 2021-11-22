@@ -4,7 +4,7 @@ Zarr archives are stored in their entirety in S3.
 Zarr archives are represented by a single Asset through the API.
 A tree hash is computed as the zarr archive is uploaded.
 Each node in the tree hash in the hash is stored in S3 to avoid bloating the DB.
-Zarr archives as a whole are too big to be copied.
+The intended use of Zarr archives is primarily to support use cases where data are too big to be copied. However, Zarr archives can be small as well.
 
 # Requirements
 1. Zarr archives are stored in a "directory" in S3.
@@ -78,7 +78,7 @@ There will be a flag `zarr: true` indicating that the asset is a zarr archive.
 ## Storage implementation
 A zarr archive with a `zarr_id` `c1223302-aff4-44aa-bd4b-952aed997c78` is stored in the public S3 bucket: `dandiarchive/zarr/c1223302-aff4-44aa-bd4b-952aed997c78/...`
 
-Paths for zarr files should never use a `/` prefix.
+Paths for zarr files, or any assets in the archive, should never use a `/` prefix.
 `foo/bar.txt` is correct, `/foo/bar.txt` is not.
 
 If a client uploaded a file `1/2/3/foo.bar`, it would be stored at `dandiarchive/zarr/c1223302-aff4-44aa-bd4b-952aed997c78/1/2/3/foo.bar`.
