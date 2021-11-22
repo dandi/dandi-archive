@@ -122,7 +122,10 @@
               </v-chip>
             </v-card-text>
 
-            <v-card-text v-if="meta.license && meta.license.length">
+            <v-card-text
+              v-if="meta.license && meta.license.length"
+              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+            >
               Licenses:
               <v-chip
                 v-for="(license, i) in meta.license"
@@ -131,6 +134,18 @@
                 style="margin: 5px;"
               >
                 {{ license }}
+              </v-chip>
+            </v-card-text>
+
+            <v-card-text v-if="accessInformation && accessInformation.length">
+              Access Information:
+              <v-chip
+                v-for="(item, i) in accessInformation"
+                :key="i"
+                small
+                style="margin: 5px;"
+              >
+                {{ item.status }}
               </v-chip>
             </v-card-text>
           </v-card>
@@ -180,7 +195,7 @@ import filesize from 'filesize';
 import moment from 'moment';
 
 import store from '@/store';
-import { DandisetStats } from '@/types';
+import { AccessInformation, DandisetStats } from '@/types';
 
 import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
 import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
@@ -280,6 +295,10 @@ export default defineComponent({
     });
     const meta = computed(() => currentDandiset.value?.metadata);
 
+    const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
+      () => meta.value?.access,
+    );
+
     const currentTab = ref(0);
 
     function formatDate(date: string): string {
@@ -294,6 +313,8 @@ export default defineComponent({
       description,
       showFullDescription,
       MAX_DESCRIPTION_LENGTH,
+
+      accessInformation,
 
       currentTab,
       tabs,

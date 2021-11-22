@@ -372,7 +372,6 @@
 
 <script lang="ts">
 import {
-  AccessInformation,
   DandisetMetadata,
   RelatedResource,
   SubjectMatterOfTheDataset,
@@ -438,9 +437,6 @@ export default defineComponent({
     const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
       () => props.meta.about,
     );
-    const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
-      () => props.meta.access,
-    );
     const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
       () => props.meta.relatedResource,
     );
@@ -467,7 +463,6 @@ export default defineComponent({
       contributors,
       fundingInformation,
       subjectMatter,
-      accessInformation,
       relatedResources,
       assetSummary,
       contactPeople,
