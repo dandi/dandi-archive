@@ -73,7 +73,7 @@ The intended use of Zarr archives is primarily to support use cases where data a
   Return an asset ID
 
 When added to a dandiset, zarr archives will appear as a normal `Asset` in all the asset API endpoints.
-There will be a flag `zarr: true` indicating that the asset is a zarr archive.
+The asset metadata will contain the information required to determine if an asset is a normal file blob or a zarr file.
 
 ## Storage implementation
 A zarr archive with a `zarr_id` `c1223302-aff4-44aa-bd4b-952aed997c78` is stored in the public S3 bucket: `dandiarchive/zarr/c1223302-aff4-44aa-bd4b-952aed997c78/...`
