@@ -162,6 +162,7 @@
             </div>
           </v-list>
           <v-btn
+            v-if="isOwner"
             color="primary"
             :to="meditorLink"
           >
