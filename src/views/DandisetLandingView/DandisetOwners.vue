@@ -77,7 +77,7 @@
                 </v-btn>
               </div>
             </template>
-            <template v-if="loggedIn">
+            <template v-if="loggedIn()">
               You must be an owner to manage ownership.
             </template>
             <template v-else>
@@ -86,7 +86,6 @@
           </v-tooltip>
         </template>
         <DandisetOwnersDialog
-          :key="ownerDialogKey"
           :owners="owners"
           @close="ownerDialog = false"
         />
@@ -96,51 +95,47 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
-import { loggedIn, user } from '@/rest';
+import { dandiRest, loggedIn } from '@/rest';
+import store from '@/store';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
+import { computed, defineComponent, ref } from '@vue/composition-api';
 
-export default {
+export default defineComponent({
   name: 'DandisetOwners',
   components: {
     DandisetOwnersDialog,
   },
-  data() {
+  setup() {
+    const ownerDialog = ref(false);
+    const owners = computed(() => store.state.dandiset.owners);
+
+    const manageOwnersDisabled = computed(() => {
+      if (!dandiRest.user || !owners.value) {
+        return true;
+      }
+      return !owners.value.find((owner) => owner.username === dandiRest.user.username);
+    });
+    const limitedOwners = computed(() => {
+      if (!owners.value) {
+        return [];
+      }
+      return owners.value.slice(0, 5);
+    });
+    const numExtraOwners = computed(() => {
+      if (!owners.value) {
+        return 0;
+      }
+      return owners.value.length - limitedOwners.value.length;
+    });
+
     return {
-      labelClasses: 'mx-2 text--secondary',
-      itemClasses: 'font-weight-medium',
-      ownerDialog: false,
-      ownerDialogKey: 0,
+      ownerDialog,
+      owners,
+      manageOwnersDisabled,
+      limitedOwners,
+      numExtraOwners,
+      loggedIn,
     };
   },
-  computed: {
-    user,
-    loggedIn,
-    currentDandiset() {
-      return this.currentDandiset;
-    },
-    manageOwnersDisabled() {
-      if (!this.loggedIn || !this.owners) return true;
-      return !this.owners.find((owner) => owner.username === this.user.username);
-    },
-    limitedOwners() {
-      if (!this.owners) return [];
-      return this.owners.slice(0, 5);
-    },
-    numExtraOwners() {
-      if (!this.owners) return 0;
-      return this.owners.length - this.limitedOwners.length;
-    },
-    ...mapState('dandiset', {
-      currentDandiset: (state) => state.dandiset,
-      owners: (state) => state.owners,
-    }),
-  },
-  watch: {
-    ownerDialog() {
-      // This is incremented to force re-render of the owner dialog
-      this.ownerDialogKey += 1;
-    },
-  },
-};
+});
 </script>
