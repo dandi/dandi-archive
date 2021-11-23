@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpRequest, HttpResponse
 from django.http.response import HttpResponseBase, HttpResponseRedirect
@@ -96,5 +97,9 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         'api/account/questionnaire_form.html',
-        {'questions': QUESTIONS, 'query_params': request.GET.dict()},
+        {
+            'questions': QUESTIONS,
+            'query_params': request.GET.dict(),
+            'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
+        },
     )

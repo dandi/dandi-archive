@@ -1,12 +1,19 @@
 import logging
-from typing import List
+from typing import Any, Dict, List
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import mail
-from django.template.loader import render_to_string
+from django.template.loader import render_to_string as _render_to_string
 
 logger = logging.getLogger(__name__)
+
+
+def render_to_string(template: str, render_context: Dict[str, Any]):
+    render_context['dandi_api_url'] = settings.DANDI_API_URL
+    render_context['dandi_web_app_url'] = settings.DANDI_WEB_APP_URL
+    return _render_to_string(template, render_context)
 
 
 def build_message(subject: str, message: str, to: List[str], html_message: str):
