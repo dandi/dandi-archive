@@ -4,6 +4,7 @@ from rest_framework.exceptions import ErrorDetail
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
+from dandiapi.api.mail import ADMIN_EMAIL
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.views.auth import QUESTIONS
 
@@ -31,13 +32,13 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
 
     email = mailoutbox[0]
     assert email.subject == f'DANDI: New user registered: {user.email}'
-    assert email.to == ['dandi@mit.edu', user.email]
+    assert email.to == [ADMIN_EMAIL, user.email]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
     email = mailoutbox[1]
     assert email.subject == f'DANDI: Review new user: {user.username}'
-    assert email.to == ['dandi@mit.edu']
+    assert email.to == [ADMIN_EMAIL]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
