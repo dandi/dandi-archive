@@ -13,7 +13,7 @@
         indeterminate
       />
       <v-row no-gutters>
-        <v-col>
+        <v-col :cols="$vuetify.breakpoint.smAndDown ? 12 : 10">
           <DandisetMain
             :schema="schema"
             :meta="meta"
@@ -29,9 +29,7 @@
         </v-col>
       </v-row>
       <v-row v-if="$vuetify.breakpoint.smAndDown">
-        <v-col
-          cols="12"
-        >
+        <v-col cols="12">
           <DandisetSidebar
             :user-can-modify-dandiset="userCanModifyDandiset"
           />
