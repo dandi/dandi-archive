@@ -61,32 +61,24 @@ jobs:
         with:
           python-version: '3.8'
 
-      - name: Upgrade pip
-        run: pip install -U pip
-
-      - name: Install Python packages
+      - name: Install latest version of pip
         run: pip install --upgrade pip
 
       - name: Clone dandi-api
         run: git clone https://github.com/dandi/dandi-api.git
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@master
+        id: pip-cache
         with:
-          path: ~/.cache/pip
-          key: ${{ hashFiles('dandi-api/requirements.txt') }}-${{ hashFiles('dandi-api/setup.py') }}
+          path: ${{ env.pythonLocation}}/lib/python3.8/site-packages/*
+          key: ${{ env.pythonLocation }}-${{ hashFiles('dandi-api/requirements.txt') }}-${{ hashFiles('dandi-api/setup.py') }}
 
-      - name: Create virtual environment
-        run: python3 -m venv install_env
-
-      - name: Install dandi-api
-        run: |
-          source install_env/bin/activate
-          pip install --upgrade --upgrade-strategy eager ./dandi-api[dev]
+      - name: Install dandi-api dependencies
+        if: steps.pip-cache.outputs.cache-hit != 'true'
+        run: pip install --upgrade --upgrade-strategy eager ./dandi-api[dev]
 
       - name: Apply migrations to API server
-        run: |
-          source ../install_env/bin/activate
-          python manage.py migrate
+        run: python manage.py migrate
         working-directory: dandi-api
 
       - name: Install E2E tests
@@ -106,7 +98,6 @@ jobs:
           done
 
           # activate virtual env and start the dandi-api server
-          source ../install_env/bin/activate
           python ../dandi-api/manage.py runserver &
 
           # run the E2E tests
