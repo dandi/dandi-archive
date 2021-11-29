@@ -46,7 +46,6 @@ import {
 import { RawLocation } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { user as userFunc } from '@/rest';
 import store from '@/store';
 import { Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
@@ -77,7 +76,6 @@ export default defineComponent({
     const schema = computed(() => store.state.dandiset.schema);
     const userCanModifyDandiset = computed(() => store.getters.dandiset.userCanModifyDandiset);
 
-    const user = computed(userFunc);
     const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
 
     function navigateToVersion(versionToNavigateTo: string) {
@@ -128,7 +126,6 @@ export default defineComponent({
       currentDandiset,
       loading,
       schema,
-      user,
       userCanModifyDandiset,
       meta,
     };
