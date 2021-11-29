@@ -483,6 +483,7 @@ export default defineComponent({
       draftVersion,
       showPublishWarning,
       showPublishWarningDialog,
+      isOwner,
     };
   },
 });
