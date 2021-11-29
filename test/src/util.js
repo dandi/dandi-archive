@@ -18,6 +18,9 @@ export function uniqueId() {
   return Date.now().toString();
 }
 
+export const TEST_USER_FIRST_NAME = 'Test';
+export const TEST_USER_LAST_NAME = `User_${uniqueId()}`;
+
 /**
  * Waits for all network requests to finish before continuing.
  */
@@ -46,10 +49,8 @@ export async function registerNewUser() {
   const email = `mr${username}@dandi.test`;
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
-  // there's currently no way to set these in development mode,
-  // so they are always empty strings by default
-  const firstName = '';
-  const lastName = '';
+  const firstName = TEST_USER_FIRST_NAME;
+  const lastName = TEST_USER_LAST_NAME;
 
   await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 
@@ -66,6 +67,12 @@ export async function registerNewUser() {
   await expect(page).toFillXPath('//input[@name="password2"]', password);
 
   // The locator is different in CI for some reason, just click the first button
+  await expect(page).toClickXPath('//button');
+  await waitForRequestsToFinish();
+
+  await expect(page).toFillXPath('//input[@name="First Name"]', firstName);
+  await expect(page).toFillXPath('//input[@name="Last Name"]', lastName);
+
   await expect(page).toClickXPath('//button');
   await waitForRequestsToFinish();
 
@@ -117,7 +124,7 @@ export async function disableAllCookies() {
  * Log out a user
  */
 export async function logout() {
-  await expect(page).toClickXPath(vAvatar('??'));
+  await expect(page).toClickXPath(vAvatar(`${TEST_USER_FIRST_NAME.charAt(0)}${TEST_USER_LAST_NAME.charAt(0)}`));
   await page.waitForTimeout(500);
   await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
   await clearCookiesAndCache();

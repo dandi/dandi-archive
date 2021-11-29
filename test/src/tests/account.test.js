@@ -5,14 +5,18 @@ import {
   vListItem,
 } from 'jest-puppeteer-vuetify';
 import {
-  registerNewUser, LOGIN_BUTTON_TEXT, LOGOUT_BUTTON_TEXT,
+  registerNewUser,
+  LOGIN_BUTTON_TEXT,
+  LOGOUT_BUTTON_TEXT,
+  TEST_USER_FIRST_NAME,
+  TEST_USER_LAST_NAME,
 } from '../util';
 
 describe('account management', () => {
   it('logs the user out', async () => {
     await registerNewUser();
 
-    await expect(page).toClickXPath(vAvatar('??'));
+    await expect(page).toClickXPath(vAvatar(`${TEST_USER_FIRST_NAME.charAt(0)}${TEST_USER_LAST_NAME.charAt(0)}`));
     await page.waitForTimeout(500);
     await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 
@@ -24,13 +28,13 @@ describe('account management', () => {
     await registerNewUser();
 
     // Logout
-    await expect(page).toClickXPath(vAvatar('??'));
+    await expect(page).toClickXPath(vAvatar(`${TEST_USER_FIRST_NAME.charAt(0)}${TEST_USER_LAST_NAME.charAt(0)}`));
     await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
 
     // Test logging in
     await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 
     // the user avatar contains the initials and is only rendered when logged in successfully
-    await expect(page).toContainXPath(vAvatar('??'));
+    await expect(page).toContainXPath(vAvatar(`${TEST_USER_FIRST_NAME.charAt(0)}${TEST_USER_LAST_NAME.charAt(0)}`));
   });
 });
