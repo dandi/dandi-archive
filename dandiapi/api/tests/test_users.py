@@ -4,6 +4,7 @@ from rest_framework.exceptions import ErrorDetail
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
+from dandiapi.api.mail import ADMIN_EMAIL
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.views.auth import QUESTIONS
 
@@ -31,13 +32,13 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
 
     email = mailoutbox[0]
     assert email.subject == f'DANDI: New user registered: {user.email}'
-    assert email.to == ['dandi@mit.edu', user.email]
+    assert email.to == [ADMIN_EMAIL, user.email]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
     email = mailoutbox[1]
-    assert email.subject == f'DANDI: New user registration to review: {user.username}'
-    assert email.to == ['dandi@mit.edu']
+    assert email.subject == f'DANDI: Review new user: {user.username}'
+    assert email.to == [ADMIN_EMAIL]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
@@ -122,9 +123,9 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
     api_client.force_authenticate(user=user)
 
     usernames = [
-        'jane_bar',
-        'jane_doe',
-        'jane_foo',
+        'odysseus_bar',
+        'odysseus_doe',
+        'odysseus_foo',
         # Some extra users to be filtered out
         'john_bar',
         'john_doe',
@@ -136,7 +137,7 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
     assert (
         api_client.get(
             '/api/users/search/?',
-            {'username': 'jane'},
+            {'username': 'odysseus'},
             format='json',
         ).data
         == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
@@ -147,14 +148,14 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
 def test_user_search_limit_enforced(api_client, user, user_factory, social_account_factory):
     api_client.force_authenticate(user=user)
 
-    usernames = [f'jane_{i:02}' for i in range(0, 20)]
+    usernames = [f'odysseus_{i:02}' for i in range(0, 20)]
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
     assert (
         api_client.get(
             '/api/users/search/?',
-            {'username': 'jane'},
+            {'username': 'odysseus'},
             format='json',
         ).data
         == [serialize_social_account(social_account) for social_account in social_accounts[:10]]

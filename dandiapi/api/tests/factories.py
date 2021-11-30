@@ -10,6 +10,13 @@ import faker
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, UserMetadata, Version
 
 
+class UserMetadataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UserMetadata
+
+    status = UserMetadata.Status.APPROVED
+
+
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
@@ -19,9 +26,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 
-    @factory.post_generation
-    def post(self, create, extracted, **kwargs):
-        UserMetadata.objects.create(user=self, status=UserMetadata.Status.APPROVED)
+    metadata = factory.RelatedFactory(UserMetadataFactory, factory_related_name='user')
 
 
 class SocialAccountFactory(factory.django.DjangoModelFactory):
@@ -33,11 +38,11 @@ class SocialAccountFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def extra_data(self):
-        first_name = faker.Faker().first_name()
-        last_name = faker.Faker().last_name()
+        first_name = self.user.first_name
+        last_name = self.user.last_name
         name = f'{first_name} {last_name}'
         return {
-            'login': first_name,
+            'login': self.user.username,
             'name': name,
             'email': self.user.username,
         }

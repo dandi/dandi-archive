@@ -88,7 +88,7 @@ def users_search_view(request: Request) -> HttpResponseBase:
         extra_data__icontains=username,
         user__is_active=True,
         user__metadata__status=UserMetadata.Status.APPROVED,
-    )[:10]
+    ).order_by('date_joined')[:10]
     users = [social_account_to_dict(social_account) for social_account in social_accounts]
 
     # Try searching Django's regular `User`s if there aren't any results.
