@@ -97,7 +97,7 @@ jobs:
             sleep 3
           done
 
-          # activate virtual env and start the dandi-api server
+          # start the dandi-api server
           python ../dandi-api/manage.py runserver &
 
           # run the E2E tests
