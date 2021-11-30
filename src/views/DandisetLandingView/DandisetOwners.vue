@@ -21,13 +21,11 @@
       <v-col cols="12">
         <v-chip
           v-for="(owner, i) in limitedOwners"
-          :key="owner.name || owner.username"
+          :key="i"
           color="grey lighten-4"
           text-color="grey darken-2"
           class="font-weight-medium ma-1"
           style="border: 1px solid #E0E0E0 !important;"
-          close-icon="mdi-star-circle"
-          :close="i === 0"
         >
           {{ owner.name || owner.username }}
         </v-chip>

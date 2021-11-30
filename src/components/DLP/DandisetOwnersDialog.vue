@@ -117,12 +117,9 @@
                     `
                   }}
                 </span>
-                <span v-if="isPrimaryOwner(owner)">
-                  <v-icon color="info">mdi-star-circle</v-icon>
-                </span>
               </span>
 
-              <span v-if="!isPrimaryOwner(owner)">
+              <span>
                 <v-btn
                   text
                   small
@@ -135,21 +132,6 @@
                   </v-icon>
                   <span class="font-weight-medium">
                     Remove
-                  </span>
-                </v-btn>
-                <v-btn
-                  text
-                  small
-                  @click="setPrimaryOwner(i)"
-                >
-                  <v-icon
-                    color="info"
-                    left
-                  >
-                    mdi-star-circle
-                  </v-icon>
-                  <span class="font-weight-medium">
-                    Make primary
                   </span>
                 </v-btn>
               </span>
@@ -217,8 +199,6 @@ export default defineComponent({
     ),
     { immediate: true });
 
-    const isPrimaryOwner = (user: User) => newOwners.value?.length && newOwners.value[0] === user;
-
     const isSelected = (user: User) => selectedUsers.value.map(
       (u) => u.username,
     ).includes(user.username);
@@ -237,17 +217,6 @@ export default defineComponent({
       newOwners.value.splice(newOwners.value.map(
         (u: User) => u.username,
       ).indexOf(owner.username), 1);
-    }
-
-    /**
-     * Set the primary owner of the dandiset
-     *
-     * @param index the index of the new primary owner in the `newUsers` array
-     */
-    function setPrimaryOwner(index: number) {
-      const user = newOwners.value[index];
-      newOwners.value.splice(index, 1);
-      newOwners.value.unshift(user);
     }
 
     function checkBoxHandler(user: User) {
@@ -290,8 +259,6 @@ export default defineComponent({
       isSelected,
       save,
       clearForm,
-      isPrimaryOwner,
-      setPrimaryOwner,
       addSelected,
       checkBoxHandler,
       selectedUsers,
