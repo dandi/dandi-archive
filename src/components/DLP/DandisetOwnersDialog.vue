@@ -166,7 +166,6 @@ export default defineComponent({
     const owners = computed(() => store.state.dandiset.owners);
 
     const searchQuery = ref('');
-    const loadingUsers = ref(false);
     const newOwners: Ref<User[]> = ref([]);
 
     // users with checkbox checked
@@ -188,10 +187,8 @@ export default defineComponent({
     });
 
     const throttledUpdate = debounce(async () => {
-      loadingUsers.value = true;
       const users = await dandiRest.searchUsers(searchQuery.value);
       _searchResults.value = users;
-      loadingUsers.value = false;
     }, 200);
 
     watch(() => owners.value, () => (
