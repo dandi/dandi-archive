@@ -298,5 +298,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
-                owners.append({'username': owner.username})
+                owners.append(
+                    {'username': owner.username, 'name': f'{owner.first_name} {owner.last_name}'}
+                )
         return Response(owners, status=status.HTTP_200_OK)

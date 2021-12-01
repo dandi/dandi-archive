@@ -595,7 +595,7 @@ def test_dandiset_rest_get_owners_no_social_account(api_client, dandiset, user):
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
     assert resp.status_code == 200
-    assert resp.data == [{'username': user.username}]
+    assert resp.data == [{'username': user.username, 'name': f'{user.first_name} {user.last_name}'}]
 
 
 @pytest.mark.django_db
