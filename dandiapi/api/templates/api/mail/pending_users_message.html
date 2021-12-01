@@ -4,6 +4,6 @@ The following new DANDI users are awaiting approval:
 <p>
   <div>Username: {{ user.username }}</div>
   <div>Joined: {{ user.date_joined }}</div>
-  <div><a href="{% url 'user-approval' username=user.username %}">Link to approve</a></div>
+  <div><a href="{{ dandi_api_url }}{% url 'user-approval' username=user.username %}">Link to approve</a></div>
 </p>
 {% endfor %}

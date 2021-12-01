@@ -171,7 +171,7 @@ def send_rejected_user_message(user: User, socialaccount: SocialAccount):
 
 
 def build_pending_users_message(users: Union[QuerySet, List[User]]):
-    render_context = {'users': users}
+    render_context = {**BASE_RENDER_CONTEXT, 'users': users}
     return build_message(
         subject='DANDI: new user registrations to review',
         message=render_to_string('api/mail/pending_users_message.txt', render_context),
