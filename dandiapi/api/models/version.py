@@ -243,7 +243,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
-            'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',
+            'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
             'assetsSummary': summary,
             'dateCreated': self.dandiset.created.isoformat(),
         }

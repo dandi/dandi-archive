@@ -113,7 +113,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         return self.blob.sha256
 
     def _populate_metadata(self):
-        download_url = settings.DANDI_API_URL + reverse(
+        # TODO use http://localhost:8000 for local deployments
+        download_url = 'https://api.dandiarchive.org' + reverse(
             'asset-direct-download',
             kwargs={'asset_id': str(self.asset_id)},
         )

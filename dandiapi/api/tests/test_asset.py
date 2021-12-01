@@ -221,7 +221,7 @@ def test_asset_populate_metadata(draft_asset_factory):
     # This should trigger _populate_metadata to inject all the computed metadata fields
     asset = draft_asset_factory(metadata=raw_metadata)
 
-    download_url = settings.DANDI_API_URL + reverse(
+    download_url = 'https://api.dandiarchive.org' + reverse(
         'asset-direct-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
