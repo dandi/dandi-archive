@@ -1,19 +1,18 @@
 import logging
-from typing import Any, Dict, List
+from typing import List
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import mail
-from django.template.loader import render_to_string as _render_to_string
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
-
-def render_to_string(template: str, render_context: Dict[str, Any]):
-    render_context['dandi_api_url'] = settings.DANDI_API_URL
-    render_context['dandi_web_app_url'] = settings.DANDI_WEB_APP_URL
-    return _render_to_string(template, render_context)
+BASE_RENDER_CONTEXT = {
+    'dandi_api_url': settings.DANDI_API_URL,
+    'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
+}
 
 
 def build_message(subject: str, message: str, to: List[str], html_message: str):
@@ -24,6 +23,7 @@ def build_message(subject: str, message: str, to: List[str], html_message: str):
 
 def build_removed_message(dandiset, removed_owner):
     render_context = {
+        **BASE_RENDER_CONTEXT,
         'dandiset_name': dandiset.draft_version.name,
         'dandiset_identifier': dandiset.identifier,
     }
@@ -38,6 +38,7 @@ def build_removed_message(dandiset, removed_owner):
 
 def build_added_message(dandiset, added_owner):
     render_context = {
+        **BASE_RENDER_CONTEXT,
         'dandiset_name': dandiset.draft_version.name,
         'dandiset_identifier': dandiset.identifier,
     }
@@ -80,6 +81,7 @@ def send_registered_notice_email(user: User, socialaccount: SocialAccount):
 
 def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
     render_context = {
+        **BASE_RENDER_CONTEXT,
         'username': user.username,
     }
     # Email sent to the DANDI list when a new user logs in for the first time
@@ -105,12 +107,14 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
     if socialaccount is None:
         native_user = user_to_dict(user)
         render_context = {
+            **BASE_RENDER_CONTEXT,
             'name': native_user['name'],
             'github_id': None,
         }
     else:
         social_user = social_account_to_dict(socialaccount)
         render_context = {
+            **BASE_RENDER_CONTEXT,
             'name': social_user['name'],
             'github_id': social_user['username'],
         }
