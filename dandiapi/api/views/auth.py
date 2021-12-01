@@ -134,7 +134,7 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         request,
         'api/account/questionnaire_form.html',
         {
-            'questions': QUESTIONS,
+            'questions': questions,
             'query_params': request.GET.dict(),
             'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
         },
