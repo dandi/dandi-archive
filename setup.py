@@ -56,7 +56,7 @@ setup(
         'httpx',
         'jsonschema',
         # Production-only
-        'django-composed-configuration[prod]',
+        'django-composed-configuration[prod]>=0.19.2',
         'django-s3-file-field[boto3]==0.1.1',
         'django-storages[boto3]',
         'gunicorn',
@@ -67,7 +67,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]',
+            'django-composed-configuration[dev]>=0.19.2',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',

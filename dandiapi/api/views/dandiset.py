@@ -5,7 +5,7 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -82,9 +82,32 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # TODO: This will filter the dandisets list if there is a query parameter user=me.
         # This is not a great solution but it is needed for the My Dandisets page.
         queryset = Dandiset.objects.all().order_by('created')
-        user_kwarg = self.request.query_params.get('user', None)
-        if user_kwarg == 'me':
-            return get_objects_for_user(self.request.user, 'owner', queryset, with_superuser=False)
+        if self.action == 'list':
+            user_kwarg = self.request.query_params.get('user', None)
+            if user_kwarg == 'me':
+                queryset = get_objects_for_user(
+                    self.request.user, 'owner', queryset, with_superuser=False
+                )
+            # Same deal for filtering out draft or empty dandisets
+            show_draft = self.request.query_params.get('draft', 'true') == 'true'
+            show_empty = self.request.query_params.get('empty', 'true') == 'true'
+
+            if not show_draft:
+                # Only include dandisets that have more than one version, i.e. published dandisets.
+                queryset = queryset.annotate(version_count=Count('versions')).filter(
+                    version_count__gt=1
+                )
+            if not show_empty:
+                # Only include dandisets that have assets in their most recent version.
+                most_recent_version = (
+                    Version.objects.filter(dandiset=OuterRef('pk'))
+                    .order_by('created')
+                    .annotate(asset_count=Count('assets'))[:1]
+                )
+                queryset = queryset.annotate(
+                    draft_asset_count=Subquery(most_recent_version.values('asset_count'))
+                )
+                queryset = queryset.filter(draft_asset_count__gt=0)
         return queryset
 
     def get_object(self):
@@ -275,5 +298,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
-                owners.append({'username': owner.username})
+                owners.append(
+                    {'username': owner.username, 'name': f'{owner.first_name} {owner.last_name}'}
+                )
         return Response(owners, status=status.HTTP_200_OK)

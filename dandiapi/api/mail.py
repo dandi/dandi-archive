@@ -1,12 +1,16 @@
 import logging
-from typing import List
+from typing import List, Union
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.core import mail
+from django.db.models.query import QuerySet
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
+
+# TODO: turn this into a Django setting
+ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
 def build_message(subject: str, message: str, to: List[str], html_message: str):
@@ -59,7 +63,7 @@ def build_registered_message(user: User, socialaccount: SocialAccount):
     return build_message(
         subject=f'DANDI: New user registered: {user.email}',
         message=render_to_string('api/mail/registered_message.txt', render_context),
-        to=['dandi@mit.edu', user.email],
+        to=[ADMIN_EMAIL, user.email],
         html_message=render_to_string('api/mail/registered_message.html', render_context),
     )
 
@@ -77,9 +81,9 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
     }
     # Email sent to the DANDI list when a new user logs in for the first time
     return build_message(
-        subject=f'DANDI: New user registration to review: {user.username}',
+        subject=f'DANDI: Review new user: {user.username}',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
-        to=['dandi@mit.edu'],
+        to=[ADMIN_EMAIL],
         html_message=render_to_string('api/mail/new_user_message.html', render_context),
     )
 
@@ -151,5 +155,22 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
 def send_rejected_user_message(user: User, socialaccount: SocialAccount):
     logger.info(f'Sending rejected user message to {user}')
     messages = [build_rejected_user_message(user, socialaccount)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_pending_users_message(users: Union[QuerySet, List[User]]):
+    render_context = {'users': users}
+    return build_message(
+        subject='DANDI: new user registrations to review',
+        message=render_to_string('api/mail/pending_users_message.txt', render_context),
+        to=[ADMIN_EMAIL],
+        html_message=render_to_string('api/mail/pending_users_message.html', render_context),
+    )
+
+
+def send_pending_users_message(users: Union[QuerySet, List[User]]):
+    logger.info(f'Sending pending users message to admins at {ADMIN_EMAIL}')
+    messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)

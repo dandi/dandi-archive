@@ -111,5 +111,41 @@
     {% endif %}
   </div>
 
+  <div>
+    <h1>Approved Users</h1>
+    <p>There are currently {{ user_count }} approved users.</p>
+    <!-- Two different tables so that emails can be copied easily -->
+    <table style="float: left">
+      <thead>
+        <tr>
+          <td>Email</td>
+        </tr>
+      </thead>
+      {% for user in users %}
+      <tr>
+        <td> {{ user.email }} </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <table style="float: left">
+      <thead>
+        <tr>
+          <td>First name</td>
+          <td>Last name</td>
+          <td>Date joined</td>
+          <td>Status</td>
+        </tr>
+      </thead>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.first_name }}</td>
+        <td>{{ user.last_name }}</td>
+        <td>{{ user.date_joined }}</td>
+        <td><a href="{% url 'user-approval' user.username %}">{{ user.metadata.status }}</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
 </div>
 {% endblock %}

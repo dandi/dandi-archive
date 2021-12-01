@@ -8,6 +8,7 @@ from django.urls import reverse
 from guardian.shortcuts import assign_perm
 import pytest
 import requests
+from rest_framework.test import APIClient
 
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
@@ -77,9 +78,9 @@ def test_asset_rest_path(
 
     # Do folder assertions
     for folder_path in expected['folders']:
-        assert folder_path in paths['folders']
+        assert folder_path in paths['results']['folders']
 
-        folder_entry = paths['folders'][folder_path]
+        folder_entry = paths['results']['folders'][folder_path]
         folder_assets = list(
             Asset.objects.all().filter(path__startswith=f'{query_prefix}{folder_path}')
         )
@@ -96,10 +97,66 @@ def test_asset_rest_path(
 
     # Do file assertions
     for file_path in expected['files']:
-        assert file_path in paths['files']
+        assert file_path in paths['results']['files']
 
         asset: Asset = Asset.objects.get(path=f'{query_prefix}{file_path}')
-        assert paths['files'][file_path] == AssetSerializer(asset).data
+        assert paths['results']['files'][file_path] == AssetSerializer(asset).data
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'path,asset_paths,page,expected_count,expected_results',
+    [
+        ('', ['a/b/c/d/e/f/g', 'foo', 'bar/baz'], 1, 3, {'folders': ['a'], 'files': []}),
+        ('', ['a/b/c/d/e/f/g', 'foo', 'bar/baz'], 2, 3, {'folders': ['bar'], 'files': []}),
+        ('', ['a/b/c/d/e/f/g', 'foo', 'bar/baz'], 3, 3, {'folders': [], 'files': ['foo']}),
+    ],
+)
+def test_asset_rest_path_pagination(
+    api_client: APIClient,
+    draft_version_factory,
+    asset_factory,
+    asset_blob_factory,
+    path: str,
+    asset_paths: list,
+    page: int,
+    expected_count: int,
+    expected_results: dict,
+):
+    # Initialize version and contained assets
+    asset_blob = asset_blob_factory()
+    assets = [asset_factory(blob=asset_blob, path=p) for p in asset_paths]
+    version: Version = draft_version_factory()
+    for asset in assets:
+        version.assets.add(asset)
+
+    # Retrieve paths from endpoint
+    paths = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/paths/',
+        {'path_prefix': path, 'page': page, 'page_size': 1},
+    ).data
+
+    assert paths.get('count') == expected_count
+
+    assert (
+        paths.get('previous') is None
+        if page == 1
+        else f'/api/dandisets/{version.dandiset.identifier}/versions'
+        f'/draft/assets/paths/?page={page-1}&page_size=1'
+    )
+
+    assert (
+        paths.get('next') is None
+        if page == expected_count
+        else f'/api/dandisets/{version.dandiset.identifier}/versions'
+        f'/draft/assets/paths/?page={page+1}&page_size=1'
+    )
+
+    for item_type in ('files', 'folders'):
+        assert len(paths['results'][item_type]) == len(expected_results[item_type])
+        for name in paths['results']['folders']:
+            assert name in expected_results['folders']
 
 
 @pytest.mark.django_db
