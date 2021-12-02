@@ -43,7 +43,10 @@ class ZarrChecksumListing:
 class ZarrJSONChecksumSerializer:
     def aggregate_checksum(self, checksums: List[ZarrChecksum]) -> str:
         """Generate an aggregated checksum for a list of ZarrChecksums."""
-        content = json.dumps([asdict(zarr_md5) for zarr_md5 in sorted(checksums)])
+        # Use the most compact separators possible
+        content = json.dumps(
+            [asdict(zarr_md5) for zarr_md5 in sorted(checksums)], separators=(',', ':')
+        )
         h = hashlib.md5()
         h.update(content.encode('utf-8'))
         return h.hexdigest()

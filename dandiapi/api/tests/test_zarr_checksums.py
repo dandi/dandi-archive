@@ -30,14 +30,14 @@ def test_zarr_checksum_sort_order():
     'checksums,checksum',
     [
         ([], 'd751713988987e9331980363e24189ce'),
-        ([ZarrChecksum(path='foo/bar', md5='a')], '44a6ca7f9a269dbb286790b119f849a6'),
+        ([ZarrChecksum(path='foo/bar', md5='a')], '01ef4152f77dfd99071e622db0b89881'),
         (
             [ZarrChecksum(path='foo/bar', md5='a'), ZarrChecksum(path='foo/baz', md5='b')],
-            '487cb4605eb53f8e38728d7791db02f5',
+            'cda71aa35881e31a04fb084efa6cf834',
         ),
         (
             [ZarrChecksum(path='foo/baz', md5='b'), ZarrChecksum(path='foo/bar', md5='a')],
-            '487cb4605eb53f8e38728d7791db02f5',
+            'cda71aa35881e31a04fb084efa6cf834',
         ),
     ],
 )
@@ -50,7 +50,7 @@ def test_zarr_checksum_serializer_generate_listing():
     serializer = ZarrJSONChecksumSerializer()
     checksums = [ZarrChecksum(path='foo/bar', md5='a'), ZarrChecksum(path='foo/baz', md5='b')]
     assert serializer.generate_listing(checksums) == ZarrChecksumListing(
-        checksums=checksums, md5='487cb4605eb53f8e38728d7791db02f5'
+        checksums=checksums, md5='cda71aa35881e31a04fb084efa6cf834'
     )
 
 
