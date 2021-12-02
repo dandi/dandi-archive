@@ -17,7 +17,7 @@ services:
       - rabbitmq
       - minio
 
-  celery_worker:
+  celery:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
@@ -31,25 +31,6 @@ services:
       "-B"
     ]
     # Docker Compose does not set the TTY width, which causes Celery errors
-    tty: false
-    env_file: ./dev/.env.docker-compose
-    volumes:
-      - .:/opt/django-project
-    depends_on:
-      - postgres
-      - rabbitmq
-      - minio
-
-  celery_beat:
-    build:
-      context: .
-      dockerfile: ./dev/django.Dockerfile
-    command: [
-      "celery",
-      "--app", "dandiapi.celery",
-      "beat",
-      "--loglevel", "INFO"
-    ]
     tty: false
     env_file: ./dev/.env.docker-compose
     volumes:

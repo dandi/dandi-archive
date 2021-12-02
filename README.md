@@ -55,10 +55,7 @@ but allows developers to run Python code on their native system.
 3. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
    2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256 -B`
-4. Run in a seperate terminal:
-   1. `source ./dev/export-env.sh`
-   2. `celery --app dandiapi.celery beat --loglevel INFO`
-5. When finished, run `docker-compose stop`
+4. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
 Attached services may be exposed to the host system via alternative ports. Developers who work
