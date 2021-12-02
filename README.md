@@ -120,3 +120,6 @@ Then go to `/swagger` and use `GET /auth/token` end-point.
 In API endpoint calls, add the `Authorization` HTTP header with a value of
 `Token <token_value>`. For example, for a token `1234`, include the header:
 `Authorization: Token 1234`.
+
+## Custom management scripts
+Documentation for the various custom `manage.py` scripts can be found in `DEVELOPMENT.md`.
