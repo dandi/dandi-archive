@@ -48,13 +48,13 @@ but allows developers to run Python code on their native system.
    to create a dummy dandiset to start working with.
 
 ### Run Application
-1.  Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
+1. Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
 2. Run:
    1. `source ./dev/export-env.sh`
    2. `./manage.py runserver`
 3. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
-   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat`
+   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256 -B`
 4. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
@@ -117,3 +117,6 @@ Then go to `/swagger` and use `GET /auth/token` end-point.
 In API endpoint calls, add the `Authorization` HTTP header with a value of
 `Token <token_value>`. For example, for a token `1234`, include the header:
 `Authorization: Token 1234`.
+
+## Custom management scripts
+Documentation for the various custom `manage.py` scripts can be found in `DEVELOPMENT.md`.
