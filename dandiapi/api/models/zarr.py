@@ -21,8 +21,29 @@ from dandiapi.api.zarr_checksums import (
 from .asset import get_asset_blob_storage
 
 
+class ZarrUploadFileManager(models.Manager):
+    def create_zarr_upload_file(self, zarr_archive: ZarrArchive, path: str, **kwargs):
+        """
+        Initialize a new ZarrUploadFile.
+
+        blob is a field that must be saved in the DB, but is derived from the name of the zarr and
+        the path of the upload in the zarr. This method exists to calculate blob and populate it
+        without overwriting __init__, which has special Django semantics.
+        This method should be used whenever creating a new ZarrUploadFile for saving.
+        """
+        blob = zarr_archive.s3_path(path)
+        return ZarrUploadFile(
+            zarr_archive=zarr_archive,
+            path=path,
+            blob=blob,
+            **kwargs,
+        )
+
+
 class ZarrUploadFile(TimeStampedModel):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
+
+    objects = ZarrUploadFileManager()
 
     zarr_archive: 'ZarrArchive' = models.ForeignKey(
         'ZarrArchive',
@@ -37,24 +58,6 @@ class ZarrUploadFile(TimeStampedModel):
     """The fully qualified S3 object key"""
 
     etag: str = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
-
-    @classmethod
-    def initialize(cls, zarr_archive: ZarrArchive, path: str, **kwargs):
-        """
-        Initialize a new ZarrUploadFile.
-
-        blob is a field that must be saved in the DB, but is derived from the name of the zarr and
-        the path of the upload in the zarr. This method exists to calculate blob and populate it
-        without overwriting __init__, which has special Django semantics.
-        This method should be used whenever creating a new ZarrUploadFile for saving.
-        """
-        blob = zarr_archive.s3_path(path)
-        return cls(
-            zarr_archive=zarr_archive,
-            path=path,
-            blob=blob,
-            **kwargs,
-        )
 
     @property
     def upload_url(self) -> str:
@@ -167,7 +170,7 @@ class ZarrArchive(TimeStampedModel):
         if listing is not None:
             return listing.md5
         else:
-            zarr_file = ZarrUploadFile.initialize(zarr_archive=self, path=path)
+            zarr_file = ZarrUploadFile.objects.create_zarr_upload_file(zarr_archive=self, path=path)
             # This will throw a 404 if the file doesn't exist
             return zarr_file.actual_etag()
 
@@ -175,7 +178,7 @@ class ZarrArchive(TimeStampedModel):
         if self.upload_in_progress:
             raise ValidationError('Simultaneous uploads are not allowed.')
         uploads = [
-            ZarrUploadFile.initialize(
+            ZarrUploadFile.objects.create_zarr_upload_file(
                 zarr_archive=self,
                 path=file['path'],
                 etag=file['etag'],

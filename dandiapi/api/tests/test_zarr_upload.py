@@ -121,7 +121,7 @@ def test_zarr_rest_upload_complete_missing_file(
     authenticated_api_client, zarr_archive: ZarrArchive
 ):
     # Creating a DB entry without creating the corresponding file in S3
-    upload = ZarrUploadFile.initialize(
+    upload = ZarrUploadFile.objects.create_zarr_upload_file(
         zarr_archive=zarr_archive, path='foo/bar.nwb', etag='whatever'
     )
     upload.save()
