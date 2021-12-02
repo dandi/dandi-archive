@@ -21,9 +21,9 @@ The intended use of Zarr archives is primarily to support use cases where data a
 ## API endpoints
 * **POST /api/zarr/**
 
-  Create a new zarr archive.
+  Create a new zarr archive and mint a UUID for it which would become `zarr_id`
 
-  Returns a zarr ID
+  Returns the `zarr_id`
 
 * **GET /api/zarr/{zarr_id}/**
 
@@ -46,6 +46,7 @@ The intended use of Zarr archives is primarily to support use cases where data a
 
   Requires a list of file paths and ETags (md5 checksums).
   The number of files being uploaded must be less than some experimentally defined limit (say ~500).
+  If the limit is exceeded, return response 400.
   This limit should be chosen so that no upload requests can conceivably exceed the Heroku request timeout (30s).
   The file paths may include already uploaded files; this is how updates are done.
 
