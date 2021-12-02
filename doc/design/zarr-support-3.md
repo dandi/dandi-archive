@@ -3,14 +3,14 @@ A zarr archive contains directories and zarr files.
 Zarr archives are stored in their entirety in S3.
 Zarr archives are represented by a single Asset through the API.
 A tree hash is computed as the zarr archive is uploaded.
-Each node in the tree hash in the hash is stored in S3 to avoid bloating the DB.
-The intended use of Zarr archives is primarily to support use cases where data are too big to be copied. However, Zarr archives can be small as well.
+The tree hash details (all nodes) are stored on S3 to avoid bloating the DB.
+The intended use of Zarr archives is primarily to support use cases where data are too big to be copied or to be stored in a single file due to available storage limits. However, Zarr archives can be small as well.
 
 # Requirements
 1. Zarr archives are stored in a "directory" in S3.
 1. Each zarr archive corresponds to a single Asset.
 1. The CLI uses some kind of tree hashing scheme to compute a checksum for the entire zarr archive.
-1. The API verifies the checksum _immediately_ after upload.
+1. The API verifies the checksum immediately after upload, so the validation status is available in the response to the upload REST request.
 1. The system can theoretically handle zarr files with ~1 million subfiles, each of size 64 * 64 * 64 bytes ~= 262 kilobytes.
 1. Zarr metadata must be mutable for zarr files in draft dandisets.
 1. Zarr archives must not be copied, as they are too large to reasonably store multiple copies.
@@ -45,6 +45,8 @@ The intended use of Zarr archives is primarily to support use cases where data a
   No more batch uploads are permitted until this one is completed or aborted.
 
   Requires a list of file paths and ETags (md5 checksums).
+  The number of files being uploaded must be less than some experimentally defined limit (say ~500).
+  This limit should be chosen so that no upload requests can conceivably exceed the Heroku request timeout (30s).
   The file paths may include already uploaded files; this is how updates are done.
 
   Returns a list of presigned upload URLs
@@ -64,7 +66,8 @@ The intended use of Zarr archives is primarily to support use cases where data a
 * **DELETE /api/zarr/{zarr_id}/files/**
 
   Deletes zarr files from S3, and updates the tree hash accordingly.
-  Requires a list of file paths
+  Requires a list of file paths.
+  All paths must be present in S3, otherwise return 404 without deleting anything.
 
 * **POST /api/dandisets/{...}/versions/{...}/assets/**
 
