@@ -29,7 +29,7 @@ class Dandiset(TimeStampedModel):
 
     @property
     def owners(self):
-        return get_users_with_perms(self, only_with_perms_in=['owner'])
+        return get_users_with_perms(self, only_with_perms_in=['owner']).order_by('date_joined')
 
     def set_owners(self, new_owners):
         old_owners = get_users_with_perms(self, only_with_perms_in=['owner'])
