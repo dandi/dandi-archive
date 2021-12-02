@@ -65,7 +65,6 @@ class ZarrUploadFile(TimeStampedModel):
             pass
         else:
             if isinstance(storage, S3Boto3Storage):
-                # breakpoint()
                 return storage.connection.meta.client.generate_presigned_url(
                     ClientMethod='put_object',
                     Params={

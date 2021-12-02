@@ -49,7 +49,7 @@ class DandiMixin(ConfigMixin):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
-    DANDI_ZARR_PREFIX_NAME = values.Value(defult='zarr', environ=True)
+    DANDI_ZARR_PREFIX_NAME = values.Value(default='zarr', environ=True)
     DANDI_ZARR_CHECKSUM_PREFIX_NAME = values.Value(default='zarr-checksums', environ=True)
 
     # This is where the schema version should be set.

@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -129,7 +129,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
             raise ValueError('This method is only valid when used by a context manager')
         return self._serializer.generate_listing(self._checksums)
 
-    def read_checksum_file(self) -> ZarrChecksumListing | None:
+    def read_checksum_file(self) -> Optional[ZarrChecksumListing]:
         """Load a checksum listing from the checksum file."""
         from dandiapi.api.models import ZarrUploadFile
 
@@ -219,6 +219,7 @@ class ZarrChecksumModificationQueue:
         """Find the deepest path in the queue, and return it and its children to be updated."""
         longest_path = list(self._queue.keys())[0]
         longest_path_length = str(longest_path).split('/')
+        # O(n) performance, consider a priority queue for optimization
         for path in self._queue.keys():
             path_length = str(path).split('/')
             if path_length > longest_path_length:
