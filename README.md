@@ -48,14 +48,17 @@ but allows developers to run Python code on their native system.
    to create a dummy dandiset to start working with.
 
 ### Run Application
-1.  Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
+1. Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
 2. Run:
    1. `source ./dev/export-env.sh`
    2. `./manage.py runserver`
 3. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
-   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat`
-4. When finished, run `docker-compose stop`
+   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256 -B`
+4. Run in a seperate terminal:
+   1. `source ./dev/export-env.sh`
+   2. `celery --app dandiapi.celery beat --loglevel INFO`
+5. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
 Attached services may be exposed to the host system via alternative ports. Developers who work
