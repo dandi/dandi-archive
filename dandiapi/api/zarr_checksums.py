@@ -165,6 +165,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
             raise ValueError('This method is only valid when used by a context manager')
         for new_checksum in checksums:
             try:
+                # O(n) performance, consider an ordered dict for optimization
                 self._checksums[self._checksums.index(new_checksum)] = new_checksum
             except ValueError:
                 self._checksums.append(new_checksum)
