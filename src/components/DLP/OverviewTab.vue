@@ -25,7 +25,7 @@
             v-if="contributor.identifier"
             :href="`https://orcid.org/${contributor.identifier}`"
             target="_blank"
-            class="mx-1"
+            class="mx-1 d-flex align-center"
           >
             <img
               alt="ORCID logo"
