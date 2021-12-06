@@ -21,6 +21,8 @@ export function uniqueId() {
 export const TEST_USER_FIRST_NAME = 'Test';
 export const TEST_USER_LAST_NAME = `User_${uniqueId()}`;
 
+export const TEST_USER_INITIALS = `${TEST_USER_FIRST_NAME.charAt(0)}${TEST_USER_LAST_NAME.charAt(0)}`;
+
 /**
  * Waits for all network requests to finish before continuing.
  */
@@ -50,7 +52,7 @@ export async function registerNewUser() {
   const password = 'XtR4-S3curi7y-p4sSw0rd'; // Top secret
 
   const firstName = TEST_USER_FIRST_NAME;
-  const lastName = TEST_USER_LAST_NAME;
+  const lastName = `${TEST_USER_LAST_NAME}_${uniqueId()}`;
 
   await expect(page).toClickXPath(vBtn(LOGIN_BUTTON_TEXT));
 
@@ -124,7 +126,7 @@ export async function disableAllCookies() {
  * Log out a user
  */
 export async function logout() {
-  await expect(page).toClickXPath(vAvatar(`${TEST_USER_FIRST_NAME.charAt(0)}${TEST_USER_LAST_NAME.charAt(0)}`));
+  await expect(page).toClickXPath(vAvatar(TEST_USER_INITIALS));
   await page.waitForTimeout(500);
   await expect(page).toClickXPath(vListItem(LOGOUT_BUTTON_TEXT, { action: vIcon('mdi-logout') }));
   await clearCookiesAndCache();
