@@ -10,14 +10,12 @@ from celery.app.base import Celery
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.transaction import atomic
 
-from dandiapi.api.models import Version
-from dandiapi.api.tasks import (
-    send_pending_users_email,
-    validate_version_metadata,
-    write_manifest_files,
-)
+from dandiapi.api.mail import send_pending_users_message
+from dandiapi.api.models import UserMetadata, Version
+from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 
 logger = get_task_logger(__name__)
 
@@ -37,6 +35,13 @@ def validate_draft_version_metadata():
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
             write_manifest_files.delay(draft_version['id'])
+
+
+@shared_task
+def send_pending_users_email() -> None:
+    """Send an email to admins listing users with status set to PENDING."""
+    pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)
+    send_pending_users_message(pending_users)
 
 
 def register_scheduled_tasks(sender: Celery, **kwargs):
