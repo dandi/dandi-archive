@@ -41,7 +41,8 @@ def validate_draft_version_metadata():
 def send_pending_users_email() -> None:
     """Send an email to admins listing users with status set to PENDING."""
     pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)
-    send_pending_users_message(pending_users)
+    if pending_users.exists():
+        send_pending_users_message(pending_users)
 
 
 def register_scheduled_tasks(sender: Celery, **kwargs):
