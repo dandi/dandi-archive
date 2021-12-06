@@ -114,7 +114,7 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
     return build_message(
         subject='Your DANDI Account',
         message=render_to_string('api/mail/approved_user_message.txt', render_context),
-        to=[user.email],
+        to=[ADMIN_EMAIL, user.email],
         html_message=render_to_string('api/mail/approved_user_message.html', render_context),
     )
 
@@ -147,7 +147,7 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
     return build_message(
         subject='Your DANDI Account',
         message=render_to_string('api/mail/rejected_user_message.txt', render_context),
-        to=[user.email],
+        to=[ADMIN_EMAIL, user.email],
         html_message=render_to_string('api/mail/rejected_user_message.html', render_context),
     )
 
