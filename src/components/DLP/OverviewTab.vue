@@ -134,50 +134,6 @@
     </v-card>
 
     <v-row>
-      <v-col v-if="subjectMatter && subjectMatter.length">
-        <v-card
-          outlined
-          height="100%"
-        >
-          <v-card-title class="font-weight-regular">
-            <v-icon class="mr-3 grey--text text--lighten-1">
-              mdi-notebook-outline
-            </v-icon>
-            Subject matter
-          </v-card-title>
-
-          <v-list>
-            <v-list-item
-              v-for="(item, i) in subjectMatter"
-              :key="i"
-            >
-              <MetadataListItem>
-                <v-row
-                  no-gutters
-                  class="justify-space-between"
-                >
-                  <v-col
-                    cols="6"
-                    class="grey--text text--darken-3"
-                  >
-                    {{ item.name }}
-                  </v-col>
-                  <v-col
-                    cols="6"
-                    class="pl-1 text-end font-weight-light"
-                  >
-                    {{ item.identifier }}
-                  </v-col>
-                </v-row>
-                <span class="text-caption grey--text text--darken-1">
-                  {{ item.schemaKey.toUpperCase() }}
-                </span>
-              </MetadataListItem>
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-col>
-
       <v-col v-if="relatedResources && relatedResources.length">
         <v-card
           outlined
@@ -309,11 +265,7 @@
 </template>
 
 <script lang="ts">
-import {
-  DandisetMetadata,
-  RelatedResource,
-  SubjectMatterOfTheDataset,
-} from '@/types';
+import { DandisetMetadata, RelatedResource } from '@/types';
 import {
   computed,
   ComputedRef,
@@ -372,9 +324,6 @@ export default defineComponent({
       ),
     );
 
-    const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
-      () => props.meta.about,
-    );
     const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
       () => props.meta.relatedResource,
     );
@@ -400,7 +349,6 @@ export default defineComponent({
     return {
       contributors,
       fundingInformation,
-      subjectMatter,
       relatedResources,
       assetSummary,
       contactPeople,

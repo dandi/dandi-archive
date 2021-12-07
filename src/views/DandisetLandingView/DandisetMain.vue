@@ -149,6 +149,20 @@
                 {{ keyword }}
               </v-chip>
             </v-card-text>
+            <v-card-text
+              v-if="subjectMatter && subjectMatter.length"
+              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+            >
+              Subject matter:
+              <v-chip
+                v-for="(item, i) in subjectMatter"
+                :key="i"
+                small
+                style="margin: 5px;"
+              >
+                {{ item.name }}
+              </v-chip>
+            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
@@ -196,7 +210,7 @@ import filesize from 'filesize';
 import moment from 'moment';
 
 import store from '@/store';
-import { AccessInformation, DandisetStats } from '@/types';
+import { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
 import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
 import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
@@ -299,6 +313,9 @@ export default defineComponent({
     const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
       () => meta.value?.access,
     );
+    const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
+      () => meta.value?.about,
+    );
 
     const currentTab = ref(0);
 
@@ -316,6 +333,7 @@ export default defineComponent({
       MAX_DESCRIPTION_LENGTH,
 
       accessInformation,
+      subjectMatter,
 
       currentTab,
       tabs,
