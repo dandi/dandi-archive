@@ -46,4 +46,23 @@ The API will treat any request with the correct secret as coming from a reviewer
 
 A link to the dandiset with this secret URL parameter is included somewhere on the embargoed dandiset page as a way to share access anonymously.
 
+### TODO implementation details
 ### TODO how to download anonymously with the CLI?
+
+## Embargo period enforcement
+NIH embargoes (and embargos in general) will have an end date to ensure that the data is not secret forever.
+We will enforce that an end date be specified for every new embargoed dandiset, and forcibly release embargoed dandisets that expire.
+
+The MVP collects the NIH award number and stores it in the metadata.
+We can use the NIH API to determine the required release date for the award (?).
+### TODO should we gather the end date during creation time, as we do award number?
+
+We should add scheduled jobs (in the manner of garbage collection) that:
+* Notify admins and owners of any embargoed dandisets without end dates
+* Notify admins and owners of any embargoed dandisets that are approaching their end dates (daily emails for the last week?)
+* Notify admins and owners of any embargoed dandisets that have past their end dates
+
+Admins will be at liberty to manually delete or release embargoed dandisets without end dates.
+Admins will be at liberty to manually release embargoed dandisets that have expired.
+
+### TODO policy details
