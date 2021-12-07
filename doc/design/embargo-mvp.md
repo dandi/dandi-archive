@@ -9,7 +9,8 @@ A subsequent document will describe the full suite of features.
 ## Web
 When creating a new dandiset, users will have checkbox to choose whether or not the dandiset should be embargoed.
 If so, the user must also specify an NIH award number (https://era.nih.gov/files/Deciphering_NIH_Application.pdf).
-The newly created dandiset will have the `access` section of the metadata filled out with the award number.
+The award number is an optional argument that is passed to the create dandiset endpoint.
+The award number will be added as a new `Funder` on an automatically generated Contributor Organization in the metadata.
 
 Instead of the normal `Publish` button and version browser, the DLP will instead show a `Release` button.
 Clicking it will open a confirmation modal informing the user that they are unembargoing, all their data will be publicized, there is no undoing, and that it can take some time for large dandisets.
@@ -69,8 +70,9 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 ## API
 * Create dandiset endpoint
 
-  When creating a new `Dandiset`, the web client will populate the `access` metadata field with either `OpenAccess` or `EmbargoedAccess` if the dandiset is embargoed.
-  The NIH award number will also be included in the metadata if embargoed.
+  Add a new optional `award_number` field.
+  If set, the `access` metadata field will be set to `EmbargoedAccess` and the award number will be recorded as a `Funder` on a new Contributor Organization.
+  The `embargo_status` of the dandiset will also be set to `PRIVATE`.
 
 * Get/List dandiset endpoint
 
