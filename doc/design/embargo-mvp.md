@@ -75,7 +75,7 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 
 * Get/List dandiset endpoint
 
-  The DandisetViewSet queryset will filter out dandisets with `embargo_status != PUBLIC` that are also not owned by the current user.
+  The DandisetViewSet queryset will filter out dandisets with `embargo_status == PRIVATE` that are also not owned by the current user.
   This will prevent them from showing up in the listing or fetching endpoints.
 
   The `DandisetSerializer` will also be updated to include the `embargo_status` field so that the web client can render the embargoed dandiset appropriately.
