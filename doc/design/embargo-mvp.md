@@ -1,0 +1,128 @@
+# Embargo Minimum Viable Product
+Due to time constraints, we are implementing the core functionality for embargoing dandisets ASAP.
+This document is dedicated to the minimum viable product.
+A subsequent document will describe the full suite of features.
+
+
+# User experience
+
+## Web
+When creating a new dandiset, users will have checkbox to choose whether or not the dandiset should be embargoed.
+If so, the user must also specify an NIH award number (https://era.nih.gov/files/Deciphering_NIH_Application.pdf).
+The newly created dandiset will have the `access` section of the metadata filled out with the award number.
+
+Instead of the normal `Publish` button and version browser, the DLP will instead show a `Release` button.
+Clicking it will open a confirmation modal informing the user that they are unembargoing, all their data will be publicized, there is no undoing, and that it can take some time for large dandisets.
+Confirming will lock the dandiset for the duration of the release.
+Once the release finishes, the dandiset will be like any other unpublished draft dandiset.
+
+Once created, an embargoed dandiset is only visible or searchable to owners.
+Instead of the `draft` chip, an `embargoed` chip should be used instead.
+
+## CLI
+The CLI experience will be basically unchanged.
+Uploads to an embargoed dandiset will function exactly the same from an API perspective, the data simply goes to a different location.
+
+### TODO: how to browse/download embargoed zarr files?
+Credentials need to be generated, distributed, and used by the client.
+
+
+# Data storage
+Embargoed assets will be stored in a separate S3 bucket.
+This bucket is private and not browseable by the general public.
+
+The API server will use the embargo bucket in exactly the same way it uses the public bucket, but it will only store embargoed data.
+
+When releasing an embargoed dandiset, all asset data for that dandiset is copied to the public bucket.
+
+When uploading a new asset to an embargoed dandiset, the server will first check if that blob has already been uploaded publically.
+If so, the public blob will be used instead of uploading the data again to the embargo bucket.
+
+
+# Django changes
+
+## Models
+The `Dandiset` model will have an `embargo_status` field that is one of `PRIVATE`, `RELEASING`, or `PUBLIC`.
+* `PUBLIC` means that the Dandiset is publically accessible and publishable.
+  This is the state all Dandisets currently have.
+* `PRIVATE` means that the Dandiset is embargoed.
+  It is not searchable or viewable to non-owners.
+  It is not publishable.
+  Manifest YAML/JSON files will be written to the embargo bucket rather than the public bucket.
+* `RELEASING` means that the Dandiset is currently transitioning from embargoed to public.
+  All modification operations will return a 400 error while the release is in progress.
+  This includes metadata changes and uploads.
+### TODO: is the metadata enough to drive the frontend changes, or do we need to change serializers?
+
+A new `EmbargoedAssetBlob` model will be added.
+This behaves the same as a normal `AssetBlob`, but points to the embargo bucket rather than the public bucket.
+It also contains a reference to the `Dandiset` it belongs to.
+
+`Asset`s will point to exactly one `AssetBlob` or `EmbargoedAssetBlob`.
+An `Asset` will be considered "embargoed" if it has an `EmbargoedAssetBlob`.
+An embargoed `Asset` can only belong to the dandiset named in the `EmbargoedAssetBlob`.
+### TODO: what to do with the `access` metadata field?
+
+The `Upload` model will have a new optional field `embargoed_dandiset` that points to an embargoed dandiset.
+If specified, the uploaded data will be sent to the embargoed bucket instead of the public bucket, and the `Upload` will create an `EmbargoedAssetBlob` when finalized.
+
+## API
+* Create dandiset endpoint
+
+  When creating a new `Dandiset`, the web client will populate the `access` metadata field with either `OpenAccess` or `EmbargoedAccess` if the dandiset is embargoed.
+  The NIH award number will also be included in the metadata if embargoed.
+
+* Get/List dandiset endpoint
+
+  The DandisetViewSet queryset will filter out dandisets with `embargo_status != PUBLIC` that are also not owned by the current user.
+  This will prevent them from showing up in the listing or fetching endpoints.
+
+* publish version endpoint
+
+  Return error 400 if `dandiset.embargo_status != PUBLIC`.
+
+* create asset, update metadata, and any other dandiset/version modification endpoints:
+
+  Return error 400 if `dandiset.embargo_status == RELEASING`.
+
+* New endpoint: `POST /api/dandisets/{dandiset_id}/release`
+
+  Release an embargoed dandiset.
+  
+  Only permitted for owners and admins. If the `embargo_status` is `PUBLIC` or `RELEASING`, return 400.
+
+  Set the `embargo_status` to `RELEASING`, then dispatch the release task.
+
+* Release task
+
+  For every `Asset` with an `EmbargoedAssetBlob` in the dandiset, convert the `EmbargoedAssetBlob` into an `AssetBlob` by moving the data from the embargo bucket to the public bucket.
+  These could be >5GB, so the [multipart copy API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/CopyingObjectsMPUapi.html) must be used.
+  Once finished, the `access` metadata field on the dandiset will be updated to `OpenAccess` and `embargo_status` is set to `PUBLIC`.
+  
+  Before copying data, check if an existing `AssetBlob` with the same checksum has been uploaded already (this would have happened after uploading the embargoed data).
+  If so, use it instead of copying the `EmbargoedAssetBlob` data.
+
+* Get/List asset endpoint
+
+  The AssetViewSet queryset will filter out assets with `embargoed_asset_blob.dandiset.embargo_status != PUBLIC` that are also not owned by the current user.
+  This will prevent them from showing up in the listing or fetching endpoints.
+
+* upload_initialize_view
+
+  An optional field `embargoed_dandiset` will be available on the serializer.
+  If specified, it will be passed to the `Upload` object.
+  This will mean the final upload will result in an `EmbargoedAssetBlob`.
+
+  Even if `embargoed_dandiset` is specified, if an `AssetBlob` with a matching checksum already exists, return it instead of uploading embargoed data.
+  This means that an embargoed dandiset can contain both embargoed and unembargoed assets.
+
+  `EmbargoedAssetBlob`s should also be checked for deduplication, but only within an embargoed dandiset.
+  An embargoed dandiset should use the same `EmbargoedAssetBlob` if the same file appears in multiple places, but two embargoed dandisets should upload the same data twice if they both contain the same file.
+
+  Return error 400 if `dandiset.embargo_status == RELEASING`.
+
+* TODO zarr upload
+
+* stats_view
+  
+  The total size value should include the size of `EmbargoedAssetBlob`s as well as `AssetBlob`s.
