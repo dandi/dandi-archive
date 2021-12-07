@@ -35,3 +35,15 @@ This will be implemented as a new django-guardian role.
 All read endpoints for assets are permitted for users who are reviewers of the embargoed dandiset.
 All read endpoints for dandisets and versions will treat reviewers the same as owners.
 All write and upload endpoints are unchanged.
+
+## Anonymous read-only access
+Embargoed dandisets need to be shared anonymously with reviewers.
+There are two modes to support: browsing the embargoed dandiset anonymously, and downloading the asset data anonymously with the CLI.
+
+Browsing the embargoed dandiset anonymously can be achieved with a secret URL parameter unique to the dandiset.
+When the web UI detects the secret URL parameter, it passes it as an authorization token header/URL parameter to all API requests.
+The API will treat any request with the correct secret as coming from a reviewer, unless the user is already an owner.
+
+A link to the dandiset with this secret URL parameter is included somewhere on the embargoed dandiset page as a way to share access anonymously.
+
+### TODO how to download anonymously with the CLI?
