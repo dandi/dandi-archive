@@ -61,7 +61,7 @@ It also contains a reference to the `Dandiset` it belongs to.
 `Asset`s will point to exactly one `AssetBlob` or `EmbargoedAssetBlob`.
 An `Asset` will be considered "embargoed" if it has an `EmbargoedAssetBlob`.
 An embargoed `Asset` can only belong to the dandiset named in the `EmbargoedAssetBlob`.
-### TODO: what to do with the `access` metadata field?
+The automatically populated `Asset` metadata will also set the `access` field to the appropriate value depending on whether or not the asset is embargoed.
 
 The `Upload` model will have a new optional field `embargoed_dandiset` that points to an embargoed dandiset.
 If specified, the uploaded data will be sent to the embargoed bucket instead of the public bucket, and the `Upload` will create an `EmbargoedAssetBlob` when finalized.
