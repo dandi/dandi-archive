@@ -50,87 +50,20 @@
         Funding information
       </v-card-title>
 
-      <v-list
-        class="pl-4"
-        :style="`column-count: ${Math.min(Math.ceil(fundingInformation.length / 2), 4)};`"
-      >
-        <div
-          v-for="(item, i) in fundingInformation"
-          :key="i"
-          class="my-2"
-        >
+      <MetadataCard :items="fundingInformation">
+        <template #content="slotProps">
           <div
-            class="d-inline-block"
-            style="width: 100%;"
+            class="text-caption grey--text text--darken-1"
           >
-            <MetadataListItem>
-              <v-row
-                no-gutters
-                class="justify-space-between"
-              >
-                <v-col
-                  cols="9"
-                  class="grey--text text--darken-3"
-                >
-                  <div class="mb-1">
-                    {{ item.name }}
-                  </div>
-                  <div
-                    v-if="item.awardNumber"
-                    class="text-caption grey--text text--darken-1"
-                  >
-                    <strong>Award Number: </strong>{{ item.awardNumber }}
-                  </div>
-                  <div
-                    v-if="item.roleName && item.roleName.length"
-                    class="text-caption grey--text text--darken-1"
-                  >
-                    <strong>Roles: </strong>
-                    <div
-                      v-for="(role, ii) in item.roleName"
-                      :key="ii"
-                      class="ml-4"
-                    >
-                      - {{ role }}
-                    </div>
-                  </div>
-                  <div
-                    v-if="item.contactPoint && item.contactPoint.length"
-                    class="text-caption grey--text text--darken-1"
-                  >
-                    <strong>Contact points: </strong>
-                    <div
-                      v-for="(contact, ii) in item.contactPoint"
-                      :key="ii"
-                      class="ml-4"
-                    >
-                      <span>
-                        -
-                        <a :href="`mailto:${contact.email}`">{{ contact.email }}</a>
-                        /
-                        <a :href="contact.url">{{ contact.url }}</a>
-                      </span>
-                    </div>
-                  </div>
-                </v-col>
-                <v-col
-                  v-if="item.url"
-                  class="pl-1 text-end font-weight-light"
-                >
-                  <v-btn
-                    icon
-                    :href="item.url"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <v-icon>mdi-link</v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </MetadataListItem>
+            <span
+              v-if="slotProps.item.awardNumber"
+              class="pl-2"
+            >
+              <strong>- Award Number: </strong>{{ slotProps.item.awardNumber }}
+            </span>
           </div>
-        </div>
-      </v-list>
+        </template>
+      </MetadataCard>
     </v-card>
 
     <v-row>
@@ -146,53 +79,34 @@
             Related resources
           </v-card-title>
 
-          <v-list>
-            <v-list-item
-              v-for="(item, i) in relatedResources"
-              :key="i"
-            >
-              <MetadataListItem>
-                <v-row
-                  no-gutters
-                  class="justify-space-between"
-                >
-                  <v-col
-                    cols="9"
-                    class="grey--text text--darken-3"
-                  >
-                    {{ item.name }}
-                    <br>
-                    <span
-                      class="text-caption grey--text text--darken-1 related-resource"
-                    >
-                      <span>ID: </span>{{ item.identifier }}
-                    </span>
-                    <br>
-                    <span class="text-caption grey--text text--darken-1">
-                      <span>Repo: </span>{{ item.repository }}
-                    </span>
-                    <br>
-                    <span class="text-caption grey--text text--darken-1">
-                      <span>Relation: </span>{{ item.relation }}
-                    </span>
-                  </v-col>
-                  <v-col
-                    v-if="item.url"
-                    class="pl-1 text-end font-weight-light"
-                  >
-                    <v-btn
-                      icon
-                      :href="item.url"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <v-icon>mdi-link</v-icon>
-                    </v-btn>
-                  </v-col>
-                </v-row>
-              </MetadataListItem>
-            </v-list-item>
-          </v-list>
+          <MetadataCard :items="relatedResources">
+            <template #content="slotProps">
+              <span
+                class="text-caption grey--text text--darken-1 related-resource"
+              >
+                <strong>ID: </strong>{{ slotProps.item.identifier }}
+              </span>
+              <br>
+              <span class="text-caption grey--text text--darken-1">
+                <strong>Repo: </strong>{{ slotProps.item.repository }}
+              </span>
+              <br>
+              <span class="text-caption grey--text text--darken-1">
+                <strong>Relation: </strong>{{ slotProps.item.relation }}
+              </span>
+            </template>
+            <template #links="slotProps">
+              <v-btn
+                v-if="slotProps.item.url"
+                icon
+                :href="slotProps.item.url"
+                target="_blank"
+                rel="noopener"
+              >
+                <v-icon>mdi-link</v-icon>
+              </v-btn>
+            </template>
+          </MetadataCard>
         </v-card>
       </v-col>
     </v-row>
@@ -209,7 +123,7 @@
       </v-card-title>
       <v-list
         style="column-count: 3;"
-        class="px-3"
+        class="px-3 ml-2"
       >
         <div
           v-for="([type, items], i) in Object.entries(assetSummary)"
@@ -222,41 +136,49 @@
             <span class="font-weight-bold">
               {{ type }}
             </span>
-            <MetadataListItem
+            <div
               v-for="(item, ii) in items"
               :key="ii"
               :title="type"
               background-color="grey lighten-4"
+              class="grey lighten-4"
+              style="width: 100%;"
             >
-              <v-row
-                no-gutters
-                class="align-center py-0"
-                style="min-height: 2em;"
+              <div
+                class="pl-2 my-1 py-1"
+                :style="`border-left: medium solid ${$vuetify.theme.themes.light.primary};
+                         line-height: 1.25`"
               >
-                <v-col
-                  cols="10"
+                <v-row
+                  no-gutters
+                  class="align-center py-0"
+                  style="min-height: 2em;"
                 >
-                  <span>{{ item.name || item }}</span>
-                </v-col>
-                <v-col>
-                  <v-btn
-                    v-if="isURL(item.identifier)"
-                    icon
-                    :href="item.identifier"
-                    target="_blank"
-                    rel="noopener"
+                  <v-col
+                    cols="10"
                   >
-                    <v-icon>mdi-link</v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
-              <span
-                v-if="!isURL(item.identifier)"
-                class="text-caption grey--text text--darken-1"
-              >
-                {{ item.identifier }}
-              </span>
-            </MetadataListItem>
+                    <span>{{ item.name || item }}</span>
+                  </v-col>
+                  <v-col>
+                    <v-btn
+                      v-if="isURL(item.identifier)"
+                      icon
+                      :href="item.identifier"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <v-icon>mdi-link</v-icon>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+                <span
+                  v-if="!isURL(item.identifier)"
+                  class="text-caption grey--text text--darken-1"
+                >
+                  {{ item.identifier }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </v-list>
@@ -272,7 +194,7 @@ import {
   defineComponent, PropType,
 } from '@vue/composition-api';
 
-import MetadataListItem from '@/components/DLP/MetadataListItem.vue';
+import MetadataCard from '@/components/DLP/MetadataCard.vue';
 
 const ASSET_SUMMARY_BLACKLIST = new Set([
   'numberOfBytes',
@@ -299,7 +221,7 @@ function isURL(str: string): boolean {
 
 export default defineComponent({
   name: 'OverviewTab',
-  components: { MetadataListItem },
+  components: { MetadataCard },
   props: {
     schema: {
       type: Object,
