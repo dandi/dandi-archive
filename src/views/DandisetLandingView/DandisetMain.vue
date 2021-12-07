@@ -66,16 +66,44 @@
       <v-row
         class="mx-1"
       >
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 6">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
             Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 6">
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-history</v-icon>
             Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
+          </span>
+        </v-col>
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+          <span v-if="meta && meta.license">
+            <v-icon class="grey--text text--lighten-1">mdi-gavel</v-icon>
+            Licenses:
+            <strong v-if="!meta.license.length">(none)</strong>
+            <span
+              v-for="(license, i) in meta.license"
+              v-else
+              :key="i"
+            >
+              <strong>{{ license }}</strong>
+              <span v-text="i === meta.license.length - 1 ? '' : ', '" />
+            </span>
+          </span>
+        </v-col>
+        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+          <span v-if="accessInformation && accessInformation.length">
+            <v-icon class="grey--text text--lighten-1">mdi-account-question</v-icon>
+            Access Information:
+            <span
+              v-for="(item, i) in accessInformation"
+              :key="i"
+            >
+              <strong>{{ item.status }}</strong>
+              <span v-text="i === accessInformation.length - 1 ? '' : ', '" />
+            </span>
           </span>
         </v-col>
       </v-row>
@@ -119,33 +147,6 @@
                 style="margin: 5px;"
               >
                 {{ keyword }}
-              </v-chip>
-            </v-card-text>
-
-            <v-card-text
-              v-if="meta.license && meta.license.length"
-              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
-            >
-              Licenses:
-              <v-chip
-                v-for="(license, i) in meta.license"
-                :key="i"
-                small
-                style="margin: 5px;"
-              >
-                {{ license }}
-              </v-chip>
-            </v-card-text>
-
-            <v-card-text v-if="accessInformation && accessInformation.length">
-              Access Information:
-              <v-chip
-                v-for="(item, i) in accessInformation"
-                :key="i"
-                small
-                style="margin: 5px;"
-              >
-                {{ item.status }}
               </v-chip>
             </v-card-text>
           </v-card>
