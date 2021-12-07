@@ -53,7 +53,6 @@ The `Dandiset` model will have an `embargo_status` field that is one of `PRIVATE
 * `RELEASING` means that the Dandiset is currently transitioning from embargoed to public.
   All modification operations will return a 400 error while the release is in progress.
   This includes metadata changes and uploads.
-### TODO: is the metadata enough to drive the frontend changes, or do we need to change serializers?
 
 A new `EmbargoedAssetBlob` model will be added.
 This behaves the same as a normal `AssetBlob`, but points to the embargo bucket rather than the public bucket.
@@ -78,6 +77,8 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 
   The DandisetViewSet queryset will filter out dandisets with `embargo_status != PUBLIC` that are also not owned by the current user.
   This will prevent them from showing up in the listing or fetching endpoints.
+
+  The `DandisetSerializer` will also be updated to include the `embargo_status` field so that the web client can render the embargoed dandiset appropriately.
 
 * publish version endpoint
 
