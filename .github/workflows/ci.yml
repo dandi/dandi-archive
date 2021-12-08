@@ -30,16 +30,23 @@ jobs:
         ports:
           - 9000:9000
     env:
+      # API server env vars
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
       DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
       DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
       DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
       DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
       DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
-      CLIENT_URL: http://localhost:8085
+      DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
+      DJANGO_DANDI_API_URL: http://localhost:8000
+
+      # Web client env vars
       VUE_APP_DANDI_API_ROOT: http://localhost:8000/api/
       VUE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
       VUE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
+
+      # E2E tests env vars
+      CLIENT_URL: http://localhost:8085
 
     steps:
       - uses: actions/checkout@master
