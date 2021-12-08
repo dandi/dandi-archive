@@ -38,78 +38,59 @@
       </div>
     </v-card>
 
-    <v-card
+    <MetadataCard
       v-if="fundingInformation && fundingInformation.length"
-      outlined
-      class="mt-3"
+      :items="fundingInformation"
+      name="Funding information"
+      icon="mdi-currency-usd"
     >
-      <v-card-title class="font-weight-regular">
-        <v-icon class="mr-3 grey--text text--lighten-1">
-          mdi-currency-usd
-        </v-icon>
-        Funding information
-      </v-card-title>
-
-      <MetadataCard :items="fundingInformation">
-        <template #content="slotProps">
-          <div
-            class="text-caption grey--text text--darken-1"
-          >
-            <span
-              v-if="slotProps.item.awardNumber"
-              class="pl-2"
-            >
-              <strong>- Award Number: </strong>{{ slotProps.item.awardNumber }}
-            </span>
-          </div>
-        </template>
-      </MetadataCard>
-    </v-card>
-
-    <v-row>
-      <v-col v-if="relatedResources && relatedResources.length">
-        <v-card
-          outlined
-          height="100%"
+      <template #content="slotProps">
+        <div
+          class="text-caption grey--text text--darken-1"
         >
-          <v-card-title class="font-weight-regular">
-            <v-icon class="mr-3 grey--text text--lighten-1">
-              mdi-book
-            </v-icon>
-            Related resources
-          </v-card-title>
+          <span
+            v-if="slotProps.item.awardNumber"
+            class="pl-2"
+          >
+            <strong>- Award Number: </strong>{{ slotProps.item.awardNumber }}
+          </span>
+        </div>
+      </template>
+    </MetadataCard>
 
-          <MetadataCard :items="relatedResources">
-            <template #content="slotProps">
-              <span
-                class="text-caption grey--text text--darken-1 related-resource"
-              >
-                <strong>ID: </strong>{{ slotProps.item.identifier }}
-              </span>
-              <br>
-              <span class="text-caption grey--text text--darken-1">
-                <strong>Repo: </strong>{{ slotProps.item.repository }}
-              </span>
-              <br>
-              <span class="text-caption grey--text text--darken-1">
-                <strong>Relation: </strong>{{ slotProps.item.relation }}
-              </span>
-            </template>
-            <template #links="slotProps">
-              <v-btn
-                v-if="slotProps.item.url"
-                icon
-                :href="slotProps.item.url"
-                target="_blank"
-                rel="noopener"
-              >
-                <v-icon>mdi-link</v-icon>
-              </v-btn>
-            </template>
-          </MetadataCard>
-        </v-card>
-      </v-col>
-    </v-row>
+    <MetadataCard
+      v-if="relatedResources && relatedResources.length"
+      :items="relatedResources"
+      name="Related resources"
+      icon="mdi-book"
+    >
+      <template #content="slotProps">
+        <span
+          class="text-caption grey--text text--darken-1 related-resource"
+        >
+          <strong>ID: </strong>{{ slotProps.item.identifier }}
+        </span>
+        <br>
+        <span class="text-caption grey--text text--darken-1">
+          <strong>Repo: </strong>{{ slotProps.item.repository }}
+        </span>
+        <br>
+        <span class="text-caption grey--text text--darken-1">
+          <strong>Relation: </strong>{{ slotProps.item.relation }}
+        </span>
+      </template>
+      <template #links="slotProps">
+        <v-btn
+          v-if="slotProps.item.url"
+          icon
+          :href="slotProps.item.url"
+          target="_blank"
+          rel="noopener"
+        >
+          <v-icon>mdi-link</v-icon>
+        </v-btn>
+      </template>
+    </MetadataCard>
 
     <v-card
       v-if="assetSummary"

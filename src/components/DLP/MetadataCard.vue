@@ -1,48 +1,66 @@
 <template>
-  <v-list
-    :style="`column-count: ${columnCount};`"
-    class="px-5"
-  >
-    <div
-      v-for="(item, i) in items"
-      :key="i"
-    >
-      <div
-        :class="`my-1 d-inline-block ${backgroundColor}`"
-        style="width: 100%;"
+  <v-row>
+    <v-col v-if="items && items.length">
+      <v-card
+        outlined
+        height="100%"
       >
-        <div
-          class="pl-2 my-1 py-1"
-          :style="`border-left: medium solid ${borderLeftColor};
-                   line-height: 1.25`"
+        <v-card-title
+          :id="name"
+          class="font-weight-regular"
         >
-          <v-row
-            no-gutters
-            class="justify-space-between mr-4"
+          <v-icon class="mr-3 grey--text text--lighten-1">
+            {{ icon }}
+          </v-icon>
+          {{ name }}
+        </v-card-title>
+        <v-list
+          :style="`column-count: ${columnCount};`"
+          class="px-5"
+        >
+          <div
+            v-for="(item, i) in items"
+            :key="i"
           >
-            <v-col
-              cols="9"
-              class="grey--text text--darken-3"
+            <div
+              :class="`my-1 d-inline-block ${backgroundColor}`"
+              style="width: 100%;"
             >
-              {{ item.name }}
-              <br>
-              <slot
-                name="content"
-                :item="item"
-              />
-            </v-col>
+              <div
+                class="pl-2 my-1 py-1"
+                :style="`border-left: medium solid ${borderLeftColor};
+                   line-height: 1.25`"
+              >
+                <v-row
+                  no-gutters
+                  class="justify-space-between mr-4"
+                >
+                  <v-col
+                    cols="9"
+                    class="grey--text text--darken-3"
+                  >
+                    {{ item.name }}
+                    <br>
+                    <slot
+                      name="content"
+                      :item="item"
+                    />
+                  </v-col>
 
-            <v-col class="px-1 text-end font-weight-light">
-              <slot
-                name="links"
-                :item="item"
-              />
-            </v-col>
-          </v-row>
-        </div>
-      </div>
-    </div>
-  </v-list>
+                  <v-col class="px-1 text-end font-weight-light">
+                    <slot
+                      name="links"
+                      :item="item"
+                    />
+                  </v-col>
+                </v-row>
+              </div>
+            </div>
+          </div>
+        </v-list>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script>
@@ -61,6 +79,14 @@ export default defineComponent({
     },
     items: {
       type: Array,
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    icon: {
+      type: String,
       required: true,
     },
   },
