@@ -101,7 +101,7 @@ def test_published_version_metadata_computed(published_version: Version):
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
         'doi': f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}',  # noqa: E501
         'url': (
-            f'https://dandiarchive.org/dandiset/'
+            'https://dandiarchive.org/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
         'dateCreated': published_version.dandiset.created.isoformat(),
