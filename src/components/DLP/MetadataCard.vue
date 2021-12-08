@@ -69,7 +69,12 @@ export default defineComponent({
 
     const borderLeftColor = computed(() => $vuetify.theme.themes.light.primary);
 
-    const columnCount = computed(() => Math.min(Math.ceil(props.items.length / 2), MAX_COLUMNS));
+    // Try to estimate the ideal number of columns to break the items into.
+    // When viewing on a smaller screen, force the number of columns to 1.
+    const columnCount = computed(
+      () => ($vuetify.breakpoint.mdAndDown
+        ? 1 : Math.min(Math.ceil(props.items.length / 2), MAX_COLUMNS)),
+    );
 
     return { borderLeftColor, columnCount };
   },
