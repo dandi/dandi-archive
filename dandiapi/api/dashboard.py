@@ -1,4 +1,5 @@
 from allauth.socialaccount.models import SocialAccount
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db.models import Exists, OuterRef, Q
@@ -13,12 +14,15 @@ from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
 
 
-class DashboardView(TemplateView):
+class DashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
+
+
+class DashboardView(DashboardMixin, TemplateView):
     template_name = 'dashboard/index.html'
 
     def get_context_data(self, **kwargs):
-        if not self.request.user.is_superuser:
-            raise PermissionDenied()
         context = super().get_context_data(**kwargs)
         context['orphaned_asset_count'] = self._orphaned_asset_count()
         context['orphaned_asset_blob_count'] = self._orphaned_asset_blob_count()
@@ -72,7 +76,7 @@ class DashboardView(TemplateView):
         )
 
 
-class UserDashboardView(FilterView):
+class UserDashboardView(DashboardMixin, FilterView):
     template_name = 'dashboard/users.html'
     filterset_class = UserStatusFilter
 
