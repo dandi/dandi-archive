@@ -14,6 +14,18 @@
 {% endblock %}
 
 {% block content %}
+<style>
+/*
+  Materialize CSS's 'collection' component doesn't work properly with the
+  dark mode setting present in some browsers. To fix this, manually
+  override the bg color when the user has their browser set to dark mode.
+*/
+@media (prefers-color-scheme: dark) {
+  .collection-item {
+    background-color: var(--body-bg) !important;
+  }
+}
+</style>
 <div id="content-main">
   <div>
     <ul class="collection">
