@@ -6,7 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-from dandiapi.api.dashboard import DashboardView, user_approval_view
+from dandiapi.api.dashboard import DashboardView, UserDashboardView, user_approval_view
 from dandiapi.api.views import (
     AssetViewSet,
     DandisetViewSet,
@@ -105,6 +105,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view()),
+    path('dashboard/users/', UserDashboardView.as_view()),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow

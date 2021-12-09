@@ -5,7 +5,9 @@ from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
+from django_filters.views import FilterView
 
+from dandiapi.api.filters import UserStatusFilter
 from dandiapi.api.mail import send_approved_user_message, send_rejected_user_message
 from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
@@ -68,6 +70,11 @@ class DashboardView(TemplateView):
             .filter(metadata__status=UserMetadata.Status.APPROVED)
             .order_by('-date_joined')
         )
+
+
+class UserDashboardView(FilterView):
+    template_name = 'dashboard/users.html'
+    filterset_class = UserStatusFilter
 
 
 @require_http_methods(['GET', 'POST'])
