@@ -2,12 +2,18 @@ import logging
 from typing import List, Union
 
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import mail
 from django.db.models.query import QuerySet
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
+
+BASE_RENDER_CONTEXT = {
+    'dandi_api_url': settings.DANDI_API_URL,
+    'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
+}
 
 # TODO: turn this into a Django setting
 ADMIN_EMAIL = 'info@dandiarchive.org'
@@ -21,6 +27,7 @@ def build_message(subject: str, message: str, to: List[str], html_message: str):
 
 def build_removed_message(dandiset, removed_owner):
     render_context = {
+        **BASE_RENDER_CONTEXT,
         'dandiset_name': dandiset.draft_version.name,
         'dandiset_identifier': dandiset.identifier,
     }
@@ -35,6 +42,7 @@ def build_removed_message(dandiset, removed_owner):
 
 def build_added_message(dandiset, added_owner):
     render_context = {
+        **BASE_RENDER_CONTEXT,
         'dandiset_name': dandiset.draft_version.name,
         'dandiset_identifier': dandiset.identifier,
     }
@@ -77,6 +85,7 @@ def send_registered_notice_email(user: User, socialaccount: SocialAccount):
 
 def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
     render_context = {
+        **BASE_RENDER_CONTEXT,
         'username': user.username,
     }
     # Email sent to the DANDI list when a new user logs in for the first time
@@ -102,19 +111,21 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
     if socialaccount is None:
         native_user = user_to_dict(user)
         render_context = {
+            **BASE_RENDER_CONTEXT,
             'name': native_user['name'],
             'github_id': None,
         }
     else:
         social_user = social_account_to_dict(socialaccount)
         render_context = {
+            **BASE_RENDER_CONTEXT,
             'name': social_user['name'],
             'github_id': social_user['username'],
         }
     return build_message(
         subject='Your DANDI Account',
         message=render_to_string('api/mail/approved_user_message.txt', render_context),
-        to=[user.email],
+        to=[ADMIN_EMAIL, user.email],
         html_message=render_to_string('api/mail/approved_user_message.html', render_context),
     )
 
@@ -147,7 +158,7 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
     return build_message(
         subject='Your DANDI Account',
         message=render_to_string('api/mail/rejected_user_message.txt', render_context),
-        to=[user.email],
+        to=[ADMIN_EMAIL, user.email],
         html_message=render_to_string('api/mail/rejected_user_message.html', render_context),
     )
 
@@ -160,7 +171,7 @@ def send_rejected_user_message(user: User, socialaccount: SocialAccount):
 
 
 def build_pending_users_message(users: Union[QuerySet, List[User]]):
-    render_context = {'users': users}
+    render_context = {**BASE_RENDER_CONTEXT, 'users': users}
     return build_message(
         subject='DANDI: new user registrations to review',
         message=render_to_string('api/mail/pending_users_message.txt', render_context),
