@@ -93,14 +93,14 @@ def test_zarr_rest_upload_complete(
 
     # Verify the parent directory checksum file is correct
     serializer = ZarrJSONChecksumSerializer()
-    expected_parent_listing = serializer.generate_listing([upload.to_checksum()])
+    expected_parent_listing = serializer.generate_listing(files=[upload.to_checksum()])
     assert (
         ZarrChecksumFileUpdater(zarr_archive, parent_path).read_checksum_file()
         == expected_parent_listing
     )
     # Verify that the root directory checksum file is correct
     expected_root_listing = serializer.generate_listing(
-        [ZarrChecksum(str(parent_path), expected_parent_listing.md5)]
+        directories=[ZarrChecksum(path=str(parent_path), md5=expected_parent_listing.md5)]
     )
     assert (
         ZarrChecksumFileUpdater(zarr_archive, root_path).read_checksum_file()

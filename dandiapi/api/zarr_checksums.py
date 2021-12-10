@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 import hashlib
-import json
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
+import pydantic
 
 if TYPE_CHECKING:
     from dandiapi.api.models import ZarrArchive
 
 
-@dataclass(order=True, eq=True, frozen=True)
-class ZarrChecksum:
+"""Passed to the json() method of pydantic models for serialization."""
+ENCODING_KWARGS = {'separators': (',', ':')}
+
+
+class ZarrChecksum(pydantic.BaseModel):
     """
     A checksum for a single file/directory in a zarr file.
 
@@ -23,51 +26,108 @@ class ZarrChecksum:
     """
 
     path: str
-    # We ignore the checksum for equality purposes to make it easier to apply modifications to a
-    # list of ZarrChecksums.
-    md5: str = field(compare=False)
+    md5: str
+
+    # To make ZarrChecksums sortable
+    def __lt__(self, other: ZarrChecksum):
+        return self.path < other.path
 
 
-@dataclass
-class ZarrChecksumListing:
+class ZarrChecksums(pydantic.BaseModel):
+    """
+    A set of file and directory checksums.
+
+    This is the data hashed to calculate the checksum of a directory.
+    """
+
+    files: List[ZarrChecksum] = pydantic.Field(default_factory=list)
+    directories: List[ZarrChecksum] = pydantic.Field(default_factory=list)
+
+    @property
+    def is_empty(self):
+        return self.files == [] and self.directories == []
+
+    def _index(self, checksums: List[ZarrChecksum], checksum: ZarrChecksum):
+        # O(n) performance, consider an ordered dict for optimization
+        for i in range(0, len(checksums)):
+            if checksums[i].path == checksum.path:
+                return i
+        raise ValueError('Not found')
+
+    def add_file_checksums(self, checksums: List[ZarrChecksum]):
+        for new_checksum in checksums:
+            try:
+                self.files[self._index(self.files, new_checksum)] = new_checksum
+            except ValueError:
+                self.files.append(new_checksum)
+        self.files = sorted(self.files)
+
+    def add_directory_checksums(self, checksums: List[ZarrChecksum]):
+        """Add a list of directory checksums to the listing."""
+        for new_checksum in checksums:
+            try:
+                self.directories[self._index(self.directories, new_checksum)] = new_checksum
+            except ValueError:
+                self.directories.append(new_checksum)
+        self.directories = sorted(self.directories)
+
+    def remove_checksums(self, paths: List[str]):
+        """Remove a list of paths from the listing."""
+        self.files = sorted(filter(lambda checksum: checksum.path not in paths, self.files))
+        self.directories = sorted(
+            filter(lambda checksum: checksum.path not in paths, self.directories)
+        )
+
+
+class ZarrChecksumListing(pydantic.BaseModel):
     """
     A listing of checksums for all sub-files/directories in a zarr directory.
 
     This is the data serialized in the checksum file.
     """
 
-    checksums: List[ZarrChecksum]
+    checksums: ZarrChecksums
     md5: str
 
 
 class ZarrJSONChecksumSerializer:
-    def aggregate_checksum(self, checksums: List[ZarrChecksum]) -> str:
+    def aggregate_checksum(self, checksums: ZarrChecksums) -> str:
         """Generate an aggregated checksum for a list of ZarrChecksums."""
         # Use the most compact separators possible
-        content = json.dumps(
-            [asdict(zarr_md5) for zarr_md5 in sorted(checksums)], separators=(',', ':')
-        )
+        # content = json.dumps([asdict(zarr_md5) for zarr_md5 in checksums], separators=(',', ':'))0
+        content = checksums.json(**ENCODING_KWARGS)
         h = hashlib.md5()
         h.update(content.encode('utf-8'))
         return h.hexdigest()
 
     def serialize(self, zarr_checksum_listing: ZarrChecksumListing) -> str:
         """Serialize a ZarrChecksumListing into a string."""
-        return json.dumps(asdict(zarr_checksum_listing))
+        # return json.dumps(asdict(zarr_checksum_listing))
+        return zarr_checksum_listing.json(**ENCODING_KWARGS)
 
     def deserialize(self, json_str: str) -> ZarrChecksumListing:
         """Deserialize a string into a ZarrChecksumListing."""
-        listing = ZarrChecksumListing(**json.loads(json_str))
-        listing.checksums = [ZarrChecksum(**checksum) for checksum in listing.checksums]
-        return listing
+        # listing = ZarrChecksumListing(**json.loads(json_str))
+        # listing.checksums = [ZarrChecksum(**checksum) for checksum in listing.checksums]
+        # return listing
+        return ZarrChecksumListing.parse_raw(json_str)
 
-    def generate_listing(self, checksums: List[ZarrChecksum]) -> ZarrChecksumListing:
+    def generate_listing(
+        self,
+        checksums: Optional[ZarrChecksums] = None,
+        files: Optional[List[ZarrChecksum]] = None,
+        directories: Optional[List[ZarrChecksum]] = None,
+    ) -> ZarrChecksumListing:
         """
-        Generate a new ZarrChecksumListing from the given list of checksums.
+        Generate a new ZarrChecksumListing from the given checksums.
 
         This method wraps aggregate_checksum and should not be overriden.
         """
-        checksums = sorted(checksums)
+        if checksums is None:
+            checksums = ZarrChecksums(
+                files=files if files is not None else [],
+                directories=directories if directories is not None else [],
+            )
         return ZarrChecksumListing(
             checksums=checksums,
             md5=self.aggregate_checksum(checksums),
@@ -104,14 +164,14 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         if existing_zarr_checksum:
             self._checksums = existing_zarr_checksum.checksums
         else:
-            self._checksums = []
+            self._checksums = ZarrChecksums()
         return self
 
     def __exit__(self, exc_type, *exc):
         # If there was an exception, do not write anything
         if exc_type:
             return None  # this means throw the exception as normal
-        if len(self.checksum_listing.checksums) > 0:
+        if not self.checksum_listing.checksums.is_empty:
             self.write_checksum_file(self.checksum_listing)
         else:
             # If there are no checksums to write, simply delete the checksum file.
@@ -159,25 +219,23 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         storage = ZarrUploadFile.blob.field.storage
         storage.delete(self.checksum_file_path)
 
-    def add_checksums(self, checksums: List[ZarrChecksum]):
-        """Add a list of checksums to the listing."""
+    def add_file_checksums(self, checksums: List[ZarrChecksum]):
+        """Add a list of file checksums to the listing."""
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')
-        for new_checksum in checksums:
-            try:
-                # O(n) performance, consider an ordered dict for optimization
-                self._checksums[self._checksums.index(new_checksum)] = new_checksum
-            except ValueError:
-                self._checksums.append(new_checksum)
-        self._checksums = sorted(self._checksums)
+        self._checksums.add_file_checksums(checksums)
+
+    def add_directory_checksums(self, checksums: List[ZarrChecksum]):
+        """Add a list of directory checksums to the listing."""
+        if self._checksums is None:
+            raise ValueError('This method is only valid when used by a context manager')
+        self._checksums.add_directory_checksums(checksums)
 
     def remove_checksums(self, paths: List[str]):
         """Remove a list of paths from the listing."""
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')
-        self._checksums = sorted(
-            filter(lambda checksum: checksum.path not in paths, self._checksums)
-        )
+        self._checksums.remove_checksums(paths)
 
 
 @dataclass
@@ -185,12 +243,13 @@ class ZarrChecksumModification:
     """
     A set of changes to apply to a ZarrChecksumListing.
 
-    Additions or modifications are stored in checksums_to_update.
+    Additions or modifications are stored in files_to_update and directories_to_update.
     Removals are stored in paths_to_remove.
     """
 
     path: Path
-    checksums_to_update: list[ZarrChecksum] = field(default_factory=list)
+    files_to_update: list[ZarrChecksum] = field(default_factory=list)
+    directories_to_update: list[ZarrChecksum] = field(default_factory=list)
     paths_to_remove: list[str] = field(default_factory=list)
 
 
@@ -206,14 +265,19 @@ class ZarrChecksumModificationQueue:
     def __init__(self) -> None:
         self._queue: dict[Path, ZarrChecksumModification] = {}
 
-    def queue_update(self, key: Path, checksum: ZarrChecksum):
+    def queue_file_update(self, key: Path, checksum: ZarrChecksum):
         if key not in self._queue:
-            self._queue[key] = ZarrChecksumModification(key)
-        self._queue[key].checksums_to_update.append(checksum)
+            self._queue[key] = ZarrChecksumModification(path=key)
+        self._queue[key].files_to_update.append(checksum)
+
+    def queue_directory_update(self, key: Path, checksum: ZarrChecksum):
+        if key not in self._queue:
+            self._queue[key] = ZarrChecksumModification(path=key)
+        self._queue[key].directories_to_update.append(checksum)
 
     def queue_removal(self, key: Path, path: Path | str):
         if key not in self._queue:
-            self._queue[key] = ZarrChecksumModification(key)
+            self._queue[key] = ZarrChecksumModification(path=key)
         self._queue[key].paths_to_remove.append(str(path))
 
     def pop_deepest(self):
@@ -244,19 +308,20 @@ class ZarrChecksumUpdater:
             modification = modifications.pop_deepest()
             with ZarrChecksumFileUpdater(self.zarr_archive, modification.path) as file_updater:
                 # Removing a checksum takes precedence over adding/modifying that checksum
-                file_updater.add_checksums(modification.checksums_to_update)
+                file_updater.add_file_checksums(modification.files_to_update)
+                file_updater.add_directory_checksums(modification.directories_to_update)
                 file_updater.remove_checksums(modification.paths_to_remove)
 
             # If we have reached the root node, then we obviously do not need to update the parent.
             if modification.path != Path('.') and modification.path != Path('/'):
-                if file_updater.checksum_listing.checksums == []:
+                if file_updater.checksum_listing.checksums.is_empty:
                     # We have removed all checksums from this checksum file.
                     # ZarrChecksumFileUpdater will have already deleted the checksum file, so all
                     # we need to do is queue this checksum for removal with it's parent.
                     modifications.queue_removal(modification.path.parent, modification.path)
                 else:
                     # The parent needs to incorporate the checksum modification we just made.
-                    modifications.queue_update(
+                    modifications.queue_directory_update(
                         modification.path.parent,
                         ZarrChecksum(
                             path=str(modification.path),
@@ -264,10 +329,10 @@ class ZarrChecksumUpdater:
                         ),
                     )
 
-    def update_checksums(self, checksums: list[ZarrChecksum]):
+    def update_file_checksums(self, checksums: list[ZarrChecksum]):
         modifications = ZarrChecksumModificationQueue()
         for checksum in checksums:
-            modifications.queue_update(Path(checksum.path).parent, checksum)
+            modifications.queue_file_update(Path(checksum.path).parent, checksum)
         self.modify(modifications)
 
     def remove_checksums(self, paths: list[str]):
@@ -280,4 +345,4 @@ class ZarrChecksumUpdater:
 # We do not store a checksum file for empty directories since an empty directory doesn't exist in
 # S3. However, an empty zarr file still needs to have a checksum, even if it has no checksum file.
 # For convenience, we define this constant as the "null" checksum.
-EMPTY_CHECKSUM = ZarrJSONChecksumSerializer().generate_listing([]).md5
+EMPTY_CHECKSUM = ZarrJSONChecksumSerializer().generate_listing(ZarrChecksums()).md5
