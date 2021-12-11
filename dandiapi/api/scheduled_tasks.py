@@ -6,11 +6,15 @@ This module is imported from celery.py in a post-app-load hook.
 from datetime import timedelta
 
 from celery import shared_task
+from celery.app.base import Celery
+from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.transaction import atomic
 
-from dandiapi.api.models import Version
+from dandiapi.api.mail import send_pending_users_message
+from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 
 logger = get_task_logger(__name__)
@@ -33,10 +37,21 @@ def validate_draft_version_metadata():
             write_manifest_files.delay(draft_version['id'])
 
 
-def register_scheduled_tasks(sender, **kwargs):
+@shared_task
+def send_pending_users_email() -> None:
+    """Send an email to admins listing users with status set to PENDING."""
+    pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)
+    if pending_users.exists():
+        send_pending_users_message(pending_users)
+
+
+def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     # Check for any draft versions that need validation every minute
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_draft_version_metadata.s(),
     )
+
+    # Send daily email to admins containing a list of users awaiting approval
+    sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())

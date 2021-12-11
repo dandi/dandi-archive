@@ -40,7 +40,9 @@ setup(
     install_requires=[
         'celery',
         'dandischema==0.4.3',
-        'django>=3.1.2',
+        # TODO: Remove this. Pinning Django to 3.x until
+        # https://github.com/jazzband/django-oauth-toolkit/issues/1037 is resolved
+        'django~=3.2',
         'django-admin-display',
         'django-allauth',
         'django-click',
