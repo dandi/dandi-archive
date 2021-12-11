@@ -5,7 +5,7 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import OuterRef, Q, Subquery, Sum
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -69,9 +69,9 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     '-created'
                 )[:1]
                 queryset = queryset.annotate(
-                    size=Subquery(latest_version.values('metadata__assetsSummary__numberOfBytes'))
-                )
-                return queryset.order_by("size")
+                    size=Subquery(latest_version.annotate(size=Sum("assets__blob__size")).values("size")
+                ))
+                return queryset.order_by(ordering)
         return queryset
 
 
