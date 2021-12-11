@@ -118,7 +118,7 @@ const sortingOptions = [
   {
     name: 'Size',
     djangoField: 'size',
-    },
+  },
 ];
 
 export default defineComponent({
