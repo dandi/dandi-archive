@@ -32,7 +32,7 @@ from dandiapi.api.views.serializers import (
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified', "size"]
+    ordering_fields = ['id', 'name', 'modified', 'size']
     ordering_description = (
         'Which field to use when ordering the results. '
         'Options are id, -id, name, -name, modified, -modified, size and -size.'
@@ -69,8 +69,10 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     '-created'
                 )[:1]
                 queryset = queryset.annotate(
-                    size=Subquery(latest_version.annotate(size=Sum("assets__blob__size")).values("size")
-                ))
+                    size=Subquery(
+                        latest_version.annotate(size=Sum('assets__blob__size')).values('size')
+                    )
+                )
                 return queryset.order_by(ordering)
         return queryset
 
