@@ -93,14 +93,14 @@
     </MetadataCard>
 
     <v-card
-      v-if="assetSummary"
+      v-if="assetSummary && Object.keys(assetSummary) && Object.keys(assetSummary).length"
       outlined
     >
       <v-card-title class="font-weight-regular">
         <v-icon class="mr-3 grey--text text--lighten-1">
           mdi-clipboard-list
         </v-icon>
-        Asset Summary
+        Assets Summary
       </v-card-title>
       <v-list
         :style="`column-count: ${assetSummaryColumnCount};`"
