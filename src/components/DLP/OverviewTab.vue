@@ -111,6 +111,7 @@
           :key="i"
         >
           <div
+            v-if="items && items.length"
             class="d-inline-block"
             style="width: 100%;"
           >
