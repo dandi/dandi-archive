@@ -103,7 +103,7 @@
         Asset Summary
       </v-card-title>
       <v-list
-        style="column-count: 3;"
+        :style="`column-count: ${assetSummaryColumnCount};`"
         class="px-3 ml-2"
       >
         <div
@@ -233,7 +233,7 @@ export default defineComponent({
     const assetSummary = computed(
       () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
         // filter out assetSummary fields we don't want to display
-        ([key]) => !ASSET_SUMMARY_BLACKLIST.has(key),
+        ([key, value]) => !ASSET_SUMMARY_BLACKLIST.has(key) && (value as any).length,
       ).map(
         // convert from camelCase to space-delimited string (i.e. "dataStandard" to "data Standard")
         ([key, value]) => [key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`), value],
@@ -241,6 +241,11 @@ export default defineComponent({
         // capitalize the first letter in the string
         ([key, value]: any) => [key.charAt(0).toUpperCase() + key.slice(1), value],
       )),
+    );
+
+    // Approximate a good column count for asset summary card
+    const assetSummaryColumnCount = computed(
+      () => Math.min(Object.keys(assetSummary.value).length, 3),
     );
 
     const contactPeople = computed(
@@ -254,6 +259,7 @@ export default defineComponent({
       fundingInformation,
       relatedResources,
       assetSummary,
+      assetSummaryColumnCount,
       contactPeople,
       isURL,
     };
