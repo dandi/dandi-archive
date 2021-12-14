@@ -18,7 +18,8 @@ Confirming will lock the dandiset for the duration of the release.
 Once the release finishes, the dandiset will be like any other unpublished draft dandiset.
 
 Once created, an embargoed dandiset is only visible or searchable to owners.
-Instead of the `draft` chip, an `embargoed` chip should be used instead.
+Instead of the `draft` chip, an `embargoed` chip should be used on the dandiset listing pages.
+These dandisets+chips will only appear in the listings to owners of the embargoed dandisets.
 
 ## CLI
 The CLI experience will be basically unchanged.
@@ -32,7 +33,15 @@ Credentials need to be generated, distributed, and used by the client.
 Embargoed assets will be stored in a separate S3 bucket.
 This bucket is private and not browseable by the general public.
 
-The API server will use the embargo bucket in exactly the same way it uses the public bucket, but it will only store embargoed data.
+Everything in the embargoed bucket will be prefixed with a dandiset identifier.
+This will make it easier to manage embargo permissions for a specific embargoed dandiset.
+The API server will use the embargo bucket to store blobs in exactly the same way it uses the public bucket, but with the embargoed dandiset prefixed.
+Manifests will be stored at a different path to simplify redundant path information.
+
+Assuming dandiset `123456` was embargoed:
+* Blobs will be stored at `123456/blobs/123/456/123456...
+* Manifests will be stored at `123456/manifests/...`
+* Zarr files will be stored at `123456/zarr/{uuid}/...`
 
 When releasing an embargoed dandiset, all asset data for that dandiset is copied to the public bucket.
 
@@ -100,6 +109,7 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 
   For every `Asset` with an `EmbargoedAssetBlob` in the dandiset, convert the `EmbargoedAssetBlob` into an `AssetBlob` by moving the data from the embargo bucket to the public bucket.
   These could be >5GB, so the [multipart copy API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/CopyingObjectsMPUapi.html) must be used.
+  The ETag and checksum must remain undisturbed; the only change should be where the data is stored.
   Once finished, the `access` metadata field on the dandiset will be updated to `OpenAccess` and `embargo_status` is set to `PUBLIC`.
   
   Before copying data, check if an existing `AssetBlob` with the same checksum has been uploaded already (this would have happened after uploading the embargoed data).
