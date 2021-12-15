@@ -130,6 +130,7 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
   This means that an embargoed dandiset can contain both embargoed and unembargoed assets.
 
   `EmbargoedAssetBlob`s should also be checked for deduplication, but only within an embargoed dandiset.
+  This is to keep the permission model clean for owners of different embargoed dandisets that might contain the same asset.
   An embargoed dandiset should use the same `EmbargoedAssetBlob` if the same file appears in multiple places, but two embargoed dandisets should upload the same data twice if they both contain the same file.
 
   Return error 400 if `dandiset.embargo_status == RELEASING`.
