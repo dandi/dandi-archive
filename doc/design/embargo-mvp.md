@@ -77,9 +77,10 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 ## API
 * Create dandiset endpoint
 
-  Add a new optional `award_number` field.
-  If set, the `access` metadata field will be set to `EmbargoedAccess` and the award number will be recorded as a `Funder` on a new Contributor Organization.
+  Add an `embargo` URL parameter to the endpoint which is normally absent.
+  If `embargo` is present (` POST .../dandisets/?embargo`), the `access` metadata field will be set to `EmbargoedAccess`.
   The `embargo_status` of the dandiset will also be set to `EMBARGOED`.
+  The expectation is that the web UI will have requested an award number from the user and recorded it as a `Funder` on a new Contributor Organization in the metadata.
 
 * Get/List dandiset endpoint
 
