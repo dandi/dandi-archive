@@ -11,11 +11,13 @@ from .upload import (
 )
 from .users import users_me_view, users_search_view
 from .version import VersionViewSet
+from .zarr import ZarrViewSet
 
 __all__ = [
     'AssetViewSet',
     'DandisetViewSet',
     'VersionViewSet',
+    'ZarrViewSet',
     'authorize_view',
     'asset_download_view',
     'asset_metadata_view',

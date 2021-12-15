@@ -130,12 +130,17 @@ class AssetSerializer(serializers.ModelSerializer):
         model = Asset
         fields = [
             'asset_id',
+            'blob',
+            'zarr',
             'path',
             'size',
             'created',
             'modified',
         ]
         read_only_fields = ['created']
+
+    blob = serializers.SlugRelatedField(slug_field='blob_id', read_only=True)
+    zarr = serializers.SlugRelatedField(slug_field='zarr_id', read_only=True)
 
 
 class AssetDetailSerializer(AssetSerializer):

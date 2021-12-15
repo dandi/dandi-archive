@@ -3,6 +3,7 @@ import os.path
 from uuid import uuid4
 
 from django.conf import settings
+from django.db.utils import IntegrityError
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
 import pytest
@@ -15,6 +16,20 @@ from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerialize
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
 # Model tests
+
+
+@pytest.mark.django_db
+def test_asset_no_blob_zarr():
+    # An attribute error is thrown when it tries to access url fields on the missing foreign keys
+    with pytest.raises(AttributeError):
+        Asset().save()
+
+
+@pytest.mark.django_db
+def test_asset_blob_and_zarr(asset_blob, zarr_archive):
+    # An integrity error is thrown by the constraint that both blob and zarr cannot both be defined
+    with pytest.raises(IntegrityError):
+        Asset(blob=asset_blob, zarr=zarr_archive).save()
 
 
 @pytest.mark.django_db
@@ -247,7 +262,7 @@ def test_asset_rest_list(api_client, version, asset):
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
-    ).data == {
+    ).json() == {
         'count': 1,
         'next': None,
         'previous': None,
@@ -256,6 +271,8 @@ def test_asset_rest_list(api_client, version, asset):
                 'asset_id': str(asset.asset_id),
                 'path': asset.path,
                 'size': asset.size,
+                'blob': asset.blob.blob_id,
+                'zarr': None,
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
             }
@@ -372,12 +389,14 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
-    ).data
+    ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
         'asset_id': UUID_RE,
         'path': path,
         'size': asset_blob.size,
+        'blob': asset_blob.blob_id,
+        'zarr': None,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.metadata,
@@ -393,6 +412,101 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
 
     # Adding an Asset should trigger a revalidation
     assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db
+def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    ).json()
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
+        'asset_id': UUID_RE,
+        'path': path,
+        'size': zarr_archive.size,
+        'blob': None,
+        'zarr': zarr_archive.zarr_id,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'metadata': new_asset.metadata,
+    }
+    for key in metadata:
+        assert resp['metadata'][key] == metadata[key]
+
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
+    # Adding an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db
+def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Exactly one of blob_id or zarr_id must be specified.']
+
+
+@pytest.mark.django_db
+def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob, zarr_archive):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': asset_blob.blob_id, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Exactly one of blob_id or zarr_id must be specified.']
 
 
 @pytest.mark.django_db
@@ -509,12 +623,70 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
         format='json',
-    ).data
+    ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
         'asset_id': UUID_RE,
         'path': new_path,
         'size': asset_blob.size,
+        'blob': asset_blob.blob_id,
+        'zarr': None,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'metadata': new_asset.metadata,
+    }
+    for key in new_metadata:
+        assert resp['metadata'][key] == new_metadata[key]
+
+    # Updating an asset should leave it in the DB, but disconnect it from the version
+    assert asset not in draft_version.assets.all()
+
+    # A new asset should be created that is associated with the version
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert new_asset in draft_version.assets.all()
+
+    # The new asset should have a reference to the old asset
+    assert new_asset.previous == asset
+
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
+    # Updating an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_archive):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    draft_version.assets.add(asset)
+
+    new_path = 'test/asset/rest/update.txt'
+    new_metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': new_path,
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
+        {'metadata': new_metadata, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    ).json()
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
+        'asset_id': UUID_RE,
+        'path': new_path,
+        'size': zarr_archive.size,
+        'blob': None,
+        'zarr': zarr_archive.zarr_id,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.metadata,

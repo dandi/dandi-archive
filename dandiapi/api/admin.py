@@ -4,7 +4,16 @@ from django.contrib.auth.admin import UserAdmin
 from django.forms.models import BaseInlineFormSet
 from guardian.admin import GuardedModelAdmin
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, UserMetadata, Version
+from dandiapi.api.models import (
+    Asset,
+    AssetBlob,
+    Dandiset,
+    Upload,
+    UserMetadata,
+    Version,
+    ZarrArchive,
+    ZarrUploadFile,
+)
 
 
 class LimitedFormset(BaseInlineFormSet):
@@ -80,3 +89,15 @@ class UserMetadataInline(TabularInline):
 
 
 UserAdmin.inlines = [UserMetadataInline]
+
+
+@admin.register(ZarrArchive)
+class ZarrArchiveAdmin(admin.ModelAdmin):
+    list_display = ['id', 'zarr_id', 'name']
+    list_display_links = ['id', 'zarr_id', 'name']
+
+
+@admin.register(ZarrUploadFile)
+class ZarrUploadFileAdmin(admin.ModelAdmin):
+    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
+    list_display_links = ['id']
