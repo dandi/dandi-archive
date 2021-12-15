@@ -66,3 +66,9 @@ Admins will be at liberty to manually delete or release embargoed dandisets with
 Admins will be at liberty to manually release embargoed dandisets that have expired.
 
 ### TODO policy details
+
+## TODO miscellaneous
+- email the owners of an embargoed dandiset (and admins) when it has been successfully released
+- on the stats page, display the full amount of data stored in the archive, and indicate how much of it is under embargo
+  - e.g., `300 TB total data size (100 TB currently under embargo)`
+  - link the word "embargo" to docs/explanation thereof
