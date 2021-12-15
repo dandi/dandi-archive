@@ -5,7 +5,7 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, OuterRef, Q, Subquery
+from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -32,10 +32,10 @@ from dandiapi.api.views.serializers import (
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified']
+    ordering_fields = ['id', 'name', 'modified', 'size']
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are id, -id, name, -name, modified, and -modified.'
+        'Options are id, -id, name, -name, modified, -modified, size and -size.'
     )
 
     def filter_queryset(self, request, queryset, view):
@@ -64,6 +64,16 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     modified_version=Subquery(latest_version.values('modified'))
                 )
                 return queryset.order_by(f'{ordering}_version')
+            elif ordering.endswith('size'):
+                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
+                    '-created'
+                )[:1]
+                queryset = queryset.annotate(
+                    size=Subquery(
+                        latest_version.annotate(size=Sum('assets__blob__size')).values('size')
+                    )
+                )
+                return queryset.order_by(ordering)
         return queryset
 
 
