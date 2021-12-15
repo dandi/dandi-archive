@@ -9,7 +9,6 @@ A subsequent document will describe the full suite of features.
 ## Web
 When creating a new dandiset, users will have checkbox to choose whether or not the dandiset should be embargoed.
 If so, the user must also specify an NIH award number (https://era.nih.gov/files/Deciphering_NIH_Application.pdf).
-The award number is an optional argument that is passed to the create dandiset endpoint.
 The award number will be added as a new `Funder` on an automatically generated Contributor Organization in the metadata.
 
 Instead of the normal `Publish` button and version browser, the DLP will instead show a `Release` button.
