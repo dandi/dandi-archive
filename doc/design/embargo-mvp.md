@@ -110,6 +110,7 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
   For every `Asset` with an `EmbargoedAssetBlob` in the dandiset, convert the `EmbargoedAssetBlob` into an `AssetBlob` by moving the data from the embargo bucket to the public bucket.
   These could be >5GB, so the [multipart copy API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/CopyingObjectsMPUapi.html) must be used.
   The ETag and checksum must remain undisturbed; the only change should be where the data is stored.
+  Verify that the resulting unembargoed assets match one-for-one (in the database) with the embargoed assets that were copied.
   Once finished, the `access` metadata field on the dandiset will be updated to `OpenAccess` and `embargo_status` is set to `OPEN`.
   
   Before copying data, check if an existing `AssetBlob` with the same checksum has been uploaded already (this would have happened after uploading the embargoed data).
