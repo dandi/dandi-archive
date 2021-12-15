@@ -74,6 +74,9 @@ The automatically populated `Asset` metadata will also set the `access` field to
 The `Upload` model will have a new optional field `embargoed_dandiset` that points to an embargoed dandiset.
 If specified, the uploaded data will be sent to the embargoed bucket instead of the public bucket, and the `Upload` will create an `EmbargoedAssetBlob` when finalized.
 
+There will be a new admin dashboard page showing embargoed dandisets and their award numbers to make it easier to monitor embargoed dandisets.
+For now, we specifically want to police users creating embargoed dandisets with invalid awards, although we may eventually care about award end dates as well.
+
 ## API
 * Create dandiset endpoint
 
