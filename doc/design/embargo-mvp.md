@@ -33,7 +33,7 @@ Credentials need to be generated, distributed, and used by the client.
 Embargoed assets will be stored in a separate S3 bucket.
 This bucket is private and not browseable by the general public.
 
-Everything in the embargoed bucket will be prefixed with a dandiset identifier.
+Each dandiset stored in the embargoed bucket will be prefixed with a dandiset identifier.
 This will make it easier to manage embargo permissions for a specific embargoed dandiset.
 The API server will use the embargo bucket to store blobs in exactly the same way it uses the public bucket, but with the embargoed dandiset prefixed.
 Manifests will be stored at a different path to simplify redundant path information.
