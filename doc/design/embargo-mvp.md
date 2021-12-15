@@ -43,10 +43,10 @@ If so, the public blob will be used instead of uploading the data again to the e
 # Django changes
 
 ## Models
-The `Dandiset` model will have an `embargo_status` field that is one of `PRIVATE`, `RELEASING`, or `PUBLIC`.
-* `PUBLIC` means that the Dandiset is publically accessible and publishable.
+The `Dandiset` model will have an `embargo_status` field that is one of `EMBARGOED`, `RELEASING`, or `OPEN`.
+* `OPEN` means that the Dandiset is publically accessible and publishable.
   This is the state all Dandisets currently have.
-* `PRIVATE` means that the Dandiset is embargoed.
+* `EMBARGOED` means that the Dandiset is embargoed.
   It is not searchable or viewable to non-owners.
   It is not publishable.
   Manifest YAML/JSON files will be written to the embargo bucket rather than the public bucket.
@@ -71,18 +71,18 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 
   Add a new optional `award_number` field.
   If set, the `access` metadata field will be set to `EmbargoedAccess` and the award number will be recorded as a `Funder` on a new Contributor Organization.
-  The `embargo_status` of the dandiset will also be set to `PRIVATE`.
+  The `embargo_status` of the dandiset will also be set to `EMBARGOED`.
 
 * Get/List dandiset endpoint
 
-  The DandisetViewSet queryset will filter out dandisets with `embargo_status == PRIVATE` that are also not owned by the current user.
+  The DandisetViewSet queryset will filter out dandisets with `embargo_status == EMBARGOED` that are also not owned by the current user.
   This will prevent them from showing up in the listing or fetching endpoints.
 
   The `DandisetSerializer` will also be updated to include the `embargo_status` field so that the web client can render the embargoed dandiset appropriately.
 
 * publish version endpoint
 
-  Return error 400 if `dandiset.embargo_status != PUBLIC`.
+  Return error 400 if `dandiset.embargo_status != OPEN`.
 
 * create asset, update metadata, and any other dandiset/version modification endpoints:
 
@@ -92,7 +92,7 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 
   Release an embargoed dandiset.
   
-  Only permitted for owners and admins. If the `embargo_status` is `PUBLIC` or `RELEASING`, return 400.
+  Only permitted for owners and admins. If the `embargo_status` is `OPEN` or `RELEASING`, return 400.
 
   Set the `embargo_status` to `RELEASING`, then dispatch the release task.
 
@@ -100,14 +100,14 @@ If specified, the uploaded data will be sent to the embargoed bucket instead of 
 
   For every `Asset` with an `EmbargoedAssetBlob` in the dandiset, convert the `EmbargoedAssetBlob` into an `AssetBlob` by moving the data from the embargo bucket to the public bucket.
   These could be >5GB, so the [multipart copy API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/CopyingObjectsMPUapi.html) must be used.
-  Once finished, the `access` metadata field on the dandiset will be updated to `OpenAccess` and `embargo_status` is set to `PUBLIC`.
+  Once finished, the `access` metadata field on the dandiset will be updated to `OpenAccess` and `embargo_status` is set to `OPEN`.
   
   Before copying data, check if an existing `AssetBlob` with the same checksum has been uploaded already (this would have happened after uploading the embargoed data).
   If so, use it instead of copying the `EmbargoedAssetBlob` data.
 
 * Get/List asset endpoint
 
-  The AssetViewSet queryset will filter out assets with `embargoed_asset_blob.dandiset.embargo_status != PUBLIC` that are also not owned by the current user.
+  The AssetViewSet queryset will filter out assets with `embargoed_asset_blob.dandiset.embargo_status != OPEN` that are also not owned by the current user.
   This will prevent them from showing up in the listing or fetching endpoints.
 
 * upload_initialize_view

@@ -3,16 +3,16 @@ This document takes the Embargo MVP as a predicate and describes the remaining f
 
 ## Non-private embargoed dandisets
 In the MVP, all embargoed dandisets are invisible to non-owners.
-There should be an additional embargo mode, "Visible".
-Visible embargoed dandisets are searchable, viewable, and their metadata is public to everyone, but their asset data and metadata is not.
+There should be an additional embargo mode, "Restricted".
+Restricted embargoed dandisets are searchable, viewable, and their metadata is public to everyone, but their asset data and metadata is not.
 
 Users will select their desired embargo mode using radio buttons when creating a dandiset.
 
-In addition to the dandiset `embargo_status` values from the MVP (`PRIVATE`, `RELEASING`, and `PUBLIC`), there is a new value, `VISIBLE`.
-All of the dandiset and version endpoints will only hide `PRIVATE` dandisets from appearing.
-The asset endpoints will not permitted for anonymous users on embargoed assets that are `PRIVATE` or `VISIBLE`.
+In addition to the dandiset `embargo_status` values from the MVP (`EMBARGOED`, `RELEASING`, and `OPEN`), there is a new value, `RESTRICTED`.
+All of the dandiset and version endpoints will only hide `EMBARGOED` dandisets from appearing.
+The asset endpoints will not permitted for anonymous users on embargoed assets that are `EMBARGOED` or `RESTRICTED`.
 
-### TODO: can users switch the embargo mode between private and visible?
+### TODO: can users switch the embargo mode between embargoed and restricted?
 It would be easy to do, since it's just a change `embargo_status`, no data needs to be copied.
 We would need a place in the UI to set that.
 
@@ -21,7 +21,7 @@ We would need a place in the UI to set that.
 In the MVP, the only role a user can have on a dandiset is "Owner".
 There should be a new role, "Reviewer".
 
-Reviewers are allowed to access asset data on private and visible embargoed dandisets.
+Reviewers are allowed to access asset data on private and restricted embargoed dandisets.
 Reviewers are allowed to see private embargoed dandisets.
 Reviewers are not allowed to make any changes to embargoed dandisets.
 
