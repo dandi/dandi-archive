@@ -1,12 +1,6 @@
-{% extends "admin/base.html" %}
+{% extends "dashboard/base.html" %}
 
 {% block title %} User Approval {% endblock %}
-
-{% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
-{% endblock %}
-
-{% block nav-global %}{% endblock %}
 
 {% block extrastyle %}
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
