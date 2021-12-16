@@ -79,6 +79,7 @@ class DashboardView(DashboardMixin, TemplateView):
 class UserDashboardView(DashboardMixin, FilterView):
     template_name = 'dashboard/users.html'
     filterset_class = UserStatusFilter
+    queryset = User.objects.filter(~Q(username='AnonymousUser'))
 
 
 @require_http_methods(['GET', 'POST'])
