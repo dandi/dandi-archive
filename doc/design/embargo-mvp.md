@@ -24,10 +24,6 @@ These dandisets+chips will only appear in the listings to owners of the embargoe
 The CLI experience will be basically unchanged.
 Uploads to an embargoed dandiset will function exactly the same from an API perspective, the data simply goes to a different location.
 
-### TODO: how to browse/download embargoed zarr files?
-Credentials need to be generated, distributed, and used by the client.
-
-
 # Data storage
 Embargoed assets will be stored in a separate S3 bucket.
 This bucket is private and not browseable by the general public.
@@ -46,6 +42,20 @@ When releasing an embargoed dandiset, all asset data for that dandiset is copied
 
 When uploading a new asset to an embargoed dandiset, the server will first check if that blob has already been uploaded publically.
 If so, the public blob will be used instead of uploading the data again to the embargo bucket.
+
+# Data download
+Downloading embargoed assets is the same as downloading normal assets.
+The `/assets/{asset_id}/download` will verify that the user has permission on the embargoed dandiset if the asset is embargoed, and return a presigned URL if so.
+
+Downloading embargoed zarr archives will be done through a special API surface.
+Clients will use zarr's builtin [fsspec](https://zarr.readthedocs.io/en/stable/tutorial.html#io-with-fsspec) store [HTTPFileSystem](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem) like this:
+```
+zarr_archive = zarr.open('https://api.dandiarchive.org/api/zarr/{zarr_id}/files/')
+```
+`https://api.dandiarchive.org/api/zarr/{zarr_id}/files/{path_to_file_or_directory}` will return either a directory listing parsable by HTTPFileSystem, or a redirect to a presigned S3 URL that can be used to download the file.
+Permissions will also be checked just as when doing an asset download.
+
+A test implementation can be found [here](https://github.com/dandi/dandi-api/commit/46f637c4d29d69d34a1a78d820193402d3fc3778).
 
 
 # Django changes
@@ -73,6 +83,9 @@ The automatically populated `Asset` metadata will also set the `access` field to
 
 The `Upload` model will have a new optional field `embargoed_dandiset` that points to an embargoed dandiset.
 If specified, the uploaded data will be sent to the embargoed bucket instead of the public bucket, and the `Upload` will create an `EmbargoedAssetBlob` when finalized.
+
+A new `EmbargoedZarrArchive` model will be added in the same vein as `EmbargoedAssetBlob`.
+A new `EmbargoedZarrUploadFile` model will also be added to track zarr uploads to an embargoed dandiset.
 
 There will be a new admin dashboard page showing embargoed dandisets and their award numbers to make it easier to monitor embargoed dandisets.
 For now, we specifically want to police users creating embargoed dandisets with invalid awards, although we may eventually care about award end dates as well.
@@ -139,7 +152,34 @@ For now, we specifically want to police users creating embargoed dandisets with 
 
   Return error 400 if `dandiset.embargo_status == RELEASING`.
 
-* TODO zarr upload
+* Zarr archive creation endpoint
+
+  Add `embargo` and `dandiset` URL parameters to the endpoint which are normally absent.
+  If `embargo` is present, an `EmbargoedZarrArchive` will be created instead of a `ZarrArchive`.
+  If `embargo` is present, `dandiset` must also be present so that the `EmbargoedZarrArchive` knows which embargoed dandiset it belongs to.
+  If `embargo` is absent and `dandiset` is present, it is ignored.
+
+* Zarr download endpoints
+  
+  These endpoints will also be available for normal zarr archives.
+  It is expected that normal zarr archives will use the s3 store, which will be more performant.
+  When used on embargoed zarr archives, the user must have read access on the dandiset. 
+
+  * `https://api.dandiarchive.org/api/zarr/{zarr_id}/files/{path_to_directory}/` (note the trailing slash)
+
+    Returns a JSON list of URLs describing the contents of the directory.
+    This will read the `.checksum` file in S3 to determine the contents of the directory.
+    If absent, return a 404.
+
+    This endpoint must be parsable by [HTTPFileSystem](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem) with `simple_links=True`.
+  
+  * `https://api.dandiarchive.org/api/zarr/{zarr_id}/files/{path_to_file}` (note the absence of trailing slash)
+
+    Returns a 302 to a presigned S3 URL for the given file in the zarr archive.
+    This will *not* check if the file is present in S3.
+    Instead, S3 will simply return a 404 if the path is incorrect.
+
+    [HTTPFileSystem](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem) follows redirects by default, so no extra configuration is required.
 
 * stats_view
   

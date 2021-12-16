@@ -67,6 +67,16 @@ Admins will be at liberty to manually release embargoed dandisets that have expi
 
 ### TODO policy details
 
+
+## Zarr download
+The MVP embargo zarr download design involves a request to our API server for every file being downloaded from the zarr archive.
+Since zarr archives can contain hundreds of thousands of files, there would be a corresponding number of requests, which might degrade performance of the API server.
+If this becomes an issue, we could:
+* Spin off the zarr download functionality into a separate microservice that can be scaled separately, and would isolate any accidental DDOS effects.
+  This could be as simple as adding a new django app and a new Heroku dyno, or as complex as a Lambda@Edge+CloudFront service.
+* Dynamically provision IAM users with permission to access prefixes in the embargo bucket and distribute access keys to users.
+  This would require the API server to manage IAM directly, which is a lot of complexity to manage.
+
 ## TODO miscellaneous
 - email the owners of an embargoed dandiset (and admins) when it has been successfully released
 - on the stats page, display the full amount of data stored in the archive, and indicate how much of it is under embargo
