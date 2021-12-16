@@ -81,8 +81,9 @@ An `Asset` will be considered "embargoed" if it has an `EmbargoedAssetBlob`.
 An embargoed `Asset` can only belong to the dandiset named in the `EmbargoedAssetBlob`.
 The automatically populated `Asset` metadata will also set the `access` field to the appropriate value depending on whether or not the asset is embargoed.
 
-The `Upload` model will have a new optional field `embargoed_dandiset` that points to an embargoed dandiset.
-If specified, the uploaded data will be sent to the embargoed bucket instead of the public bucket, and the `Upload` will create an `EmbargoedAssetBlob` when finalized.
+A new `EmbargoedUpload` model will be added.
+This is just like the normal `Upload` model, but the uploaded data will be sent to the embargoed bucket instead of the public bucket, and the `Upload` will create an `EmbargoedAssetBlob` when finalized.
+It will also contain a reference to the `Dandiset` it belongs.
 
 A new `EmbargoedZarrArchive` model will be added in the same vein as `EmbargoedAssetBlob`.
 A new `EmbargoedZarrUploadFile` model will also be added to track zarr uploads to an embargoed dandiset.
