@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test.client import Client
 from django.urls import reverse
 import pytest
-from pytest_django.asserts import assertContains
+from pytest_django.asserts import assertContains, assertNotContains
 
 from dandiapi.api.models import UserMetadata
 
@@ -37,3 +37,4 @@ def test_users_dashboard(client: Client, admin_client: Client, user, user_factor
             assertContains(resp, user.email)
             assertContains(resp, user.first_name)
             assertContains(resp, user.last_name)
+            assertNotContains(resp, 'AnonymousUser')
