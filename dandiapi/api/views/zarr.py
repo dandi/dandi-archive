@@ -5,11 +5,11 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
+from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DandiPagination
 
 
@@ -70,7 +70,7 @@ class ZarrSerializer(serializers.Serializer):
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = ZarrSerializer
     pagination_class = DandiPagination
 
