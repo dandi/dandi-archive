@@ -63,7 +63,7 @@
   </v-row>
 </template>
 
-<script>
+<script lang="ts">
 import { computed, defineComponent } from '@vue/composition-api';
 
 // The maximum amount of columns to show on a metadata card,
