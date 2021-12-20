@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
@@ -9,6 +10,17 @@ from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 class Dandiset(TimeStampedModel):
     # Don't add beginning and end markers, so this can be embedded in larger regexes
     IDENTIFIER_REGEX = r'\d{6}'
+
+    EMBARGOED = 1
+    UNEMBARGOING = 2
+    OPEN = 3
+    EMBARGO_STATUS_CHOICES = [
+        (EMBARGOED, 'Embargoed'),
+        (UNEMBARGOING, 'Unembargoing'),
+        (OPEN, 'Open'),
+    ]
+
+    embargo_status = models.IntegerField(choices=EMBARGO_STATUS_CHOICES, default=OPEN)
 
     class Meta:
         ordering = ['id']
