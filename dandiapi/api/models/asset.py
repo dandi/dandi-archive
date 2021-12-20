@@ -5,9 +5,7 @@ from typing import Dict
 from urllib.parse import urlparse, urlunparse
 import uuid
 
-from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
-from django.core.files.storage import Storage
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
@@ -15,17 +13,14 @@ from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
-from dandiapi.api.storage import create_s3_storage
+from dandiapi.api.storage import (
+    get_embargo_storage,
+    get_embargo_storage_prefix,
+    get_storage,
+    get_storage_prefix,
+)
 
 from .version import Version
-
-
-def get_asset_blob_storage() -> Storage:
-    return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
-
-
-def get_asset_blob_prefix(instance: AssetBlob, filename: str) -> str:
-    return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'
 
 
 class AssetBlob(TimeStampedModel):

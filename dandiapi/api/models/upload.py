@@ -8,8 +8,12 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.multipart import DandiMultipartManager
+from dandiapi.api.storage import (
+    get_storage,
+    get_storage_prefix,
+)
 
-from .asset import AssetBlob, get_asset_blob_prefix, get_asset_blob_storage
+from .asset import AssetBlob
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage

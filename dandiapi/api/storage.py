@@ -1,3 +1,4 @@
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 from django.conf import settings
@@ -101,3 +102,19 @@ def create_s3_storage(bucket_name: str) -> Storage:
         raise Exception(f'Unknown storage: {default_storage_class}')
 
     return storage
+
+
+def get_storage() -> Storage:
+    return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+
+
+def get_storage_prefix(instance: Any, filename: str) -> str:
+    return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'
+
+
+def get_embargo_storage() -> Storage:
+    return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+
+
+def get_embargo_storage_prefix(instance: Any, filename: str) -> str:
+    return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'

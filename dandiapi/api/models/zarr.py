@@ -11,14 +11,13 @@ from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.multipart import UnsupportedStorageError
+from dandiapi.api.storage import get_storage
 from dandiapi.api.zarr_checksums import (
     EMPTY_CHECKSUM,
     ZarrChecksum,
     ZarrChecksumFileUpdater,
     ZarrChecksumUpdater,
 )
-
-from .asset import get_asset_blob_storage
 
 
 class ZarrUploadFileManager(models.Manager):
@@ -54,7 +53,7 @@ class ZarrUploadFile(TimeStampedModel):
     path: str = models.CharField(max_length=512)
     """The path relative to the zarr root"""
 
-    blob = models.FileField(blank=True, storage=get_asset_blob_storage)
+    blob = models.FileField(blank=True, storage=get_storage)
     """The fully qualified S3 object key"""
 
     etag: str = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])

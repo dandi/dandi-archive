@@ -8,6 +8,7 @@ import django.db.models.deletion
 import django_extensions.db.fields
 
 import dandiapi.api.models.asset
+import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
@@ -74,7 +75,7 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.models.asset.get_asset_blob_storage,
+                        storage=dandiapi.api.storage.get_storage,
                         upload_to='',
                     ),
                 ),
