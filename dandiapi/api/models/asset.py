@@ -20,17 +20,15 @@ from dandiapi.api.storage import (
     get_storage_prefix,
 )
 
+from .dandiset import Dandiset
 from .version import Version
 
 
-class AssetBlob(TimeStampedModel):
+class BaseAssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
     blob_id = models.UUIDField(unique=True)
-    blob = models.FileField(
-        blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
-    )
     sha256 = models.CharField(
         null=True,
         blank=True,
@@ -41,13 +39,8 @@ class AssetBlob(TimeStampedModel):
     size = models.PositiveBigIntegerField()
 
     class Meta:
+        abstract = True
         indexes = [HashIndex(fields=['etag'])]
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-etag-size',
-                fields=['etag', 'size'],
-            )
-        ]
 
     @property
     def references(self) -> int:
@@ -71,6 +64,35 @@ class AssetBlob(TimeStampedModel):
         return self.blob.name
 
 
+class AssetBlob(BaseAssetBlob):
+    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+
+    class Meta(BaseAssetBlob.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-etag-size',
+                fields=['etag', 'size'],
+            )
+        ]
+
+
+class EmbargoedAssetBlob(BaseAssetBlob):
+    blob = models.FileField(
+        blank=True, storage=get_embargo_storage, upload_to=get_embargo_storage_prefix
+    )
+    dandiset = models.ForeignKey(
+        Dandiset, related_name='embargoed_asset_blobs', on_delete=models.CASCADE
+    )
+
+    class Meta(BaseAssetBlob.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-embargo-etag-size',
+                fields=['dandiset', 'etag', 'size'],
+            )
+        ]
+
+
 class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
@@ -84,6 +106,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     path = models.CharField(max_length=512)
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
+    )
+    embargoed_blob = models.ForeignKey(
+        EmbargoedAssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
     zarr = models.ForeignKey(
         'ZarrArchive', related_name='assets', on_delete=models.CASCADE, null=True, blank=True
@@ -109,8 +134,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 name='exactly-one-blob',
-                check=Q(blob__isnull=True, zarr__isnull=False)
-                | Q(blob__isnull=False, zarr__isnull=True),
+                check=Q(blob__isnull=True, embargoed_blob__isnull=True, zarr__isnull=False)
+                | Q(blob__isnull=True, embargoed_blob__isnull=False, zarr__isnull=True)
+                | Q(blob__isnull=False, embargoed_blob__isnull=True, zarr__isnull=True),
             )
         ]
 

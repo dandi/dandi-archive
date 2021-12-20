@@ -1,4 +1,4 @@
-from .asset import Asset, AssetBlob
+from .asset import Asset, AssetBlob, EmbargoedAssetBlob
 from .dandiset import Dandiset
 from .oauth import StagingApplication
 from .upload import Upload
@@ -10,6 +10,7 @@ __all__ = [
     'Asset',
     'AssetBlob',
     'Dandiset',
+    'EmbargoedAssetBlob',
     'StagingApplication',
     'Upload',
     'UserMetadata',
