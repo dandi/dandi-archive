@@ -113,7 +113,7 @@ def get_storage_prefix(instance: Any, filename: str) -> str:
 
 
 def get_embargo_storage() -> Storage:
-    return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+    return create_s3_storage(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
 
 
 def get_embargo_storage_prefix(instance: Any, filename: str) -> str:
