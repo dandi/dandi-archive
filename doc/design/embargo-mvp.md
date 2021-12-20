@@ -11,10 +11,10 @@ When creating a new dandiset, users will have checkbox to choose whether or not 
 If so, the user must also specify an NIH award number (https://era.nih.gov/files/Deciphering_NIH_Application.pdf).
 The award number will be added as a new `Funder` on an automatically generated Contributor Organization in the metadata.
 
-Instead of the normal `Publish` button and version browser, the DLP will instead show a `Release` button.
+Instead of the normal `Publish` button and version browser, the DLP will instead show an `Unembargo` button.
 Clicking it will open a confirmation modal informing the user that they are unembargoing, all their data will be publicized, there is no undoing, and that it can take some time for large dandisets.
-Confirming will lock the dandiset for the duration of the release.
-Once the release finishes, the dandiset will be like any other unpublished draft dandiset.
+Confirming will lock the dandiset for the duration of the unembargo.
+Once the unembargo finishes, the dandiset will be like any other unpublished draft dandiset.
 
 Once created, an embargoed dandiset is only visible or searchable to owners.
 Instead of the `draft` chip, an `embargoed` chip should be used on the dandiset listing pages.
@@ -38,7 +38,7 @@ Assuming dandiset `123456` was embargoed:
 * Manifests will be stored at `123456/manifests/...`
 * Zarr files will be stored at `123456/zarr/{uuid}/...`
 
-When releasing an embargoed dandiset, all asset data for that dandiset is copied to the public bucket.
+When unembargoing an embargoed dandiset, all asset data for that dandiset is copied to the public bucket.
 
 When uploading a new asset to an embargoed dandiset, the server will first check if that blob has already been uploaded publically.
 If so, the public blob will be used instead of uploading the data again to the embargo bucket.
@@ -61,15 +61,16 @@ A test implementation can be found [here](https://github.com/dandi/dandi-api/com
 # Django changes
 
 ## Models
-The `Dandiset` model will have an `embargo_status` field that is one of `EMBARGOED`, `RELEASING`, or `OPEN`.
+The `Dandiset` model will have an `embargo_status` field that is one of `EMBARGOED`, `UNEMBARGOING`, or `OPEN`.
 * `OPEN` means that the Dandiset is publically accessible and publishable.
   This is the state all Dandisets currently have.
 * `EMBARGOED` means that the Dandiset is embargoed.
+  It is searchable and viewable to owners.
   It is not searchable or viewable to non-owners.
   It is not publishable.
   Manifest YAML/JSON files will be written to the embargo bucket rather than the public bucket.
-* `RELEASING` means that the Dandiset is currently transitioning from embargoed to public.
-  All modification operations will return a 400 error while the release is in progress.
+* `UNEMBARGOING` means that the Dandiset is currently transitioning from embargoed to public.
+  All modification operations will return a 400 error while the unembargo is in progress.
   This includes metadata changes and uploads.
 
 A new `EmbargoedAssetBlob` model will be added.
@@ -112,17 +113,17 @@ For now, we specifically want to police users creating embargoed dandisets with 
 
 * create asset, update metadata, and any other dandiset/version modification endpoints:
 
-  Return error 400 if `dandiset.embargo_status == RELEASING`.
+  Return error 400 if `dandiset.embargo_status == UNEMBARGOING`.
 
-* New endpoint: `POST /api/dandisets/{dandiset_id}/release`
+* New endpoint: `POST /api/dandisets/{dandiset_id}/unembargo`
 
-  Release an embargoed dandiset.
+  Unembargo an embargoed dandiset.
   
-  Only permitted for owners and admins. If the `embargo_status` is `OPEN` or `RELEASING`, return 400.
+  Only permitted for owners and admins. If the `embargo_status` is `OPEN` or `UNEMBARGOING`, return 400.
 
-  Set the `embargo_status` to `RELEASING`, then dispatch the release task.
+  Set the `embargo_status` to `UNEMBARGOING`, then dispatch the unembargo task.
 
-* Release task
+* Unembargo task
 
   For every `Asset` with an `EmbargoedAssetBlob` in the dandiset, convert the `EmbargoedAssetBlob` into an `AssetBlob` by moving the data from the embargo bucket to the public bucket.
   These could be >5GB, so the [multipart copy API](https://docs.aws.amazon.com/AmazonS3/latest/userguide/CopyingObjectsMPUapi.html) must be used.
@@ -151,7 +152,7 @@ For now, we specifically want to police users creating embargoed dandisets with 
   This is to keep the permission model clean for owners of different embargoed dandisets that might contain the same asset.
   An embargoed dandiset should use the same `EmbargoedAssetBlob` if the same file appears in multiple places, but two embargoed dandisets should upload the same data twice if they both contain the same file.
 
-  Return error 400 if `dandiset.embargo_status == RELEASING`.
+  Return error 400 if `dandiset.embargo_status == UNEMBARGOING`.
 
 * Zarr archive creation endpoint
 

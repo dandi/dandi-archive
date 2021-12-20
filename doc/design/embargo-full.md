@@ -8,7 +8,7 @@ Restricted embargoed dandisets are searchable, viewable, and their metadata is p
 
 Users will select their desired embargo mode using radio buttons when creating a dandiset.
 
-In addition to the dandiset `embargo_status` values from the MVP (`EMBARGOED`, `RELEASING`, and `OPEN`), there is a new value, `RESTRICTED`.
+In addition to the dandiset `embargo_status` values from the MVP (`EMBARGOED`, `UNEMBARGOING`, and `OPEN`), there is a new value, `RESTRICTED`.
 All of the dandiset and version endpoints will only hide `EMBARGOED` dandisets from appearing.
 The asset endpoints will not permitted for anonymous users on embargoed assets that are `EMBARGOED` or `RESTRICTED`.
 
@@ -62,8 +62,8 @@ We should add scheduled jobs (in the manner of garbage collection) that:
 * Notify admins and owners of any embargoed dandisets that are approaching their end dates (daily emails for the last week?)
 * Notify admins and owners of any embargoed dandisets that have past their end dates
 
-Admins will be at liberty to manually delete or release embargoed dandisets without end dates.
-Admins will be at liberty to manually release embargoed dandisets that have expired.
+Admins will be at liberty to manually delete or unembargo embargoed dandisets without end dates.
+Admins will be at liberty to manually unembargo embargoed dandisets that have expired.
 
 ### TODO policy details
 
@@ -78,7 +78,7 @@ If this becomes an issue, we could:
   This would require the API server to manage IAM directly, which is a lot of complexity to manage.
 
 ## TODO miscellaneous
-- email the owners of an embargoed dandiset (and admins) when it has been successfully released
+- email the owners of an embargoed dandiset (and admins) when it has been successfully unembargoed
 - on the stats page, display the full amount of data stored in the archive, and indicate how much of it is under embargo
   - e.g., `300 TB total data size (100 TB currently under embargo)`
   - link the word "embargo" to docs/explanation thereof
