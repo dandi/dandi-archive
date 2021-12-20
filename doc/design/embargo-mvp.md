@@ -77,8 +77,8 @@ A new `EmbargoedAssetBlob` model will be added.
 This behaves the same as a normal `AssetBlob`, but points to the embargo bucket rather than the public bucket.
 It also contains a reference to the `Dandiset` it belongs to.
 
-`Asset`s will point to exactly one `AssetBlob` or `EmbargoedAssetBlob`.
-An `Asset` will be considered "embargoed" if it has an `EmbargoedAssetBlob`.
+`Asset`s will point to exactly one `AssetBlob` or `EmbargoedAssetBlob` or `EmbargoedZarrArchive` or `ZarrArchive`.
+An `Asset` will be considered "embargoed" if it has an `EmbargoedAssetBlob` or `EmbargoedZarrArchive`.
 An embargoed `Asset` can only belong to the dandiset named in the `EmbargoedAssetBlob`.
 The automatically populated `Asset` metadata will also set the `access` field to the appropriate value depending on whether or not the asset is embargoed.
 
