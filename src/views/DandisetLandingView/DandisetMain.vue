@@ -219,7 +219,6 @@ import OverviewTab from '@/components/DLP/OverviewTab.vue';
 import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
 import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
 import ShareDialog from './ShareDialog.vue';
-import ListingComponent from './ListingComponent.vue';
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
@@ -259,7 +258,6 @@ const tabs = [
 export default defineComponent({
   name: 'DandisetMain',
   components: {
-    ListingComponent,
     ShareDialog,
     AccessInformationTab,
     AssetSummaryTab,
