@@ -117,4 +117,4 @@ def get_embargo_storage() -> Storage:
 
 
 def get_embargo_storage_prefix(instance: Any, filename: str) -> str:
-    return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'
+    return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{filename}'
