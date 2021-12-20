@@ -30,23 +30,23 @@ def test_zarr_checksum_sort_order():
 @pytest.mark.parametrize(
     'file_checksums,directory_checksums,checksum',
     [
-        ([], [], 'deb10f9b7b3275dc058b71f011525789'),
-        ([ZarrChecksum(path='foo/bar', md5='a')], [], '5a815bced8a21b433e1074feebbde86e'),
-        ([], [ZarrChecksum(path='foo/bar', md5='a')], '5f4c8223552adf78f375063e42874328'),
+        ([], [], '481a2f77ab786a0f45aafd5db0971caa'),
+        ([ZarrChecksum(path='foo/bar', md5='a')], [], 'cdcfdfca3622e20df03219273872549e'),
+        ([], [ZarrChecksum(path='foo/bar', md5='a')], '243aca82c6872222747183dd738b6fcb'),
         (
             [ZarrChecksum(path='foo/bar', md5='a'), ZarrChecksum(path='foo/baz', md5='b')],
             [],
-            'b2a825702d706090faf13fd18cc2db99',
+            '785295076ae9156b363e442ef6d485e0',
         ),
         (
             [],
             [ZarrChecksum(path='foo/bar', md5='a'), ZarrChecksum(path='foo/baz', md5='b')],
-            '176ebfa3adc85bd2c428297fc39c2334',
+            'ebca8bb8e716237e0f71657d1045930f',
         ),
         (
             [ZarrChecksum(path='foo/baz', md5='a')],
             [ZarrChecksum(path='foo/bar', md5='b')],
-            '437319759d2ab0e6f62ef5ca7a9b822a',
+            '9c34644ba03b7e9f58ebd1caef4215ad',
         ),
     ],
 )
@@ -67,7 +67,7 @@ def test_zarr_checksum_serializer_generate_listing():
         directories=[ZarrChecksum(path='foo/baz', md5='b')],
     )
     assert serializer.generate_listing(checksums) == ZarrChecksumListing(
-        checksums=checksums, md5='a1dc945351c72ecacd237063d68f5eb4'
+        checksums=checksums, md5='23076057c0da63f8ab50d0a108db332c'
     )
 
 
@@ -83,14 +83,14 @@ def test_zarr_serialize():
                 md5='c',
             )
         )
-        == '{"checksums":{"files":[{"path":"foo/bar","md5":"a"}],"directories":[{"path":"bar/foo","md5":"b"}]},"md5":"c"}'  # noqa: E501
+        == '{"checksums":{"directories":[{"md5":"b","path":"bar/foo"}],"files":[{"md5":"a","path":"foo/bar"}]},"md5":"c"}'  # noqa: E501
     )
 
 
 def test_zarr_deserialize():
     serializer = ZarrJSONChecksumSerializer()
     assert serializer.deserialize(
-        '{"checksums":{"files":[{"path":"foo/bar","md5":"a"}],"directories":[{"path":"bar/foo","md5":"b"}]},"md5":"c"}'  # noqa: E501
+        '{"checksums":{"directories":[{"md5":"b","path":"bar/foo"}],"files":[{"md5":"a","path":"foo/bar"}]},"md5":"c"}'  # noqa: E501
     ) == ZarrChecksumListing(
         checksums=ZarrChecksums(
             files=[ZarrChecksum(path='foo/bar', md5='a')],

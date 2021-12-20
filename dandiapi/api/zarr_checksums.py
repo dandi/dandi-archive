@@ -25,8 +25,8 @@ class ZarrChecksum(pydantic.BaseModel):
     Every file and directory in a zarr archive has a path and a MD5 hash.
     """
 
-    path: str
     md5: str
+    path: str
 
     # To make ZarrChecksums sortable
     def __lt__(self, other: ZarrChecksum):
@@ -40,8 +40,8 @@ class ZarrChecksums(pydantic.BaseModel):
     This is the data hashed to calculate the checksum of a directory.
     """
 
-    files: List[ZarrChecksum] = pydantic.Field(default_factory=list)
     directories: List[ZarrChecksum] = pydantic.Field(default_factory=list)
+    files: List[ZarrChecksum] = pydantic.Field(default_factory=list)
 
     @property
     def is_empty(self):
