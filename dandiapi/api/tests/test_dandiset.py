@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -32,6 +33,35 @@ def test_dandiset_published_count(
     published_version_factory(dandiset=dandiset_factory())
 
     assert Dandiset.published_count() == 1
+
+
+@pytest.mark.parametrize(
+    ('embargo_status', 'user_status', 'visible'),
+    [
+        ('OPEN', 'owner', True),
+        ('OPEN', 'anonymous', True),
+        ('OPEN', 'not-owner', True),
+        ('EMBARGOED', 'owner', True),
+        ('EMBARGOED', 'anonymous', False),
+        ('EMBARGOED', 'not-owner', False),
+        ('UNEMBARGOING', 'owner', True),
+        ('UNEMBARGOING', 'anonymous', False),
+        ('UNEMBARGOING', 'not-owner', False),
+    ],
+)
+@pytest.mark.django_db
+def test_dandiset_manager_visible_to(
+    dandiset_factory, user_factory, embargo_status, user_status, visible
+):
+    dandiset = dandiset_factory(embargo_status=embargo_status)
+    if user_status == 'anonymous':
+        user = AnonymousUser
+    else:
+        user = user_factory()
+    if user_status == 'owner':
+        assign_perm('owner', user, dandiset)
+
+    assert list(Dandiset.objects.visible_to(user)) == ([dandiset] if visible else [])
 
 
 @pytest.mark.django_db
