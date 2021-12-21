@@ -4,12 +4,40 @@ from typing import Optional
 
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
+from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms, remove_perm
+
+
+class DandisetManager(models.Manager):
+    def visible_to(self, user) -> models.QuerySet[Dandiset]:
+        """
+        Return a queryset containing all dandisets visible to the given user.
+
+        This is basically all dandisets except embargoed dandisets not owned by the given user.
+        """
+        # We would like to do something like:
+        # Dandiset.filter(embargo_status=OPEN | permission__owned)
+        # but this is not possible with django-guardian; the `get_objects_for_user` shortcut must
+        # be used instead.
+        # We would like to do something like:
+        # queryset = Dandiset.objects.filter(embargo_status=OPEN).union(get_objects_for_user(...))
+        # but you cannot filter or perform many other common queryset operations after using
+        # union().
+        # Therefore, we resort to fetching the list of all primary keys for dandisets owned by the
+        # current user with `get_objects_for_user(...)`, then filter for either those dandisets or
+        # OPEN dandisets. There aren't very many dandisets and most users won't own very many of
+        # them, so there shouldn't be too many dandisets in the list.
+        owned_dandiset_pks = get_objects_for_user(user, 'owner', Dandiset).values('pk').all()
+        return self.filter(
+            models.Q(embargo_status=Dandiset.EmbargoStatus.OPEN)
+            | models.Q(pk__in=owned_dandiset_pks)
+        ).order_by('created')
 
 
 class Dandiset(TimeStampedModel):
     # Don't add beginning and end markers, so this can be embedded in larger regexes
     IDENTIFIER_REGEX = r'\d{6}'
+
+    objects: DandisetManager = DandisetManager()
 
     class EmbargoStatus(models.TextChoices):
         EMBARGOED = 'EMBARGOED', 'Embargoed'
