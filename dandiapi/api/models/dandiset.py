@@ -11,16 +11,20 @@ class Dandiset(TimeStampedModel):
     # Don't add beginning and end markers, so this can be embedded in larger regexes
     IDENTIFIER_REGEX = r'\d{6}'
 
-    EMBARGOED = 1
-    UNEMBARGOING = 2
-    OPEN = 3
+    EMBARGOED = 'EMBARGOED'
+    UNEMBARGOING = 'UNEMBARGOING'
+    OPEN = 'OPEN'
     EMBARGO_STATUS_CHOICES = [
         (EMBARGOED, 'Embargoed'),
         (UNEMBARGOING, 'Unembargoing'),
         (OPEN, 'Open'),
     ]
 
-    embargo_status = models.IntegerField(choices=EMBARGO_STATUS_CHOICES, default=OPEN)
+    embargo_status = models.CharField(
+        max_length=max(len(choice[0]) for choice in EMBARGO_STATUS_CHOICES),
+        choices=EMBARGO_STATUS_CHOICES,
+        default=OPEN,
+    )
 
     class Meta:
         ordering = ['id']

@@ -21,8 +21,14 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dandiset',
             name='embargo_status',
-            field=models.IntegerField(
-                choices=[(1, 'Embargoed'), (2, 'Unembargoing'), (3, 'Open')], default=3
+            field=models.CharField(
+                max_length=12,
+                choices=[
+                    ('EMBARGOED', 'Embargoed'),
+                    ('UNEMBARGOING', 'Unembargoing'),
+                    ('OPEN', 'Open'),
+                ],
+                default='OPEN',
             ),
         ),
         migrations.CreateModel(
