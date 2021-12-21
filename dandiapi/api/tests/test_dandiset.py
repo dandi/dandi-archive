@@ -240,16 +240,81 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
     }
 
 
-"""
+@pytest.mark.parametrize(
+    ('embargo_status'),
+    [choice[0] for choice in Dandiset.EmbargoStatus.choices],
+    ids=[choice[1] for choice in Dandiset.EmbargoStatus.choices],
+)
+@pytest.mark.django_db
+def test_dandiset_rest_embargo_access(
+    api_client, user_factory, dandiset_factory, embargo_status: str
+):
+    owner = user_factory()
+    unauthorized_user = user_factory()
+    dandiset = dandiset_factory(embargo_status=embargo_status)
+    assign_perm('owner', owner, dandiset)
 
-                'most_recent_published_version': {
-                    'version': dandiset.most_recent_published_version.version,
-                    'name': dandiset.most_recent_published_version.name,
-                    'asset_count': dandiset.most_recent_published_version.asset_count,
-                    'size': dandiset.most_recent_published_version.size,
-                    'metadata': dandiset.most_recent_published_version.metadata,
-                },
-"""
+    # This is what authorized users should get from the retrieve endpoint
+    expected_dandiset_serialization = {
+        'identifier': dandiset.identifier,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'draft_version': None,
+        'most_recent_published_version': None,
+        'contact_person': '',
+        'embargo_status': embargo_status,
+    }
+    # This is what unauthorized users should get from the retrieve endpoint
+    expected_error_message = {'detail': 'Not found.'}
+    # This is what authorized users should get from the list endpoint
+    expected_visible_pagination = {
+        'count': 1,
+        'next': None,
+        'previous': None,
+        'results': [expected_dandiset_serialization],
+    }
+    # This is what unauthorized users should get from the list endpoint
+    expected_invisible_pagination = {
+        'count': 0,
+        'next': None,
+        'previous': None,
+        'results': [],
+    }
+
+    # Anonymous users should only be able to access OPEN dandisets
+    assert (
+        api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
+        == expected_dandiset_serialization
+        if embargo_status == 'OPEN'
+        else expected_error_message
+    )
+    assert (
+        api_client.get('/api/dandisets/').json() == expected_visible_pagination
+        if embargo_status == 'OPEN'
+        else expected_invisible_pagination
+    )
+
+    # An unauthorized user should only be able to access OPEN dandisets
+    api_client.force_authenticate(user=unauthorized_user)
+    assert (
+        api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
+        == expected_dandiset_serialization
+        if embargo_status == 'OPEN'
+        else expected_error_message
+    )
+    assert (
+        api_client.get('/api/dandisets/').json() == expected_visible_pagination
+        if embargo_status == 'OPEN'
+        else expected_invisible_pagination
+    )
+
+    # The owner should always be able to access the dandiset
+    api_client.force_authenticate(user=owner)
+    assert (
+        api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
+        == expected_dandiset_serialization
+    )
+    assert api_client.get('/api/dandisets/').json() == expected_visible_pagination
 
 
 @pytest.mark.django_db
