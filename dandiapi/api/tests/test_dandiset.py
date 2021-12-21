@@ -48,6 +48,7 @@ def test_dandiset_rest_list(api_client, dandiset):
                 'draft_version': None,
                 'most_recent_published_version': None,
                 'contact_person': '',
+                'embargo_status': 'OPEN',
             }
         ],
     }
@@ -115,6 +116,7 @@ def test_dandiset_versions(
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
             'contact_person': contact_person,
+            'embargo_status': 'OPEN',
             'draft_version': {
                 'version': draft_version.version,
                 'name': draft_version.name,
@@ -128,6 +130,7 @@ def test_dandiset_versions(
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
                     'contact_person': contact_person,
+                    'embargo_status': 'OPEN',
                 },
             }
             if draft_version is not None
@@ -145,6 +148,7 @@ def test_dandiset_versions(
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
                     'contact_person': contact_person,
+                    'embargo_status': 'OPEN',
                 },
             }
             if published_version is not None
@@ -187,6 +191,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'draft_version': None,
                 'most_recent_published_version': None,
                 'contact_person': '',
+                'embargo_status': 'OPEN',
             }
         ],
     }
@@ -201,6 +206,7 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'draft_version': None,
         'most_recent_published_version': None,
         'contact_person': '',
+        'embargo_status': 'OPEN',
     }
 
 
@@ -233,6 +239,7 @@ def test_dandiset_rest_create(api_client, user):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'contact_person': 'Doe, John',
+        'embargo_status': 'OPEN',
         'draft_version': {
             'version': 'draft',
             'name': name,
@@ -243,6 +250,7 @@ def test_dandiset_rest_create(api_client, user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'contact_person': 'Doe, John',
+                'embargo_status': 'OPEN',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
@@ -334,12 +342,14 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'contact_person': 'Doe, John',
+                'embargo_status': 'OPEN',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
         'contact_person': 'Doe, John',
+        'embargo_status': 'OPEN',
     }
 
     # Creating a Dandiset has side affects.
@@ -438,12 +448,14 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'contact_person': 'Jane Doe',
+                'embargo_status': 'OPEN',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
         'contact_person': 'Jane Doe',
+        'embargo_status': 'OPEN',
     }
 
     # Creating a Dandiset has side affects.
