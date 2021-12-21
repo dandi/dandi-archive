@@ -39,6 +39,7 @@ class DandisetSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'contact_person',
+            'embargo_status',
         ]
         read_only_fields = ['created']
 
