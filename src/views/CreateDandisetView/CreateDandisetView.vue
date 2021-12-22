@@ -84,7 +84,9 @@ export default defineComponent({
     }
 
     async function registerDandiset() {
-      const { data } = await dandiRest.createDandiset(name.value, description.value);
+      const { data } = await dandiRest.createDandiset(
+        name.value, description.value, embargoed.value, awardNumber.value,
+      );
       const { identifier } = data;
       ctx.root.$router.push({ name: 'dandisetLanding', params: { identifier } });
     }
