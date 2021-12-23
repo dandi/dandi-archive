@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from django.http.response import HttpResponseBase
+from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers, status
@@ -194,7 +194,12 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     parts: List[TransferredPart] = request_serializer.save()
 
-    upload = get_object_or_404(Upload, upload_id=upload_id)
+    try:
+        upload = Upload.objects.get(upload_id=upload_id)
+    except Upload.DoesNotExist:
+        upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
+        if not request.user.has_perm('owner', upload.dandiset):
+            raise Http404()
 
     completion = TransferredParts(
         object_key=upload.blob.name,
@@ -202,7 +207,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
         parts=parts,
     )
 
-    completed_upload = MultipartManager.from_storage(AssetBlob.blob.field.storage).complete_upload(
+    completed_upload = MultipartManager.from_storage(upload.blob.field.storage).complete_upload(
         completion
     )
 
