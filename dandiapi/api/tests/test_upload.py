@@ -481,6 +481,30 @@ def test_upload_validate(api_client, user, upload):
 
 
 @pytest.mark.django_db
+def test_upload_validate_embargo(api_client, user, dandiset_factory, embargoed_upload_factory):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
+
+    resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
+    assert resp.status_code == 200
+    assert resp.data == {
+        'blob_id': str(embargoed_upload.upload_id),
+        'etag': embargoed_upload.etag,
+        'sha256': None,
+        'size': embargoed_upload.size,
+    }
+
+    # Verify that a new EmbargoedAssetBlob was created
+    embargoed_asset_blob = EmbargoedAssetBlob.objects.get(blob_id=embargoed_upload.upload_id)
+    assert embargoed_asset_blob.blob.name == embargoed_upload.blob.name
+
+    # Verify that the Upload was deleted
+    assert not EmbargoedUpload.objects.all().exists()
+
+
+@pytest.mark.django_db
 def test_upload_validate_upload_missing(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
@@ -542,3 +566,94 @@ def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob
 
     assert AssetBlob.objects.all().count() == 1
     assert not Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_validate_embargo_existing_assetblob(
+    api_client, user, dandiset_factory, embargoed_upload_factory, asset_blob_factory
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
+
+    # The upload should recognize this preexisting AssetBlob and use it instead
+    asset_blob = asset_blob_factory(etag=embargoed_upload.etag, size=embargoed_upload.size)
+
+    resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
+    assert resp.status_code == 200
+    assert resp.data == {
+        'blob_id': str(asset_blob.blob_id),
+        'etag': asset_blob.etag,
+        'sha256': asset_blob.sha256,
+        'size': asset_blob.size,
+    }
+
+    assert AssetBlob.objects.all().count() == 1
+    assert not EmbargoedAssetBlob.objects.all().exists()
+    assert not EmbargoedUpload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_validate_embargo_existing_embargoedassetblob(
+    api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
+
+    # The upload should recognize this preexisting EmbargoedAssetBlob and use it instead
+    # This only works because the embargoed asset blob belongs to the same dandiset
+    embargoed_asset_blob = embargoed_asset_blob_factory(
+        etag=embargoed_upload.etag, size=embargoed_upload.size, dandiset=dandiset
+    )
+
+    resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
+    assert resp.status_code == 200
+    assert resp.data == {
+        'blob_id': str(embargoed_asset_blob.blob_id),
+        'etag': embargoed_asset_blob.etag,
+        'sha256': embargoed_asset_blob.sha256,
+        'size': embargoed_asset_blob.size,
+    }
+
+    assert EmbargoedAssetBlob.objects.all().count() == 1
+    assert not AssetBlob.objects.all().exists()
+    assert not EmbargoedUpload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_validate_embargo_existing_embargoedassetblob_wrong_dandiset(
+    api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
+
+    # This should mint a new EmbargoedAssetBlob because the existing EmbargoedAssetBlob belongs to
+    # a different dandiset.
+    other_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, other_dandiset)
+    other_embargoed_asset_blob = embargoed_asset_blob_factory(
+        etag=embargoed_upload.etag, size=embargoed_upload.size, dandiset=other_dandiset
+    )
+
+    resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
+    assert resp.status_code == 200
+    assert resp.data == {
+        'blob_id': str(embargoed_upload.upload_id),
+        'etag': embargoed_upload.etag,
+        'sha256': None,
+        'size': embargoed_upload.size,
+    }
+
+    # Verify that a new EmbargoedAssetBlob was created
+    embargoed_asset_blob = EmbargoedAssetBlob.objects.get(blob_id=embargoed_upload.upload_id)
+    assert embargoed_asset_blob.blob.name == embargoed_upload.blob.name
+    assert embargoed_asset_blob.blob_id != other_embargoed_asset_blob.blob_id
+    assert EmbargoedAssetBlob.objects.count() == 2
+
+    # Verify that the Upload was deleted
+    assert not EmbargoedUpload.objects.all().exists()
