@@ -236,7 +236,12 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
 
     Also starts the asynchronous checksum calculation process.
     """
-    upload = get_object_or_404(Upload, upload_id=upload_id)
+    try:
+        upload = Upload.objects.get(upload_id=upload_id)
+    except Upload.DoesNotExist:
+        upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
+        if not request.user.has_perm('owner', upload.dandiset):
+            raise Http404()
 
     # Verify that the upload was successful
     if not upload.object_key_exists():
@@ -254,8 +259,20 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
         # Perhaps another upload completed before this one and has already created an AssetBlob.
         asset_blob = AssetBlob.objects.get(etag=upload.etag, size=upload.size)
     except AssetBlob.DoesNotExist:
-        asset_blob = upload.to_asset_blob()
-        asset_blob.save()
+        if type(upload) is EmbargoedUpload:
+            # Perhaps another embargoed upload completed before this one
+            try:
+                asset_blob = EmbargoedAssetBlob.objects.get(
+                    etag=upload.etag, size=upload.size, dandiset=upload.dandiset
+                )
+            except EmbargoedAssetBlob.DoesNotExist:
+                asset_blob = upload.to_embargoed_asset_blob()
+                asset_blob.save()
+        elif type(upload) is Upload:
+            asset_blob = upload.to_asset_blob()
+            asset_blob.save()
+        else:
+            raise ValueError(f'Unknown Upload type {type(upload)}')
 
     # Clean up the upload
     upload.delete()
