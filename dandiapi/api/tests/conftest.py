@@ -15,6 +15,8 @@ from .factories import (
     DandisetFactory,
     DraftAssetFactory,
     DraftVersionFactory,
+    EmbargoedAssetBlobFactory,
+    EmbargoedUploadFactory,
     PublishedAssetFactory,
     PublishedVersionFactory,
     SocialAccountFactory,
@@ -33,6 +35,8 @@ register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
 register(DandisetFactory)
+register(EmbargoedAssetBlobFactory)
+register(EmbargoedUploadFactory)
 register(PublishedVersionFactory, _name='published_version')
 register(DraftVersionFactory, _name='draft_version')
 # registering DraftVersionFactory after PublishedVersionFactory means
