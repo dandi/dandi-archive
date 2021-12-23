@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import abstractclassmethod
 from uuid import uuid4
 
 from django.conf import settings
@@ -50,16 +51,9 @@ class BaseUpload(TimeStampedModel):
     multipart_upload_id = models.CharField(max_length=128, unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
 
-    @classmethod
-    def object_key(cls, upload_id, **kwargs):
-        upload_id = str(upload_id)
-        dandiset_identifier = kwargs.get('dandiset')
-        dandiset_prefix = f'{dandiset_identifier}/' if dandiset_identifier is not None else ''
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'{dandiset_prefix}'
-            f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
-        )
+    @abstractclassmethod
+    def object_key(cls, upload_id, **kwargs):  # noqa: N805
+        ...
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size, **kwargs):
@@ -112,6 +106,17 @@ class BaseUpload(TimeStampedModel):
 class Upload(BaseUpload):
     blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
 
+    @classmethod
+    def object_key(cls, upload_id, **kwargs):
+        upload_id = str(upload_id)
+        dandiset_identifier = kwargs.get('dandiset')
+        dandiset_prefix = f'{dandiset_identifier}/' if dandiset_identifier is not None else ''
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'{dandiset_prefix}'
+            f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
+        )
+
     def to_asset_blob(self) -> AssetBlob:
         """Convert this upload into an AssetBlob."""
         return AssetBlob(
@@ -129,6 +134,17 @@ class EmbargoedUpload(BaseUpload):
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_uploads', on_delete=models.CASCADE
     )
+
+    @classmethod
+    def object_key(cls, upload_id, **kwargs):
+        upload_id = str(upload_id)
+        dandiset_identifier = kwargs.get('dandiset')
+        dandiset_prefix = f'{dandiset_identifier}/' if dandiset_identifier is not None else ''
+        return (
+            f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}'
+            f'{dandiset_prefix}'
+            f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
+        )
 
     def to_embargoed_asset_blob(self) -> EmbargoedAssetBlob:
         """Convert this upload into an AssetBlob."""

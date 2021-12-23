@@ -152,7 +152,7 @@ def test_upload_initialize_embargo(api_client, user, dandiset_factory):
 
     assert not Upload.objects.all().exists()
     upload = EmbargoedUpload.objects.get(upload_id=resp.data['upload_id'])
-    assert upload.blob.name.startswith(f'test-prefix/{dandiset.identifier}/blobs/')
+    assert upload.blob.name.startswith(f'test-embargo-prefix/{dandiset.identifier}/blobs/')
 
 
 @pytest.mark.django_db
@@ -453,7 +453,7 @@ def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_facto
     # Verify object was uploaded
     upload = EmbargoedUpload.objects.get(upload_id=upload_id)
     assert EmbargoedAssetBlob.blob.field.storage.exists(upload.blob.name)
-    assert upload.blob.name.startswith(f'test-prefix/{dandiset.identifier}/blobs/')
+    assert upload.blob.name.startswith(f'test-embargo-prefix/{dandiset.identifier}/blobs/')
     # Verify nothing public was created
     assert not Upload.objects.all().exists()
     assert not AssetBlob.blob.field.storage.exists(upload.blob.name)
