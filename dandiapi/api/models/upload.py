@@ -51,17 +51,20 @@ class BaseUpload(TimeStampedModel):
     size = models.PositiveBigIntegerField()
 
     @classmethod
-    def object_key(cls, upload_id):
+    def object_key(cls, upload_id, **kwargs):
         upload_id = str(upload_id)
+        dandiset_identifier = kwargs.get('dandiset')
+        dandiset_prefix = f'{dandiset_identifier}/' if dandiset_identifier is not None else ''
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+            f'{dandiset_prefix}'
             f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
         )
 
     @classmethod
-    def initialize_multipart_upload(cls, etag, size):
+    def initialize_multipart_upload(cls, etag, size, **kwargs):
         upload_id = uuid4()
-        object_key = cls.object_key(upload_id)
+        object_key = cls.object_key(upload_id, **kwargs)
         multipart_initialization = DandiMultipartManager.from_storage(
             cls.blob.field.storage
         ).initialize_upload(object_key, size)
@@ -72,6 +75,7 @@ class BaseUpload(TimeStampedModel):
             etag=etag,
             size=size,
             multipart_upload_id=multipart_initialization.upload_id,
+            **kwargs,
         )
 
         return upload, {'upload_id': upload.upload_id, 'parts': multipart_initialization.parts}
