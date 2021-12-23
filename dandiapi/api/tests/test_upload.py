@@ -2,10 +2,11 @@ import os
 import uuid
 
 from django.core.files.base import ContentFile
+from guardian.shortcuts import assign_perm
 import pytest
 import requests
 
-from dandiapi.api.models import AssetBlob, Upload
+from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedAssetBlob, EmbargoedUpload, Upload
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
@@ -115,6 +116,164 @@ def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
     assert resp.data == 'Blob already exists.'
     assert resp.get('Location') == str(asset_blob.blob_id)
     assert not Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_initialize_embargo(api_client, user, dandiset_factory):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+
+    content_size = 123
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.data == {
+        'upload_id': UUID_RE,
+        'parts': [
+            {
+                'part_number': 1,
+                'size': content_size,
+                'upload_url': HTTP_URL_RE,
+            }
+        ],
+    }
+    # Verify that the URL won't expire for a week
+    upload_url = resp.data['parts'][0]['upload_url']
+    # 604800 seconds = 1 week
+    assert 'X-Amz-Expires=604800' in upload_url
+
+    assert not Upload.objects.all().exists()
+    upload = EmbargoedUpload.objects.get(upload_id=resp.data['upload_id'])
+    assert upload.blob.name.startswith(f'test-prefix/{dandiset.identifier}/blobs/')
+
+
+@pytest.mark.django_db
+def test_upload_initialize_embargo_unembargoed_dandiset(api_client, user, dandiset_factory):
+    api_client.force_authenticate(user=user)
+    # The dandiset is not embargoed, so you aren't allowed to set it as the embargoed_dandiset
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    assign_perm('owner', user, dandiset)
+
+    content_size = 123
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 404
+    assert resp.json() == {'detail': 'Not found.'}
+    assert not Upload.objects.all().exists()
+    assert not EmbargoedUpload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_factory):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    # user is not an owner of the embargoed dandiset, so the embargoed dandiset "doesn't exist"
+
+    content_size = 123
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 404
+    assert resp.json() == {'detail': 'Not found.'}
+    assert not Upload.objects.all().exists()
+    assert not EmbargoedUpload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_initialize_embargo_existing_asset_blob(
+    api_client, user, dandiset_factory, asset_blob
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+
+    # Embargoed assets that are already uploaded publically don't need to be private
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': asset_blob.size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 409
+    assert resp.data == 'Blob already exists.'
+    assert resp.get('Location') == str(asset_blob.blob_id)
+    assert not Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_initialize_embargo_existing_embargoed_asset_blob(
+    api_client, user, dandiset_factory, embargoed_asset_blob_factory
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    # This EmbargoedAssetBlob is in the same embargoed dandiset, so it should be deduplicated
+    embargoed_asset_blob = embargoed_asset_blob_factory(dandiset=dandiset)
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': embargoed_asset_blob.size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': embargoed_asset_blob.etag},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 409
+    assert resp.data == 'Blob already exists.'
+    assert resp.get('Location') == str(embargoed_asset_blob.blob_id)
+    assert not Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_initialize_embargo_existing_embargoed_asset_blob_in_different_dandiset(
+    api_client, user, dandiset_factory, embargoed_asset_blob_factory
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    other_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    # This EmbargoedAssetBlob is in a different dandiset, so it needs to be reuploaded, even
+    # though this user is an owner of both dandisets.
+    embargoed_asset_blob = embargoed_asset_blob_factory(dandiset=other_dandiset)
+    assign_perm('owner', user, other_dandiset)
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': embargoed_asset_blob.size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': embargoed_asset_blob.etag},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 200
 
 
 @pytest.mark.django_db
