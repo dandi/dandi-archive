@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django.db import transaction
-from django.db.models.fields.related import ManyToManyField
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
