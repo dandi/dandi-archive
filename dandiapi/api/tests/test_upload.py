@@ -307,6 +307,50 @@ def test_upload_complete(api_client, user, upload):
 
 
 @pytest.mark.django_db
+def test_upload_complete_embargo(api_client, user, dandiset_factory, embargoed_upload_factory):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
+
+    content_size = 123
+
+    assert api_client.post(
+        f'/api/uploads/{embargoed_upload.upload_id}/complete/',
+        {
+            'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
+        },
+        format='json',
+    ).data == {
+        'complete_url': HTTP_URL_RE,
+        'body': Re(r'.*'),
+    }
+
+
+@pytest.mark.django_db
+def test_upload_complete_embargo_not_an_owner(
+    api_client, user, dandiset_factory, embargoed_upload_factory
+):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
+    # The user doesn't own the dandiset being uploaded to, so they cannot complete the upload.
+
+    content_size = 123
+
+    assert (
+        api_client.post(
+            f'/api/uploads/{embargoed_upload.upload_id}/complete/',
+            {
+                'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
+            },
+            format='json',
+        ).status_code
+        == 404
+    )
+
+
+@pytest.mark.django_db
 def test_upload_complete_unauthorized(api_client, upload):
     assert (
         api_client.post(
@@ -361,6 +405,58 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
     # Verify object was uploaded
     upload = Upload.objects.get(upload_id=upload_id)
     assert AssetBlob.blob.field.storage.exists(upload.blob.name)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
+def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_factory, content_size):
+    api_client.force_authenticate(user=user)
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+
+    # Get the presigned upload URL
+    initialization = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'embargoed_dandiset': dandiset.identifier,
+        },
+        format='json',
+    ).data
+
+    upload_id = initialization['upload_id']
+    parts = initialization['parts']
+
+    # Send the data directly to the object store
+    transferred_parts = []
+    part_number = 1
+    for part in parts:
+        part_transfer = requests.put(part['upload_url'], data=b'X' * part['size'])
+        etag = part_transfer.headers['etag']
+        transferred_parts.append({'part_number': part_number, 'size': part['size'], 'etag': etag})
+        part_number += 1
+
+    # Get the presigned complete URL
+    completion = api_client.post(
+        f'/api/uploads/{upload_id}/complete/',
+        {
+            'parts': transferred_parts,
+        },
+        format='json',
+    ).data
+
+    # Complete the upload to the object store
+    completion_response = requests.post(completion['complete_url'], data=completion['body'])
+    assert completion_response.status_code == 200
+
+    # Verify object was uploaded
+    upload = EmbargoedUpload.objects.get(upload_id=upload_id)
+    assert EmbargoedAssetBlob.blob.field.storage.exists(upload.blob.name)
+    assert upload.blob.name.startswith(f'test-prefix/{dandiset.identifier}/blobs/')
+    # Verify nothing public was created
+    assert not Upload.objects.all().exists()
+    assert not AssetBlob.blob.field.storage.exists(upload.blob.name)
 
 
 @pytest.mark.django_db
