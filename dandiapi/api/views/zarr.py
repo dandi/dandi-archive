@@ -153,6 +153,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         method='DELETE',
+        request_body=ZarrDeleteFileRequestSerializer(many=True),
         responses={200: ZarrSerializer(many=True)},
         operation_summary='Delete files from a zarr archive.',
         operation_description='',
