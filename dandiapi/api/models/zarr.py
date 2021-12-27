@@ -73,6 +73,7 @@ class ZarrUploadFile(TimeStampedModel):
                     Params={
                         'Bucket': storage.bucket_name,
                         'Key': self.blob.name,
+                        'ACL': 'bucket-owner-full-control',
                     },
                     ExpiresIn=60,  # TODO proper expiration
                 )
