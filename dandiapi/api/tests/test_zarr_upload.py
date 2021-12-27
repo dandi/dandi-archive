@@ -202,7 +202,7 @@ def test_zarr_rest_upload_flow(authenticated_api_client, storage, zarr_archive: 
     )
     upload_url = resp.json()[0]['upload_url']
 
-    resp = requests.put(upload_url, data=text)
+    resp = requests.put(upload_url, data=text, headers={'X-Amz-ACL': 'bucket-owner-full-control'})
     assert resp.status_code == 200
 
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
