@@ -84,7 +84,11 @@ class ZarrUploadFile(TimeStampedModel):
             pass
         else:
             if isinstance(storage, MinioStorage):
-                return storage.client.presigned_put_object(
+                # storage.client will generate URLs like `http://minio:9000/...` when running in
+                # docker. To avoid this, use the secondary base_url_client which is configured to
+                # generate URLs like `http://localhost:9000/...`.
+                client = getattr(storage, 'base_url_client', storage.client)
+                return client.presigned_put_object(
                     bucket_name=storage.bucket_name,
                     object_name=self.blob.name,
                     expires=timedelta(seconds=60),  # TODO proper expiration
