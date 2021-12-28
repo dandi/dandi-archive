@@ -121,6 +121,7 @@
 
               <span>
                 <v-btn
+                  v-if="newOwners.length > 1"
                   text
                   small
                   @click="removeOwner(owner)"
