@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -80,7 +81,14 @@ def users_me_view(request: Request) -> HttpResponseBase:
 def users_search_view(request: Request) -> HttpResponseBase:
     """Search for a user."""
     request_serializer = UserSerializer(data=request.query_params)
-    request_serializer.is_valid(raise_exception=True)
+
+    # Swallow validation errors in the input string, and just send back null
+    # results.
+    try:
+        request_serializer.is_valid(raise_exception=True)
+    except ValidationError as e:
+        return Response([])
+
     username: str = request_serializer.validated_data['username']
 
     # Perform a search, excluding any inactive users
