@@ -66,16 +66,23 @@
     >
       <template #content="slotProps">
         <span
+          v-if="slotProps.item.identifier"
           class="text-caption grey--text text--darken-1 related-resource"
         >
           <strong>ID: </strong>{{ slotProps.item.identifier }}
+          <br>
         </span>
-        <br>
-        <span class="text-caption grey--text text--darken-1">
+        <span
+          v-if="slotProps.item.repository"
+          class="text-caption grey--text text--darken-1"
+        >
           <strong>Repo: </strong>{{ slotProps.item.repository }}
+          <br>
         </span>
-        <br>
-        <span class="text-caption grey--text text--darken-1">
+        <span
+          v-if="slotProps.item.relation"
+          class="text-caption grey--text text--darken-1"
+        >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
       </template>
