@@ -39,6 +39,10 @@ const dandisetModule = defineModule({
       }
       return draftVersion;
     },
+    schemaVersion(...args): string {
+      const { state } = dandisetGetterContext(args);
+      return state.schema?.properties.schemaVersion.default;
+    },
     userCanModifyDandiset(...args): boolean {
       const { state } = dandisetGetterContext(args);
 

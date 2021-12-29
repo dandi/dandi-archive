@@ -105,9 +105,11 @@ export default defineComponent({
     }
 
     async function registerDandiset() {
-      const { data } = await dandiRest.createDandiset(
-        name.value, description.value, embargoed.value, awardNumber.value,
-      );
+      const metadata = { name: name.value, description: description.value };
+
+      const { data } = embargoed.value
+        ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
+        : await dandiRest.createDandiset(name.value, metadata);
       const { identifier } = data;
       ctx.root.$router.push({ name: 'dandisetLanding', params: { identifier } });
     }

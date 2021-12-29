@@ -4,7 +4,7 @@ import OAuthClient from '@girder/oauth-client';
 import {
   Asset, Dandiset, Paginated, User, Version, Info, AssetFile, AssetFolder,
 } from '@/types';
-import { Dandiset as DandisetMetadata, IdentifierForAnAward, Organization } from '@/types/schema';
+import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 
 // Ensure contains trailing slash
 const dandiApiRoot = process.env.VUE_APP_DANDI_API_ROOT.endsWith('/')
@@ -29,6 +29,13 @@ const dandiRest = new Vue({
       client,
       user: null,
     };
+  },
+  computed: {
+    schemaVersion(): string {
+      // Use injected $store instead of importing to
+      // avoid dependency cycle
+      return this.$store?.direct.getters.dandiset.schemaVersion;
+    },
   },
   methods: {
     async restoreLogin() {
@@ -164,30 +171,24 @@ const dandiRest = new Vue({
       return response;
     },
     async createDandiset(
-      name: string, description: string, embargoed: boolean, awardNumber: IdentifierForAnAward,
+      name: string, metadata: Partial<DandisetMetadata>, config: AxiosRequestConfig = {},
     ): Promise<AxiosResponse<Dandiset>> {
-      const { schema_version: schemaVersion } = await this.info();
-      const metadata: Partial<DandisetMetadata> = {
-        name,
-        description,
-        schemaVersion,
+      const { schemaVersion } = this;
+      return client.post('dandisets/', { name, metadata: { name, schemaVersion, ...metadata } }, config);
+    },
+    async createEmbargoedDandiset(name: string, metadata: Partial<DandisetMetadata>, awardNumber: Organization['awardNumber']) {
+      // add NIH award number as a contributor in the new dandiset's metadata
+      const award: Organization = {
+        name: 'National Institutes of Health (NIH)',
+        schemaKey: 'Organization',
+        awardNumber,
+        roleName: ['dcite:Funder'],
       };
-      const params: AxiosRequestConfig['params'] = {};
+      const contributor: DandisetContributors = [...(metadata.contributor || []), award];
 
-      if (embargoed) {
-        // set 'embargoed' query parameter
-        params.embargo = true;
-        // add NIH award number as a contributor in the new dandiset's metadata
-        const award: Organization = {
-          name: 'National Institutes of Health (NIH)',
-          schemaKey: 'Organization',
-          awardNumber,
-          roleName: ['dcite:Funder'],
-        };
-        metadata.contributor = [award];
-      }
+      const params = { embargo: true };
 
-      return client.post('dandisets/', { name, metadata }, { params });
+      return this.createDandiset(name, { ...metadata, contributor }, { params });
     },
     async saveDandiset(
       identifier: string, version: string, metadata: any,
