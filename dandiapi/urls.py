@@ -25,6 +25,7 @@ from dandiapi.api.views import (
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
+    root_content_view,
 )
 
 router = ExtendedSimpleRouter()
@@ -73,6 +74,7 @@ class DandisetIDConverter:
 
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
+    path('', root_content_view),
     path('api/', include(router.urls)),
     re_path(
         r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/$',
