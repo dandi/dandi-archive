@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.contrib.admin.options import TabularInline
 from django.contrib.auth.admin import UserAdmin
+from django.db.models.aggregates import Count
+from django.db.models.query import QuerySet
 from django.forms.models import BaseInlineFormSet
+from django.http.request import HttpRequest
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
@@ -44,9 +47,25 @@ class AssetInline(LimitedTabularInline):
 
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'dandiset', 'version', 'status', 'asset_count', 'modified', 'created']
+    list_display = [
+        'id',
+        'dandiset',
+        'version',
+        'status',
+        'number_of_assets',
+        'modified',
+        'created',
+    ]
     list_display_links = ['id', 'version']
     inlines = [AssetInline]
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        # Using the `asset_count` property here results in N queries being made
+        # for N versions. Instead, use annotation to make one query for N versions.
+        return super().get_queryset(request).annotate(number_of_assets=Count('assets'))
+
+    def number_of_assets(self, obj):
+        return obj.number_of_assets
 
 
 @admin.register(AssetBlob)
