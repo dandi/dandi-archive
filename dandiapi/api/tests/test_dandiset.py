@@ -118,6 +118,7 @@ def test_dandiset_versions(
             'draft_version': {
                 'version': draft_version.version,
                 'name': draft_version.name,
+                'asset_count': draft_version.asset_count,
                 'size': draft_version.size,
                 'status': 'Pending',
                 'created': TIMESTAMP_RE,
@@ -134,6 +135,7 @@ def test_dandiset_versions(
             'most_recent_published_version': {
                 'version': published_version.version,
                 'name': published_version.name,
+                'asset_count': published_version.asset_count,
                 'size': published_version.size,
                 'status': 'Pending',
                 'created': TIMESTAMP_RE,
@@ -207,6 +209,7 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
                 'most_recent_published_version': {
                     'version': dandiset.most_recent_published_version.version,
                     'name': dandiset.most_recent_published_version.name,
+                    'asset_count': dandiset.most_recent_published_version.asset_count,
                     'size': dandiset.most_recent_published_version.size,
                     'metadata': dandiset.most_recent_published_version.metadata,
                 },
@@ -233,6 +236,7 @@ def test_dandiset_rest_create(api_client, user):
         'draft_version': {
             'version': 'draft',
             'name': name,
+            'asset_count': 0,
             'size': 0,
             'dandiset': {
                 'identifier': DANDISET_ID_RE,
@@ -323,6 +327,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'draft_version': {
             'version': 'draft',
             'name': name,
+            'asset_count': 0,
             'size': 0,
             'dandiset': {
                 'identifier': identifier,
@@ -426,6 +431,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'draft_version': {
             'version': 'draft',
             'name': name,
+            'asset_count': 0,
             'size': 0,
             'dandiset': {
                 'identifier': identifier,

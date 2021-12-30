@@ -59,6 +59,10 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         ]
 
     @property
+    def asset_count(self):
+        return self.assets.count()
+
+    @property
     def size(self):
         return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
 
