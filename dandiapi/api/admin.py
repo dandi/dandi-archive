@@ -60,8 +60,6 @@ class VersionAdmin(admin.ModelAdmin):
     inlines = [AssetInline]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
-        # Using the `asset_count` property here results in N queries being made
-        # for N versions. Instead, use annotation to make one query for N versions.
         return super().get_queryset(request).annotate(number_of_assets=Count('assets'))
 
     def number_of_assets(self, obj):

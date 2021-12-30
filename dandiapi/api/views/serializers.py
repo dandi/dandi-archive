@@ -67,7 +67,6 @@ class VersionSerializer(serializers.ModelSerializer):
         fields = [
             'version',
             'name',
-            'asset_count',
             'size',
             'status',
             'created',
