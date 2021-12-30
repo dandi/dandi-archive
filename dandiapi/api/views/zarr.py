@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import transaction
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
 
 
 class ZarrUploadFileSerializer(serializers.Serializer):
@@ -169,3 +174,53 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(
+    method='GET',
+    responses={
+        200: 'foobar',
+    },
+    manual_parameters=[
+        openapi.Parameter(
+            'path',
+            openapi.IN_PATH,
+            'a file or directory path within the zarr file.',
+            type=openapi.TYPE_STRING,
+            required=True,
+            pattern=r'.*',
+        )
+    ],
+)
+@api_view(['GET'])
+def explore_zarr_archive(request, zarr_id: str, path: str):
+    zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
+    if path == '':
+        path = '/'
+    # If a path ends with a /, assume it is a directory.
+    # Return a JSON blob which contains URLs to the contents of the directory.
+    if path.endswith('/'):
+        # Strip off the trailing /, it confuses the ZarrChecksumFileUpdater
+        path = path[:-1]
+        # We use the .checksum file to determine the directory contents, since S3 cannot.
+        listing = ZarrChecksumFileUpdater(
+            zarr_archive=zarr_archive, zarr_directory_path=path
+        ).read_checksum_file()
+        if listing is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        directories = [
+            settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, directory.path])
+            for directory in listing.checksums.directories
+        ]
+        files = [
+            settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, file.path])
+            for file in listing.checksums.files
+        ]
+        return Response({'directories': directories, 'files': files})
+    else:
+        # The path did not end in a /, so it was a file.
+        # Redirect to a presigned S3 URL.
+        # S3 will 404 if the file does not exist.
+        return HttpResponseRedirect(
+            ZarrUploadFile.blob.field.storage.url(zarr_archive.s3_path(path))
+        )
