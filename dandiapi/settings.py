@@ -109,6 +109,8 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 
 
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'api.ProductionApplication'
+
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
 

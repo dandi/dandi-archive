@@ -5,12 +5,23 @@ from django.db import models
 from oauth2_provider.models import AbstractApplication
 
 
+class ProductionApplication(AbstractApplication):
+    """
+    Custom OAuth Toolkit `Application` model to override the
+    `skip_authorization` default.
+    """
+
+    # The default value of `skip_authorization` in `AbstractApplication` is
+    # `False`; we override that default here for production.
+    skip_authorization = models.BooleanField(default=True)
+
+
 class StagingApplication(AbstractApplication):
     """
     Custom OAuth Toolkit `Application` model to allow wildcards to be used in redirect URIs.
 
-    This is ONLY used in staging; the standard `oauth2_provider.models.Application` is used
-    in production and local development.
+    This is ONLY used in staging; a more standard `oauth2_provider.models.Application`
+    variant is used in production and local development.
     """
 
     # The default value of `skip_authorization` in `AbstractApplication` is `False`; we
