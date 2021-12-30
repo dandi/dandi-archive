@@ -19,9 +19,10 @@ BASE_RENDER_CONTEXT = {
 ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
-def build_message(subject: str, message: str, to: List[str], html_message: str):
+def build_message(subject: str, message: str, to: List[str], html_message: Optional[str] = None):
     message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
-    message.attach_alternative(html_message, 'text/html')
+    if html_message is not None:
+        message.attach_alternative(html_message, 'text/html')
     return message
 
 
