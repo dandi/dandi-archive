@@ -37,7 +37,6 @@ def build_removed_message(dandiset, removed_owner):
         subject=f'Removed from Dandiset "{dandiset.draft_version.name}"',
         message=render_to_string('api/mail/removed_message.txt', render_context),
         to=[removed_owner.email],
-        html_message=render_to_string('api/mail/removed_message.html', render_context),
     )
 
 
@@ -52,7 +51,6 @@ def build_added_message(dandiset, added_owner):
         subject=f'Added to Dandiset "{dandiset.draft_version.name}"',
         message=render_to_string('api/mail/added_message.txt', render_context),
         to=[added_owner.email],
-        html_message=render_to_string('api/mail/added_message.html', render_context),
     )
 
 
@@ -73,7 +71,6 @@ def build_registered_message(user: User, socialaccount: SocialAccount):
         subject=f'DANDI: New user registered: {user.email}',
         message=render_to_string('api/mail/registered_message.txt', render_context),
         to=[ADMIN_EMAIL, user.email],
-        html_message=render_to_string('api/mail/registered_message.html', render_context),
     )
 
 
@@ -94,7 +91,6 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
         subject=f'DANDI: Review new user: {user.username}',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
         to=[ADMIN_EMAIL],
-        html_message=render_to_string('api/mail/new_user_message.html', render_context),
     )
 
 
@@ -127,7 +123,6 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
         subject='Your DANDI Account',
         message=render_to_string('api/mail/approved_user_message.txt', render_context),
         to=[ADMIN_EMAIL, user.email],
-        html_message=render_to_string('api/mail/approved_user_message.html', render_context),
     )
 
 
@@ -160,7 +155,6 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
         subject='Your DANDI Account',
         message=render_to_string('api/mail/rejected_user_message.txt', render_context),
         to=[ADMIN_EMAIL, user.email],
-        html_message=render_to_string('api/mail/rejected_user_message.html', render_context),
     )
 
 
@@ -177,7 +171,6 @@ def build_pending_users_message(users: Union[QuerySet, List[User]]):
         subject='DANDI: new user registrations to review',
         message=render_to_string('api/mail/pending_users_message.txt', render_context),
         to=[ADMIN_EMAIL],
-        html_message=render_to_string('api/mail/pending_users_message.html', render_context),
     )
 
 
