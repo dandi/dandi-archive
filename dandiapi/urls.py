@@ -106,7 +106,7 @@ urlpatterns = [
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
     ),
     re_path(
-        r'^api/zarr/(?P<zarr_id>[0-9a-f\-]{36})/explore/(?P<path>.*)?$',
+        r'^api/zarr/(?P<zarr_id>[0-9a-f\-]{36}).zarr/(?P<path>.*)?$',
         explore_zarr_archive,
         name='zarr-explore',
     ),
