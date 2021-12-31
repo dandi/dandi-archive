@@ -75,7 +75,7 @@ class ZarrUploadFile(TimeStampedModel):
                         'Key': self.blob.name,
                         'ACL': 'bucket-owner-full-control',
                     },
-                    ExpiresIn=60,  # TODO proper expiration
+                    ExpiresIn=600,  # TODO proper expiration
                 )
 
         try:
@@ -91,7 +91,7 @@ class ZarrUploadFile(TimeStampedModel):
                 return client.presigned_put_object(
                     bucket_name=storage.bucket_name,
                     object_name=self.blob.name,
-                    expires=timedelta(seconds=60),  # TODO proper expiration
+                    expires=timedelta(seconds=600),  # TODO proper expiration
                 )
 
         raise UnsupportedStorageError('Unsupported storage provider.')
