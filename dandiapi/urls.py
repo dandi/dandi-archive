@@ -17,6 +17,7 @@ from dandiapi.api.views import (
     auth_token_view,
     authorize_view,
     blob_read_view,
+    explore_zarr_archive,
     info_view,
     stats_view,
     upload_complete_view,
@@ -103,6 +104,11 @@ urlpatterns = [
     path('api/users/search/', users_search_view),
     re_path(
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
+    ),
+    re_path(
+        r'^api/zarr/(?P<zarr_id>[0-9a-f\-]{36}).zarr/(?P<path>.*)?$',
+        explore_zarr_archive,
+        name='zarr-explore',
     ),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
