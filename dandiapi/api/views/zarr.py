@@ -201,7 +201,7 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
     # Return a JSON blob which contains URLs to the contents of the directory.
     if path.endswith('/'):
         # Strip off the trailing /, it confuses the ZarrChecksumFileUpdater
-        path = path[:-1]
+        path = path.rstrip('/')
         # We use the .checksum file to determine the directory contents, since S3 cannot.
         listing = ZarrChecksumFileUpdater(
             zarr_archive=zarr_archive, zarr_directory_path=path
