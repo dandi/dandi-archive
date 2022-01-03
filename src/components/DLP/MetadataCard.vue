@@ -39,8 +39,10 @@
                     cols="9"
                     class="grey--text text--darken-3"
                   >
-                    {{ item.name }}
-                    <br>
+                    <span v-if="item.name || item.identifier || item.id">
+                      {{ item.name || item.identifier || item.id }}
+                      <br>
+                    </span>
                     <slot
                       name="content"
                       :item="item"
