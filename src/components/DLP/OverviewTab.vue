@@ -185,12 +185,10 @@ import {
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 
+// Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
   'numberOfBytes',
   'numberOfFiles',
-  'numberOfSubjects',
-  'numberOfSamples',
-  'numberOfCells',
   'schemaKey',
 ]);
 
@@ -241,14 +239,16 @@ export default defineComponent({
     const assetSummary = computed(
       () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
         // filter out assetSummary fields we don't want to display
-        ([key, value]) => !ASSET_SUMMARY_BLACKLIST.has(key) && (value as any).length,
+        ([key, value]) => !!value && !ASSET_SUMMARY_BLACKLIST.has(key),
       ).map(
         // convert from camelCase to space-delimited string (i.e. "dataStandard" to "data Standard")
         ([key, value]) => [key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`), value],
       ).map(
         // capitalize the first letter in the string
         ([key, value]: any) => [key.charAt(0).toUpperCase() + key.slice(1), value],
-      )),
+      )
+        // convert primitive types to single-element arrays so they can be more easily rendered
+        .map(([key, value]: any) => (typeof value === 'object' ? [key, value] : [key, [value]]))),
     );
 
     // Approximate a good column count for asset summary card
