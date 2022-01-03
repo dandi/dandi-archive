@@ -62,7 +62,9 @@
           v-if="embargoed"
           v-model="awardNumber"
           label="Award number*"
-          hint="Provide an NIH award number for this embargoed dataset"
+          hint="Provide an NIH award number for this embargoed dataset.
+                Note: this can be changed at any time and additional award
+                numbers can be added later."
           persistent-hint
           :counter="120"
           :required="embargoed"
