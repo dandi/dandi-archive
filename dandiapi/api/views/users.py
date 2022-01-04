@@ -84,9 +84,7 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     # Swallow validation errors in the input string, and just send back null
     # results.
-    try:
-        request_serializer.is_valid(raise_exception=True)
-    except ValidationError as e:
+    if not request_serializer.is_valid(raise_exception=False):
         return Response([])
 
     username: str = request_serializer.validated_data['username']
