@@ -106,7 +106,7 @@ def test_user_search_blank_username(api_client, user):
             {'username': ''},
             format='json',
         ).data
-        == {'username': ['This field may not be blank.']}
+        == []
     )
 
 

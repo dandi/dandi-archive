@@ -80,7 +80,12 @@ def users_me_view(request: Request) -> HttpResponseBase:
 def users_search_view(request: Request) -> HttpResponseBase:
     """Search for a user."""
     request_serializer = UserSerializer(data=request.query_params)
-    request_serializer.is_valid(raise_exception=True)
+
+    # Swallow validation errors in the input string, and just send back null
+    # results.
+    if not request_serializer.is_valid(raise_exception=False):
+        return Response([])
+
     username: str = request_serializer.validated_data['username']
 
     # Perform a search, excluding any inactive users
