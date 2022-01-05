@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -34,6 +35,35 @@ def test_dandiset_published_count(
     assert Dandiset.published_count() == 1
 
 
+@pytest.mark.parametrize(
+    ('embargo_status', 'user_status', 'visible'),
+    [
+        ('OPEN', 'owner', True),
+        ('OPEN', 'anonymous', True),
+        ('OPEN', 'not-owner', True),
+        ('EMBARGOED', 'owner', True),
+        ('EMBARGOED', 'anonymous', False),
+        ('EMBARGOED', 'not-owner', False),
+        ('UNEMBARGOING', 'owner', True),
+        ('UNEMBARGOING', 'anonymous', False),
+        ('UNEMBARGOING', 'not-owner', False),
+    ],
+)
+@pytest.mark.django_db
+def test_dandiset_manager_visible_to(
+    dandiset_factory, user_factory, embargo_status, user_status, visible
+):
+    dandiset = dandiset_factory(embargo_status=embargo_status)
+    if user_status == 'anonymous':
+        user = AnonymousUser
+    else:
+        user = user_factory()
+    if user_status == 'owner':
+        assign_perm('owner', user, dandiset)
+
+    assert list(Dandiset.objects.visible_to(user)) == ([dandiset] if visible else [])
+
+
 @pytest.mark.django_db
 def test_dandiset_rest_list(api_client, dandiset):
     assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
@@ -48,6 +78,7 @@ def test_dandiset_rest_list(api_client, dandiset):
                 'draft_version': None,
                 'most_recent_published_version': None,
                 'contact_person': '',
+                'embargo_status': 'OPEN',
             }
         ],
     }
@@ -115,6 +146,7 @@ def test_dandiset_versions(
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
             'contact_person': contact_person,
+            'embargo_status': 'OPEN',
             'draft_version': {
                 'version': draft_version.version,
                 'name': draft_version.name,
@@ -128,6 +160,7 @@ def test_dandiset_versions(
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
                     'contact_person': contact_person,
+                    'embargo_status': 'OPEN',
                 },
             }
             if draft_version is not None
@@ -145,6 +178,7 @@ def test_dandiset_versions(
                     'created': TIMESTAMP_RE,
                     'modified': TIMESTAMP_RE,
                     'contact_person': contact_person,
+                    'embargo_status': 'OPEN',
                 },
             }
             if published_version is not None
@@ -187,6 +221,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'draft_version': None,
                 'most_recent_published_version': None,
                 'contact_person': '',
+                'embargo_status': 'OPEN',
             }
         ],
     }
@@ -201,19 +236,85 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'draft_version': None,
         'most_recent_published_version': None,
         'contact_person': '',
+        'embargo_status': 'OPEN',
     }
 
 
-"""
+@pytest.mark.parametrize(
+    ('embargo_status'),
+    [choice[0] for choice in Dandiset.EmbargoStatus.choices],
+    ids=[choice[1] for choice in Dandiset.EmbargoStatus.choices],
+)
+@pytest.mark.django_db
+def test_dandiset_rest_embargo_access(
+    api_client, user_factory, dandiset_factory, embargo_status: str
+):
+    owner = user_factory()
+    unauthorized_user = user_factory()
+    dandiset = dandiset_factory(embargo_status=embargo_status)
+    assign_perm('owner', owner, dandiset)
 
-                'most_recent_published_version': {
-                    'version': dandiset.most_recent_published_version.version,
-                    'name': dandiset.most_recent_published_version.name,
-                    'asset_count': dandiset.most_recent_published_version.asset_count,
-                    'size': dandiset.most_recent_published_version.size,
-                    'metadata': dandiset.most_recent_published_version.metadata,
-                },
-"""
+    # This is what authorized users should get from the retrieve endpoint
+    expected_dandiset_serialization = {
+        'identifier': dandiset.identifier,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'draft_version': None,
+        'most_recent_published_version': None,
+        'contact_person': '',
+        'embargo_status': embargo_status,
+    }
+    # This is what unauthorized users should get from the retrieve endpoint
+    expected_error_message = {'detail': 'Not found.'}
+    # This is what authorized users should get from the list endpoint
+    expected_visible_pagination = {
+        'count': 1,
+        'next': None,
+        'previous': None,
+        'results': [expected_dandiset_serialization],
+    }
+    # This is what unauthorized users should get from the list endpoint
+    expected_invisible_pagination = {
+        'count': 0,
+        'next': None,
+        'previous': None,
+        'results': [],
+    }
+
+    # Anonymous users should only be able to access OPEN dandisets
+    assert (
+        api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
+        == expected_dandiset_serialization
+        if embargo_status == 'OPEN'
+        else expected_error_message
+    )
+    assert (
+        api_client.get('/api/dandisets/').json() == expected_visible_pagination
+        if embargo_status == 'OPEN'
+        else expected_invisible_pagination
+    )
+
+    # An unauthorized user should only be able to access OPEN dandisets
+    api_client.force_authenticate(user=unauthorized_user)
+    assert (
+        api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
+        == expected_dandiset_serialization
+        if embargo_status == 'OPEN'
+        else expected_error_message
+    )
+    assert (
+        api_client.get('/api/dandisets/').json() == expected_visible_pagination
+        if embargo_status == 'OPEN'
+        else expected_invisible_pagination
+    )
+
+    # The owner should always be able to access the dandiset
+    api_client.force_authenticate(user=owner)
+    assert (
+        api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
+        == expected_dandiset_serialization
+    )
+    assert api_client.get('/api/dandisets/').json() == expected_visible_pagination
 
 
 @pytest.mark.django_db
@@ -233,6 +334,7 @@ def test_dandiset_rest_create(api_client, user):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'contact_person': 'Doe, John',
+        'embargo_status': 'OPEN',
         'draft_version': {
             'version': 'draft',
             'name': name,
@@ -243,6 +345,7 @@ def test_dandiset_rest_create(api_client, user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'contact_person': 'Doe, John',
+                'embargo_status': 'OPEN',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
@@ -334,12 +437,14 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'contact_person': 'Doe, John',
+                'embargo_status': 'OPEN',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
         'contact_person': 'Doe, John',
+        'embargo_status': 'OPEN',
     }
 
     # Creating a Dandiset has side affects.
@@ -438,12 +543,14 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
                 'contact_person': 'Jane Doe',
+                'embargo_status': 'OPEN',
             },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
         'contact_person': 'Jane Doe',
+        'embargo_status': 'OPEN',
     }
 
     # Creating a Dandiset has side affects.

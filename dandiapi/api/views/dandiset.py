@@ -89,15 +89,17 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     lookup_url_kwarg = 'dandiset__pk'
 
     def get_queryset(self):
-        # TODO: This will filter the dandisets list if there is a query parameter user=me.
-        # This is not a great solution but it is needed for the My Dandisets page.
-        queryset = Dandiset.objects.all().order_by('created')
+        # Only include embargoed dandisets which belong to the current user
+        queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
         if self.action == 'list':
+            # TODO: This will filter the dandisets list if there is a query parameter user=me.
+            # This is not a great solution but it is needed for the My Dandisets page.
             user_kwarg = self.request.query_params.get('user', None)
             if user_kwarg == 'me':
+                # Replace the original, rather inefficient queryset with a more specific one
                 queryset = get_objects_for_user(
-                    self.request.user, 'owner', queryset, with_superuser=False
-                )
+                    self.request.user, 'owner', Dandiset, with_superuser=False
+                ).order_by('created')
             # Same deal for filtering out draft or empty dandisets
             show_draft = self.request.query_params.get('draft', 'true') == 'true'
             show_empty = self.request.query_params.get('empty', 'true') == 'true'
