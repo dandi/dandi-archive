@@ -79,7 +79,7 @@ class DashboardView(DashboardMixin, TemplateView):
 class UserDashboardView(DashboardMixin, FilterView):
     template_name = 'dashboard/users.html'
     filterset_class = UserStatusFilter
-    queryset = User.objects.filter(~Q(username='AnonymousUser')).order_by('date_joined')
+    queryset = User.objects.filter(~Q(username='AnonymousUser')).order_by('-date_joined')
 
 
 @require_http_methods(['GET', 'POST'])
