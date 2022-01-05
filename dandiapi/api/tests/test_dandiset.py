@@ -614,7 +614,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     metadata = {'foo': 'bar'}
 
     response = api_client.post(
-        '/api/dandisets/?embargo', {'name': name, 'metadata': metadata}, format='json'
+        '/api/dandisets/?embargo=true', {'name': name, 'metadata': metadata}, format='json'
     )
     assert response.data == {
         'identifier': DANDISET_ID_RE,

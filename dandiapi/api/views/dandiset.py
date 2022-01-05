@@ -27,6 +27,7 @@ from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
+    CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
     UserSerializer,
     VersionMetadataSerializer,
@@ -138,15 +139,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         return super().get_object()
 
     @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'embargo',
-                openapi.IN_QUERY,
-                type=openapi.TYPE_BOOLEAN,
-                description='If present, the dandiset will be embargoed.',
-            )
-        ],
         request_body=VersionMetadataSerializer(),
+        query_serializer=CreateDandisetQueryParameterSerializer(),
         responses={200: DandisetDetailSerializer()},
         operation_summary='Create a new dandiset.',
         operation_description='',
@@ -156,7 +150,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if request.query_params.get('embargo') is not None:
+        query_serializer = CreateDandisetQueryParameterSerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        if query_serializer.validated_data['embargo']:
             embargo_status = Dandiset.EmbargoStatus.EMBARGOED
         else:
             embargo_status = Dandiset.EmbargoStatus.OPEN
