@@ -177,6 +177,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     'includeInCitation': True,
                 },
             ],
+            # TODO: move this into dandischema
             'access': [
                 {
                     'schemaKey': 'AccessRequirements',
