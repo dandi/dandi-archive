@@ -8,8 +8,15 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.multipart import DandiMultipartManager
+from dandiapi.api.storage import (
+    get_embargo_storage,
+    get_embargo_storage_prefix,
+    get_storage,
+    get_storage_prefix,
+)
 
-from .asset import AssetBlob, get_asset_blob_prefix, get_asset_blob_storage
+from .asset import AssetBlob, EmbargoedAssetBlob
+from .dandiset import Dandiset
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -23,17 +30,15 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 
-class Upload(TimeStampedModel):
+class BaseUpload(TimeStampedModel):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
     class Meta:
         indexes = [models.Index(fields=['etag'])]
+        abstract = True
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
     upload_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
-    blob = models.FileField(
-        blank=True, storage=get_asset_blob_storage, upload_to=get_asset_blob_prefix
-    )
     etag = models.CharField(
         null=True,
         blank=True,
@@ -58,7 +63,7 @@ class Upload(TimeStampedModel):
         upload_id = uuid4()
         object_key = cls.object_key(upload_id)
         multipart_initialization = DandiMultipartManager.from_storage(
-            AssetBlob.blob.field.storage
+            cls.blob.field.storage
         ).initialize_upload(object_key, size)
 
         upload = cls(
@@ -99,6 +104,10 @@ class Upload(TimeStampedModel):
         else:
             raise ValueError(f'Unknown storage {self.blob.field.storage}')
 
+
+class Upload(BaseUpload):
+    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+
     def to_asset_blob(self) -> AssetBlob:
         """Convert this upload into an AssetBlob."""
         return AssetBlob(
@@ -106,4 +115,23 @@ class Upload(TimeStampedModel):
             blob=self.blob,
             etag=self.etag,
             size=self.size,
+        )
+
+
+class EmbargoedUpload(BaseUpload):
+    blob = models.FileField(
+        blank=True, storage=get_embargo_storage, upload_to=get_embargo_storage_prefix
+    )
+    dandiset = models.ForeignKey(
+        Dandiset, related_name='embargoed_uploads', on_delete=models.CASCADE
+    )
+
+    def to_embargoed_asset_blob(self) -> EmbargoedAssetBlob:
+        """Convert this upload into an AssetBlob."""
+        return EmbargoedAssetBlob(
+            blob_id=self.upload_id,
+            blob=self.blob,
+            etag=self.etag,
+            size=self.size,
+            dandiset=self.dandiset,
         )

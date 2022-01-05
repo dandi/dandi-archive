@@ -12,6 +12,8 @@ from dandiapi.api.models import (
     Asset,
     AssetBlob,
     Dandiset,
+    EmbargoedAssetBlob,
+    EmbargoedUpload,
     Upload,
     UserMetadata,
     Version,
@@ -149,6 +151,13 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         return len(self.blob.read())
 
 
+class EmbargoedAssetBlobFactory(AssetBlobFactory):
+    class Meta:
+        model = EmbargoedAssetBlob
+
+    dandiset = factory.SubFactory(DandisetFactory)
+
+
 class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
@@ -198,6 +207,13 @@ class UploadFactory(factory.django.DjangoModelFactory):
         h.update(self.blob.read())
         self.blob.seek(0)
         return h.hexdigest()
+
+
+class EmbargoedUploadFactory(UploadFactory):
+    class Meta:
+        model = EmbargoedUpload
+
+    dandiset = factory.SubFactory(DandisetFactory)
 
 
 class ZarrArchiveFactory(factory.django.DjangoModelFactory):
