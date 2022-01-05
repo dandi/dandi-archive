@@ -1,5 +1,5 @@
 import logging
-from typing import List, Union
+from typing import List, Optional, Union
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
