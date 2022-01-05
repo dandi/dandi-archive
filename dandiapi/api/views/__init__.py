@@ -2,6 +2,7 @@ from .asset import AssetViewSet, asset_download_view, asset_metadata_view
 from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .info import info_view
+from .root import root_content_view
 from .stats import stats_view
 from .upload import (
     blob_read_view,
@@ -32,4 +33,5 @@ __all__ = [
     'users_search_view',
     'stats_view',
     'info_view',
+    'root_content_view',
 ]

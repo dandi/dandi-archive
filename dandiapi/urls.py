@@ -19,6 +19,7 @@ from dandiapi.api.views import (
     blob_read_view,
     explore_zarr_archive,
     info_view,
+    root_content_view,
     stats_view,
     upload_complete_view,
     upload_initialize_view,
@@ -74,6 +75,7 @@ class DandisetIDConverter:
 
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
+    path('', root_content_view),
     path('api/', include(router.urls)),
     re_path(
         r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/$',
