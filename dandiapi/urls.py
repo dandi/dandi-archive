@@ -18,6 +18,7 @@ from dandiapi.api.views import (
     authorize_view,
     blob_read_view,
     info_view,
+    root_content_view,
     stats_view,
     upload_complete_view,
     upload_initialize_view,
@@ -25,7 +26,6 @@ from dandiapi.api.views import (
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
-    root_content_view,
 )
 
 router = ExtendedSimpleRouter()
