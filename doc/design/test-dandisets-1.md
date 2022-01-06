@@ -25,8 +25,9 @@ users are seeing when they visit the archive.
 
 To encourage the use of this feature, the dandiset creation screen would have a
 checkbox along with a description of what this is for ("If you are new to the
-archive and are just exploring, please select this option to avoid this dandiset
-from appearing in public searches.").
+archive and are just exploring, please consider using the staging server
+instead. Otherwise, select this option to avoid this dandiset from appearing in
+public searches.", with "staging server" linked thereto).
 
 ### Hide draft-only dandisets
 
