@@ -70,9 +70,11 @@ dandisets. Offering a delete button with the proper semantics could help here.
 The archive does not allow for deletion of *published* dandisets, by design. But
 dandisets that are draft-only should be deleteable.
 
-And, as en extension to that idea, dandisets that are published should be able
-to have their draft dandiset deleted (essentially "archiving" that dandiset, and
-closing it off to further updates).
+And, as en extension to that idea, a published dandiset should be able to be
+"sealed" by having its draft dandiset deleted, thus closing it off to further
+updates. This would serve as a signal that the dandiset is in its final state
+and has become a permanent member of the archive. Owners and admins will be able
+to "unseal" sealed dandisets in case further modification is needed.
 
 ### Approval and cleanup process for dandisets
 
