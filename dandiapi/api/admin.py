@@ -41,10 +41,6 @@ class DandisetAdmin(GuardedModelAdmin):
     inlines = [VersionInline]
 
 
-class AssetInline(LimitedTabularInline):
-    model = Asset.versions.through
-
-
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
     list_display = [
@@ -57,7 +53,6 @@ class VersionAdmin(admin.ModelAdmin):
         'created',
     ]
     list_display_links = ['id', 'version']
-    inlines = [AssetInline]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         # Using the `asset_count` property here results in N queries being made
