@@ -77,29 +77,29 @@ updates. This would serve as a signal that the dandiset is in its final state
 and has become a permanent member of the archive. Owners and admins will be able
 to "unseal" sealed dandisets in case further modification is needed.
 
-### Approval and cleanup process for dandisets
+### Delisting of inactive dandisets
 
-On a regular basis, collect dandisets that are assetless, draft-only, or
-otherwise seemingly invalid, and email the owners thereof. Inform them that the
-dandiset will be deleted in some reasonable amount of time unless they take
-specific actions, which could be something like:
-- delete the dandiset
-- add assets to the dandiset
-- respond to the email to explain why the dandiset is actually valid
+Dandisets in a certain set of conditions will be automatically "delisted",
+meaning they will not appear in listings or searches other than to the owners
+themselves. Additionally, a delisted dandiset will become read-only so that only
+actively listed dandisets can be used by their owners to store data.
 
-We would need to fine tune the criteria for "invalid". For example, adding
-assets to a dandiset is great, but if thereafter the dandiset does not get
-published in some timeframe (e.g., six months), then perhaps it is considered
-invalid again.
+Conditions for delisting can include the following:
+- draft-only and assetless for more than 7 days
+- draft-only and no activity for more than 14 days
+- published with no activity for more than 30 days (also see "sealing" above)
 
-The final action listed above would put the dandiset through a sort of
-pre-emptive approval process. If the owner explains that indeed they have
-collaborators, they are collecting data, etc., but it will take a while, the
-admins could put a timer on the dandiset for when to check in again, etc.
+Whenever a dandiset becomes inactive according to this definition, it will
+automatically become delisted, and an email will be sent to the owners to inform
+them thereof.
+
+To relist the dandiset, an owner or admin would log in, navigate to the DLP for
+that dandiset, and click on a "relist" button. After some number of relistings,
+the option to relist would become disabled, with a note directing them to
+contact the admins to discuss what's going on with the dandiset. This relist
+countdown can be waived if the owners resume intended usage of the archive to
+develop the dandiset, publish it, etc.
 
 This is just a sketch of how this feature might work. It is extremely complex,
-requiring policy, careful communication, and buy-in from the community. It would
-also take focused labor from the admin team, and there are risks associated with
-non-communicative dandiset owners who may become frustrated with having their
-dandisets deleted, etc. But on the plus side, it would also bring richness and
-value to the dandisets hosted on the archive.
+requiring policy, careful communication, and buy-in from the community, but
+would also bring richness and value to the dandisets hosted on the archive.
