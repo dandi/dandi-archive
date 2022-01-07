@@ -48,6 +48,11 @@ from dandiapi.api.views.serializers import (
 
 
 def _download_asset(asset: Asset):
+    if asset.is_zarr:
+        return HttpResponseRedirect(
+            reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
+        )
+
     storage = asset.blob.blob.storage
 
     if isinstance(storage, S3Boto3Storage):

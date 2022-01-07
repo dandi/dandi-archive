@@ -894,6 +894,21 @@ def test_asset_download(api_client, storage, version, asset):
 
 
 @pytest.mark.django_db
+def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
+    asset = asset_factory(blob=None, zarr=zarr_archive)
+    version.assets.add(asset)
+
+    response = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/download/'
+    )
+
+    assert response.status_code == 302
+    download_url = response.get('Location')
+    assert download_url == f'/api/zarr/{zarr_archive.zarr_id}.zarr/'
+
+
+@pytest.mark.django_db
 def test_asset_direct_download(api_client, storage, version, asset):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -914,6 +929,18 @@ def test_asset_direct_download(api_client, storage, version, asset):
 
     with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
+
+
+@pytest.mark.django_db
+def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_archive):
+    asset = asset_factory(blob=None, zarr=zarr_archive)
+    version.assets.add(asset)
+
+    response = api_client.get(f'/api/assets/{asset.asset_id}/download/')
+
+    assert response.status_code == 302
+    download_url = response.get('Location')
+    assert download_url == f'/api/zarr/{zarr_archive.zarr_id}.zarr/'
 
 
 @pytest.mark.django_db
