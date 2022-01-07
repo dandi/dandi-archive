@@ -74,6 +74,7 @@
           id="view-data"
           outlined
           block
+          :disabled="currentDandiset.dandiset.embargo_status === 'UNEMBARGOING'"
           :to="fileBrowserLink"
         >
           <v-icon

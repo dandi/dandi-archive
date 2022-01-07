@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="currentDandiset.dandiset.embargo_status !== 'UNEMBARGOING'">
     <v-progress-linear
       v-if="!currentDandiset"
       indeterminate

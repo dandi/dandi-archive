@@ -4,9 +4,15 @@
     <DandisetOwners
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
-    <DandisetPublish
-      :user-can-modify-dandiset="userCanModifyDandiset"
-    />
+
+    <div v-if="currentDandiset.dandiset.embargo_status === 'OPEN'">
+      <DandisetPublish
+        :user-can-modify-dandiset="userCanModifyDandiset"
+      />
+    </div>
+    <div v-else>
+      <DandisetUnembargo />
+    </div>
   </div>
 </template>
 
@@ -21,6 +27,7 @@ import { Version } from '@/types';
 import DandisetActions from './DandisetActions.vue';
 import DandisetOwners from './DandisetOwners.vue';
 import DandisetPublish from './DandisetPublish.vue';
+import DandisetUnembargo from './DandisetUnembargo.vue';
 
 export default defineComponent({
   name: 'DandisetSidebar',
@@ -28,6 +35,7 @@ export default defineComponent({
     DandisetActions,
     DandisetOwners,
     DandisetPublish,
+    DandisetUnembargo,
   },
   props: {
     userCanModifyDandiset: {
