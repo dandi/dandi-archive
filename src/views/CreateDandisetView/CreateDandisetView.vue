@@ -24,55 +24,58 @@
           outlined
           class="my-4"
         />
-        <v-checkbox
-          v-model="embargoed"
-          hide-details
-          class="shrink mr-2 mt-0"
-        >
-          <template #label>
-            Embargo this dataset
-            <v-tooltip
-              right
-              max-width="25%"
-            >
-              <template #activator="{ on, attrs }">
-                <div
-                  v-bind="attrs"
-                  style="cursor: help"
-                  v-on="on"
-                >
-                  <small class="ml-3 d-flex align-center">
-                    (What is this?)
-                    <v-icon small>
-                      mdi-information
-                    </v-icon>
-                  </small>
-                </div>
-              </template>
-              <span>
-                Embargoed datasets are hidden from public access until a specific time period has
-                elapsed. Uploading data to the DANDI archive under embargo requires a relevant
-                NIH award number, and the data will be automatically published when the embargo
-                period expires.
-              </span>
-            </v-tooltip>
-          </template>
-        </v-checkbox>
-        <v-text-field
-          v-if="embargoed"
-          v-model="awardNumber"
-          label="Award number*"
-          hint="Provide an NIH award number for this embargoed dataset.
+        <!-- TODO: remove v-if to enable embargoed dandiset creation -->
+        <div v-if="false">
+          <v-checkbox
+            v-model="embargoed"
+            hide-details
+            class="shrink mr-2 mt-0"
+          >
+            <template #label>
+              Embargo this dataset
+              <v-tooltip
+                right
+                max-width="25%"
+              >
+                <template #activator="{ on, attrs }">
+                  <div
+                    v-bind="attrs"
+                    style="cursor: help"
+                    v-on="on"
+                  >
+                    <small class="ml-3 d-flex align-center">
+                      (What is this?)
+                      <v-icon small>
+                        mdi-information
+                      </v-icon>
+                    </small>
+                  </div>
+                </template>
+                <span>
+                  Embargoed datasets are hidden from public access until a specific time period has
+                  elapsed. Uploading data to the DANDI archive under embargo requires a relevant
+                  NIH award number, and the data will be automatically published when the embargo
+                  period expires.
+                </span>
+              </v-tooltip>
+            </template>
+          </v-checkbox>
+          <v-text-field
+            v-if="embargoed"
+            v-model="awardNumber"
+            label="Award number*"
+            hint="Provide an NIH award number for this embargoed dataset.
                 Note: this can be changed at any time and additional award
                 numbers can be added later."
-          persistent-hint
-          :counter="120"
-          :required="embargoed"
-          outlined
-          class="mt-4 shrink"
-          style="width: 20vw;"
-          :rules="awardNumberRules"
-        />
+            persistent-hint
+            :counter="120"
+            :required="embargoed"
+            outlined
+            class="mt-4 shrink"
+            style="width: 20vw;"
+            :rules="awardNumberRules"
+          />
+        </div>
         <small class="float-right font-weight-bold">*indicates required field</small>
       </v-form>
     </v-card-text>
