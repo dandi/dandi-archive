@@ -13,9 +13,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     services:
       postgres:
         image: postgres:latest
@@ -68,9 +65,11 @@ jobs:
       - name: Install web app
         if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --prefer-offline
+        working-directory: web
 
       - name: Lint web app
         run: yarn run lint --no-fix --max-warnings=0
+        working-directory: web
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -84,24 +83,22 @@ jobs:
         id: pip-cache
         with:
           path: ${{ env.pythonLocation}}/lib/python3.8/site-packages/*
-          key: ${{ env.pythonLocation }}-${{ hashFiles('dandi-api/requirements.txt') }}-${{ hashFiles('dandi-api/setup.py') }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
 
       - name: Install dandi-api dependencies
         if: steps.pip-cache.outputs.cache-hit != 'true'
         run: pip install --upgrade --upgrade-strategy eager -e .[dev]
-        working-directory: ..
 
       - name: Apply migrations to API server
         run: python manage.py migrate
-        working-directory: ..
 
       - name: Install E2E tests
         run: yarn install --frozen-lockfile
-        working-directory: test
+        working-directory: web/test
 
       - name: Lint E2E tests
         run: yarn run lint --no-fix --max-warnings=0
-        working-directory: test
+        working-directory: web/test
 
       - name: Run E2E tests
         run: |
@@ -116,4 +113,4 @@ jobs:
 
           # run the E2E tests
           yarn run test
-        working-directory: test
+        working-directory: web/test
