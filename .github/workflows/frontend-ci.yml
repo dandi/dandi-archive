@@ -1,14 +1,21 @@
-name: ci
+name: CI for front end
 on:
   pull_request:
+    paths:
+      - "web/**"
   push:
     branches:
       - master
+    paths:
+      - "web/**"
   schedule:
     - cron: "0 0 * * *"
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
     services:
       postgres:
         image: postgres:latest
