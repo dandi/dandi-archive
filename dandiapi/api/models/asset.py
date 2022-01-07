@@ -192,6 +192,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
                 'https://raw.githubusercontent.com/dandi/schema/master/releases/'
                 f'{schema_version}/context.json'
             )
+        if self.is_zarr:
+            metadata['encodingFormat'] = 'application/x-zarr'
         return metadata
 
     def published_metadata(self):

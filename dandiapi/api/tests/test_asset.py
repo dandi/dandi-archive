@@ -253,6 +253,35 @@ def test_asset_populate_metadata(draft_asset_factory):
     }
 
 
+@pytest.mark.django_db
+def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
+    raw_metadata = {
+        'foo': 'bar',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+    }
+
+    # This should trigger _populate_metadata to inject all the computed metadata fields
+    asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
+
+    download_url = 'https://api.dandiarchive.org' + reverse(
+        'asset-direct-download',
+        kwargs={'asset_id': str(asset.asset_id)},
+    )
+    blob_url = asset.zarr.s3_path('')
+    assert asset.metadata == {
+        **raw_metadata,
+        'id': f'dandiasset:{asset.asset_id}',
+        'path': asset.path,
+        'identifier': str(asset.asset_id),
+        'contentUrl': [download_url, blob_url],
+        'contentSize': asset.size,
+        'digest': asset.digest,
+        # This should be injected on all zarr assets
+        'encodingFormat': 'application/x-zarr',
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+    }
+
+
 # API Tests
 
 
@@ -422,7 +451,7 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     path = 'test/create/asset.txt'
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
@@ -467,7 +496,7 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     path = 'test/create/asset.txt'
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
@@ -492,7 +521,7 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
     path = 'test/create/asset.txt'
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
@@ -667,7 +696,7 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': new_path,
         'foo': 'bar',
         'num': 123,
