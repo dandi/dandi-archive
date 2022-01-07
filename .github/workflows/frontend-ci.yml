@@ -80,9 +80,6 @@ jobs:
       - name: Install latest version of pip
         run: pip install --upgrade pip
 
-      - name: Clone dandi-api
-        run: git clone https://github.com/dandi/dandi-api.git
-
       - uses: actions/cache@master
         id: pip-cache
         with:
@@ -91,11 +88,12 @@ jobs:
 
       - name: Install dandi-api dependencies
         if: steps.pip-cache.outputs.cache-hit != 'true'
-        run: pip install --upgrade --upgrade-strategy eager ./dandi-api[dev]
+        run: pip install --upgrade --upgrade-strategy eager .[dev]
+        working-directory: ..
 
       - name: Apply migrations to API server
         run: python manage.py migrate
-        working-directory: dandi-api
+        working-directory: ..
 
       - name: Install E2E tests
         run: yarn install --frozen-lockfile
@@ -114,7 +112,7 @@ jobs:
           done
 
           # start the dandi-api server
-          python ../dandi-api/manage.py runserver &
+          python ../../manage.py runserver &
 
           # run the E2E tests
           yarn run test
