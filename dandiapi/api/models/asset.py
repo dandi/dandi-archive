@@ -175,7 +175,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         if self.is_blob:
             s3_url = self.blob.s3_url
         else:
-            s3_url = self.zarr.s3_path('')
+            s3_url = self.zarr.s3_url
 
         metadata = {
             **self.metadata,
