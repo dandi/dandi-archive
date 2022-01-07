@@ -142,7 +142,7 @@ const dandiRest = new Vue({
         throw error;
       }
     },
-    async specificVersion(identifier: string, version: string) {
+    async specificVersion(identifier: string, version: string): Promise<Version | null> {
       try {
         const { data } = await client.get(`dandisets/${identifier}/versions/${version}/info/`);
         return data;
@@ -211,6 +211,10 @@ const dandiRest = new Vue({
     async publish(identifier: string): Promise<Version> {
       const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`);
       return data;
+    },
+    async unembargo(identifier: string) {
+      // TODO: implement this once the server endpoint is available
+      return identifier;
     },
     async info(): Promise<Info> {
       const { data } = await client.get('info/');
