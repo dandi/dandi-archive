@@ -173,6 +173,7 @@ class ZarrArchive(TimeStampedModel):
     @property
     def s3_url(self):
         signed_url = ZarrUploadFile.blob.field.storage.url(self.s3_path(''))
+        # Strip off the query parameters from the presigning, as they are different every time
         parsed = urlparse(signed_url)
         s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
         return s3_url

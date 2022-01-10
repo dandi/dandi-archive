@@ -40,6 +40,7 @@ def s3_url(path: str):
     """Turn an object path into a fully qualified S3 URL."""
     storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
     signed_url = storage.url(path)
+    # Strip off the query parameters from the presigning, as they are different every time
     parsed = urlparse(signed_url)
     s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
     return s3_url
