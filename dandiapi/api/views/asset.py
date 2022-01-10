@@ -48,6 +48,11 @@ from dandiapi.api.views.serializers import (
 
 
 def _download_asset(asset: Asset):
+    if asset.is_zarr:
+        return HttpResponseRedirect(
+            reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
+        )
+
     storage = asset.blob.blob.storage
 
     if isinstance(storage, S3Boto3Storage):
@@ -176,6 +181,13 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(versions__dandiset__in=Dandiset.objects.visible_to(self.request.user))
+        )
 
     @swagger_auto_schema(
         responses={
