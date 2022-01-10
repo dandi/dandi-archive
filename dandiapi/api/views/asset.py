@@ -195,6 +195,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         return Response(asset.metadata, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        responses={200: AssetDetailSerializer()},
+    )
+    @action(detail=True, methods=['GET'])
+    def info(self, request, **kwargs):
+        """Django serialization of an asset."""
+        asset = self.get_object()
+        serializer = AssetDetailSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
         responses={200: AssetValidationSerializer()},
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         operation_summary='Get any validation errors associated with an asset',

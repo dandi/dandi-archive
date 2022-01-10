@@ -344,6 +344,25 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
 
 
 @pytest.mark.django_db
+def test_asset_rest_info(api_client, version, asset):
+    version.assets.add(asset)
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/info/'
+    ).json() == {
+        'asset_id': str(asset.asset_id),
+        'blob': str(asset.blob.blob_id),
+        'zarr': None,
+        'path': asset.path,
+        'size': asset.size,
+        'metadata': asset.metadata,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+    }
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'status,validation_error',
     [
