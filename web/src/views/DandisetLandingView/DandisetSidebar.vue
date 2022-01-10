@@ -5,7 +5,7 @@
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
 
-    <div v-if="currentDandiset.dandiset.embargo_status === 'OPEN'">
+    <div v-if="true">
       <DandisetPublish
         :user-can-modify-dandiset="userCanModifyDandiset"
       />
