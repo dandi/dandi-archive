@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 from django.conf import settings
@@ -168,6 +169,14 @@ class ZarrArchive(TimeStampedModel):
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
         return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{str(zarr_path)}'  # noqa: E501
+
+    @property
+    def s3_url(self):
+        signed_url = ZarrUploadFile.blob.field.storage.url(self.s3_path(''))
+        # Strip off the query parameters from the presigning, as they are different every time
+        parsed = urlparse(signed_url)
+        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+        return s3_url
 
     def get_checksum(self, path: str | Path = ''):
         listing = ZarrChecksumFileUpdater(self, path).read_checksum_file()
