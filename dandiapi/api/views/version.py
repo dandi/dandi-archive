@@ -20,6 +20,8 @@ from dandiapi.api.views.serializers import (
 
 
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
+    queryset = Version.objects.all().select_related('dandiset').order_by('created')
+
     permission_classes = [IsApprovedOrReadOnly]
     serializer_class = VersionSerializer
     serializer_detail_class = VersionDetailSerializer
@@ -30,10 +32,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
     def get_queryset(self):
         return (
-            Version.objects.all()
-            .select_related('dandiset')
+            super()
+            .get_queryset()
             .filter(dandiset__in=Dandiset.objects.visible_to(self.request.user))
-            .order_by('created')
         )
 
     @swagger_auto_schema(
