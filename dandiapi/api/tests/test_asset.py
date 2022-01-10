@@ -286,8 +286,11 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
 
 
 @pytest.mark.django_db
-def test_asset_rest_list(api_client, version, asset):
+def test_asset_rest_list(api_client, version, asset, asset_factory):
     version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
@@ -344,8 +347,11 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
 
 
 @pytest.mark.django_db
-def test_asset_rest_retrieve(api_client, version, asset):
+def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
     version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
 
     assert (
         api_client.get(
@@ -370,6 +376,25 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
         ).data
         == asset.metadata
     )
+
+
+@pytest.mark.django_db
+def test_asset_rest_info(api_client, version, asset):
+    version.assets.add(asset)
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/info/'
+    ).json() == {
+        'asset_id': str(asset.asset_id),
+        'blob': str(asset.blob.blob_id),
+        'zarr': None,
+        'path': asset.path,
+        'size': asset.size,
+        'metadata': asset.metadata,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+    }
 
 
 @pytest.mark.django_db
@@ -969,6 +994,20 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
     assert json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.metadata
+
+
+@pytest.mark.django_db
+def test_asset_direct_info(api_client, asset):
+    assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
+        'asset_id': str(asset.asset_id),
+        'blob': str(asset.blob.blob_id),
+        'zarr': None,
+        'path': asset.path,
+        'size': asset.size,
+        'metadata': asset.metadata,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+    }
 
 
 @pytest.mark.parametrize(
