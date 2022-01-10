@@ -52,6 +52,10 @@ class DandisetSerializer(serializers.ModelSerializer):
         return extract_contact_person(latest_version)
 
 
+class CreateDandisetQueryParameterSerializer(serializers.Serializer):
+    embargo = serializers.BooleanField(required=False)
+
+
 class VersionMetadataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version

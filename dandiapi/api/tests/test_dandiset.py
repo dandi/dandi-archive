@@ -605,6 +605,96 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_create_embargoed(api_client, user):
+    user.first_name = 'John'
+    user.last_name = 'Doe'
+    user.save()
+    api_client.force_authenticate(user=user)
+    name = 'Test Dandiset'
+    metadata = {'foo': 'bar'}
+
+    response = api_client.post(
+        '/api/dandisets/?embargo=true', {'name': name, 'metadata': metadata}, format='json'
+    )
+    assert response.data == {
+        'identifier': DANDISET_ID_RE,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'contact_person': 'Doe, John',
+        'embargo_status': 'EMBARGOED',
+        'draft_version': {
+            'version': 'draft',
+            'name': name,
+            'asset_count': 0,
+            'size': 0,
+            'dandiset': {
+                'identifier': DANDISET_ID_RE,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+                'contact_person': 'Doe, John',
+                'embargo_status': 'EMBARGOED',
+            },
+            'status': 'Pending',
+            'created': TIMESTAMP_RE,
+            'modified': TIMESTAMP_RE,
+        },
+        'most_recent_published_version': None,
+    }
+    id = int(response.data['identifier'])
+
+    # Creating a Dandiset has side affects.
+    # Verify that the user is the only owner.
+    dandiset = Dandiset.objects.get(id=id)
+    assert list(dandiset.owners.all()) == [user]
+
+    # Verify that a draft Version and VersionMetadata were also created.
+    assert dandiset.versions.count() == 1
+    assert dandiset.most_recent_published_version is None
+    assert dandiset.draft_version.version == 'draft'
+    assert dandiset.draft_version.name == name
+    assert dandiset.draft_version.status == Version.Status.PENDING
+
+    # Verify that computed metadata was injected
+    year = datetime.now().year
+    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
+    assert dandiset.draft_version.metadata == {
+        **metadata,
+        'manifestLocation': [
+            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+        ],
+        'name': name,
+        'identifier': DANDISET_SCHEMA_ID_RE,
+        'id': f'DANDI:{dandiset.identifier}/draft',
+        'version': 'draft',
+        'url': url,
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'citation': (
+            f'{user.last_name}, {user.first_name} ({year}) {name} '
+            f'(Version draft) [Data set]. DANDI archive. {url}'
+        ),
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'schemaKey': 'Dandiset',
+        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:EmbargoedAccess'}],
+        'repository': 'https://dandiarchive.org/',
+        'contributor': [
+            {
+                'name': 'Doe, John',
+                'email': user.email,
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+                'affiliation': [],
+                'includeInCitation': True,
+            }
+        ],
+        'assetsSummary': {
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+        },
+    }
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user, dandiset):
     api_client.force_authenticate(user=admin_user)
     name = 'Test Dandiset'

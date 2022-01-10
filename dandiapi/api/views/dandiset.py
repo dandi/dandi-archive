@@ -16,6 +16,7 @@ from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -25,6 +26,7 @@ from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
+    CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
     UserSerializer,
     VersionMetadataSerializer,
@@ -137,14 +139,22 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
+        query_serializer=CreateDandisetQueryParameterSerializer(),
         responses={200: DandisetDetailSerializer()},
         operation_summary='Create a new dandiset.',
         operation_description='',
     )
-    def create(self, request):
+    def create(self, request: Request):
         """Create a new dandiset."""
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        query_serializer = CreateDandisetQueryParameterSerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        if query_serializer.validated_data['embargo']:
+            embargo_status = Dandiset.EmbargoStatus.EMBARGOED
+        else:
+            embargo_status = Dandiset.EmbargoStatus.OPEN
 
         name = serializer.validated_data['name']
         metadata = serializer.validated_data['metadata']
@@ -166,6 +176,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     'includeInCitation': True,
                 },
             ],
+            # TODO: move this into dandischema
+            'access': [
+                {
+                    'schemaKey': 'AccessRequirements',
+                    'status': 'dandi:OpenAccess'
+                    if embargo_status == Dandiset.EmbargoStatus.OPEN
+                    else 'dandi:EmbargoedAccess',
+                }
+            ],
             **metadata,
         }
         # Run the metadata through the pydantic model to automatically include any boilerplate
@@ -183,11 +202,11 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             if identifier.startswith('DANDI:'):
                 identifier = identifier[6:]
             try:
-                dandiset = Dandiset(id=int(identifier))
+                dandiset = Dandiset(id=int(identifier), embargo_status=embargo_status)
             except ValueError:
                 return Response(f'Invalid Identifier {identifier}', status=400)
         else:
-            dandiset = Dandiset()
+            dandiset = Dandiset(embargo_status=embargo_status)
         try:
             # Without force_insert, Django will try to UPDATE an existing dandiset if one exists.
             # We want to throw an error if a dandiset already exists.
