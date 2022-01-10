@@ -69,7 +69,7 @@ def test_blob_read_does_not_exist(api_client):
 
 
 @pytest.mark.django_db
-def test_upload_initialize(api_client, user):
+def test_upload_initialize(api_client, user, dandiset):
     api_client.force_authenticate(user=user)
 
     content_size = 123
@@ -79,6 +79,7 @@ def test_upload_initialize(api_client, user):
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -101,7 +102,7 @@ def test_upload_initialize(api_client, user):
 
 
 @pytest.mark.django_db
-def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
+def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset_blob):
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(
@@ -109,6 +110,7 @@ def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
         {
             'contentSize': asset_blob.size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -131,7 +133,7 @@ def test_upload_initialize_embargo(api_client, user, dandiset_factory):
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'embargoed_dandiset': dandiset.identifier,
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -192,7 +194,7 @@ def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_facto
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'embargoed_dandiset': dandiset.identifier,
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -216,7 +218,7 @@ def test_upload_initialize_embargo_existing_asset_blob(
         {
             'contentSize': asset_blob.size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
-            'embargoed_dandiset': dandiset.identifier,
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -241,7 +243,7 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
         {
             'contentSize': embargoed_asset_blob.size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': embargoed_asset_blob.etag},
-            'embargoed_dandiset': dandiset.identifier,
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -269,7 +271,7 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob_in_different_da
         {
             'contentSize': embargoed_asset_blob.size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': embargoed_asset_blob.etag},
-            'embargoed_dandiset': dandiset.identifier,
+            'dandiset': dandiset.identifier,
         },
         format='json',
     )
@@ -364,7 +366,7 @@ def test_upload_complete_unauthorized(api_client, upload):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_upload_initialize_and_complete(api_client, user, content_size):
+def test_upload_initialize_and_complete(api_client, user, dandiset, content_size):
     api_client.force_authenticate(user=user)
 
     # Get the presigned upload URL
@@ -373,6 +375,7 @@ def test_upload_initialize_and_complete(api_client, user, content_size):
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'dandiset': dandiset.identifier,
         },
         format='json',
     ).data
@@ -420,7 +423,7 @@ def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_facto
         {
             'contentSize': content_size,
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'embargoed_dandiset': dandiset.identifier,
+            'dandiset': dandiset.identifier,
         },
         format='json',
     ).data
