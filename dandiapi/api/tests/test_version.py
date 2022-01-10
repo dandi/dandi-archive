@@ -318,7 +318,10 @@ def test_version_publish_version(draft_version, asset):
 
 
 @pytest.mark.django_db
-def test_version_rest_list(api_client, version):
+def test_version_rest_list(api_client, version, draft_version_factory):
+    # Create an extra version so that there are multiple versions to filter down
+    draft_version_factory()
+
     assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
         'count': 1,
         'next': None,
@@ -345,7 +348,10 @@ def test_version_rest_list(api_client, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_retrieve(api_client, version):
+def test_version_rest_retrieve(api_client, version, draft_version_factory):
+    # Create an extra version so that there are multiple versions to filter down
+    draft_version_factory()
+
     assert (
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'

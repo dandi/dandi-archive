@@ -286,8 +286,11 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
 
 
 @pytest.mark.django_db
-def test_asset_rest_list(api_client, version, asset):
+def test_asset_rest_list(api_client, version, asset, asset_factory):
     version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
@@ -344,8 +347,11 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
 
 
 @pytest.mark.django_db
-def test_asset_rest_retrieve(api_client, version, asset):
+def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
     version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
 
     assert (
         api_client.get(
