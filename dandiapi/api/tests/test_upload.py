@@ -158,30 +158,6 @@ def test_upload_initialize_embargo(api_client, user, dandiset_factory):
 
 
 @pytest.mark.django_db
-def test_upload_initialize_embargo_unembargoed_dandiset(api_client, user, dandiset_factory):
-    api_client.force_authenticate(user=user)
-    # The dandiset is not embargoed, so you aren't allowed to set it as the embargoed_dandiset
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
-    assign_perm('owner', user, dandiset)
-
-    content_size = 123
-
-    resp = api_client.post(
-        '/api/uploads/initialize/',
-        {
-            'contentSize': content_size,
-            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
-            'embargoed_dandiset': dandiset.identifier,
-        },
-        format='json',
-    )
-    assert resp.status_code == 404
-    assert resp.json() == {'detail': 'Not found.'}
-    assert not Upload.objects.all().exists()
-    assert not EmbargoedUpload.objects.all().exists()
-
-
-@pytest.mark.django_db
 def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_factory):
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
