@@ -934,6 +934,20 @@ def test_asset_direct_metadata(api_client, asset):
     assert json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.metadata
 
 
+@pytest.mark.django_db
+def test_asset_direct_info(api_client, asset):
+    assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
+        'asset_id': str(asset.asset_id),
+        'blob': str(asset.blob.blob_id),
+        'zarr': None,
+        'path': asset.path,
+        'size': asset.size,
+        'metadata': asset.metadata,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+    }
+
+
 @pytest.mark.parametrize(
     ('embargo_status'),
     [

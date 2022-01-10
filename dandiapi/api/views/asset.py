@@ -148,6 +148,18 @@ def asset_metadata_view(request, asset_id):
     return JsonResponse(asset.metadata)
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_summary='Django serialization of an asset',
+    manual_parameters=[ASSET_ID_PARAM],
+)
+@api_view(['GET', 'HEAD'])
+def asset_info_view(request, asset_id):
+    asset = get_object_or_404(Asset, asset_id=asset_id)
+    serializer = AssetDetailSerializer(instance=asset)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class AssetRequestSerializer(serializers.Serializer):
     metadata = serializers.JSONField()
     blob_id = serializers.UUIDField(required=False)
