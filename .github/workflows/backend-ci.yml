@@ -1,11 +1,13 @@
 name: CI for backend
 on:
   pull_request:
-    paths-ignore: "web/**"
+    paths-ignore:
+      - "web/**"
   push:
     branches:
       - master
-    paths-ignore: "web/**"
+    paths-ignore:
+      - "web/**"
   schedule:
     - cron: "0 0 * * *"
 jobs:
