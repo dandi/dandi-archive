@@ -31,7 +31,7 @@ class DigestSerializer(serializers.Serializer):
 class UploadInitializationRequestSerializer(serializers.Serializer):
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
     digest = DigestSerializer()
-    embargoed_dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX, required=False)
+    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -123,22 +123,17 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
-    embargoed_dandiset_id = request_serializer.validated_data.get('embargoed_dandiset')
-    if embargoed_dandiset_id is None:
-        embargoed_dandiset = None
-        logging.info('Starting upload initialization of size %s, ETag %s', content_size, etag)
-    else:
-        embargoed_dandiset = get_object_or_404(
-            Dandiset.objects.visible_to(request.user),
-            embargo_status=Dandiset.EmbargoStatus.EMBARGOED,
-            id=embargoed_dandiset_id,
-        )
-        logging.info(
-            'Starting upload initialization of size %s, ETag %s to embargoed dandiset %s',
-            content_size,
-            etag,
-            embargoed_dandiset,
-        )
+    dandiset_id = request_serializer.validated_data['dandiset']
+    dandiset = get_object_or_404(
+        Dandiset.objects.visible_to(request.user),
+        id=dandiset_id,
+    )
+    logging.info(
+        'Starting upload initialization of size %s, ETag %s to dandiset %s',
+        content_size,
+        etag,
+        dandiset,
+    )
 
     asset_blobs = AssetBlob.objects.filter(etag=etag)
     if asset_blobs.exists():
@@ -147,10 +142,8 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             status=status.HTTP_409_CONFLICT,
             headers={'Location': asset_blobs.first().blob_id},
         )
-    elif embargoed_dandiset is not None:
-        embargoed_asset_blobs = EmbargoedAssetBlob.objects.filter(
-            dandiset=embargoed_dandiset, etag=etag
-        )
+    elif dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+        embargoed_asset_blobs = EmbargoedAssetBlob.objects.filter(dandiset=dandiset, etag=etag)
         if embargoed_asset_blobs.exists():
             return Response(
                 'Blob already exists.',
@@ -159,11 +152,11 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             )
     logging.info('Blob with ETag %s does not yet exist', etag)
 
-    if embargoed_dandiset is None:
+    if dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
         upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
     else:
         upload, initialization = EmbargoedUpload.initialize_multipart_upload(
-            etag, content_size, dandiset=embargoed_dandiset
+            etag, content_size, dandiset=dandiset
         )
     logging.info('Upload of ETag %s initialized', etag)
     upload.save()
