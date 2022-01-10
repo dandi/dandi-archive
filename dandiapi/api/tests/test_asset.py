@@ -267,7 +267,7 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
         'asset-direct-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
-    s3_url = f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/'  # noqa: E501
+    s3_url = f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/'  # noqa: E501
     assert asset.metadata == {
         **raw_metadata,
         'id': f'dandiasset:{asset.asset_id}',
