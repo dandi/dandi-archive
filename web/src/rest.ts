@@ -6,6 +6,10 @@ import {
 } from '@/types';
 import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 
+if (!process.env.VUE_APP_DANDI_API_ROOT) {
+  throw new Error('Environment variable "VUE_APP_DANDI_API_ROOT" must be set.');
+}
+
 // Ensure contains trailing slash
 const dandiApiRoot = process.env.VUE_APP_DANDI_API_ROOT.endsWith('/')
   ? process.env.VUE_APP_DANDI_API_ROOT
@@ -13,12 +17,14 @@ const dandiApiRoot = process.env.VUE_APP_DANDI_API_ROOT.endsWith('/')
 
 const client = axios.create({ baseURL: dandiApiRoot });
 
-let oauthClient: OAuthClient|null;
+let oauthClient: OAuthClient|null = null;
 try {
-  oauthClient = new OAuthClient(
-    process.env.VUE_APP_OAUTH_API_ROOT,
-    process.env.VUE_APP_OAUTH_CLIENT_ID,
-  );
+  if (process.env.VUE_APP_OAUTH_API_ROOT && process.env.VUE_APP_OAUTH_CLIENT_ID) {
+    oauthClient = new OAuthClient(
+      process.env.VUE_APP_OAUTH_API_ROOT,
+      process.env.VUE_APP_OAUTH_CLIENT_ID,
+    );
+  }
 } catch (e) {
   oauthClient = null;
 }
