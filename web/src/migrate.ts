@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const axios = require('axios');
+// eslint-disable-next-line import/no-extraneous-dependencies
 const { compile } = require('json-schema-to-typescript');
 
 /**
@@ -12,7 +13,7 @@ const { compile } = require('json-schema-to-typescript');
  *
  * @param {string} version
  */
-async function migrate(version) {
+async function migrate(version: string) {
   const schemaUrl = `https://raw.githubusercontent.com/dandi/schema/master/releases/${version}/dandiset.json`;
 
   let data;
