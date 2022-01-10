@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
-    paths-ignore: "web/**"
+    paths-ignore:
+      - "web/**"
   pull_request:
-    paths-ignore: "web/**"
+    paths-ignore:
+      - "web/**"
 
 jobs:
   build-image:
