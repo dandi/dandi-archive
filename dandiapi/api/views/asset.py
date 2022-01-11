@@ -199,6 +199,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             super()
             .get_queryset()
             .filter(versions__dandiset__in=Dandiset.objects.visible_to(self.request.user))
+            .distinct()
         )
 
     @swagger_auto_schema(
