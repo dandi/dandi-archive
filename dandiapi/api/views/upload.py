@@ -153,10 +153,10 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     logging.info('Blob with ETag %s does not yet exist', etag)
 
     if dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
-        upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
+        upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
     else:
         upload, initialization = EmbargoedUpload.initialize_multipart_upload(
-            etag, content_size, dandiset=dandiset
+            etag, content_size, dandiset
         )
     logging.info('Upload of ETag %s initialized', etag)
     upload.save()

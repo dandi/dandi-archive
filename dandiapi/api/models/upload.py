@@ -52,13 +52,13 @@ class BaseUpload(TimeStampedModel):
     size = models.PositiveBigIntegerField()
 
     @abstractclassmethod
-    def object_key(cls, upload_id, **kwargs):  # noqa: N805
+    def object_key(cls, upload_id, dandiset: Dandiset):  # noqa: N805
         pass
 
     @classmethod
-    def initialize_multipart_upload(cls, etag, size, **kwargs):
+    def initialize_multipart_upload(cls, etag, size, dandiset: Dandiset):
         upload_id = uuid4()
-        object_key = cls.object_key(upload_id, **kwargs)
+        object_key = cls.object_key(upload_id, dandiset)
         multipart_initialization = DandiMultipartManager.from_storage(
             cls.blob.field.storage
         ).initialize_upload(object_key, size)
@@ -68,8 +68,8 @@ class BaseUpload(TimeStampedModel):
             blob=object_key,
             etag=etag,
             size=size,
+            dandiset=dandiset,
             multipart_upload_id=multipart_initialization.upload_id,
-            **kwargs,
         )
 
         return upload, {'upload_id': upload.upload_id, 'parts': multipart_initialization.parts}
@@ -108,13 +108,11 @@ class Upload(BaseUpload):
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
     @classmethod
-    def object_key(cls, upload_id, **kwargs):
+    def object_key(cls, upload_id, dandiset: Dandiset):
         upload_id = str(upload_id)
-        dandiset_identifier = kwargs.get('dandiset')
-        dandiset_prefix = f'{dandiset_identifier}/' if dandiset_identifier is not None else ''
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'{dandiset_prefix}'
+            f'{dandiset.identifier}/'
             f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
         )
 
@@ -137,13 +135,11 @@ class EmbargoedUpload(BaseUpload):
     )
 
     @classmethod
-    def object_key(cls, upload_id, **kwargs):
+    def object_key(cls, upload_id, dandiset: Dandiset):
         upload_id = str(upload_id)
-        dandiset_identifier = kwargs.get('dandiset')
-        dandiset_prefix = f'{dandiset_identifier}/' if dandiset_identifier is not None else ''
         return (
             f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}'
-            f'{dandiset_prefix}'
+            f'{dandiset.identifier}/'
             f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
         )
 
