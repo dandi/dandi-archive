@@ -53,7 +53,7 @@ class BaseUpload(TimeStampedModel):
 
     @abstractclassmethod
     def object_key(cls, upload_id, **kwargs):  # noqa: N805
-        ...
+        pass
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size, **kwargs):
