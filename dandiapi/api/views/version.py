@@ -35,6 +35,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             super()
             .get_queryset()
             .filter(dandiset__in=Dandiset.objects.visible_to(self.request.user))
+            .distinct()
         )
 
     @swagger_auto_schema(
