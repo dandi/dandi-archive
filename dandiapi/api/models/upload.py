@@ -112,7 +112,6 @@ class Upload(BaseUpload):
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-            f'{dandiset.identifier}/'
             f'blobs/{upload_id[0:3]}/{upload_id[3:6]}/{upload_id}'
         )
 
