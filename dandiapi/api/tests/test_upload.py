@@ -71,6 +71,7 @@ def test_blob_read_does_not_exist(api_client):
 @pytest.mark.django_db
 def test_upload_initialize(api_client, user, dandiset):
     api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
 
     content_size = 123
 
@@ -106,6 +107,7 @@ def test_upload_initialize(api_client, user, dandiset):
 @pytest.mark.django_db
 def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset_blob):
     api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
 
     resp = api_client.post(
         '/api/uploads/initialize/',
@@ -120,6 +122,26 @@ def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset
     assert resp.data == 'Blob already exists.'
     assert resp.get('Location') == str(asset_blob.blob_id)
     assert not Upload.objects.all().exists()
+
+
+@pytest.mark.django_db
+def test_upload_initialize_not_an_owner(api_client, user, dandiset):
+    api_client.force_authenticate(user=user)
+
+    content_size = 123
+
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 403
+    assert not Upload.objects.all().exists()
+    assert not EmbargoedUpload.objects.all().exists()
 
 
 @pytest.mark.django_db
@@ -350,6 +372,7 @@ def test_upload_complete_unauthorized(api_client, upload):
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
 def test_upload_initialize_and_complete(api_client, user, dandiset, content_size):
     api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
 
     # Get the presigned upload URL
     initialization = api_client.post(

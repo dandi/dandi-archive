@@ -6,6 +6,7 @@ from typing import List
 from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
+from guardian.utils import get_40x_or_None
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
@@ -128,6 +129,10 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         Dandiset.objects.visible_to(request.user),
         id=dandiset_id,
     )
+    response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
+    if response:
+        return response
+
     logging.info(
         'Starting upload initialization of size %s, ETag %s to dandiset %s',
         content_size,
