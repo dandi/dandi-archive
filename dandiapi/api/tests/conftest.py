@@ -119,6 +119,7 @@ def minio_storage_factory() -> MinioStorage:
         base_url=(
             f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
             f'//{settings.MINIO_STORAGE_ENDPOINT}'
+            f'/{settings.DANDI_DANDISETS_BUCKET_NAME}'
         ),
     )
 

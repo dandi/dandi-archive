@@ -2,7 +2,7 @@ import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM
+from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumUpdater
 
 
 @pytest.mark.django_db
@@ -152,3 +152,69 @@ def test_zarr_rest_delete_upload_in_progress(
     )
     assert resp.status_code == 400
     assert resp.json() == ['Cannot delete files while an upload is in progress.']
+
+
+@pytest.mark.parametrize(
+    ('path', 'status', 'directories', 'files'),
+    [
+        ('', 200, ['foo/'], []),
+        ('foo/', 200, ['foo/bar/'], ['foo/a', 'foo/b']),
+        ('foo/bar/', 200, [], ['foo/bar/c']),
+        ('foo', 302, None, None),
+        ('foo/a', 302, None, None),
+        ('foo/b', 302, None, None),
+        ('foo/bar/c', 302, None, None),
+        ('gibberish', 302, None, None),
+    ],
+    ids=[
+        'root-dir',
+        'foo/-dir',
+        'foo/bar/-dir',
+        'foo-file',
+        'foo/a-file',
+        'foo/b-file',
+        'foo/bar/c-file',
+        'gibberish-file',
+    ],
+)
+@pytest.mark.django_db
+def test_zarr_explore(
+    api_client,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+    path,
+    status,
+    directories,
+    files,
+):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/a')
+    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/b')
+    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar/c')
+
+    # Write the checksum files
+    ZarrChecksumUpdater(zarr_archive).update_file_checksums(
+        [a.to_checksum(), b.to_checksum(), c.to_checksum()],
+    )
+
+    resp = api_client.get(
+        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
+    )
+    assert resp.status_code == status
+    if status == 200:
+        assert resp.json() == {
+            'directories': [
+                f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{dirpath}'
+                for dirpath in directories
+            ],
+            'files': [
+                f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{filepath}'
+                for filepath in files
+            ],
+        }
+    if status == 302:
+        assert resp.headers['Location'].startswith(
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        )
