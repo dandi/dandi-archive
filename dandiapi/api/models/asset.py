@@ -247,4 +247,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0
+        ) + (
+            EmbargoedAssetBlob.objects.filter(assets__versions__isnull=False)
+            .distinct()
+            .aggregate(size=models.Sum('size'))['size']
+            or 0
         )
