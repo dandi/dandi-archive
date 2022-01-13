@@ -43,3 +43,29 @@ def test_stats_asset(api_client, version, asset):
     stats = api_client.get('/api/stats/').data
 
     assert stats['size'] == asset.size
+
+
+@pytest.mark.django_db
+def test_stats_embargoed_asset(api_client, version, asset_factory, embargoed_asset_blob_factory):
+    embargoed_asset = asset_factory()
+    embargoed_asset.embargoed_blob = embargoed_asset_blob_factory()
+    version.assets.add(embargoed_asset)
+
+    stats = api_client.get('/api/stats/').data
+    assert stats['size'] == embargoed_asset.size
+
+
+@pytest.mark.django_db
+def test_stats_embargoed_and_regular_blobs(
+    api_client, version, asset_factory, asset_blob_factory, embargoed_asset_blob_factory
+):
+    asset = asset_factory()
+    asset.blob = asset_blob_factory()
+    version.assets.add(asset)
+
+    embargoed_asset = asset_factory()
+    embargoed_asset.embargoed_blob = embargoed_asset_blob_factory()
+    version.assets.add(embargoed_asset)
+
+    stats = api_client.get('/api/stats/').data
+    assert stats['size'] == asset.size + embargoed_asset.size

@@ -15,6 +15,7 @@ from .factories import (
     DandisetFactory,
     DraftAssetFactory,
     DraftVersionFactory,
+    EmbargoedAssetBlobFactory,
     PublishedAssetFactory,
     PublishedVersionFactory,
     SocialAccountFactory,
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
+register(EmbargoedAssetBlobFactory)
 register(DandisetFactory)
 register(PublishedVersionFactory, _name='published_version')
 register(DraftVersionFactory, _name='draft_version')
