@@ -35,6 +35,18 @@
           >
             <b>DRAFT</b>
           </v-chip>
+          <v-chip
+            v-if="item.dandiset.embargo_status !== 'OPEN'"
+            x-small
+            class="mr-1 px-2"
+            :color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4`"
+            :text-color="
+              `${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} darken-3`
+            "
+          >
+            <b>{{ item.dandiset.embargo_status }}</b>
+          </v-chip>
+
           DANDI:<b>{{ item.dandiset.identifier }}</b>
           ·
           Contact <b>{{ item.contact_person }}</b>
