@@ -35,8 +35,9 @@
           >
             <b>DRAFT</b>
           </v-chip>
+          <!-- TODO: remove `false &&` to enable this -->
           <v-chip
-            v-if="item.dandiset.embargo_status !== 'OPEN'"
+            v-if="false && item.dandiset.embargo_status !== 'OPEN'"
             x-small
             class="mr-1 px-2"
             :color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4`"
