@@ -209,7 +209,7 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
         if listing is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         directories = [
-            settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, directory.path])
+            settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, directory.path]) + '/'
             for directory in listing.checksums.directories
         ]
         files = [
