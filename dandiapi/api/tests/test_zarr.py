@@ -216,5 +216,5 @@ def test_zarr_explore(
         }
     if status == 302:
         assert resp.headers['Location'].startswith(
-            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'
+            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
         )
