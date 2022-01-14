@@ -313,6 +313,59 @@ def test_asset_rest_list(api_client, version, asset, asset_factory):
 
 
 @pytest.mark.parametrize(
+    'path,result_indices',
+    [
+        ('foo.txt', [0]),
+        ('bar.txt', [1]),
+        ('foo', [0, 2]),
+        ('bar', [1]),
+        ('foo/', [2]),
+        ('txt', []),
+    ],
+    ids=[
+        'exact-match-foo',
+        'exact-match-bar',
+        'prefix-foo',
+        'prefix-bar',
+        'prefix-foo/',
+        'no-match',
+    ],
+)
+@pytest.mark.django_db
+def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, result_indices):
+    assets = [
+        asset_factory(path='foo.txt'),
+        asset_factory(path='bar.txt'),
+        asset_factory(path='foo/bar.txt'),
+    ]
+    for asset in assets:
+        version.assets.add(asset)
+
+    expected_assets = [assets[i] for i in result_indices]
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        data={'path': path},
+    ).json() == {
+        'count': len(expected_assets),
+        'next': None,
+        'previous': None,
+        'results': [
+            {
+                'asset_id': str(asset.asset_id),
+                'path': asset.path,
+                'size': asset.size,
+                'blob': asset.blob.blob_id,
+                'zarr': None,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            }
+            for asset in expected_assets
+        ],
+    }
+
+
+@pytest.mark.parametrize(
     'order_param,ordering',
     [
         ('created', ['b', 'a', 'c']),
