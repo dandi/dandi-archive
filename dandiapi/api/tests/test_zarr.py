@@ -229,3 +229,39 @@ def test_zarr_explore(
         assert resp.headers['Location'].startswith(
             f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
         )
+
+
+@pytest.mark.parametrize(
+    'path',
+    [
+        'foo',
+        'foo/a',
+        'foo/b',
+        'foo/bar/c',
+        'gibberish',
+    ],
+    ids=[
+        'foo-file',
+        'foo/a-file',
+        'foo/b-file',
+        'foo/bar/c-file',
+        'gibberish-file',
+    ],
+)
+@pytest.mark.django_db
+def test_zarr_explore_head(
+    api_client,
+    storage,
+    zarr_archive: ZarrArchive,
+    path,
+):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+
+    resp = api_client.head(
+        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
+    )
+    assert resp.status_code == 302
+    assert resp.headers['Location'].startswith(
+        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+    )
