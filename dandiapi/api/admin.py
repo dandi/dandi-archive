@@ -1,3 +1,5 @@
+import csv
+
 from django.contrib import admin
 from django.contrib.admin.options import TabularInline
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -6,6 +8,7 @@ from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
 from django.forms.models import BaseInlineFormSet
 from django.http.request import HttpRequest
+from django.http.response import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from guardian.admin import GuardedModelAdmin
@@ -37,9 +40,18 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ['email', 'first_name', 'last_name', 'github_username']
     inlines = [UserMetadataInline]
 
+    @admin.action(description='Export selected users\' emails')
+    def export_emails_to_plaintext(self, request, queryset):
+        response = HttpResponse(content_type='text/plain')
+        writer = csv.writer(response)
+        emails = [obj.email for obj in queryset]
+        writer.writerow(emails)
+        return response
+
     def __init__(self, model, admin_site) -> None:
         super().__init__(model, admin_site)
         self.list_filter = ('metadata__status',) + self.list_filter
+        self.actions += ['export_emails_to_csv', 'export_emails_to_plaintext']
 
     @admin.display()
     def status(self, obj):
