@@ -108,6 +108,9 @@ export default defineComponent({
     const owners = computed(() => store.state.dandiset.owners);
 
     const manageOwnersDisabled = computed(() => {
+      if (dandiRest.user.admin) {
+        return false;
+      }
       if (!dandiRest.user || !owners.value) {
         return true;
       }
