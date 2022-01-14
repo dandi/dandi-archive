@@ -1,10 +1,13 @@
 from django.contrib import admin
 from django.contrib.admin.options import TabularInline
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
 from django.forms.models import BaseInlineFormSet
 from django.http.request import HttpRequest
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
@@ -17,6 +20,40 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
+
+admin.site.site_header = 'DANDI Admin'
+admin.site.site_title = 'DANDI Admin'
+
+
+class UserMetadataInline(TabularInline):
+    model = UserMetadata
+    fields = ['status', 'questionnaire_form', 'rejection_reason']
+
+
+class UserAdmin(BaseUserAdmin):
+    list_select_related = ['metadata']
+    list_display = [
+        'email',
+        'first_name',
+        'last_name',
+        'status',
+    ]
+    search_fields = ['email', 'first_name', 'last_name']
+    inlines = [UserMetadataInline]
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.list_filter = ('metadata__status',) + self.list_filter
+
+    @admin.display()
+    def status(self, obj):
+        return mark_safe(
+            f'<a href="{reverse("user-approval", args=[obj.username])}">{obj.metadata.status}</a>'
+        )
+
+
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 
 class LimitedFormset(BaseInlineFormSet):
@@ -95,14 +132,6 @@ class AssetAdmin(admin.ModelAdmin):
 class UploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
     list_display_links = ['id', 'upload_id']
-
-
-class UserMetadataInline(TabularInline):
-    model = UserMetadata
-    fields = ['status', 'questionnaire_form', 'rejection_reason']
-
-
-UserAdmin.inlines = [UserMetadataInline]
 
 
 @admin.register(ZarrArchive)
