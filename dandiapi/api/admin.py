@@ -20,6 +20,7 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
+from dandiapi.api.views.users import social_account_to_dict
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'
@@ -32,8 +33,8 @@ class UserMetadataInline(TabularInline):
 
 class UserAdmin(BaseUserAdmin):
     list_select_related = ['metadata']
-    list_display = ['email', 'first_name', 'last_name', 'status', 'date_joined']
-    search_fields = ['email', 'first_name', 'last_name']
+    list_display = ['email', 'first_name', 'last_name', 'github_username', 'status', 'date_joined']
+    search_fields = ['email', 'first_name', 'last_name', 'github_username']
     inlines = [UserMetadataInline]
 
     def __init__(self, model, admin_site) -> None:
@@ -45,6 +46,14 @@ class UserAdmin(BaseUserAdmin):
         return mark_safe(
             f'<a href="{reverse("user-approval", args=[obj.username])}">{obj.metadata.status}</a>'
         )
+
+    @admin.display()
+    def github_username(self, obj):
+        social_account = obj.socialaccount_set.first()
+        if social_account is None:
+            return '(none)'
+        gh_username: str = social_account_to_dict(social_account)['username']
+        return mark_safe(f'<a href="https://github.com/{gh_username}">{gh_username}</a>')
 
 
 admin.site.unregister(User)
