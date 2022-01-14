@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from django.conf import settings
 from django.db import transaction
 from django.http.response import HttpResponseRedirect
@@ -216,7 +218,21 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
             settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, file.path])
             for file in listing.checksums.files
         ]
-        return Response({'directories': directories, 'files': files})
+        checksums = {
+            **{
+                Path(directory.path).name: directory.md5
+                for directory in listing.checksums.directories
+            },
+            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+        }
+        return Response(
+            {
+                'directories': directories,
+                'files': files,
+                'checksums': checksums,
+                'checksum': listing.md5,
+            }
+        )
     else:
         # The path did not end in a /, so it was a file.
         # Redirect to a presigned S3 URL.
