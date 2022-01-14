@@ -1,8 +1,10 @@
+from pathlib import Path
+
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumUpdater
+from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumFileUpdater, ZarrChecksumUpdater
 
 
 @pytest.mark.django_db
@@ -198,6 +200,7 @@ def test_zarr_explore(
     ZarrChecksumUpdater(zarr_archive).update_file_checksums(
         [a.to_checksum(), b.to_checksum(), c.to_checksum()],
     )
+    listing = ZarrChecksumFileUpdater(zarr_archive, path).read_checksum_file()
 
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
@@ -213,6 +216,14 @@ def test_zarr_explore(
                 f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{filepath}'
                 for filepath in files
             ],
+            'checksums': {
+                **{
+                    Path(directory.path).name: directory.md5
+                    for directory in listing.checksums.directories
+                },
+                **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+            },
+            'checksum': listing.md5,
         }
     if status == 302:
         assert resp.headers['Location'].startswith(

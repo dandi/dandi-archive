@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from django.conf import settings
 from django.db import transaction
 from django.http.response import HttpResponseRedirect
@@ -72,6 +74,13 @@ class ZarrSerializer(serializers.Serializer):
     checksum = serializers.CharField(max_length=40, read_only=True)
     file_count = serializers.IntegerField(read_only=True)
     size = serializers.IntegerField(read_only=True)
+
+
+class ZarrExploreSerializer(serializers.Serializer):
+    directories = serializers.ListField(child=serializers.URLField())
+    files = serializers.ListField(child=serializers.URLField())
+    checksums = serializers.DictField(child=serializers.RegexField('^[0-9a-f]{32}$'))
+    checksum = serializers.RegexField('^[0-9a-f]{32}$')
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
@@ -179,7 +188,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 @swagger_auto_schema(
     method='GET',
     responses={
-        200: 'foobar',
+        200: ZarrExploreSerializer(),
+        302: 'Redirect to an object in S3',
     },
     manual_parameters=[
         openapi.Parameter(
@@ -194,6 +204,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 )
 @api_view(['GET'])
 def explore_zarr_archive(request, zarr_id: str, path: str):
+    """
+    Get information about files in a zarr archive.
+
+    If the path ends with /, it is assumed to be a directory and metadata about the directory is returned.
+    If the path does not end with /, it is assumed to be a file and a redirect to that file in S3 is returned.
+
+    This API is compatible with https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem.
+    """  # noqa: E501
     zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
     if path == '':
         path = '/'
@@ -216,7 +234,23 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
             settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, file.path])
             for file in listing.checksums.files
         ]
-        return Response({'directories': directories, 'files': files})
+        checksums = {
+            **{
+                Path(directory.path).name: directory.md5
+                for directory in listing.checksums.directories
+            },
+            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+        }
+        serializer = ZarrExploreSerializer(
+            data={
+                'directories': directories,
+                'files': files,
+                'checksums': checksums,
+                'checksum': listing.md5,
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
     else:
         # The path did not end in a /, so it was a file.
         # Redirect to a presigned S3 URL.
