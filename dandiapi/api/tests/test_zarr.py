@@ -157,36 +157,25 @@ def test_zarr_rest_delete_upload_in_progress(
 
 
 @pytest.mark.parametrize(
-    ('path', 'status', 'directories', 'files'),
+    ('path', 'directories', 'files'),
     [
-        ('', 200, ['foo/'], []),
-        ('foo/', 200, ['foo/bar/'], ['foo/a', 'foo/b']),
-        ('foo/bar/', 200, [], ['foo/bar/c']),
-        ('foo', 302, None, None),
-        ('foo/a', 302, None, None),
-        ('foo/b', 302, None, None),
-        ('foo/bar/c', 302, None, None),
-        ('gibberish', 302, None, None),
+        ('', ['foo/'], []),
+        ('foo/', ['foo/bar/'], ['foo/a', 'foo/b']),
+        ('foo/bar/', [], ['foo/bar/c']),
     ],
     ids=[
-        'root-dir',
-        'foo/-dir',
-        'foo/bar/-dir',
-        'foo-file',
-        'foo/a-file',
-        'foo/b-file',
-        'foo/bar/c-file',
-        'gibberish-file',
+        '/',
+        'foo/',
+        'foo/bar/',
     ],
 )
 @pytest.mark.django_db
-def test_zarr_explore(
+def test_zarr_explore_directory(
     api_client,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
     path,
-    status,
     directories,
     files,
 ):
@@ -205,30 +194,39 @@ def test_zarr_explore(
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
     )
-    assert resp.status_code == status
-    if status == 200:
-        assert resp.json() == {
-            'directories': [
-                f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{dirpath}'
-                for dirpath in directories
-            ],
-            'files': [
-                f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{filepath}'
-                for filepath in files
-            ],
-            'checksums': {
-                **{
-                    Path(directory.path).name: directory.md5
-                    for directory in listing.checksums.directories
-                },
-                **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+    assert resp.status_code == 200
+    assert resp.json() == {
+        'directories': [
+            f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{dirpath}'
+            for dirpath in directories
+        ],
+        'files': [
+            f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{filepath}'
+            for filepath in files
+        ],
+        'checksums': {
+            **{
+                Path(directory.path).name: directory.md5
+                for directory in listing.checksums.directories
             },
-            'checksum': listing.md5,
-        }
-    if status == 302:
-        assert resp.headers['Location'].startswith(
-            f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
-        )
+            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+        },
+        'checksum': listing.md5,
+    }
+
+
+@pytest.mark.django_db
+def test_zarr_explore_directory_does_not_exist(
+    api_client,
+    storage,
+    zarr_archive: ZarrArchive,
+):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    resp = api_client.get(
+        f'/api/zarr/{zarr_archive.zarr_id}.zarr/does/not/exist/',
+    )
+    assert resp.status_code == 404
 
 
 @pytest.mark.parametrize(
@@ -240,12 +238,34 @@ def test_zarr_explore(
         'foo/bar/c',
         'gibberish',
     ],
-    ids=[
-        'foo-file',
-        'foo/a-file',
-        'foo/b-file',
-        'foo/bar/c-file',
-        'gibberish-file',
+)
+@pytest.mark.django_db
+def test_zarr_explore_file(
+    api_client,
+    storage,
+    zarr_archive: ZarrArchive,
+    path,
+):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    resp = api_client.get(
+        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
+    )
+    assert resp.status_code == 302
+    assert resp.headers['Location'].startswith(
+        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+    )
+
+
+@pytest.mark.parametrize(
+    'path',
+    [
+        'foo',
+        'foo/a',
+        'foo/b',
+        'foo/bar/c',
+        'gibberish',
+        'gibberish/',
     ],
 )
 @pytest.mark.django_db
