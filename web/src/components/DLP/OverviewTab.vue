@@ -146,7 +146,7 @@
                   <v-col
                     cols="10"
                   >
-                    <span>{{ item.name || item }}</span>
+                    <span>{{ item.name || item.identifier || item.id || item }}</span>
                   </v-col>
                   <v-col>
                     <v-btn
