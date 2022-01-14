@@ -17,8 +17,6 @@
           :key="i"
           style="margin: 5px;"
           outlined
-          close-icon="mdi-card-account-mail"
-          :close="contactPeople.has(contributor.name)"
         >
           {{ contributor.name }}
           <a
@@ -33,6 +31,13 @@
               width="16"
               height="16"
             >
+          </a>
+          <a
+            v-if="contactPeople.has(contributor.name)"
+            :href="`mailto:${contributors.filter((c) => c.name === contributor.name)[0].email}`"
+            class="text-decoration-none"
+          >
+            <v-icon color="black">mdi-card-account-mail</v-icon>
           </a>
         </v-chip>
       </div>
