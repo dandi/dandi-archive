@@ -76,6 +76,13 @@ class ZarrSerializer(serializers.Serializer):
     size = serializers.IntegerField(read_only=True)
 
 
+class ZarrExploreSerializer(serializers.Serializer):
+    directories = serializers.ListField(child=serializers.URLField())
+    files = serializers.ListField(child=serializers.URLField())
+    checksums = serializers.DictField(child=serializers.RegexField('^[0-9a-f]{32}$'))
+    checksum = serializers.RegexField('^[0-9a-f]{32}$')
+
+
 class ZarrViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsApprovedOrReadOnly]
     serializer_class = ZarrSerializer
@@ -181,7 +188,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 @swagger_auto_schema(
     method='GET',
     responses={
-        200: 'foobar',
+        200: ZarrExploreSerializer(),
+        302: 'Redirect to an object in S3',
     },
     manual_parameters=[
         openapi.Parameter(
@@ -225,14 +233,16 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
             },
             **{Path(file.path).name: file.md5 for file in listing.checksums.files},
         }
-        return Response(
-            {
+        serializer = ZarrExploreSerializer(
+            data={
                 'directories': directories,
                 'files': files,
                 'checksums': checksums,
                 'checksum': listing.md5,
             }
         )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
     else:
         # The path did not end in a /, so it was a file.
         # Redirect to a presigned S3 URL.
