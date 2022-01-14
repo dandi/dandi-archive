@@ -204,6 +204,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 )
 @api_view(['GET'])
 def explore_zarr_archive(request, zarr_id: str, path: str):
+    """
+    Get information about files in a zarr archive.
+
+    If the path ends with /, it is assumed to be a directory and metadata about the directory is returned.
+    If the path does not end with /, it is assumed to be a file and a redirect to that file in S3 is returned.
+
+    This API is compatible with https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem.
+    """
     zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
     if path == '':
         path = '/'
