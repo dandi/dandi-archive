@@ -5,7 +5,7 @@ from django.core.files.storage import Storage
 import pytest
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 
 
 @pytest.mark.django_db
@@ -14,6 +14,24 @@ def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
     AssetBlob.blob.field.storage = storage
 
     asset_blob = asset_blob_factory(sha256=None)
+
+    h = hashlib.sha256()
+    h.update(asset_blob.blob.read())
+    sha256 = h.hexdigest()
+
+    tasks.calculate_sha256(asset_blob.blob_id)
+
+    asset_blob.refresh_from_db()
+
+    assert asset_blob.sha256 == sha256
+
+
+@pytest.mark.django_db
+def test_calculate_checksum_task_embargo(storage: Storage, embargoed_asset_blob_factory):
+    # Pretend like EmbargoedAssetBlob was defined with the given storage
+    EmbargoedAssetBlob.blob.field.storage = storage
+
+    asset_blob = embargoed_asset_blob_factory(sha256=None)
 
     h = hashlib.sha256()
     h.update(asset_blob.blob.read())
