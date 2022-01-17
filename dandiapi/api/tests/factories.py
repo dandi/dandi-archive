@@ -196,6 +196,7 @@ class UploadFactory(factory.django.DjangoModelFactory):
     upload_id = factory.Faker('uuid4')
     multipart_upload_id = factory.Faker('uuid4')
     blob = factory.django.FileField(data=factory.Faker('binary', length=100))
+    dandiset = factory.SubFactory(DandisetFactory)
 
     @factory.lazy_attribute
     def size(self):
@@ -212,8 +213,6 @@ class UploadFactory(factory.django.DjangoModelFactory):
 class EmbargoedUploadFactory(UploadFactory):
     class Meta:
         model = EmbargoedUpload
-
-    dandiset = factory.SubFactory(DandisetFactory)
 
 
 class ZarrArchiveFactory(factory.django.DjangoModelFactory):

@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from django.http.response import HttpResponseBase
+from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
+from guardian.utils import get_40x_or_None
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
@@ -14,7 +15,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
 
-from dandiapi.api.models import AssetBlob, Upload
+from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedUpload, Upload
+from dandiapi.api.models.asset import EmbargoedAssetBlob
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
@@ -30,6 +32,7 @@ class DigestSerializer(serializers.Serializer):
 class UploadInitializationRequestSerializer(serializers.Serializer):
     contentSize = serializers.IntegerField(min_value=1)  # noqa: N815
     digest = DigestSerializer()
+    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
 
 
 class PartInitializationResponseSerializer(serializers.Serializer):
@@ -121,7 +124,21 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     if digest['algorithm'] != 'dandi:dandi-etag':
         return Response('Unsupported Digest Type', status=400)
     etag = digest['value']
-    logging.info('Starting upload initialization of size %s, ETag %s', content_size, etag)
+    dandiset_id = request_serializer.validated_data['dandiset']
+    dandiset = get_object_or_404(
+        Dandiset.objects.visible_to(request.user),
+        id=dandiset_id,
+    )
+    response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
+    if response:
+        return response
+
+    logging.info(
+        'Starting upload initialization of size %s, ETag %s to dandiset %s',
+        content_size,
+        etag,
+        dandiset,
+    )
 
     asset_blobs = AssetBlob.objects.filter(etag=etag)
     if asset_blobs.exists():
@@ -130,9 +147,22 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             status=status.HTTP_409_CONFLICT,
             headers={'Location': asset_blobs.first().blob_id},
         )
+    elif dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+        embargoed_asset_blobs = EmbargoedAssetBlob.objects.filter(dandiset=dandiset, etag=etag)
+        if embargoed_asset_blobs.exists():
+            return Response(
+                'Blob already exists.',
+                status=status.HTTP_409_CONFLICT,
+                headers={'Location': embargoed_asset_blobs.first().blob_id},
+            )
     logging.info('Blob with ETag %s does not yet exist', etag)
 
-    upload, initialization = Upload.initialize_multipart_upload(etag, content_size)
+    if dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
+        upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
+    else:
+        upload, initialization = EmbargoedUpload.initialize_multipart_upload(
+            etag, content_size, dandiset
+        )
     logging.info('Upload of ETag %s initialized', etag)
     upload.save()
     logging.info('Upload of ETag %s saved', etag)
@@ -162,7 +192,12 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     parts: List[TransferredPart] = request_serializer.save()
 
-    upload = get_object_or_404(Upload, upload_id=upload_id)
+    try:
+        upload = Upload.objects.get(upload_id=upload_id)
+    except Upload.DoesNotExist:
+        upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
+        if not request.user.has_perm('owner', upload.dandiset):
+            raise Http404()
 
     completion = TransferredParts(
         object_key=upload.blob.name,
@@ -170,7 +205,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
         parts=parts,
     )
 
-    completed_upload = MultipartManager.from_storage(AssetBlob.blob.field.storage).complete_upload(
+    completed_upload = MultipartManager.from_storage(upload.blob.field.storage).complete_upload(
         completion
     )
 
@@ -199,7 +234,12 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
 
     Also starts the asynchronous checksum calculation process.
     """
-    upload = get_object_or_404(Upload, upload_id=upload_id)
+    try:
+        upload = Upload.objects.get(upload_id=upload_id)
+    except Upload.DoesNotExist:
+        upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
+        if not request.user.has_perm('owner', upload.dandiset):
+            raise Http404()
 
     # Verify that the upload was successful
     if not upload.object_key_exists():
@@ -217,8 +257,20 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
         # Perhaps another upload completed before this one and has already created an AssetBlob.
         asset_blob = AssetBlob.objects.get(etag=upload.etag, size=upload.size)
     except AssetBlob.DoesNotExist:
-        asset_blob = upload.to_asset_blob()
-        asset_blob.save()
+        if type(upload) is EmbargoedUpload:
+            # Perhaps another embargoed upload completed before this one
+            try:
+                asset_blob = EmbargoedAssetBlob.objects.get(
+                    etag=upload.etag, size=upload.size, dandiset=upload.dandiset
+                )
+            except EmbargoedAssetBlob.DoesNotExist:
+                asset_blob = upload.to_embargoed_asset_blob()
+                asset_blob.save()
+        elif type(upload) is Upload:
+            asset_blob = upload.to_asset_blob()
+            asset_blob.save()
+        else:
+            raise ValueError(f'Unknown Upload type {type(upload)}')
 
     # Clean up the upload
     upload.delete()
