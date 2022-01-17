@@ -143,16 +143,22 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def is_blob(self):
-        return self.blob is not None and self.zarr is None
+        return self.blob is not None
+
+    @property
+    def is_embargoed_blob(self):
+        return self.embargoed_blob is not None
 
     @property
     def is_zarr(self):
-        return self.zarr is not None and self.blob is None
+        return self.zarr is not None
 
     @property
     def size(self):
         if self.is_blob:
             return self.blob.size
+        elif self.is_embargoed_blob:
+            return self.embargoed_blob.size
         else:
             return self.zarr.size
 
@@ -164,6 +170,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def digest(self) -> Dict[str, str]:
         if self.is_blob:
             return self.blob.digest
+        elif self.is_embargoed_blob:
+            return self.embargoed_blob.digest
         else:
             return self.zarr.digest
 
@@ -175,6 +183,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         )
         if self.is_blob:
             s3_url = self.blob.s3_url
+        elif self.is_embargoed_blob:
+            s3_url = self.embargoed_blob.s3_url
         else:
             s3_url = self.zarr.s3_url
 
