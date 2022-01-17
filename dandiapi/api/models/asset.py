@@ -56,6 +56,7 @@ class BaseAssetBlob(TimeStampedModel):
     @property
     def s3_url(self) -> str:
         signed_url = self.blob.url
+        # Strip off the query parameters from the presigning, as they are different every time
         parsed = urlparse(signed_url)
         s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
         return s3_url
@@ -175,7 +176,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         if self.is_blob:
             s3_url = self.blob.s3_url
         else:
-            s3_url = self.zarr.s3_path('')
+            s3_url = self.zarr.s3_url
 
         metadata = {
             **self.metadata,
@@ -192,6 +193,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
                 'https://raw.githubusercontent.com/dandi/schema/master/releases/'
                 f'{schema_version}/context.json'
             )
+        if self.is_zarr:
+            metadata['encodingFormat'] = 'application/x-zarr'
         return metadata
 
     def published_metadata(self):
@@ -241,6 +244,11 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def total_size(cls):
         return (
             AssetBlob.objects.filter(assets__versions__isnull=False)
+            .distinct()
+            .aggregate(size=models.Sum('size'))['size']
+            or 0
+        ) + (
+            EmbargoedAssetBlob.objects.filter(assets__versions__isnull=False)
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0

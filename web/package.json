@@ -1,0 +1,72 @@
+{
+  "name": "dandi",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "migrate": "ts-node src/migrate.ts"
+  },
+  "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^9.0.7",
+    "@girder/oauth-client": "^0.7.7",
+    "@koumoul/vjsf": "^2.5.2",
+    "@sentry/browser": "^6.3.6",
+    "@sentry/integrations": "^6.3.6",
+    "@vue/composition-api": "^1.0.0-rc.8",
+    "ajv": "^8.3.0",
+    "axios": "^0.21.2",
+    "core-js": "^3.12.1",
+    "direct-vuex": "^0.12.1",
+    "filesize": "^6.3.0",
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
+    "vue": "^2.6.11",
+    "vue-async-computed": "^3.9.0",
+    "vue-cookie-law": "^1.13.3",
+    "vue-gtag": "^1.16.1",
+    "vue-router": "^3.5.1",
+    "vue-social-sharing": "^3.0.8",
+    "vuetify": "~2.3.6",
+    "vuex": "^3.6.2",
+    "vuex-router-sync": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.1",
+    "@types/json-schema": "^7.0.7",
+    "@types/lodash": "^4.14.168",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "@typescript-eslint/parser": "^4.23.0",
+    "@vue/cli-plugin-babel": "^4.5.13",
+    "@vue/cli-plugin-eslint": "^4.5.13",
+    "@vue/cli-plugin-typescript": "^4.5.13",
+    "@vue/cli-service": "^4.5.13",
+    "@vue/eslint-config-airbnb": "^5.3.0",
+    "@vue/eslint-config-typescript": "^7.0.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.26.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-vue": "^7.9.0",
+    "eslint-plugin-vuetify": "^1.0.0-beta.8",
+    "json-schema-to-typescript": "^10.1.5",
+    "moment-locales-webpack-plugin": "^1.2.0",
+    "sass": "^1.32.12",
+    "sass-loader": "^10.2.0",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.2.4",
+    "vue-cli-plugin-vuetify": "^2.4.0",
+    "vue-template-compiler": "^2.6.11",
+    "vuetify-loader": "^1.7.2"
+  },
+  "postcss": {
+    "plugins": {
+      "autoprefixer": {}
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}

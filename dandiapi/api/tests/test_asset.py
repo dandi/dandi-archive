@@ -10,7 +10,7 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -253,12 +253,44 @@ def test_asset_populate_metadata(draft_asset_factory):
     }
 
 
+@pytest.mark.django_db
+def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
+    raw_metadata = {
+        'foo': 'bar',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+    }
+
+    # This should trigger _populate_metadata to inject all the computed metadata fields
+    asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
+
+    download_url = 'https://api.dandiarchive.org' + reverse(
+        'asset-direct-download',
+        kwargs={'asset_id': str(asset.asset_id)},
+    )
+    s3_url = f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/'  # noqa: E501
+    assert asset.metadata == {
+        **raw_metadata,
+        'id': f'dandiasset:{asset.asset_id}',
+        'path': asset.path,
+        'identifier': str(asset.asset_id),
+        'contentUrl': [download_url, s3_url],
+        'contentSize': asset.size,
+        'digest': asset.digest,
+        # This should be injected on all zarr assets
+        'encodingFormat': 'application/x-zarr',
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+    }
+
+
 # API Tests
 
 
 @pytest.mark.django_db
-def test_asset_rest_list(api_client, version, asset):
+def test_asset_rest_list(api_client, version, asset, asset_factory):
     version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
@@ -276,6 +308,59 @@ def test_asset_rest_list(api_client, version, asset):
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
             }
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    'path,result_indices',
+    [
+        ('foo.txt', [0]),
+        ('bar.txt', [1]),
+        ('foo', [0, 2]),
+        ('bar', [1]),
+        ('foo/', [2]),
+        ('txt', []),
+    ],
+    ids=[
+        'exact-match-foo',
+        'exact-match-bar',
+        'prefix-foo',
+        'prefix-bar',
+        'prefix-foo/',
+        'no-match',
+    ],
+)
+@pytest.mark.django_db
+def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, result_indices):
+    assets = [
+        asset_factory(path='foo.txt'),
+        asset_factory(path='bar.txt'),
+        asset_factory(path='foo/bar.txt'),
+    ]
+    for asset in assets:
+        version.assets.add(asset)
+
+    expected_assets = [assets[i] for i in result_indices]
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        data={'path': path},
+    ).json() == {
+        'count': len(expected_assets),
+        'next': None,
+        'previous': None,
+        'results': [
+            {
+                'asset_id': str(asset.asset_id),
+                'path': asset.path,
+                'size': asset.size,
+                'blob': asset.blob.blob_id,
+                'zarr': None,
+                'created': TIMESTAMP_RE,
+                'modified': TIMESTAMP_RE,
+            }
+            for asset in expected_assets
         ],
     }
 
@@ -315,8 +400,11 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
 
 
 @pytest.mark.django_db
-def test_asset_rest_retrieve(api_client, version, asset):
+def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
     version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
 
     assert (
         api_client.get(
@@ -341,6 +429,25 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
         ).data
         == asset.metadata
     )
+
+
+@pytest.mark.django_db
+def test_asset_rest_info(api_client, version, asset):
+    version.assets.add(asset)
+
+    assert api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/info/'
+    ).json() == {
+        'asset_id': str(asset.asset_id),
+        'blob': str(asset.blob.blob_id),
+        'zarr': None,
+        'path': asset.path,
+        'size': asset.size,
+        'metadata': asset.metadata,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+    }
 
 
 @pytest.mark.django_db
@@ -422,7 +529,7 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     path = 'test/create/asset.txt'
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
@@ -467,7 +574,7 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     path = 'test/create/asset.txt'
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
@@ -492,7 +599,7 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
     path = 'test/create/asset.txt'
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
@@ -667,7 +774,7 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'encodingFormat': 'application/x-nwb',
+        'encodingFormat': 'application/x-zarr',
         'path': new_path,
         'foo': 'bar',
         'num': 123,
@@ -865,6 +972,21 @@ def test_asset_download(api_client, storage, version, asset):
 
 
 @pytest.mark.django_db
+def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
+    asset = asset_factory(blob=None, zarr=zarr_archive)
+    version.assets.add(asset)
+
+    response = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/download/'
+    )
+
+    assert response.status_code == 302
+    download_url = response.get('Location')
+    assert download_url == f'/api/zarr/{zarr_archive.zarr_id}.zarr/'
+
+
+@pytest.mark.django_db
 def test_asset_direct_download(api_client, storage, version, asset):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -885,6 +1007,18 @@ def test_asset_direct_download(api_client, storage, version, asset):
 
     with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
+
+
+@pytest.mark.django_db
+def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_archive):
+    asset = asset_factory(blob=None, zarr=zarr_archive)
+    version.assets.add(asset)
+
+    response = api_client.get(f'/api/assets/{asset.asset_id}/download/')
+
+    assert response.status_code == 302
+    download_url = response.get('Location')
+    assert download_url == f'/api/zarr/{zarr_archive.zarr_id}.zarr/'
 
 
 @pytest.mark.django_db
@@ -913,3 +1047,49 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
     assert json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.metadata
+
+
+@pytest.mark.django_db
+def test_asset_direct_info(api_client, asset):
+    assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
+        'asset_id': str(asset.asset_id),
+        'blob': str(asset.blob.blob_id),
+        'zarr': None,
+        'path': asset.path,
+        'size': asset.size,
+        'metadata': asset.metadata,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+    }
+
+
+@pytest.mark.parametrize(
+    ('embargo_status'),
+    [
+        Dandiset.EmbargoStatus.EMBARGOED,
+        Dandiset.EmbargoStatus.UNEMBARGOING,
+    ],
+)
+@pytest.mark.django_db
+def test_asset_embargoed_visibility(
+    api_client, dandiset_factory, draft_version_factory, asset_factory, embargo_status
+):
+    dandiset = dandiset_factory(embargo_status=embargo_status)
+    version = draft_version_factory(dandiset=dandiset)
+    asset = asset_factory()
+    version.assets.add(asset)
+
+    # The version should be hidden because the dandiset it belongs to is embargoed
+    response = api_client.get(
+        f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/assets/'
+    )
+    assert response.json() == {
+        'count': 0,
+        'next': None,
+        'previous': None,
+        'results': [],
+    }
+    response = api_client.get(
+        f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/assets/{asset.asset_id}/'
+    )
+    assert response.status_code == 404

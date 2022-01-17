@@ -1,5 +1,5 @@
 import logging
-from typing import List, Union
+from typing import List, Optional, Union
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
@@ -19,9 +19,10 @@ BASE_RENDER_CONTEXT = {
 ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
-def build_message(subject: str, message: str, to: List[str], html_message: str):
+def build_message(subject: str, message: str, to: List[str], html_message: Optional[str] = None):
     message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
-    message.attach_alternative(html_message, 'text/html')
+    if html_message is not None:
+        message.attach_alternative(html_message, 'text/html')
     return message
 
 
@@ -36,7 +37,6 @@ def build_removed_message(dandiset, removed_owner):
         subject=f'Removed from Dandiset "{dandiset.draft_version.name}"',
         message=render_to_string('api/mail/removed_message.txt', render_context),
         to=[removed_owner.email],
-        html_message=render_to_string('api/mail/removed_message.html', render_context),
     )
 
 
@@ -51,7 +51,6 @@ def build_added_message(dandiset, added_owner):
         subject=f'Added to Dandiset "{dandiset.draft_version.name}"',
         message=render_to_string('api/mail/added_message.txt', render_context),
         to=[added_owner.email],
-        html_message=render_to_string('api/mail/added_message.html', render_context),
     )
 
 
@@ -72,7 +71,6 @@ def build_registered_message(user: User, socialaccount: SocialAccount):
         subject=f'DANDI: New user registered: {user.email}',
         message=render_to_string('api/mail/registered_message.txt', render_context),
         to=[ADMIN_EMAIL, user.email],
-        html_message=render_to_string('api/mail/registered_message.html', render_context),
     )
 
 
@@ -93,7 +91,6 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
         subject=f'DANDI: Review new user: {user.username}',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
         to=[ADMIN_EMAIL],
-        html_message=render_to_string('api/mail/new_user_message.html', render_context),
     )
 
 
@@ -126,7 +123,6 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
         subject='Your DANDI Account',
         message=render_to_string('api/mail/approved_user_message.txt', render_context),
         to=[ADMIN_EMAIL, user.email],
-        html_message=render_to_string('api/mail/approved_user_message.html', render_context),
     )
 
 
@@ -159,7 +155,6 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
         subject='Your DANDI Account',
         message=render_to_string('api/mail/rejected_user_message.txt', render_context),
         to=[ADMIN_EMAIL, user.email],
-        html_message=render_to_string('api/mail/rejected_user_message.html', render_context),
     )
 
 
@@ -176,7 +171,6 @@ def build_pending_users_message(users: Union[QuerySet, List[User]]):
         subject='DANDI: new user registrations to review',
         message=render_to_string('api/mail/pending_users_message.txt', render_context),
         to=[ADMIN_EMAIL],
-        html_message=render_to_string('api/mail/pending_users_message.html', render_context),
     )
 
 

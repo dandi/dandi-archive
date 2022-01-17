@@ -48,6 +48,11 @@ from dandiapi.api.views.serializers import (
 
 
 def _download_asset(asset: Asset):
+    if asset.is_zarr:
+        return HttpResponseRedirect(
+            reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
+        )
+
     storage = asset.blob.blob.storage
 
     if isinstance(storage, S3Boto3Storage):
@@ -148,6 +153,18 @@ def asset_metadata_view(request, asset_id):
     return JsonResponse(asset.metadata)
 
 
+@swagger_auto_schema(
+    method='GET',
+    operation_summary='Django serialization of an asset',
+    manual_parameters=[ASSET_ID_PARAM],
+)
+@api_view(['GET', 'HEAD'])
+def asset_info_view(request, asset_id):
+    asset = get_object_or_404(Asset, asset_id=asset_id)
+    serializer = AssetDetailSerializer(instance=asset)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class AssetRequestSerializer(serializers.Serializer):
     metadata = serializers.JSONField()
     blob_id = serializers.UUIDField(required=False)
@@ -177,6 +194,14 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
 
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(versions__dandiset__in=Dandiset.objects.visible_to(self.request.user))
+            .distinct()
+        )
+
     @swagger_auto_schema(
         responses={
             200: 'The asset metadata.',
@@ -188,6 +213,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
         return Response(asset.metadata, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        responses={200: AssetDetailSerializer()},
+    )
+    @action(detail=True, methods=['GET'])
+    def info(self, request, **kwargs):
+        """Django serialization of an asset."""
+        asset = self.get_object()
+        serializer = AssetDetailSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer()},

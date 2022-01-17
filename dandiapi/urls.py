@@ -13,11 +13,14 @@ from dandiapi.api.views import (
     VersionViewSet,
     ZarrViewSet,
     asset_download_view,
+    asset_info_view,
     asset_metadata_view,
     auth_token_view,
     authorize_view,
     blob_read_view,
+    explore_zarr_archive,
     info_view,
+    root_content_view,
     stats_view,
     upload_complete_view,
     upload_initialize_view,
@@ -73,6 +76,7 @@ class DandisetIDConverter:
 
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
+    path('', root_content_view),
     path('api/', include(router.urls)),
     re_path(
         r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/$',
@@ -83,6 +87,11 @@ urlpatterns = [
         r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/download/',
         asset_download_view,
         name='asset-direct-download',
+    ),
+    re_path(
+        r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/info/',
+        asset_info_view,
+        name='asset-direct-info',
     ),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
@@ -103,6 +112,11 @@ urlpatterns = [
     path('api/users/search/', users_search_view),
     re_path(
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
+    ),
+    re_path(
+        r'^api/zarr/(?P<zarr_id>[0-9a-f\-]{36}).zarr/(?P<path>.*)?$',
+        explore_zarr_archive,
+        name='zarr-explore',
     ),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),

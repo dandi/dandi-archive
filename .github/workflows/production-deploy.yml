@@ -4,6 +4,8 @@ on:
   release:
     types:
       - published # use `published` instead of `created` b/c `created` also runs on draft releases
+    paths-ignore:
+      - "web/**"
 
 jobs:
   deploy:

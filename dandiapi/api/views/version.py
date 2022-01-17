@@ -21,7 +21,6 @@ from dandiapi.api.views.serializers import (
 
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
     queryset = Version.objects.all().select_related('dandiset').order_by('created')
-    queryset_detail = queryset
 
     permission_classes = [IsApprovedOrReadOnly]
     serializer_class = VersionSerializer
@@ -30,6 +29,14 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
     lookup_field = 'version'
     lookup_value_regex = Version.VERSION_REGEX
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(dandiset__in=Dandiset.objects.visible_to(self.request.user))
+            .distinct()
+        )
 
     @swagger_auto_schema(
         responses={
@@ -41,11 +48,6 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         version = self.get_object()
         return Response(version.metadata, status=status.HTTP_200_OK)
 
-    # TODO clean up this action
-    # Originally retrieve() returned this, but the API specification was modified so that
-    # retrieve() only returns the metadata for a version, instead of a serialization.
-    # Unfortunately the web UI is built around VersionDetailSerializer, so this endpoint was
-    # added to avoid rewriting the web UI.
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
         responses={200: VersionDetailSerializer()},

@@ -7,6 +7,7 @@ import pytest
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
+from dandiapi.api.models.dandiset import Dandiset
 
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
@@ -317,7 +318,10 @@ def test_version_publish_version(draft_version, asset):
 
 
 @pytest.mark.django_db
-def test_version_rest_list(api_client, version):
+def test_version_rest_list(api_client, version, draft_version_factory):
+    # Create an extra version so that there are multiple versions to filter down
+    draft_version_factory()
+
     assert api_client.get(f'/api/dandisets/{version.dandiset.identifier}/versions/').data == {
         'count': 1,
         'next': None,
@@ -344,7 +348,10 @@ def test_version_rest_list(api_client, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_retrieve(api_client, version):
+def test_version_rest_retrieve(api_client, version, draft_version_factory):
+    # Create an extra version so that there are multiple versions to filter down
+    draft_version_factory()
+
     assert (
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/'
@@ -881,3 +888,29 @@ def test_version_rest_delete_draft_admin(api_client, admin_user, draft_version):
     assert response.status_code == 403
     assert response.data == 'Cannot delete draft versions'
     assert draft_version in Version.objects.all()
+
+
+@pytest.mark.parametrize(
+    ('embargo_status'),
+    [
+        Dandiset.EmbargoStatus.EMBARGOED,
+        Dandiset.EmbargoStatus.UNEMBARGOING,
+    ],
+)
+@pytest.mark.django_db
+def test_version_embargoed_visibility(
+    api_client, dandiset_factory, draft_version_factory, embargo_status
+):
+    dandiset = dandiset_factory(embargo_status=embargo_status)
+    version = draft_version_factory(dandiset=dandiset)
+
+    # The version should be hidden because the dandiset it belongs to is embargoed
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/versions/')
+    assert response.json() == {
+        'count': 0,
+        'next': None,
+        'previous': None,
+        'results': [],
+    }
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/')
+    assert response.status_code == 404

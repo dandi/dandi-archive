@@ -127,7 +127,7 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     try:
         # questions to display in the form
         questions = json.loads(request.GET.get('QUESTIONS'))
-    except JSONDecodeError:
+    except (JSONDecodeError, TypeError):
         raise Http404()
 
     return render(
