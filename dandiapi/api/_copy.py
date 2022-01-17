@@ -33,8 +33,6 @@ def _copy_object_s3(
     dest_bucket: str,
     dest_key: str,
 ):
-    # TODO This copy maxes out at 5GB. Use multipart copy API instead:
-    # https://docs.aws.amazon.com/AmazonS3/latest/userguide/CopyingObjctsMPUapi.html
     client = storage.connection.meta.client
 
     response = client.head_object(
