@@ -14,7 +14,7 @@
 </style>
 <div class="breadcrumbs">
   <a class="dandi-navbar-link" href="{% url 'dashboard-index' %}">Dashboard Home</a>
-  <a class="dandi-navbar-link" href="{% url 'dashboard-users' %}">Users Dashboard</a>
+  <a class="dandi-navbar-link" href="{% url "admin:auth_user_changelist" %}">Users</a>
   <a class="dandi-navbar-link" href="{% url 'admin:index' %}">Admin</a>
   {% if title %} &rsaquo; {{ title }}{% endif %}
 </div>

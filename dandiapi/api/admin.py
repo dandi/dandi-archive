@@ -1,10 +1,16 @@
+import csv
+
 from django.contrib import admin
 from django.contrib.admin.options import TabularInline
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
 from django.forms.models import BaseInlineFormSet
 from django.http.request import HttpRequest
+from django.http.response import HttpResponse
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
@@ -17,6 +23,53 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
+from dandiapi.api.views.users import social_account_to_dict
+
+admin.site.site_header = 'DANDI Admin'
+admin.site.site_title = 'DANDI Admin'
+
+
+class UserMetadataInline(TabularInline):
+    model = UserMetadata
+    fields = ['status', 'questionnaire_form', 'rejection_reason']
+
+
+class UserAdmin(BaseUserAdmin):
+    list_select_related = ['metadata']
+    list_display = ['email', 'first_name', 'last_name', 'github_username', 'status', 'date_joined']
+    search_fields = ['email', 'first_name', 'last_name', 'github_username']
+    inlines = [UserMetadataInline]
+
+    @admin.action(description="Export selected users\' emails")
+    def export_emails_to_plaintext(self, request, queryset):
+        response = HttpResponse(content_type='text/plain')
+        writer = csv.writer(response)
+        emails = [obj.email for obj in queryset]
+        writer.writerow(emails)
+        return response
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.list_filter = ('metadata__status',) + self.list_filter
+        self.actions += ['export_emails_to_csv', 'export_emails_to_plaintext']
+
+    @admin.display()
+    def status(self, obj):
+        return mark_safe(
+            f'<a href="{reverse("user-approval", args=[obj.username])}">{obj.metadata.status}</a>'
+        )
+
+    @admin.display()
+    def github_username(self, obj):
+        social_account = obj.socialaccount_set.first()
+        if social_account is None:
+            return '(none)'
+        gh_username: str = social_account_to_dict(social_account)['username']
+        return mark_safe(f'<a href="https://github.com/{gh_username}">{gh_username}</a>')
+
+
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 
 class LimitedFormset(BaseInlineFormSet):
@@ -95,14 +148,6 @@ class AssetAdmin(admin.ModelAdmin):
 class UploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
     list_display_links = ['id', 'upload_id']
-
-
-class UserMetadataInline(TabularInline):
-    model = UserMetadata
-    fields = ['status', 'questionnaire_form', 'rejection_reason']
-
-
-UserAdmin.inlines = [UserMetadataInline]
 
 
 @admin.register(ZarrArchive)
