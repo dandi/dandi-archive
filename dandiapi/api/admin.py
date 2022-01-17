@@ -40,7 +40,7 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ['email', 'first_name', 'last_name', 'github_username']
     inlines = [UserMetadataInline]
 
-    @admin.action(description='Export selected users\' emails')
+    @admin.action(description="Export selected users\' emails")
     def export_emails_to_plaintext(self, request, queryset):
         response = HttpResponse(content_type='text/plain')
         writer = csv.writer(response)
