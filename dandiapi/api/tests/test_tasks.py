@@ -132,7 +132,7 @@ def test_validate_asset_metadata_no_digest(asset: Asset):
 
     assert asset.status == Asset.Status.INVALID
     assert asset.validation_errors == [
-        {'field': 'digest', 'message': 'Digest is missing dandi-etag or sha256 keys.'}
+        {'field': 'digest', 'message': 'A non-zarr asset must have a sha2_256.'}
     ]
 
 
