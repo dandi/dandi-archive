@@ -328,8 +328,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             if asset.blob.sha256 is not None:
                 # We do not bother to delay it because it should run very quickly.
                 validate_asset_metadata(asset.id)
+        elif asset.is_embargoed_blob:
+            # Refresh the blob to be sure the sha256 values is up to date
+            asset.embargoed_blob.refresh_from_db()
+            # If the blob is still waiting to have it's checksum calculated, there's no point in
+            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+            # calculated, it will revalidate this asset.
+            # If the blob already has a sha256, then the asset metadata is ready to validate.
+            if asset.embargoed_blob.sha256 is not None:
+                # We do not bother to delay it because it should run very quickly.
+                validate_asset_metadata(asset.id)
         elif asset.is_zarr:
-            # TODO what to do here?
             pass
 
         serializer = AssetDetailSerializer(instance=asset)
@@ -441,8 +450,17 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             if new_asset.blob.sha256 is not None:
                 # We do not bother to delay it because it should run very quickly.
                 validate_asset_metadata(new_asset.id)
+        elif new_asset.is_embargoed_blob:
+            # Refresh the blob to be sure the sha256 values is up to date
+            new_asset.embargoed_blob.refresh_from_db()
+            # If the blob is still waiting to have it's checksum calculated, there's no point in
+            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+            # calculated, it will revalidate this asset.
+            # If the blob already has a sha256, then the asset metadata is ready to validate.
+            if new_asset.embargoed_blob.sha256 is not None:
+                # We do not bother to delay it because it should run very quickly.
+                validate_asset_metadata(new_asset.id)
         elif new_asset.is_zarr:
-            # TODO what to do here?
             pass
 
         serializer = AssetDetailSerializer(instance=new_asset)
