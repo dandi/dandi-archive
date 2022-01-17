@@ -30,6 +30,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
+from dandiapi.api.models.asset import EmbargoedAssetBlob
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
@@ -268,10 +269,18 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer.is_valid(raise_exception=True)
 
         if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
-            asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+            try:
+                asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
+                embargoed_asset_blob = None
+            except AssetBlob.DoesNotExist:
+                embargoed_asset_blob = get_object_or_404(
+                    EmbargoedAssetBlob, blob_id=serializer.validated_data['blob_id']
+                )
+                asset_blob = None
             zarr_archive = None
         elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
             asset_blob = None
+            embargoed_asset_blob = None
             zarr_archive = get_object_or_404(
                 ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
             )
@@ -296,6 +305,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         asset = Asset(
             path=path,
             blob=asset_blob,
+            embargoed_blob=embargoed_asset_blob,
             zarr=zarr_archive,
             metadata=metadata,
             status=Asset.Status.PENDING,
