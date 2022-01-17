@@ -522,6 +522,51 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
 
 
 @pytest.mark.django_db
+def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        format='json',
+    ).json()
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
+        'asset_id': UUID_RE,
+        'path': path,
+        'size': embargoed_asset_blob.size,
+        'blob': embargoed_asset_blob.blob_id,
+        'zarr': None,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'metadata': new_asset.metadata,
+    }
+    for key in metadata:
+        assert resp['metadata'][key] == metadata[key]
+
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
+    # Adding an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db
 def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -737,6 +782,62 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         'path': new_path,
         'size': asset_blob.size,
         'blob': asset_blob.blob_id,
+        'zarr': None,
+        'created': TIMESTAMP_RE,
+        'modified': TIMESTAMP_RE,
+        'metadata': new_asset.metadata,
+    }
+    for key in new_metadata:
+        assert resp['metadata'][key] == new_metadata[key]
+
+    # Updating an asset should leave it in the DB, but disconnect it from the version
+    assert asset not in draft_version.assets.all()
+
+    # A new asset should be created that is associated with the version
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert new_asset in draft_version.assets.all()
+
+    # The new asset should have a reference to the old asset
+    assert new_asset.previous == asset
+
+    # The version modified date should be updated
+    start_time = draft_version.modified
+    draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
+    # Updating an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db
+def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embargoed_asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    draft_version.assets.add(asset)
+
+    new_path = 'test/asset/rest/update.txt'
+    new_metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': new_path,
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
+        {'metadata': new_metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        format='json',
+    ).json()
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+    assert resp == {
+        'asset_id': UUID_RE,
+        'path': new_path,
+        'size': embargoed_asset_blob.size,
+        'blob': embargoed_asset_blob.blob_id,
         'zarr': None,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
