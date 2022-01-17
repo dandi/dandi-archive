@@ -348,7 +348,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     )
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
-        old_asset = self.get_object()
+        old_asset: Asset = self.get_object()
         version = get_object_or_404(
             Version,
             dandiset__pk=versions__dandiset__pk,
@@ -364,10 +364,18 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer.is_valid(raise_exception=True)
 
         if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
-            asset_blob = get_object_or_404(AssetBlob, blob_id=serializer.validated_data['blob_id'])
+            try:
+                asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
+                embargoed_asset_blob = None
+            except AssetBlob.DoesNotExist:
+                embargoed_asset_blob = get_object_or_404(
+                    EmbargoedAssetBlob, blob_id=serializer.validated_data['blob_id']
+                )
+                asset_blob = None
             zarr_archive = None
         elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
             asset_blob = None
+            embargoed_asset_blob = None
             zarr_archive = get_object_or_404(
                 ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
             )
@@ -384,7 +392,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         if (
             metadata == old_asset.metadata
             and asset_blob == old_asset.blob
-            and zarr_archive == zarr_archive
+            and embargoed_asset_blob == old_asset.embargoed_blob
+            and zarr_archive == old_asset.zarr
         ):
             # No changes, don't create a new asset
             new_asset = old_asset
@@ -405,6 +414,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 new_asset = Asset(
                     path=path,
                     blob=asset_blob,
+                    embargoed_blob=embargoed_asset_blob,
                     zarr=zarr_archive,
                     metadata=metadata,
                     previous=old_asset,
