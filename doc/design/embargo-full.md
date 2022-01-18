@@ -1,6 +1,15 @@
 # Embargo
 This document takes the Embargo MVP as a predicate and describes the remaining features required for full Embargo support.
 
+## Switching drafts to embargoed on publish
+
+A user should be able to make the draft state of a published dataset embargoed. This has two possibilities.
+
+1. Starting with an embargoed dandiset: This involves creating an embargoed dataset, unembargoing and then publishing. At publish, the user can be given the option to embargo the draft version of the dataset.
+2. Starting with a published dandiset: This will embargo the draft version of a published dandiset.
+
+This would support use cases like adding new data to existing dandisets, but using all of the data for analyses, etc.,.
+
 ## Non-private embargoed dandisets
 In the MVP, all embargoed dandisets are invisible to non-owners.
 There should be an additional embargo mode, "Restricted".
