@@ -1,5 +1,6 @@
 import os
 from typing import Dict, List
+from uuid import uuid4
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
+from dandiapi.api._copy import copy_object
 from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
@@ -17,6 +19,7 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models.dandiset import Dandiset
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # If this environment variable is set, the pydantic model will allow URLs with localhost
@@ -161,3 +164,57 @@ def validate_version_metadata(version_id: int) -> None:
 @shared_task
 def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
+
+
+@shared_task
+def unembargo_dandiset(dandiset_id: int):
+    """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
+    dandiset: Dandiset = Dandiset.objects.get(id=dandiset_id)
+
+    # Only the draft version is needed, since embargoed dandisets can't be published
+    draft_version: Version = dandiset.draft_version
+    embargoed_assets: List[Asset] = list(
+        Asset.objects.filter(versions__in=[draft_version], embargoed_blob__isnull=False)
+    )
+
+    # Copy all embargoed assets to public bucket
+    for asset in embargoed_assets:
+        checksum = asset.embargoed_blob.sha256
+        matching_blob = (
+            AssetBlob.objects.filter(sha256=checksum).first() if checksum is not None else None
+        )
+
+        # Use existing AssetBlob if possible
+        if matching_blob is not None:
+            asset.blob = matching_blob
+        else:
+            # Matching AssetBlob doesn't exist, copy blob to public bucket
+            resp = copy_object(
+                asset.embargoed_blob.storage,
+                source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
+                source_key=asset.path,
+                dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
+                dest_key=asset.path,
+            )
+
+            # Assert files are equal
+            assert resp.etag == asset.embargoed_blob.etag
+
+            # Assign blob
+            asset.blob = AssetBlob(
+                blob_id=uuid4(),
+                etag=resp.etag,
+                blob=resp.key,
+                size=asset.embargoed_blob.size,
+            )
+
+        # Save updated blob field
+        asset.save(update_fields=['blob'])
+
+    # Update draft version metadata
+    draft_version.metadata['access'] = 'dandi:OpenAccess'
+    draft_version.save(update_fields=['metadata'])
+
+    # Set access on dandiset
+    dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
+    dandiset.save(update_fields=['embargo_status'])

@@ -10,7 +10,7 @@ from django.db.utils import IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
@@ -24,6 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.permissions import IsApprovedOrReadOnly
+from dandiapi.api.tasks import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
@@ -261,6 +262,31 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        methods=['POST'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'Dandiset unembargoing dispatched',
+            400: 'Dandiset not embargoed',
+        },
+        operation_summary='Unembargo a dandiset.',
+        operation_description=(
+            'Unembargo an embargoed dandiset. Only permitted for owners and admins'
+            '. If the embargo status is OPEN or UNEMBARGOING, an HTTP 400 is returned.'
+        ),
+    )
+    @action(methods=['POST'], detail=True)
+    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    def unembargo(self, request, dandiset__pk):
+        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
+            return Response("Dandiset not embargoed", status=status.HTTP_400_BAD_REQUEST)
+
+        unembargo_dandiset.delay(dandiset.pk)
+        return Response(None, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         method='GET',

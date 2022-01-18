@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
 except ImportError:
@@ -5,6 +7,7 @@ except ImportError:
     S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
 try:
     from minio_storage.storage import MinioStorage
+    from minio.definitions import CopyObjectResult
 except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
@@ -13,15 +16,21 @@ except ImportError:
 PART_SIZE = 500 * 1024 * 1024  # 500 MB
 
 
-def copy_object(storage, source_key: str, dest_key: str):
-    source_bucket = storage.bucket_name
-    # TODO: we may eventually want different buckets
-    dest_bucket = source_bucket
+@dataclass
+class CopyObjectResponse:
+    key: str
+    etag: str
 
+
+def copy_object(
+    storage, source_bucket: str, source_key: str, dest_bucket: str, dest_key: str
+) -> CopyObjectResponse:
+    """Copy an object, returning the new object key and etag."""
     if isinstance(storage, S3Boto3Storage):
-        _copy_object_s3(storage, source_bucket, source_key, dest_bucket, dest_key)
+        return _copy_object_s3(storage, source_bucket, source_key, dest_bucket, dest_key)
     elif isinstance(storage, MinioStorage):
-        _copy_object_minio(storage, source_bucket, source_key, dest_bucket, dest_key)
+        return _copy_object_minio(storage, source_bucket, source_key, dest_bucket, dest_key)
+
     else:
         raise ValueError(f'Unknown storage {storage}')
 
@@ -32,7 +41,8 @@ def _copy_object_s3(
     source_key: str,
     dest_bucket: str,
     dest_key: str,
-):
+) -> CopyObjectResponse:
+    """Copy an S3 object using multipart copy, returning the object key and etag."""
     client = storage.connection.meta.client
 
     response = client.head_object(
@@ -41,10 +51,7 @@ def _copy_object_s3(
     )
     content_length = response['ContentLength']
 
-    copy_source = f'{source_bucket}/{source_key}'
-
     # Use multipart copy so files > 5GB are supported
-
     parts_count = content_length // PART_SIZE
     if content_length % PART_SIZE > 0:
         # The extra part is for the remaining bytes that might be less than PART_SIZE
@@ -69,6 +76,7 @@ def _copy_object_s3(
             copy_range = f'bytes={progress}-{content_length-1}'
 
         # Copy the part
+        copy_source = f'{source_bucket}/{source_key}'
         response = client.upload_part_copy(
             Bucket=dest_bucket,
             Key=dest_key,
@@ -83,7 +91,7 @@ def _copy_object_s3(
         parts += [{'ETag': etag, 'PartNumber': part_number}]
 
     # Complete the multipart copy
-    client.complete_multipart_upload(
+    res = client.complete_multipart_upload(
         Bucket=dest_bucket,
         Key=dest_key,
         UploadId=upload_id,
@@ -96,6 +104,8 @@ def _copy_object_s3(
         Key=source_key,
     )
 
+    return CopyObjectResponse(key=res['Key'], etag=res['ETag'])
+
 
 def _copy_object_minio(
     storage,
@@ -103,9 +113,12 @@ def _copy_object_minio(
     source_key: str,
     dest_bucket: str,
     dest_key: str,
-):
+) -> CopyObjectResponse:
+    """Copy an object, returning the object key and etag"""
     # The Minio client will automatically use multipart upload if the file size is too big
     client = storage.client
     copy_source = f'{source_bucket}/{source_key}'
-    client.copy_object(dest_bucket, dest_key, copy_source)
+    res: CopyObjectResult = client.copy_object(dest_bucket, dest_key, copy_source)
     client.remove_object(source_bucket, source_key)
+
+    return CopyObjectResponse(key=res.object_name, etag=res.etag)
