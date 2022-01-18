@@ -53,8 +53,12 @@ def _download_asset(asset: Asset):
         return HttpResponseRedirect(
             reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
         )
+    elif asset.is_blob:
+        asset_blob = asset.blob
+    elif asset.is_embargoed_blob:
+        asset_blob = asset.embargoed_blob
 
-    storage = asset.blob.blob.storage
+    storage = asset_blob.blob.storage
 
     if isinstance(storage, S3Boto3Storage):
         client = storage.connection.meta.client
@@ -63,7 +67,7 @@ def _download_asset(asset: Asset):
             'get_object',
             Params={
                 'Bucket': storage.bucket_name,
-                'Key': asset.blob.blob.name,
+                'Key': asset_blob.blob.name,
                 'ResponseContentDisposition': f'attachment; filename="{path}"',
             },
         )
@@ -71,7 +75,7 @@ def _download_asset(asset: Asset):
     elif isinstance(storage, MinioStorage):
         client = storage.client if storage.base_url is None else storage.base_url_client
         bucket = storage.bucket_name
-        obj = asset.blob.blob.name
+        obj = asset_blob.blob.name
         path = os.path.basename(asset.path)
         url = client.presigned_get_object(
             bucket,

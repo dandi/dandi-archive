@@ -10,7 +10,7 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -1069,6 +1069,36 @@ def test_asset_download(api_client, storage, version, asset):
     assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
 
     with asset.blob.blob.file.open('rb') as reader:
+        assert download.content == reader.read()
+
+
+@pytest.mark.django_db
+def test_asset_download_embargo(
+    api_client, storage, version, asset_factory, embargoed_asset_blob_factory
+):
+    # Pretend like EmbargoedAssetBlob was defined with the given storage
+    EmbargoedAssetBlob.blob.field.storage = storage
+
+    embargoed_blob = embargoed_asset_blob_factory()
+    asset = asset_factory(blob=None, embargoed_blob=embargoed_blob)
+    version.assets.add(asset)
+
+    response = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/'
+        f'versions/{version.version}/assets/{asset.asset_id}/download/'
+    )
+
+    assert response.status_code == 302
+
+    download_url = response.get('Location')
+    assert download_url == HTTP_URL_RE
+
+    download = requests.get(download_url)
+    cd_header = download.headers.get('Content-Disposition')
+
+    assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
+
+    with asset.embargoed_blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
 
 
