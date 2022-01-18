@@ -224,7 +224,7 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props) {
+  setup(props, ctx) {
     const contributors = computed(
       () => props.meta.contributor?.filter(
         (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
@@ -258,7 +258,8 @@ export default defineComponent({
 
     // Approximate a good column count for asset summary card
     const assetSummaryColumnCount = computed(
-      () => Math.min(Object.keys(assetSummary.value).length, 3),
+      () => (ctx.root.$vuetify.breakpoint.mdAndDown ? 1
+        : Math.min(Object.keys(assetSummary.value).length, 3)),
     );
 
     const contactPeople = computed(
