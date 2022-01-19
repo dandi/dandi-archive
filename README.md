@@ -21,7 +21,7 @@ Vue-based [frontend](web/) to provide a user interface to the archive.
 
 To get help:
 - ask a question: https://github.com/dandi/helpdesk/discussions
-- file a feature request or bug report: https://github.com/dandi/helpdesk/issues
+- file a feature request or bug report: https://github.com/dandi/helpdesk/issues/new/choose
 - contact the DANDI team: help@dandiarchive.org
 
 To hack on the archive codebase:
