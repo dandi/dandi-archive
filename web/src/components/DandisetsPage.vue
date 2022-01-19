@@ -165,8 +165,8 @@ export default defineComponent({
         ordering,
         user: props.user ? 'me' : null,
         search: props.search ? route.query.search : null,
-        draft: showDrafts.value,
-        empty: showEmpty.value,
+        draft: props.user ? true : showDrafts.value,
+        empty: props.user ? true : showEmpty.value,
       });
       djangoDandisetRequest.value = response.data;
     });
