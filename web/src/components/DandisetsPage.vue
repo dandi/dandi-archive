@@ -2,6 +2,7 @@
   <div v-page-title="pageTitle">
     <v-toolbar color="grey darken-2 white--text">
       <v-menu
+        v-if="!user"
         offset-y
         :close-on-content-click="false"
       >
