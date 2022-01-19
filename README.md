@@ -25,4 +25,5 @@ To get help:
 - contact the DANDI team: help@dandiarchive.org
 
 To hack on the archive codebase:
-- [`DEVELOPMENT.md`](DEVELOPMENT.md)
+- Django backend: [`DEVELOPMENT.md`](DEVELOPMENT.md)
+- Vue frontend: [`web/README.md`](web/README.md)
