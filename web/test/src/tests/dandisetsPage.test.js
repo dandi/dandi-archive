@@ -1,4 +1,4 @@
-import { vBtn, vIcon } from 'jest-puppeteer-vuetify';
+import { vBtn } from 'jest-puppeteer-vuetify';
 import moment from 'moment';
 import {
   uniqueId,
@@ -19,10 +19,6 @@ describe('dandisets page', () => {
     await waitForRequestsToFinish();
 
     await expect(page).toClickXPath(vBtn(MY_DANDISETS_BTN_TEXT));
-    await expect(page).toClickXPath(vIcon('mdi-cog'));
-    // Wait for the settings menu to open
-    await page.waitForTimeout(500);
-    await expect(page).toClickXPath('//label[.= "Empty Dandisets"]');
     await waitForRequestsToFinish();
 
     await expect(page).toMatch(name);
