@@ -1,8 +1,10 @@
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
@@ -31,12 +33,17 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     lookup_value_regex = Version.VERSION_REGEX
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(dandiset__in=Dandiset.objects.visible_to(self.request.user))
-            .distinct()
-        )
+        # We need to check the dandiset to see if it's embargoed, and if so whether or not the
+        # user has ownership
+        dandiset = get_object_or_404(Dandiset, pk=self.kwargs['dandiset__pk'])
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            if not self.request.user.is_authenticated:
+                # Clients must be authenticated to access it
+                raise NotAuthenticated()
+            if not self.request.user.has_perm('owner', dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
+        return super().get_queryset()
 
     @swagger_auto_schema(
         responses={
