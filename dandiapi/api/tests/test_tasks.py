@@ -2,6 +2,7 @@ import hashlib
 
 from django.conf import settings
 from django.core.files.storage import Storage
+import factory
 import pytest
 
 from dandiapi.api import tasks
@@ -285,6 +286,57 @@ def test_unembargo_dandiset(
 
 @pytest.mark.django_db
 def test_unembargo_dandiset_existing_blobs(
-    dandiset_factory, draft_version_factory, asset_factory, embargoed_asset_blob_factory, storage
+    dandiset_factory,
+    draft_version_factory,
+    asset_factory,
+    asset_blob_factory,
+    embargoed_asset_blob_factory,
+    storage,
+    embargoed_storage,
 ):
-    pass
+    # Since both fixtures are parametrized, only proceed when they use the same storage backend
+    if type(storage) != type(embargoed_storage):
+        return
+
+    # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
+    AssetBlob.blob.field.storage = storage
+    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
+
+    # Create dandiset and version
+    dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    draft_version_factory(dandiset=dandiset)
+
+    # Create embargoed assets
+    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
+    embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
+
+    # Create unembargoed asset with identical data
+    embargoed_asset_blob_data = embargoed_asset_blob.blob.read()
+    embargoed_asset_blob.blob.seek(0)
+    existing_asset_blob = asset_blob_factory(
+        blob=factory.django.FileField(data=embargoed_asset_blob_data)
+    )
+
+    # Assert properties before unembargo
+    assert embargoed_asset.embargoed_blob is not None
+    assert embargoed_asset.blob is None
+    assert embargoed_asset.embargoed_blob.etag != ''
+    assert existing_asset_blob.etag != ''
+    assert embargoed_asset_blob.etag == existing_asset_blob.etag
+
+    # Run unembargo
+    draft_version = dandiset.draft_version
+    draft_version.assets.add(embargoed_asset)
+    tasks.unembargo_dandiset(dandiset.pk)
+    dandiset.refresh_from_db()
+    draft_version.refresh_from_db()
+
+    # Assert correct changes took place
+    assert dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
+    assert draft_version.metadata['access'] == 'dandi:OpenAccess'
+
+    asset: Asset = draft_version.assets.first()
+    assert asset.embargoed_blob is None
+    assert asset.blob is not None
+    assert asset.blob.etag == embargoed_asset_blob.etag
+    assert asset.blob == existing_asset_blob
