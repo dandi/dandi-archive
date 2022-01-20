@@ -24,7 +24,7 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
@@ -200,12 +200,21 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     filterset_class = AssetFilter
 
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(versions__dandiset__in=Dandiset.objects.visible_to(self.request.user))
-            .distinct()
+        # We need to check the dandiset to see if it's embargoed, and if so whether or not the
+        # user has ownership
+        version = get_object_or_404(
+            Version,
+            dandiset__pk=self.kwargs['versions__dandiset__pk'],
+            version=self.kwargs['versions__version'],
         )
+        if version.dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            if not self.request.user.is_authenticated:
+                # Clients must be authenticated to access it
+                raise NotAuthenticated()
+            if not self.request.user.has_perm('owner', version.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
+        return super().get_queryset()
 
     @swagger_auto_schema(
         responses={
