@@ -130,7 +130,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     blob_id = factory.Faker('uuid4')
     blob = factory.django.FileField(data=factory.Faker('binary', length=100))
-    size = 13  # len(somefilebytes)
+    size = 100
 
     @factory.lazy_attribute
     def sha256(self):
@@ -141,10 +141,8 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def etag(self):
-        h = hashlib.md5()
-        h.update(self.blob.read())
-        self.blob.seek(0)
-        return f'{h.hexdigest()}-0'
+        checksum = hashlib.md5(hashlib.md5(self.blob.read()).digest()).hexdigest()
+        return f'{checksum}-1'
 
     @factory.lazy_attribute
     def size(self):

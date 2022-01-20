@@ -179,10 +179,8 @@ def unembargo_dandiset(dandiset_id: int):
 
     # Copy all embargoed assets to public bucket
     for asset in embargoed_assets:
-        checksum = asset.embargoed_blob.sha256
-        matching_blob = (
-            AssetBlob.objects.filter(sha256=checksum).first() if checksum is not None else None
-        )
+        etag = asset.embargoed_blob.etag
+        matching_blob = AssetBlob.objects.filter(etag=etag).first() if etag != '' else None
 
         # Use existing AssetBlob if possible
         if matching_blob is not None:
@@ -190,11 +188,11 @@ def unembargo_dandiset(dandiset_id: int):
         else:
             # Matching AssetBlob doesn't exist, copy blob to public bucket
             resp = copy_object(
-                asset.embargoed_blob.storage,
+                asset.embargoed_blob.blob.storage,
                 source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
-                source_key=asset.path,
+                source_key=asset.embargoed_blob.blob.name,
                 dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-                dest_key=asset.path,
+                dest_key=asset.embargoed_blob.blob.name,
             )
 
             # Assert files are equal
@@ -207,9 +205,11 @@ def unembargo_dandiset(dandiset_id: int):
                 blob=resp.key,
                 size=asset.embargoed_blob.size,
             )
+            asset.blob.save()
 
         # Save updated blob field
-        asset.save(update_fields=['blob'])
+        asset.embargoed_blob = None
+        asset.save(update_fields=['blob', 'embargoed_blob'])
 
     # Update draft version metadata
     draft_version.metadata['access'] = 'dandi:OpenAccess'

@@ -1,4 +1,6 @@
+import binascii
 from dataclasses import dataclass
+import hashlib
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -6,8 +8,8 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
 try:
-    from minio_storage.storage import MinioStorage
     from minio.definitions import CopyObjectResult
+    from minio_storage.storage import MinioStorage
 except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
@@ -42,7 +44,6 @@ def _copy_object_s3(
     dest_bucket: str,
     dest_key: str,
 ) -> CopyObjectResponse:
-    """Copy an S3 object using multipart copy, returning the object key and etag."""
     client = storage.connection.meta.client
 
     response = client.head_object(
@@ -87,7 +88,7 @@ def _copy_object_s3(
         )
 
         # Save the ETag + Part number
-        etag = response['CopyPartResult']['ETag']
+        etag = response['CopyPartResult']['ETag'].strip('"')
         parts += [{'ETag': etag, 'PartNumber': part_number}]
 
     # Complete the multipart copy
@@ -104,7 +105,7 @@ def _copy_object_s3(
         Key=source_key,
     )
 
-    return CopyObjectResponse(key=res['Key'], etag=res['ETag'])
+    return CopyObjectResponse(key=res['Key'], etag=res['ETag'].strip('"'))
 
 
 def _copy_object_minio(
@@ -120,5 +121,10 @@ def _copy_object_minio(
     copy_source = f'{source_bucket}/{source_key}'
     res: CopyObjectResult = client.copy_object(dest_bucket, dest_key, copy_source)
     client.remove_object(source_bucket, source_key)
+
+    # Ensure that etag is calculated properly, since minio might not use multipart copy
+    if '-' not in res.etag:
+        checksum = hashlib.md5(binascii.unhexlify(res.etag)).hexdigest()
+        res.etag = f'{checksum}-1'
 
     return CopyObjectResponse(key=res.object_name, etag=res.etag)

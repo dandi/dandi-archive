@@ -85,12 +85,12 @@ def authenticated_api_client(user) -> APIClient:
 # storage fixtures are copied from django-s3-file-field test fixtures
 
 
-def s3boto3_storage_factory() -> 'S3Boto3Storage':
+def base_s3boto3_storage_factory(bucket_name: str) -> 'S3Boto3Storage':
     storage = S3Boto3Storage(
         access_key=settings.MINIO_STORAGE_ACCESS_KEY,
         secret_key=settings.MINIO_STORAGE_SECRET_KEY,
         region_name='test-region',
-        bucket_name=settings.DANDI_DANDISETS_BUCKET_NAME,
+        bucket_name=bucket_name,
         # For testing, connect to a local Minio instance
         endpoint_url=(
             f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
@@ -108,7 +108,15 @@ def s3boto3_storage_factory() -> 'S3Boto3Storage':
     return storage
 
 
-def minio_storage_factory() -> MinioStorage:
+def s3boto3_storage_factory():
+    return base_s3boto3_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
+
+
+def embargoed_s3boto3_storage_factory():
+    return base_s3boto3_storage_factory(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
+
+
+def base_minio_storage_factory(bucket_name: str) -> MinioStorage:
     return MinioStorage(
         minio_client=Minio(
             endpoint=settings.MINIO_STORAGE_ENDPOINT,
@@ -117,16 +125,24 @@ def minio_storage_factory() -> MinioStorage:
             secret_key=settings.MINIO_STORAGE_SECRET_KEY,
             # Don't use s3_connection_params.region, let Minio set its own value internally
         ),
-        bucket_name=settings.DANDI_DANDISETS_BUCKET_NAME,
+        bucket_name=bucket_name,
         auto_create_bucket=True,
         presign_urls=True,
         # For testing, connect to a local Minio instance
         base_url=(
             f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
             f'//{settings.MINIO_STORAGE_ENDPOINT}'
-            f'/{settings.DANDI_DANDISETS_BUCKET_NAME}'
+            f'/{bucket_name}'
         ),
     )
+
+
+def minio_storage_factory() -> MinioStorage:
+    return base_minio_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
+
+
+def embargoed_minio_storage_factory() -> MinioStorage:
+    return base_minio_storage_factory(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
 
 
 @pytest.fixture
@@ -135,11 +151,30 @@ def s3boto3_storage() -> 'S3Boto3Storage':
 
 
 @pytest.fixture
+def embargoed_s3boto3_storage() -> 'S3Boto3Storage':
+    return s3boto3_storage_factory(embargoed=True)
+
+
+@pytest.fixture
 def minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
+@pytest.fixture
+def embargoed_minio_storage() -> MinioStorage:
+    return minio_storage_factory(embargoed=True)
+
+
 @pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
 def storage(request) -> Storage:
+    storage_factory = request.param
+    return storage_factory()
+
+
+@pytest.fixture(
+    params=[embargoed_s3boto3_storage_factory, embargoed_minio_storage_factory],
+    ids=['s3boto3', 'minio'],
+)
+def embargoed_storage(request) -> Storage:
     storage_factory = request.param
     return storage_factory()
