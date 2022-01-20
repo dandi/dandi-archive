@@ -8,7 +8,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.utils import IntegrityError
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
@@ -16,6 +15,7 @@ from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -92,8 +92,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         # Only include embargoed dandisets which belong to the current user
-        queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+        queryset = Dandiset.objects
         if self.action == 'list':
+            queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
             # TODO: This will filter the dandisets list if there is a query parameter user=me.
             # This is not a great solution but it is needed for the My Dandisets page.
             user_kwarg = self.request.query_params.get('user', None)
@@ -135,7 +136,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise Http404('Not a valid identifier.')
         self.kwargs[self.lookup_url_kwarg] = lookup_value
 
-        return super().get_object()
+        dandiset = super().get_object()
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            if not self.request.user.is_authenticated:
+                # Clients must be authenticated to access it
+                raise NotAuthenticated()
+            if not self.request.user.has_perm('owner', dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
+        return dandiset
 
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
@@ -251,7 +260,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         Deletes a dandiset. Only dandisets without published versions are deletable.
         """
-        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        dandiset: Dandiset = self.get_object()
 
         if dandiset.versions.filter(~Q(version='draft')).exists():
             return Response(
@@ -284,7 +293,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     # TODO move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
-        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        dandiset = self.get_object()
         if request.method == 'PUT':
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)

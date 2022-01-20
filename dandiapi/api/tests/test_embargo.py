@@ -24,6 +24,10 @@ EMPTY_PAGINATION = {
 @pytest.mark.parametrize(
     ('method', 'url_format'),
     [
+        ('get', '/api/dandisets/{dandiset.identifier}/'),
+        ('delete', '/api/dandisets/{dandiset.identifier}/'),
+        ('get', '/api/dandisets/{dandiset.identifier}/users/'),
+        ('put', '/api/dandisets/{dandiset.identifier}/users/'),
         ('get', '/api/dandisets/{dandiset.identifier}/versions/'),
         ('get', '/api/dandisets/{dandiset.identifier}/versions/draft/'),
         ('put', '/api/dandisets/{dandiset.identifier}/versions/draft/'),
