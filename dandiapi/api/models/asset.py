@@ -164,7 +164,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def sha256(self):
-        return self.blob.sha256
+        if self.is_blob:
+            return self.blob.sha256
+        elif self.is_embargoed_blob:
+            return self.embargoed_blob.sha256
 
     @property
     def digest(self) -> Dict[str, str]:

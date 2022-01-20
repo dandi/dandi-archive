@@ -18,7 +18,7 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
@@ -37,7 +37,10 @@ logger = get_task_logger(__name__)
 @atomic
 def calculate_sha256(blob_id: int) -> None:
     logger.info('Starting sha256 calculation for blob %s', blob_id)
-    asset_blob = AssetBlob.objects.get(blob_id=blob_id)
+    try:
+        asset_blob = AssetBlob.objects.get(blob_id=blob_id)
+    except AssetBlob.DoesNotExist:
+        asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
 
     sha256 = calculate_sha256_checksum(asset_blob.blob.storage, asset_blob.blob.name)
     logger.info('Calculated sha256 %s', sha256)

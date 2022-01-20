@@ -9,10 +9,12 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
+from minio_storage.storage import MinioStorage
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.permissions import IsApprovedOrReadOnly
@@ -202,19 +204,34 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         )
     ],
 )
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 def explore_zarr_archive(request, zarr_id: str, path: str):
     """
     Get information about files in a zarr archive.
 
     If the path ends with /, it is assumed to be a directory and metadata about the directory is returned.
     If the path does not end with /, it is assumed to be a file and a redirect to that file in S3 is returned.
+    HEAD requests are all assumed to be files and will return redirects to that file in S3.
 
     This API is compatible with https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem.
     """  # noqa: E501
     zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
     if path == '':
         path = '/'
+    if request.method == 'HEAD':
+        # We cannot use storage.url because that presigns a GET request.
+        # Instead, we need to presign the HEAD request using the storage-appropriate client.
+        storage = ZarrUploadFile.blob.field.storage
+        if issubclass(storage.__class__, S3Boto3Storage):
+            url = storage.bucket.meta.client.generate_presigned_url(
+                'head_object',
+                Params={'Bucket': storage.bucket.name, 'Key': zarr_archive.s3_path(path)},
+            )
+        elif issubclass(storage.__class__, MinioStorage):
+            url = storage.base_url_client.presigned_url(
+                'HEAD', storage.bucket_name, zarr_archive.s3_path(path)
+            )
+        return HttpResponseRedirect(url)
     # If a path ends with a /, assume it is a directory.
     # Return a JSON blob which contains URLs to the contents of the directory.
     if path.endswith('/'):

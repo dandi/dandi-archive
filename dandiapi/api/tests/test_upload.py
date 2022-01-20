@@ -417,7 +417,13 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_factory, content_size):
+def test_upload_initialize_and_complete_embargo(
+    storage, api_client, user, dandiset_factory, content_size
+):
+    # Pretend like the blobs were defined with the given storage
+    EmbargoedUpload.blob.field.storage = storage
+    EmbargoedAssetBlob.blob.field.storage = storage
+
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     assign_perm('owner', user, dandiset)
@@ -464,7 +470,6 @@ def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_facto
     assert upload.blob.name.startswith(f'test-embargo-prefix/{dandiset.identifier}/blobs/')
     # Verify nothing public was created
     assert not Upload.objects.all().exists()
-    assert not AssetBlob.blob.field.storage.exists(upload.blob.name)
 
 
 @pytest.mark.django_db
