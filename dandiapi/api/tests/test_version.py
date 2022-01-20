@@ -888,29 +888,3 @@ def test_version_rest_delete_draft_admin(api_client, admin_user, draft_version):
     assert response.status_code == 403
     assert response.data == 'Cannot delete draft versions'
     assert draft_version in Version.objects.all()
-
-
-@pytest.mark.parametrize(
-    ('embargo_status'),
-    [
-        Dandiset.EmbargoStatus.EMBARGOED,
-        Dandiset.EmbargoStatus.UNEMBARGOING,
-    ],
-)
-@pytest.mark.django_db
-def test_version_embargoed_visibility(
-    api_client, dandiset_factory, draft_version_factory, embargo_status
-):
-    dandiset = dandiset_factory(embargo_status=embargo_status)
-    version = draft_version_factory(dandiset=dandiset)
-
-    # The version should be hidden because the dandiset it belongs to is embargoed
-    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/versions/')
-    assert response.json() == {
-        'count': 0,
-        'next': None,
-        'previous': None,
-        'results': [],
-    }
-    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/')
-    assert response.status_code == 404
