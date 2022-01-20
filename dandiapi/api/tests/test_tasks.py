@@ -7,7 +7,6 @@ import pytest
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
-from dandiapi.api.models.asset import EmbargoedAssetBlob
 from dandiapi.api.models.dandiset import Dandiset
 
 
