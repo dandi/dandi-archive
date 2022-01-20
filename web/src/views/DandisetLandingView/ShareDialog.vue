@@ -6,7 +6,7 @@
     max-width="500"
   >
     <template #activator="{ on }">
-      <div v-on="on">
+        <div style="display: inline" v-on="on">
         <v-icon
           color="primary"
         >
