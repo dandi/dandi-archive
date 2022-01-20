@@ -44,7 +44,6 @@
     </v-card>
 
     <MetadataCard
-      v-if="fundingInformation && fundingInformation.length"
       :items="fundingInformation"
       name="Funding information"
       icon="mdi-currency-usd"
@@ -60,6 +59,11 @@
             <strong>- Award Number: </strong>{{ slotProps.item.awardNumber }}
           </span>
         </div>
+      </template>
+      <template #emptyFallback>
+        <span class="font-italic font-weight-bold">
+          No funding information available.
+        </span>
       </template>
     </MetadataCard>
 
