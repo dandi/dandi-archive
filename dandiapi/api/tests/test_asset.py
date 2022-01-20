@@ -10,7 +10,7 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE

@@ -46,7 +46,7 @@ EMPTY_PAGINATION = {
         ),
         (
             'get',
-            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',
+            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',  # noqa: E501
         ),
     ],
 )
@@ -65,6 +65,7 @@ def test_embargo_visibility(
     dandiset = dandiset_factory(embargo_status=embargo_status)
     version = draft_version_factory(dandiset=dandiset)
     asset = draft_asset_factory(blob=None, embargoed_blob=embargoed_asset_blob)
+    version.assets.add(asset)
 
     url = url_format.format(dandiset=dandiset, asset=asset)
     response = getattr(api_client, method)(url)

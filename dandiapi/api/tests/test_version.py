@@ -7,7 +7,6 @@ import pytest
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.models.dandiset import Dandiset
 
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
