@@ -115,7 +115,7 @@ def _copy_object_minio(
     dest_bucket: str,
     dest_key: str,
 ) -> CopyObjectResponse:
-    """Copy an object, returning the object key and etag"""
+    """Copy an object, returning the object key and etag."""
     # The Minio client will automatically use multipart upload if the file size is too big
     client = storage.client
     copy_source = f'{source_bucket}/{source_key}'

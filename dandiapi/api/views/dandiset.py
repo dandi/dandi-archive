@@ -283,7 +283,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
 
         if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
-            return Response("Dandiset not embargoed", status=status.HTTP_400_BAD_REQUEST)
+            return Response('Dandiset not embargoed', status=status.HTTP_400_BAD_REQUEST)
 
         unembargo_dandiset.delay(dandiset.pk)
         return Response(None, status=status.HTTP_200_OK)
