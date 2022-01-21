@@ -24,6 +24,16 @@
           outlined
           class="my-4"
         />
+        <v-combobox
+          v-model="license"
+          :items="['spdx:CC0-1.0', 'spdx:CC-BY-4.0']"
+          label="License*"
+          class="my-4"
+          multiple
+          outlined
+          dense
+        />
+
         <!-- TODO: remove v-if to enable embargoed dandiset creation -->
         <div v-if="false">
           <v-checkbox
@@ -118,6 +128,7 @@ export default defineComponent({
   setup(props, ctx) {
     const name = ref('');
     const description = ref('');
+    const license = ref('');
     const embargoed = ref(false);
     const awardNumber = ref('');
     const saveDisabled = computed(
@@ -135,7 +146,7 @@ export default defineComponent({
     }
 
     async function registerDandiset() {
-      const metadata = { name: name.value, description: description.value };
+      const metadata = { name: name.value, description: description.value, license: license.value };
 
       const { data } = embargoed.value
         ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
@@ -147,6 +158,7 @@ export default defineComponent({
     return {
       name,
       description,
+      license,
       embargoed,
       awardNumber,
       saveDisabled,
