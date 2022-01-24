@@ -18,3 +18,4 @@ jobs:
         env:
           NETLIFY_SITE_ID: ${{secrets.NETLIFY_STAGING_SITE_ID}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NETLIFY_BASE: web
