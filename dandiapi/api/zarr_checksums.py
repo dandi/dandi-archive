@@ -11,7 +11,7 @@ from django.core.files.base import ContentFile
 import pydantic
 
 if TYPE_CHECKING:
-    from dandiapi.api.models import ZarrArchive
+    from dandiapi.api.models import EmbargoedZarrArchive, ZarrArchive
 
 
 """Passed to the json() method of pydantic models for serialization."""
@@ -145,7 +145,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
 
     def __init__(
         self,
-        zarr_archive: ZarrArchive,
+        zarr_archive: ZarrArchive | EmbargoedZarrArchive,
         zarr_directory_path: str | Path,
         serializer=_default_serializer,
     ):
@@ -191,9 +191,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
 
     def read_checksum_file(self) -> Optional[ZarrChecksumListing]:
         """Load a checksum listing from the checksum file."""
-        from dandiapi.api.models import ZarrUploadFile
-
-        storage = ZarrUploadFile.blob.field.storage
+        storage = self.zarr_archive.storage
         checksum_path = self.checksum_file_path
         if storage.exists(checksum_path):
             with storage.open(checksum_path) as f:
@@ -204,9 +202,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
 
     def write_checksum_file(self, zarr_checksum: ZarrChecksumListing):
         """Write a checksum listing to the checksum file."""
-        from dandiapi.api.models import ZarrUploadFile
-
-        storage = ZarrUploadFile.blob.field.storage
+        storage = self.zarr_archive.storage
         content_file = ContentFile(self._serializer.serialize(zarr_checksum).encode('utf-8'))
         # save() will never overwrite an existing file, it simply appends some garbage to ensure
         # uniqueness. _save() is an internal storage API that will overwite existing files.
@@ -214,9 +210,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
 
     def delete_checksum_file(self):
         """Delete the checksum file."""
-        from dandiapi.api.models import ZarrUploadFile
-
-        storage = ZarrUploadFile.blob.field.storage
+        storage = self.zarr_archive.storage
         storage.delete(self.checksum_file_path)
 
     def add_file_checksums(self, checksums: List[ZarrChecksum]):
@@ -300,7 +294,7 @@ class ZarrChecksumModificationQueue:
 class ZarrChecksumUpdater:
     """A helper for updating batches of checksums in a zarr archive."""
 
-    def __init__(self, zarr_archive: ZarrArchive) -> None:
+    def __init__(self, zarr_archive: ZarrArchive | EmbargoedZarrArchive) -> None:
         self.zarr_archive = zarr_archive
 
     def modify(self, modifications: ZarrChecksumModificationQueue):

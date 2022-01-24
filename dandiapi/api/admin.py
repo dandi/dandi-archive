@@ -17,6 +17,8 @@ from dandiapi.api.models import (
     Asset,
     AssetBlob,
     Dandiset,
+    EmbargoedZarrArchive,
+    EmbargoedZarrUploadFile,
     Upload,
     UserMetadata,
     Version,
@@ -156,7 +158,19 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'zarr_id', 'name']
 
 
+@admin.register(EmbargoedZarrArchive)
+class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
+    list_display = ['id', 'zarr_id', 'name', 'dandiset']
+    list_display_links = ['id', 'zarr_id', 'name']
+
+
 @admin.register(ZarrUploadFile)
 class ZarrUploadFileAdmin(admin.ModelAdmin):
+    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
+    list_display_links = ['id']
+
+
+@admin.register(EmbargoedZarrUploadFile)
+class EmbargoedZarrUploadFileAdmin(admin.ModelAdmin):
     list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
     list_display_links = ['id']
