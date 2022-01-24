@@ -172,8 +172,8 @@ class BaseZarrArchive(TimeStampedModel):
 
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     name = models.CharField(max_length=512)
-    file_count = models.IntegerField(default=0)
-    size = models.IntegerField(default=0)
+    file_count = models.BigIntegerField(default=0)
+    size = models.BigIntegerField(default=0)
 
     @property
     def upload_in_progress(self) -> bool:
