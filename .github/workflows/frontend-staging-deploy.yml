@@ -2,10 +2,10 @@ name: Deploy frontend to staging
 
 on:
   push:
-    #branches:
-      #- master
-    #paths:
-      #- "web/**"
+    branches:
+      - master
+    paths:
+      - "web/**"
 
 jobs:
   deploy-frontend-staging:
