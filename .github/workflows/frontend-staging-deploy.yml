@@ -29,6 +29,9 @@ jobs:
       - name: Build the frontend
         run: yarn run build
 
+      - name: Set staging deploy environment variables
+        run: npx netlify env:import .env.staging
+
       - name: Deploy to staging
         run: npx netlify deploy --prod --dir=dist
         env:
