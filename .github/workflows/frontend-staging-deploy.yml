@@ -1,0 +1,21 @@
+name: Trigger staging deploy of frontend application on push to master
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "web/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Deploy frontend to staging
+        uses: netlify/actions/build@master
+        env:
+          NETLIFY_SITE_ID: ${{secrets.NETLIFY_STAGING_SITE_ID}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NETLIFY_BASE: web
