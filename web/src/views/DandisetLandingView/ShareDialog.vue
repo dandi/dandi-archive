@@ -7,7 +7,7 @@
   >
     <template #activator="{ on }">
       <div
-        style="display: inline"
+        class="d-inline"
         v-on="on"
       >
         <v-icon
