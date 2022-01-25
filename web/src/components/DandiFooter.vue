@@ -15,7 +15,7 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2021 DANDI<br>
+          &copy; 2019 - present The DANDI Team<br>
           version
           <a
             class="version-link"
