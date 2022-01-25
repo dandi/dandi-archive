@@ -7,7 +7,7 @@ import {
 } from '../util';
 import * as homePage from '../pages/homePage';
 
-const VERSION_LINK_REGEX = /https:\/\/github.com\/dandi\/dandiarchive\/commit\/[0-9a-f]{5,40}/;
+const VERSION_LINK_REGEX = /https:\/\/github.com\/dandi\/dandi-archive\/commit\/[0-9a-f]{5,40}/;
 
 describe('home page stats', () => {
   it('increments users stat when a new user registers', async () => {
