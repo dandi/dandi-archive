@@ -56,7 +56,7 @@ The intended use of Zarr archives is primarily to support use cases where data a
 
   Completes an upload of a batch of zarr files.
   Fail if any of the checksums do not match.
-  Also, recursively update the tree hash for every parent node for each child.
+  Trigger the task which recursively updates the tree hash for every parent node for each child.
 
 * **DELETE /api/zarr/{zarr_id}/upload/**
 
@@ -66,7 +66,7 @@ The intended use of Zarr archives is primarily to support use cases where data a
 
 * **DELETE /api/zarr/{zarr_id}/files/**
 
-  Deletes zarr files from S3, and updates the tree hash accordingly.
+  Deletes zarr files from S3, and trigger the task to recursively update the tree hash accordingly.
   Requires a list of file paths.
   All paths must be present in S3, otherwise return 404 without deleting anything.
 
@@ -142,6 +142,54 @@ Every update to a `.checksum` file also requires updating the `.checksum` of the
 This bubbles up to the top of the zarr archive, where the final `.checksum` for the entire archive can be found.
 
 No spaces are used in JSON encodings.
+
+## Calculating checksums
+Experience has proven that updating the .checksum file in the upload complete request takes too long.
+Therefore, updating the `.checksum` file happens in a celery task.
+The upload complete endpoint will enqueue updates to perform, which are then handled as soon as possible by an arbitrary number of celery workers.
+This allows us to scale the number of celery workers so that the checksum for a zarr archive is available almost immediately after upload is complete.
+
+### ZarrChecksumUpdate
+The `ZarrChecksumUpdate` model is used to store updates that need to be applied to a zarr archive.
+It's fields will include:
+* The `ZarrArchive` it applies to.
+* The `parent_directory` containing the `.checksum` file being modified.
+* The `name` of the file being changed in the `parent_directory`.
+* An `update_type` enum:
+  * `FILE`: adding or updating a file checksum
+  * `DIRECTORY`: adding or updating a directory checksum
+  * `REMOVAL`: removing a checksum
+* The `depth` of the update; basically the number of slashes in `parent_directory`.
+* A `status` enum:
+  * `PENDING`: not yet picked up by a worker
+  * `IN_PROGRESS`: being processed by a worker
+
+
+In the upload complete endpoint, a new `ZarrChecksumUpdate` is created with an `update_type` of `FILE` for every path.
+In the file delete endpoint, a new `ZarrChecksumUpdate` is created with an `update_type` of `REMOVAL` for every path.
+Both endpoints will then dispatch a single checksum update task.
+
+### Checksum update task
+The checksum update task takes a `zarr_id` as an argument.
+It will then run the following loop:
+* Select the `ZarrChecksumUpdate` with the greatest `depth` and status `PENDING`.
+  * If there is no such `ZarrChecksumUpdate`, terminate.
+* Select for update all `ZarrChecksumUpdate` with the same `parent_directory`.
+  These represent all the updates waiting to be applied to a `.checksum` file.
+  * If the select for update failed, another worker selected the same `parent_directory` in a race condition.
+    Catch the error and terminate silently.
+* Set the `status` of all selected `ZarrChecksumUpdates` to `IN_PROGRESS`.
+* Dispatch another checksum update task.
+  If there are other updates pending, it will begin saturating the available workers.
+  If there are no updates pending, it will quit silently without doing anything.
+* Apply the necessary modifications to the `.checksum` file in the common `parent_directory`.
+* Delete all selected `ZarrChecksumUpdates`.
+* Repeat until there are no more pending `ZarrChecksumUpdates`.
+
+This task is guaranteed to:
+* Update from the bottom of the file tree to the top, minimizing writes.
+* Never apply the same updates at the same time when run concurrently.
+* Saturate the worker pool as quickly as possible.
 
 # Publishing support
 After a dandiset that contains a zarr archive is published, that zarr archive is immutable.
