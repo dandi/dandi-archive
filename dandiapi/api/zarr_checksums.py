@@ -300,6 +300,9 @@ class ZarrChecksumUpdater:
     def modify(self, modifications: ZarrChecksumModificationQueue):
         while not modifications.empty:
             modification = modifications.pop_deepest()
+            print(
+                f'Applying modifications to {self.zarr_archive.zarr_id}:{modification.path} ({len(modification.files_to_update)} files, {len(modification.directories_to_update)} directories, {len(modification.paths_to_remove)} removals)'  # noqa: E501
+            )
             with ZarrChecksumFileUpdater(self.zarr_archive, modification.path) as file_updater:
                 # Removing a checksum takes precedence over adding/modifying that checksum
                 file_updater.add_file_checksums(modification.files_to_update)
