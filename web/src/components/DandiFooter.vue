@@ -85,7 +85,7 @@ import { dandiAboutUrl } from '@/utils/constants';
 import { cookiesEnabled } from '@/rest';
 
 const version = process.env.VUE_APP_VERSION;
-const githubLink = process.env.VUE_APP_GIT_REVISION ? `https://github.com/dandi/dandiarchive/commit/${process.env.VUE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandiarchive';
+const githubLink = process.env.VUE_APP_GIT_REVISION ? `https://github.com/dandi/dandi-archive/commit/${process.env.VUE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandi-archive';
 
 export default defineComponent({
   name: 'DandiFooter',
