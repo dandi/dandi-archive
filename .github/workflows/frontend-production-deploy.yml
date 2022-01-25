@@ -36,6 +36,10 @@ jobs:
 
       - name: Set production deploy environment variables
         run: npx netlify env:import .env.production
+        env:
+          # The CLI complains if this is not specified, even though the command
+          # succeeds without it.
+          NETLIFY_SITE_ID: ${{secrets.NETLIFY_PRODUCTION_SITE_ID}}
 
       - name: Deploy to production
         run: npx netlify deploy --prod --dir=dist
