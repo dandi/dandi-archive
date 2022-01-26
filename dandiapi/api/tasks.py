@@ -1,6 +1,5 @@
 import os
 from typing import Dict, List
-from uuid import uuid4
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -18,8 +17,7 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
-from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Upload, Version
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # If this environment variable is set, the pydantic model will allow URLs with localhost
@@ -195,7 +193,7 @@ def unembargo_dandiset(dandiset_id: int):
                 source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
                 source_key=asset.embargoed_blob.blob.name,
                 dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-                dest_key=asset.embargoed_blob.blob.name,
+                dest_key=Upload.object_key(asset.embargoed_blob.blob_id, dandiset),
             )
 
             # Assert files are equal
@@ -203,7 +201,7 @@ def unembargo_dandiset(dandiset_id: int):
 
             # Assign blob
             asset.blob = AssetBlob(
-                blob_id=uuid4(),
+                blob_id=asset.embargoed_blob.blob_id,
                 etag=resp.etag,
                 blob=resp.key,
                 size=asset.embargoed_blob.size,
