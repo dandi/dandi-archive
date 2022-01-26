@@ -317,6 +317,22 @@ def test_version_publish_version(draft_version, asset):
 
 
 @pytest.mark.django_db
+def test_version_size(
+    version,
+    asset_factory,
+    asset_blob_factory,
+    embargoed_asset_blob_factory,
+    zarr_archive_factory,
+):
+    version.assets.add(asset_factory(blob=asset_blob_factory(size=100)))
+    version.assets.add(
+        asset_factory(blob=None, embargoed_blob=embargoed_asset_blob_factory(size=200))
+    )
+    version.assets.add(asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
+    assert version.size == 700
+
+
+@pytest.mark.django_db
 def test_version_rest_list(api_client, version, draft_version_factory):
     # Create an extra version so that there are multiple versions to filter down
     draft_version_factory()
