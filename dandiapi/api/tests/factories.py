@@ -147,7 +147,10 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def etag(self):
-        checksum = hashlib.md5(hashlib.md5(self.blob.read()).digest()).hexdigest()
+        data = self.blob.read()
+        self.blob.seek(0)
+
+        checksum = hashlib.md5(hashlib.md5(data).digest()).hexdigest()
         return f'{checksum}-1'
 
 
