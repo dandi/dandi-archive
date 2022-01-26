@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
-from dandiapi.api._copy import copy_object
+from dandiapi.api.copy import copy_object
 from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
