@@ -265,7 +265,7 @@ def test_unembargo_dandiset(
 ):
     # Since both fixtures are parametrized, only proceed when they use the same storage backend
     if type(storage) != type(embargoed_storage):
-        return
+        pytest.skip('Skip tests with mismatched storages')
 
     # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
     AssetBlob.blob.field.storage = storage
