@@ -300,6 +300,9 @@ def test_unembargo_dandiset(
     assert asset.blob is not None
     assert asset.blob.etag == embargoed_asset_blob.etag
 
+    blob_id = str(asset.blob.blob_id)
+    assert asset.blob.blob.name == f'test-prefix/blobs/{blob_id[:3]}/{blob_id[3:6]}/{blob_id}'
+
 
 @pytest.mark.django_db
 def test_unembargo_dandiset_existing_blobs(
