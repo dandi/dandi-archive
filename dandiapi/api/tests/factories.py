@@ -129,8 +129,14 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         model = AssetBlob
 
     blob_id = factory.Faker('uuid4')
-    blob = factory.django.FileField(data=factory.Faker('binary', length=100))
     size = 100
+
+    @factory.lazy_attribute
+    def blob(self):
+        return django_files.File(
+            file=django_files.base.ContentFile(faker.Faker().binary(self.size)).file,
+            name=Upload.object_key(self.blob_id),
+        )
 
     @factory.lazy_attribute
     def sha256(self):
@@ -144,16 +150,19 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         checksum = hashlib.md5(hashlib.md5(self.blob.read()).digest()).hexdigest()
         return f'{checksum}-1'
 
-    @factory.lazy_attribute
-    def size(self):
-        return len(self.blob.read())
-
 
 class EmbargoedAssetBlobFactory(AssetBlobFactory):
     class Meta:
         model = EmbargoedAssetBlob
 
     dandiset = factory.SubFactory(DandisetFactory)
+
+    @factory.lazy_attribute
+    def blob(self):
+        return django_files.File(
+            file=django_files.base.ContentFile(faker.Faker().binary(self.size)).file,
+            name=EmbargoedUpload.object_key(self.blob_id, self.dandiset),
+        )
 
 
 class DraftAssetFactory(factory.django.DjangoModelFactory):
