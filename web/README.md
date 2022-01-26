@@ -6,15 +6,15 @@ The DANDI Archive web client.
 ### Build and Run
 
 ```bash
-git clone https://github.com/dandi/dandiarchive
-cd dandiarchive
+git clone https://github.com/dandi/dandi-archive
+cd web
 yarn install
 yarn run serve
 ```
 
 The web app will be served at `http://localhost:8085/`.
 
-This app requires a server component to be useful, which you can run locally; see the [instructions](https://github.com/dandi/dandi-api/#dandi-api)) for doing so.
+This app requires a server component to be useful, which you can run locally; see the [instructions](https://github.com/dandi/dandi-archive/#dandi-archive)) for doing so.
 
 ### Test
 
