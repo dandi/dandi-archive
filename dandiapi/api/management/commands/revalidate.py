@@ -1,4 +1,3 @@
-from django.db.models import Exists, OuterRef
 import djclick as click
 
 from dandiapi.api.models import Asset, Version
