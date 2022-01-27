@@ -64,7 +64,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def size(self):
-        return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
+        return (
+            (self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0)
+            + (self.assets.aggregate(size=models.Sum('embargoed_blob__size'))['size'] or 0)
+            + (self.assets.aggregate(size=models.Sum('zarr__size'))['size'] or 0)
+        )
 
     @property
     def valid(self) -> bool:
