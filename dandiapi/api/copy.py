@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import binascii
 from dataclasses import dataclass
 import hashlib
+import math
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -14,14 +17,43 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
 
-
-PART_SIZE = 500 * 1024 * 1024  # 500 MB
+from dandischema.digests.dandietag import PartGenerator, gb, tb
 
 
 @dataclass
 class CopyObjectResponse:
     key: str
     etag: str
+
+
+@dataclass
+class CopyPartGenerator(PartGenerator):
+    """Override the normal PartGenerator class to account for larger copy part sizes."""
+
+    @classmethod
+    def for_file_size(cls, file_size: int) -> CopyPartGenerator:
+        """Calculate sequential part sizes given a file size."""
+        if file_size == 0:
+            return cls(0, 0, 0)
+
+        part_size = gb(5)
+
+        if file_size > tb(5):
+            raise ValueError('File is larger than the S3 maximum object size.')
+
+        if math.ceil(file_size / part_size) >= cls.MAX_PARTS:
+            part_size = math.ceil(file_size / cls.MAX_PARTS)
+
+        assert cls.MIN_PART_SIZE <= part_size <= cls.MAX_PART_SIZE
+
+        part_qty, final_part_size = divmod(file_size, part_size)
+        if final_part_size == 0:
+            final_part_size = part_size
+        else:
+            part_qty += 1
+        if part_qty == 1:
+            part_size = final_part_size
+        return cls(part_qty, part_size, final_part_size)
 
 
 def copy_object(
@@ -46,57 +78,35 @@ def _copy_object_s3(
 ) -> CopyObjectResponse:
     client = storage.connection.meta.client
 
-    response = client.head_object(
-        Bucket=source_bucket,
-        Key=source_key,
-    )
-    content_length = response['ContentLength']
+    # Create static vars
+    content_length: int = client.head_object(Bucket=source_bucket, Key=source_key)['ContentLength']
+    copy_source = f'{source_bucket}/{source_key}'
+    upload_id = client.create_multipart_upload(Bucket=dest_bucket, Key=dest_key)['UploadId']
 
-    # Use multipart copy so files > 5GB are supported
-    parts_count = content_length // PART_SIZE
-    if content_length % PART_SIZE > 0:
-        # The extra part is for the remaining bytes that might be less than PART_SIZE
-        parts_count += 1
-
-    response = client.create_multipart_upload(
-        Bucket=dest_bucket,
-        Key=dest_key,
-    )
-    upload_id = response['UploadId']
-
-    progress = 0
-    remaining = content_length
-    parts = []
-    for part_number in range(1, parts_count + 1):
-        # Calculate the range to be copied
-        if remaining > PART_SIZE:
-            copy_range = f'bytes={progress}-{progress+PART_SIZE-1}'
-            progress += PART_SIZE
-            remaining -= PART_SIZE
-        else:
-            copy_range = f'bytes={progress}-{content_length-1}'
-
-        # Copy the part
-        copy_source = f'{source_bucket}/{source_key}'
+    # Perform part copies
+    parts = list(CopyPartGenerator.for_file_size(content_length))
+    uploaded_parts = []
+    for part in parts:
+        copy_range = f'bytes={part.offset}-{part.offset+part.size}' if len(parts) > 1 else ''
         response = client.upload_part_copy(
             Bucket=dest_bucket,
             Key=dest_key,
             UploadId=upload_id,
             CopySource=copy_source,
             CopySourceRange=copy_range,
-            PartNumber=part_number,
+            PartNumber=part.number,
         )
 
         # Save the ETag + Part number
         etag = response['CopyPartResult']['ETag'].strip('"')
-        parts += [{'ETag': etag, 'PartNumber': part_number}]
+        uploaded_parts += [{'ETag': etag, 'PartNumber': part.number}]
 
     # Complete the multipart copy
     res = client.complete_multipart_upload(
         Bucket=dest_bucket,
         Key=dest_key,
         UploadId=upload_id,
-        MultipartUpload={'Parts': parts},
+        MultipartUpload={'Parts': uploaded_parts},
     )
 
     # Delete the original object
@@ -105,7 +115,8 @@ def _copy_object_s3(
         Key=source_key,
     )
 
-    return CopyObjectResponse(key=res['Key'], etag=res['ETag'].strip('"'))
+    etag = res['ETag'].strip('"')
+    return CopyObjectResponse(key=res['Key'], etag=etag)
 
 
 def _copy_object_minio(
