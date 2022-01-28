@@ -58,6 +58,7 @@ setup(
         'httpx',
         'jsonschema',
         'pydantic',
+        'boto3[s3]',
         # Production-only
         'django-composed-configuration[prod]>=0.19.2',
         'django-s3-file-field[boto3]==0.1.1',
@@ -75,6 +76,7 @@ setup(
             'django-s3-file-field[minio]',
             'ipython',
             'tox',
+            'boto3-stubs[s3]',
         ],
         'test': [
             'factory-boy',

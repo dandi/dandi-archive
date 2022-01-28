@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import binascii
 from dataclasses import dataclass
-import hashlib
 import math
+
+import boto3
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -11,7 +11,6 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
 try:
-    from minio.definitions import CopyObjectResult
     from minio_storage.storage import MinioStorage
 except ImportError:
     # This should only be used for type interrogation, never instantiation
@@ -61,24 +60,36 @@ def copy_object(
 ) -> CopyObjectResponse:
     """Copy an object, returning the new object key and etag."""
     if isinstance(storage, S3Boto3Storage):
-        return _copy_object_s3(storage, source_bucket, source_key, dest_bucket, dest_key)
+        client = storage.connection.meta.client
     elif isinstance(storage, MinioStorage):
-        return _copy_object_minio(storage, source_bucket, source_key, dest_bucket, dest_key)
-
+        # Instantiate an s3 client against the minio storage
+        client = boto3.client(
+            's3',
+            endpoint_url=storage.client._endpoint_url,
+            aws_access_key_id=storage.client._access_key,
+            aws_secret_access_key=storage.client._secret_key,
+            region_name='us-east-1',
+        )
     else:
         raise ValueError(f'Unknown storage {storage}')
 
+    return copy_object_multipart(
+        client,
+        source_bucket=source_bucket,
+        source_key=source_key,
+        dest_bucket=dest_bucket,
+        dest_key=dest_key,
+    )
 
-def _copy_object_s3(
-    storage,
+
+def copy_object_multipart(
+    client,
     source_bucket: str,
     source_key: str,
     dest_bucket: str,
     dest_key: str,
 ) -> CopyObjectResponse:
-    client = storage.connection.meta.client
-
-    # Create static vars
+    """Copy an object using multipart copy."""
     content_length: int = client.head_object(Bucket=source_bucket, Key=source_key)['ContentLength']
     copy_source = f'{source_bucket}/{source_key}'
     upload_id = client.create_multipart_upload(Bucket=dest_bucket, Key=dest_key)['UploadId']
@@ -117,25 +128,3 @@ def _copy_object_s3(
 
     etag = res['ETag'].strip('"')
     return CopyObjectResponse(key=res['Key'], etag=etag)
-
-
-def _copy_object_minio(
-    storage,
-    source_bucket: str,
-    source_key: str,
-    dest_bucket: str,
-    dest_key: str,
-) -> CopyObjectResponse:
-    """Copy an object, returning the object key and etag."""
-    # The Minio client will automatically use multipart upload if the file size is too big
-    client = storage.client
-    copy_source = f'{source_bucket}/{source_key}'
-    res: CopyObjectResult = client.copy_object(dest_bucket, dest_key, copy_source)
-    client.remove_object(source_bucket, source_key)
-
-    # Ensure that etag is calculated properly, since minio might not use multipart copy
-    if '-' not in res.etag:
-        checksum = hashlib.md5(binascii.unhexlify(res.etag)).hexdigest()
-        res.etag = f'{checksum}-1'
-
-    return CopyObjectResponse(key=res.object_name, etag=res.etag)
