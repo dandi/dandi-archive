@@ -695,22 +695,22 @@ def test_dandiset_rest_create_embargoed(api_client, user):
 
 
 @pytest.mark.parametrize(
-    ('embargo_status', 'user_status', 'success'),
+    ('embargo_status', 'user_status', 'resp_code'),
     [
-        (Dandiset.EmbargoStatus.OPEN, 'owner', False),
-        (Dandiset.EmbargoStatus.OPEN, 'anonymous', False),
-        (Dandiset.EmbargoStatus.OPEN, 'not-owner', False),
-        (Dandiset.EmbargoStatus.EMBARGOED, 'owner', True),
-        (Dandiset.EmbargoStatus.EMBARGOED, 'anonymous', False),
-        (Dandiset.EmbargoStatus.EMBARGOED, 'not-owner', False),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, 'owner', False),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, 'anonymous', False),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, 'not-owner', False),
+        (Dandiset.EmbargoStatus.OPEN, 'owner', 400),
+        (Dandiset.EmbargoStatus.OPEN, 'anonymous', 401),
+        (Dandiset.EmbargoStatus.OPEN, 'not-owner', 403),
+        (Dandiset.EmbargoStatus.EMBARGOED, 'owner', 200),
+        (Dandiset.EmbargoStatus.EMBARGOED, 'anonymous', 401),
+        (Dandiset.EmbargoStatus.EMBARGOED, 'not-owner', 403),
+        (Dandiset.EmbargoStatus.UNEMBARGOING, 'owner', 400),
+        (Dandiset.EmbargoStatus.UNEMBARGOING, 'anonymous', 401),
+        (Dandiset.EmbargoStatus.UNEMBARGOING, 'not-owner', 403),
     ],
 )
 @pytest.mark.django_db
 def test_dandiset_rest_unembargo(
-    api_client, dandiset_factory, user_factory, embargo_status, user_status, success
+    api_client, dandiset_factory, user_factory, embargo_status, user_status, resp_code
 ):
     dandiset: Dandiset = dandiset_factory(embargo_status=embargo_status)
     if user_status == 'anonymous':
@@ -722,7 +722,7 @@ def test_dandiset_rest_unembargo(
         assign_perm('owner', user, dandiset)
 
     response = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
-    assert (response.status_code == 200) == success
+    assert response.status_code == resp_code
 
 
 @pytest.mark.django_db
