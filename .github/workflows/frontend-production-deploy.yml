@@ -37,6 +37,7 @@ jobs:
       - name: Set production deploy environment variables
         run: npx netlify env:import .env.production
         env:
+          NETLIFY_AUTH_TOKEN: ${{secrets.NETLIFY_AUTH_TOKEN}}
           # The CLI complains if this is not specified, even though the command
           # succeeds without it.
           NETLIFY_SITE_ID: ${{secrets.NETLIFY_PRODUCTION_SITE_ID}}
