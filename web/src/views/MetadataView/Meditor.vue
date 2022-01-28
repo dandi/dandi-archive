@@ -1,26 +1,18 @@
 <template>
-  <v-container>
+  <v-card
+    v-if="schema"
+    v-page-title="model.name"
+    class="overflow-hidden"
+    height="90vh"
+    width="90vw"
+  >
     <v-row>
-      <v-snackbar
-        v-model="invalidPermissionSnackbar"
-        top
-        :timeout="2000"
-        color="error"
-      >
-        Save Failed: Insufficient Permissions
-        <v-btn
-          icon
-          @click="invalidPermissionSnackbar = false"
-        >
-          <v-icon color="white">
-            mdi-close-circle
-          </v-icon>
-        </v-btn>
-      </v-snackbar>
-
       <v-col>
-        <v-card class="mb-2">
-          <v-card-title>
+        <v-card
+          class="mb-2"
+          outlined
+        >
+          <v-card-actions class="pt-0">
             <v-tooltip top>
               <template #activator="{ on }">
                 <v-icon
@@ -43,15 +35,6 @@
                 There are errors in the metadata for this Dandiset.
               </template>
             </v-tooltip>
-            {{ basicModel.name }}
-          </v-card-title>
-          <v-card-actions class="pt-0">
-            <v-btn
-              icon
-              @click="exitMeditor"
-            >
-              <v-icon>mdi-home</v-icon>
-            </v-btn>
             <v-tooltip bottom>
               <template #activator="{ on }">
                 <v-btn
@@ -119,101 +102,83 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row v-if="!readonly">
-      <v-subheader>Click a field below to edit it.</v-subheader>
-    </v-row>
-    <v-row class="px-2">
-      <template v-for="propKey in Object.keys(complexSchema.properties)">
-        <v-dialog
-          v-if="renderField(complexSchema.properties[propKey])"
-          :key="propKey"
+    <v-row class="px-2 justify-center">
+      <v-tabs
+        v-model="tab"
+        background-color="grey darken-2"
+        slider-color="highlight"
+        dark
+        align-with-title
+      >
+        <v-tab
+          key="tab-0"
+          class="font-weight-medium text-caption"
+        >
+          General
+        </v-tab>
+        <v-tab
+          v-for="(propKey, i) in fieldsToRender"
+          :key="`tab-${i+1}`"
+          class="font-weight-medium text-caption"
+        >
+          {{ complexSchema.properties[propKey].title || propKey }}
+        </v-tab>
+      </v-tabs>
+
+      <v-tabs-items
+        v-model="tab"
+        style="width: 100%;"
+      >
+        <v-tab-item
+          key="tab-0"
           eager
         >
-          <template #activator="{ on }">
-            <v-btn
-              outlined
-              class="mx-2 my-2"
-              :color="sectionButtonColor(propKey)"
-              v-on="on"
-            >
-              {{ complexSchema.properties[propKey].title || propKey }}
-            </v-btn>
-          </template>
+          <v-form
+            ref="basic-form"
+            v-model="basicModelValid"
+            style="height: 75vh;"
+            class="px-7 py-5 overflow-y-auto"
+          >
+            <v-jsf
+              ref="vjsfRef"
+              v-model="basicModel"
+              :schema="basicSchema"
+              :options="{...CommonVJSFOptions, hideReadOnly: true}"
+              @change="vjsfListener"
+            />
+          </v-form>
+        </v-tab-item>
+        <v-tab-item
+          v-for="(propKey, i) in fieldsToRender"
+          :key="`tab-${i+1}`"
+          eager
+        >
           <v-card class="pa-2 px-4">
             <v-form
               :ref="`${propKey}-form`"
               v-model="complexModelValidation[propKey]"
+              class="px-7"
             >
-              <v-jsf
-                ref="complexRef"
-                :value="complexModel[propKey]"
-                :schema="complexSchema.properties[propKey]"
+              <v-jsf-wrapper
+                :transaction-tracker="transactionTracker"
+                :prop-key="propKey"
+                :editor-interface="editorInterface"
                 :options="CommonVJSFOptions"
-                @input="setComplexModelProp(propKey, $event)"
-                @change="complexFormListener"
               />
             </v-form>
           </v-card>
-        </v-dialog>
-      </template>
+        </v-tab-item>
+      </v-tabs-items>
     </v-row>
     <v-divider class="my-5" />
-    <v-row class="px-2">
-      <v-form
-        ref="basic-form"
-        v-model="basicModelValid"
-      >
-        <v-jsf
-          ref="basicRef"
-          v-model="basicModel"
-          :schema="basicSchema"
-          :options="{...CommonVJSFOptions, hideReadOnly: true}"
-          @change="basicFormListener"
-        />
-      </v-form>
-    </v-row>
-    <v-row
-      v-if="exiting && modified"
-      justify="center"
-    >
-      <v-dialog
-        v-model="exiting"
-        max-width="290"
-      >
-        <v-card>
-          <v-card-title class="text-h5">
-            Warning
-          </v-card-title>
-          <v-card-text>You have unsaved changes. Would you still like to exit?</v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn
-              color="green darken-1"
-              text
-              @click="exiting = false"
-            >
-              No
-            </v-btn>
-            <v-btn
-              color="green darken-1"
-              text
-              @click="closeEditor"
-            >
-              Yes
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-    </v-row>
-  </v-container>
+    <v-row class="px-2" />
+  </v-card>
 </template>
 
 <script lang="ts">
 import type { JSONSchema7 } from 'json-schema';
 
-import {
-  defineComponent, PropType, ref, computed, nextTick, Ref,
-} from '@vue/composition-api';
+import { defineComponent, ref, computed } from '@vue/composition-api';
 
 import jsYaml from 'js-yaml';
 
@@ -226,7 +191,8 @@ import store from '@/store';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
 import MeditorTransactionTracker from '@/utils/transactions';
-import { Location } from 'vue-router';
+
+import VJsfWrapper from '@/components/VJsfWrapper.vue';
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
@@ -245,26 +211,18 @@ function renderField(fieldSchema: JSONSchema7) {
 
 export default defineComponent({
   name: 'Meditor',
-  components: { VJsf },
-  props: {
-    schema: {
-      type: Object as PropType<JSONSchema7>,
-      required: true,
-    },
-    model: {
-      type: Object as PropType<DandiModel>,
-      required: true,
-    },
-    readonly: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  setup(props, ctx) {
-    const { model: modelProp, schema: schemaProp } = props;
-    const invalidPermissionSnackbar = ref(false);
+  components: { VJsf, VJsfWrapper },
+  setup() {
+    const currentDandiset = computed(() => store.state.dandiset.dandiset);
+    const id = computed(() => currentDandiset.value?.dandiset.identifier);
+    const schema = computed(() => store.state.dandiset.schema);
+    const model = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
+    const readonly = computed(() => !store.getters.dandiset.userCanModifyDandiset);
 
-    const editorInterface = new EditorInterface(schemaProp, modelProp);
+    const invalidPermissionSnackbar = ref(false);
+    const tab = ref(null);
+
+    const editorInterface = new EditorInterface(schema.value, model.value as DandiModel);
     const {
       modelValid,
       basicSchema,
@@ -289,67 +247,36 @@ export default defineComponent({
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
       autoFixArrayItems: false,
-      disableAll: props.readonly,
+      removeAdditionalProperties: false,
+      disableAll: readonly.value,
+      fieldProps: {
+        outlined: true,
+      },
+      arrayItemCardProps: {
+        outlined: true,
+      },
+      editMode: 'inline',
+      hideReadOnly: true,
     }));
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const id = computed(() => currentDandiset.value?.dandiset.identifier);
 
-    const basicRef: Ref<any> = ref(null);
-    const complexRef: Ref<any> = ref(null);
+    const transactionTracker = new MeditorTransactionTracker(editorInterface);
 
-    const TransactionTracker = new MeditorTransactionTracker(editorInterface);
-
-    const closeEditor = () => {
-      const newRoute: Location = {
-        name: 'dandisetLanding',
-        params: {
-          identifier: id.value || '',
-          version: currentDandiset.value?.version || '',
-        },
-      };
-      ctx.root.$router.push(newRoute);
-    };
-
-    const undoChange = () => {
-      // Undo the change and then trigger revalidation of the form. The return value of undo()
-      // indicates whether this was a basic or complex form change.
-      if (TransactionTracker.undo()) {
-        nextTick().then(() => complexRef.value.forEach((formRef: any) => formRef.validate()));
-      } else {
-        nextTick().then(() => basicRef.value.validate());
-      }
-    };
-
-    const redoChange = () => {
-      // Redo the change and then trigger revalidation of the form. The return value of redo()
-      // indicates whether this was a basic or complex form change.
-      if (TransactionTracker.redo()) {
-        nextTick().then(() => complexRef.value.forEach((formRef: any) => formRef.validate()));
-      } else {
-        nextTick().then(() => basicRef.value.validate());
-      }
-    };
-
+    // undo/redo functionality
+    const vjsfRef = ref(null);
+    function undoChange() {
+      transactionTracker.undo();
+    }
+    function redoChange() {
+      transactionTracker.redo();
+    }
     const disableUndo = computed(
-      () => props.readonly || !TransactionTracker.areTransactionsBehind(),
+      () => readonly.value || !transactionTracker.areTransactionsBehind(),
     );
     const disableRedo = computed(
-      () => props.readonly || !TransactionTracker.areTransactionsAhead(),
+      () => readonly.value || !transactionTracker.areTransactionsAhead(),
     );
-
-    const basicFormListener = () => TransactionTracker.add(basicModel.value, false);
-    const complexFormListener = () => TransactionTracker.add(complexModel, true);
-
-    const modified = computed(() => TransactionTracker.isModified());
-
-    const exiting = ref(false);
-    const exitMeditor = () => {
-      if (modified.value) {
-        exiting.value = true;
-        return;
-      }
-      closeEditor();
-    };
+    const vjsfListener = () => transactionTracker.add(basicModel.value, false);
+    const modified = computed(() => transactionTracker.isModified());
 
     async function save() {
       if (!id.value || !currentDandiset.value?.version) {
@@ -369,7 +296,7 @@ export default defineComponent({
               identifier: data.dandiset.identifier,
               version: data.version,
             });
-            TransactionTracker.reset();
+            transactionTracker.reset();
           }, 500);
         }
       } catch (error) {
@@ -385,8 +312,8 @@ export default defineComponent({
     const yamlOutput = ref(false);
     const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
     const output = computed(() => {
-      const model = editorInterface.getModel();
-      return yamlOutput.value ? jsYaml.dump(model) : JSON.stringify(model, null, 2);
+      const currentModel = editorInterface.getModel();
+      return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
     });
 
     function download() {
@@ -402,33 +329,35 @@ export default defineComponent({
       URL.revokeObjectURL(link.href);
     }
 
+    const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
+      (p) => renderField((complexSchema as any).properties[p]),
+    );
+
     return {
       allModelsValid: modelValid,
+      tab,
+      schema,
+      model,
+      readonly,
 
       basicSchema,
       basicModel,
       basicModelValid,
-      basicRef,
-      basicFormListener,
+      vjsfRef,
+      vjsfListener,
 
       complexSchema,
       complexModel,
       complexModelValid,
       complexModelValidation,
-      complexRef,
-      complexFormListener,
 
       invalidPermissionSnackbar,
-      renderField,
-      closeEditor,
+      fieldsToRender,
       save,
       download,
       sectionButtonColor,
 
       modified,
-      exiting,
-      exitMeditor,
-
       undoChange,
       redoChange,
       disableUndo,
@@ -438,7 +367,8 @@ export default defineComponent({
 
       setComplexModelProp,
 
-      TransactionTracker,
+      editorInterface,
+      transactionTracker,
     };
   },
 });
