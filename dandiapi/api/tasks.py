@@ -181,7 +181,7 @@ def unembargo_dandiset(dandiset_id: int):
     # Copy all embargoed assets to public bucket
     for asset in embargoed_assets:
         etag = asset.embargoed_blob.etag
-        matching_blob = AssetBlob.objects.filter(etag=etag).first() if etag != '' else None
+        matching_blob = AssetBlob.objects.filter(etag=etag).first()
 
         # Use existing AssetBlob if possible
         if matching_blob is not None:
