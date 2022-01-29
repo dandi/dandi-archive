@@ -1,11 +1,13 @@
 import hashlib
 
+from dandischema.digests.dandietag import mb
 from django.conf import settings
 from django.core.files.storage import Storage
 import factory
 import pytest
 
 from dandiapi.api import tasks
+from dandiapi.api.copy import CopyPartGenerator
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
 
@@ -262,10 +264,14 @@ def test_unembargo_dandiset(
     embargoed_asset_blob_factory,
     storage,
     embargoed_storage,
+    monkeypatch,
 ):
     # Since both fixtures are parametrized, only proceed when they use the same storage backend
     if type(storage) != type(embargoed_storage):
         pytest.skip('Skip tests with mismatched storages')
+
+    # Monkey patch the part size in CopyPartGenerator, so it can be tested with smaller part sizes
+    monkeypatch.setattr(CopyPartGenerator, 'DEFAULT_PART_SIZE', mb(6), raising=True)
 
     # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -275,8 +281,8 @@ def test_unembargo_dandiset(
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
 
-    # Create embargoed assets
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
+    # Create an embargoed asset that's 10mb in size
+    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(size=mb(10))
     embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
     draft_version.assets.add(embargoed_asset)
 

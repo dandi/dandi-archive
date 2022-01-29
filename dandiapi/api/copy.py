@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 import math
+from typing import List
 
 import boto3
 
@@ -62,13 +64,15 @@ class CopyObjectPart:
 class CopyPartGenerator(PartGenerator):
     """Override the normal PartGenerator class to account for larger copy part sizes."""
 
+    DEFAULT_PART_SIZE = gb(5)
+
     @classmethod
     def for_file_size(cls, file_size: int) -> CopyPartGenerator:
         """Calculate sequential part sizes given a file size."""
         if file_size == 0:
             return cls(0, 0, 0)
 
-        part_size = gb(5)
+        part_size = cls.DEFAULT_PART_SIZE
 
         if file_size > tb(5):
             raise ValueError('File is larger than the S3 maximum object size.')
@@ -141,23 +145,31 @@ def copy_object_multipart(
     content_length: int = client.head_object(Bucket=source_bucket, Key=source_key)['ContentLength']
     copy_source = f'{source_bucket}/{source_key}'
     upload_id = client.create_multipart_upload(Bucket=dest_bucket, Key=dest_key)['UploadId']
-
-    # Perform part copies
     parts = list(CopyPartGenerator.for_file_size(content_length))
-    uploaded_parts = []
-    for part in parts:
-        response = copy_object_part(
-            client,
-            CopyObjectPart(
-                part=part,
-                upload_id=upload_id,
-                copy_source=copy_source,
-                dest_bucket=dest_bucket,
-                dest_key=dest_key,
-                include_range=len(parts) > 1,
-            ),
-        )
-        uploaded_parts.append(response.as_dict())
+
+    # Perform concurrent copying of object parts
+    uploading_parts: List[Future[CopyPartResponse]] = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        for part in parts:
+            # Submit part copy for execution in thread pool
+            future = executor.submit(
+                copy_object_part,
+                client=client,
+                object_part=CopyObjectPart(
+                    part=part,
+                    upload_id=upload_id,
+                    copy_source=copy_source,
+                    dest_bucket=dest_bucket,
+                    dest_key=dest_key,
+                    include_range=len(parts) > 1,
+                ),
+            )
+
+            # Store future to extract later
+            uploading_parts.append(future)
+
+    # Retrieve results of part uploads. This blocks until all parts are uploaded.
+    uploaded_parts = [part.result().as_dict() for part in uploading_parts]
 
     # Complete the multipart copy
     res = client.complete_multipart_upload(
