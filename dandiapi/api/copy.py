@@ -16,13 +16,46 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
 
-from dandischema.digests.dandietag import PartGenerator, gb, tb
+from dandischema.digests.dandietag import Part, PartGenerator, gb, tb
 
 
 @dataclass
 class CopyObjectResponse:
     key: str
     etag: str
+
+
+@dataclass
+class CopyPartResponse:
+    etag: str
+    part_number: int
+
+    def as_dict(self):
+        return {'ETag': self.etag, 'PartNumber': self.part_number}
+
+
+@dataclass
+class CopyObjectPart:
+    # The part itself
+    part: Part
+
+    # Upload/Bucket info
+    upload_id: str
+    copy_source: str
+    dest_bucket: str
+    dest_key: str
+
+    # Whether or not to include the byte range in the request
+    # (exlcuded for single part copies)
+    include_range: bool = True
+
+    @property
+    def copy_range(self) -> str:
+        return (
+            f'bytes={self.part.offset}-{self.part.offset+self.part.size}'
+            if self.include_range
+            else ''
+        )
 
 
 @dataclass
@@ -82,6 +115,21 @@ def copy_object(
     )
 
 
+def copy_object_part(client, object_part: CopyObjectPart) -> CopyPartResponse:
+    response = client.upload_part_copy(
+        Bucket=object_part.dest_bucket,
+        Key=object_part.dest_key,
+        UploadId=object_part.upload_id,
+        CopySource=object_part.copy_source,
+        CopySourceRange=object_part.copy_range,
+        PartNumber=object_part.part.number,
+    )
+
+    # Return the ETag & part number
+    etag = response['CopyPartResult']['ETag'].strip('"')
+    return CopyPartResponse(etag=etag, part_number=object_part.part.number)
+
+
 def copy_object_multipart(
     client,
     source_bucket: str,
@@ -98,19 +146,18 @@ def copy_object_multipart(
     parts = list(CopyPartGenerator.for_file_size(content_length))
     uploaded_parts = []
     for part in parts:
-        copy_range = f'bytes={part.offset}-{part.offset+part.size}' if len(parts) > 1 else ''
-        response = client.upload_part_copy(
-            Bucket=dest_bucket,
-            Key=dest_key,
-            UploadId=upload_id,
-            CopySource=copy_source,
-            CopySourceRange=copy_range,
-            PartNumber=part.number,
+        response = copy_object_part(
+            client,
+            CopyObjectPart(
+                part=part,
+                upload_id=upload_id,
+                copy_source=copy_source,
+                dest_bucket=dest_bucket,
+                dest_key=dest_key,
+                include_range=len(parts) > 1,
+            ),
         )
-
-        # Save the ETag + Part number
-        etag = response['CopyPartResult']['ETag'].strip('"')
-        uploaded_parts += [{'ETag': etag, 'PartNumber': part.number}]
+        uploaded_parts.append(response.as_dict())
 
     # Complete the multipart copy
     res = client.complete_multipart_upload(
