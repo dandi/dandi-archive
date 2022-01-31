@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
-import math
 from typing import List
 
 import boto3
@@ -18,7 +17,7 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
 
-from dandischema.digests.dandietag import Part, PartGenerator, gb, tb
+from dandischema.digests.dandietag import Part, PartGenerator
 
 
 @dataclass
@@ -59,38 +58,6 @@ class CopyObjectPart:
             if self.include_range
             else ''
         )
-
-
-@dataclass
-class CopyPartGenerator(PartGenerator):
-    """Override the normal PartGenerator class to account for larger copy part sizes."""
-
-    DEFAULT_PART_SIZE = gb(5)
-
-    @classmethod
-    def for_file_size(cls, file_size: int) -> CopyPartGenerator:
-        """Calculate sequential part sizes given a file size."""
-        if file_size == 0:
-            return cls(0, 0, 0)
-
-        part_size = cls.DEFAULT_PART_SIZE
-
-        if file_size > tb(5):
-            raise ValueError('File is larger than the S3 maximum object size.')
-
-        if math.ceil(file_size / part_size) >= cls.MAX_PARTS:
-            part_size = math.ceil(file_size / cls.MAX_PARTS)
-
-        assert cls.MIN_PART_SIZE <= part_size <= cls.MAX_PART_SIZE
-
-        part_qty, final_part_size = divmod(file_size, part_size)
-        if final_part_size == 0:
-            final_part_size = part_size
-        else:
-            part_qty += 1
-        if part_qty == 1:
-            part_size = final_part_size
-        return cls(part_qty, part_size, final_part_size)
 
 
 def copy_object(
@@ -146,7 +113,7 @@ def copy_object_multipart(
     content_length: int = client.head_object(Bucket=source_bucket, Key=source_key)['ContentLength']
     copy_source = f'{source_bucket}/{source_key}'
     upload_id = client.create_multipart_upload(Bucket=dest_bucket, Key=dest_key)['UploadId']
-    parts = list(CopyPartGenerator.for_file_size(content_length))
+    parts = list(PartGenerator.for_file_size(content_length))
 
     # Perform concurrent copying of object parts
     uploading_parts: List[Future[CopyPartResponse]] = []

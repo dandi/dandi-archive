@@ -1,13 +1,40 @@
-from dandischema.digests.dandietag import mb
+import math
+
+from dandischema.digests.dandietag import PartGenerator, mb, tb
 from django.contrib.auth.models import AnonymousUser
 import factory
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api import tasks
-from dandiapi.api.copy import CopyPartGenerator
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+
+
+@classmethod
+def for_file_size(cls, file_size: int) -> PartGenerator:
+    if file_size == 0:
+        return cls(0, 0, 0)
+
+    # Override default of 64mb
+    part_size = mb(6)
+
+    if file_size > tb(5):
+        raise ValueError('File is larger than the S3 maximum object size.')
+
+    if math.ceil(file_size / part_size) >= cls.MAX_PARTS:
+        part_size = math.ceil(file_size / cls.MAX_PARTS)
+
+    assert cls.MIN_PART_SIZE <= part_size <= cls.MAX_PART_SIZE
+
+    part_qty, final_part_size = divmod(file_size, part_size)
+    if final_part_size == 0:
+        final_part_size = part_size
+    else:
+        part_qty += 1
+    if part_qty == 1:
+        part_size = final_part_size
+    return cls(part_qty, part_size, final_part_size)
 
 
 @pytest.mark.parametrize(
@@ -55,22 +82,19 @@ def test_unembargo_dandiset(
     if type(storage) != type(embargoed_storage):
         pytest.skip('Skip tests with mismatched storages')
 
-    # Monkey patch the part size in CopyPartGenerator, so it can be tested with smaller part sizes
-    monkeypatch.setattr(CopyPartGenerator, 'DEFAULT_PART_SIZE', mb(6), raising=True)
-
     # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
-    AssetBlob.blob.field.storage = storage
-    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
+    monkeypatch.setattr(EmbargoedAssetBlob.blob.field, 'storage', embargoed_storage)
+
+    # Monkey patch PartGenerator so that upload and copy use a smaller part size
+    monkeypatch.setattr(PartGenerator, 'for_file_size', for_file_size, raising=True)
 
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
 
-    # Create an embargoed asset blob that's 10mb in size
-    # Use CopyPartGenerator so the copy and upload use the same part sizes
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(
-        size=mb(10), part_generator=CopyPartGenerator
-    )
+    # Create an embargoed asset blob that's 10mb in size, to ensure more than one part
+    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(size=mb(10))
 
     # Create asset from embargoed blob
     embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)

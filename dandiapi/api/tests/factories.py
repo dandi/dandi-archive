@@ -9,7 +9,6 @@ from django.core import files as django_files
 import factory
 import faker
 
-from dandiapi.api.copy import CopyPartGenerator
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
@@ -130,10 +129,6 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
 
-    class Params:
-        # For etag calculation
-        part_generator: PartGenerator = PartGenerator
-
     blob_id = factory.Faker('uuid4')
     size = 100
 
@@ -155,7 +150,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     def etag(self):
         # Create DandiETag instance with custom part generator
         etagger = DandiETag(self.size)
-        etagger._part_gen = self.part_generator.for_file_size(self.size)
+        etagger._part_gen = PartGenerator.for_file_size(self.size)
         etagger._md5_digests = [None] * len(etagger._part_gen)
 
         # Add part digests
