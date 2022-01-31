@@ -2,7 +2,7 @@ import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
-from dandischema.digests.dandietag import DandiETag, PartGenerator
+from dandischema.digests.dandietag import DandiETag
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import files as django_files
@@ -148,12 +148,7 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def etag(self):
-        # Create DandiETag instance with custom part generator
         etagger = DandiETag(self.size)
-        etagger._part_gen = PartGenerator.for_file_size(self.size)
-        etagger._md5_digests = [None] * len(etagger._part_gen)
-
-        # Add part digests
         for part in etagger._part_gen:
             etagger.update(self.blob.read(part.size))
 
