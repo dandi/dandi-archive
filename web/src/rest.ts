@@ -230,6 +230,9 @@ const dandiRest = new Vue({
       const { data } = await client.get('stats/');
       return data;
     },
+    assetManifestURI(identifier: string, version: string) {
+      return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets`;
+    },
     assetDownloadURI(identifier: string, version: string, uuid: string) {
       return `${dandiApiRoot}assets/${uuid}/download/`;
     },

@@ -146,6 +146,7 @@
 import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
 import { Location } from 'vue-router';
 
+import { dandiRest } from '@/rest';
 import store from '@/store';
 
 import DownloadDialog from './DownloadDialog.vue';
@@ -191,7 +192,10 @@ export default defineComponent({
     });
 
     const manifestLocation = computed(
-      () => currentDandiset.value?.metadata?.manifestLocation[0],
+      () => dandiRest.assetManifestURI(
+        currentDandiset.value?.dandiset.identifier || '',
+        currentDandiset.value?.version || '',
+      ),
     );
 
     return {
