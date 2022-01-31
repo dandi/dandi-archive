@@ -694,37 +694,6 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     }
 
 
-@pytest.mark.parametrize(
-    ('embargo_status', 'user_status', 'resp_code'),
-    [
-        (Dandiset.EmbargoStatus.OPEN, 'owner', 400),
-        (Dandiset.EmbargoStatus.OPEN, 'anonymous', 401),
-        (Dandiset.EmbargoStatus.OPEN, 'not-owner', 403),
-        (Dandiset.EmbargoStatus.EMBARGOED, 'owner', 200),
-        (Dandiset.EmbargoStatus.EMBARGOED, 'anonymous', 401),
-        (Dandiset.EmbargoStatus.EMBARGOED, 'not-owner', 403),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, 'owner', 400),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, 'anonymous', 401),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, 'not-owner', 403),
-    ],
-)
-@pytest.mark.django_db
-def test_dandiset_rest_unembargo(
-    api_client, dandiset_factory, user_factory, embargo_status, user_status, resp_code
-):
-    dandiset: Dandiset = dandiset_factory(embargo_status=embargo_status)
-    if user_status == 'anonymous':
-        user = AnonymousUser
-    else:
-        user = user_factory()
-        api_client.force_authenticate(user=user)
-    if user_status == 'owner':
-        assign_perm('owner', user, dandiset)
-
-    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
-    assert response.status_code == resp_code
-
-
 @pytest.mark.django_db
 def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user, dandiset):
     api_client.force_authenticate(user=admin_user)
