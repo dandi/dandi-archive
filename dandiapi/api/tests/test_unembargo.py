@@ -67,7 +67,10 @@ def test_unembargo_dandiset(
     draft_version: Version = draft_version_factory(dandiset=dandiset)
 
     # Create an embargoed asset blob that's 10mb in size
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(size=mb(10))
+    # Use CopyPartGenerator so the copy and upload use the same part sizes
+    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(
+        size=mb(10), part_generator=CopyPartGenerator
+    )
 
     # Create asset from embargoed blob
     embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)

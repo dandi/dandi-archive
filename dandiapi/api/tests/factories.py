@@ -2,12 +2,14 @@ import datetime
 import hashlib
 
 from allauth.socialaccount.models import SocialAccount
+from dandischema.digests.dandietag import DandiETag, PartGenerator
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import files as django_files
 import factory
 import faker
 
+from dandiapi.api.copy import CopyPartGenerator
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
@@ -128,6 +130,10 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
 
+    class Params:
+        # For etag calculation
+        part_generator: PartGenerator = PartGenerator
+
     blob_id = factory.Faker('uuid4')
     size = 100
 
@@ -147,11 +153,17 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def etag(self):
-        data = self.blob.read()
-        self.blob.seek(0)
+        # Create DandiETag instance with custom part generator
+        etagger = DandiETag(self.size)
+        etagger._part_gen = self.part_generator.for_file_size(self.size)
+        etagger._md5_digests = [None] * len(etagger._part_gen)
 
-        checksum = hashlib.md5(hashlib.md5(data).digest()).hexdigest()
-        return f'{checksum}-1'
+        # Add part digests
+        for part in etagger._part_gen:
+            etagger.update(self.blob.read(part.size))
+
+        self.blob.seek(0)
+        return etagger.as_str()
 
 
 class EmbargoedAssetBlobFactory(AssetBlobFactory):
