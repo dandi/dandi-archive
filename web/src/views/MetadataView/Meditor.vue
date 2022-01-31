@@ -114,14 +114,26 @@
           key="tab-0"
           class="font-weight-medium text-caption"
         >
-          General
+          <v-badge
+            color="error"
+            dot
+            :value="!editorInterface.basicModelValid.value"
+          >
+            General
+          </v-badge>
         </v-tab>
         <v-tab
           v-for="(propKey, i) in fieldsToRender"
           :key="`tab-${i+1}`"
           class="font-weight-medium text-caption"
         >
-          {{ complexSchema.properties[propKey].title || propKey }}
+          <v-badge
+            color="error"
+            dot
+            :value="!editorInterface.complexModelValidation[propKey]"
+          >
+            {{ complexSchema.properties[propKey].title || propKey }}
+          </v-badge>
         </v-tab>
       </v-tabs>
 
