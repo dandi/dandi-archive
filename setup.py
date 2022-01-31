@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema==0.5.1',
+        'dandischema==0.5.2',
         # TODO: Remove this. Pinning Django to 3.x until
         # https://github.com/jazzband/django-oauth-toolkit/issues/1037 is resolved
         'django~=3.2',
