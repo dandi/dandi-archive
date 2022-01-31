@@ -106,6 +106,25 @@
       </v-row>
     </div>
 
+    <div class="my-4">
+      <v-row no-gutters>
+        <v-btn
+          outlined
+          block
+          :href="manifestLocation"
+        >
+          <v-icon
+            left
+            color="primary"
+          >
+            mdi-clipboard
+          </v-icon>
+          <span>Manifest</span>
+          <v-spacer />
+        </v-btn>
+      </v-row>
+    </div>
+
     <!-- Share button -->
     <div class="mt-6 mb-4">
       <v-row
@@ -171,11 +190,16 @@ export default defineComponent({
       };
     });
 
+    const manifestLocation = computed(
+      () => currentDandiset.value?.metadata?.manifestLocation[0],
+    );
+
     return {
       currentDandiset,
       currentVersion,
       fileBrowserLink,
       meditorLink,
+      manifestLocation,
     };
   },
 });
