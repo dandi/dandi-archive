@@ -231,7 +231,7 @@ const dandiRest = new Vue({
       return data;
     },
     assetManifestURI(identifier: string, version: string) {
-      return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets`;
+      return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/`;
     },
     assetDownloadURI(identifier: string, version: string, uuid: string) {
       return `${dandiApiRoot}assets/${uuid}/download/`;
