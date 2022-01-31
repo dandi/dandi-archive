@@ -60,6 +60,7 @@
     >
       <v-sheet class="ma-4">
         <v-jsf
+          :key="JSON.stringify(editorInterface.complexModel[propKey])"
           :value="editorInterface.complexModel[propKey]"
           :schema="editorInterface.complexSchema.properties[propKey]"
           :options="options"
@@ -70,9 +71,7 @@
               outlined
               class="d-flex flex-column"
             >
-              <draggable
-                @update="reorderItem($event)"
-              >
+              <draggable @update="reorderItem($event)">
                 <v-card
                   v-for="(item, i) in slotProps.value"
                   :key="i"
@@ -252,9 +251,22 @@ export default defineComponent({
     }
 
     function reorderItem(event: any) {
-      // const { oldIndex, newIndex } = event;
-      // @ts-ignore
-      // const item = props.editorInterface.complexModel[props.propKey][oldIndex];
+      const { oldIndex, newIndex } = event;
+      if (index.value === oldIndex) {
+        index.value = newIndex;
+      } else if (index.value === newIndex) {
+        index.value = oldIndex;
+      }
+      // make a deep clone of the model
+      const currentModel = JSON.parse(
+        JSON.stringify(props.editorInterface.complexModel[props.propKey]),
+      );
+      const item1 = currentModel[oldIndex];
+      const item2 = currentModel[newIndex];
+      currentModel[newIndex] = JSON.parse(JSON.stringify(item1));
+      currentModel[oldIndex] = JSON.parse(JSON.stringify(item2));
+      props.editorInterface.setComplexModelProp(props.propKey, currentModel);
+      props.transactionTracker.add(props.editorInterface.complexModel, true);
     }
 
     function formListener() {
