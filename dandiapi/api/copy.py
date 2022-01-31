@@ -54,7 +54,8 @@ class CopyObjectPart:
     @property
     def copy_range(self) -> str:
         return (
-            f'bytes={self.part.offset}-{self.part.offset+self.part.size}'
+            # Subtract one due to zero-indexing
+            f'bytes={self.part.offset}-{self.part.offset + self.part.size - 1}'
             if self.include_range
             else ''
         )
