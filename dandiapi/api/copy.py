@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import List
 
 import boto3
+from django.conf import settings
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -117,7 +118,7 @@ def _copy_object_multipart_s3(
 
     # Perform concurrent copying of object parts
     uploading_parts: List[Future[CopyPartResponse]] = []
-    with ThreadPoolExecutor(max_workers=50) as executor:
+    with ThreadPoolExecutor(max_workers=settings.DANDI_MULTIPART_COPY_MAX_WORKERS) as executor:
         for part in parts:
             # Submit part copy for execution in thread pool
             future = executor.submit(
