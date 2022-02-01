@@ -52,7 +52,7 @@ class BaseUpload(TimeStampedModel):
     size = models.PositiveBigIntegerField()
 
     @abstractclassmethod
-    def object_key(cls, upload_id, dandiset: Dandiset):  # noqa: N805
+    def object_key(cls, upload_id, dandiset: Dandiset | None = None):  # noqa: N805
         pass
 
     @classmethod
