@@ -174,9 +174,7 @@ def unembargo_dandiset(dandiset_id: int):
 
     # Only the draft version is needed, since embargoed dandisets can't be published
     draft_version: Version = dandiset.draft_version
-    embargoed_assets: List[Asset] = list(
-        Asset.objects.filter(versions__in=[draft_version], embargoed_blob__isnull=False)
-    )
+    embargoed_assets: List[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
 
     # Copy all embargoed assets to public bucket
     for asset in embargoed_assets:
