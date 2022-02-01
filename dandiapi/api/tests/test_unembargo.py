@@ -1,5 +1,9 @@
+import math
+import os
+
 from dandischema.digests.dandietag import PartGenerator, mb
 from django.contrib.auth.models import AnonymousUser
+from django.core.files.uploadedfile import SimpleUploadedFile
 import factory
 from guardian.shortcuts import assign_perm
 import pytest
@@ -40,6 +44,14 @@ def test_dandiset_rest_unembargo(
     assert response.status_code == resp_code
 
 
+@pytest.mark.parametrize(
+    ('file_size', 'part_size'),
+    [
+        (100, mb(64)),  # Normal
+        (mb(30), mb(5)),  # Few parts
+        (mb(100), mb(6)),  # Many parts (tests concurrency)
+    ],
+)
 @pytest.mark.django_db
 def test_unembargo_dandiset(
     dandiset_factory,
@@ -48,6 +60,8 @@ def test_unembargo_dandiset(
     embargoed_asset_blob_factory,
     storage,
     embargoed_storage,
+    file_size,
+    part_size,
     monkeypatch,
 ):
     # Since both fixtures are parametrized, only proceed when they use the same storage backend
@@ -59,17 +73,20 @@ def test_unembargo_dandiset(
     monkeypatch.setattr(EmbargoedAssetBlob.blob.field, 'storage', embargoed_storage)
 
     # Monkey patch PartGenerator so that upload and copy use a smaller part size
-    monkeypatch.setattr(PartGenerator, 'DEFAULT_PART_SIZE', mb(6), raising=True)
+    monkeypatch.setattr(PartGenerator, 'DEFAULT_PART_SIZE', part_size, raising=True)
 
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
 
-    # Create an embargoed asset blob that's 10mb in size, to ensure more than one part
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(size=mb(10))
+    # Create an embargoed asset blob
+    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(
+        size=file_size, blob=SimpleUploadedFile('test', content=os.urandom(file_size))
+    )
 
     # Assert multiple parts were used
-    assert embargoed_asset_blob.etag.endswith('-2')
+    num_parts = math.ceil(file_size / part_size)
+    assert embargoed_asset_blob.etag.endswith(f'-{num_parts}')
 
     # Create asset from embargoed blob
     embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
