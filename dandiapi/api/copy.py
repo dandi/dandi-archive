@@ -60,7 +60,7 @@ class CopyObjectPart:
         )
 
 
-def copy_object(
+def copy_object_multipart(
     storage, source_bucket: str, source_key: str, dest_bucket: str, dest_key: str
 ) -> CopyObjectResponse:
     """Copy an object, returning the new object key and etag."""
@@ -78,7 +78,7 @@ def copy_object(
     else:
         raise ValueError(f'Unknown storage {storage}')
 
-    return copy_object_multipart(
+    return _copy_object_multipart_s3(
         client,
         source_bucket=source_bucket,
         source_key=source_key,
@@ -87,7 +87,7 @@ def copy_object(
     )
 
 
-def copy_object_part(client, object_part: CopyObjectPart) -> CopyPartResponse:
+def _copy_object_part(client, object_part: CopyObjectPart) -> CopyPartResponse:
     response = client.upload_part_copy(
         Bucket=object_part.dest_bucket,
         Key=object_part.dest_key,
@@ -102,7 +102,7 @@ def copy_object_part(client, object_part: CopyObjectPart) -> CopyPartResponse:
     return CopyPartResponse(etag=etag, part_number=object_part.part.number)
 
 
-def copy_object_multipart(
+def _copy_object_multipart_s3(
     client,
     source_bucket: str,
     source_key: str,
@@ -121,7 +121,7 @@ def copy_object_multipart(
         for part in parts:
             # Submit part copy for execution in thread pool
             future = executor.submit(
-                copy_object_part,
+                _copy_object_part,
                 client=client,
                 object_part=CopyObjectPart(
                     part=part,

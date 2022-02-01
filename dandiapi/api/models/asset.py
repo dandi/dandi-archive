@@ -14,7 +14,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.copy import copy_object
+from dandiapi.api.copy import copy_object_multipart
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import (
     get_embargo_storage,
@@ -238,7 +238,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             self.blob = matching_blob
         else:
             # Matching AssetBlob doesn't exist, copy blob to public bucket
-            resp = copy_object(
+            resp = copy_object_multipart(
                 self.embargoed_blob.blob.storage,
                 source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
                 source_key=self.embargoed_blob.blob.name,
