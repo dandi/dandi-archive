@@ -12,7 +12,7 @@ from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
 
 def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
+    return bytes_size * 2**20
 
 
 @pytest.mark.django_db

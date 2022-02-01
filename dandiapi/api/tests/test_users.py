@@ -53,13 +53,10 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
 def test_user_me(api_client, social_account):
     api_client.force_authenticate(user=social_account.user)
 
-    assert (
-        api_client.get(
-            '/api/users/me/',
-            format='json',
-        ).data
-        == serialize_social_account(social_account)
-    )
+    assert api_client.get(
+        '/api/users/me/',
+        format='json',
+    ).data == serialize_social_account(social_account)
 
 
 @pytest.mark.django_db
@@ -68,13 +65,10 @@ def test_user_me_admin(api_client, admin_user, social_account_factory):
     social_account = social_account_factory(user=admin_user)
     UserMetadata.objects.create(user=admin_user)
 
-    assert (
-        api_client.get(
-            '/api/users/me/',
-            format='json',
-        ).data
-        == serialize_social_account(social_account)
-    )
+    assert api_client.get(
+        '/api/users/me/',
+        format='json',
+    ).data == serialize_social_account(social_account)
 
 
 @pytest.mark.django_db
@@ -86,14 +80,11 @@ def test_user_search(api_client, social_account, social_account_factory):
     social_account_factory()
     social_account_factory()
 
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': social_account.user.username},
-            format='json',
-        ).data
-        == [serialize_social_account(social_account)]
-    )
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': social_account.user.username},
+        format='json',
+    ).data == [serialize_social_account(social_account)]
 
 
 @pytest.mark.django_db
@@ -140,14 +131,11 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': 'odysseus'},
-            format='json',
-        ).data
-        == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
-    )
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': 'odysseus'},
+        format='json',
+    ).data == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
 
 
 @pytest.mark.django_db
@@ -158,14 +146,11 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': 'odysseus'},
-            format='json',
-        ).data
-        == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
-    )
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': 'odysseus'},
+        format='json',
+    ).data == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
 
 
 @pytest.mark.parametrize(
