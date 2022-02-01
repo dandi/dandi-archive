@@ -152,7 +152,7 @@ def s3boto3_storage() -> 'S3Boto3Storage':
 
 @pytest.fixture
 def embargoed_s3boto3_storage() -> 'S3Boto3Storage':
-    return s3boto3_storage_factory(embargoed=True)
+    return s3boto3_storage_factory()
 
 
 @pytest.fixture
@@ -162,7 +162,7 @@ def minio_storage() -> MinioStorage:
 
 @pytest.fixture
 def embargoed_minio_storage() -> MinioStorage:
-    return minio_storage_factory(embargoed=True)
+    return minio_storage_factory()
 
 
 @pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
