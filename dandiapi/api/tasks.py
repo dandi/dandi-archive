@@ -8,7 +8,6 @@ from django.db.transaction import atomic
 import jsonschema.exceptions
 
 from dandiapi.api.checksum import calculate_sha256_checksum
-from dandiapi.api.copy import copy_object
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -17,7 +16,7 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Upload, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
 
 if settings.DANDI_ALLOW_LOCALHOST_URLS:
     # If this environment variable is set, the pydantic model will allow URLs with localhost
@@ -176,39 +175,9 @@ def unembargo_dandiset(dandiset_id: int):
     draft_version: Version = dandiset.draft_version
     embargoed_assets: List[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
 
-    # Copy all embargoed assets to public bucket
+    # Unembargo all assets
     for asset in embargoed_assets:
-        etag = asset.embargoed_blob.etag
-        matching_blob = AssetBlob.objects.filter(etag=etag).first()
-
-        # Use existing AssetBlob if possible
-        if matching_blob is not None:
-            asset.blob = matching_blob
-        else:
-            # Matching AssetBlob doesn't exist, copy blob to public bucket
-            resp = copy_object(
-                asset.embargoed_blob.blob.storage,
-                source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
-                source_key=asset.embargoed_blob.blob.name,
-                dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-                dest_key=Upload.object_key(asset.embargoed_blob.blob_id, dandiset),
-            )
-
-            # Assert files are equal
-            assert resp.etag == asset.embargoed_blob.etag
-
-            # Assign blob
-            asset.blob = AssetBlob(
-                blob_id=asset.embargoed_blob.blob_id,
-                etag=resp.etag,
-                blob=resp.key,
-                size=asset.embargoed_blob.size,
-            )
-            asset.blob.save()
-
-        # Save updated blob field
-        asset.embargoed_blob = None
-        asset.save(update_fields=['blob', 'embargoed_blob'])
+        asset.unembargo()
 
     # Update draft version metadata
     draft_version.metadata['access'] = 'dandi:OpenAccess'
