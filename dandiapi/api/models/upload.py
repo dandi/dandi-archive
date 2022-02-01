@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractclassmethod
+from abc import abstractmethod
 from uuid import uuid4
 
 from django.conf import settings
@@ -51,8 +51,9 @@ class BaseUpload(TimeStampedModel):
     multipart_upload_id = models.CharField(max_length=128, unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
 
-    @abstractclassmethod
-    def object_key(cls, upload_id, dandiset: Dandiset | None = None):  # noqa: N805
+    @staticmethod
+    @abstractmethod
+    def object_key(upload_id, dandiset: Dandiset | None = None):  # noqa: N805
         pass
 
     @classmethod
