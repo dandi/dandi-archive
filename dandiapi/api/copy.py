@@ -117,7 +117,7 @@ def copy_object_multipart(
 
     # Perform concurrent copying of object parts
     uploading_parts: List[Future[CopyPartResponse]] = []
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=50) as executor:
         for part in parts:
             # Submit part copy for execution in thread pool
             future = executor.submit(
