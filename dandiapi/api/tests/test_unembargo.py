@@ -58,17 +58,13 @@ def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
-    storage,
-    embargoed_storage,
+    storage_tuple,
     file_size,
     part_size,
     monkeypatch,
 ):
-    # Since both fixtures are parametrized, only proceed when they use the same storage backend
-    if type(storage) != type(embargoed_storage):
-        pytest.skip('Skip tests with mismatched storages')
-
     # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
+    storage, embargoed_storage = storage_tuple
     monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
     monkeypatch.setattr(EmbargoedAssetBlob.blob.field, 'storage', embargoed_storage)
 
@@ -126,14 +122,10 @@ def test_unembargo_dandiset_existing_blobs(
     asset_factory,
     asset_blob_factory,
     embargoed_asset_blob_factory,
-    storage,
-    embargoed_storage,
+    storage_tuple,
 ):
-    # Since both fixtures are parametrized, only proceed when they use the same storage backend
-    if type(storage) != type(embargoed_storage):
-        pytest.skip('Skip tests with mismatched storages')
-
     # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
+    storage, embargoed_storage = storage_tuple
     AssetBlob.blob.field.storage = storage
     EmbargoedAssetBlob.blob.field.storage = embargoed_storage
 
@@ -187,12 +179,7 @@ def test_unembargo_dandiset_normal_asset_blob(
     asset_factory,
     asset_blob_factory,
     storage,
-    embargoed_storage,
 ):
-    # Since both fixtures are parametrized, only proceed when they use the same storage backend
-    if type(storage) != type(embargoed_storage):
-        pytest.skip('Skip tests with mismatched storages')
-
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
 

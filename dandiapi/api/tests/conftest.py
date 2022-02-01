@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -178,3 +178,15 @@ def storage(request) -> Storage:
 def embargoed_storage(request) -> Storage:
     storage_factory = request.param
     return storage_factory()
+
+
+@pytest.fixture(
+    params=[
+        (s3boto3_storage_factory, embargoed_s3boto3_storage_factory),
+        (minio_storage_factory, embargoed_minio_storage_factory),
+    ],
+    ids=['s3boto3', 'minio'],
+)
+def storage_tuple(request) -> Tuple[Storage, Storage]:
+    storage_factory, embargoed_storage_factory = request.param
+    return (storage_factory(), embargoed_storage_factory())
