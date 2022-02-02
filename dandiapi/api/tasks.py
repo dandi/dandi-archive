@@ -1,9 +1,9 @@
-import os
 from typing import Dict, List
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.conf import settings
+import dandischema.exceptions
+from dandischema.metadata import validate
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -16,16 +16,7 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
-
-if settings.DANDI_ALLOW_LOCALHOST_URLS:
-    # If this environment variable is set, the pydantic model will allow URLs with localhost
-    # in them. This is important for development and testing environments, where URLs will
-    # frequently point to localhost.
-    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
-
-import dandischema.exceptions
-from dandischema.metadata import validate
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
 
 logger = get_task_logger(__name__)
 
@@ -164,3 +155,25 @@ def validate_version_metadata(version_id: int) -> None:
 @shared_task
 def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
+
+
+@shared_task
+def unembargo_dandiset(dandiset_id: int):
+    """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
+    dandiset: Dandiset = Dandiset.objects.get(id=dandiset_id)
+
+    # Only the draft version is needed, since embargoed dandisets can't be published
+    draft_version: Version = dandiset.draft_version
+    embargoed_assets: List[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
+
+    # Unembargo all assets
+    for asset in embargoed_assets:
+        asset.unembargo()
+
+    # Update draft version metadata
+    draft_version.metadata['access'] = 'dandi:OpenAccess'
+    draft_version.save(update_fields=['metadata'])
+
+    # Set access on dandiset
+    dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
+    dandiset.save(update_fields=['embargo_status'])
