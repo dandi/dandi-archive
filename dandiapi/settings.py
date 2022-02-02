@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Type
 
@@ -46,6 +47,12 @@ class DandiMixin(ConfigMixin):
         configuration.REST_FRAMEWORK[
             'DEFAULT_PAGINATION_CLASS'
         ] = 'dandiapi.api.views.common.DandiPagination'
+
+        # If this environment variable is set, the pydantic model will allow URLs with localhost
+        # in them. This is important for development and testing environments, where URLs will
+        # frequently point to localhost.
+        if configuration.DANDI_ALLOW_LOCALHOST_URLS:
+            os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)

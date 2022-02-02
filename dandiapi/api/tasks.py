@@ -1,9 +1,9 @@
-import os
 from typing import Dict, List
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.conf import settings
+import dandischema.exceptions
+from dandischema.metadata import validate
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -17,15 +17,6 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
-
-if settings.DANDI_ALLOW_LOCALHOST_URLS:
-    # If this environment variable is set, the pydantic model will allow URLs with localhost
-    # in them. This is important for development and testing environments, where URLs will
-    # frequently point to localhost.
-    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
-
-import dandischema.exceptions
-from dandischema.metadata import validate
 
 logger = get_task_logger(__name__)
 
