@@ -111,10 +111,18 @@ def _copy_object_multipart_s3(
     dest_key: str,
 ) -> CopyObjectResponse:
     """Copy an object using multipart copy."""
-    content_length: int = client.head_object(Bucket=source_bucket, Key=source_key)['ContentLength']
     copy_source = f'{source_bucket}/{source_key}'
-    upload_id = client.create_multipart_upload(Bucket=dest_bucket, Key=dest_key)['UploadId']
+
+    # Generate parts
+    content_length: int = client.head_object(Bucket=source_bucket, Key=source_key)['ContentLength']
     parts = list(PartGenerator.for_file_size(content_length))
+
+    # Create upload
+    upload_id = client.create_multipart_upload(
+        Bucket=dest_bucket,
+        Key=dest_key,
+        ACL='bucket-owner-full-control',
+    )['UploadId']
 
     # Perform concurrent copying of object parts
     uploading_parts: List[Future[CopyPartResponse]] = []
