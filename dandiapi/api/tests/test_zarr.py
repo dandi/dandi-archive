@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from django.conf import settings
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
@@ -48,8 +49,8 @@ def test_zarr_rest_get(
 
 @pytest.mark.django_db
 def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
-    ten_quadrillion = 10**16
-    ten_petabytes = 10**16
+    ten_quadrillion = 10 ** 16
+    ten_petabytes = 10 ** 16
     zarr_archive = zarr_archive_factory(file_count=ten_quadrillion, size=ten_petabytes)
     assert zarr_archive.file_count == ten_quadrillion
     assert zarr_archive.size == ten_petabytes
@@ -270,7 +271,7 @@ def test_zarr_explore_file(
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
     )
 
 
@@ -300,5 +301,5 @@ def test_zarr_explore_head(
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
     )
