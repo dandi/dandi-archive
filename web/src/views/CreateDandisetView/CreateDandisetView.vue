@@ -26,7 +26,7 @@
         />
         <v-combobox
           v-model="license"
-          :items="['spdx:CC0-1.0', 'spdx:CC-BY-4.0']"
+          :items="dandiLicenses"
           label="License*"
           class="my-4"
           multiple
@@ -108,9 +108,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from '@vue/composition-api';
+import {
+  defineComponent, computed, ComputedRef, ref,
+} from '@vue/composition-api';
 import { dandiRest, loggedIn } from '@/rest';
 import { IdentifierForAnAward } from '@/types/schema';
+import { LicenseType } from '@/types';
+
+import store from '@/store';
 
 // Regular expression to validate an NIH award number.
 // Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
@@ -141,6 +146,10 @@ export default defineComponent({
       () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
     );
 
+    const dandiLicenses: ComputedRef<LicenseType[]> = computed(
+      () => store.state.dandiset.schema.definitions.LicenseType.enum,
+    );
+
     if (!loggedIn()) {
       ctx.root.$router.push({ name: 'home' });
     }
@@ -159,6 +168,7 @@ export default defineComponent({
       name,
       description,
       license,
+      dandiLicenses,
       embargoed,
       awardNumber,
       saveDisabled,
