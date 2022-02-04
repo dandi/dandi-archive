@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import datetime
 import logging
-import os
 
-from django.conf import settings
+from dandischema.metadata import aggregate_assets_summary
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
@@ -13,14 +12,6 @@ from django_extensions.db.models import TimeStampedModel
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
-
-if settings.DANDI_ALLOW_LOCALHOST_URLS:
-    # If this environment variable is set, the pydantic model will allow URLs with localhost
-    # in them. This is important for development and testing environments, where URLs will
-    # frequently point to localhost.
-    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
-
-from dandischema.metadata import aggregate_assets_summary
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +55,11 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def size(self):
-        return self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0
+        return (
+            (self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0)
+            + (self.assets.aggregate(size=models.Sum('embargoed_blob__size'))['size'] or 0)
+            + (self.assets.aggregate(size=models.Sum('zarr__size'))['size'] or 0)
+        )
 
     @property
     def valid(self) -> bool:

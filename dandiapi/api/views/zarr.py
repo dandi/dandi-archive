@@ -125,12 +125,13 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            print(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
             serializer = ZarrUploadFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
-
             uploads = zarr_archive.begin_upload(serializer.validated_data)
 
         serializer = ZarrUploadBatchSerializer(instance=uploads, many=True)
+        print(f'Presigned {len(uploads)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -146,7 +147,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-
+            print(f'Beggining upload completion for zarr archive {zarr_archive.zarr_id}')
             zarr_archive.complete_upload()
 
         return Response(None, status=status.HTTP_201_CREATED)

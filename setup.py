@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema==0.5.1',
+        'dandischema==0.5.2',
         # TODO: Remove this. Pinning Django to 3.x until
         # https://github.com/jazzband/django-oauth-toolkit/issues/1037 is resolved
         'django~=3.2',
@@ -58,6 +58,7 @@ setup(
         'httpx',
         'jsonschema',
         'pydantic',
+        'boto3[s3]',
         # Production-only
         'django-composed-configuration[prod]>=0.19.2',
         'django-s3-file-field[boto3]==0.1.1',
@@ -75,6 +76,7 @@ setup(
             'django-s3-file-field[minio]',
             'ipython',
             'tox',
+            'boto3-stubs[s3]',
         ],
         'test': [
             'factory-boy',

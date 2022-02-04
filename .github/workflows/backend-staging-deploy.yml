@@ -1,4 +1,4 @@
-name: Trigger staging deploy on push to master
+name: Trigger staging deploy of backend server on push to master
 
 on:
   push:

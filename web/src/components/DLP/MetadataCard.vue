@@ -1,6 +1,6 @@
 <template>
   <v-row>
-    <v-col v-if="items && items.length">
+    <v-col>
       <v-card
         outlined
         height="100%"
@@ -15,6 +15,7 @@
           {{ name }}
         </v-card-title>
         <v-list
+          v-if="items && items.length"
           :style="`column-count: ${columnCount};`"
           class="px-5"
         >
@@ -60,6 +61,13 @@
             </div>
           </div>
         </v-list>
+        <v-sheet
+          v-else
+          class="ma-5"
+        >
+          <!-- Optional alternate component that will be used as a fallback if `items` is empty -->
+          <slot name="emptyFallback" />
+        </v-sheet>
       </v-card>
     </v-col>
   </v-row>

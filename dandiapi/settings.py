@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Type
 
@@ -47,12 +48,21 @@ class DandiMixin(ConfigMixin):
             'DEFAULT_PAGINATION_CLASS'
         ] = 'dandiapi.api.views.common.DandiPagination'
 
+        # If this environment variable is set, the pydantic model will allow URLs with localhost
+        # in them. This is important for development and testing environments, where URLs will
+        # frequently point to localhost.
+        if configuration.DANDI_ALLOW_LOCALHOST_URLS:
+            os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
+
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_DANDISETS_EMBARGO_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_ZARR_PREFIX_NAME = values.Value(default='zarr', environ=True)
     DANDI_ZARR_CHECKSUM_PREFIX_NAME = values.Value(default='zarr-checksums', environ=True)
+
+    # Mainly applies to unembargo
+    DANDI_MULTIPART_COPY_MAX_WORKERS = values.IntegerValue(environ=True, default=50)
 
     # This is where the schema version should be set.
     # It can optionally be overwritten with the environment variable, but that should only be

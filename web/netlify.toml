@@ -4,15 +4,8 @@ command = "yarn run build"
 
   [build.environment]
   NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
-  VUE_APP_OAUTH_API_ROOT = "https://api.dandiarchive.org/oauth/"
-  VUE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
-  VUE_APP_DANDI_API_ROOT = "https://api.dandiarchive.org/api/"
-  VUE_APP_SENTRY_DSN = "https://425b9a012300493d867e97785fae7b88@o308436.ingest.sentry.io/5196549"
-  VUE_APP_SENTRY_ENVIRONMENT = "production"
-
-[context.deploy-preview]
-
-  [context.deploy-preview.environment]
   VUE_APP_OAUTH_API_ROOT = "https://api-staging.dandiarchive.org/oauth/"
+  VUE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
   VUE_APP_DANDI_API_ROOT = "https://api-staging.dandiarchive.org/api/"
+  VUE_APP_SENTRY_DSN = "https://425b9a012300493d867e97785fae7b88@o308436.ingest.sentry.io/5196549"
   VUE_APP_SENTRY_ENVIRONMENT = "staging"

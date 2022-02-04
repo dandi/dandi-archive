@@ -10,7 +10,7 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -1192,35 +1192,3 @@ def test_asset_direct_info(api_client, asset):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }
-
-
-@pytest.mark.parametrize(
-    ('embargo_status'),
-    [
-        Dandiset.EmbargoStatus.EMBARGOED,
-        Dandiset.EmbargoStatus.UNEMBARGOING,
-    ],
-)
-@pytest.mark.django_db
-def test_asset_embargoed_visibility(
-    api_client, dandiset_factory, draft_version_factory, asset_factory, embargo_status
-):
-    dandiset = dandiset_factory(embargo_status=embargo_status)
-    version = draft_version_factory(dandiset=dandiset)
-    asset = asset_factory()
-    version.assets.add(asset)
-
-    # The version should be hidden because the dandiset it belongs to is embargoed
-    response = api_client.get(
-        f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/assets/'
-    )
-    assert response.json() == {
-        'count': 0,
-        'next': None,
-        'previous': None,
-        'results': [],
-    }
-    response = api_client.get(
-        f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/assets/{asset.asset_id}/'
-    )
-    assert response.status_code == 404

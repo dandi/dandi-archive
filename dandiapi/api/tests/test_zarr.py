@@ -36,7 +36,6 @@ def test_zarr_rest_get(
     zarr_archive.complete_upload()
 
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
-    print(resp.json())
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
@@ -48,9 +47,27 @@ def test_zarr_rest_get(
 
 
 @pytest.mark.django_db
+def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
+    ten_quadrillion = 10**16
+    ten_petabytes = 10**16
+    zarr_archive = zarr_archive_factory(file_count=ten_quadrillion, size=ten_petabytes)
+    assert zarr_archive.file_count == ten_quadrillion
+    assert zarr_archive.size == ten_petabytes
+
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.status_code == 200
+    assert resp.json() == {
+        'name': zarr_archive.name,
+        'zarr_id': zarr_archive.zarr_id,
+        'checksum': zarr_archive.checksum,
+        'file_count': ten_quadrillion,
+        'size': ten_petabytes,
+    }
+
+
+@pytest.mark.django_db
 def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive):
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
-    print(resp.json())
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
