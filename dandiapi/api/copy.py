@@ -52,12 +52,12 @@ class CopyObjectPart:
     include_range: bool = True
 
     @property
-    def copy_range(self) -> str:
+    def copy_range(self) -> str | None:
         return (
             # Subtract one due to zero-indexing
             f'bytes={self.part.offset}-{self.part.offset + self.part.size - 1}'
             if self.include_range
-            else ''
+            else None
         )
 
 
@@ -89,13 +89,19 @@ def copy_object_multipart(
 
 
 def _copy_object_part(client, object_part: CopyObjectPart) -> CopyPartResponse:
+    # Add conditional params
+    extra_params = {}
+    if object_part.copy_range is not None:
+        extra_params['CopySourceRange'] = object_part.copy_range
+
+    # Make copy request
     response = client.upload_part_copy(
         Bucket=object_part.dest_bucket,
         Key=object_part.dest_key,
         UploadId=object_part.upload_id,
         CopySource=object_part.copy_source,
-        CopySourceRange=object_part.copy_range,
         PartNumber=object_part.part.number,
+        **extra_params,
     )
 
     # Return the ETag & part number
