@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from django.conf import settings
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
@@ -270,7 +271,7 @@ def test_zarr_explore_file(
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
     )
 
 
@@ -300,5 +301,5 @@ def test_zarr_explore_head(
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
     )
