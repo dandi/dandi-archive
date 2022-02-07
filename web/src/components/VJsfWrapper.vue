@@ -1,136 +1,147 @@
 <template>
-  <v-row class="d-flex justify-space-evenly">
-    <v-col cols="6">
-      <div
-        style="height: 75vh;"
-        class="overflow-y-auto"
-      >
-        <!-- Note: use the transaction stack pointer as key to force vjsf rerender on undo/redo -->
-        <v-jsf
-          :key="`${propKey}-${index}-${transactionTracker.transactionPointer}`"
-          class="my-6"
-          :value="currentItem"
-          :schema="schema"
-          :options="options"
-          @input="currentItem=$event"
-          @change="formListener"
-        />
-        <v-divider />
-        <div
-          style="height: 10vh"
-          class="d-flex align-center justify-space-between"
-        >
-          <v-btn
-            elevation="0"
-            color="white"
-            class="text--darken-2 grey--text font-weight-medium"
-            @click="clearForm()"
-          >
-            Clear Form
-          </v-btn>
-          <v-btn
-            v-if="index === -1"
-            dark
-            elevation="0"
-            @click="createNewItem()"
-          >
-            <span class="mr-1">Add Item</span>
-            <v-icon>mdi-arrow-right</v-icon>
-          </v-btn>
-          <v-btn
-            v-else
-            dark
-            elevation="0"
-            @click="saveItem(propKey)"
-          >
-            <span class="mr-1">Save Item</span>
-            <v-icon>mdi-arrow-right</v-icon>
-          </v-btn>
-        </div>
-      </div>
-    </v-col>
-    <v-col
-      :style="`
-        background-color: ${
-        $vuetify.theme.themes[$vuetify.theme.isDark ? 'dark' : 'light'].dropzone
-      }; height: 75vh;
-        `"
-      class="overflow-y-auto"
-      cols="6"
+  <div>
+    <v-row
+      style="height: 80%;"
+      class="d-flex justify-space-between"
     >
-      <v-sheet class="ma-4">
-        <v-jsf
-          :key="JSON.stringify(editorInterface.complexModel[propKey])"
-          :value="editorInterface.complexModel[propKey]"
-          :schema="editorInterface.complexSchema.properties[propKey]"
-          :options="options"
-          @input="setComplexModelProp($event)"
+      <v-col cols="6">
+        <div
+          style="height: 65vh;"
+          class="overflow-y-auto"
         >
-          <template slot-scope="slotProps">
-            <v-card
-              outlined
-              class="d-flex flex-column"
-            >
-              <draggable @update="reorderItem($event)">
-                <v-card
-                  v-for="(item, i) in slotProps.value"
-                  :key="i"
-                  outlined
-                >
-                  <div class="pa-3 d-flex align-center justify-space-between">
-                    <span class="d-inline text-truncate text-subtitle-1">
-                      <v-icon>mdi-drag-horizontal-variant</v-icon>
-                      <span :class="index === i ? 'accent--text' : undefined">
-                        {{ item.name || item.identifier || item.id }}
-                        {{ index === i ? '*' : undefined }}
+          <v-form v-model="formValid">
+            <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
+            <v-jsf
+              v-if="index >= 0"
+              :key="`${propKey}-${index}-${transactionTracker.transactionPointer}`"
+              class="my-6"
+              :value="currentItem"
+              :schema="schema"
+              :options="options"
+              @input="currentItem=$event"
+              @change="formListener"
+            />
+          </v-form>
+        </div>
+      </v-col>
+      <v-col
+        :style="`
+        background-color: ${
+          $vuetify.theme.themes[$vuetify.theme.isDark ? 'dark' : 'light'].dropzone
+        }; height: 75vh;
+        `"
+        class="overflow-y-auto"
+        cols="6"
+      >
+        <v-sheet class="ma-4">
+          <v-jsf
+            :key="JSON.stringify(editorInterface.complexModel[propKey])"
+            :value="editorInterface.complexModel[propKey]"
+            :schema="editorInterface.complexSchema.properties[propKey]"
+            :options="options"
+            @input="setComplexModelProp($event)"
+          >
+            <template slot-scope="slotProps">
+              <v-card
+                outlined
+                class="d-flex flex-column"
+              >
+                <draggable @update="reorderItem($event)">
+                  <v-card
+                    v-for="(item, i) in slotProps.value"
+                    :key="i"
+                    outlined
+                  >
+                    <div class="pa-3 d-flex align-center justify-space-between">
+                      <span class="d-inline text-truncate text-subtitle-1">
+                        <v-icon>mdi-drag-horizontal-variant</v-icon>
+                        <span :class="index === i ? 'accent--text' : undefined">
+                          {{ item.name || item.identifier || item.id }}
+                          {{ index === i ? '*' : undefined }}
+                        </span>
                       </span>
-                    </span>
-                    <span style="min-width: 31%;">
-                      <span>
-                        <v-btn
-                          text
-                          small
-                          @click="removeItem(i)"
-                        >
-                          <v-icon
-                            color="error"
-                            left
+                      <span style="min-width: 31%;">
+                        <span>
+                          <v-btn
+                            text
+                            small
+                            @click="removeItem(i)"
                           >
-                            mdi-minus-circle
-                          </v-icon>
-                          <span class="font-weight-regular">
-                            Remove
-                          </span>
-                        </v-btn>
-                      </span>
-                      <span>
-                        <v-btn
-                          :disabled="index === i"
-                          text
-                          small
-                          @click="selectExistingItem(i)"
-                        >
-                          <v-icon
-                            color="info"
-                            left
+                            <v-icon
+                              color="error"
+                              left
+                            >
+                              mdi-minus-circle
+                            </v-icon>
+                            <span class="font-weight-regular">
+                              Remove
+                            </span>
+                          </v-btn>
+                        </span>
+                        <span>
+                          <v-btn
+                            :disabled="index === i"
+                            text
+                            small
+                            @click="selectExistingItem(i)"
                           >
-                            mdi-pencil
-                          </v-icon>
-                          <span class="font-weight-regular">
-                            Edit
-                          </span>
-                        </v-btn>
+                            <v-icon
+                              color="info"
+                              left
+                            >
+                              mdi-pencil
+                            </v-icon>
+                            <span class="font-weight-regular">
+                              Edit
+                            </span>
+                          </v-btn>
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                </v-card>
-              </draggable>
-            </v-card>
-          </template>
-        </v-jsf>
-      </v-sheet>
-    </v-col>
-  </v-row>
+                    </div>
+                  </v-card>
+                </draggable>
+              </v-card>
+            </template>
+          </v-jsf>
+        </v-sheet>
+      </v-col>
+    </v-row>
+    <div
+      class="my-5"
+      style="position: fixed; bottom: 0; height: 10vh; width: 40%"
+    >
+      <v-divider class="my-2" />
+      <div class="d-flex align-center justify-space-between">
+        <v-btn
+          elevation="0"
+          color="white"
+          class="text--darken-2 grey--text font-weight-medium"
+          @click="clearForm()"
+        >
+          Clear Form
+        </v-btn>
+        <v-btn
+          v-if="index === -1"
+          class="grey darken-3 white--text"
+          elevation="0"
+          @click="createNewItem()"
+        >
+          <span class="mr-1">Add Item</span>
+          <v-icon>mdi-arrow-right</v-icon>
+        </v-btn>
+        <v-btn
+          v-else
+          class="grey darken-3 white--text"
+          elevation="0"
+          :disabled="!formValid"
+          @click="saveItem(propKey)"
+        >
+          <span class="mr-1">Save Item</span>
+          <v-icon>mdi-arrow-right</v-icon>
+        </v-btn>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -169,7 +180,8 @@ export default defineComponent({
   setup(props) {
     const index = ref(-1); // index of item currently being edited
     const currentItem = ref({}); // the item currently being edited
-    const isNewItem = ref(true);
+    const isNewItem = ref(true); // determines whether to save existing item or add new one on save
+    const formValid = ref(false); // whether or not the current item being edited is valid
 
     // extracts the subschema for the given propKey
     const schema = computed(
@@ -283,6 +295,7 @@ export default defineComponent({
       saveItem,
       schema,
       isNewItem,
+      formValid,
       selectExistingItem,
       clearForm,
       editItem,
