@@ -171,7 +171,9 @@ def unembargo_dandiset(dandiset_id: int):
         asset.unembargo()
 
     # Update draft version metadata
-    draft_version.metadata['access'] = 'dandi:OpenAccess'
+    draft_version.metadata['access'] = [
+        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
+    ]
     draft_version.save(update_fields=['metadata'])
 
     # Set access on dandiset
