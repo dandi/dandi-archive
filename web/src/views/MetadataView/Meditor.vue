@@ -3,8 +3,6 @@
     v-if="schema"
     v-page-title="model.name"
     class="overflow-hidden"
-    height="90vh"
-    width="90vw"
   >
     <v-row>
       <v-col>
@@ -146,9 +144,7 @@
           eager
         >
           <v-form
-            ref="basic-form"
             v-model="basicModelValid"
-            style="height: 75vh;"
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf
@@ -165,9 +161,8 @@
           :key="`tab-${i+1}`"
           eager
         >
-          <v-card class="pa-2 px-4">
+          <v-card class="pa-2 px-1">
             <v-form
-              :ref="`${propKey}-form`"
               v-model="complexModelValidation[propKey]"
               class="px-7"
             >
@@ -190,7 +185,9 @@
 <script lang="ts">
 import type { JSONSchema7 } from 'json-schema';
 
-import { defineComponent, ref, computed } from '@vue/composition-api';
+import {
+  defineComponent, ref, computed, ComputedRef,
+} from '@vue/composition-api';
 
 import jsYaml from 'js-yaml';
 
@@ -227,7 +224,7 @@ export default defineComponent({
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const id = computed(() => currentDandiset.value?.dandiset.identifier);
-    const schema = computed(() => store.state.dandiset.schema);
+    const schema: ComputedRef<JSONSchema7> = computed(() => store.state.dandiset.schema);
     const model = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
     const readonly = computed(() => !store.getters.dandiset.userCanModifyDandiset);
 
@@ -246,21 +243,10 @@ export default defineComponent({
       complexModelValid,
       complexModelValidation,
     } = editorInterface;
-
-    function sectionButtonColor(propKey: string) {
-      const sectionValid = complexModelValidation[propKey];
-      if (sectionValid !== undefined && !sectionValid) {
-        return 'error';
-      }
-
-      return undefined;
-    }
-
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
-      autoFixArrayItems: false,
-      removeAdditionalProperties: false,
       disableAll: readonly.value,
+      childrenClass: 'my-1 px-2',
       fieldProps: {
         outlined: true,
       },
@@ -367,7 +353,6 @@ export default defineComponent({
       fieldsToRender,
       save,
       download,
-      sectionButtonColor,
 
       modified,
       undoChange,

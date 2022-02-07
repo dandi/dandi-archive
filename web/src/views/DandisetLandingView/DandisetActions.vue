@@ -88,7 +88,7 @@
         </v-btn>
       </v-row>
       <v-row no-gutters>
-        <v-dialog width="75vw">
+        <v-dialog max-width="85vw">
           <template #activator="{ on }">
             <v-btn
               id="view-edit-metadata"
