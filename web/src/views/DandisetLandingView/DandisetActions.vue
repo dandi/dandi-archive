@@ -111,6 +111,25 @@
       </v-row>
     </div>
 
+    <div class="my-4">
+      <v-row no-gutters>
+        <v-btn
+          outlined
+          block
+          :href="manifestLocation"
+        >
+          <v-icon
+            left
+            color="primary"
+          >
+            mdi-clipboard
+          </v-icon>
+          <span>Manifest</span>
+          <v-spacer />
+        </v-btn>
+      </v-row>
+    </div>
+
     <!-- Share button -->
     <div class="mt-6 mb-4">
       <v-row
@@ -132,6 +151,7 @@
 import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
 import { Location } from 'vue-router';
 
+import { dandiRest } from '@/rest';
 import store from '@/store';
 
 import DownloadDialog from './DownloadDialog.vue';
@@ -166,10 +186,18 @@ export default defineComponent({
       };
     });
 
+    const manifestLocation = computed(
+      () => dandiRest.assetManifestURI(
+        currentDandiset.value?.dandiset.identifier || '',
+        currentDandiset.value?.version || '',
+      ),
+    );
+
     return {
       currentDandiset,
       currentVersion,
       fileBrowserLink,
+      manifestLocation,
     };
   },
 });

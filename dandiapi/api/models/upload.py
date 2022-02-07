@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import abstractclassmethod
+from abc import abstractmethod
 from uuid import uuid4
 
 from django.conf import settings
@@ -51,8 +51,9 @@ class BaseUpload(TimeStampedModel):
     multipart_upload_id = models.CharField(max_length=128, unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
 
-    @abstractclassmethod
-    def object_key(cls, upload_id, dandiset: Dandiset):  # noqa: N805
+    @staticmethod
+    @abstractmethod
+    def object_key(upload_id, dandiset: Dandiset | None = None):  # noqa: N805
         pass
 
     @classmethod
@@ -107,8 +108,8 @@ class Upload(BaseUpload):
     blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
-    @classmethod
-    def object_key(cls, upload_id, dandiset: Dandiset):
+    @staticmethod
+    def object_key(upload_id, dandiset: Dandiset | None = None):
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -133,8 +134,8 @@ class EmbargoedUpload(BaseUpload):
         Dandiset, related_name='embargoed_uploads', on_delete=models.CASCADE
     )
 
-    @classmethod
-    def object_key(cls, upload_id, dandiset: Dandiset):
+    @staticmethod
+    def object_key(upload_id, dandiset: Dandiset):
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}'
