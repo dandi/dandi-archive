@@ -154,10 +154,10 @@ import { Location } from 'vue-router';
 import { dandiRest } from '@/rest';
 import store from '@/store';
 
+import Meditor from '@/components/Meditor.vue';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
-import Meditor from '../MetadataView/Meditor.vue';
 
 export default defineComponent({
   name: 'DandisetActions',
