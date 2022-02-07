@@ -246,6 +246,7 @@ export default defineComponent({
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
       disableAll: readonly.value,
+      autoFixArrayItems: false,
       childrenClass: 'my-1 px-2',
       fieldProps: {
         outlined: true,

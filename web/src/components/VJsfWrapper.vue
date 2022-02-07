@@ -57,7 +57,7 @@
                         <v-icon>mdi-drag-horizontal-variant</v-icon>
                         <span :class="index === i ? 'accent--text' : undefined">
                           {{ item.name || item.identifier || item.id }}
-                          {{ index === i ? '*' : undefined }}
+                          {{ index === i && isModified ? '*' : undefined }}
                         </span>
                       </span>
                       <span style="min-width: 31%;">
@@ -152,6 +152,8 @@ import {
 import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
+import { isEqual } from 'lodash';
+
 import { EditorInterface } from '@/utils/schema/editor';
 import { DandiModel } from '@/utils/schema/types';
 import MeditorTransactionTracker from '@/utils/transactions';
@@ -188,6 +190,13 @@ export default defineComponent({
       // @ts-ignore
       () => props.editorInterface.complexSchema.properties[props.propKey].items,
     );
+
+    // whether the current form has been edited and requires saving
+    const isModified = computed(() => !isEqual(
+      currentItem.value,
+      // @ts-ignore
+      props.editorInterface.complexModel[props.propKey][index.value],
+    ));
 
     watch(() => props.editorInterface.complexModel[props.propKey], () => {
       if (index.value >= 0) {
@@ -301,6 +310,7 @@ export default defineComponent({
       editItem,
       reorderItem,
       formListener,
+      isModified,
     };
   },
 });
