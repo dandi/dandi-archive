@@ -35,7 +35,7 @@
           <a
             v-if="contactPeople.has(contributor.name)"
             :href="contributor.email ? `mailto:${contributor.email}` : undefined"
-            class="text-decoration-none"
+            class="mx-1 text-decoration-none"
           >
             <v-icon color="black">mdi-card-account-mail</v-icon>
           </a>
