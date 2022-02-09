@@ -11,6 +11,7 @@ This script was the best way I could find to bulk delete objects in an S3 direct
 You will need an AWS CLI profile set up with permission to delete objects from the desired bucket.
 See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
 """
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
 import click
@@ -33,7 +34,8 @@ def delete_version(bucket, thing):
 @click.option('--bucket', prompt='Bucket', help='The bucket to delete from')
 @click.option('--prefix', prompt='Path to delete', help='The prefix to delete all files under')
 @click.option('--force', is_flag=True, help='Skip confirmation prompts')
-def delete_objects(profile: str, bucket: str, prefix: str, force: bool):
+@click.option('--threads', prompt='Threads', help='How many threads to use')
+def delete_objects(profile: str, bucket: str, prefix: str, force: bool, threads: int):
     session = boto3.Session(profile_name=profile)
     s3 = session.resource('s3')
     bucket = s3.Bucket(bucket)
@@ -46,10 +48,15 @@ def delete_objects(profile: str, bucket: str, prefix: str, force: bool):
         click.echo('This operation will continue to fetch objects until they are all deleted.')
     if force or click.confirm(f'Delete {delete_count} objects from {bucket.name}/{prefix}?'):
         while True:
-            for delete_marker in delete_markers:
-                delete_version(bucket, delete_marker)
-            for version in versions:
-                delete_version(bucket, version)
+            with ThreadPoolExecutor(max_workers=int(threads)) as executor:
+                futures = [
+                    executor.submit(delete_version, bucket, delete_marker)
+                    for delete_marker in delete_markers
+                ]
+                futures += [
+                    executor.submit(delete_version, bucket, version) for version in versions
+                ]
+                list(as_completed(futures))
             if 'DeleteMarkers' not in response and 'Versions' not in response:
                 click.echo('Done!')
                 break
