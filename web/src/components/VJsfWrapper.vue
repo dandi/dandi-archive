@@ -35,8 +35,8 @@
       >
         <v-sheet class="ma-4">
           <v-jsf
-            :key="JSON.stringify(editorInterface.complexModel[propKey])"
-            :value="editorInterface.complexModel[propKey]"
+            :key="JSON.stringify(currentModel)"
+            :value="currentModel"
             :schema="editorInterface.complexSchema.properties[propKey]"
             :options="options"
             @input="setComplexModelProp($event)"
@@ -191,52 +191,48 @@ export default defineComponent({
       () => props.editorInterface.complexSchema.properties[props.propKey].items,
     );
 
-    // whether the current form has been edited and requires saving
-    const isModified = computed(() => !isEqual(
-      currentItem.value,
-      // @ts-ignore
-      props.editorInterface.complexModel[props.propKey][index.value],
-    ));
+    const currentModel = computed({
+      get: () => props.editorInterface.complexModel[props.propKey] as DandiModel[],
+      set: (newModel: any) => {
+        props.editorInterface.setComplexModelProp(props.propKey, newModel);
+        props.transactionTracker.add(props.editorInterface.complexModel, true);
+      },
+    });
 
-    watch(() => props.editorInterface.complexModel[props.propKey], () => {
+    // Update current item if model changed
+    watch(currentModel, (val) => {
       if (index.value >= 0) {
-        currentItem.value = (props.editorInterface.complexModel as any)[props.propKey][index.value];
+        currentItem.value = val[index.value];
       }
     });
 
+    // whether the current form has been edited and requires saving
+    const isModified = computed(() => !isEqual(
+      currentItem.value,
+      currentModel.value[index.value],
+    ));
+
     function setComplexModelProp(event: DandiModel): void {
-      const currentValue = [...(props.editorInterface.complexModel[props.propKey] as any)] as any;
+      const currentValue = [...currentModel.value];
       if (index.value >= 0) {
         currentValue[index.value] = { ...(currentValue[index.value] as DandiModel), ...event };
       } else {
         index.value = currentValue.push(event);
       }
+
       props.editorInterface.setComplexModelProp(props.propKey, currentValue);
     }
 
     function createNewItem() {
-      // @ts-ignore
-      const currentModel = [...props.editorInterface.complexModel[props.propKey]];
-      currentModel.push(currentItem.value);
-      // @ts-ignore
-      props.editorInterface.setComplexModelProp(props.propKey, currentModel);
-      index.value = currentModel.length - 1;
-
-      // record a transaction
-      props.transactionTracker.add(props.editorInterface.complexModel, true);
+      currentModel.value = [...currentModel.value, currentItem.value];
+      index.value = currentModel.value.length - 1;
     }
 
     function saveItem() {
       // write the item currently being edited into the schema model
-
-      // @ts-ignore
-      const currentModel = [...props.editorInterface.complexModel[props.propKey]];
-      currentModel[index.value] = currentItem.value;
-      // @ts-ignore
-      props.editorInterface.setComplexModelProp(props.propKey, currentModel);
-
-      // record a transaction
-      props.transactionTracker.add(props.editorInterface.complexModel, true);
+      const newModel = [...currentModel.value];
+      newModel[index.value] = currentItem.value;
+      currentModel.value = newModel;
     }
 
     function removeItem(index_to_remove: number) {
@@ -245,19 +241,18 @@ export default defineComponent({
         index.value = -1;
         currentItem.value = {};
       }
-      const currentValue = [...(props.editorInterface.complexModel[props.propKey] as any)] as any;
-      currentValue.splice(index_to_remove, 1);
-      props.editorInterface.setComplexModelProp(props.propKey, currentValue);
 
-      // record a transaction
-      props.transactionTracker.add(props.editorInterface.complexModel, true);
+      // Create new value and set
+      const currentValue = [...currentModel.value];
+      currentValue.splice(index_to_remove, 1);
+      currentModel.value = currentValue;
     }
 
     function selectExistingItem(new_index: number) {
       index.value = new_index;
       // make a deep copy so the schema model isn't modified until this is saved
       currentItem.value = JSON.parse(JSON.stringify(
-        props.editorInterface.complexModel[props.propKey],
+        currentModel.value,
       ))[new_index];
     }
 
@@ -278,16 +273,19 @@ export default defineComponent({
       } else if (index.value === newIndex) {
         index.value = oldIndex;
       }
+
       // make a deep clone of the model
-      const currentModel = JSON.parse(
-        JSON.stringify(props.editorInterface.complexModel[props.propKey]),
+      const newModel = JSON.parse(
+        JSON.stringify(currentModel.value),
       );
-      const item1 = currentModel[oldIndex];
-      const item2 = currentModel[newIndex];
-      currentModel[newIndex] = JSON.parse(JSON.stringify(item1));
-      currentModel[oldIndex] = JSON.parse(JSON.stringify(item2));
-      props.editorInterface.setComplexModelProp(props.propKey, currentModel);
-      props.transactionTracker.add(props.editorInterface.complexModel, true);
+
+      // Switch items
+      const b = newModel[newIndex];
+      newModel[newIndex] = newModel[oldIndex];
+      newModel[oldIndex] = b;
+
+      // Update
+      currentModel.value = newModel;
     }
 
     function formListener() {
@@ -303,6 +301,7 @@ export default defineComponent({
       createNewItem,
       saveItem,
       schema,
+      currentModel,
       isNewItem,
       formValid,
       selectExistingItem,
