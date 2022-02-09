@@ -39,7 +39,7 @@ class UserMetadataInline(TabularInline):
 class UserAdmin(BaseUserAdmin):
     list_select_related = ['metadata']
     list_display = ['email', 'first_name', 'last_name', 'github_username', 'status', 'date_joined']
-    search_fields = ['email', 'first_name', 'last_name', 'github_username']
+    search_fields = ['email', 'first_name', 'last_name']
     inlines = [UserMetadataInline]
 
     @admin.action(description="Export selected users\' emails")
