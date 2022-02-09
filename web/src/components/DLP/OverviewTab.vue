@@ -34,7 +34,7 @@
           </a>
           <a
             v-if="contactPeople.has(contributor.name)"
-            :href="`mailto:${contributors.filter((c) => c.name === contributor.name)[0].email}`"
+            :href="contributor.email ? `mailto:${contributor.email}` : undefined"
             class="text-decoration-none"
           >
             <v-icon color="black">mdi-card-account-mail</v-icon>
