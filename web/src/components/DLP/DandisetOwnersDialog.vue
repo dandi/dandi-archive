@@ -163,7 +163,7 @@
           <v-btn
             color="error"
             depressed
-            @click="save()"
+            @click="save"
           >
             Yes
           </v-btn>
