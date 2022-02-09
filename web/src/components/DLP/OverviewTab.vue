@@ -37,7 +37,7 @@
             :href="contributor.email ? `mailto:${contributor.email}` : undefined"
             class="mx-1 text-decoration-none"
           >
-            <v-icon color="black">mdi-card-account-mail</v-icon>
+            <v-icon color="info">mdi-card-account-mail</v-icon>
           </a>
         </v-chip>
       </div>
