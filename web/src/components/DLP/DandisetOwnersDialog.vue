@@ -277,12 +277,12 @@ export default defineComponent({
 
     async function save() {
       if (currentDandiset.value?.dandiset) {
-        const userNotOwner = !owners.value
+        const owner = owners.value
           ?.map((u: User) => u.username)
           .includes(dandiRest.user!.username);
 
         // If necessary, open display and return. Otherwise, proceed to save.
-        if (!adminWarningDisplay.value && dandiRest.user?.admin && userNotOwner) {
+        if (!adminWarningDisplay.value && dandiRest.user?.admin && !owner) {
           adminWarningDisplay.value = true;
           return;
         }
