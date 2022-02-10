@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentDandiset.dandiset.embargo_status !== 'UNEMBARGOING'">
+  <div v-if="currentDandiset && currentDandiset.dandiset.embargo_status !== 'UNEMBARGOING'">
     <v-progress-linear
       v-if="!currentDandiset"
       indeterminate
@@ -213,16 +213,14 @@
 
 <script lang="ts">
 import {
-  computed, defineComponent, Ref, ref, watch,
+  computed, defineComponent, onMounted, Ref, ref, watch,
 } from '@vue/composition-api';
 import { RawLocation } from 'vue-router';
 import filesize from 'filesize';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
-import {
-  AssetFile, AssetFolder, AssetStats, User,
-} from '@/types';
+import { AssetFile, AssetFolder, AssetStats } from '@/types';
 
 const parentDirectory = '..';
 const rootDirectory = '';
@@ -269,18 +267,21 @@ export default defineComponent({
   },
   setup(props, ctx) {
     const location = ref(rootDirectory);
-    const owners: Ref<string[]> = ref([]);
     const itemToDelete = ref(null);
     const page = ref(1);
     const pages = ref(0);
     const updating = ref(false);
     const items: Ref<AssetStats[]> = ref([]);
 
+    // Computed
+    const owners = computed(() => store.state.dandiset.owners?.map((u) => u.username) || null);
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const splitLocation = computed(() => location.value.split('/'));
-    const me = computed(() => (dandiRest.user ? dandiRest.user.username : null));
-    const isAdmin = computed(() => me.value && dandiRest.user?.admin);
-    const isOwner = computed(() => me.value && owners.value.includes(me.value));
+    const isAdmin = computed(() => dandiRest.user?.admin || false);
+    const isOwner = computed(() => !!(
+      dandiRest.user
+      && owners.value?.includes(dandiRest.user?.username)
+    ));
 
     function getExternalServices(asset_id: string, name: string, size: number) {
       const { identifier, version } = props;
@@ -329,26 +330,37 @@ export default defineComponent({
       const { folders, files, count } = await dandiRest.assetPaths(
         props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
       );
-      owners.value = (await dandiRest.owners(props.identifier)).data.map((u: User) => u.username);
+
+      // Set num pages
       pages.value = Math.ceil(count / FILES_PER_PAGE);
-      items.value = [
-        ...location.value !== rootDirectory ? [{ name: parentDirectory, folder: true }] : [],
-        ...Object.keys(folders).map(
-          (key) => ({ ...folders[key], name: `${key}/`, folder: true }),
-        ).sort(sortByName),
-        ...Object.keys(files).map(
-          (key) => {
-            const { asset_id, size } = files[key];
-            const services = getExternalServices(asset_id, key, size || 0);
-            return {
-              ...files[key],
-              name: key,
-              folder: false,
-              services,
-            };
-          },
-        ).sort(sortByName),
-      ];
+
+      // Create items
+      // Parent directory if necessary
+      const newItems = location.value !== rootDirectory
+        ? [{ name: parentDirectory, folder: true }]
+        : [];
+
+      // Add folders
+      newItems.push(...Object.keys(folders).map(
+        (key) => ({ ...folders[key], name: `${key}/`, folder: true }),
+      ).sort(sortByName));
+
+      // Add items
+      newItems.push(...Object.keys(files).map(
+        (key) => {
+          const { asset_id, size } = files[key];
+          const services = getExternalServices(asset_id, key, size || 0);
+          return {
+            ...files[key],
+            name: key,
+            folder: false,
+            services,
+          };
+        },
+      ).sort(sortByName));
+
+      // Assign values
+      items.value = newItems;
       updating.value = false;
     }
 
@@ -393,9 +405,14 @@ export default defineComponent({
       location.value = route.query.location.toString() || rootDirectory;
     }, { immediate: true });
 
-    store.dispatch.dandiset.fetchDandiset({
-      identifier: props.identifier,
-      version: props.version,
+    // Fetch dandiset if necessary
+    onMounted(() => {
+      if (!store.state.dandiset.dandiset) {
+        store.dispatch.dandiset.initializeDandisets({
+          identifier: props.identifier,
+          version: props.version,
+        });
+      }
     });
 
     getItems();
