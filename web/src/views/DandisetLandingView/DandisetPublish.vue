@@ -382,13 +382,16 @@ export default defineComponent({
       if (currentDandiset.value?.status === 'Published') {
         return 'No changes since last publish.';
       }
+      if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
+        return 'This dandiset is being unembargoed, please wait.';
+      }
       return '';
     });
 
     const publishButtonDisabled: ComputedRef<boolean> = computed(
       () => !!(currentDandiset.value?.version_validation_errors.length
         || currentDandiset.value?.asset_validation_errors.length
-        || publishDisabledMessage.value),
+        || publishDisabledMessage.value) || currentDandiset.value?.dandiset.embargo_status !== 'OPEN',
     );
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
