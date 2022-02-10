@@ -5,13 +5,13 @@
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
 
-    <div v-if="true">
+    <div v-if="currentDandiset.dandiset.embargo_status === 'EMBARGOED'">
+      <DandisetUnembargo />
+    </div>
+    <div v-else>
       <DandisetPublish
         :user-can-modify-dandiset="userCanModifyDandiset"
       />
-    </div>
-    <div v-else>
-      <DandisetUnembargo />
     </div>
   </div>
 </template>
