@@ -223,6 +223,11 @@ export default defineComponent({
       props.editorInterface.setComplexModelProp(props.propKey, currentValue);
     }
 
+    function clearForm() {
+      index.value = -1;
+      currentItem.value = {};
+    }
+
     function createNewItem() {
       currentModel.value = [...currentModel.value, currentItem.value];
       index.value = currentModel.value.length - 1;
@@ -233,6 +238,7 @@ export default defineComponent({
       const newModel = [...currentModel.value];
       newModel[index.value] = currentItem.value;
       currentModel.value = newModel;
+      clearForm();
     }
 
     function removeItem(index_to_remove: number) {
@@ -254,11 +260,6 @@ export default defineComponent({
       currentItem.value = JSON.parse(JSON.stringify(
         currentModel.value,
       ))[new_index];
-    }
-
-    function clearForm() {
-      index.value = -1;
-      currentItem.value = {};
     }
 
     function editItem(event: DandiModel) {
