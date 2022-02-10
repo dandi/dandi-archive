@@ -93,14 +93,18 @@ def test_unembargo_dandiset(
     assert embargoed_asset.blob is None
     assert embargoed_asset.embargoed_blob.etag != ''
 
-    # Run unembargo
+    # Run unembargo and validate version metadata
     tasks.unembargo_dandiset(dandiset.pk)
+    tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
 
     # Assert correct changes took place
     assert dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
-    assert draft_version.metadata['access'] == 'dandi:OpenAccess'
+    assert draft_version.status == Version.Status.VALID
+    assert draft_version.metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
+    ]
 
     # Assert no new asset created
     asset: Asset = draft_version.assets.first()
@@ -154,12 +158,16 @@ def test_unembargo_dandiset_existing_blobs(
 
     # Run unembargo
     tasks.unembargo_dandiset(dandiset.pk)
+    tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
 
     # Assert correct changes took place
     assert dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
-    assert draft_version.metadata['access'] == 'dandi:OpenAccess'
+    assert draft_version.status == Version.Status.VALID
+    assert draft_version.metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
+    ]
 
     # Assert no new asset created
     asset: Asset = draft_version.assets.first()
@@ -198,12 +206,16 @@ def test_unembargo_dandiset_normal_asset_blob(
 
     # Run unembargo
     tasks.unembargo_dandiset(dandiset.pk)
+    tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
 
     # Assert correct changes took place
     assert dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
-    assert draft_version.metadata['access'] == 'dandi:OpenAccess'
+    assert draft_version.status == Version.Status.VALID
+    assert draft_version.metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
+    ]
 
     # Assert no new asset created
     fetched_asset: Asset = draft_version.assets.first()
