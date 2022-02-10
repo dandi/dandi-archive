@@ -152,8 +152,9 @@
         </v-card-title>
         <v-divider class="my-3" />
         <v-card-text>
-          This action will modify the owners of this dandiset. You are not an owner of this
-          dandiset, but as an admin you may still perform this action.
+          This action will modify the owners of this dandiset.
+          <span class="font-weight-bold">You are not an owner of this dandiset,</span>
+          but as an admin you may still perform this action.
         </v-card-text>
         <v-card-text>
           Would you like to proceed?
