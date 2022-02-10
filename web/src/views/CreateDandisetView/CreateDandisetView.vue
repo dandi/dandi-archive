@@ -24,15 +24,6 @@
           outlined
           class="my-4"
         />
-        <v-combobox
-          v-model="license"
-          :items="dandiLicenses"
-          label="License*"
-          class="my-4"
-          multiple
-          outlined
-          dense
-        />
 
         <div>
           <v-checkbox
@@ -83,6 +74,17 @@
             class="mt-4 shrink"
             style="width: 20vw;"
             :rules="awardNumberRules"
+          />
+        </div>
+        <div v-if="embargoed===false">
+          <v-combobox
+            v-model="license"
+            :items="dandiLicenses"
+            label="License* (required if not embargo)"
+            class="my-4"
+            multiple
+            outlined
+            dense
           />
         </div>
         <small class="float-right font-weight-bold">*indicates required field</small>
