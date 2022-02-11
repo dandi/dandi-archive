@@ -130,7 +130,9 @@ import {
   insideIFrame as insideIFrameFunc,
   dandiRest,
 } from '@/rest';
-import { dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl } from '@/utils/constants';
+import {
+  dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
+} from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
 export default defineComponent({
@@ -173,6 +175,11 @@ export default defineComponent({
       {
         text: 'Help',
         to: dandiHelpUrl,
+        external: true,
+      },
+      {
+        text: 'DandiHub',
+        to: dandihubUrl,
         external: true,
       },
     ];
