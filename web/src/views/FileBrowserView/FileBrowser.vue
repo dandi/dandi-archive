@@ -376,9 +376,6 @@ export default defineComponent({
       itemToDelete.value = null;
     }
 
-    // Refresh files/folders whenever URL changes
-    watch(location, getItems, { immediate: true });
-
     // Update URL if location changes
     watch(location, () => {
       const { location: existingLocation } = ctx.root.$route.query;
@@ -404,6 +401,7 @@ export default defineComponent({
     // go to the directory specified in the URL if it changes
     watch(() => ctx.root.$route, (route) => {
       location.value = route.query.location.toString() || rootDirectory;
+      getItems();
     }, { immediate: true });
 
     // Fetch dandiset if necessary
@@ -415,8 +413,6 @@ export default defineComponent({
         });
       }
     });
-
-    getItems();
 
     return {
       location,
