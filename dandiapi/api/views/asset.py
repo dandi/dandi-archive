@@ -157,7 +157,7 @@ class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
 
-    def get_queryset(self):
+    def raise_if_unauthorized(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
         # user has ownership
         asset_id = self.kwargs.get('asset_id')
@@ -171,6 +171,8 @@ class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
                     # The user does not have ownership permission
                     raise PermissionDenied()
 
+    def get_queryset(self):
+        self.raise_if_unauthorized()
         return super().get_queryset()
 
     @swagger_auto_schema(
@@ -208,7 +210,7 @@ class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
     )
     @action(methods=['GET', 'HEAD'], detail=True)
     def info(self, request, asset_id):
-        asset = get_object_or_404(Asset, asset_id=asset_id)
+        asset = self.get_object()
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -219,8 +221,22 @@ class AssetRequestSerializer(serializers.Serializer):
     zarr_id = serializers.UUIDField(required=False)
 
 
-class AssetViewSet(BaseAssetViewSet, NestedViewSetMixin, ReadOnlyModelViewSet):
+class AssetViewSet(NestedViewSetMixin, BaseAssetViewSet, ReadOnlyModelViewSet):
     pagination_class = DandiPagination
+
+    def raise_if_unauthorized(self):
+        version = get_object_or_404(
+            Version,
+            dandiset__pk=self.kwargs['versions__dandiset__pk'],
+            version=self.kwargs['versions__version'],
+        )
+        if version.dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            if not self.request.user.is_authenticated:
+                # Clients must be authenticated to access it
+                raise NotAuthenticated()
+            if not self.request.user.has_perm('owner', version.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
 
     # Redefine info and download actions to update swagger manual_parameters
 
