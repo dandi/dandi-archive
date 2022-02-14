@@ -237,7 +237,7 @@ def test_asset_populate_metadata(draft_asset_factory):
     asset = draft_asset_factory(metadata=raw_metadata)
 
     download_url = 'https://api.dandiarchive.org' + reverse(
-        'asset-direct-download',
+        'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     blob_url = asset.blob.s3_url
@@ -264,7 +264,7 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
     asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
 
     download_url = 'https://api.dandiarchive.org' + reverse(
-        'asset-direct-download',
+        'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     s3_url = f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/'  # noqa: E501
@@ -410,7 +410,7 @@ def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
-        ).data
+        ).json()
         == asset.metadata
     )
 
@@ -426,7 +426,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
-        ).data
+        ).json()
         == asset.metadata
     )
 
