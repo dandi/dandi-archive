@@ -171,6 +171,7 @@
                 :prop-key="propKey"
                 :editor-interface="editorInterface"
                 :options="CommonVJSFOptions"
+                :readonly="readonly"
               />
             </v-form>
           </v-card>

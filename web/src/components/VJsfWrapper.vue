@@ -46,7 +46,10 @@
                 outlined
                 class="d-flex flex-column"
               >
-                <draggable @update="reorderItem($event)">
+                <draggable
+                  :disabled="readonly"
+                  @update="reorderItem($event)"
+                >
                   <v-card
                     v-for="(item, i) in slotProps.value"
                     :key="i"
@@ -61,7 +64,7 @@
                         </span>
                       </span>
                       <span style="min-width: 31%;">
-                        <span>
+                        <span v-if="!readonly">
                           <v-btn
                             text
                             small
@@ -89,10 +92,10 @@
                               color="info"
                               left
                             >
-                              mdi-pencil
+                              mdi-{{ readonly ? 'eye' : 'pencil' }}
                             </v-icon>
                             <span class="font-weight-regular">
-                              Edit
+                              {{ readonly ? 'View' : 'Edit' }}
                             </span>
                           </v-btn>
                         </span>
@@ -176,6 +179,10 @@ export default defineComponent({
     },
     options: {
       type: Object,
+      required: true,
+    },
+    readonly: {
+      type: Boolean,
       required: true,
     },
   },
