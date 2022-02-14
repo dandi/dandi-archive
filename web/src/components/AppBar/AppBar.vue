@@ -43,14 +43,16 @@
       </v-list>
     </v-menu>
     <v-toolbar-title>
-      <v-img
-        alt="DANDI logo"
-        contain
-        max-height="48px"
-        max-width="120px"
-        src="@/assets/logo.svg"
-        class="mr-2"
-      />
+      <router-link to="/">
+        <v-img
+          alt="DANDI logo"
+          contain
+          max-height="48px"
+          max-width="120px"
+          src="@/assets/logo.svg"
+          class="mr-2"
+        />
+      </router-link>
     </v-toolbar-title>
     <span class="d-none d-md-flex">
       <template v-for="navItem in navItems">
@@ -149,10 +151,6 @@ export default defineComponent({
     const insideIFrame = computed(insideIFrameFunc);
 
     const navItems = [
-      {
-        text: 'Welcome',
-        to: 'home',
-      },
       {
         text: 'Public Dandisets',
         to: 'publicDandisets',
