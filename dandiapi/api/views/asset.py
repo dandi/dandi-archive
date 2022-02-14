@@ -23,10 +23,10 @@ from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
@@ -135,47 +135,6 @@ def _paginate_asset_paths(
     return {'results': paths.data, 'count': asset_count, 'next': next_url, 'previous': prev_url}
 
 
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Get the download link for an asset.',
-    operation_description='',
-    manual_parameters=[ASSET_ID_PARAM],
-)
-@api_view(['GET', 'HEAD'])
-def asset_download_view(request, asset_id):
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    return _download_asset(asset)
-
-
-@swagger_auto_schema(
-    method='GET',
-    operation_summary="Get an asset's metadata",
-    manual_parameters=[ASSET_ID_PARAM],
-)
-@api_view(['GET', 'HEAD'])
-def asset_metadata_view(request, asset_id):
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    return JsonResponse(asset.metadata)
-
-
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Django serialization of an asset',
-    manual_parameters=[ASSET_ID_PARAM],
-)
-@api_view(['GET', 'HEAD'])
-def asset_info_view(request, asset_id):
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    serializer = AssetDetailSerializer(instance=asset)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class AssetRequestSerializer(serializers.Serializer):
-    metadata = serializers.JSONField()
-    blob_id = serializers.UUIDField(required=False)
-    zarr_id = serializers.UUIDField(required=False)
-
-
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
     order = filters.OrderingFilter(fields=['created', 'modified', 'path'])
@@ -185,13 +144,12 @@ class AssetFilter(filters.FilterSet):
         fields = ['path']
 
 
-class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
+class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
     queryset = Asset.objects.all().order_by('created')
 
     permission_classes = [IsApprovedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
-    pagination_class = DandiPagination
 
     lookup_field = 'asset_id'
     lookup_value_regex = Asset.UUID_REGEX
@@ -202,42 +160,96 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     def get_queryset(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
         # user has ownership
-        version = get_object_or_404(
-            Version,
-            dandiset__pk=self.kwargs['versions__dandiset__pk'],
-            version=self.kwargs['versions__version'],
-        )
-        if version.dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            if not self.request.user.is_authenticated:
-                # Clients must be authenticated to access it
-                raise NotAuthenticated()
-            if not self.request.user.has_perm('owner', version.dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied()
+        asset_id = self.kwargs.get('asset_id')
+        if asset_id is not None:
+            asset = get_object_or_404(Asset, asset_id=asset_id)
+            if asset.embargoed_blob is not None:
+                if not self.request.user.is_authenticated:
+                    # Clients must be authenticated to access it
+                    raise NotAuthenticated()
+                if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
+                    # The user does not have ownership permission
+                    raise PermissionDenied()
+
         return super().get_queryset()
 
     @swagger_auto_schema(
         responses={
             200: 'The asset metadata.',
         },
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[ASSET_ID_PARAM],
         operation_summary="Get an asset\'s metadata",
         operation_description='',
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        return Response(asset.metadata, status=status.HTTP_200_OK)
+        return JsonResponse(asset.metadata)
 
     @swagger_auto_schema(
+        method='GET',
+        operation_summary='Get the download link for an asset.',
+        operation_description='',
+        manual_parameters=[ASSET_ID_PARAM],
+        responses={
+            200: None,  # This disables the auto-generated 200 response
+            301: 'Redirect to object store',
+        },
+    )
+    @action(methods=['GET', 'HEAD'], detail=True)
+    def download(self, *args, **kwargs):
+        asset = self.get_object()
+        return _download_asset(asset)
+
+    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Django serialization of an asset',
+        manual_parameters=[ASSET_ID_PARAM],
+        responses={200: AssetDetailSerializer()},
+    )
+    @action(methods=['GET', 'HEAD'], detail=True)
+    def info(self, request, asset_id):
+        asset = get_object_or_404(Asset, asset_id=asset_id)
+        serializer = AssetDetailSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AssetRequestSerializer(serializers.Serializer):
+    metadata = serializers.JSONField()
+    blob_id = serializers.UUIDField(required=False)
+    zarr_id = serializers.UUIDField(required=False)
+
+
+class AssetViewSet(BaseAssetViewSet, NestedViewSetMixin, ReadOnlyModelViewSet):
+    pagination_class = DandiPagination
+
+    # Redefine info and download actions to update swagger manual_parameters
+
+    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Django serialization of an asset',
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         responses={200: AssetDetailSerializer()},
     )
     @action(detail=True, methods=['GET'])
-    def info(self, request, **kwargs):
+    def info(self, request, asset_id, **kwargs):
         """Django serialization of an asset."""
-        asset = self.get_object()
-        serializer = AssetDetailSerializer(instance=asset)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return super().info(request, asset_id)
+
+    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Get the download link for an asset.',
+        operation_description='',
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        responses={
+            200: None,  # This disables the auto-generated 200 response
+            301: 'Redirect to object store',
+        },
+    )
+    @action(detail=True, methods=['GET'])
+    def download(self, *args, **kwargs):
+        return super().download(*args, **kwargs)
+
+    # Remaining actions
 
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer()},
@@ -509,20 +521,6 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         version.save()
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-    @swagger_auto_schema(
-        responses={
-            200: None,  # This disables the auto-generated 200 response
-            301: 'Redirect to object store',
-        },
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary='Return a redirect to the file download in the object store.',
-        operation_description='',
-    )
-    @action(detail=True, methods=['GET'])
-    def download(self, request, **kwargs):
-        """Return a redirect to the file download in the object store."""
-        return _download_asset(self.get_object())
 
     @swagger_auto_schema(
         manual_parameters=[PATH_PREFIX_PARAM],
