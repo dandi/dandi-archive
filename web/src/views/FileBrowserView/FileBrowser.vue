@@ -377,8 +377,9 @@ export default defineComponent({
     }
 
     // Refresh files/folders whenever URL changes
-    watch(location, getItems);
+    watch(location, getItems, { immediate: true });
 
+    // Update URL if location changes
     watch(location, () => {
       const { location: existingLocation } = ctx.root.$route.query;
 
@@ -393,9 +394,9 @@ export default defineComponent({
       } as RawLocation);
     });
 
+    // If the API call returns no items, go back to the root (shouldn't normally happen)
     watch(items, () => {
       if (items.value && !items.value.length) {
-        // If the API call returns no items, go back to the root (shouldn't normally happen)
         location.value = rootDirectory;
       }
     });
