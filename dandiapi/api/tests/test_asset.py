@@ -11,6 +11,7 @@ import requests
 from rest_framework.test import APIClient
 
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -1087,7 +1088,8 @@ def test_asset_download_embargo(
     authenticated_api_client,
     user,
     storage,
-    version,
+    draft_version_factory,
+    dandiset_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     authenticated,
@@ -1095,6 +1097,11 @@ def test_asset_download_embargo(
 ):
     # Pretend like EmbargoedAssetBlob was defined with the given storage
     EmbargoedAssetBlob.blob.field.storage = storage
+
+    # Set draft version as embargoed
+    version = draft_version_factory(
+        dandiset=dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    )
 
     # Set client and owner perm
     client = authenticated_api_client if authenticated else api_client
