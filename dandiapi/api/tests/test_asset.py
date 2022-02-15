@@ -612,6 +612,36 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
 
 
 @pytest.mark.django_db
+def test_asset_create_zarr_wrong_dandiset(
+    api_client, user, draft_version, zarr_archive_factory, dandiset_factory
+):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    zarr_dandiset = dandiset_factory()
+    zarr_archive = zarr_archive_factory(dandiset=zarr_dandiset)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-zarr',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['The zarr archive belongs to a different dandiset']
+
+
+@pytest.mark.django_db
 def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
