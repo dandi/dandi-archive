@@ -209,7 +209,7 @@ class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
         responses={200: AssetDetailSerializer()},
     )
     @action(methods=['GET', 'HEAD'], detail=True)
-    def info(self, request, asset_id):
+    def info(self, *args, **kwargs):
         asset = self.get_object()
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -247,9 +247,9 @@ class AssetViewSet(NestedViewSetMixin, BaseAssetViewSet, ReadOnlyModelViewSet):
         responses={200: AssetDetailSerializer()},
     )
     @action(detail=True, methods=['GET'])
-    def info(self, request, asset_id, **kwargs):
+    def info(self, *args, **kwargs):
         """Django serialization of an asset."""
-        return super().info(request, asset_id)
+        return super().info()
 
     @swagger_auto_schema(
         method='GET',
