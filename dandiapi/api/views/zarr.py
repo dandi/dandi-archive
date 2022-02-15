@@ -17,6 +17,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
@@ -65,6 +66,7 @@ class ZarrSerializer(serializers.Serializer):
         fields = [
             'zarr_id',
             'name',
+            'dandiset',
             'checksum',
             'file_count',
             'size',
@@ -73,6 +75,7 @@ class ZarrSerializer(serializers.Serializer):
 
     zarr_id = serializers.CharField(read_only=True)
     name = serializers.CharField(max_length=512)
+    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
     checksum = serializers.CharField(max_length=40, read_only=True)
     file_count = serializers.IntegerField(read_only=True)
     size = serializers.IntegerField(read_only=True)
@@ -106,7 +109,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         name = serializer.validated_data['name']
-        zarr_archive: ZarrArchive = ZarrArchive(name=name)
+        dandiset = get_object_or_404(
+            Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
+        )
+        zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         zarr_archive.save()
 
         serializer = ZarrSerializer(instance=zarr_archive)
