@@ -8,7 +8,6 @@ import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView
 import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
 import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
 import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
-import MetadataView from '@/views/MetadataView/MetadataView.vue';
 
 Vue.use(Router);
 
@@ -43,12 +42,6 @@ const routes: RouteConfig[] = [
     name: 'fileBrowser',
     props: true,
     component: FileBrowser,
-  },
-  {
-    path: '/dandiset/:identifier/:version/metadata',
-    name: 'metadata',
-    props: true,
-    component: MetadataView,
   },
   {
     path: '/dandiset/:identifier/:version?',
