@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django.conf import settings
+from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
@@ -93,10 +94,12 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
 @pytest.mark.django_db
 def test_zarr_rest_delete_file(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
@@ -114,12 +117,32 @@ def test_zarr_rest_delete_file(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_delete_multiple_files(
+def test_zarr_rest_delete_file_not_an_owner(
     authenticated_api_client,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_archive.complete_upload()
+
+    resp = authenticated_api_client.delete(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_zarr_rest_delete_multiple_files(
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     uploads = [zarr_upload_file_factory(zarr_archive=zarr_archive) for i in range(0, 10)]
@@ -140,10 +163,12 @@ def test_zarr_rest_delete_multiple_files(
 @pytest.mark.django_db
 def test_zarr_rest_delete_missing_file(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
@@ -169,10 +194,12 @@ def test_zarr_rest_delete_missing_file(
 @pytest.mark.django_db
 def test_zarr_rest_delete_upload_in_progress(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
