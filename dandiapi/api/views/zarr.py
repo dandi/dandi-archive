@@ -204,6 +204,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             pattern=r'.*',
         )
     ],
+    operation_id='zarr_content_read',
 )
 @api_view(['GET', 'HEAD'])
 def explore_zarr_archive(request, zarr_id: str, path: str):
