@@ -1073,18 +1073,8 @@ def test_asset_download(api_client, storage, version, asset):
         assert download.content == reader.read()
 
 
-@pytest.mark.parametrize(
-    'authenticated,owner',
-    [
-        (False, False),
-        (False, True),
-        (True, False),
-        (True, True),
-    ],
-)
 @pytest.mark.django_db
 def test_asset_download_embargo(
-    api_client,
     authenticated_api_client,
     user,
     storage,
@@ -1092,8 +1082,6 @@ def test_asset_download_embargo(
     dandiset_factory,
     asset_factory,
     embargoed_asset_blob_factory,
-    authenticated,
-    owner,
 ):
     # Pretend like EmbargoedAssetBlob was defined with the given storage
     EmbargoedAssetBlob.blob.field.storage = storage
@@ -1103,10 +1091,9 @@ def test_asset_download_embargo(
         dandiset=dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     )
 
-    # Set client and owner perm
-    client = authenticated_api_client if authenticated else api_client
-    if owner:
-        assign_perm('owner', user, version.dandiset)
+    # Assign perms and set client
+    assign_perm('owner', user, version.dandiset)
+    client = authenticated_api_client
 
     # Generate assets and blobs
     embargoed_blob = embargoed_asset_blob_factory(dandiset=version.dandiset)
@@ -1117,14 +1104,6 @@ def test_asset_download_embargo(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.asset_id}/download/'
     )
-
-    if not authenticated:
-        assert response.status_code == 401
-        return
-
-    if not owner:
-        assert response.status_code == 403
-        return
 
     assert response.status_code == 302
 
