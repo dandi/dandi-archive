@@ -24,7 +24,7 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
@@ -175,6 +175,15 @@ class AssetRequestSerializer(serializers.Serializer):
     blob_id = serializers.UUIDField(required=False)
     zarr_id = serializers.UUIDField(required=False)
 
+    def validate(self, data):
+        """Ensure blob_id and zarr_id are mutually exclusive."""
+        if ('blob_id' in data) == ('zarr_id' in data):
+            raise serializers.ValidationError(
+                {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
+            )
+
+        return data
+
 
 class AssetFilter(filters.FilterSet):
     path = filters.CharFilter(lookup_expr='istartswith')
@@ -281,7 +290,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
+        if 'blob_id' in serializer.validated_data:
             try:
                 asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
                 embargoed_asset_blob = None
@@ -291,14 +300,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 )
                 asset_blob = None
             zarr_archive = None
-        elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
+        else:
             asset_blob = None
             embargoed_asset_blob = None
             zarr_archive = get_object_or_404(
                 ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
             )
-        else:
-            raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:
@@ -385,7 +392,7 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         serializer = AssetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
+        if 'blob_id' in serializer.validated_data:
             try:
                 asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
                 embargoed_asset_blob = None
@@ -395,14 +402,12 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 )
                 asset_blob = None
             zarr_archive = None
-        elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
+        else:
             asset_blob = None
             embargoed_asset_blob = None
             zarr_archive = get_object_or_404(
                 ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
             )
-        else:
-            raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
 
         metadata = serializer.validated_data['metadata']
         if 'path' not in metadata:

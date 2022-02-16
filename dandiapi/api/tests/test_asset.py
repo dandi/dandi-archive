@@ -633,7 +633,7 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Exactly one of blob_id or zarr_id must be specified.']
+    assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
 
 
 @pytest.mark.django_db
@@ -658,7 +658,7 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Exactly one of blob_id or zarr_id must be specified.']
+    assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
 
 
 @pytest.mark.django_db
