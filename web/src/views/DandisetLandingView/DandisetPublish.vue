@@ -388,11 +388,12 @@ export default defineComponent({
       return '';
     });
 
-    const publishButtonDisabled: ComputedRef<boolean> = computed(
-      () => !!(currentDandiset.value?.version_validation_errors.length
-        || currentDandiset.value?.asset_validation_errors.length
-        || publishDisabledMessage.value) || currentDandiset.value?.dandiset.embargo_status !== 'OPEN',
-    );
+    const publishButtonDisabled = computed(() => !!(
+      currentDandiset.value?.version_validation_errors.length
+      || currentDandiset.value?.asset_validation_errors.length
+      || currentDandiset.value?.dandiset.embargo_status !== 'OPEN'
+      || publishDisabledMessage.value
+    ));
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
       if (!store.state.dandiset.owners) {
