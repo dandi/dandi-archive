@@ -118,7 +118,7 @@ For now, we specifically want to police users creating embargoed dandisets with 
 * New endpoint: `POST /api/dandisets/{dandiset_id}/unembargo`
 
   Unembargo an embargoed dandiset.
-  
+
   Only permitted for owners and admins. If the `embargo_status` is `OPEN` or `UNEMBARGOING`, return 400.
 
   Set the `embargo_status` to `UNEMBARGOING`, then dispatch the unembargo task.
@@ -130,13 +130,13 @@ For now, we specifically want to police users creating embargoed dandisets with 
   The ETag and checksum must remain undisturbed; the only change should be where the data is stored.
   Verify that the resulting unembargoed assets match one-for-one (in the database) with the embargoed assets that were copied.
   Once finished, the `access` metadata field on the dandiset will be updated to `OpenAccess` and `embargo_status` is set to `OPEN`.
-  
+
   Before copying data, check if an existing `AssetBlob` with the same checksum has been uploaded already (this would have happened after uploading the embargoed data).
   If so, use it instead of copying the `EmbargoedAssetBlob` data.
 
 * Get/List asset endpoint
 
-  The AssetViewSet queryset will filter out assets with `embargoed_asset_blob.dandiset.embargo_status != OPEN` that are also not owned by the current user.
+  The NestedAssetViewSet queryset will filter out assets with `embargoed_asset_blob.dandiset.embargo_status != OPEN` that are also not owned by the current user.
   This will prevent them from showing up in the listing or fetching endpoints.
 
 * upload_initialize_view
@@ -162,10 +162,10 @@ For now, we specifically want to police users creating embargoed dandisets with 
   If `embargo` is absent and `dandiset` is present, it is ignored.
 
 * Zarr download endpoints
-  
+
   These endpoints will also be available for normal zarr archives.
   It is expected that normal zarr archives will use the s3 store, which will be more performant.
-  When used on embargoed zarr archives, the user must have read access on the dandiset. 
+  When used on embargoed zarr archives, the user must have read access on the dandiset.
 
   * `https://api.dandiarchive.org/api/zarr/{zarr_id}/files/{path_to_directory}/` (note the trailing slash)
 
@@ -174,7 +174,7 @@ For now, we specifically want to police users creating embargoed dandisets with 
     If absent, return a 404.
 
     This endpoint must be parsable by [HTTPFileSystem](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem) with `simple_links=True`.
-  
+
   * `https://api.dandiarchive.org/api/zarr/{zarr_id}/files/{path_to_file}` (note the absence of trailing slash)
 
     Returns a 302 to a presigned S3 URL for the given file in the zarr archive.
@@ -184,5 +184,5 @@ For now, we specifically want to police users creating embargoed dandisets with 
     [HTTPFileSystem](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem) follows redirects by default, so no extra configuration is required.
 
 * stats_view
-  
+
   The total size value should include the size of `EmbargoedAssetBlob`s as well as `AssetBlob`s.

@@ -105,7 +105,7 @@ class AssetFilter(filters.FilterSet):
         fields = ['path']
 
 
-class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
+class AssetViewSet(DetailSerializerMixin, GenericViewSet):
     queryset = Asset.objects.all().order_by('created')
 
     permission_classes = [IsApprovedOrReadOnly]
@@ -219,7 +219,7 @@ class AssetRequestSerializer(serializers.Serializer):
     zarr_id = serializers.UUIDField(required=False)
 
 
-class AssetViewSet(NestedViewSetMixin, BaseAssetViewSet, ReadOnlyModelViewSet):
+class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet):
     pagination_class = DandiPagination
 
     def raise_if_unauthorized(self):

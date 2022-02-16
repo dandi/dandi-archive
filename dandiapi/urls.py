@@ -9,8 +9,8 @@ from rest_framework_extensions.routers import ExtendedSimpleRouter
 from dandiapi.api.dashboard import DashboardView, user_approval_view
 from dandiapi.api.views import (
     AssetViewSet,
-    BaseAssetViewSet,
     DandisetViewSet,
+    NestedAssetViewSet,
     VersionViewSet,
     ZarrViewSet,
     auth_token_view,
@@ -39,7 +39,7 @@ router = ExtendedSimpleRouter()
     )
     .register(
         r'assets',
-        AssetViewSet,
+        NestedAssetViewSet,
         basename='asset',
         parents_query_lookups=[
             f'versions__dandiset__{DandisetViewSet.lookup_field}',
@@ -47,7 +47,7 @@ router = ExtendedSimpleRouter()
         ],
     )
 )
-router.register('assets', BaseAssetViewSet, basename='asset')
+router.register('assets', AssetViewSet, basename='asset')
 router.register('zarr', ZarrViewSet, basename='zarr')
 
 
