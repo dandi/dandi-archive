@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -13,6 +13,7 @@ from drf_yasg.utils import no_body, swagger_auto_schema
 from minio_storage.storage import MinioStorage
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -114,7 +115,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
         )
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
-        zarr_archive.save()
+        try:
+            zarr_archive.save()
+        except IntegrityError:
+            raise ValidationError('Zarr already exists')
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -36,6 +36,20 @@ def test_zarr_rest_create(authenticated_api_client, dandiset):
 
 
 @pytest.mark.django_db
+def test_zarr_rest_create_duplicate(authenticated_api_client, zarr_archive):
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': zarr_archive.dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Zarr already exists']
+
+
+@pytest.mark.django_db
 def test_zarr_rest_get(
     authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_upload_file_factory
 ):
