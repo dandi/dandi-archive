@@ -48,45 +48,6 @@ from dandiapi.api.views.serializers import (
 )
 
 
-def _download_asset(asset: Asset):
-    if asset.is_zarr:
-        return HttpResponseRedirect(
-            reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
-        )
-    elif asset.is_blob:
-        asset_blob = asset.blob
-    elif asset.is_embargoed_blob:
-        asset_blob = asset.embargoed_blob
-
-    storage = asset_blob.blob.storage
-
-    if isinstance(storage, S3Boto3Storage):
-        client = storage.connection.meta.client
-        path = os.path.basename(asset.path)
-        url = client.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': storage.bucket_name,
-                'Key': asset_blob.blob.name,
-                'ResponseContentDisposition': f'attachment; filename="{path}"',
-            },
-        )
-        return HttpResponseRedirect(url)
-    elif isinstance(storage, MinioStorage):
-        client = storage.client if storage.base_url is None else storage.base_url_client
-        bucket = storage.bucket_name
-        obj = asset_blob.blob.name
-        path = os.path.basename(asset.path)
-        url = client.presigned_get_object(
-            bucket,
-            obj,
-            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
-        )
-        return HttpResponseRedirect(url)
-    else:
-        raise ValueError(f'Unknown storage {storage}')
-
-
 def _paginate_asset_paths(
     items: list, page: int, page_size: int, versions__dandiset__pk: str, versions__version: str
 ) -> dict:
@@ -200,7 +161,44 @@ class BaseAssetViewSet(DetailSerializerMixin, GenericViewSet):
     @action(methods=['GET', 'HEAD'], detail=True)
     def download(self, *args, **kwargs):
         asset = self.get_object()
-        return _download_asset(asset)
+
+        # Assign asset blob or redirect if zarr
+        if asset.is_zarr:
+            return HttpResponseRedirect(
+                reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
+            )
+        elif asset.is_blob:
+            asset_blob = asset.blob
+        elif asset.is_embargoed_blob:
+            asset_blob = asset.embargoed_blob
+
+        # Redirect to correct presigned URL
+        storage = asset_blob.blob.storage
+        if isinstance(storage, S3Boto3Storage):
+            client = storage.connection.meta.client
+            path = os.path.basename(asset.path)
+            url = client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': storage.bucket_name,
+                    'Key': asset_blob.blob.name,
+                    'ResponseContentDisposition': f'attachment; filename="{path}"',
+                },
+            )
+            return HttpResponseRedirect(url)
+        elif isinstance(storage, MinioStorage):
+            client = storage.client if storage.base_url is None else storage.base_url_client
+            bucket = storage.bucket_name
+            obj = asset_blob.blob.name
+            path = os.path.basename(asset.path)
+            url = client.presigned_get_object(
+                bucket,
+                obj,
+                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+            )
+            return HttpResponseRedirect(url)
+        else:
+            raise ValueError(f'Unknown storage {storage}')
 
     @swagger_auto_schema(
         method='GET',
