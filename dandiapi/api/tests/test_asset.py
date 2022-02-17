@@ -666,7 +666,8 @@ def test_asset_create_no_valid_blob(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
-    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    path = 'test/create/asset.txt'
+    metadata = {'path': path, 'foo': ['bar', 'baz'], '1': 2}
     uuid = uuid4()
 
     resp = api_client.post(
@@ -692,7 +693,7 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'No path specified in metadata.'
+    assert resp.data == {'metadata': ['No path specified in metadata.']}
 
 
 @pytest.mark.django_db
