@@ -114,6 +114,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         dandiset = get_object_or_404(
             Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
         )
+        if not self.request.user.has_perm('owner', dandiset):
+            raise PermissionDenied()
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         try:
             zarr_archive.save()

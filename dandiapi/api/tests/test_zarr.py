@@ -10,7 +10,8 @@ from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumFileUpdater,
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create(authenticated_api_client, dandiset):
+def test_zarr_rest_create(authenticated_api_client, user, dandiset):
+    assign_perm('owner', user, dandiset)
     name = 'My Zarr File!'
 
     resp = authenticated_api_client.post(
@@ -36,7 +37,21 @@ def test_zarr_rest_create(authenticated_api_client, dandiset):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create_duplicate(authenticated_api_client, zarr_archive):
+def test_zarr_rest_create_not_an_owner(authenticated_api_client, zarr_archive):
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': zarr_archive.dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive):
+    assign_perm('owner', user, zarr_archive.dandiset)
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
