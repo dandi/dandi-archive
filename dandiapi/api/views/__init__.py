@@ -1,4 +1,4 @@
-from .asset import AssetViewSet, asset_download_view, asset_info_view, asset_metadata_view
+from .asset import AssetViewSet, NestedAssetViewSet
 from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .info import info_view
@@ -15,14 +15,12 @@ from .version import VersionViewSet
 from .zarr import ZarrViewSet, explore_zarr_archive
 
 __all__ = [
+    'NestedAssetViewSet',
     'AssetViewSet',
     'DandisetViewSet',
     'VersionViewSet',
     'ZarrViewSet',
     'authorize_view',
-    'asset_download_view',
-    'asset_info_view',
-    'asset_metadata_view',
     'auth_token_view',
     'blob_read_view',
     'explore_zarr_archive',
