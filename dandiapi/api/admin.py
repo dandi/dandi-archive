@@ -154,7 +154,7 @@ class UploadAdmin(admin.ModelAdmin):
 
 @admin.register(ZarrArchive)
 class ZarrArchiveAdmin(admin.ModelAdmin):
-    list_display = ['id', 'zarr_id', 'name']
+    list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
 
 

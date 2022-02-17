@@ -323,6 +323,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             zarr_archive = get_object_or_404(
                 ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
             )
+            if zarr_archive.dandiset != version.dandiset:
+                raise ValidationError('The zarr archive belongs to a different dandiset')
         else:
             raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
 
