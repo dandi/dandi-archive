@@ -146,6 +146,34 @@ def test_zarr_rest_delete_file(
 
 
 @pytest.mark.django_db
+def test_zarr_rest_delete_file_asset_metadata(
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+    asset_factory,
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_archive.complete_upload()
+    asset = asset_factory(zarr=zarr_archive, blob=None)
+    assert asset.metadata['digest'] == zarr_archive.digest
+    assert asset.metadata['contentSize'] == 100
+
+    resp = authenticated_api_client.delete(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+    )
+    assert resp.status_code == 204
+
+    asset.refresh_from_db()
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+    assert asset.metadata['contentSize'] == 0
+
+
+@pytest.mark.django_db
 def test_zarr_rest_delete_file_not_an_owner(
     authenticated_api_client,
     storage,
