@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Optional
+
 import boto3
 import djclick as click
 
@@ -5,15 +8,54 @@ from dandiapi.api.models.zarr import ZarrArchive
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
-    ZarrChecksums,
+    ZarrChecksumListing,
+    ZarrChecksumModification,
     ZarrChecksumUpdater,
 )
 
 
-class WriteOnlyZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
-    def __enter__(self):
-        self._checksums = ZarrChecksums()
-        return self
+class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
+    """Override ZarrChecksumFileUpdater to ignore old files."""
+
+    def __init__(self, *args, session_start: datetime, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._session_start = session_start
+
+    def read_checksum_file(self) -> Optional[ZarrChecksumListing]:
+        """Load a checksum listing from the checksum file."""
+        storage = self.zarr_archive.storage
+        checksum_path = self.checksum_file_path
+        exists = storage.exists(checksum_path)
+
+        # Only read existing if it's one that we've created
+        if exists and storage.modified_time(checksum_path) >= self._session_start:
+            with storage.open(checksum_path) as f:
+                x = f.read()
+                return self._serializer.deserialize(x)
+        else:
+            return None
+
+
+class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
+    """ZarrChecksumUpdater to distinguish existing and new checksum files."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._session_start = datetime.now()
+
+    def apply_modification(
+        self, modification: ZarrChecksumModification
+    ) -> SessionZarrChecksumFileUpdater:
+        with SessionZarrChecksumFileUpdater(
+            zarr_archive=self.zarr_archive,
+            zarr_directory_path=modification.path,
+            session_start=self._session_start,
+        ) as file_updater:
+            file_updater.add_file_checksums(modification.files_to_update)
+            file_updater.add_directory_checksums(modification.directories_to_update)
+            file_updater.remove_checksums(modification.paths_to_remove)
+
+        return file_updater
 
 
 def yield_files(client, zarr: ZarrArchive):
@@ -52,6 +94,6 @@ def compute_zarr_checksum(zarr_id: int):
     zarr: ZarrArchive = ZarrArchive.objects.get(id=zarr_id)
 
     # Instantiate updater and add files as they come in
-    updater = ZarrChecksumUpdater(zarr_archive=zarr, file_updater=WriteOnlyZarrChecksumFileUpdater)
+    updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
     for checksums in yield_files(client, zarr):
         updater.update_file_checksums(checksums)
