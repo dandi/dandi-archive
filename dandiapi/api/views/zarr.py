@@ -21,6 +21,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.permissions import IsApprovedOrReadOnly
+from dandiapi.api.tasks import cancel_zarr_upload
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
 
@@ -180,13 +181,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     def upload_cancel(self, request, zarr_id):
         """Cancel an upload of files to a zarr archive."""
         queryset = self.get_queryset().select_for_update()
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied()
-            zarr_archive.cancel_upload()
-
+        zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+        if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            raise PermissionDenied()
+        if not zarr_archive.upload_in_progress:
+            raise ValidationError('No upload to cancel.')
+        # Cancelling involves deleting any data uploaded to S3, which involves a batch of S3 API
+        # requests. These are done in a task to avoid Heroku request timeouts.
+        cancel_zarr_upload.delay()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(

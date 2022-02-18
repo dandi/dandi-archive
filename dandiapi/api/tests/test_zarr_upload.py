@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
+from dandiapi.api.tasks import cancel_zarr_upload
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 from dandiapi.api.zarr_checksums import (
     EMPTY_CHECKSUM,
@@ -219,8 +220,9 @@ def test_zarr_rest_upload_cancel(
     resp = authenticated_api_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/upload/')
     assert resp.status_code == 204
 
-    assert not zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
-    assert not zarr_archive.upload_in_progress
+    # The task was delayed but has not yet started, so nothing has changed
+    assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
+    assert zarr_archive.upload_in_progress
 
 
 @pytest.mark.django_db
@@ -251,6 +253,28 @@ def test_zarr_rest_upload_cancel_no_upload(
     resp = authenticated_api_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/upload/')
     assert resp.status_code == 400
     assert resp.json() == ['No upload to cancel.']
+
+
+@pytest.mark.django_db
+def test_zarr_rest_upload_cancel_task(
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    # Creating a zarr upload file means that the zarr has an upload in progress
+    zarr_upload_file: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
+    assert zarr_archive.upload_in_progress
+
+    cancel_zarr_upload(str(zarr_archive.zarr_id))
+
+    assert not zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
+    assert not zarr_archive.upload_in_progress
 
 
 @pytest.mark.django_db

@@ -243,8 +243,6 @@ class BaseZarrArchive(TimeStampedModel):
 
     def cancel_upload(self):
         active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
-        if not active_uploads:
-            raise ValidationError('No upload to cancel.')
         for upload in active_uploads:
             upload.blob.delete()
         active_uploads.delete()
