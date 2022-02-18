@@ -27,6 +27,7 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'zarr_id': UUID_RE,
         'dandiset': dandiset.identifier,
         'checksum': EMPTY_CHECKSUM,
+        'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
     }
@@ -81,6 +82,7 @@ def test_zarr_rest_get(
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
         'file_count': 1,
         'size': upload.size(),
     }
@@ -101,6 +103,7 @@ def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
         'file_count': ten_quadrillion,
         'size': ten_petabytes,
     }
@@ -115,6 +118,7 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
     }

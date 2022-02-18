@@ -71,15 +71,17 @@ class ZarrSerializer(serializers.Serializer):
             'name',
             'dandiset',
             'checksum',
+            'upload_in_progress',
             'file_count',
             'size',
         ]
-        read_only_fields = ['zarr_id', 'checksum', 'file_count', 'size']
+        read_only_fields = ['zarr_id', 'checksum', 'upload_in_progress', 'file_count', 'size']
 
     zarr_id = serializers.CharField(read_only=True)
     name = serializers.CharField(max_length=512)
     dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
     checksum = serializers.CharField(max_length=40, read_only=True)
+    upload_in_progress = serializers.BooleanField(read_only=True)
     file_count = serializers.IntegerField(read_only=True)
     size = serializers.IntegerField(read_only=True)
 
