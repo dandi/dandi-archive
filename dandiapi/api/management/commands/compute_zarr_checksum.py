@@ -5,6 +5,7 @@ import boto3
 import djclick as click
 
 from dandiapi.api.models.zarr import ZarrArchive
+from dandiapi.api.storage import get_storage
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
@@ -12,6 +13,12 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumModification,
     ZarrChecksumUpdater,
 )
+
+try:
+    from minio_storage.storage import MinioStorage
+except ImportError:
+    # This should only be used for type interrogation, never instantiation
+    MinioStorage = type('FakeMinioStorage', (), {})
 
 
 class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
@@ -70,10 +77,6 @@ def yield_files(client, zarr: ZarrArchive):
         # Fetch
         res = client.list_objects_v2(**options)
 
-        # If all files fetched, end
-        if res['IsTruncated'] is False or not res['Contents']:
-            break
-
         # Yield this batch of files
         yield [
             ZarrChecksum(
@@ -83,14 +86,32 @@ def yield_files(client, zarr: ZarrArchive):
             for file in res['Contents']
         ]
 
+        # If all files fetched, end
+        if res['IsTruncated'] is False:
+            break
+
         # Get next continuation token
         continuation_token = res['NextContinuationToken']
+
+
+def get_client():
+    storage = get_storage()
+    if isinstance(storage, MinioStorage):
+        return boto3.client(
+            's3',
+            endpoint_url=storage.client._endpoint_url,
+            aws_access_key_id=storage.client._access_key,
+            aws_secret_access_key=storage.client._secret_key,
+            region_name='us-east-1',
+        )
+
+    return storage.connection.meta.client
 
 
 @click.command()
 @click.argument('zarr_id', type=int)
 def compute_zarr_checksum(zarr_id: int):
-    client = boto3.client('s3')
+    client = get_client()
     zarr: ZarrArchive = ZarrArchive.objects.get(id=zarr_id)
 
     # Instantiate updater and add files as they come in
