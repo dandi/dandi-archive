@@ -116,6 +116,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         )
         if not self.request.user.has_perm('owner', dandiset):
             raise PermissionDenied()
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         try:
             zarr_archive.save()
