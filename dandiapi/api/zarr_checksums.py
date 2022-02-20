@@ -43,6 +43,13 @@ class ZarrChecksums(pydantic.BaseModel):
     directories: List[ZarrChecksum] = pydantic.Field(default_factory=list)
     files: List[ZarrChecksum] = pydantic.Field(default_factory=list)
 
+    def __init__(self, **data) -> None:
+        super().__init__(**data)
+
+        # Ensure sorted
+        self.files = sorted(self.files)
+        self.directories = sorted(self.directories)
+
     @property
     def is_empty(self):
         return self.files == [] and self.directories == []
