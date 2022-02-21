@@ -1,7 +1,9 @@
+from typing import List
+
 import pytest
 
 from dandiapi.api.management.commands.compute_zarr_checksum import compute_zarr_checksum
-from dandiapi.api.models.zarr import ZarrArchive
+from dandiapi.api.models.zarr import ZarrArchive, ZarrUploadFile
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
@@ -100,5 +102,47 @@ def test_compute_zarr_checksum_existing(zarr_upload_file_factory, zarr_archive_f
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
+    assert ZarrChecksumFileUpdater(zarr, 'foo').read_checksum_file() == foo_listing
+    assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() == root_listing
+
+
+@pytest.mark.django_db
+def test_compute_zarr_checksum_many_files(zarr_upload_file_factory, zarr_archive_factory, faker):
+    zarr: ZarrArchive = zarr_archive_factory()
+
+    # Generate > 1000 files, since the page size from S3 is 1000 items
+    foo_bar_files: List[ZarrUploadFile] = [
+        zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a'),
+        zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/b'),
+    ]
+    foo_baz_files: List[ZarrUploadFile] = [
+        # zarr_upload_file_factory(zarr_archive=zarr, path=f'foo/baz/{faker.file_name()}')
+        zarr_upload_file_factory(zarr_archive=zarr, path=f'foo/baz/{faker.pystr()}')
+        for _ in range(1005)
+    ]
+
+    # Generate correct listings
+    serializer = ZarrJSONChecksumSerializer()
+    foo_bar_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_bar_files])
+    foo_baz_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_baz_files])
+    foo_listing = serializer.generate_listing(
+        directories=[
+            ZarrChecksum(path='foo/bar', md5=foo_bar_listing.md5),
+            ZarrChecksum(path='foo/baz', md5=foo_baz_listing.md5),
+        ]
+    )
+    root_listing = serializer.generate_listing(
+        directories=[ZarrChecksum(path='foo', md5=foo_listing.md5)]
+    )
+
+    # Compute checksum
+    compute_zarr_checksum(str(zarr.id))
+
+    # new_listing = ZarrChecksumFileUpdater(zarr, 'foo/baz').read_checksum_file()
+    # breakpoint()
+
+    # Assert files computed correctly
+    assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
+    assert ZarrChecksumFileUpdater(zarr, 'foo/baz').read_checksum_file() == foo_baz_listing
     assert ZarrChecksumFileUpdater(zarr, 'foo').read_checksum_file() == foo_listing
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() == root_listing
