@@ -810,6 +810,38 @@ def test_version_rest_publish_assets(
 
 
 @pytest.mark.django_db
+def test_version_rest_publish_zarr(
+    api_client,
+    user: User,
+    draft_version: Version,
+    draft_asset_factory,
+    zarr_archive_factory,
+):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr_asset: Asset = draft_asset_factory(zarr=zarr_archive, blob=None)
+    normal_asset: Asset = draft_asset_factory()
+    draft_version.assets.add(zarr_asset)
+    draft_version.assets.add(normal_asset)
+
+    # Validate the metadata to mark the assets and version as `VALID`
+    tasks.validate_asset_metadata(zarr_asset.id)
+    tasks.validate_asset_metadata(normal_asset.id)
+    tasks.validate_version_metadata(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.valid
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Cannot publish dandisets which contain zarrs']
+
+
+@pytest.mark.django_db
 def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
     api_client.force_authenticate(user=user)
     version.assets.add(asset)

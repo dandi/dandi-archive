@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from django.conf import settings
-from django.db import transaction
+from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -12,11 +13,13 @@ from drf_yasg.utils import no_body, swagger_auto_schema
 from minio_storage.storage import MinioStorage
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
@@ -65,6 +68,7 @@ class ZarrSerializer(serializers.Serializer):
         fields = [
             'zarr_id',
             'name',
+            'dandiset',
             'checksum',
             'file_count',
             'size',
@@ -73,6 +77,7 @@ class ZarrSerializer(serializers.Serializer):
 
     zarr_id = serializers.CharField(read_only=True)
     name = serializers.CharField(max_length=512)
+    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
     checksum = serializers.CharField(max_length=40, read_only=True)
     file_count = serializers.IntegerField(read_only=True)
     size = serializers.IntegerField(read_only=True)
@@ -106,8 +111,16 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         name = serializer.validated_data['name']
-        zarr_archive: ZarrArchive = ZarrArchive(name=name)
-        zarr_archive.save()
+        dandiset = get_object_or_404(
+            Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
+        )
+        if not self.request.user.has_perm('owner', dandiset):
+            raise PermissionDenied()
+        zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
+        try:
+            zarr_archive.save()
+        except IntegrityError:
+            raise ValidationError('Zarr already exists')
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -125,6 +138,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
             print(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
             serializer = ZarrUploadFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -147,6 +163,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
             print(f'Beggining upload completion for zarr archive {zarr_archive.zarr_id}')
             zarr_archive.complete_upload()
 
@@ -163,7 +182,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
             zarr_archive.cancel_upload()
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
@@ -181,6 +202,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]

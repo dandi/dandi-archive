@@ -273,6 +273,16 @@ class ZarrArchive(BaseZarrArchive):
     storage = get_storage()
     upload_file_class = ZarrUploadFile
 
+    dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
+
+    class Meta(BaseZarrArchive.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-dandiset-name',
+                fields=['dandiset', 'name'],
+            )
+        ]
+
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
         return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{str(zarr_path)}'  # noqa: E501
@@ -285,6 +295,14 @@ class EmbargoedZarrArchive(BaseZarrArchive):
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
     )
+
+    class Meta(BaseZarrArchive.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-embargo-dandiset-name',
+                fields=['dandiset', 'name'],
+            )
+        ]
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""

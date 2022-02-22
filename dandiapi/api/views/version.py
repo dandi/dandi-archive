@@ -4,7 +4,7 @@ from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
@@ -112,7 +112,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Only draft versions can be published',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
-
+        if (
+            old_version.dandiset.zarr_archives.exists()
+            or old_version.dandiset.embargoed_zarr_archives.exists()
+        ):
+            raise ValidationError('Cannot publish dandisets which contain zarrs')
         if not old_version.valid:
             return Response(
                 'Dandiset metadata or asset metadata is not valid',
