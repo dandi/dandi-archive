@@ -26,6 +26,10 @@ def test_compute_zarr_checksum(zarr_upload_file_factory, zarr_archive_factory, f
         for _ in range(1005)
     ]
 
+    # Calculate size and file count
+    total_size = sum([f.blob.size for f in (foo_bar_files + foo_baz_files)])
+    total_file_count = len(foo_bar_files) + len(foo_baz_files)
+
     # Generate correct listings
     serializer = ZarrJSONChecksumSerializer()
     foo_bar_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_bar_files])
@@ -46,6 +50,10 @@ def test_compute_zarr_checksum(zarr_upload_file_factory, zarr_archive_factory, f
     assert ZarrChecksumFileUpdater(zarr, 'foo').read_checksum_file() is None
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is None
 
+    # Assert zarr size and file count is zero
+    assert zarr.size == 0
+    assert zarr.file_count == 0
+
     # Compute checksum
     compute_zarr_checksum(str(zarr.id))
 
@@ -54,6 +62,11 @@ def test_compute_zarr_checksum(zarr_upload_file_factory, zarr_archive_factory, f
     assert ZarrChecksumFileUpdater(zarr, 'foo/baz').read_checksum_file() == foo_baz_listing
     assert ZarrChecksumFileUpdater(zarr, 'foo').read_checksum_file() == foo_listing
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() == root_listing
+
+    # Assert size and file count matches
+    zarr.refresh_from_db()
+    assert zarr.size == total_size
+    assert zarr.file_count == total_file_count
 
 
 @pytest.mark.django_db

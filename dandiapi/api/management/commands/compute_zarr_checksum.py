@@ -87,13 +87,7 @@ def yield_files(client, zarr: ZarrArchive):
         res = client.list_objects_v2(**options)
 
         # Yield this batch of files
-        yield [
-            ZarrChecksum(
-                md5=file['ETag'].strip('"'),
-                path=file['Key'].replace(zarr.s3_path(''), ''),
-            )
-            for file in res['Contents']
-        ]
+        yield res['Contents']
 
         # If all files fetched, end
         if res['IsTruncated'] is False:
@@ -123,7 +117,27 @@ def compute_zarr_checksum(zarr_id: int):
     client = get_client()
     zarr: ZarrArchive = ZarrArchive.objects.get(id=zarr_id)
 
+    # Reset before compute
+    zarr.size = 0
+    zarr.file_count = 0
+
     # Instantiate updater and add files as they come in
     updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
-    for checksums in yield_files(client, zarr):
-        updater.update_file_checksums(checksums)
+    for files in yield_files(client, zarr):
+        # Update size and file count
+        zarr.file_count += len(files)
+        zarr.size += sum((file['Size'] for file in files))
+
+        # Update checksums
+        updater.update_file_checksums(
+            [
+                ZarrChecksum(
+                    md5=file['ETag'].strip('"'),
+                    path=file['Key'].replace(zarr.s3_path(''), ''),
+                )
+                for file in files
+            ]
+        )
+
+    # Save zarr after completion
+    zarr.save()
