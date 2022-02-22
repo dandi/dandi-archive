@@ -106,11 +106,12 @@
         background-color="grey darken-2"
         slider-color="highlight"
         dark
+        show-arrows
         align-with-title
       >
         <v-tab
           key="tab-0"
-          class="font-weight-medium text-caption"
+          class="font-weight-medium text-caption ml-2"
         >
           <v-badge
             color="error"
@@ -148,7 +149,6 @@
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf
-              ref="vjsfRef"
               v-model="basicModel"
               :schema="basicSchema"
               :options="{...CommonVJSFOptions, hideReadOnly: true}"
@@ -262,7 +262,6 @@ export default defineComponent({
     const transactionTracker = new MeditorTransactionTracker(editorInterface);
 
     // undo/redo functionality
-    const vjsfRef = ref(null);
     function undoChange() {
       transactionTracker.undo();
     }
@@ -343,7 +342,6 @@ export default defineComponent({
       basicSchema,
       basicModel,
       basicModelValid,
-      vjsfRef,
       vjsfListener,
 
       complexSchema,
