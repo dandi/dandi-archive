@@ -106,11 +106,12 @@
         background-color="grey darken-2"
         slider-color="highlight"
         dark
+        show-arrows
         align-with-title
       >
         <v-tab
           key="tab-0"
-          class="font-weight-medium text-caption"
+          class="font-weight-medium text-caption ml-2"
         >
           <v-badge
             color="error"
