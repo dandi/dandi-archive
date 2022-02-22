@@ -138,9 +138,6 @@ def test_compute_zarr_checksum_many_files(zarr_upload_file_factory, zarr_archive
     # Compute checksum
     compute_zarr_checksum(str(zarr.id))
 
-    # new_listing = ZarrChecksumFileUpdater(zarr, 'foo/baz').read_checksum_file()
-    # breakpoint()
-
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
     assert ZarrChecksumFileUpdater(zarr, 'foo/baz').read_checksum_file() == foo_baz_listing
