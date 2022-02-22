@@ -149,7 +149,6 @@
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf
-              ref="vjsfRef"
               v-model="basicModel"
               :schema="basicSchema"
               :options="{...CommonVJSFOptions, hideReadOnly: true}"
@@ -263,7 +262,6 @@ export default defineComponent({
     const transactionTracker = new MeditorTransactionTracker(editorInterface);
 
     // undo/redo functionality
-    const vjsfRef = ref(null);
     function undoChange() {
       transactionTracker.undo();
     }
@@ -344,7 +342,6 @@ export default defineComponent({
       basicSchema,
       basicModel,
       basicModelValid,
-      vjsfRef,
       vjsfListener,
 
       complexSchema,
