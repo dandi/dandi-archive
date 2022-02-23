@@ -7,6 +7,8 @@ from dandiapi.api.models.zarr import ZarrArchive, ZarrUploadFile
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
+    ZarrChecksumListing,
+    ZarrChecksums,
     ZarrChecksumUpdater,
     ZarrJSONChecksumSerializer,
 )
@@ -119,3 +121,18 @@ def test_compute_zarr_checksum_existing(zarr_upload_file_factory, zarr_archive_f
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
     assert ZarrChecksumFileUpdater(zarr, 'foo').read_checksum_file() == foo_listing
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() == root_listing
+
+
+@pytest.mark.django_db
+def test_compute_zarr_checksum_empty(zarr_archive_factory):
+    zarr: ZarrArchive = zarr_archive_factory()
+
+    # Compute checksum
+    compute_zarr_checksum(str(zarr.id))
+
+    # Assert files computed correctly
+    assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is None
+    assert ZarrJSONChecksumSerializer().generate_listing() == ZarrChecksumListing(
+        checksums=ZarrChecksums(directories=[], files=[]),
+        md5='481a2f77ab786a0f45aafd5db0971caa',
+    )

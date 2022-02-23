@@ -87,7 +87,7 @@ def yield_files(client, zarr: ZarrArchive):
         res = client.list_objects_v2(**options)
 
         # Yield this batch of files
-        yield res['Contents']
+        yield res.get('Contents', [])
 
         # If all files fetched, end
         if res['IsTruncated'] is False:
