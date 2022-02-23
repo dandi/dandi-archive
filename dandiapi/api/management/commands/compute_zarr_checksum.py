@@ -113,31 +113,39 @@ def get_client():
 
 @click.command()
 @click.argument('zarr_id', type=int)
-def compute_zarr_checksum(zarr_id: int):
+@click.option('--no-checksum', help="Don't recompute checksums", is_flag=True)
+@click.option('--no-size', help="Don't recompute total size", is_flag=True)
+@click.option('--no-count', help="Don't recompute total file count", is_flag=True)
+def compute_zarr_checksum(zarr_id: int, no_checksum: bool, no_size: bool, no_count: bool):
     client = get_client()
     zarr: ZarrArchive = ZarrArchive.objects.get(id=zarr_id)
 
     # Reset before compute
-    zarr.size = 0
-    zarr.file_count = 0
+    if not no_size:
+        zarr.size = 0
+    if not no_count:
+        zarr.file_count = 0
 
     # Instantiate updater and add files as they come in
     updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
     for files in yield_files(client, zarr):
         # Update size and file count
-        zarr.file_count += len(files)
-        zarr.size += sum((file['Size'] for file in files))
+        if not no_size:
+            zarr.size += sum((file['Size'] for file in files))
+        if not no_count:
+            zarr.file_count += len(files)
 
         # Update checksums
-        updater.update_file_checksums(
-            [
-                ZarrChecksum(
-                    md5=file['ETag'].strip('"'),
-                    path=file['Key'].replace(zarr.s3_path(''), ''),
-                )
-                for file in files
-            ]
-        )
+        if not no_checksum:
+            updater.update_file_checksums(
+                [
+                    ZarrChecksum(
+                        md5=file['ETag'].strip('"'),
+                        path=file['Key'].replace(zarr.s3_path(''), ''),
+                    )
+                    for file in files
+                ]
+            )
 
     # Save zarr after completion
     zarr.save()
