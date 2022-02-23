@@ -116,7 +116,7 @@ def get_client():
 @click.option('--no-checksum', help="Don't recompute checksums", is_flag=True)
 @click.option('--no-size', help="Don't recompute total size", is_flag=True)
 @click.option('--no-count', help="Don't recompute total file count", is_flag=True)
-def compute_zarr_checksum(zarr_id: int, no_checksum: bool, no_size: bool, no_count: bool):
+def ingest_zarr_archive(zarr_id: int, no_checksum: bool, no_size: bool, no_count: bool):
     client = get_client()
     zarr: ZarrArchive = ZarrArchive.objects.get(id=zarr_id)
 

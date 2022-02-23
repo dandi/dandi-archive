@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from guardian.admin import GuardedModelAdmin
 
-from dandiapi.api.management.commands.compute_zarr_checksum import compute_zarr_checksum
+from dandiapi.api.management.commands.ingest_zarr_archive import ingest_zarr_archive
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
@@ -162,7 +162,7 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
     def ingest_zarr_archive(self, request, queryset):
         for zarr in queryset:
             zarr: ZarrArchive
-            compute_zarr_checksum(str(zarr.id))
+            ingest_zarr_archive(str(zarr.id))
 
     def __init__(self, model, admin_site) -> None:
         super().__init__(model, admin_site)

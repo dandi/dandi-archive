@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from dandiapi.api.management.commands.compute_zarr_checksum import compute_zarr_checksum
+from dandiapi.api.management.commands.ingest_zarr_archive import ingest_zarr_archive
 from dandiapi.api.models.zarr import ZarrArchive, ZarrUploadFile
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
@@ -15,7 +15,7 @@ from dandiapi.api.zarr_checksums import (
 
 
 @pytest.mark.django_db
-def test_compute_zarr_checksum(zarr_upload_file_factory, zarr_archive_factory, faker):
+def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, faker):
     zarr: ZarrArchive = zarr_archive_factory()
 
     # Generate > 1000 files, since the page size from S3 is 1000 items
@@ -57,7 +57,7 @@ def test_compute_zarr_checksum(zarr_upload_file_factory, zarr_archive_factory, f
     assert zarr.file_count == 0
 
     # Compute checksum
-    compute_zarr_checksum(str(zarr.id))
+    ingest_zarr_archive(str(zarr.id))
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
@@ -72,7 +72,7 @@ def test_compute_zarr_checksum(zarr_upload_file_factory, zarr_archive_factory, f
 
 
 @pytest.mark.django_db
-def test_compute_zarr_checksum_existing(zarr_upload_file_factory, zarr_archive_factory):
+def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
     # Add initial files
@@ -115,7 +115,7 @@ def test_compute_zarr_checksum_existing(zarr_upload_file_factory, zarr_archive_f
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is not None
 
     # Compute checksum
-    compute_zarr_checksum(str(zarr.id))
+    ingest_zarr_archive(str(zarr.id))
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
@@ -124,11 +124,11 @@ def test_compute_zarr_checksum_existing(zarr_upload_file_factory, zarr_archive_f
 
 
 @pytest.mark.django_db
-def test_compute_zarr_checksum_empty(zarr_archive_factory):
+def test_ingest_zarr_archive_empty(zarr_archive_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
     # Compute checksum
-    compute_zarr_checksum(str(zarr.id))
+    ingest_zarr_archive(str(zarr.id))
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is None
