@@ -135,7 +135,8 @@
           </v-badge>
         </v-tab>
       </v-tabs>
-
+    </v-row>
+    <v-row>
       <v-tabs-items
         v-model="tab"
         style="width: 100%;"
@@ -146,6 +147,7 @@
         >
           <v-form
             v-model="basicModelValid"
+            style="height: 70vh;"
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf
@@ -178,8 +180,6 @@
         </v-tab-item>
       </v-tabs-items>
     </v-row>
-    <v-divider class="my-5" />
-    <v-row class="px-2" />
   </v-card>
 </template>
 
