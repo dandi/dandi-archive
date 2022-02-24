@@ -88,7 +88,11 @@
         </v-btn>
       </v-row>
       <v-row no-gutters>
-        <v-dialog max-width="85vw">
+        <v-dialog
+          v-model="meditorOpen"
+          persistent
+          max-width="85vw"
+        >
           <template #activator="{ on }">
             <v-btn
               id="view-edit-metadata"
@@ -106,7 +110,7 @@
               <v-spacer />
             </v-btn>
           </template>
-          <meditor />
+          <meditor @close="meditorOpen = false" />
         </v-dialog>
       </v-row>
     </div>
@@ -148,7 +152,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
+import {
+  defineComponent, computed, ComputedRef, ref,
+} from '@vue/composition-api';
 import { Location } from 'vue-router';
 
 import { dandiRest } from '@/rest';
@@ -168,6 +174,8 @@ export default defineComponent({
     Meditor,
   },
   setup() {
+    const meditorOpen = ref(false);
+
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const currentVersion = computed(() => store.getters.dandiset.version);
 
@@ -198,6 +206,7 @@ export default defineComponent({
       currentVersion,
       fileBrowserLink,
       manifestLocation,
+      meditorOpen,
     };
   },
 });

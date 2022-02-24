@@ -7,8 +7,8 @@
     <v-row>
       <v-col>
         <v-card
-          class="mb-2"
-          outlined
+          rounded="0"
+          flat
         >
           <v-card-actions class="pt-0">
             <v-tooltip top>
@@ -96,6 +96,14 @@
               </template>
               <span>Download Metadata</span>
             </v-tooltip>
+            <v-btn
+              elevation="0"
+              color="info"
+              :disabled="modified"
+              @click="$emit('close')"
+            >
+              Done
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
