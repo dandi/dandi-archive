@@ -180,8 +180,6 @@
         </v-tab-item>
       </v-tabs-items>
     </v-row>
-    <v-divider class="my-5" />
-    <v-row class="px-2" />
   </v-card>
 </template>
 

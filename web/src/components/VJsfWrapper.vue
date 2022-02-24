@@ -3,7 +3,7 @@
     <v-row class="d-flex justify-space-between">
       <v-col cols="6">
         <div
-          style="height: 50vh;"
+          style="height: 40vh;"
           class="overflow-y-auto"
         >
           <v-form v-model="formValid">
@@ -19,6 +19,38 @@
               @change="formListener"
             />
           </v-form>
+        </div>
+        <div style="height: 10vh;">
+          <v-divider class="my-2" />
+          <div class="d-flex align-center justify-space-between mx-2">
+            <v-btn
+              elevation="0"
+              color="white"
+              class="text--darken-2 grey--text font-weight-medium"
+              @click="clearForm()"
+            >
+              Clear Form
+            </v-btn>
+            <v-btn
+              v-if="index === -1"
+              class="grey darken-3 white--text"
+              elevation="0"
+              @click="createNewItem()"
+            >
+              <span class="mr-1">Add Item</span>
+              <v-icon>mdi-arrow-right</v-icon>
+            </v-btn>
+            <v-btn
+              v-else
+              class="grey darken-3 white--text"
+              elevation="0"
+              :disabled="!formValid"
+              @click="saveItem(propKey)"
+            >
+              <span class="mr-1">Save Item</span>
+              <v-icon>mdi-arrow-right</v-icon>
+            </v-btn>
+          </div>
         </div>
       </v-col>
       <v-col
@@ -106,41 +138,6 @@
         </v-sheet>
       </v-col>
     </v-row>
-    <div
-      class="my-5"
-      style="position: fixed; bottom: 0; height: 10vh; width: 40%"
-    >
-      <v-divider class="my-2" />
-      <div class="d-flex align-center justify-space-between">
-        <v-btn
-          elevation="0"
-          color="white"
-          class="text--darken-2 grey--text font-weight-medium"
-          @click="clearForm()"
-        >
-          Clear Form
-        </v-btn>
-        <v-btn
-          v-if="index === -1"
-          class="grey darken-3 white--text"
-          elevation="0"
-          @click="createNewItem()"
-        >
-          <span class="mr-1">Add Item</span>
-          <v-icon>mdi-arrow-right</v-icon>
-        </v-btn>
-        <v-btn
-          v-else
-          class="grey darken-3 white--text"
-          elevation="0"
-          :disabled="!formValid"
-          @click="saveItem(propKey)"
-        >
-          <span class="mr-1">Save Item</span>
-          <v-icon>mdi-arrow-right</v-icon>
-        </v-btn>
-      </div>
-    </div>
   </div>
 </template>
 
