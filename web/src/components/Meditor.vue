@@ -187,7 +187,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import {
-  defineComponent, ref, computed, ComputedRef,
+  defineComponent, ref, computed, ComputedRef, onMounted,
 } from '@vue/composition-api';
 
 import jsYaml from 'js-yaml';
@@ -333,6 +333,19 @@ export default defineComponent({
     const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
       (p) => renderField((complexSchema as any).properties[p]),
     );
+
+    onMounted(() => {
+      window.addEventListener('beforeunload', (e) => {
+        // display a confirmation prompt if attempting to navigate away from the
+        // page with unsaved changes in the meditor
+        if (modified.value) {
+          e.preventDefault();
+          // Required for Chrome-based browsers -
+          // see https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload#example
+          e.returnValue = 'test';
+        }
+      });
+    });
 
     return {
       allModelsValid: modelValid,
