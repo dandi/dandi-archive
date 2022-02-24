@@ -147,7 +147,7 @@
         >
           <v-form
             v-model="basicModelValid"
-            style="height: 50vh;"
+            style="height: 70vh;"
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf

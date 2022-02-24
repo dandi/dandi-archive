@@ -3,7 +3,7 @@
     <v-row class="d-flex justify-space-between">
       <v-col cols="6">
         <div
-          style="height: 40vh;"
+          style="height: 60vh;"
           class="overflow-y-auto"
         >
           <v-form v-model="formValid">
@@ -57,7 +57,7 @@
         :style="`
         background-color: ${
           $vuetify.theme.themes[$vuetify.theme.isDark ? 'dark' : 'light'].dropzone
-        }; height: 50vh;
+        }; height: 70vh;
         `"
         class="overflow-y-auto"
         cols="6"
