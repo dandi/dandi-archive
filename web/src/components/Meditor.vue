@@ -248,12 +248,14 @@ export default defineComponent({
       initialValidation: 'all',
       disableAll: readonly.value,
       autoFixArrayItems: false,
-      childrenClass: 'my-1 px-2',
+      childrenClass: 'px-2',
       fieldProps: {
         outlined: true,
+        dense: true,
       },
       arrayItemCardProps: {
         outlined: true,
+        dense: true,
       },
       editMode: 'inline',
       hideReadOnly: true,
