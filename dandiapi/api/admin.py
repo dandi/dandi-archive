@@ -25,6 +25,7 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
+from dandiapi.api.models.asset import EmbargoedAssetBlob
 from dandiapi.api.views.users import social_account_to_dict
 
 admin.site.site_header = 'DANDI Admin'
@@ -122,6 +123,21 @@ class VersionAdmin(admin.ModelAdmin):
 class AssetBlobAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
     list_display_links = ['id', 'blob_id']
+
+
+@admin.register(EmbargoedAssetBlob)
+class EmbargoedAssetBlobAdmin(AssetBlobAdmin):
+    list_display = [
+        'id',
+        'blob_id',
+        'dandiset',
+        'blob',
+        'references',
+        'size',
+        'sha256',
+        'modified',
+        'created',
+    ]
 
 
 class AssetBlobInline(LimitedTabularInline):
