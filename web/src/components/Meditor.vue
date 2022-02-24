@@ -135,7 +135,8 @@
           </v-badge>
         </v-tab>
       </v-tabs>
-
+    </v-row>
+    <v-row>
       <v-tabs-items
         v-model="tab"
         style="width: 100%;"
@@ -146,6 +147,7 @@
         >
           <v-form
             v-model="basicModelValid"
+            style="height: 50vh;"
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf
