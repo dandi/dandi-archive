@@ -88,21 +88,26 @@
         </v-btn>
       </v-row>
       <v-row no-gutters>
-        <v-btn
-          id="view-edit-metadata"
-          outlined
-          block
-          :to="meditorLink"
-        >
-          <v-icon
-            left
-            color="primary"
-          >
-            mdi-note-text
-          </v-icon>
-          <span>Metadata</span>
-          <v-spacer />
-        </v-btn>
+        <v-dialog max-width="85vw">
+          <template #activator="{ on }">
+            <v-btn
+              id="view-edit-metadata"
+              outlined
+              block
+              v-on="on"
+            >
+              <v-icon
+                left
+                color="primary"
+              >
+                mdi-note-text
+              </v-icon>
+              <span>Metadata</span>
+              <v-spacer />
+            </v-btn>
+          </template>
+          <meditor />
+        </v-dialog>
       </v-row>
     </div>
 
@@ -149,6 +154,7 @@ import { Location } from 'vue-router';
 import { dandiRest } from '@/rest';
 import store from '@/store';
 
+import Meditor from '@/components/Meditor.vue';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
@@ -159,6 +165,7 @@ export default defineComponent({
     CiteAsDialog,
     DownloadDialog,
     ShareDialog,
+    Meditor,
   },
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
@@ -179,18 +186,6 @@ export default defineComponent({
       };
     });
 
-    const meditorLink: ComputedRef<Location|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const version: string = currentVersion.value;
-      const { identifier } = currentDandiset.value.dandiset;
-      return {
-        name: 'metadata',
-        params: { identifier, version },
-      };
-    });
-
     const manifestLocation = computed(
       () => dandiRest.assetManifestURI(
         currentDandiset.value?.dandiset.identifier || '',
@@ -202,7 +197,6 @@ export default defineComponent({
       currentDandiset,
       currentVersion,
       fileBrowserLink,
-      meditorLink,
       manifestLocation,
     };
   },

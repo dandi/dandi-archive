@@ -168,6 +168,7 @@ export default defineComponent({
         search: props.search ? route.query.search : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
+        embargoed: props.user,
       });
       djangoDandisetRequest.value = response.data;
     });

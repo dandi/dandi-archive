@@ -105,9 +105,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 queryset = get_objects_for_user(
                     self.request.user, 'owner', Dandiset, with_superuser=False
                 ).order_by('created')
-            # Same deal for filtering out draft or empty dandisets
+            # Same deal for filtering out draft, empty, or embargoed dandisets
             show_draft = self.request.query_params.get('draft', 'true') == 'true'
             show_empty = self.request.query_params.get('empty', 'true') == 'true'
+            show_embargoed = self.request.query_params.get('embargoed', 'true') == 'true'
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
@@ -125,6 +126,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     draft_asset_count=Subquery(most_recent_version.values('asset_count'))
                 )
                 queryset = queryset.filter(draft_asset_count__gt=0)
+            if not show_embargoed:
+                queryset = queryset.filter(embargo_status='OPEN')
         return queryset
 
     def get_object(self):

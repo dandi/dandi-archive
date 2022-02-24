@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import json
 from typing import Any, Dict, List
 
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.core.mail.message import EmailMessage
 from django.test.client import Client
 from django.urls.base import reverse
 import pytest
@@ -25,8 +29,12 @@ def serialize_social_account(social_account):
 
 
 @pytest.mark.django_db
-def test_user_registration_email(social_account, mailoutbox, api_client):
+def test_user_registration_email_content(
+    social_account: SocialAccount, mailoutbox: list[EmailMessage], api_client: APIClient
+):
     user = social_account.user
+    social_account.user.metadata.status = UserMetadata.Status.INCOMPLETE  # simulates new user
+
     api_client.force_authenticate(user=user)
     api_client.post(
         '/api/users/questionnaire-form/',
@@ -47,6 +55,36 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
     assert email.to == [ADMIN_EMAIL]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
+
+
+@pytest.mark.parametrize(
+    'status,email_count',
+    [
+        # INCOMPLETE/PENDING users POSTing to the questionnaire endpoint should result in 2 emails
+        # being sent (new user welcome email, admin "needs approval" email), while no email should
+        # be sent in the case of APPROVED users
+        (UserMetadata.Status.INCOMPLETE, 2),
+        (UserMetadata.Status.PENDING, 2),
+        (UserMetadata.Status.APPROVED, 0),
+    ],
+)
+@pytest.mark.django_db
+def test_user_registration_email_count(
+    social_account: SocialAccount,
+    mailoutbox: list[EmailMessage],
+    api_client: APIClient,
+    status: str,
+    email_count: int,
+):
+    user = social_account.user
+    user.metadata.status = status
+    api_client.force_authenticate(user=user)
+    api_client.post(
+        '/api/users/questionnaire-form/',
+        {f'question_{i}': f'answer_{i}' for i in range(len(QUESTIONS))},
+        format='json',
+    )
+    assert len(mailoutbox) == email_count
 
 
 @pytest.mark.django_db

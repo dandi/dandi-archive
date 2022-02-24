@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from django.conf import settings
+from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
@@ -8,13 +10,22 @@ from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumFileUpdater,
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create(authenticated_api_client):
+def test_zarr_rest_create(authenticated_api_client, user, dandiset):
+    assign_perm('owner', user, dandiset)
     name = 'My Zarr File!'
 
-    resp = authenticated_api_client.post('/api/zarr/', {'name': name}, format='json')
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': name,
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
     assert resp.json() == {
         'name': name,
         'zarr_id': UUID_RE,
+        'dandiset': dandiset.identifier,
         'checksum': EMPTY_CHECKSUM,
         'file_count': 0,
         'size': 0,
@@ -23,6 +34,34 @@ def test_zarr_rest_create(authenticated_api_client):
 
     zarr_archive = ZarrArchive.objects.get(zarr_id=resp.json()['zarr_id'])
     assert zarr_archive.name == name
+
+
+@pytest.mark.django_db
+def test_zarr_rest_create_not_an_owner(authenticated_api_client, zarr_archive):
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': zarr_archive.dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive):
+    assign_perm('owner', user, zarr_archive.dandiset)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': zarr_archive.dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Zarr already exists']
 
 
 @pytest.mark.django_db
@@ -40,6 +79,7 @@ def test_zarr_rest_get(
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
+        'dandiset': zarr_archive.dandiset.identifier,
         'checksum': zarr_archive.checksum,
         'file_count': 1,
         'size': upload.size(),
@@ -59,6 +99,7 @@ def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
+        'dandiset': zarr_archive.dandiset.identifier,
         'checksum': zarr_archive.checksum,
         'file_count': ten_quadrillion,
         'size': ten_petabytes,
@@ -72,6 +113,7 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
+        'dandiset': zarr_archive.dandiset.identifier,
         'checksum': zarr_archive.checksum,
         'file_count': 0,
         'size': 0,
@@ -81,10 +123,12 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
 @pytest.mark.django_db
 def test_zarr_rest_delete_file(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
@@ -102,12 +146,32 @@ def test_zarr_rest_delete_file(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_delete_multiple_files(
+def test_zarr_rest_delete_file_not_an_owner(
     authenticated_api_client,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_archive.complete_upload()
+
+    resp = authenticated_api_client.delete(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_zarr_rest_delete_multiple_files(
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     uploads = [zarr_upload_file_factory(zarr_archive=zarr_archive) for i in range(0, 10)]
@@ -128,10 +192,12 @@ def test_zarr_rest_delete_multiple_files(
 @pytest.mark.django_db
 def test_zarr_rest_delete_missing_file(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
@@ -157,10 +223,12 @@ def test_zarr_rest_delete_missing_file(
 @pytest.mark.django_db
 def test_zarr_rest_delete_upload_in_progress(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
@@ -270,7 +338,7 @@ def test_zarr_explore_file(
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
     )
 
 
@@ -300,5 +368,5 @@ def test_zarr_explore_head(
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://localhost:9000/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
     )

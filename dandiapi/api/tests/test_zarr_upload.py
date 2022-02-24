@@ -1,6 +1,7 @@
 import hashlib
 from pathlib import Path
 
+from guardian.shortcuts import assign_perm
 import pytest
 import requests
 
@@ -15,7 +16,8 @@ from dandiapi.api.zarr_checksums import (
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_start(authenticated_api_client, zarr_archive: ZarrArchive):
+def test_zarr_rest_upload_start(authenticated_api_client, user, zarr_archive: ZarrArchive):
+    assign_perm('owner', user, zarr_archive.dandiset)
     path = 'foo/bar.txt'
     text = b'Some fascinating zarr content.\n'
     h = hashlib.md5()
@@ -40,11 +42,34 @@ def test_zarr_rest_upload_start(authenticated_api_client, zarr_archive: ZarrArch
 
 
 @pytest.mark.django_db
+def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
+    path = 'foo/bar.txt'
+    text = b'Some fascinating zarr content.\n'
+    h = hashlib.md5()
+    h.update(text)
+    etag = h.hexdigest()
+
+    resp = authenticated_api_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/upload/',
+        [
+            {
+                'path': path,
+                'etag': etag,
+            }
+        ],
+        format='json',
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
 def test_zarr_rest_upload_start_simultaneous(
     authenticated_api_client,
+    user,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     zarr_upload_file_factory(zarr_archive=zarr_archive)
 
     path = 'foo/bar.txt'
@@ -70,10 +95,12 @@ def test_zarr_rest_upload_start_simultaneous(
 @pytest.mark.django_db
 def test_zarr_rest_upload_complete(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     # Creating a zarr upload file means that the zarr has an upload in progress
@@ -110,7 +137,28 @@ def test_zarr_rest_upload_complete(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_complete_no_upload(authenticated_api_client, zarr_archive: ZarrArchive):
+def test_zarr_rest_upload_complete_not_an_owner(
+    authenticated_api_client,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    # Creating a zarr upload file means that the zarr has an upload in progress
+    zarr_upload_file_factory(zarr_archive=zarr_archive)
+    assert zarr_archive.upload_in_progress
+    assert zarr_archive.checksum == EMPTY_CHECKSUM
+
+    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_zarr_rest_upload_complete_no_upload(
+    authenticated_api_client, user, zarr_archive: ZarrArchive
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
     assert resp.status_code == 400
     assert resp.json() == ['No upload in progress.']
@@ -118,8 +166,9 @@ def test_zarr_rest_upload_complete_no_upload(authenticated_api_client, zarr_arch
 
 @pytest.mark.django_db
 def test_zarr_rest_upload_complete_missing_file(
-    authenticated_api_client, zarr_archive: ZarrArchive
+    authenticated_api_client, user, zarr_archive: ZarrArchive
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Creating a DB entry without creating the corresponding file in S3
     upload = ZarrUploadFile.objects.create_zarr_upload_file(
         zarr_archive=zarr_archive, path='foo/bar.nwb', etag='whatever'
@@ -134,10 +183,12 @@ def test_zarr_rest_upload_complete_missing_file(
 @pytest.mark.django_db
 def test_zarr_rest_upload_complete_incorrect_etag(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, etag='incorrect')
@@ -152,10 +203,12 @@ def test_zarr_rest_upload_complete_incorrect_etag(
 @pytest.mark.django_db
 def test_zarr_rest_upload_cancel(
     authenticated_api_client,
+    user,
     storage,
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     # Creating a zarr upload file means that the zarr has an upload in progress
@@ -171,7 +224,28 @@ def test_zarr_rest_upload_cancel(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_cancel_no_upload(authenticated_api_client, zarr_archive: ZarrArchive):
+def test_zarr_rest_upload_cancel_not_an_owner(
+    authenticated_api_client,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+):
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    # Creating a zarr upload file means that the zarr has an upload in progress
+    zarr_upload_file: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
+    assert zarr_archive.upload_in_progress
+
+    resp = authenticated_api_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/upload/')
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_zarr_rest_upload_cancel_no_upload(
+    authenticated_api_client, user, zarr_archive: ZarrArchive
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
     assert not zarr_archive.upload_in_progress
 
     resp = authenticated_api_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/upload/')
@@ -180,7 +254,8 @@ def test_zarr_rest_upload_cancel_no_upload(authenticated_api_client, zarr_archiv
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_flow(authenticated_api_client, storage, zarr_archive: ZarrArchive):
+def test_zarr_rest_upload_flow(authenticated_api_client, user, storage, zarr_archive: ZarrArchive):
+    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
 

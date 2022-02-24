@@ -382,14 +382,18 @@ export default defineComponent({
       if (currentDandiset.value?.status === 'Published') {
         return 'No changes since last publish.';
       }
+      if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
+        return 'This dandiset is being unembargoed, please wait.';
+      }
       return '';
     });
 
-    const publishButtonDisabled: ComputedRef<boolean> = computed(
-      () => !!(currentDandiset.value?.version_validation_errors.length
-        || currentDandiset.value?.asset_validation_errors.length
-        || publishDisabledMessage.value),
-    );
+    const publishButtonDisabled = computed(() => !!(
+      currentDandiset.value?.version_validation_errors.length
+      || currentDandiset.value?.asset_validation_errors.length
+      || currentDandiset.value?.dandiset.embargo_status !== 'OPEN'
+      || publishDisabledMessage.value
+    ));
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
       if (!store.state.dandiset.owners) {

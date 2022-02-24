@@ -11,7 +11,6 @@ import * as Integrations from '@sentry/integrations';
 
 // Import plugins first (order may matter)
 import '@/plugins/composition';
-import '@/plugins/asyncComputed';
 import vuetify from '@/plugins/vuetify';
 
 // Import custom behavior

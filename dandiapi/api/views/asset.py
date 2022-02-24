@@ -23,14 +23,14 @@ from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
-from dandiapi.api.models.asset import EmbargoedAssetBlob
+from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
 from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
@@ -46,45 +46,6 @@ from dandiapi.api.views.serializers import (
     AssetSerializer,
     AssetValidationSerializer,
 )
-
-
-def _download_asset(asset: Asset):
-    if asset.is_zarr:
-        return HttpResponseRedirect(
-            reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
-        )
-    elif asset.is_blob:
-        asset_blob = asset.blob
-    elif asset.is_embargoed_blob:
-        asset_blob = asset.embargoed_blob
-
-    storage = asset_blob.blob.storage
-
-    if isinstance(storage, S3Boto3Storage):
-        client = storage.connection.meta.client
-        path = os.path.basename(asset.path)
-        url = client.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': storage.bucket_name,
-                'Key': asset_blob.blob.name,
-                'ResponseContentDisposition': f'attachment; filename="{path}"',
-            },
-        )
-        return HttpResponseRedirect(url)
-    elif isinstance(storage, MinioStorage):
-        client = storage.client if storage.base_url is None else storage.base_url_client
-        bucket = storage.bucket_name
-        obj = asset_blob.blob.name
-        path = os.path.basename(asset.path)
-        url = client.presigned_get_object(
-            bucket,
-            obj,
-            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
-        )
-        return HttpResponseRedirect(url)
-    else:
-        raise ValueError(f'Unknown storage {storage}')
 
 
 def _paginate_asset_paths(
@@ -135,45 +96,27 @@ def _paginate_asset_paths(
     return {'results': paths.data, 'count': asset_count, 'next': next_url, 'previous': prev_url}
 
 
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Get the download link for an asset.',
-    operation_description='',
-    manual_parameters=[ASSET_ID_PARAM],
-)
-@api_view(['GET', 'HEAD'])
-def asset_download_view(request, asset_id):
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    return _download_asset(asset)
+def _maybe_validate_asset_metadata(asset: Asset):
+    if asset.is_blob:
+        blob = asset.blob
+    elif asset.is_embargoed_blob:
+        blob = asset.embargoed_blob
+    else:
+        return
 
+    # Refresh the blob to be sure the sha256 values is up to date
+    blob: BaseAssetBlob
+    blob.refresh_from_db()
 
-@swagger_auto_schema(
-    method='GET',
-    operation_summary="Get an asset's metadata",
-    manual_parameters=[ASSET_ID_PARAM],
-)
-@api_view(['GET', 'HEAD'])
-def asset_metadata_view(request, asset_id):
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    return JsonResponse(asset.metadata)
+    # If the blob is still waiting to have it's checksum calculated, there's no point in
+    # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
+    # calculated, it will revalidate this asset.
+    if blob.sha256 is None:
+        return
 
-
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Django serialization of an asset',
-    manual_parameters=[ASSET_ID_PARAM],
-)
-@api_view(['GET', 'HEAD'])
-def asset_info_view(request, asset_id):
-    asset = get_object_or_404(Asset, asset_id=asset_id)
-    serializer = AssetDetailSerializer(instance=asset)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class AssetRequestSerializer(serializers.Serializer):
-    metadata = serializers.JSONField()
-    blob_id = serializers.UUIDField(required=False)
-    zarr_id = serializers.UUIDField(required=False)
+    # If the blob already has a sha256, then the asset metadata is ready to validate.
+    # We do not bother to delay it because it should run very quickly.
+    validate_asset_metadata(asset.id)
 
 
 class AssetFilter(filters.FilterSet):
@@ -185,13 +128,12 @@ class AssetFilter(filters.FilterSet):
         fields = ['path']
 
 
-class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
+class AssetViewSet(DetailSerializerMixin, GenericViewSet):
     queryset = Asset.objects.all().order_by('created')
 
     permission_classes = [IsApprovedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
-    pagination_class = DandiPagination
 
     lookup_field = 'asset_id'
     lookup_value_regex = Asset.UUID_REGEX
@@ -199,9 +141,123 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
 
-    def get_queryset(self):
+    def raise_if_unauthorized(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
         # user has ownership
+        asset_id = self.kwargs.get('asset_id')
+        if asset_id is not None:
+            asset = get_object_or_404(Asset, asset_id=asset_id)
+            if asset.embargoed_blob is not None:
+                if not self.request.user.is_authenticated:
+                    # Clients must be authenticated to access it
+                    raise NotAuthenticated()
+                if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
+                    # The user does not have ownership permission
+                    raise PermissionDenied()
+
+    def get_queryset(self):
+        self.raise_if_unauthorized()
+        return super().get_queryset()
+
+    @swagger_auto_schema(
+        responses={
+            200: 'The asset metadata.',
+        },
+        manual_parameters=[ASSET_ID_PARAM],
+        operation_summary="Get an asset\'s metadata",
+        operation_description='',
+    )
+    def retrieve(self, request, **kwargs):
+        asset = self.get_object()
+        return JsonResponse(asset.metadata)
+
+    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Get the download link for an asset.',
+        operation_description='',
+        manual_parameters=[ASSET_ID_PARAM],
+        responses={
+            200: None,  # This disables the auto-generated 200 response
+            301: 'Redirect to object store',
+        },
+    )
+    @action(methods=['GET', 'HEAD'], detail=True)
+    def download(self, *args, **kwargs):
+        asset = self.get_object()
+
+        # Assign asset blob or redirect if zarr
+        if asset.is_zarr:
+            return HttpResponseRedirect(
+                reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
+            )
+        elif asset.is_blob:
+            asset_blob = asset.blob
+        elif asset.is_embargoed_blob:
+            asset_blob = asset.embargoed_blob
+
+        # Redirect to correct presigned URL
+        storage = asset_blob.blob.storage
+        if isinstance(storage, S3Boto3Storage):
+            client = storage.connection.meta.client
+            path = os.path.basename(asset.path)
+            url = client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': storage.bucket_name,
+                    'Key': asset_blob.blob.name,
+                    'ResponseContentDisposition': f'attachment; filename="{path}"',
+                },
+            )
+            return HttpResponseRedirect(url)
+        elif isinstance(storage, MinioStorage):
+            client = storage.client if storage.base_url is None else storage.base_url_client
+            bucket = storage.bucket_name
+            obj = asset_blob.blob.name
+            path = os.path.basename(asset.path)
+            url = client.presigned_get_object(
+                bucket,
+                obj,
+                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+            )
+            return HttpResponseRedirect(url)
+        else:
+            raise ValueError(f'Unknown storage {storage}')
+
+    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Django serialization of an asset',
+        manual_parameters=[ASSET_ID_PARAM],
+        responses={200: AssetDetailSerializer()},
+    )
+    @action(methods=['GET', 'HEAD'], detail=True)
+    def info(self, *args, **kwargs):
+        asset = self.get_object()
+        serializer = AssetDetailSerializer(instance=asset)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AssetRequestSerializer(serializers.Serializer):
+    metadata = serializers.JSONField()
+    blob_id = serializers.UUIDField(required=False)
+    zarr_id = serializers.UUIDField(required=False)
+
+    def validate(self, data):
+        """Ensure blob_id and zarr_id are mutually exclusive."""
+        if ('blob_id' in data) == ('zarr_id' in data):
+            raise serializers.ValidationError(
+                {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
+            )
+
+        if 'path' not in data['metadata']:
+            raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
+
+        return data
+
+
+class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet):
+    pagination_class = DandiPagination
+
+    def raise_if_unauthorized(self):
         version = get_object_or_404(
             Version,
             dandiset__pk=self.kwargs['versions__dandiset__pk'],
@@ -214,30 +270,76 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
             if not self.request.user.has_perm('owner', version.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
-        return super().get_queryset()
+
+    # Redefine info and download actions to update swagger manual_parameters
+
+    def asset_from_request(self) -> Asset:
+        """
+        Return an unsaved Asset, constructed from the request data.
+
+        Any necessary validation errors will be raised in this method.
+        """
+        serializer = AssetRequestSerializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
+        asset_blob = None
+        embargoed_asset_blob = None
+        zarr_archive = None
+        if 'blob_id' in serializer.validated_data:
+            try:
+                asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
+            except AssetBlob.DoesNotExist:
+                embargoed_asset_blob = get_object_or_404(
+                    EmbargoedAssetBlob, blob_id=serializer.validated_data['blob_id']
+                )
+        elif 'zarr_id' in serializer.validated_data:
+            zarr_archive = get_object_or_404(
+                ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
+            )
+        else:
+            # This shouldn't ever occur
+            raise NotImplementedError('Storage type not handled.')
+
+        # Construct Asset
+        path = serializer.validated_data['metadata']['path']
+        metadata = Asset.strip_metadata(serializer.validated_data['metadata'])
+        asset = Asset(
+            path=path,
+            blob=asset_blob,
+            embargoed_blob=embargoed_asset_blob,
+            zarr=zarr_archive,
+            metadata=metadata,
+            status=Asset.Status.PENDING,
+        )
+
+        return asset
 
     @swagger_auto_schema(
-        responses={
-            200: 'The asset metadata.',
-        },
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary="Get an asset\'s metadata",
-        operation_description='',
-    )
-    def retrieve(self, request, **kwargs):
-        asset = self.get_object()
-        return Response(asset.metadata, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Django serialization of an asset',
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         responses={200: AssetDetailSerializer()},
     )
     @action(detail=True, methods=['GET'])
-    def info(self, request, **kwargs):
+    def info(self, *args, **kwargs):
         """Django serialization of an asset."""
-        asset = self.get_object()
-        serializer = AssetDetailSerializer(instance=asset)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return super().info()
+
+    @swagger_auto_schema(
+        method='GET',
+        operation_summary='Get the download link for an asset.',
+        operation_description='',
+        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        responses={
+            200: None,  # This disables the auto-generated 200 response
+            301: 'Redirect to object store',
+        },
+    )
+    @action(detail=True, methods=['GET'])
+    def download(self, *args, **kwargs):
+        return super().download(*args, **kwargs)
+
+    # Remaining actions
 
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer()},
@@ -278,51 +380,20 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
-        serializer = AssetRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
-            try:
-                asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
-                embargoed_asset_blob = None
-            except AssetBlob.DoesNotExist:
-                embargoed_asset_blob = get_object_or_404(
-                    EmbargoedAssetBlob, blob_id=serializer.validated_data['blob_id']
-                )
-                asset_blob = None
-            zarr_archive = None
-        elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
-            asset_blob = None
-            embargoed_asset_blob = None
-            zarr_archive = get_object_or_404(
-                ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
-            )
-        else:
-            raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
-
-        metadata = serializer.validated_data['metadata']
-        if 'path' not in metadata:
-            return Response('No path specified in metadata.', status=400)
-        path = metadata['path']
+        # Retrieve blobs and metadata
+        asset = self.asset_from_request()
 
         # Check if there are already any assets with the same path
-        if version.assets.filter(path=path).exists():
+        if version.assets.filter(path=asset.path).exists():
             return Response(
                 'An asset with that path already exists',
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # Strip away any computed fields
-        metadata = Asset.strip_metadata(metadata)
+        # Ensure zarr archive doesn't already belong to a dandiset
+        if asset.zarr and asset.zarr.dandiset != version.dandiset:
+            raise ValidationError('The zarr archive belongs to a different dandiset')
 
-        asset = Asset(
-            path=path,
-            blob=asset_blob,
-            embargoed_blob=embargoed_asset_blob,
-            zarr=zarr_archive,
-            metadata=metadata,
-            status=Asset.Status.PENDING,
-        )
         asset.save()
         version.assets.add(asset)
 
@@ -331,28 +402,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        if asset.is_blob:
-            # Refresh the blob to be sure the sha256 values is up to date
-            asset.blob.refresh_from_db()
-            # If the blob is still waiting to have it's checksum calculated, there's no point in
-            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-            # calculated, it will revalidate this asset.
-            # If the blob already has a sha256, then the asset metadata is ready to validate.
-            if asset.blob.sha256 is not None:
-                # We do not bother to delay it because it should run very quickly.
-                validate_asset_metadata(asset.id)
-        elif asset.is_embargoed_blob:
-            # Refresh the blob to be sure the sha256 values is up to date
-            asset.embargoed_blob.refresh_from_db()
-            # If the blob is still waiting to have it's checksum calculated, there's no point in
-            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-            # calculated, it will revalidate this asset.
-            # If the blob already has a sha256, then the asset metadata is ready to validate.
-            if asset.embargoed_blob.sha256 is not None:
-                # We do not bother to delay it because it should run very quickly.
-                validate_asset_metadata(asset.id)
-        elif asset.is_zarr:
-            pass
+        # Validate the asset metadata if able
+        _maybe_validate_asset_metadata(asset)
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -382,47 +433,21 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
-        serializer = AssetRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        if 'blob_id' in serializer.validated_data and 'zarr_id' not in serializer.validated_data:
-            try:
-                asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
-                embargoed_asset_blob = None
-            except AssetBlob.DoesNotExist:
-                embargoed_asset_blob = get_object_or_404(
-                    EmbargoedAssetBlob, blob_id=serializer.validated_data['blob_id']
-                )
-                asset_blob = None
-            zarr_archive = None
-        elif 'blob_id' not in serializer.validated_data and 'zarr_id' in serializer.validated_data:
-            asset_blob = None
-            embargoed_asset_blob = None
-            zarr_archive = get_object_or_404(
-                ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
-            )
-        else:
-            raise ValidationError('Exactly one of blob_id or zarr_id must be specified.')
-
-        metadata = serializer.validated_data['metadata']
-        if 'path' not in metadata:
-            return Response('No path specified in metadata', status=404)
-        path = metadata['path']
-        # Strip away any computed fields
-        metadata = Asset.strip_metadata(metadata)
+        # Retrieve blobs and metadata
+        new_asset = self.asset_from_request()
 
         if (
-            metadata == old_asset.metadata
-            and asset_blob == old_asset.blob
-            and embargoed_asset_blob == old_asset.embargoed_blob
-            and zarr_archive == old_asset.zarr
+            new_asset.metadata == old_asset.metadata
+            and new_asset.blob == old_asset.blob
+            and new_asset.embargoed_blob == old_asset.embargoed_blob
+            and new_asset.zarr_archive == old_asset.zarr
         ):
             # No changes, don't create a new asset
             new_asset = old_asset
         else:
             # Verify we aren't changing path to the same value as an existing asset
             if (
-                version.assets.filter(path=path)
+                version.assets.filter(path=new_asset.path)
                 .filter(~models.Q(asset_id=old_asset.asset_id))
                 .exists()
             ):
@@ -431,17 +456,10 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
                     status=status.HTTP_409_CONFLICT,
                 )
 
+            # Mint a new Asset whenever blob or metadata are modified
             with transaction.atomic():
-                # Mint a new Asset whenever blob or metadata are modified
-                new_asset = Asset(
-                    path=path,
-                    blob=asset_blob,
-                    embargoed_blob=embargoed_asset_blob,
-                    zarr=zarr_archive,
-                    metadata=metadata,
-                    previous=old_asset,
-                    status=Asset.Status.PENDING,
-                )
+                # Set previous asset and save
+                new_asset.previous = old_asset
                 new_asset.save()
 
                 # Replace the old asset with the new one
@@ -453,28 +471,8 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         # Save the version so that the modified field is updated
         version.save()
 
-        if new_asset.is_blob:
-            # Refresh the blob to be sure the sha256 values is up to date
-            new_asset.blob.refresh_from_db()
-            # If the blob is still waiting to have it's checksum calculated, there's no point in
-            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-            # calculated, it will revalidate this asset.
-            # If the blob already has a sha256, then the asset metadata is ready to validate.
-            if new_asset.blob.sha256 is not None:
-                # We do not bother to delay it because it should run very quickly.
-                validate_asset_metadata(new_asset.id)
-        elif new_asset.is_embargoed_blob:
-            # Refresh the blob to be sure the sha256 values is up to date
-            new_asset.embargoed_blob.refresh_from_db()
-            # If the blob is still waiting to have it's checksum calculated, there's no point in
-            # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-            # calculated, it will revalidate this asset.
-            # If the blob already has a sha256, then the asset metadata is ready to validate.
-            if new_asset.embargoed_blob.sha256 is not None:
-                # We do not bother to delay it because it should run very quickly.
-                validate_asset_metadata(new_asset.id)
-        elif new_asset.is_zarr:
-            pass
+        # Validate the asset metadata if able
+        _maybe_validate_asset_metadata(new_asset)
 
         serializer = AssetDetailSerializer(instance=new_asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -509,20 +507,6 @@ class AssetViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewS
         version.save()
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-    @swagger_auto_schema(
-        responses={
-            200: None,  # This disables the auto-generated 200 response
-            301: 'Redirect to object store',
-        },
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary='Return a redirect to the file download in the object store.',
-        operation_description='',
-    )
-    @action(detail=True, methods=['GET'])
-    def download(self, request, **kwargs):
-        """Return a redirect to the file download in the object store."""
-        return _download_asset(self.get_object())
 
     @swagger_auto_schema(
         manual_parameters=[PATH_PREFIX_PARAM],

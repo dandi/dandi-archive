@@ -6,7 +6,7 @@ import {
 } from '@vue/composition-api';
 import { cloneDeep } from 'lodash';
 
-import { DandiModel } from './types';
+import { DandiModel, DandiModelUnion } from './types';
 import {
   computeBasicSchema,
   computeComplexSchema,
@@ -81,7 +81,7 @@ class EditorInterface {
     });
   }
 
-  setComplexModelProp(propKey: string, value: DandiModel) {
+  setComplexModelProp(propKey: string, value: DandiModelUnion) {
     Vue.set(this.complexModel, propKey, value);
   }
 }

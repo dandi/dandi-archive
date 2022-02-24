@@ -145,6 +145,8 @@ export default defineComponent({
           identifier: currentDandiset.value.dandiset.identifier,
           version: currentDandiset.value.version,
         });
+
+        showWarningDialog.value = false;
       }
     }
 

@@ -43,14 +43,16 @@
       </v-list>
     </v-menu>
     <v-toolbar-title>
-      <v-img
-        alt="DANDI logo"
-        contain
-        max-height="48px"
-        max-width="120px"
-        src="@/assets/logo.svg"
-        class="mr-2"
-      />
+      <router-link to="/">
+        <v-img
+          alt="DANDI logo"
+          contain
+          max-height="48px"
+          max-width="120px"
+          src="@/assets/logo.svg"
+          class="mr-2"
+        />
+      </router-link>
     </v-toolbar-title>
     <span class="d-none d-md-flex">
       <template v-for="navItem in navItems">
@@ -130,7 +132,9 @@ import {
   insideIFrame as insideIFrameFunc,
   dandiRest,
 } from '@/rest';
-import { dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl } from '@/utils/constants';
+import {
+  dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
+} from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
 export default defineComponent({
@@ -147,10 +151,6 @@ export default defineComponent({
     const insideIFrame = computed(insideIFrameFunc);
 
     const navItems = [
-      {
-        text: 'Welcome',
-        to: 'home',
-      },
       {
         text: 'Public Dandisets',
         to: 'publicDandisets',
@@ -173,6 +173,11 @@ export default defineComponent({
       {
         text: 'Help',
         to: dandiHelpUrl,
+        external: true,
+      },
+      {
+        text: 'DandiHub',
+        to: dandihubUrl,
         external: true,
       },
     ];
