@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
+from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
@@ -14,12 +15,7 @@ from rest_framework.exceptions import ValidationError
 from dandiapi.api.models import Dandiset
 from dandiapi.api.multipart import UnsupportedStorageError
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.api.zarr_checksums import (
-    EMPTY_CHECKSUM,
-    ZarrChecksum,
-    ZarrChecksumFileUpdater,
-    ZarrChecksumUpdater,
-)
+from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater, ZarrChecksumUpdater
 
 
 class ZarrUploadFileManager(models.Manager):
