@@ -5,6 +5,7 @@ from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumFileUpdater, ZarrChecksumUpdater
 
@@ -62,6 +63,27 @@ def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive
     )
     assert resp.status_code == 400
     assert resp.json() == ['Zarr already exists']
+
+
+@pytest.mark.django_db
+def test_zarr_rest_create_embargoed_dandiset(
+    authenticated_api_client,
+    user,
+    zarr_archive,
+    dandiset_factory,
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Cannot add zarr to embargoed dandiset']
 
 
 @pytest.mark.django_db
