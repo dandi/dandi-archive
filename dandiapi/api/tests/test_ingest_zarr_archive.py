@@ -57,7 +57,7 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
     assert zarr.file_count == 0
 
     # Compute checksum
-    ingest_zarr_archive(str(zarr.id))
+    ingest_zarr_archive(str(zarr.zarr_id))
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
@@ -115,7 +115,7 @@ def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_fac
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is not None
 
     # Compute checksum
-    ingest_zarr_archive(str(zarr.id))
+    ingest_zarr_archive(str(zarr.zarr_id))
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, 'foo/bar').read_checksum_file() == foo_bar_listing
@@ -128,7 +128,7 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
     # Compute checksum
-    ingest_zarr_archive(str(zarr.id))
+    ingest_zarr_archive(str(zarr.zarr_id))
 
     # Assert files computed correctly
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is None
