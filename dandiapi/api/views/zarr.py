@@ -168,6 +168,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 raise PermissionDenied()
             print(f'Beggining upload completion for zarr archive {zarr_archive.zarr_id}')
             zarr_archive.complete_upload()
+            # Save any zarr assets to trigger metadata updates
+            for asset in zarr_archive.assets.all():
+                asset.save()
 
         return Response(None, status=status.HTTP_201_CREATED)
 
@@ -209,6 +212,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
+
+            # Save any zarr assets to trigger metadata updates
+            for asset in zarr_archive.assets.all():
+                asset.save()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 
