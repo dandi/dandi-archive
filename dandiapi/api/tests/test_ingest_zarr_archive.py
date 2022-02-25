@@ -2,8 +2,9 @@ from typing import List
 
 import pytest
 
+from dandiapi.api.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
 from dandiapi.api.management.commands.ingest_zarr_archive import ingest_zarr_archive
-from dandiapi.api.models.zarr import ZarrArchive, ZarrUploadFile
+from dandiapi.api.models import Dandiset, ZarrArchive, ZarrUploadFile
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
@@ -136,3 +137,23 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
         checksums=ZarrChecksums(directories=[], files=[]),
         md5='481a2f77ab786a0f45aafd5db0971caa',
     )
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_upload_file_factory):
+    dandiset: Dandiset = dandiset_factory()
+    for _ in range(10):
+        zarr_upload_file_factory(
+            path='foo/a',
+            zarr_archive=zarr_archive_factory(dandiset=dandiset),
+        )
+
+    # Run ingest
+    ingest_dandiset_zarrs(str(dandiset.identifier))
+
+    # Assert that zarr archives have been updated
+    dandiset.refresh_from_db()
+    for zarr in dandiset.zarr_archives.all():
+        assert zarr.size != 0
+        assert zarr.file_count != 0
+        assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is not None

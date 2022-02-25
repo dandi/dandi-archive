@@ -147,3 +147,8 @@ def ingest_zarr_archive(
 
     # Save zarr after completion
     zarr.save()
+
+
+def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
+    for zarr in ZarrArchive.objects.filter(dandiset__id=dandiset_id):
+        ingest_zarr_archive.delay(str(zarr.zarr_id), **kwargs)
