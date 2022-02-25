@@ -3,6 +3,7 @@ from typing import Optional
 
 import boto3
 from celery import shared_task
+from django.db.transaction import atomic
 
 from dandiapi.api.models.zarr import ZarrArchive
 from dandiapi.api.storage import get_storage
@@ -112,11 +113,12 @@ def get_client():
 
 
 @shared_task
+@atomic
 def ingest_zarr_archive(
     zarr_id: str, no_checksum: bool = False, no_size: bool = False, no_count: bool = False
 ):
     client = get_client()
-    zarr: ZarrArchive = ZarrArchive.objects.get(zarr_id=zarr_id)
+    zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
 
     # Reset before compute
     if not no_size:
