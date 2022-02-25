@@ -119,6 +119,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         )
         if not self.request.user.has_perm('owner', dandiset):
             raise PermissionDenied()
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         try:
             zarr_archive.save()
@@ -171,6 +173,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 raise PermissionDenied()
             print(f'Beggining upload completion for zarr archive {zarr_archive.zarr_id}')
             zarr_archive.complete_upload()
+            # Save any zarr assets to trigger metadata updates
+            for asset in zarr_archive.assets.all():
+                asset.save()
 
         return Response(None, status=status.HTTP_201_CREATED)
 
@@ -213,6 +218,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
+
+            # Save any zarr assets to trigger metadata updates
+            for asset in zarr_archive.assets.all():
+                asset.save()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 

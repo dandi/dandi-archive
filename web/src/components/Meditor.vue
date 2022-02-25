@@ -106,11 +106,12 @@
         background-color="grey darken-2"
         slider-color="highlight"
         dark
+        show-arrows
         align-with-title
       >
         <v-tab
           key="tab-0"
-          class="font-weight-medium text-caption"
+          class="font-weight-medium text-caption ml-2"
         >
           <v-badge
             color="error"
@@ -134,7 +135,8 @@
           </v-badge>
         </v-tab>
       </v-tabs>
-
+    </v-row>
+    <v-row>
       <v-tabs-items
         v-model="tab"
         style="width: 100%;"
@@ -145,10 +147,10 @@
         >
           <v-form
             v-model="basicModelValid"
+            style="height: 70vh;"
             class="px-7 py-5 overflow-y-auto"
           >
             <v-jsf
-              ref="vjsfRef"
               v-model="basicModel"
               :schema="basicSchema"
               :options="{...CommonVJSFOptions, hideReadOnly: true}"
@@ -178,8 +180,6 @@
         </v-tab-item>
       </v-tabs-items>
     </v-row>
-    <v-divider class="my-5" />
-    <v-row class="px-2" />
   </v-card>
 </template>
 
@@ -248,12 +248,14 @@ export default defineComponent({
       initialValidation: 'all',
       disableAll: readonly.value,
       autoFixArrayItems: false,
-      childrenClass: 'my-1 px-2',
+      childrenClass: 'px-2',
       fieldProps: {
         outlined: true,
+        dense: true,
       },
       arrayItemCardProps: {
         outlined: true,
+        dense: true,
       },
       editMode: 'inline',
       hideReadOnly: true,
@@ -262,7 +264,6 @@ export default defineComponent({
     const transactionTracker = new MeditorTransactionTracker(editorInterface);
 
     // undo/redo functionality
-    const vjsfRef = ref(null);
     function undoChange() {
       transactionTracker.undo();
     }
@@ -343,7 +344,6 @@ export default defineComponent({
       basicSchema,
       basicModel,
       basicModelValid,
-      vjsfRef,
       vjsfListener,
 
       complexSchema,

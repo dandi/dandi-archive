@@ -138,6 +138,42 @@ def test_zarr_rest_upload_complete(
 
 
 @pytest.mark.django_db
+def test_zarr_rest_upload_complete_asset_metadata(
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+    asset_factory,
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    # Creating a zarr upload file means that the zarr has an upload in progress
+    upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    assert zarr_archive.upload_in_progress
+    assert zarr_archive.checksum == EMPTY_CHECKSUM
+    asset = asset_factory(zarr=zarr_archive, blob=None)
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+    assert asset.metadata['contentSize'] == 0
+
+    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
+    assert resp.status_code == 201
+
+    # Calculate the new checksum
+    parent_path = Path(upload.path).parent
+    serializer = ZarrJSONChecksumSerializer()
+    expected_parent_listing = serializer.generate_listing(files=[upload.to_checksum()])
+    expected_root_listing = serializer.generate_listing(
+        directories=[ZarrChecksum(path=str(parent_path), md5=expected_parent_listing.md5)]
+    )
+    # Verify that the asset metadata was updated when the upload completed
+    asset.refresh_from_db()
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == expected_root_listing.md5
+    assert asset.metadata['contentSize'] == 100
+
+
+@pytest.mark.django_db
 def test_zarr_rest_upload_complete_not_an_owner(
     authenticated_api_client,
     storage,
