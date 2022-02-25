@@ -43,6 +43,13 @@ class ZarrChecksums(pydantic.BaseModel):
     directories: List[ZarrChecksum] = pydantic.Field(default_factory=list)
     files: List[ZarrChecksum] = pydantic.Field(default_factory=list)
 
+    def __init__(self, **data) -> None:
+        super().__init__(**data)
+
+        # Ensure sorted
+        self.files = sorted(self.files)
+        self.directories = sorted(self.directories)
+
     @property
     def is_empty(self):
         return self.files == [] and self.directories == []
@@ -297,17 +304,27 @@ class ZarrChecksumUpdater:
     def __init__(self, zarr_archive: ZarrArchive | EmbargoedZarrArchive) -> None:
         self.zarr_archive = zarr_archive
 
+    def apply_modification(self, modification: ZarrChecksumModification) -> ZarrChecksumFileUpdater:
+        with ZarrChecksumFileUpdater(self.zarr_archive, modification.path) as file_updater:
+            # Removing a checksum takes precedence over adding/modifying that checksum
+            file_updater.add_file_checksums(modification.files_to_update)
+            file_updater.add_directory_checksums(modification.directories_to_update)
+            file_updater.remove_checksums(modification.paths_to_remove)
+
+        return file_updater
+
     def modify(self, modifications: ZarrChecksumModificationQueue):
         while not modifications.empty:
             modification = modifications.pop_deepest()
             print(
-                f'Applying modifications to {self.zarr_archive.zarr_id}:{modification.path} ({len(modification.files_to_update)} files, {len(modification.directories_to_update)} directories, {len(modification.paths_to_remove)} removals)'  # noqa: E501
+                f'Applying modifications to {self.zarr_archive.zarr_id}:{modification.path} '
+                f'({len(modification.files_to_update)} files, '
+                f'{len(modification.directories_to_update)} directories, '
+                f'{len(modification.paths_to_remove)} removals)'
             )
-            with ZarrChecksumFileUpdater(self.zarr_archive, modification.path) as file_updater:
-                # Removing a checksum takes precedence over adding/modifying that checksum
-                file_updater.add_file_checksums(modification.files_to_update)
-                file_updater.add_directory_checksums(modification.directories_to_update)
-                file_updater.remove_checksums(modification.paths_to_remove)
+
+            # Apply modification
+            file_updater = self.apply_modification(modification)
 
             # If we have reached the root node, then we obviously do not need to update the parent.
             if modification.path != Path('.') and modification.path != Path('/'):
