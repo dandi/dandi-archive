@@ -60,11 +60,11 @@ def test_user_registration_email_content(
 @pytest.mark.parametrize(
     'status,email_count',
     [
-        # INCOMPLETE/PENDING users POSTing to the questionnaire endpoint should result in 2 emails
+        # INCOMPLETE users POSTing to the questionnaire endpoint should result in 2 emails
         # being sent (new user welcome email, admin "needs approval" email), while no email should
-        # be sent in the case of APPROVED users
+        # be sent in the case of APPROVED/PENDING users
         (UserMetadata.Status.INCOMPLETE, 2),
-        (UserMetadata.Status.PENDING, 2),
+        (UserMetadata.Status.PENDING, 0),
         (UserMetadata.Status.APPROVED, 0),
     ],
 )
@@ -291,3 +291,25 @@ def test_user_questionnaire_view(
 
     for question in questions:
         assertContains(resp, question['question'])
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'email,expected_status',
+    [
+        ('test@test.com', UserMetadata.Status.PENDING),
+        ('test@test.edu', UserMetadata.Status.APPROVED),
+    ],
+)
+def test_user_edu_auto_approve(user: User, api_client: APIClient, email: str, expected_status: str):
+    user.email = email
+    user.save(update_fields=['email'])
+    user_metadata: UserMetadata = user.metadata
+    user_metadata.status = UserMetadata.Status.INCOMPLETE
+    user_metadata.save(update_fields=['status'])
+
+    api_client.force_authenticate(user=user)
+    resp = api_client.post(reverse('user-questionnaire'))
+    assert resp.status_code == 302
+
+    assert user_metadata.status == expected_status
