@@ -18,6 +18,7 @@ from dandiapi.api.models import (
     Asset,
     AssetBlob,
     Dandiset,
+    EmbargoedAssetBlob,
     EmbargoedZarrArchive,
     EmbargoedZarrUploadFile,
     Upload,
@@ -26,7 +27,6 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
-from dandiapi.api.models.asset import EmbargoedAssetBlob
 from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.views.users import social_account_to_dict
 
