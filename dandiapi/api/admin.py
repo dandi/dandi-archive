@@ -18,6 +18,7 @@ from dandiapi.api.models import (
     Asset,
     AssetBlob,
     Dandiset,
+    EmbargoedAssetBlob,
     EmbargoedZarrArchive,
     EmbargoedZarrUploadFile,
     Upload,
@@ -124,6 +125,21 @@ class VersionAdmin(admin.ModelAdmin):
 class AssetBlobAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
     list_display_links = ['id', 'blob_id']
+
+
+@admin.register(EmbargoedAssetBlob)
+class EmbargoedAssetBlobAdmin(AssetBlobAdmin):
+    list_display = [
+        'id',
+        'blob_id',
+        'dandiset',
+        'blob',
+        'references',
+        'size',
+        'sha256',
+        'modified',
+        'created',
+    ]
 
 
 class AssetBlobInline(LimitedTabularInline):
