@@ -1,6 +1,6 @@
 import csv
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.options import TabularInline
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
@@ -11,6 +11,7 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import ngettext
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
@@ -26,6 +27,7 @@ from dandiapi.api.models import (
     ZarrUploadFile,
 )
 from dandiapi.api.models.asset import EmbargoedAssetBlob
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.views.users import social_account_to_dict
 
 admin.site.site_header = 'DANDI Admin'
@@ -172,6 +174,28 @@ class UploadAdmin(admin.ModelAdmin):
 class ZarrArchiveAdmin(admin.ModelAdmin):
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
+
+    @admin.action(description='Ingest selected zarr archives')
+    def ingest_zarr_archive(self, request, queryset):
+        for zarr in queryset:
+            zarr: ZarrArchive
+            ingest_zarr_archive.delay(zarr_id=(str(zarr.id)))
+
+        # Return message
+        self.message_user(
+            request,
+            ngettext(
+                '%d zarr archive has begun ingesting.',
+                '%d zarr archives have begun ingesting.',
+                queryset.count(),
+            )
+            % queryset.count(),
+            messages.SUCCESS,
+        )
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.actions += ['ingest_zarr_archive']
 
 
 @admin.register(EmbargoedZarrArchive)
