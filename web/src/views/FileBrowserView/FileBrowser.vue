@@ -404,6 +404,9 @@ export default defineComponent({
       getItems();
     }, { immediate: true });
 
+    // fetch new page of items when a new one is selected
+    watch(page, getItems);
+
     // Fetch dandiset if necessary
     onMounted(() => {
       if (!store.state.dandiset.dandiset) {
