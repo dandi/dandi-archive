@@ -1,4 +1,4 @@
-name: Trigger production deploy of backend server on new release
+name: Deploy backend to production
 
 on:
   release:
