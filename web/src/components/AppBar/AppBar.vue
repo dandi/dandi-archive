@@ -47,8 +47,8 @@
         <v-img
           alt="DANDI logo"
           contain
-          max-height="48px"
-          max-width="120px"
+          height="48px"
+          width="120px"
           src="@/assets/logo.svg"
           class="mr-2"
         />
