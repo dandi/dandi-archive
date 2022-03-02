@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.http.response import Http404, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -86,6 +87,7 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
 @api_view(['GET', 'POST'])
 @require_http_methods(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@transaction.atomic
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     user: User = request.user
     if request.method == 'POST':
@@ -101,6 +103,7 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             else None
             for question in QUESTIONS
         }
+        user_metadata.save(update_fields=['questionnaire_form'])
 
         # Save first and last name if applicable
         if 'First Name' in req_body and req_body['First Name']:
