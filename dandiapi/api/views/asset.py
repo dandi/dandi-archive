@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import models, transaction
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -163,13 +163,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         responses={
             200: 'The asset metadata.',
         },
-        manual_parameters=[ASSET_ID_PARAM],
         operation_summary="Get an asset\'s metadata",
-        operation_description='',
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        return JsonResponse(asset.metadata)
+        return Response(asset.metadata)
 
     @swagger_auto_schema(
         method='GET',
@@ -271,8 +269,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 # The user does not have ownership permission
                 raise PermissionDenied()
 
-    # Redefine info and download actions to update swagger manual_parameters
-
     def asset_from_request(self) -> Asset:
         """
         Return an unsaved Asset, constructed from the request data.
@@ -313,6 +309,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         )
 
         return asset
+
+    # Redefine info and download actions to update swagger manual_parameters
 
     @swagger_auto_schema(
         method='GET',
