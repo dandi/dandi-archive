@@ -159,6 +159,12 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         self.raise_if_unauthorized()
         return super().get_queryset()
 
+    @swagger_auto_schema(
+        responses={
+            200: 'The asset metadata.',
+        },
+        operation_summary="Get an asset\'s metadata",
+    )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
         return Response(asset.metadata)
