@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import models, transaction
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
