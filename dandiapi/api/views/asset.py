@@ -159,17 +159,9 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         self.raise_if_unauthorized()
         return super().get_queryset()
 
-    @swagger_auto_schema(
-        responses={
-            200: 'The asset metadata.',
-        },
-        manual_parameters=[ASSET_ID_PARAM],
-        operation_summary="Get an asset\'s metadata",
-        operation_description='',
-    )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        return JsonResponse(asset.metadata)
+        return Response(asset.metadata)
 
     @swagger_auto_schema(
         method='GET',
@@ -271,8 +263,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 # The user does not have ownership permission
                 raise PermissionDenied()
 
-    # Redefine info and download actions to update swagger manual_parameters
-
     def asset_from_request(self) -> Asset:
         """
         Return an unsaved Asset, constructed from the request data.
@@ -313,6 +303,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         )
 
         return asset
+
+    # Redefine info and download actions to update swagger manual_parameters
 
     @swagger_auto_schema(
         method='GET',
