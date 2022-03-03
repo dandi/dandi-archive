@@ -27,7 +27,7 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
+from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs, ingest_zarr_archive
 from dandiapi.api.views.users import social_account_to_dict
 
 admin.site.site_header = 'DANDI Admin'
@@ -97,6 +97,23 @@ class DandisetAdmin(GuardedModelAdmin):
     list_display = ['identifier', 'modified', 'created']
     readonly_fields = ['identifier', 'created']
     inlines = [VersionInline]
+
+    @admin.action(description='Ingest selected dandiset zarr archives')
+    def ingest_dandiset_zarrs(self, request, queryset):
+        for dandiset in queryset:
+            ingest_dandiset_zarrs(dandiset_id=dandiset.id)
+
+        # Return message
+        plural = 's' if queryset.count() > 1 else ''
+        self.message_user(
+            request,
+            f'Ingesting zarr archives for {queryset.count()} dandiset{plural}.',
+            messages.SUCCESS,
+        )
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.actions += ['ingest_dandiset_zarrs']
 
 
 @admin.register(Version)
@@ -178,8 +195,7 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
     @admin.action(description='Ingest selected zarr archives')
     def ingest_zarr_archive(self, request, queryset):
         for zarr in queryset:
-            zarr: ZarrArchive
-            ingest_zarr_archive.delay(zarr_id=(str(zarr.id)))
+            ingest_zarr_archive.delay(zarr_id=(str(zarr.zarr_id)))
 
         # Return message
         self.message_user(

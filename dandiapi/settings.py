@@ -117,6 +117,9 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     # This makes the dandischema pydantic model allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
 
+    # Ensure celery tasks run synchronously
+    CELERY_TASK_ALWAYS_EAGER = True
+
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
     pass
