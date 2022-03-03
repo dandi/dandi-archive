@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
@@ -7,7 +8,7 @@ import pytest
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
 
 
 @pytest.mark.django_db
