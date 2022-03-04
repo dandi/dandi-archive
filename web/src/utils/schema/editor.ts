@@ -2,10 +2,12 @@ import type { JSONSchema7 } from 'json-schema';
 
 import Vue from 'vue';
 import {
-  computed, reactive, ref, ComputedRef, Ref,
+  computed, reactive, ref, ComputedRef, Ref, watch,
 } from '@vue/composition-api';
 import { cloneDeep } from 'lodash';
 
+// eslint-disable-next-line import/no-cycle
+import { setModelLocalStorage } from '@/components/Meditor/localStorage';
 import { DandiModel, DandiModelUnion } from './types';
 import {
   computeBasicSchema,
@@ -15,7 +17,7 @@ import {
   populateEmptyArrays,
 } from './utils';
 // eslint-disable-next-line import/no-cycle
-import MeditorTransactionTracker from '../transactions';
+import { MeditorTransactionTracker } from '../transactions';
 
 /**
  * Manages the interface between the source data/schema, and the changes necessary for it to
@@ -63,6 +65,16 @@ class EditorInterface {
     ));
 
     this.transactionTracker = new MeditorTransactionTracker(this);
+
+    // save model to local storage on changes
+    watch(() => this.getModel(), (newModel: DandiModel) => {
+      setModelLocalStorage(newModel.id as string, newModel);
+    });
+  }
+
+  setModel(model: DandiModel) {
+    this.setBasicModel(filterModelWithSchema(model, this.basicSchema));
+    this.setComplexModel(filterModelWithSchema(model, this.complexSchema));
   }
 
   syncModel() {
