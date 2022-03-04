@@ -39,6 +39,10 @@ export default class MeditorTransactionTracker {
     this.editorInterface = editorInterface;
   }
 
+  getTransactionPointer() {
+    return this.transactionPointer;
+  }
+
   // record a new change to the metadata
   add(newModel: DandiModel, complex: boolean) {
     // if there's transactions ahead of this one (due to a previous undo), get rid of them

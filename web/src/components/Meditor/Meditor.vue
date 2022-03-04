@@ -169,9 +169,7 @@
               class="px-7"
             >
               <v-jsf-wrapper
-                :transaction-tracker="transactionTracker"
                 :prop-key="propKey"
-                :editor-interface="editorInterface"
                 :options="CommonVJSFOptions"
                 :readonly="readonly"
               />
@@ -200,9 +198,9 @@ import { dandiRest } from '@/rest';
 import store from '@/store';
 import { DandiModel, isJSONSchema } from '@/utils/schema/types';
 import { EditorInterface } from '@/utils/schema/editor';
-import MeditorTransactionTracker from '@/utils/transactions';
 
-import VJsfWrapper from '@/components/VJsfWrapper.vue';
+import VJsfWrapper from './VJsfWrapper.vue';
+import { editorInterface } from './state';
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
@@ -232,7 +230,7 @@ export default defineComponent({
     const invalidPermissionSnackbar = ref(false);
     const tab = ref(null);
 
-    const editorInterface = new EditorInterface(schema.value, model.value as DandiModel);
+    editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
     const {
       modelValid,
       basicSchema,
@@ -243,7 +241,8 @@ export default defineComponent({
       setComplexModelProp,
       complexModelValid,
       complexModelValidation,
-    } = editorInterface;
+      transactionTracker,
+    } = editorInterface.value;
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
       disableAll: readonly.value,
@@ -260,8 +259,6 @@ export default defineComponent({
       editMode: 'inline',
       hideReadOnly: true,
     }));
-
-    const transactionTracker = new MeditorTransactionTracker(editorInterface);
 
     // undo/redo functionality
     function undoChange() {
@@ -283,7 +280,7 @@ export default defineComponent({
       if (!id.value || !currentDandiset.value?.version) {
         return;
       }
-      const dandiset = editorInterface.getModel();
+      const dandiset = editorInterface.value.getModel();
 
       try {
         const { status, data } = await dandiRest.saveDandiset(
@@ -313,7 +310,7 @@ export default defineComponent({
     const yamlOutput = ref(false);
     const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
     const output = computed(() => {
-      const currentModel = editorInterface.getModel();
+      const currentModel = editorInterface.value.getModel();
       return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
     });
 

@@ -14,6 +14,8 @@ import {
   writeSubModelToMaster,
   populateEmptyArrays,
 } from './utils';
+// eslint-disable-next-line import/no-cycle
+import MeditorTransactionTracker from '../transactions';
 
 /**
  * Manages the interface between the source data/schema, and the changes necessary for it to
@@ -36,6 +38,8 @@ class EditorInterface {
   complexModelValid: ComputedRef<boolean>;
   complexModelValidation: Record<string, boolean> = {};
 
+  transactionTracker: MeditorTransactionTracker
+
   constructor(schema: JSONSchema7, model: DandiModel) {
     this.model = cloneDeep(model);
     this.schema = cloneDeep(schema);
@@ -57,6 +61,8 @@ class EditorInterface {
     this.complexModelValid = computed(() => Object.keys(this.complexModelValidation).every(
       (key) => !!this.complexModelValidation[key],
     ));
+
+    this.transactionTracker = new MeditorTransactionTracker(this);
   }
 
   syncModel() {
