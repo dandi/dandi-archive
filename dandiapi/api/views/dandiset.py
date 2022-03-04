@@ -24,7 +24,6 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -83,7 +82,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
