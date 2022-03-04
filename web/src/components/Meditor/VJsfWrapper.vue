@@ -10,7 +10,9 @@
             <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
             <v-jsf
               v-if="index >= 0"
-              :key="`${propKey}-${index}-${transactionTracker.transactionPointer}`"
+              :key="`
+                ${propKey}-${index}-${editorInterface.transactionTracker.getTransactionPointer()}
+              `"
               class="my-6"
               :value="currentItem"
               :schema="schema"
@@ -143,7 +145,7 @@
 
 <script lang="ts">
 import {
-  computed, defineComponent, ref, PropType, watch,
+  computed, defineComponent, ref, watch,
 } from '@vue/composition-api';
 
 import VJsf from '@koumoul/vjsf/lib/VJsf';
@@ -151,22 +153,13 @@ import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 import { isEqual } from 'lodash';
 
-import { EditorInterface } from '@/utils/schema/editor';
 import { DandiModel } from '@/utils/schema/types';
-import MeditorTransactionTracker from '@/utils/transactions';
+import { editorInterface } from './state';
 
 export default defineComponent({
   name: 'VjsfWrapper',
   components: { VJsf },
   props: {
-    editorInterface: {
-      type: Object as PropType<EditorInterface>,
-      required: true,
-    },
-    transactionTracker: {
-      type: Object as PropType<MeditorTransactionTracker>,
-      required: true,
-    },
     propKey: {
       type: String,
       required: true,
@@ -189,14 +182,14 @@ export default defineComponent({
     // extracts the subschema for the given propKey
     const schema = computed(
       // @ts-ignore
-      () => props.editorInterface.complexSchema.properties[props.propKey].items,
+      () => editorInterface.value.complexSchema.properties[props.propKey].items,
     );
 
     const currentModel = computed({
-      get: () => props.editorInterface.complexModel[props.propKey] as DandiModel[],
+      get: () => editorInterface.value.complexModel[props.propKey] as DandiModel[],
       set: (newModel: any) => {
-        props.editorInterface.setComplexModelProp(props.propKey, newModel);
-        props.transactionTracker.add(props.editorInterface.complexModel, true);
+        editorInterface.value.setComplexModelProp(props.propKey, newModel);
+        editorInterface.value.transactionTracker.add(editorInterface.value.complexModel, true);
       },
     });
 
@@ -221,7 +214,7 @@ export default defineComponent({
         index.value = currentValue.push(event);
       }
 
-      props.editorInterface.setComplexModelProp(props.propKey, currentValue);
+      editorInterface.value.setComplexModelProp(props.propKey, currentValue);
     }
 
     function clearForm() {
@@ -292,7 +285,7 @@ export default defineComponent({
 
     function formListener() {
       // record a new transaction whenever the current item is modified
-      props.transactionTracker.add(props.editorInterface.complexModel, true);
+      editorInterface.value.transactionTracker.add(editorInterface.value.complexModel, true);
     }
 
     return {
@@ -312,6 +305,7 @@ export default defineComponent({
       reorderItem,
       formListener,
       isModified,
+      editorInterface,
     };
   },
 });
