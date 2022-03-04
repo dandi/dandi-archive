@@ -62,9 +62,10 @@ def test_draft_version_metadata_computed(draft_version: Version):
         'version': draft_version.version,
         'id': f'DANDI:{draft_version.dandiset.identifier}/{draft_version.version}',
         'url': (
-            f'https://dandiarchive.org/dandiset/'
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{draft_version.dandiset.identifier}/{draft_version.version}'
         ),
+        'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': draft_version.dandiset.created.isoformat(),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
@@ -101,9 +102,10 @@ def test_published_version_metadata_computed(published_version: Version):
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
         'doi': f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}',  # noqa: E501
         'url': (
-            'https://dandiarchive.org/dandiset/'
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
+        'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': published_version.dandiset.created.isoformat(),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'assetsSummary': {
@@ -121,7 +123,7 @@ def test_published_version_metadata_computed(published_version: Version):
 def test_version_metadata_citation_draft(draft_version):
     name = draft_version.metadata['name'].rstrip('.')
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
     assert (
         draft_version.metadata['citation']
         == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
@@ -302,7 +304,7 @@ def test_version_publish_version(draft_version, asset):
         'version': publish_version.version,
         'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
         'url': (
-            f'https://dandiarchive.org/dandiset/{publish_version.dandiset.identifier}'
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
             f'/{publish_version.version}'
         ),
         'citation': publish_version.citation(publish_version.metadata),
@@ -477,7 +479,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'dateCreated': 'foobar',
     }
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'manifestLocation': [
@@ -488,6 +490,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
@@ -553,7 +556,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         ],
     }
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}/draft'
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
         'manifestLocation': [
@@ -564,6 +567,7 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
         'version': 'draft',
         'url': url,
+        'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
@@ -707,7 +711,7 @@ def test_version_rest_publish(api_client, user: User, draft_version: Version, as
         'version': published_version.version,
         'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
         'url': (
-            f'https://dandiarchive.org/dandiset/{draft_version.dandiset.identifier}'
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
             f'/{published_version.version}'
         ),
         'citation': published_version.citation(published_version.metadata),
