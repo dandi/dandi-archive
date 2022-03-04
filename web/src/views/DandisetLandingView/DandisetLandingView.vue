@@ -41,14 +41,15 @@
 
 <script lang="ts">
 import {
-  defineComponent, computed, watchEffect, watch,
+  defineComponent, computed, watchEffect, watch, onMounted,
 } from '@vue/composition-api';
-import { RawLocation } from 'vue-router';
+import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import store from '@/store';
 import { Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
+import { editorInterface } from '@/components/Meditor/state';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -58,6 +59,20 @@ export default defineComponent({
     DandisetMain,
     DandisetSearchField,
     DandisetSidebar,
+  },
+  // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking a
+  // link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
+  // "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
+  //
+  beforeRouteLeave(to: Route, from: Route, next: NavigationGuardNext) {
+    // Prompt user if they try to leave the DLP with unsaved changes in the meditor
+    if (!editorInterface.value.transactionTracker.isModified()
+    // eslint-disable-next-line no-alert
+    || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
+      next();
+      return true;
+    }
+    return false;
   },
   props: {
     identifier: {
@@ -120,6 +135,21 @@ export default defineComponent({
           navigateToVersion(draftVersion);
         }
       }
+    });
+
+    onMounted(() => {
+      // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
+      // clicking external links. The `beforeRouteLeave` function above handles "soft"
+      // page navigations, such as using the back/forward buttons or clicking a link
+      // to navigate elsewhere in the SPA.
+      window.addEventListener('beforeunload', (e) => {
+        // display a confirmation prompt if attempting to navigate away from the
+        // page with unsaved changes in the meditor
+        if (editorInterface.value.transactionTracker.isModified()) {
+          e.preventDefault();
+          e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
+        }
+      });
     });
 
     return {
