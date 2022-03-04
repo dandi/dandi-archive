@@ -373,7 +373,7 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
@@ -465,7 +465,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -571,7 +571,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -660,7 +660,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
