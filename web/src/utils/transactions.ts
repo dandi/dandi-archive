@@ -66,7 +66,6 @@ class MeditorTransactionTracker {
   }
 
   setTransactionPointer(value: number) {
-    this.transactionPointer.value = value + 1;
     this.transactionPointer.value = value;
   }
 
