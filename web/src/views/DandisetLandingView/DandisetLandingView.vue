@@ -66,7 +66,7 @@ export default defineComponent({
   //
   beforeRouteLeave(to: Route, from: Route, next: NavigationGuardNext) {
     // Prompt user if they try to leave the DLP with unsaved changes in the meditor
-    if (!editorInterface.value.transactionTracker.isModified()
+    if (!editorInterface.value?.transactionTracker?.isModified()
     // eslint-disable-next-line no-alert
     || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
       next();
@@ -145,7 +145,7 @@ export default defineComponent({
       window.addEventListener('beforeunload', (e) => {
         // display a confirmation prompt if attempting to navigate away from the
         // page with unsaved changes in the meditor
-        if (editorInterface.value.transactionTracker.isModified()) {
+        if (editorInterface.value?.transactionTracker?.isModified()) {
           e.preventDefault();
           e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
         }
