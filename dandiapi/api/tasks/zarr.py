@@ -150,6 +150,10 @@ def ingest_zarr_archive(
     # Save zarr after completion
     zarr.save()
 
+    # Save all assets that reference this zarr, so their metadata is updated
+    for asset in zarr.assets.all():
+        asset.save()
+
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
     for zarr in ZarrArchive.objects.filter(dandiset__id=dandiset_id):

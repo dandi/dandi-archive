@@ -1,5 +1,6 @@
 from typing import List
 
+from dandischema.digests.zarr import EMPTY_CHECKSUM
 import pytest
 
 from dandiapi.api.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
@@ -136,6 +137,31 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
     assert ZarrJSONChecksumSerializer().generate_listing() == ZarrChecksumListing(
         checksums=ZarrChecksums(directories=[], files=[]),
         md5='481a2f77ab786a0f45aafd5db0971caa',
+    )
+
+
+@pytest.mark.django_db
+def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_factory, asset_factory):
+    # Create zarr and asset
+    zarr: ZarrArchive = zarr_archive_factory()
+    zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a')
+    asset = asset_factory(zarr=zarr, blob=None, embargoed_blob=None)
+
+    # Assert asset size, metadata
+    assert asset.size == 0
+    assert asset.metadata['contentSize'] == 0
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+
+    # Compute checksum
+    ingest_zarr_archive(str(zarr.zarr_id))
+
+    # Assert asset size, metadata
+    asset.refresh_from_db()
+    assert asset.size == 100
+    assert asset.metadata['contentSize'] == 100
+    assert (
+        asset.metadata['digest']['dandi:dandi-zarr-checksum']
+        == ZarrChecksumFileUpdater(asset.zarr, '').read_checksum_file().md5
     )
 
 
