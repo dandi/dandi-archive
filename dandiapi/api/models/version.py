@@ -4,6 +4,7 @@ import datetime
 import logging
 
 from dandischema.metadata import aggregate_assets_summary
+from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
@@ -238,7 +239,8 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
-            'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
+            'repository': settings.DANDI_WEB_APP_URL,
+            'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',  # noqa
             'assetsSummary': summary,
             'dateCreated': self.dandiset.created.isoformat(),
         }

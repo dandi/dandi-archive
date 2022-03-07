@@ -369,11 +369,11 @@ def test_dandiset_rest_create(api_client, user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
@@ -389,7 +389,7 @@ def test_dandiset_rest_create(api_client, user):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': 'https://dandiarchive.org/',
+        'repository': settings.DANDI_WEB_APP_URL,
         'contributor': [
             {
                 'name': 'Doe, John',
@@ -461,11 +461,11 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -481,7 +481,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': 'https://dandiarchive.org/',
+        'repository': settings.DANDI_WEB_APP_URL,
         'contributor': [
             {
                 'name': 'Doe, John',
@@ -567,11 +567,11 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -586,7 +586,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': 'https://dandiarchive.org/',
+        'repository': settings.DANDI_WEB_APP_URL,
         'contributor': [
             {
                 'name': 'Jane Doe',
@@ -656,11 +656,11 @@ def test_dandiset_rest_create_embargoed(api_client, user):
 
     # Verify that computed metadata was injected
     year = datetime.now().year
-    url = f'https://dandiarchive.org/dandiset/{dandiset.identifier}/draft'
+    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'https://api.dandiarchive.org/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
@@ -676,7 +676,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:EmbargoedAccess'}],
-        'repository': 'https://dandiarchive.org/',
+        'repository': settings.DANDI_WEB_APP_URL,
         'contributor': [
             {
                 'name': 'Doe, John',
