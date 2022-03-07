@@ -15,7 +15,7 @@ services:
       - ${DOCKER_RABBITMQ_CONSOLE_PORT-15672}:15672
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:2022.3.3
     # When run with a TTY, minio prints credentials on startup
     tty: true
     command: ["server", "/data", "--console-address", ":${DOCKER_MINIO_CONSOLE_PORT-9001}"]
