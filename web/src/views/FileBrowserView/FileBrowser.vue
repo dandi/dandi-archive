@@ -153,7 +153,7 @@
                   >
                     <template #activator="{ on, attrs }">
                       <v-btn
-                        v-if="item.services.length"
+                        v-if="item.services && item.services.length"
                         color="primary"
                         icon
                         v-bind="attrs"
@@ -170,7 +170,10 @@
                         <v-icon>mdi-dots-vertical</v-icon>
                       </v-btn>
                     </template>
-                    <v-list dense>
+                    <v-list
+                      v-if="item && item.services"
+                      dense
+                    >
                       <v-subheader
                         v-if="item.services.length"
                         class="font-weight-medium"
@@ -267,7 +270,7 @@ export default defineComponent({
   },
   setup(props, ctx) {
     const location = ref(rootDirectory);
-    const itemToDelete = ref(null);
+    const itemToDelete = ref();
     const page = ref(1);
     const pages = ref(0);
     const updating = ref(false);

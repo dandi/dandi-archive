@@ -92,7 +92,7 @@
   </v-card>
 </template>
 
-<script>
+<script lang="ts">
 import { dandiRest, loggedIn } from '@/rest';
 import store from '@/store';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
@@ -108,13 +108,13 @@ export default defineComponent({
     const owners = computed(() => store.state.dandiset.owners);
 
     const manageOwnersDisabled = computed(() => {
-      if (dandiRest.user.admin) {
+      if (dandiRest.user?.admin) {
         return false;
       }
       if (!dandiRest.user || !owners.value) {
         return true;
       }
-      return !owners.value.find((owner) => owner.username === dandiRest.user.username);
+      return !owners.value.find((owner) => owner.username === dandiRest.user?.username);
     });
     const limitedOwners = computed(() => {
       if (!owners.value) {
