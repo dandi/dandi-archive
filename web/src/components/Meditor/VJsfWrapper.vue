@@ -153,7 +153,7 @@ import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 import { isEqual } from 'lodash';
 
-import { DandiModel } from '@/utils/schema/types';
+import { DandiModel } from './types';
 import { editorInterface } from './state';
 
 export default defineComponent({

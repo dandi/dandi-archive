@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import { computed } from '@vue/composition-api';
-import { EditorInterface } from '@/utils/schema/editor';
+import { EditorInterface } from './editor';
 
 const state = {
   editorInterface: {} as EditorInterface,

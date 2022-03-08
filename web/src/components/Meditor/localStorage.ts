@@ -1,7 +1,7 @@
 import { dandiRest } from '@/rest';
-import { DandiModel } from '@/utils/schema/types';
+import { DandiModel } from './types';
 // eslint-disable-next-line import/no-cycle
-import { MeditorTransaction } from '@/utils/transactions';
+import { MeditorTransaction } from './transactions';
 
 function getModelLocalStorage(identifier: string) {
   const model = localStorage.getItem(`${dandiRest.user?.username}-${identifier}-model`);

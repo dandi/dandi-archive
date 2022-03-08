@@ -1,13 +1,14 @@
 import { ref, Ref, watch } from '@vue/composition-api';
 import { cloneDeep, isEqual } from 'lodash';
 // eslint-disable-next-line import/no-cycle
-import { EditorInterface } from '@/utils/schema/editor';
-// eslint-disable-next-line import/no-cycle
 import {
   setTransactionPointerLocalStorage,
   setTransactionsLocalStorage,
-} from '@/components/Meditor/localStorage';
-import { DandiModel } from './schema/types';
+} from './localStorage';
+// eslint-disable-next-line import/no-cycle
+import { EditorInterface } from './editor';
+// eslint-disable-next-line import/no-cycle
+import { DandiModel } from './types';
 
 interface MeditorTransaction {
   field: string,

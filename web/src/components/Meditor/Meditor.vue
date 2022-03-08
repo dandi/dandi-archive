@@ -234,8 +234,8 @@ import '@koumoul/vjsf/lib/VJsf.css';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
-import { DandiModel, isJSONSchema } from '@/utils/schema/types';
-import { EditorInterface } from '@/utils/schema/editor';
+import { DandiModel, isJSONSchema } from './types';
+import { EditorInterface } from './editor';
 
 import {
   clearLocalStorage,
@@ -243,7 +243,7 @@ import {
   getModelLocalStorage,
   getTransactionPointerLocalStorage,
   getTransactionsLocalStorage,
-} from '@/components/Meditor/localStorage';
+} from './localStorage';
 import VJsfWrapper from './VJsfWrapper.vue';
 import { editorInterface } from './state';
 

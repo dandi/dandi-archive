@@ -7,7 +7,7 @@ import {
 import { cloneDeep } from 'lodash';
 
 // eslint-disable-next-line import/no-cycle
-import { setModelLocalStorage } from '@/components/Meditor/localStorage';
+import { setModelLocalStorage } from './localStorage';
 import { DandiModel, DandiModelUnion } from './types';
 import {
   computeBasicSchema,
@@ -17,7 +17,7 @@ import {
   populateEmptyArrays,
 } from './utils';
 // eslint-disable-next-line import/no-cycle
-import { MeditorTransactionTracker } from '../transactions';
+import { MeditorTransactionTracker } from './transactions';
 
 /**
  * Manages the interface between the source data/schema, and the changes necessary for it to
