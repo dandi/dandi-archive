@@ -166,10 +166,21 @@ class BaseZarrArchive(TimeStampedModel):
         get_latest_by = 'modified'
         abstract = True
 
+    # The status of the zarr ingestion (checksums, size, file count)
+    class Status(models.TextChoices):
+        PENDING = 'Pending'
+        INGESTING = 'Ingesting'
+        COMPLETE = 'Complete'
+
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
+    status = models.CharField(
+        max_length=max(len(choice[0]) for choice in Status.choices),
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
 
     @property
     def upload_in_progress(self) -> bool:
