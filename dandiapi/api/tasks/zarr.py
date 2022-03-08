@@ -3,7 +3,8 @@ from typing import Optional
 
 import boto3
 from celery import shared_task
-from django.db.transaction import atomic
+from celery.utils.log import get_task_logger
+from django.db import DatabaseError, transaction
 
 from dandiapi.api.models.zarr import ZarrArchive
 from dandiapi.api.storage import get_storage
@@ -20,6 +21,9 @@ try:
 except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
+
+
+logger = get_task_logger(__name__)
 
 
 class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
@@ -113,46 +117,70 @@ def get_client():
 
 
 @shared_task
-@atomic
 def ingest_zarr_archive(
     zarr_id: str, no_checksum: bool = False, no_size: bool = False, no_count: bool = False
 ):
     client = get_client()
-    zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
 
-    # Reset before compute
-    if not no_size:
-        zarr.size = 0
-    if not no_count:
-        zarr.file_count = 0
-
-    # Instantiate updater and add files as they come in
-    updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
-    for files in yield_files(client, zarr):
-        # Update size and file count
-        if not no_size:
-            zarr.size += sum((file['Size'] for file in files))
-        if not no_count:
-            zarr.file_count += len(files)
-
-        # Update checksums
-        if not no_checksum:
-            updater.update_file_checksums(
-                [
-                    ZarrChecksum(
-                        md5=file['ETag'].strip('"'),
-                        path=file['Key'].replace(zarr.s3_path(''), ''),
-                    )
-                    for file in files
-                ]
+    # Set zarr status before ingest
+    with transaction.atomic():
+        try:
+            zarr: ZarrArchive = ZarrArchive.objects.select_for_update(nowait=True).get(
+                zarr_id=zarr_id
             )
+            zarr.status = ZarrArchive.Status.INGESTING
+            zarr.save(update_fields=['status'])
+        except DatabaseError:
+            logger.info('Zarr archive already being ingested. Exiting...')
+            return
 
-    # Save zarr after completion
-    zarr.save()
+    # Lock zarr until finished
+    with transaction.atomic():
+        try:
+            zarr: ZarrArchive = ZarrArchive.objects.select_for_update(nowait=True).get(
+                zarr_id=zarr_id
+            )
+        except DatabaseError:
+            logger.info('Zarr archive already being ingested. Exiting...')
+            return
 
-    # Save all assets that reference this zarr, so their metadata is updated
-    for asset in zarr.assets.all():
-        asset.save()
+        # Reset before compute
+        if not no_size:
+            zarr.size = 0
+        if not no_count:
+            zarr.file_count = 0
+
+        # Instantiate updater and add files as they come in
+        updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
+        for files in yield_files(client, zarr):
+            # Update size and file count
+            if not no_size:
+                zarr.size += sum((file['Size'] for file in files))
+            if not no_count:
+                zarr.file_count += len(files)
+
+            # Update checksums
+            if not no_checksum:
+                updater.update_file_checksums(
+                    [
+                        ZarrChecksum(
+                            md5=file['ETag'].strip('"'),
+                            path=file['Key'].replace(zarr.s3_path(''), ''),
+                        )
+                        for file in files
+                    ]
+                )
+
+        # Save zarr after completion
+        zarr.save()
+
+        # Save all assets that reference this zarr, so their metadata is updated
+        for asset in zarr.assets.all():
+            asset.save()
+
+        # Set status
+        zarr.status = ZarrArchive.Status.COMPLETE
+        zarr.save(update_fields=['status'])
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
