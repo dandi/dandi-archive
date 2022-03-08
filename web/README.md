@@ -31,3 +31,9 @@ For example, to migrate to schema version 0.5.1, run:
 ```bash
 yarn migrate 0.5.1
 ```
+
+
+### Environment Variables
+
+- VUE_APP_SERVER_DOWNTIME_MESSAGE
+  - A custom error message to be displayed when the backend server can't be reached
