@@ -93,6 +93,13 @@ class DandisetDetailSerializer(DandisetSerializer):
     draft_version = VersionSerializer(read_only=True)
 
 
+class DandisetQueryParameterSerializer(serializers.Serializer):
+    draft = serializers.BooleanField(default=True)
+    empty = serializers.BooleanField(default=True)
+    embargoed = serializers.BooleanField(default=True)
+    user = serializers.CharField(required=False)
+
+
 class VersionDetailSerializer(VersionSerializer):
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
 

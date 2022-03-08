@@ -30,6 +30,7 @@ from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
+    DandisetQueryParameterSerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
@@ -97,18 +98,22 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         queryset = Dandiset.objects
         if self.action == 'list':
             queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+
+            query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
+            query_serializer.is_valid(raise_exception=True)
+
             # TODO: This will filter the dandisets list if there is a query parameter user=me.
             # This is not a great solution but it is needed for the My Dandisets page.
-            user_kwarg = self.request.query_params.get('user', None)
+            user_kwarg = query_serializer.validated_data.get('user')
             if user_kwarg == 'me':
                 # Replace the original, rather inefficient queryset with a more specific one
                 queryset = get_objects_for_user(
                     self.request.user, 'owner', Dandiset, with_superuser=False
                 ).order_by('created')
-            # Same deal for filtering out draft, empty, or embargoed dandisets
-            show_draft = self.request.query_params.get('draft', 'true') == 'true'
-            show_empty = self.request.query_params.get('empty', 'true') == 'true'
-            show_embargoed = self.request.query_params.get('embargoed', 'true') == 'true'
+
+            show_draft: bool = query_serializer.validated_data['draft']
+            show_empty: bool = query_serializer.validated_data['empty']
+            show_embargoed: bool = query_serializer.validated_data['embargoed']
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
