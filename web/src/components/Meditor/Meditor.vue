@@ -4,6 +4,44 @@
     v-page-title="model.name"
     class="overflow-hidden"
   >
+    <v-dialog
+      v-model="loadFromLocalStoragePrompt"
+      persistent
+      max-width="60vh"
+    >
+      <v-card class="pb-3">
+        <v-card-title class="text-h5 font-weight-light">
+          Attention
+        </v-card-title>
+        <v-divider class="my-3" />
+        <v-card-text>
+          You have previously edited this dandiset and have unsaved data.
+        </v-card-text>
+        <v-card-text>
+          Would you like to load that data?
+        </v-card-text>
+
+        <v-card-text class="font-weight-bold">
+          WARNING: this will overwrite any changes that were made by others since your last edit.
+        </v-card-text>
+
+        <v-card-actions>
+          <v-btn
+            color="error"
+            depressed
+            @click="loadDataFromLocalStorage()"
+          >
+            Yes
+          </v-btn>
+          <v-btn
+            depressed
+            @click="discardDataFromLocalStorage()"
+          >
+            No, discard it
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-row>
       <v-col>
         <v-card
@@ -169,9 +207,7 @@
               class="px-7"
             >
               <v-jsf-wrapper
-                :transaction-tracker="transactionTracker"
                 :prop-key="propKey"
-                :editor-interface="editorInterface"
                 :options="CommonVJSFOptions"
                 :readonly="readonly"
               />
@@ -187,7 +223,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import {
-  defineComponent, ref, computed, ComputedRef,
+  defineComponent, ref, computed, ComputedRef, onMounted,
 } from '@vue/composition-api';
 
 import jsYaml from 'js-yaml';
@@ -198,11 +234,18 @@ import '@koumoul/vjsf/lib/VJsf.css';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
-import { DandiModel, isJSONSchema } from '@/utils/schema/types';
-import { EditorInterface } from '@/utils/schema/editor';
-import MeditorTransactionTracker from '@/utils/transactions';
+import { DandiModel, isJSONSchema } from './types';
+import { EditorInterface } from './editor';
 
-import VJsfWrapper from '@/components/VJsfWrapper.vue';
+import {
+  clearLocalStorage,
+  dataInLocalStorage,
+  getModelLocalStorage,
+  getTransactionPointerLocalStorage,
+  getTransactionsLocalStorage,
+} from './localStorage';
+import VJsfWrapper from './VJsfWrapper.vue';
+import { editorInterface } from './state';
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
@@ -226,13 +269,17 @@ export default defineComponent({
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const id = computed(() => currentDandiset.value?.dandiset.identifier);
     const schema: ComputedRef<JSONSchema7> = computed(() => store.state.dandiset.schema);
-    const model = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
+    const model = computed(() => currentDandiset.value?.metadata);
     const readonly = computed(() => !store.getters.dandiset.userCanModifyDandiset);
+    const isDataInLocalStorage = computed(
+      () => (model.value ? dataInLocalStorage(model.value.id) : false),
+    );
 
     const invalidPermissionSnackbar = ref(false);
     const tab = ref(null);
+    const loadFromLocalStoragePrompt = ref(false);
 
-    const editorInterface = new EditorInterface(schema.value, model.value as DandiModel);
+    editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
     const {
       modelValid,
       basicSchema,
@@ -243,7 +290,8 @@ export default defineComponent({
       setComplexModelProp,
       complexModelValid,
       complexModelValidation,
-    } = editorInterface;
+      transactionTracker,
+    } = editorInterface.value;
     const CommonVJSFOptions = computed(() => ({
       initialValidation: 'all',
       disableAll: readonly.value,
@@ -260,8 +308,6 @@ export default defineComponent({
       editMode: 'inline',
       hideReadOnly: true,
     }));
-
-    const transactionTracker = new MeditorTransactionTracker(editorInterface);
 
     // undo/redo functionality
     function undoChange() {
@@ -280,10 +326,10 @@ export default defineComponent({
     const modified = computed(() => transactionTracker.isModified());
 
     async function save() {
-      if (!id.value || !currentDandiset.value?.version) {
+      if (!id.value || !model.value || !currentDandiset.value?.version) {
         return;
       }
-      const dandiset = editorInterface.getModel();
+      const dandiset = editorInterface.value?.getModel();
 
       try {
         const { status, data } = await dandiRest.saveDandiset(
@@ -291,6 +337,7 @@ export default defineComponent({
         );
 
         if (status === 200) {
+          clearLocalStorage(model.value.id);
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
             await store.dispatch.dandiset.fetchDandiset({
@@ -313,7 +360,7 @@ export default defineComponent({
     const yamlOutput = ref(false);
     const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
     const output = computed(() => {
-      const currentModel = editorInterface.getModel();
+      const currentModel = editorInterface.value?.getModel();
       return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
     });
 
@@ -333,6 +380,35 @@ export default defineComponent({
     const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
       (p) => renderField((complexSchema as any).properties[p]),
     );
+
+    function loadDataFromLocalStorage() {
+      if (!model.value) {
+        return;
+      }
+      // load previous meditor data from localStorage
+      editorInterface.value?.setModel(getModelLocalStorage(model.value.id));
+      editorInterface.value?.transactionTracker.setTransactions(
+        getTransactionsLocalStorage(model.value.id),
+      );
+      editorInterface.value?.transactionTracker.setTransactionPointer(
+        getTransactionPointerLocalStorage(model.value.id),
+      );
+      loadFromLocalStoragePrompt.value = false;
+    }
+    function discardDataFromLocalStorage() {
+      if (!model.value) {
+        return;
+      }
+      clearLocalStorage(model.value.id);
+      loadFromLocalStoragePrompt.value = false;
+    }
+    onMounted(() => {
+      // On mount, detect if there is unsaved data stored in local storage and ask the user
+      // if they would like to restore it
+      if (isDataInLocalStorage.value) {
+        loadFromLocalStoragePrompt.value = true;
+      }
+    });
 
     return {
       allModelsValid: modelValid,
@@ -368,6 +444,10 @@ export default defineComponent({
 
       editorInterface,
       transactionTracker,
+
+      loadFromLocalStoragePrompt,
+      loadDataFromLocalStorage,
+      discardDataFromLocalStorage,
     };
   },
 });

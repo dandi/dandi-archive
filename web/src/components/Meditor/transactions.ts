@@ -1,6 +1,14 @@
-import { EditorInterface } from '@/utils/schema/editor';
-import { DandiModel } from '@/utils/schema/types';
+import { ref, Ref, watch } from '@vue/composition-api';
 import { cloneDeep, isEqual } from 'lodash';
+// eslint-disable-next-line import/no-cycle
+import {
+  setTransactionPointerLocalStorage,
+  setTransactionsLocalStorage,
+} from './localStorage';
+// eslint-disable-next-line import/no-cycle
+import { EditorInterface } from './editor';
+// eslint-disable-next-line import/no-cycle
+import { DandiModel } from './types';
 
 interface MeditorTransaction {
   field: string,
@@ -13,12 +21,12 @@ interface MeditorTransaction {
 // to the stack before they start to be discarded
 const MAX_TRANSACTION_STACK_SIZE = 500;
 
-export default class MeditorTransactionTracker {
+class MeditorTransactionTracker {
   private transactions: MeditorTransaction[];
 
   // a "pointer" to the current transaction, i.e. the index
   // of the current transaction in the transactions array
-  private transactionPointer: number;
+  private transactionPointer: Ref<number>;
 
   // true if transactions are discarded due to reaching the max stack size
   private lostTransactions: boolean;
@@ -31,21 +39,52 @@ export default class MeditorTransactionTracker {
   public currentComplexModel: DandiModel;
 
   constructor(editorInterface: EditorInterface) {
-    this.transactions = [];
-    this.transactionPointer = -1;
-    this.lostTransactions = false;
     this.currentBasicModel = cloneDeep(editorInterface.basicModel.value);
     this.currentComplexModel = cloneDeep(editorInterface.complexModel);
     this.editorInterface = editorInterface;
+
+    this.lostTransactions = false;
+
+    this.transactions = [];
+
+    this.transactionPointer = ref(-1);
+
+    // save transaction stack state to localStorage on changes
+    watch(() => this.transactionPointer.value, () => {
+      setTransactionsLocalStorage(
+        this.editorInterface.basicModel.value.id as string,
+        this.transactions,
+      );
+      setTransactionPointerLocalStorage(
+        this.editorInterface.basicModel.value.id as string,
+        this.transactionPointer.value,
+      );
+    });
+  }
+
+  getTransactionPointer() {
+    return this.transactionPointer.value;
+  }
+
+  setTransactionPointer(value: number) {
+    this.transactionPointer.value = value;
+  }
+
+  getTransactions() {
+    return this.transactions;
+  }
+
+  setTransactions(transactions: MeditorTransaction[]) {
+    this.transactions = transactions;
   }
 
   // record a new change to the metadata
   add(newModel: DandiModel, complex: boolean) {
     // if there's transactions ahead of this one (due to a previous undo), get rid of them
-    if (this.transactionPointer < this.transactions.length - 1) {
+    if (this.transactionPointer.value < this.transactions.length - 1) {
       this.transactions.splice(
-        this.transactionPointer + 1,
-        this.transactions.length - (this.transactionPointer + 1),
+        this.transactionPointer.value + 1,
+        this.transactions.length - (this.transactionPointer.value + 1),
       );
     }
 
@@ -66,7 +105,7 @@ export default class MeditorTransactionTracker {
           this.transactions.shift();
           this.lostTransactions = true;
         } else {
-          this.transactionPointer += 1;
+          this.transactionPointer.value += 1;
         }
       }
     });
@@ -80,69 +119,74 @@ export default class MeditorTransactionTracker {
 
   // undo a change. Returns true if the change was to a complex form, false if to a basic form.
   undo(): boolean|null {
-    if (this.transactionPointer < 0) {
+    if (this.transactionPointer.value < 0) {
       return null;
     }
 
-    const currentModel = this.transactions[this.transactionPointer].complex
+    const currentModel = this.transactions[this.transactionPointer.value].complex
       ? this.currentComplexModel : this.currentBasicModel;
 
     currentModel[
-      this.transactions[this.transactionPointer].field
-    ] = this.transactions[this.transactionPointer].oldValue;
+      this.transactions[this.transactionPointer.value].field
+    ] = this.transactions[this.transactionPointer.value].oldValue;
 
     // make sure to apply the changes to the correct model
-    if (this.transactions[this.transactionPointer].complex) {
+    if (this.transactions[this.transactionPointer.value].complex) {
       this.editorInterface.setComplexModel(currentModel);
     } else {
       this.editorInterface.setBasicModel(currentModel);
     }
 
-    this.transactionPointer -= 1;
+    this.transactionPointer.value -= 1;
 
-    return this.transactions[this.transactionPointer + 1].complex;
+    return this.transactions[this.transactionPointer.value + 1].complex;
   }
 
   // redo a change. Returns true if the change was to a complex form, false if to a basic form.
   redo(): boolean|null {
-    if (this.transactionPointer === this.transactions.length - 1) {
+    if (this.transactionPointer.value === this.transactions.length - 1) {
       return null;
     }
 
-    this.transactionPointer += 1;
+    this.transactionPointer.value += 1;
 
-    const currentModel = this.transactions[this.transactionPointer].complex
+    const currentModel = this.transactions[this.transactionPointer.value].complex
       ? this.currentComplexModel : this.currentBasicModel;
 
     currentModel[
-      this.transactions[this.transactionPointer].field
-    ] = this.transactions[this.transactionPointer].newValue;
+      this.transactions[this.transactionPointer.value].field
+    ] = this.transactions[this.transactionPointer.value].newValue;
 
     // make sure to apply the changes to the correct model
-    if (this.transactions[this.transactionPointer].complex) {
+    if (this.transactions[this.transactionPointer.value].complex) {
       this.editorInterface.setComplexModel(currentModel);
     } else {
       this.editorInterface.setBasicModel(currentModel);
     }
 
-    return this.transactions[this.transactionPointer].complex;
+    return this.transactions[this.transactionPointer.value].complex;
   }
 
   areTransactionsAhead(): boolean {
-    return this.transactionPointer < this.transactions.length - 1;
+    return this.transactionPointer.value < this.transactions.length - 1;
   }
 
   areTransactionsBehind(): boolean {
-    return this.transactionPointer > -1;
+    return this.transactionPointer.value > -1;
   }
 
   isModified(): boolean {
-    return this.transactionPointer > -1 || this.lostTransactions;
+    return this.transactionPointer.value > -1 || this.lostTransactions;
   }
 
   reset() {
     this.transactions = [];
-    this.transactionPointer = -1;
+    this.transactionPointer.value = -1;
     this.lostTransactions = false;
   }
 }
+
+export {
+  MeditorTransaction,
+  MeditorTransactionTracker,
+};
