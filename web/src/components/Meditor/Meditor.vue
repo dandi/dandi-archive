@@ -326,7 +326,7 @@ export default defineComponent({
     const modified = computed(() => transactionTracker.isModified());
 
     async function save() {
-      if (!id.value || !currentDandiset.value?.version) {
+      if (!id.value || !model.value || !currentDandiset.value?.version) {
         return;
       }
       const dandiset = editorInterface.value?.getModel();
@@ -337,7 +337,7 @@ export default defineComponent({
         );
 
         if (status === 200) {
-          clearLocalStorage(model.value!.id);
+          clearLocalStorage(model.value.id);
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
             await store.dispatch.dandiset.fetchDandiset({
@@ -382,25 +382,31 @@ export default defineComponent({
     );
 
     function loadDataFromLocalStorage() {
+      if (!model.value) {
+        return;
+      }
       // load previous meditor data from localStorage
-      editorInterface.value?.setModel(getModelLocalStorage(model.value!.id));
+      editorInterface.value?.setModel(getModelLocalStorage(model.value.id));
       editorInterface.value?.transactionTracker.setTransactions(
-        getTransactionsLocalStorage(model.value!.id),
+        getTransactionsLocalStorage(model.value.id),
       );
       editorInterface.value?.transactionTracker.setTransactionPointer(
-        getTransactionPointerLocalStorage(model.value!.id),
+        getTransactionPointerLocalStorage(model.value.id),
       );
       loadFromLocalStoragePrompt.value = false;
     }
     function discardDataFromLocalStorage() {
-      clearLocalStorage(model.value!.id);
+      if (!model.value) {
+        return;
+      }
+      clearLocalStorage(model.value.id);
       loadFromLocalStoragePrompt.value = false;
     }
     onMounted(() => {
       // On mount, detect if there is unsaved data stored in local storage and ask the user
       // if they would like to restore it
       if (isDataInLocalStorage.value) {
-        loadFromLocalStoragePrompt!.value = true;
+        loadFromLocalStoragePrompt.value = true;
       }
     });
 
