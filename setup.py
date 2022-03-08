@@ -60,7 +60,7 @@ setup(
         'pydantic',
         'boto3[s3]',
         # Production-only
-        'django-composed-configuration[prod]>=0.19.2',
+        'django-composed-configuration[prod]>=0.20.0',
         'django-s3-file-field[boto3]==0.1.1',
         'django-storages[boto3]',
         'gunicorn',
@@ -71,7 +71,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.19.2',
+            'django-composed-configuration[dev]>=0.20.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',
