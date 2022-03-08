@@ -68,7 +68,9 @@ jobs:
         working-directory: web
 
       - name: Lint web app
-        run: yarn run lint --no-fix --max-warnings=0
+        run: |
+          yarn run lint --no-fix --max-warnings=0
+          yarn run lint:templates
         working-directory: web
 
       - name: Set up Python
