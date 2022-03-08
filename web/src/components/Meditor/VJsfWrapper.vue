@@ -186,10 +186,10 @@ export default defineComponent({
     );
 
     const currentModel = computed({
-      get: () => editorInterface.value.complexModel[props.propKey] as DandiModel[],
+      get: () => editorInterface.value?.complexModel[props.propKey] as DandiModel[],
       set: (newModel: any) => {
-        editorInterface.value.setComplexModelProp(props.propKey, newModel);
-        editorInterface.value.transactionTracker.add(editorInterface.value.complexModel, true);
+        editorInterface.value?.setComplexModelProp(props.propKey, newModel);
+        editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
       },
     });
 
@@ -214,7 +214,7 @@ export default defineComponent({
         index.value = currentValue.push(event);
       }
 
-      editorInterface.value.setComplexModelProp(props.propKey, currentValue);
+      editorInterface.value?.setComplexModelProp(props.propKey, currentValue);
     }
 
     function clearForm() {
@@ -285,7 +285,7 @@ export default defineComponent({
 
     function formListener() {
       // record a new transaction whenever the current item is modified
-      editorInterface.value.transactionTracker.add(editorInterface.value.complexModel, true);
+      editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
     }
 
     return {

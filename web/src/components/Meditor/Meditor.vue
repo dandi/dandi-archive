@@ -329,7 +329,7 @@ export default defineComponent({
       if (!id.value || !currentDandiset.value?.version) {
         return;
       }
-      const dandiset = editorInterface.value.getModel();
+      const dandiset = editorInterface.value?.getModel();
 
       try {
         const { status, data } = await dandiRest.saveDandiset(
@@ -360,7 +360,7 @@ export default defineComponent({
     const yamlOutput = ref(false);
     const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
     const output = computed(() => {
-      const currentModel = editorInterface.value.getModel();
+      const currentModel = editorInterface.value?.getModel();
       return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
     });
 
@@ -383,18 +383,18 @@ export default defineComponent({
 
     function loadDataFromLocalStorage() {
       // load previous meditor data from localStorage
-      editorInterface.value.setModel(getModelLocalStorage(model.value!.id));
-      editorInterface.value.transactionTracker.setTransactions(
+      editorInterface.value?.setModel(getModelLocalStorage(model.value!.id));
+      editorInterface.value?.transactionTracker.setTransactions(
         getTransactionsLocalStorage(model.value!.id),
       );
-      editorInterface.value.transactionTracker.setTransactionPointer(
+      editorInterface.value?.transactionTracker.setTransactionPointer(
         getTransactionPointerLocalStorage(model.value!.id),
       );
       loadFromLocalStoragePrompt.value = false;
     }
     function discardDataFromLocalStorage() {
       clearLocalStorage(model.value!.id);
-      loadFromLocalStoragePrompt!.value = false;
+      loadFromLocalStoragePrompt.value = false;
     }
     onMounted(() => {
       // On mount, detect if there is unsaved data stored in local storage and ask the user
