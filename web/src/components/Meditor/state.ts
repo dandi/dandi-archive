@@ -2,6 +2,10 @@ import Vue from 'vue';
 import { computed } from '@vue/composition-api';
 import { EditorInterface } from './editor';
 
+// NOTE: it would be better to use a single ref here instead of seperate state/computed
+// variables, but doing so introduces a strange bug where editorInterface.basicModel is
+// un-reffed immediately after instantiation. This does not occur when using a computed
+// variable with a seperate state object, so we do that here as a workaround.
 const state = {
   editorInterface: null as EditorInterface | null,
 };
