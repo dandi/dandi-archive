@@ -77,7 +77,7 @@
           />
         </div>
         <div v-if="embargoed===false">
-          <v-combobox
+          <v-select
             v-model="license"
             :items="dandiLicenses"
             label="License* (required if not embargo)"
