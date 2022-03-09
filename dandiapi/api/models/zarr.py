@@ -239,14 +239,8 @@ class BaseZarrArchive(TimeStampedModel):
                 raise ValidationError(
                     f'File {upload.path} ETag {upload.actual_etag()} does not match reported checksum {upload.etag}.'  # noqa: E501
                 )
-        ZarrChecksumUpdater(self).update_file_checksums(
-            [upload.to_checksum() for upload in active_uploads]
-        )
-        for upload in active_uploads:
-            self.size += upload.size()
-        self.file_count += len(active_uploads)
+
         active_uploads.delete()
-        self.save()
 
     def cancel_upload(self):
         active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
