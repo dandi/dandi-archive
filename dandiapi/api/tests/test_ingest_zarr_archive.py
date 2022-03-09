@@ -1,6 +1,7 @@
 from typing import List
 
 from dandischema.digests.zarr import EMPTY_CHECKSUM
+from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
@@ -14,6 +15,57 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumUpdater,
     ZarrJSONChecksumSerializer,
 )
+
+
+@pytest.mark.django_db
+def test_ingest_zarr_archive_rest(authenticated_api_client, zarr_archive: ZarrArchive, user):
+    assign_perm('owner', user, zarr_archive.dandiset)
+
+    # Check status is pending
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.status_code == 200
+    assert resp.json()['status'] == ZarrArchive.Status.PENDING
+
+    # Start ingest
+    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
+    assert resp.status_code == 204
+
+    # Check status is valid
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.status_code == 200
+    assert resp.json()['status'] == ZarrArchive.Status.COMPLETE
+
+
+@pytest.mark.django_db
+def test_ingest_zarr_archive_rest_already_active(
+    authenticated_api_client, zarr_archive: ZarrArchive, user
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
+
+    # Emulate ongoing ingest
+    zarr_archive.status = ZarrArchive.Status.INGESTING
+    zarr_archive.save()
+
+    # Ensure second ingest fails
+    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
+    assert resp.status_code == 400
+    assert resp.json() == 'Ingestion already running.'
+
+
+@pytest.mark.django_db
+def test_ingest_zarr_archive_rest_upload_active(
+    authenticated_api_client, zarr_archive: ZarrArchive, zarr_upload_file_factory, user
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
+
+    # Create active upload
+    zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar')
+    assert zarr_archive.upload_in_progress
+
+    # Check that ingestion isn't started
+    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
+    assert resp.status_code == 400
+    assert resp.json() == 'Upload in progress. Please cancel or complete this existing upload.'
 
 
 @pytest.mark.django_db
