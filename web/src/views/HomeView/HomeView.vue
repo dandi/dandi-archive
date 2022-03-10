@@ -47,7 +47,7 @@
   </v-container>
 </template>
 
-<script lang="ts">
+<script>
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 

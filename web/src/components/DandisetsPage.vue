@@ -1,40 +1,13 @@
 <template>
   <div v-page-title="pageTitle">
     <v-toolbar color="grey darken-2 white--text">
-      <v-menu
-        v-if="!user"
-        offset-y
-        :close-on-content-click="false"
-      >
-        <template #activator="{ on, attrs }">
-          <v-icon
-            dark
-            v-bind="attrs"
-            v-on="on"
-          >
-            mdi-cog
-          </v-icon>
-        </template>
-        <v-list>
-          <v-list-item>
-            <v-list-item-title>Show:</v-list-item-title>
-          </v-list-item>
-          <v-list-item>
-            <v-switch
-              v-model="showDrafts"
-              label="Drafts"
-              dense
-            />
-          </v-list-item>
-          <v-list-item>
-            <v-switch
-              v-model="showEmpty"
-              label="Empty Dandisets"
-              dense
-            />
-          </v-list-item>
-        </v-list>
-      </v-menu>
+      <v-toolbar-title class="d-none d-md-block">
+        {{ title }}
+      </v-toolbar-title>
+      <v-divider
+        class="d-none d-md-block"
+        vertical
+      />
       <div class="mx-6">
         Sort By:
       </div>
@@ -98,7 +71,7 @@ import {
 } from '@vue/composition-api';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { dandiRest } from '@/rest';
+import { publishRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
 
 const DANDISETS_PER_PAGE = 8;
@@ -115,10 +88,6 @@ const sortingOptions = [
   {
     name: 'Name',
     djangoField: 'name',
-  },
-  {
-    name: 'Size',
-    djangoField: 'size',
   },
 ];
 
@@ -146,8 +115,6 @@ export default defineComponent({
     // https://next.router.vuejs.org/api/#useroute
     const route = ctx.root.$route;
 
-    const showDrafts = ref(true);
-    const showEmpty = ref(false);
     const sortOption = ref(Number(route.query.sortOption) || 0);
     const sortDir = ref(Number(route.query.sortDir || -1));
     const page = ref(Number(route.query.page) || 1);
@@ -160,15 +127,12 @@ export default defineComponent({
     const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
     watchEffect(async () => {
       const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
-      const response = await dandiRest.dandisets({
+      const response = await publishRest.dandisets({
         page: page.value,
         page_size: DANDISETS_PER_PAGE,
         ordering,
         user: props.user ? 'me' : null,
         search: props.search ? route.query.search : null,
-        draft: props.user ? true : showDrafts.value,
-        empty: props.user ? true : showEmpty.value,
-        embargoed: props.user,
       });
       djangoDandisetRequest.value = response.data;
     });
@@ -181,10 +145,6 @@ export default defineComponent({
     const pages = computed(() => {
       const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
       return Math.ceil(totalDandisets / DANDISETS_PER_PAGE) || 1;
-    });
-
-    watch([showDrafts, showEmpty], () => {
-      page.value = 1;
     });
 
     const queryParams = computed(() => ({
@@ -218,8 +178,6 @@ export default defineComponent({
     }
 
     return {
-      showDrafts,
-      showEmpty,
       sortingOptions,
       sortOption,
       sortDir,

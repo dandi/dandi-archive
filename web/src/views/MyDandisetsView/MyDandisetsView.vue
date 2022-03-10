@@ -11,7 +11,7 @@
   </DandisetsPage>
 </template>
 
-<script lang="ts">
+<script>
 import DandisetsPage from '@/components/DandisetsPage.vue';
 
 export default {

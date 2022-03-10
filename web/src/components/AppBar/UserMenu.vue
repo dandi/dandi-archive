@@ -19,7 +19,7 @@
       id="user-menu"
       dense
     >
-      <ApiKeyItem v-if="approved" />
+      <ApiKeyItem />
       <v-list-item @click="logout">
         <v-list-item-content>
           Logout
@@ -32,22 +32,24 @@
   </v-menu>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
-
-import { user as userFunc, dandiRest } from '@/rest';
+<script>
+import { publishRest, user } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
-export default defineComponent({
+export default {
   name: 'UserMenu',
   components: {
     ApiKeyItem,
   },
-  setup() {
-    const user = computed(userFunc);
-    const userInitials = computed(() => {
-      if (user.value) {
-        const { name } = user.value;
+  data() {
+    return {
+    };
+  },
+  computed: {
+    user,
+    userInitials() {
+      if (this.user) {
+        const { name } = this.user;
         if (name) {
           const name_parts = name.split(' ');
           if (name_parts.length >= 2) {
@@ -58,19 +60,19 @@ export default defineComponent({
             );
           }
         }
+        // If first name + last name aren't specified, try to use the login instead
+        const { login } = this.user;
+        if (login) {
+          return login.slice(0, 2);
+        }
       }
       return '??';
-    });
-
-    async function logout() {
-      await dandiRest.logout();
-    }
-
-    return {
-      userInitials,
-      approved: dandiRest.user?.approved,
-      logout,
-    };
+    },
   },
-});
+  methods: {
+    async logout() {
+      await publishRest.logout();
+    },
+  },
+};
 </script>

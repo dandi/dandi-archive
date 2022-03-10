@@ -43,16 +43,14 @@
       </v-list>
     </v-menu>
     <v-toolbar-title>
-      <router-link to="/">
-        <v-img
-          alt="DANDI logo"
-          contain
-          height="48px"
-          width="120px"
-          src="@/assets/logo.svg"
-          class="mr-2"
-        />
-      </router-link>
+      <v-img
+        alt="DANDI logo"
+        contain
+        max-height="48px"
+        max-width="120px"
+        src="@/assets/logo.svg"
+        class="mr-2"
+      />
     </v-toolbar-title>
     <span class="d-none d-md-flex">
       <template v-for="navItem in navItems">
@@ -86,7 +84,6 @@
     <div v-if="!insideIFrame">
       <template v-if="loggedIn">
         <v-btn
-          :disabled="!approved"
           :to="{ name: 'createDandiset' }"
           exact
           class="mx-3"
@@ -123,78 +120,67 @@
   </v-app-bar>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
-
+<script>
 import {
-  cookiesEnabled as cookiesEnabledFunc,
-  loggedIn as loggedInFunc,
-  insideIFrame as insideIFrameFunc,
-  dandiRest,
+  cookiesEnabled, loggedIn, insideIFrame, publishRest,
 } from '@/rest';
-import {
-  dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
-} from '@/utils/constants';
+import { dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
-export default defineComponent({
+export default {
   name: 'AppBar',
-  components: { UserMenu },
-  setup(props, ctx) {
-    const returnObject = computed(() => {
-      const { name, query, params } = ctx.root.$route;
-      return JSON.stringify({ name, query, params });
-    });
-
-    const cookiesEnabled = computed(cookiesEnabledFunc);
-    const loggedIn = computed(loggedInFunc);
-    const insideIFrame = computed(insideIFrameFunc);
-
-    const navItems = [
-      {
-        text: 'Public Dandisets',
-        to: 'publicDandisets',
-      },
-      {
-        text: 'My Dandisets',
-        to: 'myDandisets',
-        if: loggedInFunc,
-      },
-      {
-        text: 'About',
-        to: dandiAboutUrl,
-        external: true,
-      },
-      {
-        text: 'Documentation',
-        to: dandiDocumentationUrl,
-        external: true,
-      },
-      {
-        text: 'Help',
-        to: dandiHelpUrl,
-        external: true,
-      },
-      {
-        text: 'DandiHub',
-        to: dandihubUrl,
-        external: true,
-      },
-    ];
-
-    function login() {
-      dandiRest.login();
-    }
-
+  components: {
+    UserMenu,
+  },
+  data() {
     return {
-      returnObject,
-      login,
-      navItems,
-      cookiesEnabled,
-      insideIFrame,
-      loggedIn,
-      approved: dandiRest.user?.approved,
+      dandiAboutUrl,
+      dandiDocumentationUrl,
+      navItems: [
+        {
+          text: 'Welcome',
+          to: 'home',
+        },
+        {
+          text: 'Public Dandisets',
+          to: 'publicDandisets',
+        },
+        {
+          text: 'My Dandisets',
+          to: 'myDandisets',
+          if: loggedIn,
+        },
+        {
+          text: 'About',
+          to: dandiAboutUrl,
+          external: true,
+        },
+        {
+          text: 'Documentation',
+          to: dandiDocumentationUrl,
+          external: true,
+        },
+        {
+          text: 'Help',
+          to: dandiHelpUrl,
+          external: true,
+        },
+      ],
     };
   },
-});
+  computed: {
+    loggedIn,
+    insideIFrame,
+    cookiesEnabled,
+    returnObject() {
+      const { name, query, params } = this.$route;
+      return JSON.stringify({ name, query, params });
+    },
+  },
+  methods: {
+    login() {
+      publishRest.login();
+    },
+  },
+};
 </script>

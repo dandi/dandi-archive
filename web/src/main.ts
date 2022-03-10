@@ -6,12 +6,13 @@ import VueGtag from 'vue-gtag';
 import VueSocialSharing from 'vue-social-sharing';
 
 // @ts-ignore missing definitions
+import { vuetify } from '@girder/components/src';
 import * as Sentry from '@sentry/browser';
 import * as Integrations from '@sentry/integrations';
 
 // Import plugins first (order may matter)
 import '@/plugins/composition';
-import vuetify from '@/plugins/vuetify';
+import '@/plugins/girder';
 
 // Import custom behavior
 import '@/title';
@@ -20,7 +21,7 @@ import '@/title';
 import App from '@/App.vue';
 import router from '@/router';
 import store from '@/store';
-import { dandiRest } from '@/rest';
+import { publishRest } from '@/rest';
 
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
@@ -28,7 +29,7 @@ Sentry.init({
   integrations: [new Integrations.Vue({ Vue, logErrors: true })],
 });
 
-sync(store.original, router);
+sync(store, router);
 
 Vue.use(VueGtag, {
   config: { id: 'UA-146135810-2' },
@@ -37,21 +38,17 @@ Vue.use(VueGtag, {
 Vue.use(VueSocialSharing);
 
 async function loadUser() {
-  return dandiRest.restoreLogin();
+  return publishRest.restoreLogin();
 }
 
-async function loadSchema() {
-  await store.dispatch.dandiset.fetchSchema();
-}
-
-Promise.all([loadUser(), loadSchema()]).then(() => {
+loadUser().then(() => {
   new Vue({
     setup() {
       provide('store', store);
     },
     router,
     render: (h) => h(App),
-    store: store.original,
+    store,
     // @ts-ignore: missing definitions because Vue.use(Vuetify) is in a .js file
     vuetify,
   }).$mount('#app');

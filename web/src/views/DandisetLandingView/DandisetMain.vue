@@ -1,342 +1,574 @@
 <template>
   <div>
-    <v-card
-      class="px-3"
-      color="grey lighten-5"
-      outlined
-    >
-      <v-row class="mx-2 my-2 mb-0">
+    <v-card class="pb-2">
+      <v-row
+        class="mx-2 font-weight-regular"
+        align="center"
+      >
         <v-col>
-          <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
+          Dandiset ID: {{ meta.id }}
+        </v-col>
+      </v-row>
+      <v-row class="mx-2 my-2">
+        <v-col>
+          <h1 class="font-weight-regular">
             {{ meta.name }}
-            <ShareDialog />
           </h1>
         </v-col>
       </v-row>
-      <v-row class="mx-1">
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <v-chip
-            class="text-wrap py-1"
-            style="text-align: center;"
-            outlined
+      <v-row
+        class="mx-2"
+        align="center"
+      >
+        <v-col>
+          Share
+          <v-dialog
+            v-model="dialog"
+            offset-y
+            min-width="420"
+            max-width="500"
           >
-            <span>
-              ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
-            </span>
-            <v-divider
-              vertical
-              class="mx-2"
+            <template #activator="{ on }">
+              <v-icon
+                color="primary"
+                v-on="on"
+              >
+                mdi-share-variant
+              </v-icon>
+            </template>
+
+            <v-card>
+              <v-card-title>
+                <v-btn
+                  icon
+                  x-small
+                  :right="true"
+                  :absolute="true"
+                  @click="dialog = false"
+                >
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-title>
+              <v-card-title class="text-h6">
+                {{ meta.name }}
+              </v-card-title>
+              <v-card-text>
+                <div>
+                  <span
+                    v-for="author in contributors"
+                    :key="author.name + author.identifier"
+                    class="text-body-1"
+                  >
+                    {{ author.name }}
+                  </span>
+                </div>
+              </v-card-text>
+              <v-card-text>
+                <span class="font-weight-black">
+                  Share this article:
+                </span>
+                <CopyText
+                  class="pa-2"
+                  :text="permalink"
+                  icon-hover-text="Copy permalink to clipboard"
+                />
+              </v-card-text>
+              <v-divider class="mx-4" />
+              <v-card-actions>
+                <v-list-item class="grow">
+                  <v-row
+                    align="center"
+                  >
+                    <ShareNetwork
+                      network="twitter"
+                      :url="permalink"
+                      :title="meta.name"
+                      :hashtags="hashtags"
+                    >
+                      <v-icon
+                        class="mr-1"
+                        color="blue"
+                        large
+                      >
+                        mdi-twitter
+                      </v-icon>
+                    </ShareNetwork>
+                  </v-row>
+                </v-list-item>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-col>
+        <v-col v-if="meta.citation">
+          Cite as
+          <v-menu
+            offset-y
+            :close-on-content-click="false"
+            min-width="420"
+            max-width="420"
+          >
+            <template #activator="{ on }">
+              <v-icon
+                color="primary"
+                v-on="on"
+              >
+                mdi-comment-quote-outline
+              </v-icon>
+            </template>
+
+            <v-card>
+              <CopyText
+                class="pa-2"
+                :text="meta.citation"
+                :is-textarea="true"
+                icon-hover-text="Copy to clipboard"
+              />
+            </v-card>
+          </v-menu>
+        </v-col>
+        <DownloadDialog>
+          <template #activator="{ on }">
+            <v-btn
+              id="download"
+              text
+              v-on="on"
+            >
+              <v-icon
+                color="primary"
+                class="mr-2"
+              >
+                mdi-download
+              </v-icon>
+              Download
+              <v-icon>mdi-menu-down</v-icon>
+            </v-btn>
+          </template>
+        </DownloadDialog>
+        <v-btn
+          id="view-data"
+          :to="fileBrowserLink"
+          text
+        >
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
+            mdi-file-tree
+          </v-icon>
+          View Data
+        </v-btn>
+        <v-btn
+          id="view-edit-metadata"
+          text
+          @click="$emit('edit')"
+        >
+          <v-icon
+            color="primary"
+            class="mr-2"
+          >
+            {{ metadataButtonIcon }}
+          </v-icon>
+          {{ metadataButtonText }}
+        </v-btn>
+        <template v-if="publishDandiset.version === 'draft'">
+          <v-tooltip
+            left
+            :disabled="!publishDisabledMessage"
+          >
+            <template #activator="{ on }">
+              <div v-on="on">
+                <v-btn
+                  id="publish"
+                  text
+                  :disabled="publishDisabled || !user"
+                  @click="publish"
+                >
+                  <v-icon
+                    color="success"
+                    class="mr-2"
+                  >
+                    mdi-publish
+                  </v-icon>
+                  Publish
+                </v-btn>
+              </div>
+            </template>
+            <p
+              :style="{ whiteSpace: 'pre-line' }"
+              v-text="publishDisabledMessage"
             />
-            <span
-              :class="`
-                font-weight-bold
-                ${currentDandiset.version === 'draft' ? 'orange' : 'blue'}--text text--darken-4
-              `"
-            >
-              {{ currentDandiset.version.toUpperCase() }}
-            </span>
-          </v-chip>
-        </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span>
-            <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
-            <template
-              v-if="!currentDandiset.contact_person"
-            >
-              No contact information
+          </v-tooltip>
+          <v-menu
+            v-if="publishDandiset.version_validation_errors.length"
+            :nudge-width="200"
+            offset-y
+          >
+            <template #activator="{ on: menu, attrs }">
+              <v-tooltip bottom>
+                <template #activator="{ on: tooltip }">
+                  <v-btn
+                    v-bind="attrs"
+                    v-on="{ ...tooltip, ...menu }"
+                  >
+                    <v-icon
+                      color="error"
+                      class="mr-1"
+                    >
+                      mdi-clipboard-alert
+                    </v-icon>
+                    {{ publishDandiset.version_validation_errors.length }}
+                  </v-btn>
+                </template>
+                <span>Fix issues with metadata</span>
+              </v-tooltip>
             </template>
-            <template v-else>
-              Contact <strong>{{ currentDandiset.contact_person }}</strong>
+            <v-card class="pa-1">
+              <v-list
+                style="max-height: 200px"
+                class="overflow-y-auto"
+              >
+                <div
+                  v-for="(error, index) in publishDandiset.version_validation_errors"
+                  :key="index"
+                >
+                  <v-list-item>
+                    <v-list-item-icon>
+                      <v-icon>
+                        {{ getValidationErrorIcon(error.field) }}
+                      </v-icon>
+                    </v-list-item-icon>
+
+                    <v-list-item-content>
+                      {{ error.field }}: {{ error.message }}
+                    </v-list-item-content>
+                  </v-list-item>
+                  <v-divider />
+                </div>
+              </v-list>
+              <v-btn
+                color="primary"
+                @click="$emit('edit')"
+              >
+                Fix issues
+              </v-btn>
+            </v-card>
+          </v-menu>
+          <v-menu
+            v-if="publishDandiset.asset_validation_errors.length"
+            :nudge-width="300"
+            offset-y
+          >
+            <template #activator="{ on: menu, attrs }">
+              <v-tooltip bottom>
+                <template #activator="{ on: tooltip }">
+                  <v-btn
+                    v-bind="attrs"
+                    v-on="{ ...tooltip, ...menu }"
+                  >
+                    <v-icon
+                      color="error"
+                      class="mr-1"
+                    >
+                      mdi-database-alert
+                    </v-icon>
+                    {{ publishDandiset.asset_validation_errors.length }}
+                  </v-btn>
+                </template>
+                <span>Fix issues with assets</span>
+              </v-tooltip>
             </template>
-          </span>
-        </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span>
-            <v-icon class="grey--text text--lighten-1">mdi-file</v-icon>
-            File Count <strong>{{ stats.asset_count }}</strong>
-          </span>
-        </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span>
-            <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
-            File Size <strong>{{ transformFilesize(stats.size) }}</strong>
+            <v-card class="pa-1">
+              <v-list
+                style="max-height: 200px"
+                class="overflow-y-auto"
+              >
+                <div
+                  v-for="(error, index) in publishDandiset.asset_validation_errors"
+                  :key="index"
+                >
+                  <v-list-item>
+                    <v-list-item-icon>
+                      <v-icon>
+                        {{ getValidationErrorIcon(error.field) }}
+                      </v-icon>
+                    </v-list-item-icon>
+
+                    <v-list-item-content>
+                      {{ error.field }}: {{ error.message }}
+                    </v-list-item-content>
+                  </v-list-item>
+                  <v-divider />
+                </div>
+              </v-list>
+            </v-card>
+          </v-menu>
+        </template>
+      </v-row>
+
+      <v-divider />
+      <v-row
+        v-if="contributors.length"
+        class="mx-2"
+        align="center"
+      >
+        <v-col>
+          <span
+            v-for="author in contributors"
+            :key="author.name + author.identifier"
+          >
+            <a
+              v-if="author.identifier"
+              :href="author.identifier"
+              target="_blank"
+            >
+              <img
+                alt="ORCID logo"
+                src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+                width="16"
+                height="16"
+              ></a>
+            <v-tooltip
+              v-if="author.affiliation"
+              top
+              color="black"
+            >
+              <template #activator="{ on }">
+                <span v-on="on">
+                  {{ author.name }}
+                </span>
+              </template>
+              <span>{{ author.affiliation }}</span>
+            </v-tooltip>
+            <span v-else> {{ author.name }}</span>
           </span>
         </v-col>
       </v-row>
       <v-row
-        class="mx-1"
+        v-if="meta.keywords"
+        class="mx-2"
       >
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span>
-            <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
-            Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
-          </span>
-        </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span>
-            <v-icon class="grey--text text--lighten-1">mdi-history</v-icon>
-            Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
-          </span>
-        </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span v-if="meta && meta.license">
-            <v-icon class="grey--text text--lighten-1">mdi-gavel</v-icon>
-            Licenses:
-            <strong v-if="!meta.license.length">(none)</strong>
-            <span
-              v-for="(license, i) in meta.license"
-              v-else
-              :key="i"
-            >
-              <strong>{{ license }}</strong>
-              <span v-text="i === meta.license.length - 1 ? '' : ', '" />
-            </span>
-          </span>
-        </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <span v-if="accessInformation && accessInformation.length">
-            <v-icon class="grey--text text--lighten-1">mdi-account-question</v-icon>
-            Access Information:
-            <span
-              v-for="(item, i) in accessInformation"
-              :key="i"
-            >
-              <strong>{{ item.status }}</strong>
-              <span v-text="i === accessInformation.length - 1 ? '' : ', '" />
-            </span>
-          </span>
-        </v-col>
-      </v-row>
-
-      <v-divider />
-
-      <v-row class="mx-1 my-4 px-4 font-weight-light">
-        <!-- Truncate text if necessary -->
-        <span v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)">
-          {{ description }}
-          <a
-            v-if="showFullDescription"
-            @click="showFullDescription = false"
-          > [ - see less ]</a>
-          <a
-            v-else
-            @click="showFullDescription = true"
-          > [ + see more ]</a></span>
-        <span v-else>{{ description }}</span>
-      </v-row>
-
-      <v-row class="justify-center">
-        <v-col
-          cols="11"
-          class="pb-0"
-        >
-          <v-card
-            v-if="(meta.keywords && meta.keywords.length) || (meta.license && meta.license.length)"
-            outlined
-            class="mb-4"
+        <v-col>
+          <span
+            v-for="key in meta.keywords"
+            :key="key"
           >
-            <v-card-text
-              v-if="meta.keywords && meta.keywords.length"
-              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
-            >
-              Keywords:
-              <v-chip
-                v-for="(keyword, i) in meta.keywords"
-                :key="i"
-                small
-                style="margin: 5px;"
-              >
-                {{ keyword }}
-              </v-chip>
-            </v-card-text>
-            <v-card-text
-              v-if="subjectMatter && subjectMatter.length"
-              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
-            >
-              Subject matter:
-              <v-chip
-                v-for="(item, i) in subjectMatter"
-                :key="i"
-                small
-                style="margin: 5px;"
-              >
-                {{ item.name }}
-              </v-chip>
-            </v-card-text>
-          </v-card>
+            <v-chip
+              small
+              style="margin: 5px;"
+              class="grey darken-2 font-weight-bold white--text"
+            > {{ key }} </v-chip>
+          </span>
         </v-col>
       </v-row>
-
-      <!-- TODO: Re-enable these tab components when the others are complete -->
-
-      <!-- <v-tabs
-        v-model="currentTab"
-        background-color="grey lighten-5"
-        class="ml-3"
-        show-arrows
-      >
-        <v-tabs-slider />
-
-        <v-tab
-          v-for="(tab, index) in tabs"
-          :key="tab.name"
-          :href="`#${index}`"
-        >
-          <v-icon>{{ tab.icon }}</v-icon>
-          {{ tab.name }}
-        </v-tab>
-      </v-tabs> -->
+      <v-row :class="titleClasses">
+        <v-card-title class="font-weight-regular">
+          Description
+        </v-card-title>
+      </v-row>
+      <v-row class="mx-1 mb-4 px-4 font-weight-light">
+        {{ meta.description }}
+      </v-row>
+      <template v-for="key in Object.keys(extraFields).sort()">
+        <template v-if="renderData(extraFields[key], schema.properties[key])">
+          <v-divider :key="`${key}-divider`" />
+          <v-row
+            :key="`${key}-title`"
+            :class="titleClasses"
+          >
+            <v-card-title class="font-weight-regular">
+              {{ schemaPropertiesCopy[key].title || key }}
+            </v-card-title>
+          </v-row>
+          <v-row
+            :key="key"
+            class="mx-2 mb-4"
+          >
+            <v-col class="py-0">
+              <ListingComponent
+                :field="key"
+                :schema="schema.properties[key]"
+                :data="extraFields[key]"
+              />
+            </v-col>
+          </v-row>
+        </template>
+      </template>
     </v-card>
-
-    <!-- Dynamically render component based on current tab -->
-    <v-row class="justify-center">
-      <v-col cols="11">
-        <component
-          :is="tabs[currentTab].component"
-          v-if="tabs[currentTab]"
-          v-bind="{ schema, meta }"
-        />
-      </v-col>
-    </v-row>
   </div>
 </template>
 
-<script lang="ts">
+<script>
+import { mapState, mapGetters } from 'vuex';
+
+import { dandiUrl, VALIDATION_ICONS } from '@/utils/constants';
 import {
-  defineComponent, computed, ComputedRef, ref,
-} from '@vue/composition-api';
+  loggedIn, publishRest, user,
+} from '@/rest';
 
-import filesize from 'filesize';
-import moment from 'moment';
+import CopyText from '@/components/CopyText.vue';
+import _ from 'lodash';
+import DownloadDialog from './DownloadDialog.vue';
+import ListingComponent from './ListingComponent.vue';
 
-import store from '@/store';
-import { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
-
-import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
-import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
-import ContributorsTab from '@/components/DLP/ContributorsTab.vue';
-import OverviewTab from '@/components/DLP/OverviewTab.vue';
-import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
-import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
-import ShareDialog from './ShareDialog.vue';
-
-// max description length before it's truncated and "see more" button is shown
-const MAX_DESCRIPTION_LENGTH = 400;
-
-const tabs = [
-  {
-    name: 'Overview',
-    component: OverviewTab,
-  },
-  {
-    name: 'Contributors',
-    component: ContributorsTab,
-    icon: 'mdi-account',
-  },
-  {
-    name: 'Subject Matter',
-    component: SubjectMatterTab,
-    icon: 'mdi-notebook-outline',
-  },
-  {
-    name: 'Access Information',
-    component: AccessInformationTab,
-    icon: 'mdi-account-question',
-  },
-  {
-    name: 'Asset Summary',
-    component: AssetSummaryTab,
-    icon: 'mdi-clipboard-list',
-  },
-  {
-    name: 'Related Resources',
-    component: RelatedResourcesTab,
-    icon: 'mdi-book',
-  },
-];
-
-export default defineComponent({
+export default {
   name: 'DandisetMain',
   components: {
-    ShareDialog,
-    AccessInformationTab,
-    AssetSummaryTab,
-    ContributorsTab,
-    OverviewTab,
-    RelatedResourcesTab,
-    SubjectMatterTab,
+    CopyText,
+    DownloadDialog,
+    ListingComponent,
   },
   props: {
     schema: {
       type: Object,
       required: true,
     },
+    meta: {
+      type: Object,
+      required: true,
+    },
+    userCanModifyDandiset: {
+      type: Boolean,
+      required: true,
+    },
   },
-  setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-
-    const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
-
-    const stats: ComputedRef<DandisetStats|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const { asset_count, size } = currentDandiset.value;
-      return { asset_count, size };
-    });
-
-    // whether or not the "see more" button has been pressed to reveal
-    // the full description
-    const showFullDescription = ref(false);
-    const description: ComputedRef<string> = computed(() => {
-      if (!currentDandiset.value) {
-        return '';
-      }
-      const fullDescription = currentDandiset.value.metadata?.description;
-      if (!fullDescription) {
-        return '';
-      }
-      if (fullDescription.length <= MAX_DESCRIPTION_LENGTH) {
-        return fullDescription;
-      }
-      if (showFullDescription.value) {
-        return currentDandiset.value.metadata?.description || '';
-      }
-      let shortenedDescription = fullDescription.substring(0, MAX_DESCRIPTION_LENGTH);
-      shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
-      return shortenedDescription;
-    });
-    const meta = computed(() => currentDandiset.value?.metadata);
-
-    const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
-      () => meta.value?.access,
-    );
-    const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
-      () => meta.value?.about,
-    );
-
-    const currentTab = ref(0);
-
-    function formatDate(date: string): string {
-      return moment(date).format('LL');
-    }
-
+  data() {
     return {
-      currentDandiset,
-      formatDate,
-      stats,
-      transformFilesize,
-      description,
-      showFullDescription,
-      MAX_DESCRIPTION_LENGTH,
-
-      accessInformation,
-      subjectMatter,
-
-      currentTab,
-      tabs,
-      meta,
+      dialog: false,
+      titleClasses: 'mx-1',
+      mainFields: [
+        'name',
+        'description',
+        'identifier',
+      ],
+      hashtags: 'dandi',
     };
   },
-});
+  computed: {
+    loggedIn,
+    user,
+    contributors() {
+      // eslint-disable-next-line no-console
+      const persons = _.filter(this.meta.contributor, (author) => author.schemaKey === 'Person' && author.includeInCitation);
+      const authors = _.map(persons, (author, index) => {
+        let affiliations = '';
+        let orcid_id = author.identifier;
+        if (!_.isEmpty(author.affiliation)) {
+          affiliations = _.map(author.affiliation, (a) => a.name);
+          affiliations = affiliations.join(', ');
+        }
+        let author_name = author.name;
+        if (index < persons.length - 1) {
+          author_name = `${author.name};`;
+        }
+        if (orcid_id) {
+          orcid_id = `https://orcid.org/${orcid_id}`;
+        }
+        return { name: author_name, identifier: orcid_id, affiliation: affiliations };
+      });
+      return authors;
+    },
+    publishDisabledMessage() {
+      if (!this.loggedIn) {
+        return 'You must be logged in to edit.';
+      }
+      if (!this.userCanModifyDandiset) {
+        return 'You do not have permission to edit this dandiset.';
+      }
+      if (this.publishDandiset.status === 'Pending') {
+        return 'This dandiset has not yet been validated.';
+      }
+      if (this.publishDandiset.status === 'Validating') {
+        return 'Currently validating this dandiset.';
+      }
+      if (this.publishDandiset.status === 'Published') {
+        return 'No changes since last publish.';
+      }
+
+      return null;
+    },
+    publishDisabled() {
+      return !!(this.publishDandiset.version_validation_errors.length
+        || this.publishDandiset.asset_validation_errors.length
+        || this.publishDisabledMessage);
+    },
+    metadataButtonText() {
+      return this.userCanModifyDandiset ? 'Edit metadata' : 'View metadata';
+    },
+    metadataButtonIcon() {
+      return this.userCanModifyDandiset ? 'mdi-pencil' : 'mdi-eye';
+    },
+    fileBrowserLink() {
+      const { version } = this;
+      const { identifier } = this.publishDandiset.dandiset;
+      // TODO: this probably does not work correctly yet
+      return {
+        name: 'fileBrowser',
+        params: { identifier, version },
+        query: {
+          location: '',
+        },
+      };
+    },
+    permalink() {
+      return `${dandiUrl}/dandiset/${this.publishDandiset.dandiset.identifier}/${this.version}`;
+    },
+    extraFields() {
+      const { meta, mainFields } = this;
+      let extra = Object.keys(meta).filter(
+        (x) => !mainFields.includes(x) && x in this.schema.properties,
+      );
+      const remove_list = ['citation', 'repository', 'url', 'schemaVersion', 'version', 'id', 'keywords', 'schemaKey'];
+      extra = extra.filter((n) => !remove_list.includes(n));
+      const extra_obj = extra.reduce((obj, key) => ({ ...obj, [key]: meta[key] }), {});
+      extra_obj.contributor = _.filter(meta.contributor, (author) => author.schemaKey !== 'Person');
+      delete extra_obj.assetsSummary.schemaKey;
+      delete extra_obj.assetsSummary.numberOfBytes;
+      delete extra_obj.assetsSummary.numberOfFiles;
+      _.forEach(extra_obj, (val) => {
+        if (Array.isArray(val) && val.length !== 0) {
+          val.forEach((each_val) => {
+            if (Object.prototype.hasOwnProperty.call(each_val, 'schemaKey')) {
+              /* eslint no-param-reassign:["error",
+              {"ignorePropertyModificationsFor":["each_val"] }] */
+              delete each_val.schemaKey;
+            }
+          });
+        }
+      });
+      return extra_obj;
+    },
+    schemaPropertiesCopy() {
+      const schema_copy = JSON.parse(JSON.stringify(this.schema.properties));
+      schema_copy.contributor.title = 'Funding Information';
+      return schema_copy;
+    },
+    ...mapState('dandiset', {
+      publishDandiset: (state) => state.publishDandiset,
+    }),
+    ...mapGetters('dandiset', ['version']),
+  },
+  methods: {
+    async publish() {
+      const version = await publishRest.publish(this.publishDandiset.dandiset.identifier);
+      // re-initialize the dataset to load the newly published version
+      await this.$store.dispatch('dandiset/initializeDandisets', { identifier: version.dandiset.identifier, version: version.version });
+    },
+    renderData(data, schema) {
+      if (data === null || _.isEmpty(data)) {
+        return false;
+      }
+      if (schema.type === 'array' && Array.isArray(data) && data.length === 0) {
+        return false;
+      }
+      return true;
+    },
+    getValidationErrorIcon(errorField) {
+      const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
+      if (icons.length > 0) {
+        return VALIDATION_ICONS[icons[0]];
+      }
+      return VALIDATION_ICONS.DEFAULT;
+    },
+  },
+};
 </script>

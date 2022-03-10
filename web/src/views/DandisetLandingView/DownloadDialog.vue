@@ -115,14 +115,11 @@
     </v-card>
   </v-menu>
 </template>
-<script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
-
-import store from '@/store';
-
+<script>
+import { mapState, mapGetters } from 'vuex';
 import CopyText from '@/components/CopyText.vue';
 
-function formatDownloadCommand(identifier: string, version: string): string {
+function formatDownloadCommand(identifier, version) {
   if (version === 'draft') {
     return `dandi download https://dandiarchive.org/dandiset/${identifier}/draft`;
   }
@@ -132,56 +129,52 @@ function formatDownloadCommand(identifier: string, version: string): string {
   return `dandi download DANDI:${identifier}/${version}`;
 }
 
-export default defineComponent({
+export default {
   name: 'DownloadDialog',
-  components: { CopyText },
-  setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const publishedVersions = computed(() => store.state.dandiset.versions);
-    const currentVersion = computed(() => store.getters.dandiset.version);
-
-    const selectedDownloadOption = ref('draft');
-    const selectedVersion = ref(0);
-
-    const identifier = computed(() => currentDandiset.value?.dandiset.identifier);
-
-    const availableVersions = computed(
-      () => (publishedVersions.value || [])
-        .map((version, index) => ({ version: version.version, index })),
-    );
-
-    const defaultDownloadText = computed(
-      () => (identifier.value ? formatDownloadCommand(identifier.value, currentVersion.value) : ''),
-    );
-
-    const customDownloadText = computed(() => {
-      if (!identifier.value) {
-        return '';
-      }
-      if (selectedDownloadOption.value === 'draft') {
-        return formatDownloadCommand(identifier.value, 'draft');
-      } if (selectedDownloadOption.value === 'latest') {
-        return formatDownloadCommand(identifier.value, '');
-      } if (selectedDownloadOption.value === 'other') {
-        return formatDownloadCommand(
-          identifier.value,
-          availableVersions.value[selectedVersion.value].version,
-        );
-      }
-      return '';
-    });
-
+  components: {
+    CopyText,
+  },
+  data() {
     return {
-      availableVersions,
-      currentDandiset,
-      currentVersion,
-      customDownloadText,
-      defaultDownloadText,
-      identifier,
-      publishedVersions,
-      selectedDownloadOption,
-      selectedVersion,
+      selectedDownloadOption: 'draft',
+      selectedVersion: 0,
     };
   },
-});
+  computed: {
+    defaultDownloadText() {
+      const { identifier, currentVersion } = this;
+      return formatDownloadCommand(identifier, currentVersion);
+    },
+    customDownloadText() {
+      const {
+        identifier,
+        selectedDownloadOption,
+        availableVersions,
+        selectedVersion,
+      } = this;
+      if (selectedDownloadOption === 'draft') {
+        return formatDownloadCommand(identifier, 'draft');
+      } if (selectedDownloadOption === 'latest') {
+        return formatDownloadCommand(identifier);
+      } if (selectedDownloadOption === 'other') {
+        return formatDownloadCommand(identifier, availableVersions[selectedVersion].version);
+      }
+      return '';
+    },
+    availableVersions() {
+      return (this.publishedVersions || [])
+        .map((version, index) => ({ version: version.version, index }));
+    },
+    identifier() {
+      return this.publishDandiset.dandiset.identifier;
+    },
+    ...mapState('dandiset', {
+      publishDandiset: (state) => state.publishDandiset,
+      publishedVersions: (state) => state.versions,
+    }),
+    ...mapGetters('dandiset', {
+      currentVersion: 'version',
+    }),
+  },
+};
 </script>
