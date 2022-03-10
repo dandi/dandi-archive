@@ -42,7 +42,8 @@ from dandiapi.api.views.common import (
 )
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
-    AssetPathsSerializer,
+    AssetPathsQueryParameterSerializer,
+    AssetPathsResponseSerializer,
     AssetSerializer,
     AssetValidationSerializer,
 )
@@ -76,7 +77,7 @@ def _paginate_asset_paths(
         else:
             folders[k] = v
 
-    paths = AssetPathsSerializer({'folders': folders, 'files': files})
+    paths = AssetPathsResponseSerializer({'folders': folders, 'files': files})
 
     # generate other parameters for the paginated response
     url_kwargs = {
@@ -508,7 +509,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(
         manual_parameters=[PATH_PREFIX_PARAM],
-        responses={200: AssetPathsSerializer()},
+        responses={200: AssetPathsResponseSerializer()},
     )
     @action(detail=False, methods=['GET'])
     def paths(self, request, versions__dandiset__pk: str, versions__version: str, **kwargs):
@@ -518,11 +519,12 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         The specified path must be a folder; it either must end in a slash or
         (to refer to the root folder) must be the empty string.
         """
-        path_prefix: str = self.request.query_params.get('path_prefix') or ''
-        page: int = int(self.request.query_params.get('page') or '1')
-        page_size: int = int(
-            self.request.query_params.get('page_size') or DandiPagination.page_size
-        )
+        query_serializer = AssetPathsQueryParameterSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        path_prefix: str = query_serializer.validated_data['path_prefix']
+        page: int = query_serializer.validated_data['page']
+        page_size: int = query_serializer.validated_data['page_size']
 
         qs = (
             self.get_queryset()
