@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 from dandiapi.api.models import Dandiset
 from dandiapi.api.multipart import UnsupportedStorageError
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
 
 class ZarrUploadFileManager(models.Manager):
@@ -219,6 +219,8 @@ class BaseZarrArchive(TimeStampedModel):
     def begin_upload(self, files):
         if self.upload_in_progress:
             raise ValidationError('Simultaneous uploads are not allowed.')
+
+        # Create upload objects
         uploads = [
             self.upload_file_class.objects.create_zarr_upload_file(
                 zarr_archive=self,
@@ -242,6 +244,10 @@ class BaseZarrArchive(TimeStampedModel):
 
         active_uploads.delete()
 
+        # New files added, ingest must be run again
+        self.status = self.Status.PENDING
+        self.save()
+
     def cancel_upload(self):
         active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
         for upload in active_uploads:
@@ -259,13 +265,11 @@ class BaseZarrArchive(TimeStampedModel):
             if not self.storage.exists(self.s3_path(path)):
                 raise ValidationError(f'File {self.s3_path(path)} does not exist.')
         for path in paths:
-            s3_path = self.s3_path(path)
-            file_size = self.storage.size(s3_path)
-            self.storage.delete(s3_path)
-            self.size -= file_size
-            self.file_count -= 1
+            self.storage.delete(self.s3_path(path))
+
+        # Files deleted, ingest must be run again
+        self.status = self.Status.PENDING
         self.save()
-        ZarrChecksumUpdater(self).remove_checksums(paths)
 
 
 class ZarrArchive(BaseZarrArchive):
