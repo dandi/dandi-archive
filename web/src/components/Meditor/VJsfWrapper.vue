@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="editorInterface && editorInterface.complexSchema">
     <v-row class="d-flex justify-space-between">
       <v-col cols="6">
         <div
@@ -29,7 +29,7 @@
               elevation="0"
               color="white"
               class="text--darken-2 grey--text font-weight-medium"
-              @click="clearForm()"
+              @click="clearForm"
             >
               Clear Form
             </v-btn>
@@ -37,7 +37,7 @@
               v-if="index === -1"
               class="grey darken-3 white--text"
               elevation="0"
-              @click="createNewItem()"
+              @click="createNewItem"
             >
               <span class="mr-1">Add Item</span>
               <v-icon>mdi-arrow-right</v-icon>
@@ -47,7 +47,7 @@
               class="grey darken-3 white--text"
               elevation="0"
               :disabled="!formValid"
-              @click="saveItem(propKey)"
+              @click="saveItem"
             >
               <span class="mr-1">Save Item</span>
               <v-icon>mdi-arrow-right</v-icon>
@@ -58,13 +58,16 @@
       <v-col
         :style="`
         background-color: ${
-          $vuetify.theme.themes[$vuetify.theme.isDark ? 'dark' : 'light'].dropzone
+          $vuetify.theme.themes[$vuetify.theme.dark ? 'dark' : 'light'].dropzone
         }; height: 70vh;
         `"
         class="overflow-y-auto"
         cols="6"
       >
-        <v-sheet class="ma-4">
+        <v-sheet
+          v-if="editorInterface.complexSchema.properties"
+          class="ma-4"
+        >
           <v-jsf
             :key="JSON.stringify(currentModel)"
             :value="currentModel"

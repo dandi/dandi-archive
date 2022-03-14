@@ -137,6 +137,13 @@ import {
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 
+interface NavigationItem {
+  text: string,
+  to: string,
+  if?(): boolean,
+  external: boolean,
+}
+
 export default defineComponent({
   name: 'AppBar',
   components: { UserMenu },
@@ -150,14 +157,16 @@ export default defineComponent({
     const loggedIn = computed(loggedInFunc);
     const insideIFrame = computed(insideIFrameFunc);
 
-    const navItems = [
+    const navItems: NavigationItem[] = [
       {
         text: 'Public Dandisets',
         to: 'publicDandisets',
+        external: false,
       },
       {
         text: 'My Dandisets',
         to: 'myDandisets',
+        external: false,
         if: loggedInFunc,
       },
       {

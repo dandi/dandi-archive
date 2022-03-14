@@ -1,6 +1,6 @@
 <template>
   <v-card
-    v-if="schema"
+    v-if="schema && model"
     v-page-title="model.name"
     class="overflow-hidden"
   >
@@ -154,7 +154,7 @@
           <v-badge
             color="error"
             dot
-            :value="!editorInterface.basicModelValid.value"
+            :value="!basicModelValid"
           >
             General
           </v-badge>
@@ -167,9 +167,9 @@
           <v-badge
             color="error"
             dot
-            :value="!editorInterface.complexModelValidation[propKey]"
+            :value="!complexModelValidation[propKey]"
           >
-            {{ complexSchema.properties[propKey].title || propKey }}
+            {{ getSchemaTitle(propKey) }}
           </v-badge>
         </v-tab>
       </v-tabs>
@@ -377,6 +377,11 @@ export default defineComponent({
       URL.revokeObjectURL(link.href);
     }
 
+    function getSchemaTitle(propKey: string) {
+      const properties = complexSchema?.properties as any;
+      return properties ? properties[propKey].title || propKey : propKey;
+    }
+
     const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
       (p) => renderField((complexSchema as any).properties[p]),
     );
@@ -429,6 +434,7 @@ export default defineComponent({
 
       invalidPermissionSnackbar,
       fieldsToRender,
+      getSchemaTitle,
       save,
       download,
 

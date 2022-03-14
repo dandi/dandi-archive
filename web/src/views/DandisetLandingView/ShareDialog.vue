@@ -1,5 +1,6 @@
 <template>
   <v-dialog
+    v-if="meta && meta.name"
     v-model="dialog"
     offset-y
     min-width="420"

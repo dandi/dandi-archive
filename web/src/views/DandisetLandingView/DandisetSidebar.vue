@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="currentDandiset">
     <DandisetActions />
     <DandisetOwners
       :user-can-modify-dandiset="userCanModifyDandiset"
