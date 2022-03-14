@@ -31,8 +31,9 @@
               Cancel
             </v-btn>
             <v-btn
+              v-if="itemToDelete"
               color="error"
-              @click="deleteAsset(itemToDelete)"
+              @click="deleteAsset"
             >
               Yes
             </v-btn>
@@ -114,7 +115,7 @@
                   <v-btn
                     v-if="showDelete(item)"
                     icon
-                    @click="itemToDelete = item"
+                    @click="setItemToDelete(item)"
                   >
                     <v-icon color="error">
                       mdi-delete
@@ -270,7 +271,7 @@ export default defineComponent({
   },
   setup(props, ctx) {
     const location = ref(rootDirectory);
-    const itemToDelete = ref();
+    const itemToDelete: Ref<AssetFile | null> = ref(null);
     const page = ref(1);
     const pages = ref(0);
     const updating = ref(false);
@@ -367,8 +368,15 @@ export default defineComponent({
       updating.value = false;
     }
 
-    async function deleteAsset(item: AssetFile) {
-      const { asset_id } = item;
+    function setItemToDelete(item: AssetStats) {
+      itemToDelete.value = item as AssetFile;
+    }
+
+    async function deleteAsset() {
+      if (!itemToDelete.value) {
+        return;
+      }
+      const { asset_id } = itemToDelete.value;
       if (asset_id !== undefined) {
         // Delete the asset on the server.
         await dandiRest.deleteAsset(props.identifier, props.version, asset_id);
@@ -437,6 +445,7 @@ export default defineComponent({
       fileSize,
       showDelete,
       deleteAsset,
+      setItemToDelete,
     };
   },
 });
