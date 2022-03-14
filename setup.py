@@ -31,18 +31,16 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python',
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
         'celery',
         'dandischema==0.5.3',
-        # TODO: Remove this. Pinning Django to 3.x until
-        # https://github.com/jazzband/django-oauth-toolkit/issues/1037 is resolved
-        'django~=3.2',
+        'django>=4.0.3',
         'django-admin-display',
         'django-allauth',
         'django-click',
@@ -60,7 +58,7 @@ setup(
         'pydantic',
         'boto3[s3]',
         # Production-only
-        'django-composed-configuration[prod]>=0.19.2',
+        'django-composed-configuration[prod]>=0.20.0',
         'django-s3-file-field[boto3]==0.1.1',
         'django-storages[boto3]',
         'gunicorn',
@@ -71,7 +69,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.19.2',
+            'django-composed-configuration[dev]>=0.20.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',
