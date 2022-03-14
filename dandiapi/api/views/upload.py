@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import List
 
+from django.db import transaction
 from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -253,27 +254,34 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
             f'ETag {upload.etag} does not match actual ETag {upload.actual_etag()}.'
         )
 
-    try:
-        # Perhaps another upload completed before this one and has already created an AssetBlob.
-        asset_blob = AssetBlob.objects.get(etag=upload.etag, size=upload.size)
-    except AssetBlob.DoesNotExist:
-        if type(upload) is EmbargoedUpload:
-            # Perhaps another embargoed upload completed before this one
-            try:
-                asset_blob = EmbargoedAssetBlob.objects.get(
-                    etag=upload.etag, size=upload.size, dandiset=upload.dandiset
-                )
-            except EmbargoedAssetBlob.DoesNotExist:
-                asset_blob = upload.to_embargoed_asset_blob()
+    # Use a transaction here so we can use select_for_update to lock the DB rows to avoid
+    # a race condition where two clients are uploading the same blob at the same time.
+    # This also ensures that the minting of the new AssetBlob and deletion of the Upload
+    # is an atomic operation.
+    with transaction.atomic():
+        try:
+            # Perhaps another upload completed before this one and has already created an AssetBlob.
+            asset_blob = AssetBlob.objects.select_for_update(no_key=True).get(
+                etag=upload.etag, size=upload.size
+            )
+        except AssetBlob.DoesNotExist:
+            if type(upload) is EmbargoedUpload:
+                # Perhaps another embargoed upload completed before this one
+                try:
+                    asset_blob = EmbargoedAssetBlob.objects.select_for_update(no_key=True).get(
+                        etag=upload.etag, size=upload.size, dandiset=upload.dandiset
+                    )
+                except EmbargoedAssetBlob.DoesNotExist:
+                    asset_blob = upload.to_embargoed_asset_blob()
+                    asset_blob.save()
+            elif type(upload) is Upload:
+                asset_blob = upload.to_asset_blob()
                 asset_blob.save()
-        elif type(upload) is Upload:
-            asset_blob = upload.to_asset_blob()
-            asset_blob.save()
-        else:
-            raise ValueError(f'Unknown Upload type {type(upload)}')
+            else:
+                raise ValueError(f'Unknown Upload type {type(upload)}')
 
-    # Clean up the upload
-    upload.delete()
+        # Clean up the upload
+        upload.delete()
 
     # Start calculating the sha256 in the background
     calculate_sha256.delay(asset_blob.blob_id)
