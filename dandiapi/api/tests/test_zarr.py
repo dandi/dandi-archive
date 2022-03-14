@@ -7,6 +7,7 @@ import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
 
@@ -28,6 +29,7 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'name': name,
         'zarr_id': UUID_RE,
         'dandiset': dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
         'checksum': EMPTY_CHECKSUM,
         'upload_in_progress': False,
         'file_count': 0,
@@ -98,12 +100,16 @@ def test_zarr_rest_get(
     # We need to complete the upload for the checksum files to be written.
     zarr_archive.complete_upload()
 
+    # Ingest archive so checksum files are written.
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.COMPLETE,
         'checksum': zarr_archive.checksum,
         'upload_in_progress': False,
         'file_count': 1,
@@ -119,12 +125,14 @@ def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
     assert zarr_archive.file_count == ten_quadrillion
     assert zarr_archive.size == ten_petabytes
 
+    # Don't ingest since there aren't actually any files
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
         'checksum': zarr_archive.checksum,
         'upload_in_progress': False,
         'file_count': ten_quadrillion,
@@ -140,6 +148,7 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
         'checksum': zarr_archive.checksum,
         'upload_in_progress': False,
         'file_count': 0,
@@ -161,12 +170,25 @@ def test_zarr_rest_delete_file(
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
 
+    # Ingest
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
+    # Assert file count and size
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.file_count == 1
+    assert zarr_archive.size == 100
+
+    # Make delete call
     resp = authenticated_api_client.delete(
         f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
     )
     assert resp.status_code == 204
 
     assert not upload.blob.field.storage.exists(upload.blob.name)
+
+    # Re-ingest
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
@@ -187,6 +209,10 @@ def test_zarr_rest_delete_file_asset_metadata(
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
     asset = asset_factory(zarr=zarr_archive, blob=None)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
+    asset.refresh_from_db()
+    zarr_archive.refresh_from_db()
     assert asset.metadata['digest'] == zarr_archive.digest
     assert asset.metadata['contentSize'] == 100
 
@@ -195,6 +221,7 @@ def test_zarr_rest_delete_file_asset_metadata(
     )
     assert resp.status_code == 204
 
+    ingest_zarr_archive(zarr_archive.zarr_id)
     asset.refresh_from_db()
     assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
     assert asset.metadata['contentSize'] == 0
@@ -239,6 +266,8 @@ def test_zarr_rest_delete_multiple_files(
 
     for upload in uploads:
         assert not upload.blob.field.storage.exists(upload.blob.name)
+
+    ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
@@ -270,6 +299,8 @@ def test_zarr_rest_delete_missing_file(
         f'File test-prefix/test-zarr/{zarr_archive.zarr_id}/does/not/exist does not exist.'
     ]
     assert upload.blob.field.storage.exists(upload.blob.name)
+
+    ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 1
     assert zarr_archive.size == upload.size()

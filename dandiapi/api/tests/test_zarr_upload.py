@@ -7,6 +7,7 @@ import requests
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.tasks import cancel_zarr_upload
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 
 
@@ -280,6 +281,7 @@ def test_zarr_rest_upload_flow(authenticated_api_client, user, storage, zarr_arc
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
     assert resp.status_code == 201
 
+    ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert not zarr_archive.upload_in_progress
     assert zarr_archive.file_count == 1
