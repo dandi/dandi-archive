@@ -256,7 +256,7 @@ export default defineComponent({
         (contributor) => !!(contributor.schemaKey === 'Organization')
         // Only include organizations with "Sponsor" or "Funder" roles in Funding Information
         && (contributor.roleName?.includes('dcite:Funder') || contributor.roleName?.includes('dcite:Sponsor')),
-      ),
+      ) || [],
     );
 
     const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
