@@ -25,6 +25,10 @@ class DandiMixin(ConfigMixin):
 
     DANDI_ALLOW_LOCALHOST_URLS = False
 
+    # Workaround for static file storage to work correctly on Django 4.
+    # Taken from https://github.com/axnsan12/drf-yasg/issues/761#issuecomment-1031381674
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
     @staticmethod
     def mutate_configuration(configuration: Type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
