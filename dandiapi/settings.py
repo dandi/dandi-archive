@@ -42,12 +42,20 @@ class DandiMixin(ConfigMixin):
             'allauth.socialaccount.providers.github',
         ]
 
+        # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             # TODO remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]
+
+        # Permission
+        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += [
+            'dandiapi.api.permissions.IsApprovedOrReadOnly'
+        ]
+
+        # Pagination
         configuration.REST_FRAMEWORK[
             'DEFAULT_PAGINATION_CLASS'
         ] = 'dandiapi.api.views.common.DandiPagination'

@@ -20,7 +20,6 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import cancel_zarr_upload
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
@@ -94,7 +93,6 @@ class ZarrExploreSerializer(serializers.Serializer):
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = ZarrSerializer
     pagination_class = DandiPagination
 

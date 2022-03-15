@@ -31,7 +31,6 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
 from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
-from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
@@ -132,7 +131,6 @@ class AssetFilter(filters.FilterSet):
 class AssetViewSet(DetailSerializerMixin, GenericViewSet):
     queryset = Asset.objects.all().order_by('created')
 
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
 
