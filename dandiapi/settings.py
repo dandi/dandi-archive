@@ -25,6 +25,8 @@ class DandiMixin(ConfigMixin):
 
     DANDI_ALLOW_LOCALHOST_URLS = False
 
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
     @staticmethod
     def mutate_configuration(configuration: Type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
