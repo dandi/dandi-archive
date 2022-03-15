@@ -82,7 +82,9 @@ def clear_checksum_files(zarr: ZarrArchive):
         if not files:
             break
 
-        objects = [{'Key': file['Key']} for file in files]
+        # Handle both versioned and non-versioned buckets
+        allowed = {'Key', 'VersionId'}
+        objects = [{k: v for k, v in file.items() if k in allowed} for file in files]
         client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
 
 
