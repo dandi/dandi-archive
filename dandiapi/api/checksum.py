@@ -1,7 +1,9 @@
 import hashlib
+import logging
 
 from django.core.files.storage import Storage
 
+logger = logging.getLogger('checksum')
 
 class UnsupportedStorageError(Exception):
     """Raised when the given Storage is not supported."""
@@ -24,15 +26,19 @@ class ChecksumCalculatorFile:
 
 
 def _calculate_checksum_boto3(storage: Storage, name: str):
+    logger.info(f'Calculating boto3 checksum of {name}')
     obj = storage.bucket.Object(name)
     calculator = ChecksumCalculatorFile()
+    logger.info(f'Downloading {name}')
     obj.download_fileobj(calculator)
     return calculator.checksum
 
 
 def _calculate_checksum_minio(storage: Storage, name: str):
+    logger.info(f'Calculating minio checksum of {name}')
     obj = storage.client.get_object(storage.bucket_name, name)
     calculator = ChecksumCalculatorFile()
+    logger.info(f'Downloading {name}')
     for d in obj.stream(amt=1024 * 1024):
         calculator.write(d)
     return calculator.checksum
