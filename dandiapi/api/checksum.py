@@ -5,6 +5,7 @@ from django.core.files.storage import Storage
 
 logger = logging.getLogger('checksum')
 
+
 class UnsupportedStorageError(Exception):
     """Raised when the given Storage is not supported."""
 
