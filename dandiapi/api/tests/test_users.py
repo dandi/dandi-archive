@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
@@ -282,7 +282,7 @@ def test_user_status(
 )
 def test_user_questionnaire_view(
     admin_client: Client,
-    questions: List[Dict[str, Any]],
+    questions: list[dict[str, Any]],
     querystring: str,
     expected_status_code: int,
 ):

@@ -1,5 +1,3 @@
-from typing import List
-
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 import pytest
 
@@ -21,11 +19,11 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
     zarr: ZarrArchive = zarr_archive_factory()
 
     # Generate > 1000 files, since the page size from S3 is 1000 items
-    foo_bar_files: List[ZarrUploadFile] = [
+    foo_bar_files: list[ZarrUploadFile] = [
         zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a'),
         zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/b'),
     ]
-    foo_baz_files: List[ZarrUploadFile] = [
+    foo_baz_files: list[ZarrUploadFile] = [
         zarr_upload_file_factory(zarr_archive=zarr, path=f'foo/baz/{faker.pystr()}')
         for _ in range(1005)
     ]
