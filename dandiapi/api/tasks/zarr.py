@@ -5,7 +5,7 @@ import boto3
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.db import DatabaseError, transaction
+from django.db import transaction
 
 from dandiapi.api.models.zarr import ZarrArchive
 from dandiapi.api.storage import get_storage
@@ -145,27 +145,20 @@ class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
 def ingest_zarr_archive(
     zarr_id: str, no_checksum: bool = False, no_size: bool = False, no_count: bool = False
 ):
-    # Set zarr status before ingest
+    # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
-        try:
-            zarr: ZarrArchive = ZarrArchive.objects.select_for_update(nowait=True).get(
-                zarr_id=zarr_id
-            )
-            zarr.status = ZarrArchive.Status.INGESTING
-            zarr.save(update_fields=['status'])
-        except DatabaseError:
-            logger.info('Zarr archive already being ingested. Exiting...')
+        zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+        if zarr.status != ZarrArchive.Status.PENDING:
+            logger.info(f'{ZarrArchive.INGEST_ERROR_MSG}. Exiting...')
             return
 
-    # Lock zarr until finished
+        # Set as ingesting
+        zarr.status = ZarrArchive.Status.INGESTING
+        zarr.save()
+
+    # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
-        try:
-            zarr: ZarrArchive = ZarrArchive.objects.select_for_update(nowait=True).get(
-                zarr_id=zarr_id
-            )
-        except DatabaseError:
-            logger.info('Zarr archive already being ingested. Exiting...')
-            return
+        zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
 
         # Reset before compute
         if not no_size:

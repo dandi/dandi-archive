@@ -161,6 +161,7 @@ class EmbargoedZarrUploadFile(BaseZarrUploadFile):
 
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+    INGEST_ERROR_MSG = 'Zarr archive already ingested'
 
     class Meta:
         get_latest_by = 'modified'
