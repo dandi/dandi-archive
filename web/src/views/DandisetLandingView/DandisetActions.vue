@@ -87,28 +87,21 @@
           <v-spacer />
         </v-btn>
       </v-row>
-      <v-row no-gutters>
-        <v-dialog max-width="85vw">
-          <template #activator="{ on }">
-            <v-btn
-              id="view-edit-metadata"
-              outlined
-              block
-              v-on="on"
-            >
-              <v-icon
-                left
-                color="primary"
-              >
-                mdi-note-text
-              </v-icon>
-              <span>Metadata</span>
-              <v-spacer />
-            </v-btn>
-          </template>
-          <meditor />
-        </v-dialog>
-      </v-row>
+      <v-btn
+        id="view-edit-metadata"
+        outlined
+        block
+        @click="openMeditor = true"
+      >
+        <v-icon
+          left
+          color="primary"
+        >
+          mdi-note-text
+        </v-icon>
+        <span>Metadata</span>
+        <v-spacer />
+      </v-btn>
     </div>
 
     <div class="my-4">
@@ -154,7 +147,7 @@ import { Location } from 'vue-router';
 import { dandiRest } from '@/rest';
 import store from '@/store';
 
-import Meditor from '@/components/Meditor/Meditor.vue';
+import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
@@ -165,7 +158,6 @@ export default defineComponent({
     CiteAsDialog,
     DownloadDialog,
     ShareDialog,
-    Meditor,
   },
   setup() {
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
@@ -198,6 +190,7 @@ export default defineComponent({
       currentVersion,
       fileBrowserLink,
       manifestLocation,
+      openMeditor,
     };
   },
 });

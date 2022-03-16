@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import { computed } from '@vue/composition-api';
+import { computed, ref } from '@vue/composition-api';
 import { EditorInterface } from './editor';
 
 // NOTE: it would be better to use a single ref here instead of seperate state/computed
@@ -28,6 +28,9 @@ const editorInterface = computed({
   },
 });
 
+const open = ref(false); // whether or not the Meditor is open
+
 export {
   editorInterface,
+  open,
 };
