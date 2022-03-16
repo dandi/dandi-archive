@@ -49,7 +49,7 @@ def test_ingest_zarr_archive_rest_already_active(
     # Ensure second ingest fails
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
     assert resp.status_code == 400
-    assert resp.json() == 'Ingestion already running.'
+    assert resp.json() == ZarrArchive.INGEST_ERROR_MSG
 
 
 @pytest.mark.django_db
