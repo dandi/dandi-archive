@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.db import DatabaseError, IntegrityError, transaction
+from django.db import IntegrityError, transaction
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -129,7 +129,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrUploadFileRequestSerializer(many=True),
         responses={
             200: ZarrUploadBatchSerializer(many=True),
-            400: 'Zarr archive is currently being ingested.',
+            400: ZarrArchive.INGEST_ERROR_MSG,
         },
         operation_summary='Start an upload of files to a zarr archive.',
         operation_description='',
@@ -137,14 +137,11 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @action(methods=['POST'], detail=True)
     def upload(self, request, zarr_id):
         """Start an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update(nowait=True)
+        queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
-            try:
-                zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            except DatabaseError:
-                return Response(
-                    'Zarr archive is currently being ingested.', status=status.HTTP_400_BAD_REQUEST
-                )
+            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if zarr_archive.status == ZarrArchive.Status.INGESTING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
@@ -183,10 +180,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         return Response(None, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
-        responses={
-            200: ZarrSerializer(many=True),
-            400: 'Zarr archive is currently being ingested.',
-        },
+        responses={200: ZarrSerializer(many=True)},
         operation_summary='Cancel an upload of files to a zarr archive.',
         operation_description='',
     )
@@ -209,7 +203,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=ZarrDeleteFileRequestSerializer(many=True),
         responses={
             200: ZarrSerializer(many=True),
-            400: 'Zarr archive is currently being ingested.',
+            400: ZarrArchive.INGEST_ERROR_MSG,
         },
         operation_summary='Delete files from a zarr archive.',
         operation_description='',
@@ -219,12 +213,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         """Delete files from a zarr archive."""
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
-            try:
-                zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            except DatabaseError:
-                return Response(
-                    'Zarr archive is currently being ingested.', status=status.HTTP_400_BAD_REQUEST
-                )
+            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if zarr_archive.status == ZarrArchive.Status.INGESTING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
@@ -244,7 +235,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         request_body=no_body,
         responses={
             200: ZarrSerializer(many=True),
-            400: 'Ingestion already running or upload currently active.',
+            400: ZarrArchive.INGEST_ERROR_MSG,
         },
         operation_summary='Ingest a zarr archive, calculating checksums, size and file count.',
         operation_description='',
@@ -257,8 +248,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # The user does not have ownership permission
             raise PermissionDenied()
 
-        if zarr_archive.status == ZarrArchive.Status.INGESTING:
-            return Response('Ingestion already running.', status=status.HTTP_400_BAD_REQUEST)
+        if zarr_archive.status != ZarrArchive.Status.PENDING:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
         if zarr_archive.upload_in_progress:
             return Response(
                 'Upload in progress. Please cancel or complete this existing upload.',
