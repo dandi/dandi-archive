@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 from dandiapi.api.models import Dandiset
 from dandiapi.api.multipart import UnsupportedStorageError
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
 
 class ZarrUploadFileManager(models.Manager):
@@ -161,15 +161,27 @@ class EmbargoedZarrUploadFile(BaseZarrUploadFile):
 
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+    INGEST_ERROR_MSG = 'Zarr archive already ingested'
 
     class Meta:
         get_latest_by = 'modified'
         abstract = True
 
+    # The status of the zarr ingestion (checksums, size, file count)
+    class Status(models.TextChoices):
+        PENDING = 'Pending'
+        INGESTING = 'Ingesting'
+        COMPLETE = 'Complete'
+
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
+    status = models.CharField(
+        max_length=max(len(choice[0]) for choice in Status.choices),
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
 
     @property
     def upload_in_progress(self) -> bool:
@@ -208,6 +220,8 @@ class BaseZarrArchive(TimeStampedModel):
     def begin_upload(self, files):
         if self.upload_in_progress:
             raise ValidationError('Simultaneous uploads are not allowed.')
+
+        # Create upload objects
         uploads = [
             self.upload_file_class.objects.create_zarr_upload_file(
                 zarr_archive=self,
@@ -228,13 +242,11 @@ class BaseZarrArchive(TimeStampedModel):
                 raise ValidationError(
                     f'File {upload.path} ETag {upload.actual_etag()} does not match reported checksum {upload.etag}.'  # noqa: E501
                 )
-        ZarrChecksumUpdater(self).update_file_checksums(
-            [upload.to_checksum() for upload in active_uploads]
-        )
-        for upload in active_uploads:
-            self.size += upload.size()
-        self.file_count += len(active_uploads)
+
         active_uploads.delete()
+
+        # New files added, ingest must be run again
+        self.status = self.Status.PENDING
         self.save()
 
     def cancel_upload(self):
@@ -254,13 +266,11 @@ class BaseZarrArchive(TimeStampedModel):
             if not self.storage.exists(self.s3_path(path)):
                 raise ValidationError(f'File {self.s3_path(path)} does not exist.')
         for path in paths:
-            s3_path = self.s3_path(path)
-            file_size = self.storage.size(s3_path)
-            self.storage.delete(s3_path)
-            self.size -= file_size
-            self.file_count -= 1
+            self.storage.delete(self.s3_path(path))
+
+        # Files deleted, ingest must be run again
+        self.status = self.Status.PENDING
         self.save()
-        ZarrChecksumUpdater(self).remove_checksums(paths)
 
 
 class ZarrArchive(BaseZarrArchive):

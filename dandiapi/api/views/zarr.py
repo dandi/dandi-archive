@@ -21,6 +21,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tasks import cancel_zarr_upload
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
 
@@ -62,27 +63,20 @@ class ZarrDeleteFileRequestSerializer(serializers.Serializer):
     path = serializers.CharField()
 
 
-class ZarrSerializer(serializers.Serializer):
+class ZarrSerializer(serializers.ModelSerializer):
     class Meta:
         model = ZarrArchive
-        fields = [
+        read_only_fields = [
             'zarr_id',
-            'name',
-            'dandiset',
+            'status',
             'checksum',
             'upload_in_progress',
             'file_count',
             'size',
         ]
-        read_only_fields = ['zarr_id', 'checksum', 'upload_in_progress', 'file_count', 'size']
+        fields = ['name', 'dandiset', *read_only_fields]
 
-    zarr_id = serializers.CharField(read_only=True)
-    name = serializers.CharField(max_length=512)
     dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
-    checksum = serializers.CharField(max_length=40, read_only=True)
-    upload_in_progress = serializers.BooleanField(read_only=True)
-    file_count = serializers.IntegerField(read_only=True)
-    size = serializers.IntegerField(read_only=True)
 
 
 class ZarrExploreSerializer(serializers.Serializer):
@@ -131,7 +125,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         method='POST',
         request_body=ZarrUploadFileRequestSerializer(many=True),
-        responses={200: ZarrUploadBatchSerializer(many=True)},
+        responses={
+            200: ZarrUploadBatchSerializer(many=True),
+            400: ZarrArchive.INGEST_ERROR_MSG,
+        },
         operation_summary='Start an upload of files to a zarr archive.',
         operation_description='',
     )
@@ -141,6 +138,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if zarr_archive.status == ZarrArchive.Status.INGESTING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
@@ -199,7 +199,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         method='DELETE',
         request_body=ZarrDeleteFileRequestSerializer(many=True),
-        responses={200: ZarrSerializer(many=True)},
+        responses={
+            200: ZarrSerializer(many=True),
+            400: ZarrArchive.INGEST_ERROR_MSG,
+        },
         operation_summary='Delete files from a zarr archive.',
         operation_description='',
     )
@@ -209,6 +212,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if zarr_archive.status == ZarrArchive.Status.INGESTING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
@@ -220,6 +226,37 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # Save any zarr assets to trigger metadata updates
             for asset in zarr_archive.assets.all():
                 asset.save()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        method='POST',
+        request_body=no_body,
+        responses={
+            200: ZarrSerializer(many=True),
+            400: ZarrArchive.INGEST_ERROR_MSG,
+        },
+        operation_summary='Ingest a zarr archive, calculating checksums, size and file count.',
+        operation_description='',
+    )
+    @action(methods=['POST'], detail=True)
+    def ingest(self, request, zarr_id):
+        """Ingest a zarr archive."""
+        zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
+        if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            # The user does not have ownership permission
+            raise PermissionDenied()
+
+        if zarr_archive.status != ZarrArchive.Status.PENDING:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+        if zarr_archive.upload_in_progress:
+            return Response(
+                'Upload in progress. Please cancel or complete this existing upload.',
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Dispatch ingestion
+        ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
+
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 

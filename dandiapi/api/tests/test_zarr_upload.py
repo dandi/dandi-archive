@@ -1,5 +1,4 @@
 import hashlib
-from pathlib import Path
 
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
@@ -8,12 +7,8 @@ import requests
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.tasks import cancel_zarr_upload
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
-from dandiapi.api.zarr_checksums import (
-    ZarrChecksum,
-    ZarrChecksumFileUpdater,
-    ZarrJSONChecksumSerializer,
-)
 
 
 @pytest.mark.django_db
@@ -105,7 +100,7 @@ def test_zarr_rest_upload_complete(
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     # Creating a zarr upload file means that the zarr has an upload in progress
-    upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_archive.upload_in_progress
     assert zarr_archive.checksum == EMPTY_CHECKSUM
 
@@ -114,63 +109,6 @@ def test_zarr_rest_upload_complete(
 
     # Completing the upload means that it is no longer in progress
     assert not zarr_archive.upload_in_progress
-
-    # zarr_upload_file_factory always generates paths in the form foo/bar.nwb
-    parent_path = Path(upload.path).parent
-    root_path = parent_path.parent
-
-    # Verify the parent directory checksum file is correct
-    serializer = ZarrJSONChecksumSerializer()
-    expected_parent_listing = serializer.generate_listing(files=[upload.to_checksum()])
-    assert (
-        ZarrChecksumFileUpdater(zarr_archive, parent_path).read_checksum_file()
-        == expected_parent_listing
-    )
-    # Verify that the root directory checksum file is correct
-    expected_root_listing = serializer.generate_listing(
-        directories=[ZarrChecksum(path=str(parent_path), md5=expected_parent_listing.md5)]
-    )
-    assert (
-        ZarrChecksumFileUpdater(zarr_archive, root_path).read_checksum_file()
-        == expected_root_listing
-    )
-    assert zarr_archive.checksum == expected_root_listing.md5
-
-
-@pytest.mark.django_db
-def test_zarr_rest_upload_complete_asset_metadata(
-    authenticated_api_client,
-    user,
-    storage,
-    zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
-    asset_factory,
-):
-    assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    # Creating a zarr upload file means that the zarr has an upload in progress
-    upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    assert zarr_archive.upload_in_progress
-    assert zarr_archive.checksum == EMPTY_CHECKSUM
-    asset = asset_factory(zarr=zarr_archive, blob=None)
-    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
-    assert asset.metadata['contentSize'] == 0
-
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
-    assert resp.status_code == 201
-
-    # Calculate the new checksum
-    parent_path = Path(upload.path).parent
-    serializer = ZarrJSONChecksumSerializer()
-    expected_parent_listing = serializer.generate_listing(files=[upload.to_checksum()])
-    expected_root_listing = serializer.generate_listing(
-        directories=[ZarrChecksum(path=str(parent_path), md5=expected_parent_listing.md5)]
-    )
-    # Verify that the asset metadata was updated when the upload completed
-    asset.refresh_from_db()
-    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == expected_root_listing.md5
-    assert asset.metadata['contentSize'] == 100
 
 
 @pytest.mark.django_db
@@ -343,6 +281,7 @@ def test_zarr_rest_upload_flow(authenticated_api_client, user, storage, zarr_arc
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
     assert resp.status_code == 201
 
+    ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert not zarr_archive.upload_in_progress
     assert zarr_archive.file_count == 1

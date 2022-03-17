@@ -3,7 +3,9 @@ from typing import Optional
 
 import boto3
 from celery import shared_task
-from django.db.transaction import atomic
+from celery.utils.log import get_task_logger
+from django.conf import settings
+from django.db import transaction
 
 from dandiapi.api.models.zarr import ZarrArchive
 from dandiapi.api.storage import get_storage
@@ -20,6 +22,70 @@ try:
 except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
+
+
+logger = get_task_logger(__name__)
+
+
+def get_client():
+    """Return an s3 client from the current storage."""
+    storage = get_storage()
+    if isinstance(storage, MinioStorage):
+        return boto3.client(
+            's3',
+            endpoint_url=storage.client._endpoint_url,
+            aws_access_key_id=storage.client._access_key,
+            aws_secret_access_key=storage.client._secret_key,
+            region_name='us-east-1',
+        )
+
+    return storage.connection.meta.client
+
+
+def yield_files(bucket: str, prefix: Optional[str] = None):
+    """Get all objects in the bucket, through repeated object listing."""
+    client = get_client()
+    common_options = {'Bucket': bucket}
+    if prefix is not None:
+        common_options['Prefix'] = prefix
+
+    continuation_token = None
+    while True:
+        options = {**common_options}
+        if continuation_token is not None:
+            options['ContinuationToken'] = continuation_token
+
+        # Fetch
+        res = client.list_objects_v2(**options)
+
+        # Yield this batch of files
+        yield res.get('Contents', [])
+
+        # If all files fetched, end
+        if res['IsTruncated'] is False:
+            break
+
+        # Get next continuation token
+        continuation_token = res['NextContinuationToken']
+
+
+def clear_checksum_files(zarr: ZarrArchive):
+    """Remove all checksum files."""
+    client = get_client()
+    bucket = zarr.storage.bucket_name
+    prefix = (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
+        f'{settings.DANDI_ZARR_CHECKSUM_PREFIX_NAME}/{zarr.zarr_id}'
+    )
+
+    for files in yield_files(bucket=bucket, prefix=prefix):
+        if not files:
+            break
+
+        # Handle both versioned and non-versioned buckets
+        allowed = {'Key', 'VersionId'}
+        objects = [{k: v for k, v in file.items() if k in allowed} for file in files]
+        client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
 
 
 class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
@@ -75,84 +141,70 @@ class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
         return file_updater
 
 
-def yield_files(client, zarr: ZarrArchive):
-    """Get all objects in the bucket, through repeated object listing."""
-    continuation_token = None
-    common_options = {'Bucket': zarr.storage.bucket_name, 'Prefix': zarr.s3_path('')}
-    while True:
-        options = {**common_options}
-        if continuation_token is not None:
-            options['ContinuationToken'] = continuation_token
-
-        # Fetch
-        res = client.list_objects_v2(**options)
-
-        # Yield this batch of files
-        yield res.get('Contents', [])
-
-        # If all files fetched, end
-        if res['IsTruncated'] is False:
-            break
-
-        # Get next continuation token
-        continuation_token = res['NextContinuationToken']
-
-
-def get_client():
-    storage = get_storage()
-    if isinstance(storage, MinioStorage):
-        return boto3.client(
-            's3',
-            endpoint_url=storage.client._endpoint_url,
-            aws_access_key_id=storage.client._access_key,
-            aws_secret_access_key=storage.client._secret_key,
-            region_name='us-east-1',
-        )
-
-    return storage.connection.meta.client
-
-
 @shared_task
-@atomic
 def ingest_zarr_archive(
     zarr_id: str, no_checksum: bool = False, no_size: bool = False, no_count: bool = False
 ):
-    client = get_client()
-    zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+    # Ensure zarr is in pending state before proceeding
+    with transaction.atomic():
+        zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+        if zarr.status != ZarrArchive.Status.PENDING:
+            logger.info(f'{ZarrArchive.INGEST_ERROR_MSG}. Exiting...')
+            return
 
-    # Reset before compute
-    if not no_size:
-        zarr.size = 0
-    if not no_count:
-        zarr.file_count = 0
+        # Set as ingesting
+        zarr.status = ZarrArchive.Status.INGESTING
+        zarr.save()
 
-    # Instantiate updater and add files as they come in
-    updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
-    for files in yield_files(client, zarr):
-        # Update size and file count
+    # Zarr is in correct state, lock until ingestion finishes
+    with transaction.atomic():
+        zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+
+        # Reset before compute
         if not no_size:
-            zarr.size += sum((file['Size'] for file in files))
+            zarr.size = 0
         if not no_count:
-            zarr.file_count += len(files)
+            zarr.file_count = 0
 
-        # Update checksums
-        if not no_checksum:
-            updater.update_file_checksums(
-                [
-                    ZarrChecksum(
-                        md5=file['ETag'].strip('"'),
-                        path=file['Key'].replace(zarr.s3_path(''), ''),
-                    )
-                    for file in files
-                ]
-            )
+        # Instantiate updater and add files as they come in
+        updated = False
+        updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
+        for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
+            if len(files):
+                updated = True
 
-    # Save zarr after completion
-    zarr.save()
+            # Update size and file count
+            if not no_size:
+                zarr.size += sum((file['Size'] for file in files))
+            if not no_count:
+                zarr.file_count += len(files)
 
-    # Save all assets that reference this zarr, so their metadata is updated
-    for asset in zarr.assets.all():
-        asset.save()
+            # Update checksums
+            if not no_checksum:
+                updater.update_file_checksums(
+                    [
+                        ZarrChecksum(
+                            md5=file['ETag'].strip('"'),
+                            path=file['Key'].replace(zarr.s3_path(''), ''),
+                        )
+                        for file in files
+                    ]
+                )
+
+        # If no files were actually yielded, remove all checksum files
+        if not updated:
+            clear_checksum_files(zarr)
+
+        # Save zarr after completion
+        zarr.save()
+
+        # Save all assets that reference this zarr, so their metadata is updated
+        for asset in zarr.assets.all():
+            asset.save()
+
+        # Set status
+        zarr.status = ZarrArchive.Status.COMPLETE
+        zarr.save(update_fields=['status'])
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
