@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
@@ -60,17 +58,17 @@ def write_manifest_files(version_id: int) -> None:
     write_collection_jsonld(version, logger=logger)
 
 
-def encode_pydantic_error(error) -> Dict[str, str]:
+def encode_pydantic_error(error) -> dict[str, str]:
     return {'field': error['loc'][0], 'message': error['msg']}
 
 
-def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> Dict[str, str]:
+def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> dict[str, str]:
     return {'field': '.'.join([str(p) for p in error.path]), 'message': error.message}
 
 
 def collect_validation_errors(
     error: dandischema.exceptions.ValidationError,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     if type(error) is dandischema.exceptions.PydanticValidationError:
         encoder = encode_pydantic_error
     elif type(error) is dandischema.exceptions.JsonschemaValidationError:
@@ -165,7 +163,7 @@ def unembargo_dandiset(dandiset_id: int):
 
     # Only the draft version is needed, since embargoed dandisets can't be published
     draft_version: Version = dandiset.draft_version
-    embargoed_assets: List[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
+    embargoed_assets: list[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
 
     # Unembargo all assets
     for asset in embargoed_assets:

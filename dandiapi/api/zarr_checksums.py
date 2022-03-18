@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -98,19 +98,19 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         storage = self.zarr_archive.storage
         storage.delete(self.checksum_file_path)
 
-    def add_file_checksums(self, checksums: List[ZarrChecksum]):
+    def add_file_checksums(self, checksums: list[ZarrChecksum]):
         """Add a list of file checksums to the listing."""
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')
         self._checksums.add_file_checksums(checksums)
 
-    def add_directory_checksums(self, checksums: List[ZarrChecksum]):
+    def add_directory_checksums(self, checksums: list[ZarrChecksum]):
         """Add a list of directory checksums to the listing."""
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')
         self._checksums.add_directory_checksums(checksums)
 
-    def remove_checksums(self, paths: List[str]):
+    def remove_checksums(self, paths: list[str]):
         """Remove a list of paths from the listing."""
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')

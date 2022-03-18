@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import List
 
 from django.db import transaction
 from django.http.response import Http404, HttpResponseBase
@@ -59,7 +58,7 @@ class PartCompletionRequestSerializer(serializers.Serializer):
 class UploadCompletionRequestSerializer(serializers.Serializer):
     parts = PartCompletionRequestSerializer(many=True, allow_empty=False)
 
-    def create(self, validated_data) -> List[TransferredPart]:
+    def create(self, validated_data) -> list[TransferredPart]:
         return [
             TransferredPart(**part)
             for part in sorted(validated_data.pop('parts'), key=lambda part: part['part_number'])
@@ -191,7 +190,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     """
     request_serializer = UploadCompletionRequestSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
-    parts: List[TransferredPart] = request_serializer.save()
+    parts: list[TransferredPart] = request_serializer.save()
 
     try:
         upload = Upload.objects.get(upload_id=upload_id)
