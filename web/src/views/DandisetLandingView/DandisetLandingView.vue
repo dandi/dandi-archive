@@ -1,5 +1,6 @@
 <template>
   <div>
+    <Meditor v-if="currentDandiset" />
     <v-toolbar class="grey darken-2 white--text">
       <DandisetSearchField />
     </v-toolbar>
@@ -46,6 +47,7 @@ import {
 import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import Meditor from '@/components/Meditor/Meditor.vue';
 import store from '@/store';
 import { Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
@@ -59,6 +61,7 @@ export default defineComponent({
     DandisetMain,
     DandisetSearchField,
     DandisetSidebar,
+    Meditor,
   },
   // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking a
   // link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
