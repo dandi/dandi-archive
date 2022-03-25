@@ -47,7 +47,7 @@ def calculate_sha256(blob_id: int) -> None:
         validate_asset_metadata(asset.id)
 
 
-@shared_task
+@shared_task(queue='write_manifest_files')
 @atomic
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
