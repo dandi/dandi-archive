@@ -22,6 +22,6 @@ jobs:
 
       - name: Create Release
         env:
-          GH_TOKEN: ${{ secrets.AUTO_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           ~/auto shipit
