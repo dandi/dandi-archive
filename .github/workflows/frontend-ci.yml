@@ -7,7 +7,29 @@ on:
   schedule:
     - cron: "0 0 * * *"
 jobs:
-  test:
+  lint-type-check:
+    defaults:
+        run:
+          working-directory: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+
+      - name: Install Vue app
+        run: yarn install
+
+      - name: Lint Vue app
+        run: yarn run lint
+
+      - name: Type-check Vue templates
+        run: yarn run lint:templates
+
+      - name: Build Vue app
+        run: yarn run build
+
+  test-e2e-pytest-pyppeteer:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -29,26 +51,8 @@ jobs:
           MINIO_SECRET_KEY: minioSecretKey
         ports:
           - 9000:9000
-
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14.x'
-          cache: 'yarn'
-          cache-dependency-path: web/yarn.lock
-
-      - name: Install web app
-        if: steps.yarn-cache.outputs.cache-hit != 'true'
-        run: yarn install --frozen-lockfile --prefer-offline
-        working-directory: web
-
-      - name: Lint web app
-        run: |
-          yarn run lint --no-fix --max-warnings=0
-          yarn run lint:templates
-        working-directory: web
 
       - name: Run E2E tests
         uses: docker://ghcr.io/girder/pytest-pyppeteer:v0.0.10
@@ -71,7 +75,7 @@ jobs:
           DJANGO_DANDI_API_URL: http://localhost:8000
 
   # TODO: Remove this job when the rest of the puppeteer-based tests are ported to pyppeteer
-  test-e2e-old:
+  test-e2e-jest-puppeteer:
     runs-on: ubuntu-latest
     services:
       postgres:
