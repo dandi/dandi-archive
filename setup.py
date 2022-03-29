@@ -78,7 +78,9 @@ setup(
         ],
         'test': [
             'factory-boy',
+            'girder-pytest-pyppeteer==0.0.9',
             'pytest',
+            'pytest-asyncio',
             'pytest-cov',
             'pytest-django',
             'pytest-factoryboy',
