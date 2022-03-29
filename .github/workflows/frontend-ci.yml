@@ -1,13 +1,9 @@
 name: CI for frontend
 on:
   pull_request:
-    paths:
-      - "web/**"
   push:
     branches:
       - master
-    paths:
-      - "web/**"
   schedule:
     - cron: "0 0 * * *"
 jobs:
