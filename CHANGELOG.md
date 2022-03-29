@@ -1,3 +1,15 @@
+# v0.2.1 (Tue Mar 29 2022)
+
+#### 🐛 Bug Fix
+
+- Empty commit to cut a release [#989](https://github.com/dandi/dandi-archive/pull/989) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.0 (Tue Mar 29 2022)
 
 #### 🚀 Enhancement
