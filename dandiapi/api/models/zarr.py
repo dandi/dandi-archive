@@ -134,7 +134,7 @@ class BaseZarrUploadFile(TimeStampedModel):
         raise UnsupportedStorageError('Unsupported storage provider.')
 
     def to_checksum(self) -> ZarrChecksum:
-        return ZarrChecksum(path=self.path, md5=self.etag)
+        return ZarrChecksum(name=Path(self.path).name, digest=self.etag, size=self.size())
 
 
 class ZarrUploadFile(BaseZarrUploadFile):
@@ -209,7 +209,7 @@ class BaseZarrArchive(TimeStampedModel):
     def get_checksum(self, path: str | Path = ''):
         listing = ZarrChecksumFileUpdater(self, path).read_checksum_file()
         if listing is not None:
-            return listing.md5
+            return listing.digest
         else:
             zarr_file = self.upload_file_class.objects.create_zarr_upload_file(
                 zarr_archive=self, path=path

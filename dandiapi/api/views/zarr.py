@@ -82,8 +82,10 @@ class ZarrSerializer(serializers.ModelSerializer):
 class ZarrExploreSerializer(serializers.Serializer):
     directories = serializers.ListField(child=serializers.URLField())
     files = serializers.ListField(child=serializers.URLField())
-    checksums = serializers.DictField(child=serializers.RegexField('^[0-9a-f]{32}$'))
-    checksum = serializers.RegexField('^[0-9a-f]{32}$')
+    checksums = serializers.DictField(
+        child=serializers.RegexField('^[0-9a-f]{32}(-[0-9]+--[0-9]+)?$')
+    )
+    checksum = serializers.RegexField('^[0-9a-f]{32}-[0-9]+--[0-9]+$')
 
 
 class ZarrViewSet(ReadOnlyModelViewSet):
@@ -318,26 +320,26 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
         if listing is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         directories = [
-            settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, directory.path]) + '/'
+            settings.DANDI_API_URL
+            + reverse('zarr-explore', args=[zarr_id, str(Path(path) / directory.name)])
+            + '/'
             for directory in listing.checksums.directories
         ]
         files = [
-            settings.DANDI_API_URL + reverse('zarr-explore', args=[zarr_id, file.path])
+            settings.DANDI_API_URL
+            + reverse('zarr-explore', args=[zarr_id, str(Path(path) / file.name)])
             for file in listing.checksums.files
         ]
         checksums = {
-            **{
-                Path(directory.path).name: directory.md5
-                for directory in listing.checksums.directories
-            },
-            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+            **{directory.name: directory.digest for directory in listing.checksums.directories},
+            **{file.name: file.digest for file in listing.checksums.files},
         }
         serializer = ZarrExploreSerializer(
             data={
                 'directories': directories,
                 'files': files,
                 'checksums': checksums,
-                'checksum': listing.md5,
+                'checksum': listing.digest,
             }
         )
         serializer.is_valid(raise_exception=True)
