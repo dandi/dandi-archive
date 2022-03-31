@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -121,48 +122,52 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        new_version = old_version.publish_version
+        with transaction.atomic():
+            new_version = old_version.publish_version
 
-        new_version.doi = doi.create_doi(new_version)
+            new_version.doi = doi.create_doi(new_version)
 
-        new_version.save()
-        # Bulk create the join table rows to optimize linking assets to new_version
-        AssetVersions = Version.assets.through  # noqa: N806
+            new_version.save()
+            # Bulk create the join table rows to optimize linking assets to new_version
+            AssetVersions = Version.assets.through  # noqa: N806
 
-        # Add a new many-to-many association directly to any already published assets
-        already_published_assets = old_version.assets.filter(published=True)
-        AssetVersions.objects.bulk_create(
-            [
-                AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in already_published_assets.values('id')
-            ]
-        )
+            # Add a new many-to-many association directly to any already published assets
+            already_published_assets = old_version.assets.filter(published=True)
+            AssetVersions.objects.bulk_create(
+                [
+                    AssetVersions(asset_id=asset['id'], version_id=new_version.id)
+                    for asset in already_published_assets.values('id')
+                ]
+            )
 
-        # Publish any draft assets
-        # Import here to avoid dependency cycle
-        from dandiapi.api.models import Asset
+            # Publish any draft assets
+            # Import here to avoid dependency cycle
+            from dandiapi.api.models import Asset
 
-        draft_assets = old_version.assets.filter(published=False).all()
-        for draft_asset in draft_assets:
-            draft_asset.publish()
-        Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
+            draft_assets = old_version.assets.filter(published=False).all()
+            for draft_asset in draft_assets:
+                draft_asset.publish()
+            Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
 
-        AssetVersions.objects.bulk_create(
-            [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
-        )
+            AssetVersions.objects.bulk_create(
+                [
+                    AssetVersions(asset_id=asset.id, version_id=new_version.id)
+                    for asset in draft_assets
+                ]
+            )
 
-        # Save again to recompute metadata, specifically assetsSummary
-        new_version.save()
+            # Save again to recompute metadata, specifically assetsSummary
+            new_version.save()
 
-        # Set the version of the draft to PUBLISHED so that it cannot be publishd again without
-        # being modified and revalidated
-        old_version.status = Version.Status.PUBLISHED
-        old_version.save()
+            # Set the version of the draft to PUBLISHED so that it cannot be publishd again without
+            # being modified and revalidated
+            old_version.status = Version.Status.PUBLISHED
+            old_version.save()
 
-        write_manifest_files.delay(new_version.id)
+            write_manifest_files.delay(new_version.id)
 
-        serializer = VersionSerializer(new_version)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = VersionSerializer(new_version)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
