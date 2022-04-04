@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping, Optional
+from typing import TYPE_CHECKING, Optional
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -223,6 +224,10 @@ class ZarrChecksumUpdater:
                     )
 
     def update_file_checksums(self, checksums: Mapping[str, ZarrChecksum]):
+        """
+        Update the given checksums.
+        
+        checksums: a mapping of path to the new checksum for that path."""
         modifications = ZarrChecksumModificationQueue()
         for path, checksum in checksums.items():
             modifications.queue_file_update(Path(path).parent, checksum)
