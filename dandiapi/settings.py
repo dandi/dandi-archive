@@ -137,6 +137,10 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
 
+    # Don't require a POST request to initiate a GitHub login
+    # https://github.com/pennersr/django-allauth/blob/HEAD/ChangeLog.rst#backwards-incompatible-changes-2
+    SOCIALACCOUNT_LOGIN_ON_GET = True
+
     # Don't automatically approve users in production. Instead they must be
     # manually approved by an admin.
     AUTO_APPROVE_USERS = False
