@@ -1,3 +1,18 @@
+# v0.2.2 (Tue Apr 05 2022)
+
+#### 🐛 Bug Fix
+
+- Allow github login with GET request [#999](https://github.com/dandi/dandi-archive/pull/999) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add manifest-worker to Celery in dev environment [#994](https://github.com/dandi/dandi-archive/pull/994) ([@dchiquito](https://github.com/dchiquito))
+- Make publishing an atomic operation [#978](https://github.com/dandi/dandi-archive/pull/978) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Daniel Chiquito ([@dchiquito](https://github.com/dchiquito))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.1 (Tue Mar 29 2022)
 
 #### 🐛 Bug Fix
