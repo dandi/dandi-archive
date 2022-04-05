@@ -42,6 +42,21 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
 
 
 @pytest.mark.django_db
+def test_zarr_rest_dandiset_malformed(authenticated_api_client, user, dandiset):
+    assign_perm('owner', user, dandiset)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': 'My Zarr File!',
+            'dandiset': f'{dandiset.identifier}asd',
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == {"dandiset": ["This value does not match the required pattern."]}
+
+
+@pytest.mark.django_db
 def test_zarr_rest_create_not_an_owner(authenticated_api_client, zarr_archive):
     resp = authenticated_api_client.post(
         '/api/zarr/',

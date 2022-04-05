@@ -76,7 +76,7 @@ class ZarrSerializer(serializers.ModelSerializer):
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
-    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX)
+    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
 
 
 class ZarrExploreSerializer(serializers.Serializer):
