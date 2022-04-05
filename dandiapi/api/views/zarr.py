@@ -86,6 +86,11 @@ class ZarrExploreSerializer(serializers.Serializer):
     checksum = serializers.RegexField('^[0-9a-f]{32}$')
 
 
+class ZarrListSerializer(serializers.Serializer):
+    dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX, required=False)
+    name = serializers.CharField(required=False)
+
+
 class ZarrViewSet(ReadOnlyModelViewSet):
     serializer_class = ZarrSerializer
     pagination_class = DandiPagination
@@ -93,6 +98,28 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     queryset = ZarrArchive.objects.all()
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
+
+    def get_queryset(self):
+        query_serializer = ZarrListSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        # Filter by search params
+        queryset = self.queryset
+        data = query_serializer.validated_data
+        if 'dandiset' in data:
+            queryset = queryset.filter(dandiset=int(data['dandiset'].strip('0')))
+        if 'name' in data:
+            queryset = queryset.filter(name=data['name'])
+
+        return queryset
+
+    @swagger_auto_schema(
+        query_serializer=ZarrListSerializer(),
+        responses={200: ZarrSerializer(many=True)},
+        operation_summary='List zarr archives.',
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
         request_body=ZarrSerializer(),

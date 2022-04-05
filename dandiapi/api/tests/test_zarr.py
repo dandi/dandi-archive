@@ -133,6 +133,48 @@ def test_zarr_rest_get(
 
 
 @pytest.mark.django_db
+def test_zarr_rest_list_filter(authenticated_api_client, dandiset_factory, zarr_archive_factory):
+    # Create dandisets and zarrs
+    dandiset_a: Dandiset = dandiset_factory()
+    zarr_archive_a_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='test')
+    zarr_archive_a_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='unique')
+
+    dandiset_b: Dandiset = dandiset_factory()
+    zarr_archive_b_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='test')
+    zarr_archive_b_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='unique2')
+
+    # Test dandiset filter
+    resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_a.identifier})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 2
+    assert results[0]['zarr_id'] == zarr_archive_a_a.zarr_id
+    assert results[1]['zarr_id'] == zarr_archive_a_b.zarr_id
+
+    resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_b.identifier})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 2
+    assert results[0]['zarr_id'] == zarr_archive_b_a.zarr_id
+    assert results[1]['zarr_id'] == zarr_archive_b_b.zarr_id
+
+    # Test name filter
+    resp = authenticated_api_client.get('/api/zarr/', {'name': 'test'})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 2
+    assert results[0]['zarr_id'] == zarr_archive_a_a.zarr_id
+    assert results[1]['zarr_id'] == zarr_archive_b_a.zarr_id
+
+    # Test dandiset and name filter
+    resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_b, 'name': 'test'})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 1
+    assert results[0]['zarr_id'] == zarr_archive_b_a.zarr_id
+
+
+@pytest.mark.django_db
 def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
     ten_quadrillion = 10**16
     ten_petabytes = 10**16
