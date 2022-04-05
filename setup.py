@@ -42,7 +42,7 @@ setup(
         'dandischema==0.5.3',
         'django>=4.0.3',
         'django-admin-display',
-        'django-allauth',
+        'django-allauth==0.46.0',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
