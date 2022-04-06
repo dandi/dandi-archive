@@ -1,3 +1,15 @@
+# v0.2.6 (Wed Apr 06 2022)
+
+#### 🐛 Bug Fix
+
+- Fix search bar overflowing offscreen [#1008](https://github.com/dandi/dandi-archive/pull/1008) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.5 (Wed Apr 06 2022)
 
 #### 🐛 Bug Fix
