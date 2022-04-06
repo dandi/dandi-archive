@@ -1,3 +1,15 @@
+# v0.2.5 (Wed Apr 06 2022)
+
+#### 🐛 Bug Fix
+
+- Make checksum_worker responsible for zarr ingest [#1005](https://github.com/dandi/dandi-archive/pull/1005) ([@dchiquito](https://github.com/dchiquito))
+
+#### Authors: 1
+
+- Daniel Chiquito ([@dchiquito](https://github.com/dchiquito))
+
+---
+
 # v0.2.4 (Wed Apr 06 2022)
 
 #### 🐛 Bug Fix
