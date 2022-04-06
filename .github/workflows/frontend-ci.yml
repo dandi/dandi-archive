@@ -1,17 +1,81 @@
-name: CI for front end
+name: CI for frontend
 on:
   pull_request:
-    paths:
-      - "web/**"
   push:
     branches:
       - master
-    paths:
-      - "web/**"
   schedule:
     - cron: "0 0 * * *"
 jobs:
-  test:
+  lint-type-check:
+    defaults:
+        run:
+          working-directory: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+
+      - name: Install Vue app
+        run: yarn install
+
+      - name: Lint Vue app
+        run: yarn run lint
+
+      - name: Type-check Vue templates
+        run: yarn run lint:templates
+
+      - name: Build Vue app
+        run: yarn run build
+
+  test-e2e-pytest-pyppeteer:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+      rabbitmq:
+        image: rabbitmq:management
+        ports:
+          - 5672:5672
+      minio:
+        # This image does not require any command arguments (which GitHub Actions don't support)
+        image: bitnami/minio:2022.3.3
+        env:
+          MINIO_ACCESS_KEY: minioAccessKey
+          MINIO_SECRET_KEY: minioSecretKey
+        ports:
+          - 9000:9000
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run E2E tests
+        uses: docker://ghcr.io/girder/pytest-pyppeteer:v0.0.10
+        with:
+          install_directory: web
+          install_command: yarn install
+          test_directory: .
+          test_command: tox -e test-pyppeteer
+        env:
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@postgres:5432/django
+          DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
+          DJANGO_MINIO_STORAGE_ENDPOINT: minio:9000
+          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          DJANGO_STORAGE_BUCKET_NAME: django-storage
+          DJANGO_MINIO_STORAGE_MEDIA_URL: http://localhost:9000/django-storage
+          DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-dandisets
+          DJANGO_DANDI_DANDISETS_EMBARGO_BUCKET_NAME: dandi-embargo-dandisets
+          DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
+          DJANGO_DANDI_API_URL: http://localhost:8000
+
+  # TODO: Remove this job when the rest of the puppeteer-based tests are ported to pyppeteer
+  test-e2e-jest-puppeteer:
     runs-on: ubuntu-latest
     services:
       postgres:
