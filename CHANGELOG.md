@@ -1,3 +1,15 @@
+# v0.2.4 (Wed Apr 06 2022)
+
+#### 🐛 Bug Fix
+
+- Handle validation errors when fetching zarr checksums [#1007](https://github.com/dandi/dandi-archive/pull/1007) ([@dchiquito](https://github.com/dchiquito))
+
+#### Authors: 1
+
+- Daniel Chiquito ([@dchiquito](https://github.com/dchiquito))
+
+---
+
 # v0.2.3 (Wed Apr 06 2022)
 
 #### 🐛 Bug Fix
