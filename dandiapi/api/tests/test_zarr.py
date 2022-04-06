@@ -53,7 +53,7 @@ def test_zarr_rest_dandiset_malformed(authenticated_api_client, user, dandiset):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == {"dandiset": ["This value does not match the required pattern."]}
+    assert resp.json() == {'dandiset': ['This value does not match the required pattern.']}
 
 
 @pytest.mark.django_db
