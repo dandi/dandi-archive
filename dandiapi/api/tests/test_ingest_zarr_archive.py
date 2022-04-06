@@ -1,4 +1,5 @@
 import time
+
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
@@ -127,7 +128,7 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
 @pytest.mark.django_db
 def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factory, faker):
     zarr: ZarrArchive = zarr_archive_factory()
-    zarr_upload_file_factory(zarr_archive=zarr, path=f'foo/bar/baz.txt')
+    zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/baz.txt')
 
     # Perform initial ingest
     ingest_zarr_archive(str(zarr.zarr_id))
