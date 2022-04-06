@@ -18,9 +18,9 @@ from dandiapi.api.zarr_checksums import (
 
 
 def test_zarr_checksum_sort_order():
-    # The a < b in the path should take precedence over z > y in the md5
-    a = ZarrChecksum(path='1/2/3/a/z', md5='z')
-    b = ZarrChecksum(path='1/2/3/b/z', md5='y')
+    # The a < b in the name should take precedence over z > y in the md5
+    a = ZarrChecksum(name='a', digest='z', size=3)
+    b = ZarrChecksum(name='b', digest='y', size=4)
     assert sorted([b, a]) == [a, b]
 
 
@@ -30,30 +30,44 @@ def test_zarr_checksum_sort_order():
 @pytest.mark.parametrize(
     'file_checksums,directory_checksums,checksum',
     [
-        ([], [], '481a2f77ab786a0f45aafd5db0971caa'),
-        ([ZarrChecksum(path='foo/bar', md5='a')], [], 'cdcfdfca3622e20df03219273872549e'),
-        ([], [ZarrChecksum(path='foo/bar', md5='a')], '243aca82c6872222747183dd738b6fcb'),
+        ([], [], '481a2f77ab786a0f45aafd5db0971caa-0--0'),
         (
-            [ZarrChecksum(path='foo/bar', md5='a'), ZarrChecksum(path='foo/baz', md5='b')],
+            [ZarrChecksum(name='bar', digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', size=1)],
             [],
-            '785295076ae9156b363e442ef6d485e0',
+            'f21b9b4bf53d7ce1167bcfae76371e59-1--1',
         ),
         (
             [],
-            [ZarrChecksum(path='foo/bar', md5='a'), ZarrChecksum(path='foo/baz', md5='b')],
-            'ebca8bb8e716237e0f71657d1045930f',
+            [ZarrChecksum(name='foo/bar', digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-1--1', size=1)],
+            '413274f13134fa8a83a7f94e96c5a3c9-1--1',
         ),
         (
-            [ZarrChecksum(path='foo/baz', md5='a')],
-            [ZarrChecksum(path='foo/bar', md5='b')],
-            '9c34644ba03b7e9f58ebd1caef4215ad',
+            [
+                ZarrChecksum(name='bar', digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', size=1),
+                ZarrChecksum(name='baz', digest='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', size=2),
+            ],
+            [],
+            '4e67de4393d14c1e9c472438f0f1f8b1-2--3',
+        ),
+        (
+            [],
+            [
+                ZarrChecksum(name='bar', digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-1--1', size=1),
+                ZarrChecksum(name='baz', digest='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-1--2', size=2),
+            ],
+            '859ca1926affe9c7d0424030f26fbd89-2--3',
+        ),
+        (
+            [ZarrChecksum(name='baz', digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', size=1)],
+            [ZarrChecksum(name='bar', digest='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-1--2', size=2)],
+            '3cb139f47d3a3580388f41956c15f55e-2--3',
         ),
     ],
 )
 def test_zarr_checksum_serializer_aggregate_checksum(file_checksums, directory_checksums, checksum):
     serializer = ZarrJSONChecksumSerializer()
     assert (
-        serializer.aggregate_checksum(
+        serializer.aggregate_digest(
             ZarrChecksums(files=file_checksums, directories=directory_checksums)
         )
         == checksum
@@ -63,11 +77,15 @@ def test_zarr_checksum_serializer_aggregate_checksum(file_checksums, directory_c
 def test_zarr_checksum_serializer_generate_listing():
     serializer = ZarrJSONChecksumSerializer()
     checksums = ZarrChecksums(
-        files=[ZarrChecksum(path='foo/bar', md5='a')],
-        directories=[ZarrChecksum(path='foo/baz', md5='b')],
+        files=[ZarrChecksum(name='bar', digest='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', size=1)],
+        directories=[
+            ZarrChecksum(name='baz', digest='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-1--2', size=2)
+        ],
     )
     assert serializer.generate_listing(checksums) == ZarrChecksumListing(
-        checksums=checksums, md5='23076057c0da63f8ab50d0a108db332c'
+        checksums=checksums,
+        digest='baf791d7bac84947c14739b1684ec5ab-2--3',
+        size=3,
     )
 
 
@@ -77,26 +95,28 @@ def test_zarr_serialize():
         serializer.serialize(
             ZarrChecksumListing(
                 checksums=ZarrChecksums(
-                    files=[ZarrChecksum(path='foo/bar', md5='a')],
-                    directories=[ZarrChecksum(path='bar/foo', md5='b')],
+                    files=[ZarrChecksum(name='foo', digest='a', size=1)],
+                    directories=[ZarrChecksum(name='bar', digest='b', size=2)],
                 ),
-                md5='c',
+                digest='c',
+                size=3,
             )
         )
-        == '{"checksums":{"directories":[{"md5":"b","path":"bar/foo"}],"files":[{"md5":"a","path":"foo/bar"}]},"md5":"c"}'  # noqa: E501
+        == '{"checksums":{"directories":[{"digest":"b","name":"bar","size":2}],"files":[{"digest":"a","name":"foo","size":1}]},"digest":"c","size":3}'  # noqa: E501
     )
 
 
 def test_zarr_deserialize():
     serializer = ZarrJSONChecksumSerializer()
     assert serializer.deserialize(
-        '{"checksums":{"directories":[{"md5":"b","path":"bar/foo"}],"files":[{"md5":"a","path":"foo/bar"}]},"md5":"c"}'  # noqa: E501
+        '{"checksums":{"directories":[{"digest":"b","name":"bar/foo","size":2}],"files":[{"digest":"a","name":"foo/bar","size":1}]},"digest":"c", "size":3}'  # noqa: E501
     ) == ZarrChecksumListing(
         checksums=ZarrChecksums(
-            files=[ZarrChecksum(path='foo/bar', md5='a')],
-            directories=[ZarrChecksum(path='bar/foo', md5='b')],
+            files=[ZarrChecksum(name='foo/bar', digest='a', size=1)],
+            directories=[ZarrChecksum(name='bar/foo', digest='b', size=2)],
         ),
-        md5='c',
+        digest='c',
+        size=3,
     )
 
 
@@ -145,7 +165,8 @@ def test_zarr_checksum_file_updater_write_checksum_file(
                 upload.to_checksum(),
             ]
         ),
-        md5='b',
+        digest='b',
+        size=1,
     )
 
     updater = ZarrChecksumFileUpdater(zarr_archive, upload_parent_path)
@@ -179,7 +200,9 @@ def test_zarr_checksum_file_updater_read_checksum_file(
     ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     upload_parent_path = str(Path(upload.path).parent)
-    listing = ZarrChecksumListing(checksums=ZarrChecksums(files=[upload.to_checksum()]), md5='b')
+    listing = ZarrChecksumListing(
+        checksums=ZarrChecksums(files=[upload.to_checksum()]), digest='b', size=1
+    )
 
     updater = ZarrChecksumFileUpdater(zarr_archive, upload_parent_path)
     updater.write_checksum_file(listing)
@@ -225,8 +248,8 @@ def test_zarr_checksum_file_updater_context_manager(
         assert updater.checksum_listing == listing
 
         # Add two new checksums to the updater
-        a = ZarrChecksum(path='foo/bar', md5='a')
-        b = ZarrChecksum(path='foo/baz', md5='b')
+        a = ZarrChecksum(name='bar', digest='a', size=1)
+        b = ZarrChecksum(name='baz', digest='b', size=2)
         # Duplicate checksums should be removed
         updater.add_file_checksums(sorted([upload.to_checksum(), a, a, b, b]))
         # The updater's internal state should be updated
@@ -236,7 +259,7 @@ def test_zarr_checksum_file_updater_context_manager(
 
         # Remove the A checksum from the updater
         # The md5 should not need to match
-        updater.remove_checksums([a.path])
+        updater.remove_checksums([a.name])
         assert updater.checksum_listing == serializer.generate_listing(
             files=sorted(checksums + [b])
         )
@@ -253,10 +276,17 @@ def test_zarr_checksum_file_updater_context_manager(
 # ZarrChecksumModificationQueue tests
 
 
-foo = ZarrChecksum(path='foo', md5='md5')
-bar = ZarrChecksum(path='bar', md5='md5')
-foo_bar = ZarrChecksum(path='foo/bar', md5='md5')
-foo_bar_baz = ZarrChecksum(path='foo/bar/baz', md5='md5')
+foo = ZarrChecksum(name='foo', digest='a', size=2)
+bar = ZarrChecksum(name='bar', digest='b', size=1)
+foo_bar = ZarrChecksum(name='bar', digest='c', size=2)
+foo_bar_baz = ZarrChecksum(name='baz', digest='d', size=2)
+# This is a convenient way to get the correct parent directory for a given checksum
+parent_directory_map = {
+    foo.digest: Path('.'),
+    bar.digest: Path('.'),
+    foo_bar.digest: Path('foo'),
+    foo_bar_baz.digest: Path('foo/bar'),
+}
 
 
 @pytest.mark.parametrize(
@@ -335,9 +365,11 @@ def test_zarr_checksum_modification_queue(
 ):
     queue = ZarrChecksumModificationQueue()
     for file_update in file_updates:
-        queue.queue_file_update(Path(file_update.path).parent, file_update)
+        queue.queue_file_update(parent_directory_map[file_update.digest], file_update)
     for directory_update in directory_updates:
-        queue.queue_directory_update(Path(directory_update.path).parent, directory_update)
+        queue.queue_directory_update(
+            parent_directory_map[directory_update.digest], directory_update
+        )
     for removal in removals:
         queue.queue_removal(Path(removal).parent, removal)
 
@@ -356,13 +388,17 @@ def test_zarr_checksum_modification_queue(
 def test_zarr_checksum_updater(storage, zarr_archive: ZarrArchive, zarr_upload_file_factory):
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
-    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/a')
-    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/b')
-    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar/c')
+    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
+    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
+    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')
 
     # Test update_checksums
     ZarrChecksumUpdater(zarr_archive).update_file_checksums(
-        [a.to_checksum(), b.to_checksum(), c.to_checksum()],
+        {
+            'foo/a': a.to_checksum(),
+            'foo/b': b.to_checksum(),
+            'foo/bar/c': c.to_checksum(),
+        }
     )
 
     serializer = ZarrJSONChecksumSerializer()
@@ -376,13 +412,13 @@ def test_zarr_checksum_updater(storage, zarr_archive: ZarrArchive, zarr_upload_f
             b.to_checksum(),
         ],
         directories=[
-            ZarrChecksum(path='foo/bar', md5=foo_bar_listing.md5),
+            ZarrChecksum(name='bar', digest=foo_bar_listing.digest, size=100),
         ],
     )
     # The root contains an entry for foo
     root_listing = serializer.generate_listing(
         directories=[
-            ZarrChecksum(path='foo', md5=foo_listing.md5),
+            ZarrChecksum(name='foo', digest=foo_listing.digest, size=300),
         ]
     )
 
@@ -397,7 +433,7 @@ def test_zarr_checksum_updater(storage, zarr_archive: ZarrArchive, zarr_upload_f
     foo_listing = serializer.generate_listing(files=[a.to_checksum(), b.to_checksum()])
     # The root needs to be updated, since foo's checksum has changed
     root_listing = serializer.generate_listing(
-        directories=[ZarrChecksum(path='foo', md5=foo_listing.md5)]
+        directories=[ZarrChecksum(name='foo', digest=foo_listing.digest, size=200)]
     )
 
     assert not c.blob.storage.exists(

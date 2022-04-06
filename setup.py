@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema==0.5.3',
+        'dandischema==0.6.0',
         'django>=4.0.3',
         'django-admin-display',
         'django-allauth',

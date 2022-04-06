@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import boto3
@@ -182,13 +183,14 @@ def ingest_zarr_archive(
             # Update checksums
             if not no_checksum:
                 updater.update_file_checksums(
-                    [
-                        ZarrChecksum(
-                            md5=file['ETag'].strip('"'),
-                            path=file['Key'].replace(zarr.s3_path(''), ''),
+                    {
+                        file['Key'].replace(zarr.s3_path(''), ''): ZarrChecksum(
+                            digest=file['ETag'].strip('"'),
+                            name=Path(file['Key'].replace(zarr.s3_path(''), '')).name,
+                            size=file['Size'],
                         )
                         for file in files
-                    ]
+                    }
                 )
 
         # If no files were actually yielded, remove all checksum files

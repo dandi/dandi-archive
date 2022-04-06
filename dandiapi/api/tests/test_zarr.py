@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from guardian.shortcuts import assign_perm
@@ -352,19 +350,21 @@ def test_zarr_explore_directory(
 ):
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
-    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/a')
-    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/b')
-    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar/c')
+    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
+    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
+    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')
 
     # Write the checksum files
     ZarrChecksumUpdater(zarr_archive).update_file_checksums(
-        [a.to_checksum(), b.to_checksum(), c.to_checksum()],
+        {
+            'foo/a': a.to_checksum(),
+            'foo/b': b.to_checksum(),
+            'foo/bar/c': c.to_checksum(),
+        }
     )
     listing = ZarrChecksumFileUpdater(zarr_archive, path).read_checksum_file()
 
-    resp = api_client.get(
-        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
-    )
+    resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}')
     assert resp.status_code == 200
     assert resp.json() == {
         'directories': [
@@ -376,13 +376,10 @@ def test_zarr_explore_directory(
             for filepath in files
         ],
         'checksums': {
-            **{
-                Path(directory.path).name: directory.md5
-                for directory in listing.checksums.directories
-            },
-            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+            **{directory.name: directory.digest for directory in listing.checksums.directories},
+            **{file.name: file.digest for file in listing.checksums.files},
         },
-        'checksum': listing.md5,
+        'checksum': listing.digest,
     }
 
 
