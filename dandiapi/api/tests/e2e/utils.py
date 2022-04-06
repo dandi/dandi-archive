@@ -35,7 +35,7 @@ async def contains_text(page: Page, text: str):
     from pyppeteer.errors import TimeoutError
 
     try:
-        await page.waitForXPath(f'//*[contains(text(), "{text}")]', {'timeout': 500})
+        await page.waitForXPath(f'//*[contains(., "{text}")]', {'timeout': 500})
         return True
     except TimeoutError:
         return False
