@@ -20,8 +20,8 @@ from dandiapi.api.multipart import UnsupportedStorageError
 from dandiapi.api.storage import get_embargo_storage, get_storage
 from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
-
 logger = logging.Logger(name=__name__)
+
 
 class ZarrUploadFileManager(models.Manager):
     def create_zarr_upload_file(

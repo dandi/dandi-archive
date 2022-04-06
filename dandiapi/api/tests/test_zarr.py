@@ -162,7 +162,12 @@ def test_zarr_rest_get_invalid_checksum_file(authenticated_api_client, zarr_arch
     content_file = ContentFile('invalid content'.encode('utf-8'))
     # save() will never overwrite an existing file, it simply appends some garbage to ensure
     # uniqueness. _save() is an internal storage API that will overwite existing files.
-    storage._save(ZarrChecksumFileUpdater(zarr_archive=zarr_archive, zarr_directory_path='').checksum_file_path, content_file)
+    storage._save(
+        ZarrChecksumFileUpdater(
+            zarr_archive=zarr_archive, zarr_directory_path=''
+        ).checksum_file_path,
+        content_file,
+    )
 
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
