@@ -7,6 +7,7 @@ from django.db.models import QuerySet
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
+from dandiapi.api import doi
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -184,3 +185,45 @@ def unembargo_dandiset(dandiset_id: int):
     # Set access on dandiset
     dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
     dandiset.save(update_fields=['embargo_status'])
+
+
+@shared_task
+@atomic
+def publish_task(version_id: int):
+    old_version: Version = Version.objects.get(id=version_id)
+    new_version: Version = old_version.publish_version
+
+    new_version.doi = doi.create_doi(new_version)
+    new_version.save()
+
+    # Bulk create the join table rows to optimize linking assets to new_version
+    AssetVersions = Version.assets.through
+
+    # Add a new many-to-many association directly to any already published assets
+    already_published_assets = old_version.assets.filter(published=True)
+    AssetVersions.objects.bulk_create(
+        [
+            AssetVersions(asset_id=asset['id'], version_id=new_version.id)
+            for asset in already_published_assets.values('id')
+        ]
+    )
+
+    # Publish any draft assets
+    draft_assets = old_version.assets.filter(published=False).all()
+    for draft_asset in draft_assets:
+        draft_asset.publish()
+    Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
+
+    AssetVersions.objects.bulk_create(
+        [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
+    )
+
+    # Save again to recompute metadata, specifically assetsSummary
+    new_version.save()
+
+    # Set the version of the draft to PUBLISHED so that it cannot be published again without
+    # being modified and revalidated
+    old_version.status = Version.Status.PUBLISHED
+    old_version.save()
+
+    transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
