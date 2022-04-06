@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import logging
 from pathlib import Path
+from typing import Optional
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
@@ -10,12 +12,15 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+import pydantic
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.multipart import UnsupportedStorageError
 from dandiapi.api.storage import get_embargo_storage, get_storage
 from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
+
+logger = logging.Logger(name=__name__)
 
 
 class ZarrUploadFileManager(models.Manager):
@@ -188,11 +193,14 @@ class BaseZarrArchive(TimeStampedModel):
         return self.active_uploads.exists()
 
     @property
-    def checksum(self) -> str:
+    def checksum(self) -> Optional[str]:
         try:
             return self.get_checksum()
         except ValidationError:
             return EMPTY_CHECKSUM
+        except pydantic.ValidationError as e:
+            logger.error(e, exc_info=True)
+            return None
 
     @property
     def digest(self) -> dict[str, str]:

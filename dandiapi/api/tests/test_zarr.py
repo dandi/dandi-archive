@@ -1,5 +1,6 @@
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
+from django.core.files.base import ContentFile
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -148,6 +149,34 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'dandiset': zarr_archive.dandiset.identifier,
         'status': ZarrArchive.Status.PENDING,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
+        'file_count': 0,
+        'size': 0,
+    }
+
+
+@pytest.mark.django_db
+def test_zarr_rest_get_invalid_checksum_file(authenticated_api_client, zarr_archive: ZarrArchive):
+    # Write some invalid content into the .checksum file
+    storage = zarr_archive.storage
+    content_file = ContentFile('invalid content'.encode('utf-8'))
+    # save() will never overwrite an existing file, it simply appends some garbage to ensure
+    # uniqueness. _save() is an internal storage API that will overwite existing files.
+    storage._save(
+        ZarrChecksumFileUpdater(
+            zarr_archive=zarr_archive, zarr_directory_path=''
+        ).checksum_file_path,
+        content_file,
+    )
+
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.status_code == 200
+    assert resp.json() == {
+        'name': zarr_archive.name,
+        'zarr_id': zarr_archive.zarr_id,
+        'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
+        'checksum': None,
         'upload_in_progress': False,
         'file_count': 0,
         'size': 0,

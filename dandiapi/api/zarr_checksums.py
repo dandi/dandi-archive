@@ -226,8 +226,9 @@ class ZarrChecksumUpdater:
     def update_file_checksums(self, checksums: Mapping[str, ZarrChecksum]):
         """
         Update the given checksums.
-        
-        checksums: a mapping of path to the new checksum for that path."""
+
+        checksums: a mapping of path to the new checksum for that path.
+        """
         modifications = ZarrChecksumModificationQueue()
         for path, checksum in checksums.items():
             modifications.queue_file_update(Path(path).parent, checksum)
