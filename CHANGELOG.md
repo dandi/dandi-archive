@@ -1,3 +1,15 @@
+# v0.2.3 (Wed Apr 06 2022)
+
+#### 🐛 Bug Fix
+
+- Bump dandischema to 0.6.0 [#991](https://github.com/dandi/dandi-archive/pull/991) ([@dchiquito](https://github.com/dchiquito))
+
+#### Authors: 1
+
+- Daniel Chiquito ([@dchiquito](https://github.com/dchiquito))
+
+---
+
 # v0.2.2 (Tue Apr 05 2022)
 
 #### 🐛 Bug Fix
