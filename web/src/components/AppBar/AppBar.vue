@@ -1,6 +1,7 @@
 <template>
   <v-app-bar app>
     <v-menu
+      v-if="$vuetify.breakpoint.mobile"
       open-on-hover
       offset-y
     >
