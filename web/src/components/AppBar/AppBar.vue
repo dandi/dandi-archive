@@ -71,7 +71,10 @@
           text
         >
           {{ navItem.text }}
-          <v-icon class="ml-1">
+          <v-icon
+            class="ml-1"
+            small
+          >
             mdi-open-in-new
           </v-icon>
         </v-btn>
