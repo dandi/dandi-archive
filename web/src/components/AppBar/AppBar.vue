@@ -4,6 +4,7 @@
       v-if="$vuetify.breakpoint.mobile"
       open-on-hover
       offset-y
+      close-delay="300"
     >
       <template #activator="{on}">
         <v-icon
