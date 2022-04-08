@@ -10,7 +10,17 @@ command = "yarn run build"
   VUE_APP_SENTRY_DSN = "https://425b9a012300493d867e97785fae7b88@o308436.ingest.sentry.io/5196549"
   VUE_APP_SENTRY_ENVIRONMENT = "staging"
 
+
+[[redirects]]
+from = "/server-info"
+to = "/server-info.json"
+status = 200
+
 [[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
+
+
+[[plugins]]
+package = "/netlify/plugins/server-info-build"
