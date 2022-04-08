@@ -21,7 +21,7 @@ jobs:
         run: yarn install
 
       - name: Lint Vue app
-        run: yarn run lint
+        run: yarn run lint --no-fix
 
       - name: Type-check Vue templates
         run: yarn run lint:templates
