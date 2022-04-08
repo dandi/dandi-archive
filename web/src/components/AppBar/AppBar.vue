@@ -39,18 +39,15 @@
         </template>
       </v-list>
     </v-menu>
-    <v-toolbar-title>
-      <router-link to="/">
-        <v-img
-          alt="DANDI logo"
-          contain
-          height="48px"
-          width="120px"
-          src="@/assets/logo.svg"
-          class="mr-2"
-        />
-      </router-link>
-    </v-toolbar-title>
+    <router-link to="/">
+      <v-img
+        alt="DANDI logo"
+        contain
+        width="100px"
+        src="@/assets/logo.svg"
+        class="mr-3"
+      />
+    </router-link>
     <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
       <template v-for="navItem in navItems">
         <v-btn
