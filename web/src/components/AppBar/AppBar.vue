@@ -17,6 +17,7 @@
               :key="navItem.text"
               :to="navItem.external ? undefined : {name: navItem.to}"
               :href="navItem.external ? navItem.to : undefined"
+              exact
             >
               <v-list-item-content
                 v-if="!navItem.external"
