@@ -7,7 +7,7 @@
       close-delay="300"
     >
       <template #activator="{on}">
-        <v-app-bar-nav-icon v-on="on"></v-app-bar-nav-icon>
+        <v-app-bar-nav-icon v-on="on" />
       </template>
       <v-list>
         <v-list-item-group>
@@ -15,10 +15,11 @@
             <v-list-item
               v-if="!navItem.if || navItem.if()"
               :key="navItem.text"
+              :to="navItem.external ? undefined : {name: navItem.to}"
+              :href="navItem.external ? navItem.to : undefined"
             >
               <v-list-item-content
                 v-if="!navItem.external"
-                :to="{name: navItem.to}"
                 exact
                 text
                 class="text-md"
