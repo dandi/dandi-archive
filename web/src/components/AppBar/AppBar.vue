@@ -7,12 +7,7 @@
       close-delay="300"
     >
       <template #activator="{on}">
-        <v-icon
-          class="d-md-none mr-4"
-          v-on="on"
-        >
-          mdi-menu
-        </v-icon>
+        <v-app-bar-nav-icon v-on="on"></v-app-bar-nav-icon>
       </template>
       <v-list>
         <template v-for="navItem in navItems">
