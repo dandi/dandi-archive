@@ -51,7 +51,7 @@
         />
       </router-link>
     </v-toolbar-title>
-    <span class="d-none d-md-flex">
+    <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
       <template v-for="navItem in navItems">
         <v-btn
           v-if="!navItem.external && (!navItem.if || navItem.if())"
@@ -76,7 +76,7 @@
           </v-icon>
         </v-btn>
       </template>
-    </span>
+    </v-toolbar-items>
 
     <v-spacer />
 
