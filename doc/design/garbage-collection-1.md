@@ -30,6 +30,9 @@ Deleting an `Asset` is as simple as deleting the database record, although it mi
 
 Unreferenced `Asset`s should be removed after 30 days, just in case a user accidentally deletes some metadata that we need to recover.
 
+## Embargoed AssetBlobs and Assets
+Embargoed `AssetBlobs` and `Assets` should be subject to the same garbage collection rules as normal `AssetBlobs` and `Assets`.
+
 ## S3 objects
 Hypothetically, we might at some point encounter a desynchronization between objects stored in S3 and references stored in the database.
 We should identify up any objects stored in S3 that do not have corresponding `AssetBlob`s.
@@ -41,6 +44,12 @@ Identifying problematic objects requires iterating over every blob in the archiv
 Orphaned data should not be cleaned up automatically, as they are likely a symptom of a bug.
 Instead, they should be investigated manually as they occur.
 There should be a scheduled job that runs and reports orphaned data somewhere, either throwing an exception to be reported in Sentry, or be saving some data somewhere to be displayed in the admin data dashboard.
+
+## ZarrArchives
+A `ZarrArchive` represents a single zarr file being stored at a specific prefix in S3.
+
+`ZarrArchives` may be large enough that deleting automatically may result in fairly catastrophic data loss, so no automatic garbage collection should be done.
+Instead, `ZarrArchives` that have not been modified in more than 30 days should be logged for manual review.
 
 # Implementation
 All of these garbage collection operations should be added to the `collect_garbage` script.
