@@ -10,33 +10,40 @@
         <v-app-bar-nav-icon v-on="on"></v-app-bar-nav-icon>
       </template>
       <v-list>
-        <template v-for="navItem in navItems">
-          <v-list-item
-            v-if="!navItem.if || navItem.if()"
-            :key="navItem.text"
-          >
-            <v-btn
-              v-if="!navItem.external"
-              :to="{name: navItem.to}"
-              exact
-              text
+        <v-list-item-group>
+          <template v-for="navItem in navItems">
+            <v-list-item
+              v-if="!navItem.if || navItem.if()"
+              :key="navItem.text"
             >
-              {{ navItem.text }}
-            </v-btn>
-            <v-btn
-              v-if="navItem.external"
-              :href="navItem.to"
-              target="_blank"
-              rel="noopener"
-              text
-            >
-              {{ navItem.text }}
-              <v-icon class="ml-1">
+              <v-list-item-content
+                v-if="!navItem.external"
+                :to="{name: navItem.to}"
+                exact
+                text
+                class="text-md"
+              >
+                {{ navItem.text }}
+              </v-list-item-content>
+              <v-list-item-content
+                v-if="navItem.external"
+                :href="navItem.to"
+                target="_blank"
+                rel="noopener"
+                text
+              >
+                {{ navItem.text }}
+              </v-list-item-content>
+              <v-icon
+                v-if="navItem.external"
+                class="ml-1"
+                small
+              >
                 mdi-open-in-new
               </v-icon>
-            </v-btn>
-          </v-list-item>
-        </template>
+            </v-list-item>
+          </template>
+        </v-list-item-group>
       </v-list>
     </v-menu>
     <router-link to="/">
