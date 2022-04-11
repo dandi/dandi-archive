@@ -17,7 +17,10 @@
               :key="navItem.text"
               :to="navItem.external ? undefined : {name: navItem.to}"
               :href="navItem.external ? navItem.to : undefined"
+              :target="navItem.external ? '_blank' : undefined"
+              :rel="navItem.external ? 'noopener' : undefined"
               exact
+              text
             >
               <v-list-item-content
                 v-if="!navItem.external"
