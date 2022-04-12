@@ -7,6 +7,7 @@ web: gunicorn --bind 0.0.0.0:$PORT dandiapi.wsgi
 # but we may need to switch back to a dedicated worker in the future.
 # The queue `celery` is the default queue.
 worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery -B
-checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q calculate_sha256
+# The checksum-worker calculates blob checksums and updates zarr checksum files
+checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q calculate_sha256,ingest_zarr_archive
 # Manifests can be very memory intensive for large numbers of assets, so limit concurrency to 1
 manifest-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q write_manifest_files -c 1

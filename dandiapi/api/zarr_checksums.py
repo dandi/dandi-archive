@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -114,7 +115,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         """Remove a list of paths from the listing."""
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')
-        self._checksums.remove_checksums(paths)
+        self._checksums.remove_checksums([Path(path).name for path in paths])
 
 
 @dataclass
@@ -216,15 +217,21 @@ class ZarrChecksumUpdater:
                     modifications.queue_directory_update(
                         modification.path.parent,
                         ZarrChecksum(
-                            path=str(modification.path),
-                            md5=file_updater.checksum_listing.md5,
+                            name=modification.path.name,
+                            digest=file_updater.checksum_listing.digest,
+                            size=file_updater.checksum_listing.size,
                         ),
                     )
 
-    def update_file_checksums(self, checksums: list[ZarrChecksum]):
+    def update_file_checksums(self, checksums: Mapping[str, ZarrChecksum]):
+        """
+        Update the given checksums.
+
+        checksums: a mapping of path to the new checksum for that path.
+        """
         modifications = ZarrChecksumModificationQueue()
-        for checksum in checksums:
-            modifications.queue_file_update(Path(checksum.path).parent, checksum)
+        for path, checksum in checksums.items():
+            modifications.queue_file_update(Path(path).parent, checksum)
         self.modify(modifications)
 
     def remove_checksums(self, paths: list[str]):

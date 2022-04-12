@@ -129,7 +129,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         blank=True,
         null=True,
         default=None,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
     )
     published = models.BooleanField(default=False)
 

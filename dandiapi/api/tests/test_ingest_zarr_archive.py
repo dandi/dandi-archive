@@ -1,3 +1,5 @@
+import time
+
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
@@ -90,12 +92,12 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
     foo_baz_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_baz_files])
     foo_listing = serializer.generate_listing(
         directories=[
-            ZarrChecksum(path='foo/bar', md5=foo_bar_listing.md5),
-            ZarrChecksum(path='foo/baz', md5=foo_baz_listing.md5),
+            ZarrChecksum(name='bar', digest=foo_bar_listing.digest, size=200),
+            ZarrChecksum(name='baz', digest=foo_baz_listing.digest, size=100 * len(foo_baz_files)),
         ]
     )
     root_listing = serializer.generate_listing(
-        directories=[ZarrChecksum(path='foo', md5=foo_listing.md5)]
+        directories=[ZarrChecksum(name='foo', digest=foo_listing.digest, size=total_size)]
     )
 
     # Assert checksum files don't already exist
@@ -124,6 +126,32 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
 
 
 @pytest.mark.django_db
+def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factory, faker):
+    zarr: ZarrArchive = zarr_archive_factory()
+    zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/baz.txt')
+
+    # Perform initial ingest
+    ingest_zarr_archive(str(zarr.zarr_id))
+    checksum_updater = ZarrChecksumFileUpdater(zarr, '')
+    checksum = checksum_updater.read_checksum_file()
+    checksum_last_modified = zarr.storage.modified_time(checksum_updater.checksum_file_path)
+    assert checksum is not None
+
+    # Last modified time only has second precision, so sleep for 1 second
+    time.sleep(1)
+
+    # Perform redundant ingest, ensure checksum hasn't changed
+    ingest_zarr_archive(str(zarr.zarr_id))
+    assert checksum_updater.read_checksum_file() == checksum
+    assert zarr.storage.modified_time(checksum_updater.checksum_file_path) == checksum_last_modified
+
+    # Perform ingest with force flag, assert updated
+    ingest_zarr_archive(str(zarr.zarr_id), force=True)
+    assert checksum_updater.read_checksum_file() == checksum
+    assert zarr.storage.modified_time(checksum_updater.checksum_file_path) != checksum_last_modified
+
+
+@pytest.mark.django_db
 def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
@@ -134,11 +162,11 @@ def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_fac
 
     # Intentionally generate and save invalid checksum files
     ZarrChecksumUpdater(zarr).update_file_checksums(
-        [
-            ZarrChecksum(path='foo/a', md5='a'),
-            ZarrChecksum(path='foo/b', md5='b'),
-            ZarrChecksum(path='foo/bar/c', md5='c'),
-        ],
+        {
+            'foo/a': ZarrChecksum(name='a', digest='a', size=100),
+            'foo/b': ZarrChecksum(name='b', digest='b', size=100),
+            'foo/bar/c': ZarrChecksum(name='c', digest='c', size=100),
+        },
     )
 
     # Generate correct listings
@@ -150,14 +178,14 @@ def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_fac
             b.to_checksum(),
         ],
         directories=[
-            ZarrChecksum(path='foo/bar', md5=foo_bar_listing.md5),
+            ZarrChecksum(name='bar', digest=foo_bar_listing.digest, size=100),
         ],
     )
 
     # The root contains an entry for foo
     root_listing = serializer.generate_listing(
         directories=[
-            ZarrChecksum(path='foo', md5=foo_listing.md5),
+            ZarrChecksum(name='foo', digest=foo_listing.digest, size=300),
         ]
     )
 
@@ -186,7 +214,8 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() is None
     assert ZarrJSONChecksumSerializer().generate_listing() == ZarrChecksumListing(
         checksums=ZarrChecksums(directories=[], files=[]),
-        md5='481a2f77ab786a0f45aafd5db0971caa',
+        digest='481a2f77ab786a0f45aafd5db0971caa-0--0',
+        size=zarr.size,
     )
 
 
@@ -211,7 +240,7 @@ def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_facto
     assert asset.metadata['contentSize'] == 100
     assert (
         asset.metadata['digest']['dandi:dandi-zarr-checksum']
-        == ZarrChecksumFileUpdater(asset.zarr, '').read_checksum_file().md5
+        == ZarrChecksumFileUpdater(asset.zarr, '').read_checksum_file().digest
     )
 
 

@@ -1,7 +1,6 @@
-from pathlib import Path
-
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
+from django.core.files.base import ContentFile
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -214,6 +213,34 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
 
 
 @pytest.mark.django_db
+def test_zarr_rest_get_invalid_checksum_file(authenticated_api_client, zarr_archive: ZarrArchive):
+    # Write some invalid content into the .checksum file
+    storage = zarr_archive.storage
+    content_file = ContentFile('invalid content'.encode('utf-8'))
+    # save() will never overwrite an existing file, it simply appends some garbage to ensure
+    # uniqueness. _save() is an internal storage API that will overwite existing files.
+    storage._save(
+        ZarrChecksumFileUpdater(
+            zarr_archive=zarr_archive, zarr_directory_path=''
+        ).checksum_file_path,
+        content_file,
+    )
+
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.status_code == 200
+    assert resp.json() == {
+        'name': zarr_archive.name,
+        'zarr_id': zarr_archive.zarr_id,
+        'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
+        'checksum': None,
+        'upload_in_progress': False,
+        'file_count': 0,
+        'size': 0,
+    }
+
+
+@pytest.mark.django_db
 def test_zarr_rest_delete_file(
     authenticated_api_client,
     user,
@@ -409,19 +436,21 @@ def test_zarr_explore_directory(
 ):
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
-    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/a')
-    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/b')
-    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar/c')
+    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
+    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
+    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')
 
     # Write the checksum files
     ZarrChecksumUpdater(zarr_archive).update_file_checksums(
-        [a.to_checksum(), b.to_checksum(), c.to_checksum()],
+        {
+            'foo/a': a.to_checksum(),
+            'foo/b': b.to_checksum(),
+            'foo/bar/c': c.to_checksum(),
+        }
     )
     listing = ZarrChecksumFileUpdater(zarr_archive, path).read_checksum_file()
 
-    resp = api_client.get(
-        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
-    )
+    resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}')
     assert resp.status_code == 200
     assert resp.json() == {
         'directories': [
@@ -433,13 +462,10 @@ def test_zarr_explore_directory(
             for filepath in files
         ],
         'checksums': {
-            **{
-                Path(directory.path).name: directory.md5
-                for directory in listing.checksums.directories
-            },
-            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+            **{directory.name: directory.digest for directory in listing.checksums.directories},
+            **{file.name: file.digest for file in listing.checksums.files},
         },
-        'checksum': listing.md5,
+        'checksum': listing.digest,
     }
 
 
