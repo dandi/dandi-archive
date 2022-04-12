@@ -33,6 +33,13 @@ DANDISET_PK_PARAM = openapi.Parameter(
 
 PATH_PREFIX_PARAM = openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING)
 
+ASSET_GLOB_PARAM = openapi.Parameter(
+    'glob',
+    openapi.IN_QUERY,
+    type=openapi.TYPE_STRING,
+    description='Glob pattern to filter asset paths with.',
+)
+
 VERSION_PARAM = openapi.Parameter(
     'version',
     openapi.IN_PATH,
