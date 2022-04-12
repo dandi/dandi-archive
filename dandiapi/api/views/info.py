@@ -47,16 +47,13 @@ def info_view(self):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': schema_url,
-            # TODO: Use git describe --abbrev=0
             'version': versioneer.get_version(),
-            # TODO: Determine what these should be
             "cli_minimal_version": "0.14.2",
             "cli_bad_versions": [],
             "services": {
                 "api": {"url": settings.DANDI_API_URL},
                 "webui": {"url": settings.DANDI_WEB_APP_URL},
-                # TODO: Add jupyter hub api setting
-                "jupyterhub": {"url": "https://hub.dandiarchive.org"},
+                "jupyterhub": {"url": settings.DANDI_JUPYTERHUB_URL},
             },
         }
     )

@@ -84,6 +84,7 @@ class DandiMixin(ConfigMixin):
     DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
     DANDI_WEB_APP_URL = values.URLValue(environ_required=True)
     DANDI_API_URL = values.URLValue(environ_required=True)
+    DANDI_JUPYTERHUB_URL = values.URLValue(environ_required=True)
 
     DANDI_VALIDATION_JOB_INTERVAL = values.IntegerValue(environ=True, default=60)
 
