@@ -1268,3 +1268,40 @@ def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expec
     )
 
     assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'regex_pattern,expected_paths',
+    [
+        (
+            '[0-9].txt',
+            ['1.txt', '1/2/3.txt'],
+        ),
+        (
+            '[a-z].txt',
+            ['a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
+        ),
+    ],
+)
+def test_asset_rest_regex_valid(api_client, asset_factory, version, regex_pattern, expected_paths):
+    paths = ('1.txt', '1/2/3.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
+
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': regex_pattern},
+    )
+
+    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+
+
+@pytest.mark.django_db
+def test_asset_rest_regex_invalid(api_client, version):
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': '[[[[['},  # provide an invalid regex
+    )
+
+    assert resp.status_code == 400
