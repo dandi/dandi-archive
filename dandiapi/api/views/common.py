@@ -40,6 +40,13 @@ ASSET_GLOB_PARAM = openapi.Parameter(
     description='Glob pattern to filter asset paths with.',
 )
 
+ASSET_REGEX_PARAM = openapi.Parameter(
+    'regex',
+    openapi.IN_QUERY,
+    type=openapi.TYPE_STRING,
+    description='Regex pattern to filter asset paths with.',
+)
+
 VERSION_PARAM = openapi.Parameter(
     'version',
     openapi.IN_PATH,

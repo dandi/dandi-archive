@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
 except ImportError:
@@ -37,6 +39,7 @@ from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_GLOB_PARAM,
     ASSET_ID_PARAM,
+    ASSET_REGEX_PARAM,
     PATH_PREFIX_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
@@ -508,11 +511,23 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(manual_parameters=[ASSET_GLOB_PARAM])
+    @swagger_auto_schema(manual_parameters=[ASSET_GLOB_PARAM, ASSET_REGEX_PARAM])
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
         glob_pattern: str | None = self.request.query_params.get('glob')
+        regex_pattern: str | None = self.request.query_params.get('regex')
+
+        if regex_pattern is not None:
+            try:
+                # Validate the regex by calling re.compile on it
+                re.compile(regex_pattern)
+                queryset = queryset.filter(path__iregex=regex_pattern)
+            except re.error:
+                return Response(
+                    data=f'{regex_pattern} is not a valid regex pattern.',
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         if glob_pattern is not None:
             queryset = queryset.filter(
