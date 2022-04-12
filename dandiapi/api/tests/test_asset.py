@@ -1240,3 +1240,31 @@ def test_asset_direct_info(api_client, asset):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'glob_pattern,expected_paths',
+    [
+        (
+            '*.txt',
+            ['a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
+        ),
+        (
+            'a/b/c/*',
+            ['a/b/c/d.txt', 'a/b/c/e.txt'],
+        ),
+        ('a/b/d/*', ['a/b/d/e.txt']),
+    ],
+)
+def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expected_paths):
+    paths = ('a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
+
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'glob': glob_pattern},
+    )
+
+    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
