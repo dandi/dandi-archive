@@ -144,12 +144,16 @@ class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
 
 @shared_task(queue='ingest_zarr_archive')
 def ingest_zarr_archive(
-    zarr_id: str, no_checksum: bool = False, no_size: bool = False, no_count: bool = False
+    zarr_id: str,
+    no_checksum: bool = False,
+    no_size: bool = False,
+    no_count: bool = False,
+    force: bool = False,
 ):
     # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-        if zarr.status != ZarrArchive.Status.PENDING:
+        if not force and zarr.status != ZarrArchive.Status.PENDING:
             logger.info(f'{ZarrArchive.INGEST_ERROR_MSG}. Exiting...')
             return
 

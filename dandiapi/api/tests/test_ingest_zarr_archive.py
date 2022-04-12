@@ -1,3 +1,5 @@
+import time
+
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
@@ -121,6 +123,32 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
     zarr.refresh_from_db()
     assert zarr.size == total_size
     assert zarr.file_count == total_file_count
+
+
+@pytest.mark.django_db
+def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factory, faker):
+    zarr: ZarrArchive = zarr_archive_factory()
+    zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/baz.txt')
+
+    # Perform initial ingest
+    ingest_zarr_archive(str(zarr.zarr_id))
+    checksum_updater = ZarrChecksumFileUpdater(zarr, '')
+    checksum = checksum_updater.read_checksum_file()
+    checksum_last_modified = zarr.storage.modified_time(checksum_updater.checksum_file_path)
+    assert checksum is not None
+
+    # Last modified time only has second precision, so sleep for 1 second
+    time.sleep(1)
+
+    # Perform redundant ingest, ensure checksum hasn't changed
+    ingest_zarr_archive(str(zarr.zarr_id))
+    assert checksum_updater.read_checksum_file() == checksum
+    assert zarr.storage.modified_time(checksum_updater.checksum_file_path) == checksum_last_modified
+
+    # Perform ingest with force flag, assert updated
+    ingest_zarr_archive(str(zarr.zarr_id), force=True)
+    assert checksum_updater.read_checksum_file() == checksum
+    assert zarr.storage.modified_time(checksum_updater.checksum_file_path) != checksum_last_modified
 
 
 @pytest.mark.django_db
