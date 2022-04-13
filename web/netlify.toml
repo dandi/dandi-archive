@@ -12,11 +12,6 @@ command = "yarn run build"
 
 
 [[redirects]]
-from = "/server-info"
-to = "/server-info.json"
-status = 200
-
-[[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
