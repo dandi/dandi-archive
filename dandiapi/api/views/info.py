@@ -48,12 +48,12 @@ def info_view(self):
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': schema_url,
             'version': versioneer.get_version(),
-            "cli_minimal_version": "0.14.2",
-            "cli_bad_versions": [],
-            "services": {
-                "api": {"url": settings.DANDI_API_URL},
-                "webui": {"url": settings.DANDI_WEB_APP_URL},
-                "jupyterhub": {"url": settings.DANDI_JUPYTERHUB_URL},
+            'cli_minimal_version': '0.14.2',
+            'cli_bad_versions': [],
+            'services': {
+                'api': {'url': settings.DANDI_API_URL},
+                'webui': {'url': settings.DANDI_WEB_APP_URL},
+                'jupyterhub': {'url': settings.DANDI_JUPYTERHUB_URL},
             },
         }
     )
