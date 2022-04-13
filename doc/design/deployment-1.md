@@ -1,5 +1,16 @@
 # Deployment procedures
 
+## Current situation
+Currently, we have a single `master` git branch. A GitHub CI workflow is triggered whenever anything is merged into `master` and deploys the changes to production. [`auto`](https://intuit.github.io/) creates git tags and releases, which trigger a GitHub CI workflow which deploys to production.
+
+The staging Netlify site is deployed automatically from `master`. The production Netlify site is deployed manually using the Netlify CLI from a GitHub CI workflow. This workflow also deletes the `netlify.toml` file so that it can manually specify the production configuration.
+
+The staging and production Heroku apps are deployed manually from a GitHub CI workflow using a GitHub action.
+
+Netlify and Heroku can deploy themselves automatically from a branch, but not from a release tag. This means we need to deploy manually from GitHub CI, which is quite complex and not ideal. Additionally, Netlify does not support multiple `netlify.toml` configuration files in a single project directory, which means the deployment CI step deletes the `netlify.toml` in the production deployment and specifies the environment with the Netlify CLI instead. 
+
+This proposed solution is to use a second `release` branch which tracks the released code. This allows us to use the automatic Netlify and Heroku deployments rather than pushing manually from GitHub CI.
+
 ## Git branches
 There are two central git branches:
 
