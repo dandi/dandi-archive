@@ -37,9 +37,7 @@ from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
 from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
-    ASSET_GLOB_PARAM,
     ASSET_ID_PARAM,
-    ASSET_REGEX_PARAM,
     PATH_PREFIX_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
@@ -47,6 +45,7 @@ from dandiapi.api.views.common import (
 )
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
+    AssetListSerializer,
     AssetPathsQueryParameterSerializer,
     AssetPathsResponseSerializer,
     AssetSerializer,
@@ -511,12 +510,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(manual_parameters=[ASSET_GLOB_PARAM, ASSET_REGEX_PARAM])
+    @swagger_auto_schema(query_serializer=AssetListSerializer)
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        serializer = AssetListSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        glob_pattern: str | None = self.request.query_params.get('glob')
-        regex_pattern: str | None = self.request.query_params.get('regex')
+        queryset = self.filter_queryset(self.get_queryset())
+        glob_pattern: str | None = serializer.validated_data.get('glob')
+        regex_pattern: str | None = serializer.validated_data.get('regex')
 
         if regex_pattern is not None:
             try:
@@ -531,7 +532,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         if glob_pattern is not None:
             queryset = queryset.filter(
-                path__iregex=glob_pattern.replace("*", ".*").replace(".", "\\.")
+                path__iregex=glob_pattern.replace('*', '.*').replace('.', '\\.')
             )
 
         page = self.paginate_queryset(queryset)

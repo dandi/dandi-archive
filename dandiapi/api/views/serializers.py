@@ -197,3 +197,8 @@ class AssetPathsQueryParameterSerializer(serializers.Serializer):
     path_prefix = serializers.CharField(default='')
     page = serializers.IntegerField(default=1)
     page_size = serializers.IntegerField(default=DandiPagination.page_size)
+
+
+class AssetListSerializer(serializers.Serializer):
+    glob = serializers.CharField(required=False)
+    regex = serializers.CharField(required=False)
