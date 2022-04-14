@@ -68,11 +68,6 @@ export default defineComponent({
         router.replace(trimmed);
       }
     });
-
-    return {
-      // Hack to satisfy template type checker
-      $vuetify: (ctx.root as any).$vuetify,
-    };
   },
 });
 </script>
