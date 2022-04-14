@@ -1,60 +1,66 @@
 <template>
   <v-app-bar app>
     <v-menu
+      v-if="$vuetify.breakpoint.mobile"
       open-on-hover
       offset-y
+      close-delay="300"
     >
       <template #activator="{on}">
-        <v-icon
-          class="d-md-none mr-4"
-          v-on="on"
-        >
-          mdi-menu
-        </v-icon>
+        <v-app-bar-nav-icon v-on="on" />
       </template>
       <v-list>
-        <template v-for="navItem in navItems">
-          <v-list-item
-            v-if="!navItem.if || navItem.if()"
-            :key="navItem.text"
-          >
-            <v-btn
-              v-if="!navItem.external"
-              :to="{name: navItem.to}"
+        <v-list-item-group>
+          <template v-for="navItem in navItems">
+            <v-list-item
+              v-if="!navItem.if || navItem.if()"
+              :key="navItem.text"
+              :to="navItem.external ? undefined : {name: navItem.to}"
+              :href="navItem.external ? navItem.to : undefined"
+              :target="navItem.external ? '_blank' : undefined"
+              :rel="navItem.external ? 'noopener' : undefined"
               exact
               text
             >
-              {{ navItem.text }}
-            </v-btn>
-            <v-btn
-              v-if="navItem.external"
-              :href="navItem.to"
-              target="_blank"
-              rel="noopener"
-              text
-            >
-              {{ navItem.text }}
-              <v-icon class="ml-1">
+              <v-list-item-content
+                v-if="!navItem.external"
+                exact
+                text
+                class="text-md"
+              >
+                {{ navItem.text }}
+              </v-list-item-content>
+              <v-list-item-content
+                v-if="navItem.external"
+                :href="navItem.to"
+                target="_blank"
+                rel="noopener"
+                text
+              >
+                {{ navItem.text }}
+              </v-list-item-content>
+              <v-icon
+                v-if="navItem.external"
+                class="ml-1"
+                small
+              >
                 mdi-open-in-new
               </v-icon>
-            </v-btn>
-          </v-list-item>
-        </template>
+            </v-list-item>
+          </template>
+        </v-list-item-group>
       </v-list>
     </v-menu>
-    <v-toolbar-title>
-      <router-link to="/">
-        <v-img
-          alt="DANDI logo"
-          contain
-          height="48px"
-          width="120px"
-          src="@/assets/logo.svg"
-          class="mr-2"
-        />
-      </router-link>
-    </v-toolbar-title>
-    <span class="d-none d-md-flex">
+    <router-link to="/">
+      <v-img
+        alt="DANDI logo"
+        contain
+        width="100px"
+        src="@/assets/logo.svg"
+        class="mr-3"
+      />
+    </router-link>
+    <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
       <template v-for="navItem in navItems">
         <v-btn
           v-if="!navItem.external && (!navItem.if || navItem.if())"
@@ -74,12 +80,15 @@
           text
         >
           {{ navItem.text }}
-          <v-icon class="ml-1">
+          <v-icon
+            class="ml-1"
+            small
+          >
             mdi-open-in-new
           </v-icon>
         </v-btn>
       </template>
-    </span>
+    </v-toolbar-items>
 
     <v-spacer />
 
