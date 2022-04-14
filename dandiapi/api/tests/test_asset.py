@@ -1305,3 +1305,15 @@ def test_asset_rest_regex_invalid(api_client, version):
     )
 
     assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_asset_rest_glob_regex_together(api_client, version):
+    """Test that including both a glob and regex returns a 400 error."""
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': '[0-9].txt', 'glob': '*.txt'},
+    )
+
+    assert resp.status_code == 400
+    assert resp.json() == {'glob': ['Cannot specify both glob and regex']}
