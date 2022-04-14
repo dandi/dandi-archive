@@ -9,8 +9,3 @@ command = "yarn run build"
   VUE_APP_DANDI_API_ROOT = "https://api-staging.dandiarchive.org/api/"
   VUE_APP_SENTRY_DSN = "https://425b9a012300493d867e97785fae7b88@o308436.ingest.sentry.io/5196549"
   VUE_APP_SENTRY_ENVIRONMENT = "staging"
-
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
