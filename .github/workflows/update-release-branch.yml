@@ -1,0 +1,21 @@
+name: Update release branch
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
+          token: ${{ secrets.GH_TOKEN }} # use PAT with permissions to push to master
+          ref: release
+      
+      - name: Reset release branch
+        run: |
+          git reset --hard ${{ github.ref }}
+          git push --force origin release
+
