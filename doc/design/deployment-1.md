@@ -1,7 +1,7 @@
 # Deployment procedures
 
 ## Current situation
-Currently, we have a single `master` git branch. A GitHub CI workflow is triggered whenever anything is merged into `master` and deploys the changes to production. [`auto`](https://intuit.github.io/) creates git tags and releases, which trigger a GitHub CI workflow which deploys to production.
+Currently, we have a single `master` git branch. A GitHub CI workflow is triggered whenever anything is merged into `master` and deploys the changes to staging. [`auto`](https://intuit.github.io/) creates git tags and releases, which trigger a GitHub CI workflow which deploys to production.
 
 The staging Netlify site is deployed automatically from `master`. The production Netlify site is deployed manually using the Netlify CLI from a GitHub CI workflow. This workflow also deletes the `netlify.toml` file so that it can manually specify the production configuration.
 
@@ -15,12 +15,12 @@ This proposed solution is to use a second `release` branch which tracks the rele
 There are two central git branches:
 
 - **`master`**: the active development branch. PRs should always use `master` as their merge target.
-- **`release`**: the *current* release branch. This will be rebased on top of master whenever a release ocurrs.
+- **`release`**: the *current* release branch. This will be reset to point to the top of master whenever a release ocurrs.
 
 Staging is deployed from `master`, while production is deployed from `release`.
 
 ## The `release` branch
-The `release` branch is kept up to date using a GitHub CI workflow. Whenever a release ocurrs, the `release` branch is rebased on top of `master` (to avoid merge conflicts). The `release` branch should therefore always be pointed at the latest release tag.
+The `release` branch is kept up to date using a GitHub CI workflow. Whenever a release ocurrs, the `release` branch is reset to point to `master` (to avoid merge conflicts). The `release` branch should therefore always be pointed at the latest release tag.
 
 ## Netlify deployment
 The staging and production Netlify sites are now both managed using a single `netlify.toml`. [Deploy contexts](https://docs.netlify.com/configure-builds/file-based-configuration/#deploy-contexts) allow us to differentiate between the production and staging sites. Production uses the default configuration, while staging uses a `branch-deploy` configuration.
