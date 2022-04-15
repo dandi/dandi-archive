@@ -1,4 +1,4 @@
-name: Update relase branch
+name: Update release branch
 
 on:
   release:
