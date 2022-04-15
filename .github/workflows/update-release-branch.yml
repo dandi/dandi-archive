@@ -16,6 +16,6 @@ jobs:
       
       - name: Reset release branch
         run: |
-          git reset --hard ${{ GITHUB_REF }}
+          git reset --hard ${{ github.ref }}
           git push --force origin release
 
