@@ -1,3 +1,18 @@
+# v0.2.8 (Fri Apr 15 2022)
+
+#### 🐛 Bug Fix
+
+- Release branch CI [#1033](https://github.com/dandi/dandi-archive/pull/1033) ([@dchiquito](https://github.com/dchiquito) [@AlmightyYakob](https://github.com/AlmightyYakob))
+- Deployment design doc [#1024](https://github.com/dandi/dandi-archive/pull/1024) ([@dchiquito](https://github.com/dchiquito) [@dandibot](https://github.com/dandibot))
+
+#### Authors: 3
+
+- Dandi Bot ([@dandibot](https://github.com/dandibot))
+- Daniel Chiquito ([@dchiquito](https://github.com/dchiquito))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.8 (Thu Apr 14 2022)
 
 #### 🐛 Bug Fix
