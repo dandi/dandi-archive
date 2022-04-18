@@ -1,3 +1,15 @@
+# v0.2.11 (Mon Apr 18 2022)
+
+#### 🐛 Bug Fix
+
+- Push to heroku directly in update-release-branch.yml [#1038](https://github.com/dandi/dandi-archive/pull/1038) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.10 (Mon Apr 18 2022)
 
 #### 🐛 Bug Fix
