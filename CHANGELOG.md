@@ -1,3 +1,15 @@
+# v0.2.10 (Mon Apr 18 2022)
+
+#### 🐛 Bug Fix
+
+- Fix disabled Heroku Github integration for staging and production deployment [#1036](https://github.com/dandi/dandi-archive/pull/1036) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.8 (Fri Apr 15 2022)
 
 #### 🐛 Bug Fix
