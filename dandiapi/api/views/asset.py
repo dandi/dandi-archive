@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import re
+
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
 except ImportError:
@@ -41,6 +45,7 @@ from dandiapi.api.views.common import (
 )
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
+    AssetListSerializer,
     AssetPathsQueryParameterSerializer,
     AssetPathsResponseSerializer,
     AssetSerializer,
@@ -504,6 +509,39 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         version.save()
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(query_serializer=AssetListSerializer)
+    def list(self, request, *args, **kwargs):
+        serializer = AssetListSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        glob_pattern: str | None = serializer.validated_data.get('glob')
+        regex_pattern: str | None = serializer.validated_data.get('regex')
+
+        if regex_pattern is not None:
+            try:
+                # Validate the regex by calling re.compile on it
+                re.compile(regex_pattern)
+                queryset = queryset.filter(path__iregex=regex_pattern)
+            except re.error:
+                return Response(
+                    data=f'{regex_pattern} is not a valid regex pattern.',
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if glob_pattern is not None:
+            queryset = queryset.filter(
+                path__iregex=glob_pattern.replace('*', '.*').replace('.', '\\.')
+            )
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         manual_parameters=[PATH_PREFIX_PARAM],

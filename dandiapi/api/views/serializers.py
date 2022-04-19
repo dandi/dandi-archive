@@ -197,3 +197,15 @@ class AssetPathsQueryParameterSerializer(serializers.Serializer):
     path_prefix = serializers.CharField(default='')
     page = serializers.IntegerField(default=1)
     page_size = serializers.IntegerField(default=DandiPagination.page_size)
+
+
+class AssetListSerializer(serializers.Serializer):
+    glob = serializers.CharField(required=False)
+    regex = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        if 'glob' in attrs and 'regex' in attrs:
+            raise serializers.ValidationError(
+                {'glob': 'Cannot specify both glob and regex'},
+            )
+        return super().validate(attrs)
