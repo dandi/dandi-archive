@@ -53,3 +53,4 @@ jobs:
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
           DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
           DJANGO_DANDI_API_URL: http://localhost:8000
+          DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/

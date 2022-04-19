@@ -84,6 +84,7 @@ class DandiMixin(ConfigMixin):
     DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
     DANDI_WEB_APP_URL = values.URLValue(environ_required=True)
     DANDI_API_URL = values.URLValue(environ_required=True)
+    DANDI_JUPYTERHUB_URL = values.URLValue(environ_required=True)
 
     DANDI_VALIDATION_JOB_INTERVAL = values.IntegerValue(environ=True, default=60)
 
@@ -121,6 +122,7 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = 'test-embargo-prefix/'
     DANDI_ZARR_PREFIX_NAME = 'test-zarr'
     DANDI_ZARR_CHECKSUM_PREFIX_NAME = 'test-zarr-checksums'
+    DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 
     # This makes the dandischema pydantic model allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
