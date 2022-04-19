@@ -142,7 +142,7 @@ def test_zarr_rest_list_filter(authenticated_api_client, dandiset_factory, zarr_
     zarr_archive_b_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='test')
     zarr_archive_b_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='unique2')
 
-    # Test dandiset filter
+    # Test dandiset filter with dandiset a
     resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_a.identifier})
     assert resp.status_code == 200
     results = resp.json()['results']
@@ -150,6 +150,7 @@ def test_zarr_rest_list_filter(authenticated_api_client, dandiset_factory, zarr_
     assert results[0]['zarr_id'] == zarr_archive_a_a.zarr_id
     assert results[1]['zarr_id'] == zarr_archive_a_b.zarr_id
 
+    # Test dandiset filter with dandiset b
     resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_b.identifier})
     assert resp.status_code == 200
     results = resp.json()['results']

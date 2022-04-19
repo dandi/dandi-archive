@@ -109,7 +109,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.queryset
         data = query_serializer.validated_data
         if 'dandiset' in data:
-            queryset = queryset.filter(dandiset=int(data['dandiset'].strip('0')))
+            queryset = queryset.filter(dandiset=int(data['dandiset'].lstrip('0')))
         if 'name' in data:
             queryset = queryset.filter(name=data['name'])
 
