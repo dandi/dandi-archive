@@ -10,7 +10,7 @@ class UserMetadata(TimeStampedModel):
         APPROVED = 'APPROVED'
         REJECTED = 'REJECTED'
 
-    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name='metadata')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='metadata')
     status = models.CharField(choices=Status.choices, default=Status.INCOMPLETE, max_length=10)
     questionnaire_form = models.JSONField(blank=True, null=True)
     rejection_reason = models.TextField(blank=True, default='', max_length=1000)
