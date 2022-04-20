@@ -78,7 +78,7 @@ class DandiMixin(ConfigMixin):
     DANDI_SCHEMA_VERSION = values.Value(default='0.6.2', environ=True)
 
     # The version of the API
-    DANDI_API_VERSION = values.Value(environ_required=True)
+    DANDI_API_VERSION = values.Value(default='v0.0.0', environ=True)
 
     DANDI_DOI_API_URL = values.URLValue(environ=True)
     DANDI_DOI_API_USER = values.Value(environ=True)
