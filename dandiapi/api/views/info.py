@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers
@@ -54,6 +56,7 @@ class ApiInfoSerializer(serializers.Serializer):
 )
 @api_view()
 def info_view(self):
+    api_url = os.path.join(settings.DANDI_API_URL, 'api/')
     serializer = ApiInfoSerializer(
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
@@ -62,7 +65,7 @@ def info_view(self):
             'cli-minimal-version': '0.14.2',
             'cli-bad-versions': [],
             'services': {
-                'api': {'url': settings.DANDI_API_URL},
+                'api': {'url': api_url},
                 'webui': {'url': settings.DANDI_WEB_APP_URL},
                 'jupyterhub': {'url': settings.DANDI_JUPYTERHUB_URL},
             },
