@@ -17,7 +17,7 @@ import os.path
 from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
-from django.db import models, transaction
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -450,7 +450,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             # Verify we aren't changing path to the same value as an existing asset
             if (
                 version.assets.filter(path=new_asset.path)
-                .filter(~models.Q(asset_id=old_asset.asset_id))
+                .exclude(asset_id=old_asset.asset_id)
                 .exists()
             ):
                 return Response(
