@@ -1,3 +1,15 @@
+# v0.2.15 (Wed Apr 20 2022)
+
+#### 🐛 Bug Fix
+
+- Include `api/` suffix in info endpoint api url [#1049](https://github.com/dandi/dandi-archive/pull/1049) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.14 (Wed Apr 20 2022)
 
 #### 🐛 Bug Fix
