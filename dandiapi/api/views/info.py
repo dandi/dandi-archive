@@ -23,14 +23,23 @@ class ApiServicesSerializer(serializers.Serializer):
 
 
 class ApiInfoSerializer(serializers.Serializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Need to add fields here to allow for hyphens in name
+        self.fields.update(
+            {
+                'cli-minimal-version': serializers.CharField(),
+                'cli-bad-versions': serializers.ListField(child=serializers.CharField()),
+            }
+        )
+
     # Schema
     schema_version = serializers.CharField()
     schema_url = serializers.URLField()
 
     # Versions
     version = serializers.CharField()
-    cli_minimal_version = serializers.CharField()
-    cli_bad_versions = serializers.ListField(child=serializers.CharField())
 
     # Services
     services = ApiServicesSerializer()
@@ -48,8 +57,8 @@ def info_view(self):
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': schema_url,
             'version': versioneer.get_version(),
-            'cli_minimal_version': '0.14.2',
-            'cli_bad_versions': [],
+            'cli-minimal-version': '0.14.2',
+            'cli-bad-versions': [],
             'services': {
                 'api': {'url': settings.DANDI_API_URL},
                 'webui': {'url': settings.DANDI_WEB_APP_URL},
