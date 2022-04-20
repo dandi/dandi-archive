@@ -1,7 +1,7 @@
 from django.conf import settings
-import versioneer
 
 from dandiapi.api.views.info import schema_url
+import versioneer
 
 
 def test_rest_info(api_client):
