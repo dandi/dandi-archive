@@ -565,6 +565,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         qs = (
             self.get_queryset()
             .select_related('blob')
+            .select_related('embargoed_blob')
+            .select_related('zarr')
             .filter(path__startswith=path_prefix)
             .order_by('path')
         )
