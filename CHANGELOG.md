@@ -1,3 +1,16 @@
+# v0.2.14 (Wed Apr 20 2022)
+
+#### 🐛 Bug Fix
+
+- Fix incorrect fields in info endpoint [#1046](https://github.com/dandi/dandi-archive/pull/1046) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Select all underlying asset storage fields in asset paths endpoint [#1034](https://github.com/dandi/dandi-archive/pull/1034) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.13 (Tue Apr 19 2022)
 
 #### 🐛 Bug Fix
