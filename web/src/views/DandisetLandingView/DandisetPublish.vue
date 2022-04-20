@@ -134,6 +134,14 @@
                       @click="publish"
                     >
                       Publish
+                      <v-spacer />
+                      <v-progress-circular
+                        v-if="publishing"
+                        indeterminate
+                      />
+                      <v-icon v-else>
+                        mdi-upload
+                      </v-icon>
                     </v-btn>
                   </v-card-actions>
                 </v-card>
@@ -410,12 +418,29 @@
         </v-btn>
       </v-col>
     </v-row>
+    <v-snackbar :value="!!alreadyBeingPublishedError">
+      This dandiset is already being published. Please wait for publishing to complete.
+    </v-snackbar>
+    <v-snackbar :value="!!publishedVersion">
+      Publish complete.
+      <template #action="{ attrs }">
+        <v-btn
+          color="info lighten-2"
+          text
+          v-bind="attrs"
+          @click="navigateToPublishedVersion"
+        >
+          Go to published dandiset
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed, ComputedRef, ref } from 'vue';
 
+import axios from 'axios';
 import moment from 'moment';
 
 import { dandiRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
@@ -485,6 +510,14 @@ const isOwner: ComputedRef<boolean> = computed(
   )),
 );
 
+// true if the dandiset is being published due to the user
+// clicking the publish button on this page
+const publishing = ref(false);
+// The version that resulted from the recent publish, if applicable
+const publishedVersion = ref('');
+
+const alreadyBeingPublishedError = ref(false);
+
 const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if (!loggedIn.value) {
     return 'You must be logged in to edit.';
@@ -507,8 +540,30 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
     return 'This dandiset is being unembargoed, please wait.';
   }
+  if (publishing.value) {
+    return 'This dandiset is being published, please wait.';
+  }
   return '';
 });
+
+setInterval(async () => {
+  // When a dandiset is being published, poll the server to check if it's finished
+  if (publishing.value && currentDandiset.value) {
+    const { identifier } = currentDandiset.value.dandiset!;
+    const { version } = currentDandiset.value;
+    const dandiset = await dandiRest.specificVersion(identifier, version);
+
+    if (dandiset?.status === 'Published') {
+      // re-fetch current dandiset so it includes the newly published version
+      await store.fetchDandiset({ identifier, version });
+      await store.fetchDandisetVersions({ identifier });
+
+      publishedVersion.value = otherVersions.value![0].version;
+
+      publishing.value = false;
+    }
+  }
+}, 2000);
 
 const publishButtonDisabled = computed(() => !!(
   currentDandiset.value?.version_validation_errors.length
@@ -578,16 +633,35 @@ async function publish() {
 
     showPublishChecklistDialog.value = false;
 
-    const version = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
-    // navigate to the newly published version
-    router.push({
-      name: 'dandisetLanding',
-      params: {
-        identifier: currentDandiset.value?.dandiset.identifier,
-        version: version.version,
-      },
-    });
+    publishing.value = true;
+    try {
+      const { version } = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
+      publishedVersion.value = version;
+    } catch (e) {
+      // A 423: Locked error means that the dandiset is currently undergoing publishing.
+      // If that happens, display an error.
+      if (axios.isAxiosError(e) && e.response?.status === 423) {
+        alreadyBeingPublishedError.value = true;
+      } else {
+        throw e;
+      }
+    }
   }
+}
+
+function navigateToPublishedVersion() {
+  const { identifier } = currentDandiset.value!.dandiset;
+  const version = publishedVersion.value;
+
+  // reset these for the new version
+  publishing.value = false;
+  publishedVersion.value = '';
+
+  // navigate to the newly published version
+  router.push({
+    name: 'dandisetLanding',
+    params: { identifier, version },
+  });
 }
 
 </script>
