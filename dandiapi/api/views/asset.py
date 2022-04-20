@@ -20,7 +20,6 @@ from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.http.response import Http404
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -29,6 +28,7 @@ from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
