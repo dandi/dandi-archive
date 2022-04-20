@@ -26,7 +26,9 @@ class ApiInfoSerializer(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Need to add fields here to allow for hyphens in name
+        # Need to add fields here to allow for hyphens in name.
+        # dandi-cli expects these exact field names (with hyphens), so
+        # these fields must remain unchanged.
         self.fields.update(
             {
                 'cli-minimal-version': serializers.CharField(),
