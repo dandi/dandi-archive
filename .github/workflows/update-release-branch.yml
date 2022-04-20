@@ -25,3 +25,5 @@ jobs:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: "dandi-api"
           heroku_email: ${{secrets.HEROKU_EMAIL}}
+        env:
+          HD_DJANGO_DANDI_API_VERSION: ${{ github.ref  }}
