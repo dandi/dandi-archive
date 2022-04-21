@@ -28,6 +28,11 @@ jobs:
           token: ${{ secrets.GH_TOKEN }} # use PAT with permissions to push to master
           ref: release
 
+      - name: Get latest git tag
+        run: |
+          git fetch --prune --unshallow
+          echo "API_VERSION=$(git describe --abbrev=0)" >> $GITHUB_ENV
+
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3.12.12
         with:
@@ -35,4 +40,4 @@ jobs:
           heroku_app_name: "dandi-api"
           heroku_email: ${{secrets.HEROKU_EMAIL}}
         env:
-          HD_DJANGO_DANDI_API_VERSION: ${{ github.ref  }}
+          HD_DJANGO_DANDI_API_VERSION: ${{ env.API_VERSION }}
