@@ -1,3 +1,15 @@
+# v0.2.17 (Thu Apr 21 2022)
+
+#### 🐛 Bug Fix
+
+- Remove trailing slash in info api url [#1056](https://github.com/dandi/dandi-archive/pull/1056) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.16 (Wed Apr 20 2022)
 
 #### 🐛 Bug Fix
