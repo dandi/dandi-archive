@@ -6,8 +6,6 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-import versioneer
-
 schema_url = (
     'https://raw.githubusercontent.com/dandi/schema/master/'
     f'releases/{settings.DANDI_SCHEMA_VERSION}/dandiset.json'
