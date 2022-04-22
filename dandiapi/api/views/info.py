@@ -6,6 +6,8 @@ from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from dandiapi import __version__
+
 schema_url = (
     'https://raw.githubusercontent.com/dandi/schema/master/'
     f'releases/{settings.DANDI_SCHEMA_VERSION}/dandiset.json'
@@ -59,7 +61,7 @@ def info_view(self):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': schema_url,
-            'version': settings.DANDI_API_VERSION.lstrip('v'),
+            'version': __version__.lstrip('v'),
             'cli-minimal-version': '0.14.2',
             'cli-bad-versions': [],
             'services': {
