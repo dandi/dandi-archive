@@ -1,7 +1,7 @@
 from django.conf import settings
 
-from dandiapi.api.views.info import schema_url
 from dandiapi import __version__
+from dandiapi.api.views.info import schema_url
 
 
 def test_rest_info(api_client):
