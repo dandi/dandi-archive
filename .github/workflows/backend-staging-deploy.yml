@@ -15,7 +15,7 @@ jobs:
       - name: Get latest git tag
         run: |
           git fetch --prune --unshallow
-          echo "API_VERSION=$(git describe --abbrev=0)" >> $GITHUB_ENV
+          echo "API_VERSION=$(git describe)" >> $GITHUB_ENV
       - uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
