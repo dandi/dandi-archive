@@ -12,14 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Get latest git tag
-        run: |
-          git fetch --prune --unshallow
-          echo "API_VERSION=$(git describe)" >> $GITHUB_ENV
       - uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: "dandi-api-staging"
           heroku_email: ${{secrets.HEROKU_EMAIL}}
-        env:
-          HD_DJANGO_DANDI_API_VERSION: ${{ env.API_VERSION  }}
