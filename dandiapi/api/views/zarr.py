@@ -6,7 +6,6 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.http.response import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -14,6 +13,7 @@ from minio_storage.storage import MinioStorage
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from storages.backends.s3boto3 import S3Boto3Storage

@@ -2,7 +2,7 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
@@ -60,7 +60,7 @@ class DashboardView(DashboardMixin, TemplateView):
                 has_version=Exists(Version.objects.filter(assets=OuterRef('id')))
             )
             .filter(has_version=True)
-            .filter(~Q(status=Asset.Status.VALID))
+            .exclude(status=Asset.Status.VALID)
         )
 
     def _uploads(self):

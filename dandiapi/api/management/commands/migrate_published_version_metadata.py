@@ -2,7 +2,6 @@ from difflib import ndiff
 from pprint import pformat
 
 from dandischema import migrate
-from django.db.models import Q
 import djclick as click
 
 from dandiapi.api.models import Version
@@ -17,7 +16,7 @@ def migrate_published_version_metadata(dandiset: str, published_version: str, to
     click.echo(
         f'Migrating published version {dandiset}/{published_version} metadata to version {to_version}'  # noqa: E501
     )
-    version = Version.objects.filter(~Q(version='draft')).get(
+    version = Version.objects.exclude(version='draft').get(
         dandiset=dandiset, version=published_version
     )
     metadata = version.metadata

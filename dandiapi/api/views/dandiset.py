@@ -5,10 +5,9 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
 from django.db.utils import IntegrityError
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
@@ -17,6 +16,7 @@ from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -270,7 +270,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         """
         dandiset: Dandiset = self.get_object()
 
-        if dandiset.versions.filter(~Q(version='draft')).exists():
+        if dandiset.versions.exclude(version='draft').exists():
             return Response(
                 'Cannot delete dandisets with published versions.',
                 status=status.HTTP_403_FORBIDDEN,

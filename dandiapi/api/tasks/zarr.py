@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 import boto3
 from celery import shared_task
@@ -43,7 +44,7 @@ def get_client():
     return storage.connection.meta.client
 
 
-def yield_files(bucket: str, prefix: Optional[str] = None):
+def yield_files(bucket: str, prefix: str | None = None):
     """Get all objects in the bucket, through repeated object listing."""
     client = get_client()
     common_options = {'Bucket': bucket}
@@ -98,7 +99,7 @@ class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
         # Set the start of when new files may have been written
         self._session_start = session_start
 
-    def read_checksum_file(self) -> Optional[ZarrChecksumListing]:
+    def read_checksum_file(self) -> ZarrChecksumListing | None:
         """Load a checksum listing from the checksum file."""
         storage = self.zarr_archive.storage
         checksum_path = self.checksum_file_path

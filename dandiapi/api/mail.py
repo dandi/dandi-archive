@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import logging
-from typing import Optional, Union
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
@@ -19,7 +20,7 @@ BASE_RENDER_CONTEXT = {
 ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
-def build_message(subject: str, message: str, to: list[str], html_message: Optional[str] = None):
+def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
     message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
     if html_message is not None:
         message.attach_alternative(html_message, 'text/html')
@@ -165,7 +166,7 @@ def send_rejected_user_message(user: User, socialaccount: SocialAccount):
         connection.send_messages(messages)
 
 
-def build_pending_users_message(users: Union[QuerySet, list[User]]):
+def build_pending_users_message(users: QuerySet | list[User]):
     render_context = {**BASE_RENDER_CONTEXT, 'users': users}
     return build_message(
         subject='DANDI: new user registrations to review',
@@ -174,7 +175,7 @@ def build_pending_users_message(users: Union[QuerySet, list[User]]):
     )
 
 
-def send_pending_users_message(users: Union[QuerySet, list[User]]):
+def send_pending_users_message(users: QuerySet | list[User]):
     logger.info(f'Sending pending users message to admins at {ADMIN_EMAIL}')
     messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
