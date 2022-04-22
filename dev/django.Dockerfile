@@ -9,9 +9,6 @@ RUN apt-get update && \
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Copy versioneer.py so it can be accessed by setup.py
-COPY ./versioneer.py /opt/django-project/versioneer.py
-
 # Only copy the setup.py and setup.cfg, it will still force all install_requires to be installed,
 # but find_packages() will find nothing (which is fine). When Docker Compose mounts the real source
 # over top of this directory, the .egg-link in site-packages resolves to the mounted directory
