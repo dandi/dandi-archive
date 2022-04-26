@@ -61,7 +61,7 @@ def info_view(self):
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': schema_url,
-            'version': __version__.lstrip('v'),
+            'version': __version__,
             'cli-minimal-version': '0.14.2',
             'cli-bad-versions': [],
             'services': {
