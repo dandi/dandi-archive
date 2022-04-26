@@ -14,7 +14,7 @@ setup(
     name='dandiapi',
     description='',
     # Determine version with scm
-    use_scm_version=True,
+    use_scm_version={'version_scheme': 'post-release'},
     setup_requires=['setuptools_scm'],
     long_description=long_description,
     long_description_content_type='text/markdown',
