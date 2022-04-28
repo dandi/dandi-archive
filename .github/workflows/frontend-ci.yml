@@ -154,7 +154,6 @@ jobs:
           key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
 
       - name: Install dandi-api dependencies
-        if: steps.pip-cache.outputs.cache-hit != 'true'
         run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
       - name: Apply migrations to API server
