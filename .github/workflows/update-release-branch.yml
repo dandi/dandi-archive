@@ -27,9 +27,19 @@ jobs:
           fetch-depth: 0 # fetch history for all branches and tags
           ref: release
 
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.12.12
-        with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: "dandi-api"
-          heroku_email: ${{secrets.HEROKU_EMAIL}}
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Install builds plugin
+        run: heroku plugins:install heroku-builds
+
+      - name: Build app into tarball
+        run: |
+          git fetch --prune --unshallow --tags
+          python setup.py sdist --formats=gztar
+
+      - name: Create Heroku Build
+        run: heroku builds:create -a dandi-api --source-tar=dist/$(python setup.py --fullname).tar.gz
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY  }}
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL  }}
