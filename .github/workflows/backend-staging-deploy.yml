@@ -11,7 +11,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
@@ -20,9 +22,7 @@ jobs:
         run: heroku plugins:install heroku-builds
 
       - name: Build app into tarball
-        run: |
-          git fetch --prune --unshallow --tags
-          python setup.py sdist --formats=gztar
+        run: python setup.py sdist --formats=gztar
 
       - name: Create Heroku Build
         run: heroku builds:create -a dandi-api-staging --source-tar=dist/$(python setup.py --fullname).tar.gz
