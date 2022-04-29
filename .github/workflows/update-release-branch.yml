@@ -5,7 +5,7 @@ on:
     types: [released]
 
 jobs:
-  release:
+  reset-release-branch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,10 +14,18 @@ jobs:
           token: ${{ secrets.GH_TOKEN }} # use PAT with permissions to push to master
           ref: release
 
-      - name: Reset release branch
+      - name: Perform reset
         run: |
           git reset --hard ${{ github.ref }}
           git push --force origin release
+
+  production-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
+          ref: release
 
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3.12.12
