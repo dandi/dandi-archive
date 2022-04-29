@@ -14,7 +14,7 @@ def test_rest_info(api_client):
         'cli-minimal-version': '0.14.2',
         'cli-bad-versions': [],
         'services': {
-            'api': {'url': f'{settings.DANDI_API_URL}/api/'},
+            'api': {'url': f'{settings.DANDI_API_URL}/api'},
             'webui': {'url': settings.DANDI_WEB_APP_URL},
             'jupyterhub': {'url': settings.DANDI_JUPYTERHUB_URL},
         },

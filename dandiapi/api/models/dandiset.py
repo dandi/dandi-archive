@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms, remove_perm
@@ -55,7 +53,7 @@ class Dandiset(TimeStampedModel):
         permissions = [('owner', 'Owns the dandiset')]
 
     @property
-    def identifier(self) -> Optional[str]:
+    def identifier(self) -> str | None:
         # Compare against None, to allow id 0
         return f'{self.id:06}' if self.id is not None else ''
 

@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -75,7 +75,7 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
             raise ValueError('This method is only valid when used by a context manager')
         return self._serializer.generate_listing(self._checksums)
 
-    def read_checksum_file(self) -> Optional[ZarrChecksumListing]:
+    def read_checksum_file(self) -> ZarrChecksumListing | None:
         """Load a checksum listing from the checksum file."""
         storage = self.zarr_archive.storage
         checksum_path = self.checksum_file_path

@@ -74,6 +74,7 @@ jobs:
           DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
           DJANGO_DANDI_API_URL: http://localhost:8000
           DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
+          DANDI_ALLOW_LOCALHOST_URLS: 1
 
   # TODO: Remove this job when the rest of the puppeteer-based tests are ported to pyppeteer
   test-e2e-jest-puppeteer:
@@ -110,6 +111,7 @@ jobs:
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
       DJANGO_DANDI_API_URL: http://localhost:8000
       DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
+      DANDI_ALLOW_LOCALHOST_URLS: 1
 
       # Web client env vars
       VUE_APP_DANDI_API_ROOT: http://localhost:8000/api/

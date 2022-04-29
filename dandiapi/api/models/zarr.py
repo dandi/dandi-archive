@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import timedelta
 import logging
 from pathlib import Path
-from typing import Optional
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
@@ -193,7 +192,7 @@ class BaseZarrArchive(TimeStampedModel):
         return self.active_uploads.exists()
 
     @property
-    def checksum(self) -> Optional[str]:
+    def checksum(self) -> str | None:
         try:
             return self.get_checksum()
         except ValidationError:

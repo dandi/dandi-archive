@@ -56,7 +56,7 @@ class ApiInfoSerializer(serializers.Serializer):
 )
 @api_view()
 def info_view(self):
-    api_url = os.path.join(settings.DANDI_API_URL, 'api/')
+    api_url = os.path.join(settings.DANDI_API_URL, 'api')
     serializer = ApiInfoSerializer(
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
