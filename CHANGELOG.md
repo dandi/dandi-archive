@@ -1,3 +1,15 @@
+# v0.2.19 (Fri Apr 29 2022)
+
+#### 🐛 Bug Fix
+
+- Deploy to heroku with Heroku CLI directly [#1075](https://github.com/dandi/dandi-archive/pull/1075) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.18 (Fri Apr 29 2022)
 
 #### 🐛 Bug Fix
