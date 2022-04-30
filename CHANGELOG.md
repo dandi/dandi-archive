@@ -1,3 +1,36 @@
+# v0.2.19 (Fri Apr 29 2022)
+
+#### 🐛 Bug Fix
+
+- Deploy to heroku with Heroku CLI directly [#1075](https://github.com/dandi/dandi-archive/pull/1075) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
+# v0.2.18 (Fri Apr 29 2022)
+
+#### 🐛 Bug Fix
+
+- Fix version in `/api/info/` [#1054](https://github.com/dandi/dandi-archive/pull/1054) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Fix failing `test_create_dev_dandiset` [#1070](https://github.com/dandi/dandi-archive/pull/1070) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Pin django-oauth-toolkit to 1.x [#1072](https://github.com/dandi/dandi-archive/pull/1072) ([@waxlamp](https://github.com/waxlamp))
+- Add garbage collection design doc [#560](https://github.com/dandi/dandi-archive/pull/560) ([@dchiquito](https://github.com/dchiquito))
+- Handle missing location query param [#1069](https://github.com/dandi/dandi-archive/pull/1069) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add actions workflow to auto-add issues to beta project board [#1043](https://github.com/dandi/dandi-archive/pull/1043) ([@waxlamp](https://github.com/waxlamp))
+- Misc. Django/Python improvements [#1050](https://github.com/dandi/dandi-archive/pull/1050) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- Daniel Chiquito ([@dchiquito](https://github.com/dchiquito))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.2.17 (Thu Apr 21 2022)
 
 #### 🐛 Bug Fix
