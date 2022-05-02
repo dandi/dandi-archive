@@ -297,14 +297,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        return (
-            AssetBlob.objects.filter(assets__versions__isnull=False)
+        return sum(
+            cls.objects.filter(assets__versions__isnull=False)
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0
-        ) + (
-            EmbargoedAssetBlob.objects.filter(assets__versions__isnull=False)
-            .distinct()
-            .aggregate(size=models.Sum('size'))['size']
-            or 0
+            for cls in (AssetBlob, EmbargoedAssetBlob)
         )
