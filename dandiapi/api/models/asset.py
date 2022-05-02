@@ -297,10 +297,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def total_size(cls):
+        # delayed import to avoid present imports circularity
+        from .zarr import ZarrArchive, EmbargoedZarrArchive
         return sum(
             cls.objects.filter(assets__versions__isnull=False)
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0
-            for cls in (AssetBlob, EmbargoedAssetBlob)
+            for cls in (AssetBlob, EmbargoedAssetBlob, ZarrArchive, EmbargoedZarrArchive)
         )
