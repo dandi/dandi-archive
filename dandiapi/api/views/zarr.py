@@ -214,7 +214,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @upload.mapping.delete
     def upload_cancel(self, request, zarr_id):
         """Cancel an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
+        queryset = self.get_queryset()
         zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
         if not self.request.user.has_perm('owner', zarr_archive.dandiset):
             raise PermissionDenied()

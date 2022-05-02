@@ -17,7 +17,7 @@ from dandiapi.api.zarr_checksums import (
 )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_rest(authenticated_api_client, zarr_archive: ZarrArchive, user):
     assign_perm('owner', user, zarr_archive.dandiset)
 
@@ -36,7 +36,7 @@ def test_ingest_zarr_archive_rest(authenticated_api_client, zarr_archive: ZarrAr
     assert resp.json()['status'] == ZarrArchive.Status.COMPLETE
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_rest_already_active(
     authenticated_api_client, zarr_archive: ZarrArchive, user
 ):
@@ -52,7 +52,7 @@ def test_ingest_zarr_archive_rest_already_active(
     assert resp.json() == ZarrArchive.INGEST_ERROR_MSG
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_rest_upload_active(
     authenticated_api_client, zarr_archive: ZarrArchive, zarr_upload_file_factory, user
 ):
@@ -68,7 +68,7 @@ def test_ingest_zarr_archive_rest_upload_active(
     assert resp.json() == 'Upload in progress. Please cancel or complete this existing upload.'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, faker):
     zarr: ZarrArchive = zarr_archive_factory()
 
@@ -125,7 +125,7 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
     assert zarr.file_count == total_file_count
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factory, faker):
     zarr: ZarrArchive = zarr_archive_factory()
     zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/baz.txt')
@@ -151,7 +151,7 @@ def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factor
     assert zarr.storage.modified_time(checksum_updater.checksum_file_path) != checksum_last_modified
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
@@ -203,7 +203,7 @@ def test_ingest_zarr_archive_existing(zarr_upload_file_factory, zarr_archive_fac
     assert ZarrChecksumFileUpdater(zarr, '').read_checksum_file() == root_listing
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_empty(zarr_archive_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
@@ -219,7 +219,7 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_factory, asset_factory):
     # Create zarr and asset
     zarr: ZarrArchive = zarr_archive_factory()

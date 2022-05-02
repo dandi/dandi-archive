@@ -35,7 +35,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
 
     username = factory.SelfAttribute('email')
-    email = factory.Faker('safe_email')
+    email = factory.Faker('free_email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 

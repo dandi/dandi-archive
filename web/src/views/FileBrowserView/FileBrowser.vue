@@ -411,7 +411,13 @@ export default defineComponent({
 
     // go to the directory specified in the URL if it changes
     watch(() => ctx.root.$route, (route) => {
-      location.value = route.query.location.toString() || rootDirectory;
+      location.value = (
+        Array.isArray(route.query.location)
+          ? route.query.location[0]
+          : route.query.location
+      ) || rootDirectory;
+
+      // Retrieve with new location
       getItems();
     }, { immediate: true });
 
