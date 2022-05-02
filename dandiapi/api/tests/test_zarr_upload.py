@@ -175,7 +175,7 @@ def test_zarr_rest_upload_complete_incorrect_etag(
     ]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_zarr_rest_upload_cancel(
     authenticated_api_client,
     user,
