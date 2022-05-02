@@ -207,7 +207,9 @@ def test_publish_asset(draft_asset: Asset):
 
 
 @pytest.mark.django_db
-def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_factory):
+def test_asset_total_size(
+    draft_version_factory, asset_factory, asset_blob_factory, zarr_archive_factory
+):
     # This asset blob should only be counted once,
     # despite belonging to multiple assets and multiple versions.
     asset_blob = asset_blob_factory()
@@ -225,6 +227,17 @@ def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_facto
     asset_factory()
 
     assert Asset.total_size() == asset_blob.size
+
+    zarr_archive = zarr_archive_factory()
+    # give it some size
+    zarr_archive.size = 100
+    zarr_archive.save() # save adjusted .size into DB
+
+    # adding of an asset with zarr should be reflected
+    asset3 = asset_factory(zarr=zarr_archive, blob=None)
+    version2.assets.add(asset3)
+
+    assert Asset.total_size() == asset_blob.size + zarr_archive.size
 
 
 @pytest.mark.django_db
