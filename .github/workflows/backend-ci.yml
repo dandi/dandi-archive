@@ -27,7 +27,7 @@ jobs:
           - 5672:5672
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnami/minio:latest
+        image: bitnami/minio:2022.3.3
         env:
           MINIO_ACCESS_KEY: minioAccessKey
           MINIO_SECRET_KEY: minioSecretKey
@@ -38,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Install tox
         run: |
           pip install --upgrade pip
@@ -53,3 +53,5 @@ jobs:
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
           DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
           DJANGO_DANDI_API_URL: http://localhost:8000
+          DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
+          DANDI_ALLOW_LOCALHOST_URLS: 1

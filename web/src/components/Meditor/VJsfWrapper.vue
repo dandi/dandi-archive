@@ -1,19 +1,18 @@
 <template>
-  <div>
-    <v-row
-      style="height: 80%;"
-      class="d-flex justify-space-between"
-    >
+  <div v-if="editorInterface && editorInterface.complexSchema">
+    <v-row class="d-flex justify-space-between">
       <v-col cols="6">
         <div
-          style="height: 65vh;"
+          style="height: 60vh;"
           class="overflow-y-auto"
         >
           <v-form v-model="formValid">
             <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
             <v-jsf
               v-if="index >= 0"
-              :key="`${propKey}-${index}-${transactionTracker.transactionPointer}`"
+              :key="`
+                ${propKey}-${index}-${editorInterface.transactionTracker.getTransactionPointer()}
+              `"
               class="my-6"
               :value="currentItem"
               :schema="schema"
@@ -23,17 +22,52 @@
             />
           </v-form>
         </div>
+        <div style="height: 10vh;">
+          <v-divider class="my-2" />
+          <div class="d-flex align-center justify-space-between mx-2">
+            <v-btn
+              elevation="0"
+              color="white"
+              class="text--darken-2 grey--text font-weight-medium"
+              @click="clearForm"
+            >
+              Clear Form
+            </v-btn>
+            <v-btn
+              v-if="index === -1"
+              class="grey darken-3 white--text"
+              elevation="0"
+              @click="createNewItem"
+            >
+              <span class="mr-1">Add Item</span>
+              <v-icon>mdi-arrow-right</v-icon>
+            </v-btn>
+            <v-btn
+              v-else
+              class="grey darken-3 white--text"
+              elevation="0"
+              :disabled="!formValid"
+              @click="saveItem"
+            >
+              <span class="mr-1">Save Item</span>
+              <v-icon>mdi-arrow-right</v-icon>
+            </v-btn>
+          </div>
+        </div>
       </v-col>
       <v-col
         :style="`
         background-color: ${
-          $vuetify.theme.themes[$vuetify.theme.isDark ? 'dark' : 'light'].dropzone
-        }; height: 75vh;
+          $vuetify.theme.themes[$vuetify.theme.dark ? 'dark' : 'light'].dropzone
+        }; height: 70vh;
         `"
         class="overflow-y-auto"
         cols="6"
       >
-        <v-sheet class="ma-4">
+        <v-sheet
+          v-if="editorInterface.complexSchema.properties"
+          class="ma-4"
+        >
           <v-jsf
             :key="JSON.stringify(currentModel)"
             :value="currentModel"
@@ -109,47 +143,12 @@
         </v-sheet>
       </v-col>
     </v-row>
-    <div
-      class="my-5"
-      style="position: fixed; bottom: 0; height: 10vh; width: 40%"
-    >
-      <v-divider class="my-2" />
-      <div class="d-flex align-center justify-space-between">
-        <v-btn
-          elevation="0"
-          color="white"
-          class="text--darken-2 grey--text font-weight-medium"
-          @click="clearForm()"
-        >
-          Clear Form
-        </v-btn>
-        <v-btn
-          v-if="index === -1"
-          class="grey darken-3 white--text"
-          elevation="0"
-          @click="createNewItem()"
-        >
-          <span class="mr-1">Add Item</span>
-          <v-icon>mdi-arrow-right</v-icon>
-        </v-btn>
-        <v-btn
-          v-else
-          class="grey darken-3 white--text"
-          elevation="0"
-          :disabled="!formValid"
-          @click="saveItem(propKey)"
-        >
-          <span class="mr-1">Save Item</span>
-          <v-icon>mdi-arrow-right</v-icon>
-        </v-btn>
-      </div>
-    </div>
   </div>
 </template>
 
 <script lang="ts">
 import {
-  computed, defineComponent, ref, PropType, watch,
+  computed, defineComponent, ref, watch,
 } from '@vue/composition-api';
 
 import VJsf from '@koumoul/vjsf/lib/VJsf';
@@ -157,22 +156,13 @@ import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 import { isEqual } from 'lodash';
 
-import { EditorInterface } from '@/utils/schema/editor';
-import { DandiModel } from '@/utils/schema/types';
-import MeditorTransactionTracker from '@/utils/transactions';
+import { DandiModel } from './types';
+import { editorInterface } from './state';
 
 export default defineComponent({
   name: 'VjsfWrapper',
   components: { VJsf },
   props: {
-    editorInterface: {
-      type: Object as PropType<EditorInterface>,
-      required: true,
-    },
-    transactionTracker: {
-      type: Object as PropType<MeditorTransactionTracker>,
-      required: true,
-    },
     propKey: {
       type: String,
       required: true,
@@ -195,14 +185,14 @@ export default defineComponent({
     // extracts the subschema for the given propKey
     const schema = computed(
       // @ts-ignore
-      () => props.editorInterface.complexSchema.properties[props.propKey].items,
+      () => editorInterface.value.complexSchema.properties[props.propKey].items,
     );
 
     const currentModel = computed({
-      get: () => props.editorInterface.complexModel[props.propKey] as DandiModel[],
+      get: () => editorInterface.value?.complexModel[props.propKey] as DandiModel[],
       set: (newModel: any) => {
-        props.editorInterface.setComplexModelProp(props.propKey, newModel);
-        props.transactionTracker.add(props.editorInterface.complexModel, true);
+        editorInterface.value?.setComplexModelProp(props.propKey, newModel);
+        editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
       },
     });
 
@@ -227,7 +217,7 @@ export default defineComponent({
         index.value = currentValue.push(event);
       }
 
-      props.editorInterface.setComplexModelProp(props.propKey, currentValue);
+      editorInterface.value?.setComplexModelProp(props.propKey, currentValue);
     }
 
     function clearForm() {
@@ -298,7 +288,7 @@ export default defineComponent({
 
     function formListener() {
       // record a new transaction whenever the current item is modified
-      props.transactionTracker.add(props.editorInterface.complexModel, true);
+      editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
     }
 
     return {
@@ -318,6 +308,7 @@ export default defineComponent({
       reorderItem,
       formListener,
       isModified,
+      editorInterface,
     };
   },
 });

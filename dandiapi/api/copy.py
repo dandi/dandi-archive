@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import List
 
 import boto3
 from django.conf import settings
@@ -131,7 +130,7 @@ def _copy_object_multipart_s3(
     )['UploadId']
 
     # Perform concurrent copying of object parts
-    uploading_parts: List[Future[CopyPartResponse]] = []
+    uploading_parts: list[Future[CopyPartResponse]] = []
     with ThreadPoolExecutor(max_workers=settings.DANDI_MULTIPART_COPY_MAX_WORKERS) as executor:
         for part in parts:
             # Submit part copy for execution in thread pool

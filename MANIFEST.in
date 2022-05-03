@@ -1,4 +1,2 @@
 # Include any data files such as templates or static assets in the source distribution
 graft dandiapi
-include versioneer.py
-include dandiapi/_version.py

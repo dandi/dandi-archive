@@ -1,5 +1,6 @@
 <template>
   <v-card
+    v-if="currentDandiset"
     outlined
     class="mt-4 px-3"
   >

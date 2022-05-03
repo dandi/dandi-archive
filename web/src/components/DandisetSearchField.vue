@@ -1,6 +1,6 @@
 <template>
   <v-form
-    style="width: 100vw;"
+    style="width: 100%;"
     @submit="performSearch"
   >
     <v-text-field
@@ -23,8 +23,11 @@
   </v-form>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, ref } from '@vue/composition-api';
+import { RawLocation } from 'vue-router';
+
+export default defineComponent({
   name: 'DandisetSearchField',
   props: {
     dense: {
@@ -33,38 +36,43 @@ export default {
       default: true,
     },
   },
-  data() {
-    return {
-      currentSearch: this.$route.query.search || '',
-    };
-  },
-  methods: {
-    updateSearch(search) {
-      this.currentSearch = search;
-    },
-    performSearch() {
-      const { currentSearch } = this;
-      if (currentSearch === this.$route.query.search) {
+  setup(props, ctx) {
+    const currentSearch = ref(ctx.root.$route.query.search || '');
+
+    function updateSearch(search: string) {
+      currentSearch.value = search;
+    }
+
+    function performSearch() {
+      const router = ctx.root.$router;
+      const route = ctx.root.$route;
+      if (currentSearch.value === route.query.search) {
         // nothing has changed, do nothing
         return;
       }
-      if (this.$route.name !== 'searchDandisets') {
-        this.$router.push({
+      if (route.name !== 'searchDandisets') {
+        router.push({
           name: 'searchDandisets',
           query: {
-            search: currentSearch,
+            search: currentSearch.value,
           },
         });
       } else {
-        this.$router.replace({
-          ...this.$route,
+        router.replace({
+          ...route,
           query: {
-            ...this.$route.query,
-            search: currentSearch,
+            ...route.query,
+            search: currentSearch.value,
           },
-        });
+        } as RawLocation);
       }
-    },
+    }
+
+    return {
+      currentSearch,
+      updateSearch,
+      performSearch,
+    };
   },
-};
+});
 </script>

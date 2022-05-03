@@ -5,10 +5,9 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
 from django.db.utils import IntegrityError
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
@@ -17,6 +16,7 @@ from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -24,12 +24,12 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
+    DandisetQueryParameterSerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
@@ -82,7 +82,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
@@ -97,18 +96,22 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         queryset = Dandiset.objects
         if self.action == 'list':
             queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+
+            query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
+            query_serializer.is_valid(raise_exception=True)
+
             # TODO: This will filter the dandisets list if there is a query parameter user=me.
             # This is not a great solution but it is needed for the My Dandisets page.
-            user_kwarg = self.request.query_params.get('user', None)
+            user_kwarg = query_serializer.validated_data.get('user')
             if user_kwarg == 'me':
                 # Replace the original, rather inefficient queryset with a more specific one
                 queryset = get_objects_for_user(
                     self.request.user, 'owner', Dandiset, with_superuser=False
                 ).order_by('created')
-            # Same deal for filtering out draft, empty, or embargoed dandisets
-            show_draft = self.request.query_params.get('draft', 'true') == 'true'
-            show_empty = self.request.query_params.get('empty', 'true') == 'true'
-            show_embargoed = self.request.query_params.get('embargoed', 'true') == 'true'
+
+            show_draft: bool = query_serializer.validated_data['draft']
+            show_empty: bool = query_serializer.validated_data['empty']
+            show_embargoed: bool = query_serializer.validated_data['embargoed']
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
@@ -267,7 +270,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         """
         dandiset: Dandiset = self.get_object()
 
-        if dandiset.versions.filter(~Q(version='draft')).exists():
+        if dandiset.versions.exclude(version='draft').exists():
             return Response(
                 'Cannot delete dandisets with published versions.',
                 status=status.HTTP_403_FORBIDDEN,

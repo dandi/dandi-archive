@@ -1,6 +1,6 @@
 import csv
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.options import TabularInline
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
@@ -11,12 +11,14 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import ngettext
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
     Dandiset,
+    EmbargoedAssetBlob,
     EmbargoedZarrArchive,
     EmbargoedZarrUploadFile,
     Upload,
@@ -25,6 +27,7 @@ from dandiapi.api.models import (
     ZarrArchive,
     ZarrUploadFile,
 )
+from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs, ingest_zarr_archive
 from dandiapi.api.views.users import social_account_to_dict
 
 admin.site.site_header = 'DANDI Admin'
@@ -95,6 +98,23 @@ class DandisetAdmin(GuardedModelAdmin):
     readonly_fields = ['identifier', 'created']
     inlines = [VersionInline]
 
+    @admin.action(description='Ingest selected dandiset zarr archives')
+    def ingest_dandiset_zarrs(self, request, queryset):
+        for dandiset in queryset:
+            ingest_dandiset_zarrs(dandiset_id=dandiset.id)
+
+        # Return message
+        plural = 's' if queryset.count() > 1 else ''
+        self.message_user(
+            request,
+            f'Ingesting zarr archives for {queryset.count()} dandiset{plural}.',
+            messages.SUCCESS,
+        )
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.actions += ['ingest_dandiset_zarrs']
+
 
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
@@ -122,6 +142,21 @@ class VersionAdmin(admin.ModelAdmin):
 class AssetBlobAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
     list_display_links = ['id', 'blob_id']
+
+
+@admin.register(EmbargoedAssetBlob)
+class EmbargoedAssetBlobAdmin(AssetBlobAdmin):
+    list_display = [
+        'id',
+        'blob_id',
+        'dandiset',
+        'blob',
+        'references',
+        'size',
+        'sha256',
+        'modified',
+        'created',
+    ]
 
 
 class AssetBlobInline(LimitedTabularInline):
@@ -156,6 +191,27 @@ class UploadAdmin(admin.ModelAdmin):
 class ZarrArchiveAdmin(admin.ModelAdmin):
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
+
+    @admin.action(description='Ingest selected zarr archives')
+    def ingest_zarr_archive(self, request, queryset):
+        for zarr in queryset:
+            ingest_zarr_archive.delay(zarr_id=(str(zarr.zarr_id)))
+
+        # Return message
+        self.message_user(
+            request,
+            ngettext(
+                '%d zarr archive has begun ingesting.',
+                '%d zarr archives have begun ingesting.',
+                queryset.count(),
+            )
+            % queryset.count(),
+            messages.SUCCESS,
+        )
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.actions += ['ingest_zarr_archive']
 
 
 @admin.register(EmbargoedZarrArchive)

@@ -75,6 +75,7 @@ const dandiRest = new Vue({
       if (oauthClient) {
         await oauthClient.logout();
         this.user = null;
+        localStorage.clear();
       }
     },
     async me(): Promise<User> {

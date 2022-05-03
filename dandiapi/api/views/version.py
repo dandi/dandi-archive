@@ -1,17 +1,17 @@
-from django.shortcuts import get_object_or_404
+from django.db import transaction
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api import doi
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import delete_doi_task, write_manifest_files
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -24,7 +24,6 @@ from dandiapi.api.views.serializers import (
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
     queryset = Version.objects.all().select_related('dandiset').order_by('created')
 
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = VersionSerializer
     serializer_detail_class = VersionDetailSerializer
     pagination_class = DandiPagination
@@ -123,48 +122,52 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        new_version = old_version.publish_version
+        with transaction.atomic():
+            new_version = old_version.publish_version
 
-        new_version.doi = doi.create_doi(new_version)
+            new_version.doi = doi.create_doi(new_version)
 
-        new_version.save()
-        # Bulk create the join table rows to optimize linking assets to new_version
-        AssetVersions = Version.assets.through  # noqa: N806
+            new_version.save()
+            # Bulk create the join table rows to optimize linking assets to new_version
+            AssetVersions = Version.assets.through  # noqa: N806
 
-        # Add a new many-to-many association directly to any already published assets
-        already_published_assets = old_version.assets.filter(published=True)
-        AssetVersions.objects.bulk_create(
-            [
-                AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in already_published_assets.values('id')
-            ]
-        )
+            # Add a new many-to-many association directly to any already published assets
+            already_published_assets = old_version.assets.filter(published=True)
+            AssetVersions.objects.bulk_create(
+                [
+                    AssetVersions(asset_id=asset['id'], version_id=new_version.id)
+                    for asset in already_published_assets.values('id')
+                ]
+            )
 
-        # Publish any draft assets
-        # Import here to avoid dependency cycle
-        from dandiapi.api.models import Asset
+            # Publish any draft assets
+            # Import here to avoid dependency cycle
+            from dandiapi.api.models import Asset
 
-        draft_assets = old_version.assets.filter(published=False).all()
-        for draft_asset in draft_assets:
-            draft_asset.publish()
-        Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
+            draft_assets = old_version.assets.filter(published=False).all()
+            for draft_asset in draft_assets:
+                draft_asset.publish()
+            Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
 
-        AssetVersions.objects.bulk_create(
-            [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
-        )
+            AssetVersions.objects.bulk_create(
+                [
+                    AssetVersions(asset_id=asset.id, version_id=new_version.id)
+                    for asset in draft_assets
+                ]
+            )
 
-        # Save again to recompute metadata, specifically assetsSummary
-        new_version.save()
+            # Save again to recompute metadata, specifically assetsSummary
+            new_version.save()
 
-        # Set the version of the draft to PUBLISHED so that it cannot be publishd again without
-        # being modified and revalidated
-        old_version.status = Version.Status.PUBLISHED
-        old_version.save()
+            # Set the version of the draft to PUBLISHED so that it cannot be publishd again without
+            # being modified and revalidated
+            old_version.status = Version.Status.PUBLISHED
+            old_version.save()
 
-        write_manifest_files.delay(new_version.id)
+            write_manifest_files.delay(new_version.id)
 
-        serializer = VersionSerializer(new_version)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = VersionSerializer(new_version)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],

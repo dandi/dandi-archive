@@ -1,0 +1,14 @@
+{
+  "plugins": [
+    "git-tag",
+    "all-contributors",
+    "conventional-commits",
+    "first-time-contributor",
+    "released"
+  ],
+  "owner": "dandi",
+  "repo": "dandi-archive",
+  "name": "dandibot",
+  "email": "dandibot@mit.edu",
+  "onlyPublishWithReleaseLabel": true
+}

@@ -4,6 +4,7 @@ import datetime
 import logging
 
 from dandischema.metadata import aggregate_assets_summary
+from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
@@ -70,7 +71,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         from .asset import Asset
 
         # Return False if any asset is not VALID
-        return not self.assets.filter(~models.Q(status=Asset.Status.VALID)).exists()
+        return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
     @property
     def publish_status(self) -> Version.Status:
@@ -80,7 +81,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # Import here to avoid dependency cycle
         from .asset import Asset
 
-        invalid_asset = self.assets.filter(~models.Q(status=Asset.Status.VALID)).first()
+        invalid_asset = self.assets.exclude(status=Asset.Status.VALID).first()
         if invalid_asset:
             return Version.Status.INVALID
 
@@ -238,7 +239,8 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'identifier': f'DANDI:{self.dandiset.identifier}',
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
-            'url': f'https://dandiarchive.org/dandiset/{self.dandiset.identifier}/{self.version}',
+            'repository': settings.DANDI_WEB_APP_URL,
+            'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',  # noqa
             'assetsSummary': summary,
             'dateCreated': self.dandiset.created.isoformat(),
         }

@@ -11,6 +11,7 @@ from composed_configuration import (
     TestingBaseConfiguration,
 )
 from configurations import values
+from dandischema.consts import DANDI_SCHEMA_VERSION as _DANDI_SCHEMA_VERSION
 
 
 class DandiMixin(ConfigMixin):
@@ -38,12 +39,20 @@ class DandiMixin(ConfigMixin):
             'allauth.socialaccount.providers.github',
         ]
 
+        # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             # TODO remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]
+
+        # Permission
+        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += [
+            'dandiapi.api.permissions.IsApprovedOrReadOnly'
+        ]
+
+        # Pagination
         configuration.REST_FRAMEWORK[
             'DEFAULT_PAGINATION_CLASS'
         ] = 'dandiapi.api.views.common.DandiPagination'
@@ -67,7 +76,7 @@ class DandiMixin(ConfigMixin):
     # This is where the schema version should be set.
     # It can optionally be overwritten with the environment variable, but that should only be
     # considered a temporary fix.
-    DANDI_SCHEMA_VERSION = values.Value(default='0.6.2', environ=True)
+    DANDI_SCHEMA_VERSION = values.Value(default=_DANDI_SCHEMA_VERSION, environ=True)
 
     DANDI_DOI_API_URL = values.URLValue(environ=True)
     DANDI_DOI_API_USER = values.Value(environ=True)
@@ -76,6 +85,7 @@ class DandiMixin(ConfigMixin):
     DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
     DANDI_WEB_APP_URL = values.URLValue(environ_required=True)
     DANDI_API_URL = values.URLValue(environ_required=True)
+    DANDI_JUPYTERHUB_URL = values.URLValue(environ_required=True)
 
     DANDI_VALIDATION_JOB_INTERVAL = values.IntegerValue(environ=True, default=60)
 
@@ -113,9 +123,13 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = 'test-embargo-prefix/'
     DANDI_ZARR_PREFIX_NAME = 'test-zarr'
     DANDI_ZARR_CHECKSUM_PREFIX_NAME = 'test-zarr-checksums'
+    DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 
     # This makes the dandischema pydantic model allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
+
+    # Ensure celery tasks run synchronously
+    CELERY_TASK_ALWAYS_EAGER = True
 
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
@@ -125,6 +139,10 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
+
+    # Don't require a POST request to initiate a GitHub login
+    # https://github.com/pennersr/django-allauth/blob/HEAD/ChangeLog.rst#backwards-incompatible-changes-2
+    SOCIALACCOUNT_LOGIN_ON_GET = True
 
     # Don't automatically approve users in production. Instead they must be
     # manually approved by an admin.

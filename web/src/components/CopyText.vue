@@ -53,8 +53,10 @@
   </v-text-field>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent, Ref, ref } from '@vue/composition-api';
+
+export default defineComponent({
   name: 'ApiKeyItem',
   // This will prevent arbitrary props from being rendered as HTML attributes
   // v-bind="$attrs" ensures that props are ingested as vue props instead
@@ -70,33 +72,37 @@ export default {
       default: 'Copy text to clipboard',
     },
     isTextarea: {
-      type: String,
-      default: 'is-textarea',
+      type: Boolean,
+      default: false,
     },
   },
-  data() {
-    return {
-      messages: [],
-    };
-  },
-  methods: {
-    copyToClipboard() {
-      const vTextFieldComponent = this.$refs.textField;
+  setup() {
+    const messages: Ref<string[]> = ref([]);
+    const textField = ref(null);
+
+    function copyToClipboard() {
       // v-text-field provides some internal refs that we can use
       // one is "input", which is the actual <input> DOM element that it uses
-      const inputElement = vTextFieldComponent.$refs.input;
+      // @ts-ignore
+      const inputElement = textField.value.$refs.input;
       inputElement.focus();
       document.execCommand('selectAll');
       inputElement.select();
       document.execCommand('copy');
 
       // Notify the user that the copy was successful
-      this.messages.push('Copied!');
+      messages.value.push('Copied!');
       // Remove the notification after 4 seconds
-      setTimeout(() => this.messages.pop(), 4000);
-    },
+      setTimeout(() => messages.value.pop(), 4000);
+    }
+
+    return {
+      messages,
+      copyToClipboard,
+      textField,
+    };
   },
-};
+});
 </script>
 
 <style>

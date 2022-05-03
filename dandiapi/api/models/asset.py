@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-from typing import Dict
 from urllib.parse import urlparse, urlunparse
 import uuid
 
@@ -50,7 +49,7 @@ class BaseAssetBlob(TimeStampedModel):
         return self.assets.count()
 
     @property
-    def digest(self) -> Dict[str, str]:
+    def digest(self) -> dict[str, str]:
         digest = {'dandi:dandi-etag': self.etag}
         if self.sha256:
             digest['dandi:sha2-256'] = self.sha256
@@ -130,7 +129,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         blank=True,
         null=True,
         default=None,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
     )
     published = models.BooleanField(default=False)
 
@@ -173,7 +172,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.embargoed_blob.sha256
 
     @property
-    def digest(self) -> Dict[str, str]:
+    def digest(self) -> dict[str, str]:
         if self.is_blob:
             return self.blob.digest
         elif self.is_embargoed_blob:
@@ -182,8 +181,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.zarr.digest
 
     def _populate_metadata(self):
-        # TODO use http://localhost:8000 for local deployments
-        download_url = 'https://api.dandiarchive.org' + reverse(
+        download_url = settings.DANDI_API_URL + reverse(
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )

@@ -36,23 +36,12 @@ Vue.use(VueGtag, {
 
 Vue.use(VueSocialSharing);
 
-async function loadUser() {
-  return dandiRest.restoreLogin();
-}
-
-async function loadSchema() {
-  await store.dispatch.dandiset.fetchSchema();
-}
-
-Promise.all([loadUser(), loadSchema()]).then(() => {
-  new Vue({
-    setup() {
-      provide('store', store);
-    },
-    router,
-    render: (h) => h(App),
-    store: store.original,
-    // @ts-ignore: missing definitions because Vue.use(Vuetify) is in a .js file
-    vuetify,
-  }).$mount('#app');
-});
+new Vue({
+  setup() {
+    provide('store', store);
+  },
+  router,
+  render: (h) => h(App),
+  store: store.original,
+  vuetify,
+}).$mount('#app');

@@ -2,8 +2,6 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-import versioneer
-
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
     with readme_file.open() as f:
@@ -14,8 +12,10 @@ else:
 
 setup(
     name='dandiapi',
-    version=versioneer.get_version(),
     description='',
+    # Determine version with scm
+    use_scm_version={'version_scheme': 'post-release'},
+    setup_requires=['setuptools_scm'],
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='Apache 2.0',
@@ -31,18 +31,16 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python',
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema==0.5.2',
-        # TODO: Remove this. Pinning Django to 3.x until
-        # https://github.com/jazzband/django-oauth-toolkit/issues/1037 is resolved
-        'django~=3.2',
+        'dandischema~=0.7.1',
+        'django>=4.0.3',
         'django-admin-display',
         'django-allauth',
         'django-click',
@@ -50,7 +48,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-guardian',
-        'django-oauth-toolkit',
+        'django-oauth-toolkit>=1.7,<2',
         'djangorestframework',
         'djangorestframework-yaml',
         'drf-extensions',
@@ -60,18 +58,16 @@ setup(
         'pydantic',
         'boto3[s3]',
         # Production-only
-        'django-composed-configuration[prod]>=0.19.2',
+        'django-composed-configuration[prod]>=0.20.1',
         'django-s3-file-field[boto3]==0.1.1',
         'django-storages[boto3]',
         'gunicorn',
         # Development-only, but required
         'django-minio-storage',
-        # Temporary dependency for user migration
-        'versioneer',
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.19.2',
+            'django-composed-configuration[dev]>=0.20.1',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',
@@ -80,7 +76,9 @@ setup(
         ],
         'test': [
             'factory-boy',
+            'girder-pytest-pyppeteer==0.0.9',
             'pytest',
+            'pytest-asyncio',
             'pytest-cov',
             'pytest-django',
             'pytest-factoryboy',
@@ -88,5 +86,4 @@ setup(
             'requests',
         ],
     },
-    cmdclass=versioneer.get_cmdclass(),
 )

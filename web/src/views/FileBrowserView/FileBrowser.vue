@@ -31,8 +31,9 @@
               Cancel
             </v-btn>
             <v-btn
+              v-if="itemToDelete"
               color="error"
-              @click="deleteAsset(itemToDelete)"
+              @click="deleteAsset"
             >
               Yes
             </v-btn>
@@ -114,7 +115,7 @@
                   <v-btn
                     v-if="showDelete(item)"
                     icon
-                    @click="itemToDelete = item"
+                    @click="setItemToDelete(item)"
                   >
                     <v-icon color="error">
                       mdi-delete
@@ -153,7 +154,7 @@
                   >
                     <template #activator="{ on, attrs }">
                       <v-btn
-                        v-if="item.services.length"
+                        v-if="item.services && item.services.length"
                         color="primary"
                         icon
                         v-bind="attrs"
@@ -170,7 +171,10 @@
                         <v-icon>mdi-dots-vertical</v-icon>
                       </v-btn>
                     </template>
-                    <v-list dense>
+                    <v-list
+                      v-if="item && item.services"
+                      dense
+                    >
                       <v-subheader
                         v-if="item.services.length"
                         class="font-weight-medium"
@@ -267,7 +271,7 @@ export default defineComponent({
   },
   setup(props, ctx) {
     const location = ref(rootDirectory);
-    const itemToDelete = ref(null);
+    const itemToDelete: Ref<AssetFile | null> = ref(null);
     const page = ref(1);
     const pages = ref(0);
     const updating = ref(false);
@@ -364,8 +368,15 @@ export default defineComponent({
       updating.value = false;
     }
 
-    async function deleteAsset(item: AssetFile) {
-      const { asset_id } = item;
+    function setItemToDelete(item: AssetStats) {
+      itemToDelete.value = item as AssetFile;
+    }
+
+    async function deleteAsset() {
+      if (!itemToDelete.value) {
+        return;
+      }
+      const { asset_id } = itemToDelete.value;
       if (asset_id !== undefined) {
         // Delete the asset on the server.
         await dandiRest.deleteAsset(props.identifier, props.version, asset_id);
@@ -400,9 +411,18 @@ export default defineComponent({
 
     // go to the directory specified in the URL if it changes
     watch(() => ctx.root.$route, (route) => {
-      location.value = route.query.location.toString() || rootDirectory;
+      location.value = (
+        Array.isArray(route.query.location)
+          ? route.query.location[0]
+          : route.query.location
+      ) || rootDirectory;
+
+      // Retrieve with new location
       getItems();
     }, { immediate: true });
+
+    // fetch new page of items when a new one is selected
+    watch(page, getItems);
 
     // Fetch dandiset if necessary
     onMounted(() => {
@@ -431,6 +451,7 @@ export default defineComponent({
       fileSize,
       showDelete,
       deleteAsset,
+      setItemToDelete,
     };
   },
 });

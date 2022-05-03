@@ -5,6 +5,7 @@ from json.decoder import JSONDecodeError
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.http.response import Http404, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -18,7 +19,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from dandiapi.api.mail import send_new_user_message_email, send_registered_notice_email
+from dandiapi.api.mail import (
+    send_approved_user_message,
+    send_new_user_message_email,
+    send_registered_notice_email,
+)
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
 
@@ -82,6 +87,7 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
 @api_view(['GET', 'POST'])
 @require_http_methods(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
+@transaction.atomic
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     user: User = request.user
     if request.method == 'POST':
@@ -97,10 +103,7 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             else None
             for question in QUESTIONS
         }
-
-        if user_metadata.status == UserMetadata.Status.INCOMPLETE:
-            user_metadata.status = UserMetadata.Status.PENDING
-            user_metadata.save()
+        user_metadata.save(update_fields=['questionnaire_form'])
 
         # Save first and last name if applicable
         if 'First Name' in req_body and req_body['First Name']:
@@ -116,12 +119,25 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         # been approved that go back and update the form later should also not receive an email.
         if (
             not questionnaire_already_filled_out
-            and user_metadata.status == UserMetadata.Status.PENDING
+            and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
+            is_edu_email: bool = user.email.endswith('.edu')
+
+            # auto-approve users with edu emails, otherwise require manual approval
+            user_metadata.status = (
+                UserMetadata.Status.APPROVED if is_edu_email else UserMetadata.Status.PENDING
+            )
+            user_metadata.save(update_fields=['status'])
+
             # send email indicating the user has signed up
             for socialaccount in user.socialaccount_set.all():
-                send_registered_notice_email(user, socialaccount)
-                send_new_user_message_email(user, socialaccount)
+                # Send approved email if they have been auto-approved
+                if user_metadata.status == UserMetadata.Status.APPROVED:
+                    send_approved_user_message(user, socialaccount)
+                # otherwise, send "awaiting approval" email
+                else:
+                    send_registered_notice_email(user, socialaccount)
+                    send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(

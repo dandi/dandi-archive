@@ -1,0 +1,4 @@
+[[redirects]]
+from = "/*"
+to = "https://dandiarchive.org/:splat"
+status = 301

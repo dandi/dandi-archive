@@ -74,7 +74,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent, PropType } from '@vue/composition-api';
 
 // The maximum amount of columns to show on a metadata card,
 // regardless of how many entries there are.
@@ -88,7 +88,7 @@ export default defineComponent({
       default: 'white',
     },
     items: {
-      type: Array,
+      type: Array as PropType<any[]>,
       required: true,
     },
     name: {

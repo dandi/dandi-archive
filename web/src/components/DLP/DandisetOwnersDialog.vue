@@ -113,7 +113,7 @@
                   {{
                     `
                     ${owner.name || owner.username}
-                    ${owner.username === user.username ? ' (you)' : ''}
+                    ${user && user.username === owner.username ? ' (you)' : ''}
                     `
                   }}
                 </span>

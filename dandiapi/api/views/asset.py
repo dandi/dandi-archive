@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import re
+
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
 except ImportError:
@@ -13,10 +17,9 @@ import os.path
 from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
-from django.db import models, transaction
-from django.http import HttpResponseRedirect, JsonResponse
+from django.db import transaction
+from django.http import HttpResponseRedirect
 from django.http.response import Http404
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -25,13 +28,13 @@ from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
 from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
-from dandiapi.api.permissions import IsApprovedOrReadOnly
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
@@ -42,7 +45,9 @@ from dandiapi.api.views.common import (
 )
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
-    AssetPathsSerializer,
+    AssetListSerializer,
+    AssetPathsQueryParameterSerializer,
+    AssetPathsResponseSerializer,
     AssetSerializer,
     AssetValidationSerializer,
 )
@@ -76,7 +81,7 @@ def _paginate_asset_paths(
         else:
             folders[k] = v
 
-    paths = AssetPathsSerializer({'folders': folders, 'files': files})
+    paths = AssetPathsResponseSerializer({'folders': folders, 'files': files})
 
     # generate other parameters for the paginated response
     url_kwargs = {
@@ -131,7 +136,6 @@ class AssetFilter(filters.FilterSet):
 class AssetViewSet(DetailSerializerMixin, GenericViewSet):
     queryset = Asset.objects.all().order_by('created')
 
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
 
@@ -163,13 +167,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         responses={
             200: 'The asset metadata.',
         },
-        manual_parameters=[ASSET_ID_PARAM],
         operation_summary="Get an asset\'s metadata",
-        operation_description='',
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        return JsonResponse(asset.metadata)
+        return Response(asset.metadata)
 
     @swagger_auto_schema(
         method='GET',
@@ -271,8 +273,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 # The user does not have ownership permission
                 raise PermissionDenied()
 
-    # Redefine info and download actions to update swagger manual_parameters
-
     def asset_from_request(self) -> Asset:
         """
         Return an unsaved Asset, constructed from the request data.
@@ -313,6 +313,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         )
 
         return asset
+
+    # Redefine info and download actions to update swagger manual_parameters
 
     @swagger_auto_schema(
         method='GET',
@@ -448,7 +450,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             # Verify we aren't changing path to the same value as an existing asset
             if (
                 version.assets.filter(path=new_asset.path)
-                .filter(~models.Q(asset_id=old_asset.asset_id))
+                .exclude(asset_id=old_asset.asset_id)
                 .exists()
             ):
                 return Response(
@@ -508,9 +510,42 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
+    @swagger_auto_schema(query_serializer=AssetListSerializer)
+    def list(self, request, *args, **kwargs):
+        serializer = AssetListSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = self.filter_queryset(self.get_queryset())
+        glob_pattern: str | None = serializer.validated_data.get('glob')
+        regex_pattern: str | None = serializer.validated_data.get('regex')
+
+        if regex_pattern is not None:
+            try:
+                # Validate the regex by calling re.compile on it
+                re.compile(regex_pattern)
+                queryset = queryset.filter(path__iregex=regex_pattern)
+            except re.error:
+                return Response(
+                    data=f'{regex_pattern} is not a valid regex pattern.',
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if glob_pattern is not None:
+            queryset = queryset.filter(
+                path__iregex=glob_pattern.replace('*', '.*').replace('.', '\\.')
+            )
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @swagger_auto_schema(
         manual_parameters=[PATH_PREFIX_PARAM],
-        responses={200: AssetPathsSerializer()},
+        responses={200: AssetPathsResponseSerializer()},
     )
     @action(detail=False, methods=['GET'])
     def paths(self, request, versions__dandiset__pk: str, versions__version: str, **kwargs):
@@ -520,15 +555,18 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         The specified path must be a folder; it either must end in a slash or
         (to refer to the root folder) must be the empty string.
         """
-        path_prefix: str = self.request.query_params.get('path_prefix') or ''
-        page: int = int(self.request.query_params.get('page') or '1')
-        page_size: int = int(
-            self.request.query_params.get('page_size') or DandiPagination.page_size
-        )
+        query_serializer = AssetPathsQueryParameterSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+
+        path_prefix: str = query_serializer.validated_data['path_prefix']
+        page: int = query_serializer.validated_data['page']
+        page_size: int = query_serializer.validated_data['page_size']
 
         qs = (
             self.get_queryset()
             .select_related('blob')
+            .select_related('embargoed_blob')
+            .select_related('zarr')
             .filter(path__startswith=path_prefix)
             .order_by('path')
         )

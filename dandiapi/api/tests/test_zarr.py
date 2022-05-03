@@ -1,12 +1,14 @@
-from pathlib import Path
-
+from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
+from django.core.files.base import ContentFile
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
+from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.api.zarr_checksums import EMPTY_CHECKSUM, ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
 
 
 @pytest.mark.django_db
@@ -26,7 +28,9 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'name': name,
         'zarr_id': UUID_RE,
         'dandiset': dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
         'checksum': EMPTY_CHECKSUM,
+        'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
     }
@@ -34,6 +38,21 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
 
     zarr_archive = ZarrArchive.objects.get(zarr_id=resp.json()['zarr_id'])
     assert zarr_archive.name == name
+
+
+@pytest.mark.django_db
+def test_zarr_rest_dandiset_malformed(authenticated_api_client, user, dandiset):
+    assign_perm('owner', user, dandiset)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': 'My Zarr File!',
+            'dandiset': f'{dandiset.identifier}asd',
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == {'dandiset': ['This value does not match the required pattern.']}
 
 
 @pytest.mark.django_db
@@ -65,6 +84,27 @@ def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive
 
 
 @pytest.mark.django_db
+def test_zarr_rest_create_embargoed_dandiset(
+    authenticated_api_client,
+    user,
+    zarr_archive,
+    dandiset_factory,
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, dandiset)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['Cannot add zarr to embargoed dandiset']
+
+
+@pytest.mark.django_db
 def test_zarr_rest_get(
     authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_upload_file_factory
 ):
@@ -74,16 +114,64 @@ def test_zarr_rest_get(
     # We need to complete the upload for the checksum files to be written.
     zarr_archive.complete_upload()
 
+    # Ingest archive so checksum files are written.
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.COMPLETE,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
         'file_count': 1,
         'size': upload.size(),
     }
+
+
+@pytest.mark.django_db
+def test_zarr_rest_list_filter(authenticated_api_client, dandiset_factory, zarr_archive_factory):
+    # Create dandisets and zarrs
+    dandiset_a: Dandiset = dandiset_factory()
+    zarr_archive_a_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='test')
+    zarr_archive_a_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='unique')
+
+    dandiset_b: Dandiset = dandiset_factory()
+    zarr_archive_b_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='test')
+    zarr_archive_b_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='unique2')
+
+    # Test dandiset filter with dandiset a
+    resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_a.identifier})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 2
+    assert results[0]['zarr_id'] == zarr_archive_a_a.zarr_id
+    assert results[1]['zarr_id'] == zarr_archive_a_b.zarr_id
+
+    # Test dandiset filter with dandiset b
+    resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_b.identifier})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 2
+    assert results[0]['zarr_id'] == zarr_archive_b_a.zarr_id
+    assert results[1]['zarr_id'] == zarr_archive_b_b.zarr_id
+
+    # Test name filter
+    resp = authenticated_api_client.get('/api/zarr/', {'name': 'test'})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 2
+    assert results[0]['zarr_id'] == zarr_archive_a_a.zarr_id
+    assert results[1]['zarr_id'] == zarr_archive_b_a.zarr_id
+
+    # Test dandiset and name filter
+    resp = authenticated_api_client.get('/api/zarr/', {'dandiset': dandiset_b, 'name': 'test'})
+    assert resp.status_code == 200
+    results = resp.json()['results']
+    assert len(results) == 1
+    assert results[0]['zarr_id'] == zarr_archive_b_a.zarr_id
 
 
 @pytest.mark.django_db
@@ -94,13 +182,16 @@ def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
     assert zarr_archive.file_count == ten_quadrillion
     assert zarr_archive.size == ten_petabytes
 
+    # Don't ingest since there aren't actually any files
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
         'file_count': ten_quadrillion,
         'size': ten_petabytes,
     }
@@ -114,7 +205,37 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
         'checksum': zarr_archive.checksum,
+        'upload_in_progress': False,
+        'file_count': 0,
+        'size': 0,
+    }
+
+
+@pytest.mark.django_db
+def test_zarr_rest_get_invalid_checksum_file(authenticated_api_client, zarr_archive: ZarrArchive):
+    # Write some invalid content into the .checksum file
+    storage = zarr_archive.storage
+    content_file = ContentFile('invalid content'.encode('utf-8'))
+    # save() will never overwrite an existing file, it simply appends some garbage to ensure
+    # uniqueness. _save() is an internal storage API that will overwite existing files.
+    storage._save(
+        ZarrChecksumFileUpdater(
+            zarr_archive=zarr_archive, zarr_directory_path=''
+        ).checksum_file_path,
+        content_file,
+    )
+
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
+    assert resp.status_code == 200
+    assert resp.json() == {
+        'name': zarr_archive.name,
+        'zarr_id': zarr_archive.zarr_id,
+        'dandiset': zarr_archive.dandiset.identifier,
+        'status': ZarrArchive.Status.PENDING,
+        'checksum': None,
+        'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
     }
@@ -134,15 +255,61 @@ def test_zarr_rest_delete_file(
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
 
+    # Ingest
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
+    # Assert file count and size
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.file_count == 1
+    assert zarr_archive.size == 100
+
+    # Make delete call
     resp = authenticated_api_client.delete(
         f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
     )
     assert resp.status_code == 204
 
     assert not upload.blob.field.storage.exists(upload.blob.name)
+
+    # Re-ingest
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
+
+
+@pytest.mark.django_db
+def test_zarr_rest_delete_file_asset_metadata(
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_upload_file_factory,
+    asset_factory,
+):
+    assign_perm('owner', user, zarr_archive.dandiset)
+    # Pretend like ZarrUploadFile was defined with the given storage
+    ZarrUploadFile.blob.field.storage = storage
+    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_archive.complete_upload()
+    asset = asset_factory(zarr=zarr_archive, blob=None)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
+    asset.refresh_from_db()
+    zarr_archive.refresh_from_db()
+    assert asset.metadata['digest'] == zarr_archive.digest
+    assert asset.metadata['contentSize'] == 100
+
+    resp = authenticated_api_client.delete(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+    )
+    assert resp.status_code == 204
+
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    asset.refresh_from_db()
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+    assert asset.metadata['contentSize'] == 0
 
 
 @pytest.mark.django_db
@@ -184,6 +351,8 @@ def test_zarr_rest_delete_multiple_files(
 
     for upload in uploads:
         assert not upload.blob.field.storage.exists(upload.blob.name)
+
+    ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
@@ -215,6 +384,8 @@ def test_zarr_rest_delete_missing_file(
         f'File test-prefix/test-zarr/{zarr_archive.zarr_id}/does/not/exist does not exist.'
     ]
     assert upload.blob.field.storage.exists(upload.blob.name)
+
+    ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 1
     assert zarr_archive.size == upload.size()
@@ -266,19 +437,21 @@ def test_zarr_explore_directory(
 ):
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
-    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/a')
-    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/b')
-    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar/c')
+    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
+    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
+    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')
 
     # Write the checksum files
     ZarrChecksumUpdater(zarr_archive).update_file_checksums(
-        [a.to_checksum(), b.to_checksum(), c.to_checksum()],
+        {
+            'foo/a': a.to_checksum(),
+            'foo/b': b.to_checksum(),
+            'foo/bar/c': c.to_checksum(),
+        }
     )
     listing = ZarrChecksumFileUpdater(zarr_archive, path).read_checksum_file()
 
-    resp = api_client.get(
-        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
-    )
+    resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}')
     assert resp.status_code == 200
     assert resp.json() == {
         'directories': [
@@ -290,13 +463,10 @@ def test_zarr_explore_directory(
             for filepath in files
         ],
         'checksums': {
-            **{
-                Path(directory.path).name: directory.md5
-                for directory in listing.checksums.directories
-            },
-            **{Path(file.path).name: file.md5 for file in listing.checksums.files},
+            **{directory.name: directory.digest for directory in listing.checksums.directories},
+            **{file.name: file.digest for file in listing.checksums.files},
         },
-        'checksum': listing.md5,
+        'checksum': listing.digest,
     }
 
 

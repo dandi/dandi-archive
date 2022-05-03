@@ -237,7 +237,7 @@ def test_asset_populate_metadata(draft_asset_factory):
     # This should trigger _populate_metadata to inject all the computed metadata fields
     asset = draft_asset_factory(metadata=raw_metadata)
 
-    download_url = 'https://api.dandiarchive.org' + reverse(
+    download_url = settings.DANDI_API_URL + reverse(
         'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
@@ -264,7 +264,7 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
     # This should trigger _populate_metadata to inject all the computed metadata fields
     asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
 
-    download_url = 'https://api.dandiarchive.org' + reverse(
+    download_url = settings.DANDI_API_URL + reverse(
         'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
@@ -1240,3 +1240,80 @@ def test_asset_direct_info(api_client, asset):
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'glob_pattern,expected_paths',
+    [
+        (
+            '*.txt',
+            ['a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
+        ),
+        (
+            'a/b/c/*',
+            ['a/b/c/d.txt', 'a/b/c/e.txt'],
+        ),
+        ('a/b/d/*', ['a/b/d/e.txt']),
+    ],
+)
+def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expected_paths):
+    paths = ('a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
+
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'glob': glob_pattern},
+    )
+
+    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'regex_pattern,expected_paths',
+    [
+        (
+            '[0-9].txt',
+            ['1.txt', '1/2/3.txt'],
+        ),
+        (
+            '[a-z].txt',
+            ['a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
+        ),
+    ],
+)
+def test_asset_rest_regex_valid(api_client, asset_factory, version, regex_pattern, expected_paths):
+    paths = ('1.txt', '1/2/3.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
+
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': regex_pattern},
+    )
+
+    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+
+
+@pytest.mark.django_db
+def test_asset_rest_regex_invalid(api_client, version):
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': '[[[[['},  # provide an invalid regex
+    )
+
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_asset_rest_glob_regex_together(api_client, version):
+    """Test that including both a glob and regex returns a 400 error."""
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': '[0-9].txt', 'glob': '*.txt'},
+    )
+
+    assert resp.status_code == 400
+    assert resp.json() == {'glob': ['Cannot specify both glob and regex']}

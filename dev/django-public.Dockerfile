@@ -1,9 +1,9 @@
-FROM python:3.8-slim
+FROM python:3.9-slim
 # Install system librarires for Python packages:
 # * psycopg2
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-        libpq-dev gcc libc6-dev && \
+    libpq-dev gcc libc6-dev git && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED 1
