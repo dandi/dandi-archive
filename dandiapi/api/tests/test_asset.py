@@ -10,7 +10,8 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -236,8 +237,8 @@ def test_asset_populate_metadata(draft_asset_factory):
     # This should trigger _populate_metadata to inject all the computed metadata fields
     asset = draft_asset_factory(metadata=raw_metadata)
 
-    download_url = 'https://api.dandiarchive.org' + reverse(
-        'asset-direct-download',
+    download_url = settings.DANDI_API_URL + reverse(
+        'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     blob_url = asset.blob.s3_url
@@ -263,8 +264,8 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
     # This should trigger _populate_metadata to inject all the computed metadata fields
     asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
 
-    download_url = 'https://api.dandiarchive.org' + reverse(
-        'asset-direct-download',
+    download_url = settings.DANDI_API_URL + reverse(
+        'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     s3_url = f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/'  # noqa: E501
@@ -410,7 +411,7 @@ def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
-        ).data
+        ).json()
         == asset.metadata
     )
 
@@ -426,7 +427,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
         api_client.get(
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
-        ).data
+        ).json()
         == asset.metadata
     )
 
@@ -612,6 +613,36 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
 
 
 @pytest.mark.django_db
+def test_asset_create_zarr_wrong_dandiset(
+    api_client, user, draft_version, zarr_archive_factory, dandiset_factory
+):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    zarr_dandiset = dandiset_factory()
+    zarr_archive = zarr_archive_factory(dandiset=zarr_dandiset)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-zarr',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == ['The zarr archive belongs to a different dandiset']
+
+
+@pytest.mark.django_db
 def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -633,7 +664,7 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Exactly one of blob_id or zarr_id must be specified.']
+    assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
 
 
 @pytest.mark.django_db
@@ -658,7 +689,7 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Exactly one of blob_id or zarr_id must be specified.']
+    assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
 
 
 @pytest.mark.django_db
@@ -666,7 +697,8 @@ def test_asset_create_no_valid_blob(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
-    metadata = {'meta': 'data', 'foo': ['bar', 'baz'], '1': 2}
+    path = 'test/create/asset.txt'
+    metadata = {'path': path, 'foo': ['bar', 'baz'], '1': 2}
     uuid = uuid4()
 
     resp = api_client.post(
@@ -692,7 +724,7 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == 'No path specified in metadata.'
+    assert resp.data == {'metadata': ['No path specified in metadata.']}
 
 
 @pytest.mark.django_db
@@ -1074,16 +1106,32 @@ def test_asset_download(api_client, storage, version, asset):
 
 @pytest.mark.django_db
 def test_asset_download_embargo(
-    api_client, storage, version, asset_factory, embargoed_asset_blob_factory
+    authenticated_api_client,
+    user,
+    storage,
+    draft_version_factory,
+    dandiset_factory,
+    asset_factory,
+    embargoed_asset_blob_factory,
 ):
     # Pretend like EmbargoedAssetBlob was defined with the given storage
     EmbargoedAssetBlob.blob.field.storage = storage
 
-    embargoed_blob = embargoed_asset_blob_factory()
+    # Set draft version as embargoed
+    version = draft_version_factory(
+        dandiset=dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    )
+
+    # Assign perms and set client
+    assign_perm('owner', user, version.dandiset)
+    client = authenticated_api_client
+
+    # Generate assets and blobs
+    embargoed_blob = embargoed_asset_blob_factory(dandiset=version.dandiset)
     asset = asset_factory(blob=None, embargoed_blob=embargoed_blob)
     version.assets.add(asset)
 
-    response = api_client.get(
+    response = client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.asset_id}/download/'
     )
@@ -1194,33 +1242,78 @@ def test_asset_direct_info(api_client, asset):
     }
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
-    ('embargo_status'),
+    'glob_pattern,expected_paths',
     [
-        Dandiset.EmbargoStatus.EMBARGOED,
-        Dandiset.EmbargoStatus.UNEMBARGOING,
+        (
+            '*.txt',
+            ['a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
+        ),
+        (
+            'a/b/c/*',
+            ['a/b/c/d.txt', 'a/b/c/e.txt'],
+        ),
+        ('a/b/d/*', ['a/b/d/e.txt']),
     ],
 )
-@pytest.mark.django_db
-def test_asset_embargoed_visibility(
-    api_client, dandiset_factory, draft_version_factory, asset_factory, embargo_status
-):
-    dandiset = dandiset_factory(embargo_status=embargo_status)
-    version = draft_version_factory(dandiset=dandiset)
-    asset = asset_factory()
-    version.assets.add(asset)
+def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expected_paths):
+    paths = ('a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
 
-    # The version should be hidden because the dandiset it belongs to is embargoed
-    response = api_client.get(
-        f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/assets/'
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'glob': glob_pattern},
     )
-    assert response.json() == {
-        'count': 0,
-        'next': None,
-        'previous': None,
-        'results': [],
-    }
-    response = api_client.get(
-        f'/api/dandisets/{dandiset.identifier}/versions/{version.version}/assets/{asset.asset_id}/'
+
+    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'regex_pattern,expected_paths',
+    [
+        (
+            '[0-9].txt',
+            ['1.txt', '1/2/3.txt'],
+        ),
+        (
+            '[a-z].txt',
+            ['a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
+        ),
+    ],
+)
+def test_asset_rest_regex_valid(api_client, asset_factory, version, regex_pattern, expected_paths):
+    paths = ('1.txt', '1/2/3.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
+    for path in paths:
+        version.assets.add(asset_factory(path=path))
+
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': regex_pattern},
     )
-    assert response.status_code == 404
+
+    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+
+
+@pytest.mark.django_db
+def test_asset_rest_regex_invalid(api_client, version):
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': '[[[[['},  # provide an invalid regex
+    )
+
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_asset_rest_glob_regex_together(api_client, version):
+    """Test that including both a glob and regex returns a 400 error."""
+    resp = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'regex': '[0-9].txt', 'glob': '*.txt'},
+    )
+
+    assert resp.status_code == 400
+    assert resp.json() == {'glob': ['Cannot specify both glob and regex']}

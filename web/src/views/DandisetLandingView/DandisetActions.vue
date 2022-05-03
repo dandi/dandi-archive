@@ -87,20 +87,37 @@
           <v-spacer />
         </v-btn>
       </v-row>
+      <v-btn
+        id="view-edit-metadata"
+        outlined
+        block
+        @click="openMeditor = true"
+      >
+        <v-icon
+          left
+          color="primary"
+        >
+          mdi-note-text
+        </v-icon>
+        <span>Metadata</span>
+        <v-spacer />
+      </v-btn>
+    </div>
+
+    <div class="my-4">
       <v-row no-gutters>
         <v-btn
-          id="view-edit-metadata"
           outlined
           block
-          :to="meditorLink"
+          :href="manifestLocation"
         >
           <v-icon
             left
             color="primary"
           >
-            mdi-note-text
+            mdi-clipboard
           </v-icon>
-          <span>Metadata</span>
+          <span>Manifest</span>
           <v-spacer />
         </v-btn>
       </v-row>
@@ -127,8 +144,10 @@
 import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
 import { Location } from 'vue-router';
 
+import { dandiRest } from '@/rest';
 import store from '@/store';
 
+import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
@@ -159,23 +178,19 @@ export default defineComponent({
       };
     });
 
-    const meditorLink: ComputedRef<Location|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const version: string = currentVersion.value;
-      const { identifier } = currentDandiset.value.dandiset;
-      return {
-        name: 'metadata',
-        params: { identifier, version },
-      };
-    });
+    const manifestLocation = computed(
+      () => dandiRest.assetManifestURI(
+        currentDandiset.value?.dandiset.identifier || '',
+        currentDandiset.value?.version || '',
+      ),
+    );
 
     return {
       currentDandiset,
       currentVersion,
       fileBrowserLink,
-      meditorLink,
+      manifestLocation,
+      openMeditor,
     };
   },
 });

@@ -2,11 +2,13 @@ import type { JSONSchema7 } from 'json-schema';
 
 import Vue from 'vue';
 import {
-  computed, reactive, ref, ComputedRef, Ref,
+  computed, reactive, ref, ComputedRef, Ref, watch,
 } from '@vue/composition-api';
 import { cloneDeep } from 'lodash';
 
-import { DandiModel } from './types';
+// eslint-disable-next-line import/no-cycle
+import { setModelLocalStorage } from './localStorage';
+import { DandiModel, DandiModelUnion } from './types';
 import {
   computeBasicSchema,
   computeComplexSchema,
@@ -14,6 +16,8 @@ import {
   writeSubModelToMaster,
   populateEmptyArrays,
 } from './utils';
+// eslint-disable-next-line import/no-cycle
+import { MeditorTransactionTracker } from './transactions';
 
 /**
  * Manages the interface between the source data/schema, and the changes necessary for it to
@@ -36,6 +40,8 @@ class EditorInterface {
   complexModelValid: ComputedRef<boolean>;
   complexModelValidation: Record<string, boolean> = {};
 
+  transactionTracker: MeditorTransactionTracker
+
   constructor(schema: JSONSchema7, model: DandiModel) {
     this.model = cloneDeep(model);
     this.schema = cloneDeep(schema);
@@ -57,6 +63,18 @@ class EditorInterface {
     this.complexModelValid = computed(() => Object.keys(this.complexModelValidation).every(
       (key) => !!this.complexModelValidation[key],
     ));
+
+    this.transactionTracker = new MeditorTransactionTracker(this);
+
+    // save model to local storage on changes
+    watch(() => this.getModel(), (newModel: DandiModel) => {
+      setModelLocalStorage(newModel.id as string, newModel);
+    });
+  }
+
+  setModel(model: DandiModel) {
+    this.setBasicModel(filterModelWithSchema(model, this.basicSchema));
+    this.setComplexModel(filterModelWithSchema(model, this.complexSchema));
   }
 
   syncModel() {
@@ -81,7 +99,7 @@ class EditorInterface {
     });
   }
 
-  setComplexModelProp(propKey: string, value: DandiModel) {
+  setComplexModelProp(propKey: string, value: DandiModelUnion) {
     Vue.set(this.complexModel, propKey, value);
   }
 }

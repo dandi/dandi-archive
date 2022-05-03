@@ -47,7 +47,9 @@
 </template>
 
 <script lang="ts">
-export default {
+import { defineComponent } from '@vue/composition-api';
+
+export default defineComponent({
   name: 'SingleStat',
   props: {
     value: { type: String, required: true },
@@ -55,5 +57,5 @@ export default {
     description: { type: String, default: null, required: false },
     href: { type: String, default: null, required: false },
   },
-};
+});
 </script>

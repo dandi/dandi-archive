@@ -1,7 +1,11 @@
-import json
-from typing import Any, Dict, List
+from __future__ import annotations
 
+import json
+from typing import Any
+
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.core.mail.message import EmailMessage
 from django.test.client import Client
 from django.urls.base import reverse
 import pytest
@@ -25,8 +29,12 @@ def serialize_social_account(social_account):
 
 
 @pytest.mark.django_db
-def test_user_registration_email(social_account, mailoutbox, api_client):
+def test_user_registration_email_content(
+    social_account: SocialAccount, mailoutbox: list[EmailMessage], api_client: APIClient
+):
     user = social_account.user
+    social_account.user.metadata.status = UserMetadata.Status.INCOMPLETE  # simulates new user
+
     api_client.force_authenticate(user=user)
     api_client.post(
         '/api/users/questionnaire-form/',
@@ -49,17 +57,44 @@ def test_user_registration_email(social_account, mailoutbox, api_client):
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
 
+@pytest.mark.parametrize(
+    'status,email_count',
+    [
+        # INCOMPLETE users POSTing to the questionnaire endpoint should result in 2 emails
+        # being sent (new user welcome email, admin "needs approval" email), while no email should
+        # be sent in the case of APPROVED/PENDING users
+        (UserMetadata.Status.INCOMPLETE, 2),
+        (UserMetadata.Status.PENDING, 0),
+        (UserMetadata.Status.APPROVED, 0),
+    ],
+)
+@pytest.mark.django_db
+def test_user_registration_email_count(
+    social_account: SocialAccount,
+    mailoutbox: list[EmailMessage],
+    api_client: APIClient,
+    status: str,
+    email_count: int,
+):
+    user = social_account.user
+    user.metadata.status = status
+    api_client.force_authenticate(user=user)
+    api_client.post(
+        '/api/users/questionnaire-form/',
+        {f'question_{i}': f'answer_{i}' for i in range(len(QUESTIONS))},
+        format='json',
+    )
+    assert len(mailoutbox) == email_count
+
+
 @pytest.mark.django_db
 def test_user_me(api_client, social_account):
     api_client.force_authenticate(user=social_account.user)
 
-    assert (
-        api_client.get(
-            '/api/users/me/',
-            format='json',
-        ).data
-        == serialize_social_account(social_account)
-    )
+    assert api_client.get(
+        '/api/users/me/',
+        format='json',
+    ).data == serialize_social_account(social_account)
 
 
 @pytest.mark.django_db
@@ -68,13 +103,10 @@ def test_user_me_admin(api_client, admin_user, social_account_factory):
     social_account = social_account_factory(user=admin_user)
     UserMetadata.objects.create(user=admin_user)
 
-    assert (
-        api_client.get(
-            '/api/users/me/',
-            format='json',
-        ).data
-        == serialize_social_account(social_account)
-    )
+    assert api_client.get(
+        '/api/users/me/',
+        format='json',
+    ).data == serialize_social_account(social_account)
 
 
 @pytest.mark.django_db
@@ -86,14 +118,11 @@ def test_user_search(api_client, social_account, social_account_factory):
     social_account_factory()
     social_account_factory()
 
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': social_account.user.username},
-            format='json',
-        ).data
-        == [serialize_social_account(social_account)]
-    )
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': social_account.user.username},
+        format='json',
+    ).data == [serialize_social_account(social_account)]
 
 
 @pytest.mark.django_db
@@ -140,14 +169,11 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': 'odysseus'},
-            format='json',
-        ).data
-        == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
-    )
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': 'odysseus'},
+        format='json',
+    ).data == [serialize_social_account(social_account) for social_account in social_accounts[:3]]
 
 
 @pytest.mark.django_db
@@ -158,14 +184,11 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
-    assert (
-        api_client.get(
-            '/api/users/search/?',
-            {'username': 'odysseus'},
-            format='json',
-        ).data
-        == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
-    )
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': 'odysseus'},
+        format='json',
+    ).data == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
 
 
 @pytest.mark.parametrize(
@@ -259,7 +282,7 @@ def test_user_status(
 )
 def test_user_questionnaire_view(
     admin_client: Client,
-    questions: List[Dict[str, Any]],
+    questions: list[dict[str, Any]],
     querystring: str,
     expected_status_code: int,
 ):
@@ -268,3 +291,25 @@ def test_user_questionnaire_view(
 
     for question in questions:
         assertContains(resp, question['question'])
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'email,expected_status',
+    [
+        ('test@test.com', UserMetadata.Status.PENDING),
+        ('test@test.edu', UserMetadata.Status.APPROVED),
+    ],
+)
+def test_user_edu_auto_approve(user: User, api_client: APIClient, email: str, expected_status: str):
+    user.email = email
+    user.save(update_fields=['email'])
+    user_metadata: UserMetadata = user.metadata
+    user_metadata.status = UserMetadata.Status.INCOMPLETE
+    user_metadata.save(update_fields=['status'])
+
+    api_client.force_authenticate(user=user)
+    resp = api_client.post(reverse('user-questionnaire'))
+    assert resp.status_code == 302
+
+    assert user_metadata.status == expected_status

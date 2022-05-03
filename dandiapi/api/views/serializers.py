@@ -2,6 +2,7 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.api.views.common import DandiPagination
 
 
 def extract_contact_person(version):
@@ -93,6 +94,13 @@ class DandisetDetailSerializer(DandisetSerializer):
     draft_version = VersionSerializer(read_only=True)
 
 
+class DandisetQueryParameterSerializer(serializers.Serializer):
+    draft = serializers.BooleanField(default=True)
+    empty = serializers.BooleanField(default=True)
+    embargoed = serializers.BooleanField(default=True)
+    user = serializers.CharField(required=False)
+
+
 class VersionDetailSerializer(VersionSerializer):
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
 
@@ -180,6 +188,24 @@ class AssetFolderSerializer(serializers.Serializer):
     modified = serializers.DateTimeField()
 
 
-class AssetPathsSerializer(serializers.Serializer):
+class AssetPathsResponseSerializer(serializers.Serializer):
     folders = serializers.DictField(child=AssetFolderSerializer())
     files = serializers.DictField(child=AssetSerializer())
+
+
+class AssetPathsQueryParameterSerializer(serializers.Serializer):
+    path_prefix = serializers.CharField(default='')
+    page = serializers.IntegerField(default=1)
+    page_size = serializers.IntegerField(default=DandiPagination.page_size)
+
+
+class AssetListSerializer(serializers.Serializer):
+    glob = serializers.CharField(required=False)
+    regex = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        if 'glob' in attrs and 'regex' in attrs:
+            raise serializers.ValidationError(
+                {'glob': 'Cannot specify both glob and regex'},
+            )
+        return super().validate(attrs)

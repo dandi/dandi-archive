@@ -10,11 +10,9 @@ from dandiapi.api.dashboard import DashboardView, user_approval_view
 from dandiapi.api.views import (
     AssetViewSet,
     DandisetViewSet,
+    NestedAssetViewSet,
     VersionViewSet,
     ZarrViewSet,
-    asset_download_view,
-    asset_info_view,
-    asset_metadata_view,
     auth_token_view,
     authorize_view,
     blob_read_view,
@@ -41,7 +39,7 @@ router = ExtendedSimpleRouter()
     )
     .register(
         r'assets',
-        AssetViewSet,
+        NestedAssetViewSet,
         basename='asset',
         parents_query_lookups=[
             f'versions__dandiset__{DandisetViewSet.lookup_field}',
@@ -49,6 +47,7 @@ router = ExtendedSimpleRouter()
         ],
     )
 )
+router.register('assets', AssetViewSet, basename='asset')
 router.register('zarr', ZarrViewSet, basename='zarr')
 
 
@@ -78,21 +77,6 @@ register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
     path('api/', include(router.urls)),
-    re_path(
-        r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/$',
-        asset_metadata_view,
-        name='asset-direct-metadata',
-    ),
-    re_path(
-        r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/download/',
-        asset_download_view,
-        name='asset-direct-download',
-    ),
-    re_path(
-        r'api/assets/(?P<asset_id>[0-9a-f\-]{36})/info/',
-        asset_info_view,
-        name='asset-direct-info',
-    ),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
     path('api/info/', info_view),

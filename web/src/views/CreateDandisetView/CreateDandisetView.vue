@@ -24,8 +24,7 @@
           outlined
           class="my-4"
         />
-        <!-- TODO: remove v-if to enable embargoed dandiset creation -->
-        <div v-if="false">
+        <div>
           <v-checkbox
             v-model="embargoed"
             hide-details

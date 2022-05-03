@@ -12,7 +12,7 @@ from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
 
 def mb(bytes_size: int) -> int:
-    return bytes_size * 2 ** 20
+    return bytes_size * 2**20
 
 
 @pytest.mark.django_db
@@ -294,7 +294,7 @@ def test_upload_initialize_unauthorized(api_client):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_complete(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
@@ -312,7 +312,7 @@ def test_upload_complete(api_client, user, upload):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_complete_embargo(api_client, user, dandiset_factory, embargoed_upload_factory):
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -333,7 +333,7 @@ def test_upload_complete_embargo(api_client, user, dandiset_factory, embargoed_u
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_complete_embargo_not_an_owner(
     api_client, user, dandiset_factory, embargoed_upload_factory
 ):
@@ -356,7 +356,7 @@ def test_upload_complete_embargo_not_an_owner(
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_complete_unauthorized(api_client, upload):
     assert (
         api_client.post(
@@ -368,7 +368,7 @@ def test_upload_complete_unauthorized(api_client, upload):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
 def test_upload_initialize_and_complete(api_client, user, dandiset, content_size):
     api_client.force_authenticate(user=user)
@@ -415,7 +415,7 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
     assert AssetBlob.blob.field.storage.exists(upload.blob.name)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
 def test_upload_initialize_and_complete_embargo(
     storage, api_client, user, dandiset_factory, content_size
@@ -472,7 +472,7 @@ def test_upload_initialize_and_complete_embargo(
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
@@ -493,7 +493,7 @@ def test_upload_validate(api_client, user, upload):
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_embargo(api_client, user, dandiset_factory, embargoed_upload_factory):
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -517,7 +517,7 @@ def test_upload_validate_embargo(api_client, user, dandiset_factory, embargoed_u
     assert not EmbargoedUpload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_upload_missing(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
@@ -531,7 +531,7 @@ def test_upload_validate_upload_missing(api_client, user, upload):
     assert Upload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_wrong_size(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
@@ -546,7 +546,7 @@ def test_upload_validate_wrong_size(api_client, user, upload):
     assert Upload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_wrong_etag(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
@@ -562,7 +562,7 @@ def test_upload_validate_wrong_etag(api_client, user, upload):
     assert Upload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob_factory):
     api_client.force_authenticate(user=user)
 
@@ -581,7 +581,7 @@ def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_embargo_existing_assetblob(
     api_client, user, dandiset_factory, embargoed_upload_factory, asset_blob_factory
 ):
@@ -607,7 +607,7 @@ def test_upload_validate_embargo_existing_assetblob(
     assert not EmbargoedUpload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_embargo_existing_embargoedassetblob(
     api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
 ):
@@ -636,7 +636,7 @@ def test_upload_validate_embargo_existing_embargoedassetblob(
     assert not EmbargoedUpload.objects.all().exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_validate_embargo_existing_embargoedassetblob_wrong_dandiset(
     api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
 ):

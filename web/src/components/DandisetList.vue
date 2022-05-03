@@ -4,8 +4,8 @@
     subheader
   >
     <v-list-item
-      v-for="(item, i) in items"
-      :key="item._id"
+      v-for="item in dandisets"
+      :key="item.dandiset.identifier"
       selectable
       :to="{
         name: 'dandisetLanding',
@@ -35,9 +35,8 @@
           >
             <b>DRAFT</b>
           </v-chip>
-          <!-- TODO: remove `false &&` to enable this -->
           <v-chip
-            v-if="false && item.dandiset.embargo_status !== 'OPEN'"
+            v-if="item.dandiset.embargo_status !== 'OPEN'"
             x-small
             class="mr-1 px-2"
             :color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4`"
@@ -54,14 +53,14 @@
           ·
           Updated on <b>{{ formatDate(item.modified) }}</b>
           ·
-          <template v-if="dandisetStats">
+          <template v-if="dandisets">
             <v-icon
               small
               class="pb-1"
             >
               mdi-file
             </v-icon>
-            {{ dandisetStats[i].asset_count }}
+            {{ item.asset_count }}
             ·
             <v-icon
               small
@@ -69,7 +68,7 @@
             >
               mdi-database
             </v-icon>
-            {{ filesize(dandisetStats[i].size, { round: 1, base: 10, standard: 'iec' }) }}
+            {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
           </template>
         </v-list-item-subtitle>
       </v-list-item-content>
@@ -78,24 +77,17 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent, ref, computed, watch, PropType,
-} from '@vue/composition-api';
+import { defineComponent, computed, PropType } from '@vue/composition-api';
 import moment from 'moment';
 import filesize from 'filesize';
 
-type Dandiset = {};
-interface DandisetStats {
-  bytes: number;
-  folders: number;
-  items: number;
-}
+import { Version } from '@/types';
 
 export default defineComponent({
   name: 'DandisetList',
   props: {
     dandisets: {
-      type: Array as PropType<Dandiset[]>,
+      type: Array as PropType<Version[]>,
       required: true,
     },
   },
@@ -109,26 +101,12 @@ export default defineComponent({
       return { name, params, query };
     });
 
-    const items = computed(() => props.dandisets);
-    const dandisetStats = ref<DandisetStats[] | null>(null);
-    async function fetchDandisetStats(dandisets: Dandiset[]) {
-      // Set back to null in case of failure
-      dandisetStats.value = null;
-
-      dandisetStats.value = dandisets as DandisetStats[];
-    }
-
-    // Fetching dandiset stats must be done this way since we don't have access to asyncComputed
-    watch(() => props.dandisets, fetchDandisetStats, { immediate: true });
-
     function formatDate(date: string) {
       return moment(date).format('LL');
     }
 
     return {
       origin,
-      items,
-      dandisetStats,
       formatDate,
 
       // Returned imports

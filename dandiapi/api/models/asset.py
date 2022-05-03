@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import datetime
-from typing import Dict
 from urllib.parse import urlparse, urlunparse
 import uuid
 
+from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
+from django.core.exceptions import FieldError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.copy import copy_object_multipart
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import (
     get_embargo_storage,
@@ -47,7 +49,7 @@ class BaseAssetBlob(TimeStampedModel):
         return self.assets.count()
 
     @property
-    def digest(self) -> Dict[str, str]:
+    def digest(self) -> dict[str, str]:
         digest = {'dandi:dandi-etag': self.etag}
         if self.sha256:
             digest['dandi:sha2-256'] = self.sha256
@@ -127,7 +129,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         blank=True,
         null=True,
         default=None,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
     )
     published = models.BooleanField(default=False)
 
@@ -170,7 +172,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.embargoed_blob.sha256
 
     @property
-    def digest(self) -> Dict[str, str]:
+    def digest(self) -> dict[str, str]:
         if self.is_blob:
             return self.blob.digest
         elif self.is_embargoed_blob:
@@ -179,9 +181,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.zarr.digest
 
     def _populate_metadata(self):
-        # TODO use http://localhost:8000 for local deployments
-        download_url = 'https://api.dandiarchive.org' + reverse(
-            'asset-direct-download',
+        download_url = settings.DANDI_API_URL + reverse(
+            'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
         if self.is_blob:
@@ -219,6 +220,47 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'publishedBy': self.published_by(now),
             'datePublished': now.isoformat(),
         }
+
+    def unembargo(self):
+        """Unembargo an asset by copying its blob to the public bucket."""
+        if self.embargoed_blob is None:
+            raise FieldError('Asset is not embargoed')
+
+        # Prevent circular import
+        from dandiapi.api.models.upload import Upload
+
+        # Use existing AssetBlob if possible
+        etag = self.embargoed_blob.etag
+        matching_blob = AssetBlob.objects.filter(etag=etag).first()
+        if matching_blob is not None:
+            self.blob = matching_blob
+        else:
+            # Matching AssetBlob doesn't exist, copy blob to public bucket
+            resp = copy_object_multipart(
+                self.embargoed_blob.blob.storage,
+                source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
+                source_key=self.embargoed_blob.blob.name,
+                dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
+                dest_key=Upload.object_key(
+                    self.embargoed_blob.blob_id, self.embargoed_blob.dandiset
+                ),
+            )
+
+            # Assert files are equal
+            assert resp.etag == self.embargoed_blob.etag
+
+            # Assign blob
+            self.blob = AssetBlob(
+                blob_id=self.embargoed_blob.blob_id,
+                etag=resp.etag,
+                blob=resp.key,
+                size=self.embargoed_blob.size,
+            )
+            self.blob.save()
+
+        # Save updated blob field
+        self.embargoed_blob = None
+        self.save(update_fields=['blob', 'embargoed_blob'])
 
     def publish(self):
         """

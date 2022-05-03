@@ -1,0 +1,43 @@
+name: Update release branch
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  reset-release-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
+          token: ${{ secrets.GH_TOKEN }} # use PAT with permissions to push to master
+          ref: release
+
+      - name: Perform reset
+        run: |
+          git reset --hard ${{ github.ref }}
+          git push --force origin release
+
+  production-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # fetch history for all branches and tags
+          ref: release
+
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Install builds plugin
+        run: heroku plugins:install heroku-builds
+
+      - name: Build app into tarball
+        run: python setup.py sdist --formats=gztar
+
+      - name: Create Heroku Build
+        run: heroku builds:create -a dandi-api --source-tar=dist/$(python setup.py --fullname).tar.gz
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY  }}
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL  }}

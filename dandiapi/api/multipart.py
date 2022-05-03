@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from datetime import timedelta
-from typing import Iterator, Tuple
 
 from dandischema.digests.dandietag import PartGenerator
 from django.core.files.storage import Storage
@@ -16,7 +16,7 @@ class UnsupportedStorageError(Exception):
 
 class DandiMultipartMixin:
     @staticmethod
-    def _iter_part_sizes(file_size: int, part_size: int = None) -> Iterator[Tuple[int, int]]:
+    def _iter_part_sizes(file_size: int, part_size: int = None) -> Iterator[tuple[int, int]]:
         generator = PartGenerator.for_file_size(file_size)
         for part in generator:
             yield part.number, part.size

@@ -1,5 +1,6 @@
 <template>
   <v-card
+    v-if="currentDandiset && otherVersions"
     outlined
     class="mt-4 px-3"
   >
@@ -127,7 +128,10 @@
                     cols="9"
                     class="py-0"
                   >
-                    <div class="text-caption">
+                    <div
+                      v-if="currentDandiset"
+                      class="text-caption"
+                    >
                       This Dandiset has {{ currentDandiset.version_validation_errors.length }}
                       metadata validation error(s).
                     </div>
@@ -209,7 +213,10 @@
                     cols="9"
                     class="py-0"
                   >
-                    <div class="text-caption">
+                    <div
+                      v-if="currentDandiset"
+                      class="text-caption"
+                    >
                       This Dandiset has {{ currentDandiset.asset_validation_errors.length }}
                       asset validation error(s).
                     </div>
@@ -382,14 +389,18 @@ export default defineComponent({
       if (currentDandiset.value?.status === 'Published') {
         return 'No changes since last publish.';
       }
+      if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
+        return 'This dandiset is being unembargoed, please wait.';
+      }
       return '';
     });
 
-    const publishButtonDisabled: ComputedRef<boolean> = computed(
-      () => !!(currentDandiset.value?.version_validation_errors.length
-        || currentDandiset.value?.asset_validation_errors.length
-        || publishDisabledMessage.value),
-    );
+    const publishButtonDisabled = computed(() => !!(
+      currentDandiset.value?.version_validation_errors.length
+      || currentDandiset.value?.asset_validation_errors.length
+      || currentDandiset.value?.dandiset.embargo_status !== 'OPEN'
+      || publishDisabledMessage.value
+    ));
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
       if (!store.state.dandiset.owners) {

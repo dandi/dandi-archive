@@ -34,17 +34,16 @@
           </a>
           <a
             v-if="contactPeople.has(contributor.name)"
-            :href="`mailto:${contributors.filter((c) => c.name === contributor.name)[0].email}`"
-            class="text-decoration-none"
+            :href="contributor.email ? `mailto:${contributor.email}` : undefined"
+            class="mx-1 text-decoration-none"
           >
-            <v-icon color="black">mdi-card-account-mail</v-icon>
+            <v-icon color="info">mdi-card-account-mail</v-icon>
           </a>
         </v-chip>
       </div>
     </v-card>
 
     <MetadataCard
-      v-if="fundingInformation && fundingInformation.length"
       :items="fundingInformation"
       name="Funding information"
       icon="mdi-currency-usd"
@@ -60,6 +59,11 @@
             <strong>- Award Number: </strong>{{ slotProps.item.awardNumber }}
           </span>
         </div>
+      </template>
+      <template #emptyFallback>
+        <span class="font-italic font-weight-bold">
+          No funding information available.
+        </span>
       </template>
     </MetadataCard>
 
@@ -252,7 +256,7 @@ export default defineComponent({
         (contributor) => !!(contributor.schemaKey === 'Organization')
         // Only include organizations with "Sponsor" or "Funder" roles in Funding Information
         && (contributor.roleName?.includes('dcite:Funder') || contributor.roleName?.includes('dcite:Sponsor')),
-      ),
+      ) || [],
     );
 
     const relatedResources: ComputedRef<RelatedResource|undefined> = computed(

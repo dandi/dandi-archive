@@ -41,6 +41,7 @@ export interface Version {
   metadata?: DandisetMetadata,
   asset_validation_errors: ValidationError[],
   version_validation_errors: ValidationError[],
+  contact_person?: string,
 }
 
 export interface Asset {
@@ -76,6 +77,8 @@ export interface AssetStats {
   created?: string,
   modified?: string,
   size?: number,
+  services?: { name: string, url: string }[],
+  asset_id?: string,
 }
 
 export interface AssetFolder extends AssetStats {

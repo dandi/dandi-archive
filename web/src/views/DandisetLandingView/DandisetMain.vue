@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="currentDandiset && meta && stats">
     <v-card
       class="px-3"
       color="grey lighten-5"
@@ -88,7 +88,7 @@
               :key="i"
             >
               <strong>{{ license }}</strong>
-              <span v-text="i === meta.license.length - 1 ? '' : ', '" />
+              <span v-text="meta && i === meta.license.length - 1 ? '' : ', '" />
             </span>
           </span>
         </v-col>
@@ -101,7 +101,7 @@
               :key="i"
             >
               <strong>{{ item.status }}</strong>
-              <span v-text="i === accessInformation.length - 1 ? '' : ', '" />
+              <span v-text="accessInformation && i === accessInformation.length - 1 ? '' : ', '" />
             </span>
           </span>
         </v-col>

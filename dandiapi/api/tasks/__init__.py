@@ -1,9 +1,7 @@
-import os
-from typing import Dict, List
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.conf import settings
+import dandischema.exceptions
+from dandischema.metadata import validate
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -16,16 +14,8 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
-
-if settings.DANDI_ALLOW_LOCALHOST_URLS:
-    # If this environment variable is set, the pydantic model will allow URLs with localhost
-    # in them. This is important for development and testing environments, where URLs will
-    # frequently point to localhost.
-    os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
-
-import dandischema.exceptions
-from dandischema.metadata import validate
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
+from dandiapi.api.models.zarr import ZarrArchive
 
 logger = get_task_logger(__name__)
 
@@ -36,8 +26,10 @@ def calculate_sha256(blob_id: int) -> None:
     logger.info('Starting sha256 calculation for blob %s', blob_id)
     try:
         asset_blob = AssetBlob.objects.get(blob_id=blob_id)
+        logger.info(f'Found AssetBlob {blob_id}')
     except AssetBlob.DoesNotExist:
         asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
+        logger.info(f'Found EmbargoedAssetBlob {blob_id}')
 
     sha256 = calculate_sha256_checksum(asset_blob.blob.storage, asset_blob.blob.name)
     logger.info('Calculated sha256 %s', sha256)
@@ -55,7 +47,7 @@ def calculate_sha256(blob_id: int) -> None:
         validate_asset_metadata(asset.id)
 
 
-@shared_task
+@shared_task(queue='write_manifest_files')
 @atomic
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
@@ -68,17 +60,17 @@ def write_manifest_files(version_id: int) -> None:
     write_collection_jsonld(version, logger=logger)
 
 
-def encode_pydantic_error(error) -> Dict[str, str]:
+def encode_pydantic_error(error) -> dict[str, str]:
     return {'field': error['loc'][0], 'message': error['msg']}
 
 
-def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> Dict[str, str]:
+def encode_jsonschema_error(error: jsonschema.exceptions.ValidationError) -> dict[str, str]:
     return {'field': '.'.join([str(p) for p in error.path]), 'message': error.message}
 
 
 def collect_validation_errors(
     error: dandischema.exceptions.ValidationError,
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     if type(error) is dandischema.exceptions.PydanticValidationError:
         encoder = encode_pydantic_error
     elif type(error) is dandischema.exceptions.JsonschemaValidationError:
@@ -164,3 +156,34 @@ def validate_version_metadata(version_id: int) -> None:
 @shared_task
 def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
+
+
+@shared_task
+def unembargo_dandiset(dandiset_id: int):
+    """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
+    dandiset: Dandiset = Dandiset.objects.get(id=dandiset_id)
+
+    # Only the draft version is needed, since embargoed dandisets can't be published
+    draft_version: Version = dandiset.draft_version
+    embargoed_assets: list[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
+
+    # Unembargo all assets
+    for asset in embargoed_assets:
+        asset.unembargo()
+
+    # Update draft version metadata
+    draft_version.metadata['access'] = [
+        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
+    ]
+    draft_version.save(update_fields=['metadata'])
+
+    # Set access on dandiset
+    dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
+    dandiset.save(update_fields=['embargo_status'])
+
+
+@shared_task
+@atomic
+def cancel_zarr_upload(zarr_id: str):
+    zarr_archive: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+    zarr_archive.cancel_upload()

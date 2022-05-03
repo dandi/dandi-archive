@@ -75,6 +75,7 @@ const dandiRest = new Vue({
       if (oauthClient) {
         await oauthClient.logout();
         this.user = null;
+        localStorage.clear();
       }
     },
     async me(): Promise<User> {
@@ -218,9 +219,8 @@ const dandiRest = new Vue({
       const { data } = await client.post(`dandisets/${identifier}/versions/draft/publish/`);
       return data;
     },
-    async unembargo(identifier: string) {
-      // TODO: implement this once the server endpoint is available
-      return identifier;
+    async unembargo(identifier: string): Promise<AxiosResponse> {
+      return client.post(`dandisets/${identifier}/unembargo/`);
     },
     async info(): Promise<Info> {
       const { data } = await client.get('info/');
@@ -229,6 +229,9 @@ const dandiRest = new Vue({
     async stats() {
       const { data } = await client.get('stats/');
       return data;
+    },
+    assetManifestURI(identifier: string, version: string) {
+      return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/`;
     },
     assetDownloadURI(identifier: string, version: string, uuid: string) {
       return `${dandiApiRoot}assets/${uuid}/download/`;

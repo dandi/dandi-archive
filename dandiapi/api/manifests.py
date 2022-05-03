@@ -51,7 +51,7 @@ def manifest_location(version: Version):
     if version.version == 'draft':
         return [
             (
-                f'https://api.dandiarchive.org/api/dandisets/{version.dandiset.identifier}'
+                f'{settings.DANDI_API_URL}/api/dandisets/{version.dandiset.identifier}'
                 f'/versions/draft/assets/'
             )
         ]

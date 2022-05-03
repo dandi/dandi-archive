@@ -113,7 +113,7 @@
                   {{
                     `
                     ${owner.name || owner.username}
-                    ${owner.username === user.username ? ' (you)' : ''}
+                    ${user && user.username === owner.username ? ' (you)' : ''}
                     `
                   }}
                 </span>
@@ -141,6 +141,42 @@
         </div>
       </v-col>
     </v-row>
+    <v-dialog
+      v-model="adminWarningDisplay"
+      max-width="60vw"
+      persistent
+    >
+      <v-card class="pb-3">
+        <v-card-title class="text-h5 font-weight-light">
+          WARNING
+        </v-card-title>
+        <v-divider class="my-3" />
+        <v-card-text>
+          This action will modify the owners of this dandiset.
+          <span class="font-weight-bold">You are not an owner of this dandiset,</span>
+          but as an admin you may still perform this action.
+        </v-card-text>
+        <v-card-text>
+          Would you like to proceed?
+        </v-card-text>
+
+        <v-card-actions>
+          <v-btn
+            color="error"
+            depressed
+            @click="save"
+          >
+            Yes
+          </v-btn>
+          <v-btn
+            depressed
+            @click="adminWarningDisplay = false"
+          >
+            No
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
@@ -171,6 +207,8 @@ export default defineComponent({
 
     // users with checkbox checked
     const selectedUsers: Ref<User[]> = ref([]);
+
+    const adminWarningDisplay = ref(false);
 
     // eslint-disable-next-line no-underscore-dangle
     const _searchResults: Ref<User[]> = ref([]);
@@ -239,9 +277,20 @@ export default defineComponent({
 
     async function save() {
       if (currentDandiset.value?.dandiset) {
+        const owner = owners.value
+          ?.map((u: User) => u.username)
+          .includes(dandiRest.user!.username);
+
+        // If necessary, open display and return. Otherwise, proceed to save.
+        if (!adminWarningDisplay.value && dandiRest.user?.admin && !owner) {
+          adminWarningDisplay.value = true;
+          return;
+        }
+
         const { identifier } = currentDandiset.value.dandiset;
         const { data } = await dandiRest.setOwners(identifier, newOwners.value);
         setOwners(data);
+        adminWarningDisplay.value = false;
       }
     }
 
@@ -261,6 +310,7 @@ export default defineComponent({
       checkBoxHandler,
       selectedUsers,
       user,
+      adminWarningDisplay,
     };
   },
 });

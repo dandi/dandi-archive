@@ -1,5 +1,6 @@
 <template>
   <v-card
+    v-if="currentDandiset"
     outlined
     class="mt-4 px-3"
   >
@@ -145,6 +146,8 @@ export default defineComponent({
           identifier: currentDandiset.value.dandiset.identifier,
           version: currentDandiset.value.version,
         });
+
+        showWarningDialog.value = false;
       }
     }
 

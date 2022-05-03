@@ -6,6 +6,7 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
+    "lint:templates": "vue-type-check --workspace . --srcDir src/",
     "migrate": "ts-node src/migrate.ts"
   },
   "dependencies": {
@@ -24,7 +25,6 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "vue": "^2.6.11",
-    "vue-async-computed": "^3.9.0",
     "vue-cookie-law": "^1.13.3",
     "vue-gtag": "^1.16.1",
     "vue-router": "^3.5.1",
@@ -58,6 +58,7 @@
     "typescript": "^4.2.4",
     "vue-cli-plugin-vuetify": "^2.4.0",
     "vue-template-compiler": "^2.6.11",
+    "vue-type-check": "^1.1.0",
     "vuetify-loader": "^1.7.2"
   },
   "postcss": {

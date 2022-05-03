@@ -5,17 +5,18 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, OuterRef, Subquery, Sum
 from django.db.utils import IntegrityError
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import assign_perm, get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
@@ -23,11 +24,12 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.permissions import IsApprovedOrReadOnly
+from dandiapi.api.tasks import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
+    DandisetQueryParameterSerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
@@ -80,7 +82,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
-    permission_classes = [IsApprovedOrReadOnly]
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
@@ -92,19 +93,25 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         # Only include embargoed dandisets which belong to the current user
-        queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+        queryset = Dandiset.objects
         if self.action == 'list':
+            queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+
+            query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
+            query_serializer.is_valid(raise_exception=True)
+
             # TODO: This will filter the dandisets list if there is a query parameter user=me.
             # This is not a great solution but it is needed for the My Dandisets page.
-            user_kwarg = self.request.query_params.get('user', None)
+            user_kwarg = query_serializer.validated_data.get('user')
             if user_kwarg == 'me':
                 # Replace the original, rather inefficient queryset with a more specific one
                 queryset = get_objects_for_user(
                     self.request.user, 'owner', Dandiset, with_superuser=False
                 ).order_by('created')
-            # Same deal for filtering out draft or empty dandisets
-            show_draft = self.request.query_params.get('draft', 'true') == 'true'
-            show_empty = self.request.query_params.get('empty', 'true') == 'true'
+
+            show_draft: bool = query_serializer.validated_data['draft']
+            show_empty: bool = query_serializer.validated_data['empty']
+            show_embargoed: bool = query_serializer.validated_data['embargoed']
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
@@ -122,6 +129,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     draft_asset_count=Subquery(most_recent_version.values('asset_count'))
                 )
                 queryset = queryset.filter(draft_asset_count__gt=0)
+            if not show_embargoed:
+                queryset = queryset.filter(embargo_status='OPEN')
         return queryset
 
     def get_object(self):
@@ -135,7 +144,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise Http404('Not a valid identifier.')
         self.kwargs[self.lookup_url_kwarg] = lookup_value
 
-        return super().get_object()
+        dandiset = super().get_object()
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+            if not self.request.user.is_authenticated:
+                # Clients must be authenticated to access it
+                raise NotAuthenticated()
+            if not self.request.user.has_perm('owner', dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
+        return dandiset
 
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
@@ -251,9 +268,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         Deletes a dandiset. Only dandisets without published versions are deletable.
         """
-        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        dandiset: Dandiset = self.get_object()
 
-        if dandiset.versions.filter(~Q(version='draft')).exists():
+        if dandiset.versions.exclude(version='draft').exists():
             return Response(
                 'Cannot delete dandisets with published versions.',
                 status=status.HTTP_403_FORBIDDEN,
@@ -261,6 +278,31 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset.delete()
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        methods=['POST'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'Dandiset unembargoing dispatched',
+            400: 'Dandiset not embargoed',
+        },
+        operation_summary='Unembargo a dandiset.',
+        operation_description=(
+            'Unembargo an embargoed dandiset. Only permitted for owners and admins'
+            '. If the embargo status is OPEN or UNEMBARGOING, an HTTP 400 is returned.'
+        ),
+    )
+    @action(methods=['POST'], detail=True)
+    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    def unembargo(self, request, dandiset__pk):
+        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+
+        if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
+            return Response('Dandiset not embargoed', status=status.HTTP_400_BAD_REQUEST)
+
+        unembargo_dandiset.delay(dandiset.pk)
+        return Response(None, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         method='GET',
@@ -284,7 +326,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     # TODO move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
-        dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        dandiset = self.get_object()
         if request.method == 'PUT':
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
