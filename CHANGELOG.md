@@ -1,3 +1,18 @@
+# v0.2.20 (Thu May 05 2022)
+
+#### 🐛 Bug Fix
+
+- Empty commit to cut a release [#1082](https://github.com/dandi/dandi-archive/pull/1082) ([@yarikoptic](https://github.com/yarikoptic))
+- Boost dandischema and DANDI_SCHEMA_VERSION [#1074](https://github.com/dandi/dandi-archive/pull/1074) ([@yarikoptic](https://github.com/yarikoptic) [@AlmightyYakob](https://github.com/AlmightyYakob))
+- Remove erroneous select_for_update and update tests to use transactions [#1066](https://github.com/dandi/dandi-archive/pull/1066) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.19 (Fri Apr 29 2022)
 
 #### 🐛 Bug Fix
