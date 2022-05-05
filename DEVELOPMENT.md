@@ -103,6 +103,11 @@ Useful sub-commands include:
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
 
+## dandiarchive.org WEB Interface
+
+This repository now also contains sources for the web interface under [web/](./web/) folder.
+If you would like to develop it locally, please see [web/README.md](./web/README.md) file for instructions.
+
 ## API Authentication
 Read-only API endpoints (i.e. `GET`, `HEAD`) do not require any
 authentication. All other endpoints require token authentication
