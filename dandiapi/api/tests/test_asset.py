@@ -231,13 +231,16 @@ def test_asset_total_size(
     zarr_archive = zarr_archive_factory()
     # give it some size
     zarr_archive.size = 100
-    zarr_archive.save() # save adjusted .size into DB
+    zarr_archive.save()  # save adjusted .size into DB
 
     # adding of an asset with zarr should be reflected
     asset3 = asset_factory(zarr=zarr_archive, blob=None)
     version2.assets.add(asset3)
 
     assert Asset.total_size() == asset_blob.size + zarr_archive.size
+
+    # TODO: add testing for embargoed zar added, whenever embargoed zarrs
+    # supported, ATM they are not and tested by test_zarr_rest_create_embargoed_dandiset
 
 
 @pytest.mark.django_db
