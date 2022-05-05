@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -15,6 +17,19 @@ from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
+logger = logging.getLogger(__name__)
+
+
+def _get_user_status(user: User):
+    # Workaround for https://github.com/dandi/dandi-archive/issues/1085
+    # TODO: remove/robustify some other way whenever underlying reason is
+    # identified
+    metadata = getattr(user, 'metadata', None)
+    if metadata:
+        return metadata.status
+    logger.error("User %s lacks .metadata. Returning user's status as INCOMPLETE", user)
+    return UserMetadata.Status.INCOMPLETE
+
 
 def user_to_dict(user: User):
     """
@@ -26,7 +41,7 @@ def user_to_dict(user: User):
         'admin': user.is_superuser,
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
-        'status': user.metadata.status,
+        'status': _get_user_status(user),
         'created': user.date_joined,
     }
 
@@ -46,7 +61,7 @@ def social_account_to_dict(social_account: SocialAccount):
         'admin': user.is_superuser,
         'username': username,
         'name': name,
-        'status': user.metadata.status,
+        'status': _get_user_status(user),
         'created': created,
     }
 
