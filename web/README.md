@@ -12,6 +12,9 @@ yarn install
 yarn run serve
 ```
 
+**Note**: on Debian systems `yarn` command is from unrelated `cmdtest` package.
+Install and use (instead of `yarn`) `yarnpkg` instead.
+
 The web app will be served at `http://localhost:8085/`.
 
 This app requires a server component to be useful, which you can run locally; see the [instructions](https://github.com/dandi/dandi-archive/#dandi-archive)) for doing so.
