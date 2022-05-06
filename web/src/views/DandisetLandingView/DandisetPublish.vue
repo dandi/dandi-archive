@@ -168,7 +168,7 @@
           <v-btn
             v-if="isOwner"
             color="primary"
-            :to="meditorLink"
+            @click="openMeditor = true"
           >
             Fix issues
           </v-btn>
@@ -318,6 +318,7 @@ import { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
 import { Location, RawLocation } from 'vue-router';
+import { open as openMeditor } from '@/components/Meditor/state';
 
 function getValidationErrorIcon(errorField: string): string {
   const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
@@ -495,6 +496,7 @@ export default defineComponent({
       showPublishWarning,
       showPublishWarningDialog,
       isOwner,
+      openMeditor,
     };
   },
 });
