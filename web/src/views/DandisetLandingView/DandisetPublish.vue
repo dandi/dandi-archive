@@ -93,7 +93,7 @@
     </v-row>
 
     <v-row
-      v-if="currentDandiset.version_validation_errors.length "
+      v-if="currentDandiset.status === 'Invalid' || currentDandiset.status === 'Pending'"
       class="mb-4 px-1"
       no-gutters
     >
@@ -129,7 +129,14 @@
                     class="py-0"
                   >
                     <div
-                      v-if="currentDandiset"
+                      v-if="currentDandiset && currentDandiset.status === 'Pending'"
+                      class="text-caption"
+                    >
+                      Validation is pending.
+                    </div>
+
+                    <div
+                      v-else-if="currentDandiset && currentDandiset.status === 'Invalid'"
                       class="text-caption"
                     >
                       This Dandiset has {{ currentDandiset.version_validation_errors.length }}
@@ -139,10 +146,16 @@
                 </v-row>
               </v-card>
             </template>
-            <span>Fix issues with metadata</span>
+            <span v-if="currentDandiset.status === 'Pending'">
+              Wait for validation or reload the page
+            </span>
+            <span v-else>Fix issues with metadata</span>
           </v-tooltip>
         </template>
-        <v-card class="pa-1">
+        <v-card
+          v-if="currentDandiset.status === 'Invalid'"
+          class="pa-1"
+        >
           <v-list
             style="max-height: 200px"
             class="overflow-y-auto"
