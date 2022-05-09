@@ -261,7 +261,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         method='POST',
         request_body=no_body,
         responses={
-            200: ZarrSerializer(many=True),
+            # Note: Having proper None results in no documentation in /swagger
+            204: 'None - expected normal return without any content',
             400: ZarrArchive.INGEST_ERROR_MSG,
         },
         operation_summary='Ingest a zarr archive, calculating checksums, size and file count.',
