@@ -146,14 +146,14 @@
                 </v-row>
               </v-card>
             </template>
-            <span v-if="currentDandiset.status === 'Pending'">
+            <span v-if="currentDandiset && currentDandiset.status === 'Pending'">
               Wait for validation or reload the page
             </span>
             <span v-else>Fix issues with metadata</span>
           </v-tooltip>
         </template>
         <v-card
-          v-if="currentDandiset.status === 'Invalid'"
+          v-if="currentDandiset && currentDandiset.status === 'Invalid'"
           class="pa-1"
         >
           <v-list
