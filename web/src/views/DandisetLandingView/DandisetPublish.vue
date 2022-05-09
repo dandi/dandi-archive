@@ -421,18 +421,6 @@ export default defineComponent({
       () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
     );
 
-    const meditorLink: ComputedRef<Location|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const version: string = currentVersion.value;
-      const { identifier } = currentDandiset.value.dandiset;
-      return {
-        name: 'metadata',
-        params: { identifier, version },
-      } as Location;
-    });
-
     const showPublishWarningDialog = ref(false);
 
     function formatDate(date: string): string {
@@ -489,7 +477,6 @@ export default defineComponent({
       publishDisabledMessage,
       publishButtonDisabled,
       publishButtonHidden,
-      meditorLink,
       getValidationErrorIcon,
       publish,
       draftVersion,
