@@ -317,7 +317,7 @@ import router from '@/router';
 import { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
-import { Location, RawLocation } from 'vue-router';
+import { RawLocation } from 'vue-router';
 import { open as openMeditor } from '@/components/Meditor/state';
 
 function getValidationErrorIcon(errorField: string): string {
