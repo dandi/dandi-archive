@@ -136,7 +136,7 @@
                 </v-row>
               </v-card>
             </template>
-            <span>Wait for validation or reload the page</span>
+            <span>Reload the page to see if validation is over.</span>
           </v-tooltip>
         </template>
       </v-menu>
