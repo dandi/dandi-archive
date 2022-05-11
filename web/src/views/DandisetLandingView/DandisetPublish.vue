@@ -136,7 +136,8 @@
                     </div>
 
                     <div
-                      v-else-if="currentDandiset && currentDandiset.status === 'Invalid' && currentDandiset.version_validation_errors.length"
+                      v-else-if="currentDandiset && currentDandiset.status === 'Invalid'
+                        && currentDandiset.version_validation_errors.length"
                       class="text-caption"
                     >
                       This Dandiset has {{ currentDandiset.version_validation_errors.length }}
