@@ -1,3 +1,27 @@
+# v0.2.21 (Wed May 11 2022)
+
+#### 🐛 Bug Fix
+
+- checking the validation status, new attempt [#1097](https://github.com/dandi/dandi-archive/pull/1097) ([@djarecka](https://github.com/djarecka))
+- Fix opening Meditor when clicking on "Fix Issues" in the list of dandiset metadata issues [#1088](https://github.com/dandi/dandi-archive/pull/1088) ([@djarecka](https://github.com/djarecka))
+- BF(workaround): to avoid crash for user lacking metadata - return INCOMPLETE [#1086](https://github.com/dandi/dandi-archive/pull/1086) ([@yarikoptic](https://github.com/yarikoptic))
+- Remove EmbargoedZarrArchive since not supported [#1077](https://github.com/dandi/dandi-archive/pull/1077) ([@yarikoptic](https://github.com/yarikoptic))
+- TST: added a test and tune up to factories to ensure that zarr size is computed [#1077](https://github.com/dandi/dandi-archive/pull/1077) ([@yarikoptic](https://github.com/yarikoptic))
+- BF: add {Embragoed,}ZarrArchive sizes into total_size compute [#1077](https://github.com/dandi/dandi-archive/pull/1077) ([@yarikoptic](https://github.com/yarikoptic))
+- RF: avoid code duplication while considering two types of *AssetBlobs [#1077](https://github.com/dandi/dandi-archive/pull/1077) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 📝 Documentation
+
+- BF DOC(incomplete): /zarr/.../ingest has 204 not 200 response [#1087](https://github.com/dandi/dandi-archive/pull/1087) ([@yarikoptic](https://github.com/yarikoptic))
+- Extend docs with information about devel env [#1084](https://github.com/dandi/dandi-archive/pull/1084) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Dorota Jarecka ([@djarecka](https://github.com/djarecka))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.20 (Thu May 05 2022)
 
 #### 🐛 Bug Fix
