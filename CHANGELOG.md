@@ -1,3 +1,19 @@
+# v0.2.23 (Thu May 12 2022)
+
+#### ⚠️ Pushed to `master`
+
+- Empty commit without markers to skip ci to see if release would be released on netlify ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- BF: provide custom commit message without token to skip the beat [#1101](https://github.com/dandi/dandi-archive/pull/1101) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.22 (Thu May 12 2022)
 
 #### 🏠 Internal
