@@ -1,3 +1,15 @@
+# v0.2.22 (Thu May 12 2022)
+
+#### 🏠 Internal
+
+- BF: production-deploy - add "needs" dependency within update-release-branch [#1099](https://github.com/dandi/dandi-archive/pull/1099) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.21 (Wed May 11 2022)
 
 #### 🐛 Bug Fix
