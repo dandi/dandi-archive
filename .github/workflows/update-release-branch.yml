@@ -21,6 +21,7 @@ jobs:
 
   production-deploy:
     runs-on: ubuntu-latest
+    needs: reset-release-branch
     steps:
       - uses: actions/checkout@v3
         with:
