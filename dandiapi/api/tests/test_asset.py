@@ -267,6 +267,7 @@ def test_asset_populate_metadata(draft_asset_factory):
         'contentSize': asset.blob.size,
         'digest': asset.blob.digest,
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'repository': settings.DANDI_WEB_APP_URL,
     }
 
 
@@ -296,6 +297,7 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
         # This should be injected on all zarr assets
         'encodingFormat': 'application/x-zarr',
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'repository': settings.DANDI_WEB_APP_URL,
     }
 
 

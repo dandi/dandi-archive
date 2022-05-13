@@ -200,6 +200,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'datePublished',
             'publishedBy',
             'manifestLocation',
+            'repository'
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 

@@ -191,12 +191,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             s3_url = self.embargoed_blob.s3_url
         else:
             s3_url = self.zarr.s3_url
-
         metadata = {
             **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),
+            'repository': settings.DANDI_WEB_APP_URL,
             'contentUrl': [download_url, s3_url],
             'contentSize': self.size,
             'digest': self.digest,
@@ -289,6 +289,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'digest',
             'datePublished',
             'publishedBy',
+            'repository',
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
