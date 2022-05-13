@@ -188,19 +188,19 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def strip_metadata(cls, metadata):
         """Strip away computed fields from a metadata dict."""
         computed_fields = [
-            'name',
-            'identifier',
-            'version',
-            'id',
-            'url',
             'assetsSummary',
             'citation',
-            'doi',
             'dateCreated',
             'datePublished',
-            'publishedBy',
+            'doi',
+            'id',
+            'identifier',
             'manifestLocation',
-            'repository'
+            'name',
+            'publishedBy',
+            'repository',
+            'url',
+            'version',
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
@@ -235,15 +235,15 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
         metadata = {
             **self.metadata,
-            'manifestLocation': manifest_location(self),
-            'name': self.name,
-            'identifier': f'DANDI:{self.dandiset.identifier}',
-            'version': self.version,
-            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
-            'repository': settings.DANDI_WEB_APP_URL,
-            'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',  # noqa
             'assetsSummary': summary,
             'dateCreated': self.dandiset.created.isoformat(),
+            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
+            'identifier': f'DANDI:{self.dandiset.identifier}',
+            'manifestLocation': manifest_location(self),
+            'name': self.name,
+            'repository': settings.DANDI_WEB_APP_URL,
+            'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',  # noqa
+            'version': self.version,
         }
         if self.doi:
             metadata['doi'] = self.doi

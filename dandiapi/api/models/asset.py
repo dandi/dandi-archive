@@ -193,13 +193,13 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             s3_url = self.zarr.s3_url
         metadata = {
             **self.metadata,
-            'id': f'dandiasset:{self.asset_id}',
-            'path': self.path,
-            'identifier': str(self.asset_id),
-            'repository': settings.DANDI_WEB_APP_URL,
-            'contentUrl': [download_url, s3_url],
             'contentSize': self.size,
+            'contentUrl': [download_url, s3_url],
             'digest': self.digest,
+            'id': f'dandiasset:{self.asset_id}',
+            'identifier': str(self.asset_id),
+            'path': self.path,
+            'repository': settings.DANDI_WEB_APP_URL,
         }
         if 'schemaVersion' in metadata:
             schema_version = metadata['schemaVersion']
@@ -281,13 +281,13 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def strip_metadata(cls, metadata):
         """Strip away computed fields from a metadata dict."""
         computed_fields = [
-            'id',
-            'path',
-            'identifier',
-            'contentUrl',
             'contentSize',
-            'digest',
+            'contentUrl',
             'datePublished',
+            'digest',
+            'id',
+            'identifier',
+            'path',
             'publishedBy',
             'repository',
         ]
