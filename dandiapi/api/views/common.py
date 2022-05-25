@@ -5,7 +5,7 @@ max_page_size = 1000
 
 
 class DandiPagination(PageNumberPagination):
-    page_size = 25
+    page_size = 100
     max_page_size = max_page_size
     page_size_query_param = 'page_size'
 
