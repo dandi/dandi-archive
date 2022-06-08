@@ -30,6 +30,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         VALIDATING = 'Validating'
         VALID = 'Valid'
         INVALID = 'Invalid'
+        PUBLISHING = 'Publishing'
         PUBLISHED = 'Published'
 
     dandiset = models.ForeignKey(Dandiset, related_name='versions', on_delete=models.CASCADE)
