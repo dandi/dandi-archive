@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
@@ -35,7 +35,7 @@ setup(
         'Programming Language :: Python',
     ],
     python_requires='>=3.9',
-    packages=find_packages(),
+    packages=find_namespace_packages(include=["dandiapi*"]),
     include_package_data=True,
     install_requires=[
         'celery',
