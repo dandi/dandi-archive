@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from pyppeteer.page import Page
 
 import pytest
-from utils import contains_text, disable_all_cookies, wait_for_navigation
+from utils import contains_text, disable_all_cookies
 
 COOKIE_CONSENT_MESSAGE = 'We use cookies to ensure you get the best experience on DANDI.'
 COOKIE_DISABLED_MESSAGE = (
@@ -15,10 +15,7 @@ COOKIE_DISABLED_MESSAGE = (
 
 
 @pytest.mark.pyppeteer
-async def test_cookies_acknowledgement_banner(page: Page, webpack_server: str):
-    await page.goto(webpack_server)
-    await wait_for_navigation(page)
-
+async def test_cookies_acknowledgement_banner(page: Page):
     # Ensure page contains cookie acknowledgement banner
     assert await contains_text(page, COOKIE_CONSENT_MESSAGE)
 
@@ -33,10 +30,7 @@ async def test_cookies_acknowledgement_banner(page: Page, webpack_server: str):
 
 
 @pytest.mark.pyppeteer
-async def test_cookies_disabled_banner(page: Page, webpack_server: str):
-    await page.goto(webpack_server)
-    await wait_for_navigation(page)
-
+async def test_cookies_disabled_banner(page: Page):
     await disable_all_cookies(page)
 
     # Ensure the page shows a message warning the user that they have cookies disabled

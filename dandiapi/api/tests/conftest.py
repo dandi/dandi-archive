@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import os
 from typing import TYPE_CHECKING
 
 from botocore.exceptions import ClientError
@@ -9,6 +12,8 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 from storages.backends.s3boto3 import S3Boto3Storage
+
+from dandiapi.api.tests.e2e.utils import wait_for_navigation
 
 from .factories import (
     AssetBlobFactory,
@@ -29,6 +34,19 @@ from .factories import (
 if TYPE_CHECKING:
     # mypy_boto3_s3 only provides types
     import mypy_boto3_s3 as s3
+    from pyppeteer.browser import Browser
+
+
+def pytest_configure(config):
+    config.addinivalue_line('markers', 'pyppeteer: This is a pyppeteer test.')
+    # Set URL for live_server fixture
+    os.environ['DJANGO_LIVE_TEST_SERVER_ADDRESS'] = (
+        # live_server expects a string in the format "localhost:PORT", so
+        # strip off http/https protocol first:
+        os.environ['DJANGO_DANDI_API_URL']  # noqa: B005
+        .lstrip('http://')
+        .lstrip('https://')
+    )
 
 
 register(PublishedAssetFactory, _name='published_asset')
@@ -190,3 +208,11 @@ def embargoed_storage(request) -> Storage:
 def storage_tuple(request) -> tuple[Storage, Storage]:
     storage_factory, embargoed_storage_factory = request.param
     return (storage_factory(), embargoed_storage_factory())
+
+
+@pytest.fixture
+async def page(browser: Browser, live_server: str):
+    new_page = await browser.newPage()
+    await new_page.goto(os.environ['DJANGO_DANDI_WEB_APP_URL'])
+    await wait_for_navigation(new_page)
+    return new_page

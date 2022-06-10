@@ -54,17 +54,38 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run E2E tests
-        uses: docker://ghcr.io/girder/pytest-pyppeteer:v0.0.11
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          install_directory: web
-          install_command: yarn install
-          test_directory: .
-          test_command: tox -e test-pyppeteer
+          node-version: '16.x'
+          cache: 'yarn'
+          cache-dependency-path: web/yarn.lock
+
+      - name: Install web app
+        run: yarn install --frozen-lockfile --prefer-offline
+        working-directory: web
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install tox
+        run: |
+          pip install --upgrade pip
+          pip install tox
+
+      - name: Run E2E tests
+        run: |
+          # Start web client
+          yarn --cwd web run serve & > /dev/null
+          # Run tests
+          tox -e test-pyppeteer
         env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@postgres:5432/django
-          DJANGO_CELERY_BROKER_URL: amqp://rabbitmq:5672/
-          DJANGO_MINIO_STORAGE_ENDPOINT: minio:9000
+          # API server env vars
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
           DJANGO_STORAGE_BUCKET_NAME: django-storage
@@ -75,6 +96,11 @@ jobs:
           DJANGO_DANDI_API_URL: http://localhost:8000
           DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
           DANDI_ALLOW_LOCALHOST_URLS: 1
+
+          # Web client env vars
+          VUE_APP_DANDI_API_ROOT: http://localhost:8000/api/
+          VUE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
+          VUE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
 
   # TODO: Remove this job when the rest of the puppeteer-based tests are ported to pyppeteer
   test-e2e-jest-puppeteer:
