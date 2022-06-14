@@ -297,14 +297,16 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        return (
-            AssetBlob.objects.filter(assets__versions__isnull=False)
+        # delayed import to avoid present imports circularity
+        from .zarr import ZarrArchive
+
+        return sum(
+            cls.objects.filter(assets__versions__isnull=False)
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0
-        ) + (
-            EmbargoedAssetBlob.objects.filter(assets__versions__isnull=False)
-            .distinct()
-            .aggregate(size=models.Sum('size'))['size']
-            or 0
+            for cls in (AssetBlob, EmbargoedAssetBlob, ZarrArchive)
+            # adding of Zarrs to embargoed dandisets is not supported
+            # so no point of adding EmbargoedZarr here since would also result in error
+            # TODO: add EmbagoedZarr whenever supported
         )
