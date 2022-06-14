@@ -35,7 +35,7 @@ setup(
         'Programming Language :: Python',
     ],
     python_requires='>=3.9',
-    packages=find_namespace_packages(include=["dandiapi*"]),
+    packages=find_namespace_packages(include=['dandiapi*']),
     include_package_data=True,
     install_requires=[
         'celery',
