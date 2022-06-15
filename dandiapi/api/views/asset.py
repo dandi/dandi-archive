@@ -517,24 +517,12 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         queryset = self.filter_queryset(self.get_queryset())
         glob_pattern: str | None = serializer.validated_data.get('glob')
-        regex_pattern: str | None = serializer.validated_data.get('regex')
-
-        if regex_pattern is not None:
-            try:
-                # Validate the regex by calling re.compile on it
-                re.compile(regex_pattern)
-                queryset = queryset.filter(path__iregex=regex_pattern)
-            except re.error:
-                return Response(
-                    data=f'{regex_pattern} is not a valid regex pattern.',
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
 
         if glob_pattern is not None:
-            # Escape special characters in the glob pattern. This is a security precaution taken since
-            # we are using postgres' regex search. A malicious user who knows this could include a
-            # regex as part of the glob expression, which postgres would happily parse and use if it's
-            # not escaped.
+            # Escape special characters in the glob pattern. This is a security precaution taken
+            # since we are using postgres' regex search. A malicious user who knows this could
+            # include a regex as part of the glob expression, which postgres would happily parse
+            # and use if it's not escaped.
             glob_pattern = re.escape(glob_pattern)
             queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
