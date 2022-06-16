@@ -1272,6 +1272,7 @@ def test_asset_direct_info(api_client, asset):
         ),
         ('a/b/d/*', ['a/b/d/e.txt']),
         ('*b*e.txt', ['a/b/c/e.txt', 'a/b/d/e.txt']),
+        ('.*[a|b].txt', []),  # regexes shouldn't be evaluated
     ],
 )
 def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expected_paths):
