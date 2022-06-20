@@ -191,6 +191,21 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
     ).data == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
 
 
+@pytest.mark.django_db
+def test_user_search_extra_data(api_client, user, social_account, social_account_factory):
+    """Test that searched keyword isn't caught by a different field in `extra_data`."""
+    api_client.force_authenticate(user=user)
+
+    social_accounts = [social_account_factory() for _ in range(3)]
+    social_accounts[-1].extra_data['test'] = social_account.extra_data['login']
+
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': social_account.extra_data['login']},
+        format='json',
+    ).data == [serialize_social_account(social_account)]
+
+
 @pytest.mark.parametrize(
     'status,expected_status_code,expected_search_results_value',
     [
