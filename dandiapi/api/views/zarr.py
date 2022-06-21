@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 from django.conf import settings
@@ -24,6 +25,8 @@ from dandiapi.api.tasks import cancel_zarr_upload
 from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
+
+logger = logging.getLogger(__name__)
 
 
 class ZarrUploadFileSerializer(serializers.Serializer):
@@ -173,13 +176,15 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
-            print(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
+            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
             serializer = ZarrUploadFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             uploads = zarr_archive.begin_upload(serializer.validated_data)
 
         serializer = ZarrUploadBatchSerializer(instance=uploads, many=True)
-        print(f'Presigned {len(uploads)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
+        logger.info(
+            f'Presigned {len(uploads)} URLs to upload to zarr archive {zarr_archive.zarr_id}'
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -198,7 +203,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
-            print(f'Beggining upload completion for zarr archive {zarr_archive.zarr_id}')
+            logger.info(f'Beginning upload completion for zarr archive {zarr_archive.zarr_id}')
             zarr_archive.complete_upload()
             # Save any zarr assets to trigger metadata updates
             for asset in zarr_archive.assets.all():
