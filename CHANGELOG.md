@@ -1,3 +1,17 @@
+# v0.2.24 (Tue Jun 21 2022)
+
+#### 🐛 Bug Fix
+
+- Fix improper escaping of glob parameter, remove regex search [#1062](https://github.com/dandi/dandi-archive/pull/1062) ([@mvandenburgh](https://github.com/mvandenburgh))
+- ENH: increase page size from 25 to 100 [#1107](https://github.com/dandi/dandi-archive/pull/1107) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.23 (Thu May 12 2022)
 
 #### ⚠️ Pushed to `master`
