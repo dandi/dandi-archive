@@ -565,9 +565,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         qs: QuerySet[Asset] = (
             self.get_queryset()
-            .select_related('blob')
-            .select_related('embargoed_blob')
-            .select_related('zarr')
+            .select_related('blob', 'embargoed_blob', 'zarr')
             .filter(path__startswith=path_prefix)
             .order_by('path')
         )
