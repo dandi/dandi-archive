@@ -18,6 +18,7 @@ from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
+from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
 from django.http.response import Http404
 from django.urls import reverse
@@ -553,11 +554,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         page: int = query_serializer.validated_data['page']
         page_size: int = query_serializer.validated_data['page_size']
 
-        qs = (
+        qs: QuerySet[Asset] = (
             self.get_queryset()
-            .select_related('blob')
-            .select_related('embargoed_blob')
-            .select_related('zarr')
+            .select_related('blob', 'embargoed_blob', 'zarr')
             .filter(path__startswith=path_prefix)
             .order_by('path')
         )
@@ -565,7 +564,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         folders: dict[str, dict] = {}
         files: dict[str, Asset] = {}
 
-        for asset in qs:
+        for asset in qs.iterator():
             # Get the remainder of the path after path_prefix
             base_path: str = asset.path[len(path_prefix) :].strip('/')
 
