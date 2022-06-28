@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, OuterRef, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.utils.decorators import method_decorator
@@ -29,6 +30,7 @@ from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
+    DandisetListSerializer,
     DandisetQueryParameterSerializer,
     UserSerializer,
     VersionMetadataSerializer,
@@ -153,6 +155,54 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 # The user does not have ownership permission
                 raise PermissionDenied()
         return dandiset
+
+    @swagger_auto_schema(
+        query_serializer=DandisetQueryParameterSerializer(),
+        responses={200: DandisetListSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset().annotate()
+        dandisets = self.paginate_queryset(self.filter_queryset(qs))
+
+        # Query versions, to supply num/count of assets.
+        # Ideally we'd use `distinct('dandiset_id')` to limit the
+        # amount of published versions returned, but we can't use that with `annotate`.
+        versions = (
+            Version.objects.select_related('dandiset')
+            .annotate(
+                total_size=(
+                    Coalesce(Sum('assets__blob__size'), 0)
+                    + Coalesce(Sum('assets__embargoed_blob__size'), 0)
+                    + Coalesce(Sum('assets__zarr__size'), 0)
+                ),
+                num_assets=Count('assets'),
+            )
+            .filter(dandiset__in=dandisets)
+            .order_by('-version', '-modified')
+        )
+
+        # Determine draft and most recently published for each dandiset.
+        #
+        # Since ordering is version descending, then modified descending, we will
+        # see all drafts first, then any published. Once we have seen both one draft
+        # and one published, we're done for that dandiset.
+        dandisets_to_versions = {}
+        for version in versions:
+            version: Version
+
+            if version.dandiset_id not in dandisets_to_versions:
+                dandisets_to_versions[version.dandiset_id] = {'draft': None, 'published': None}
+
+            entry = dandisets_to_versions[version.dandiset_id]
+            if version.version == 'draft' and entry['draft'] is None:
+                entry['draft'] = version
+            elif entry['published'] is None:
+                entry['published'] = version
+
+        serializer = DandisetListSerializer(
+            dandisets, many=True, context={'dandisets': dandisets_to_versions}
+        )
+        return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),
