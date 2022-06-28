@@ -80,7 +80,6 @@ def clear_checksum_files(zarr: ZarrArchive):
         f'{settings.DANDI_ZARR_CHECKSUM_PREFIX_NAME}/{zarr.zarr_id}'
     )
 
-    logger.info(f'Removing all checksum files for ZarrArchive {zarr.id}...')
     for files in yield_files(bucket=bucket, prefix=prefix):
         if not files:
             break
@@ -89,7 +88,6 @@ def clear_checksum_files(zarr: ZarrArchive):
         allowed = {'Key', 'VersionId'}
         objects = [{k: v for k, v in file.items() if k in allowed} for file in files]
         client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
-    logger.info(f'Finished removing all checksum files for ZarrArchive {zarr.id}.')
 
 
 class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
@@ -154,11 +152,8 @@ def ingest_zarr_archive(
     force: bool = False,
 ):
     # Ensure zarr is in pending state before proceeding
-    logger.info(f'Ensure zarr {zarr_id} is in pending state before proceeding...')
     with transaction.atomic():
-        logger.info(f'Locking ZarrArchive {zarr_id}...')
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-        logger.info(f'Locked ZarrArchive {zarr_id}.')
         if not force and zarr.status != ZarrArchive.Status.PENDING:
             logger.info(f'{ZarrArchive.INGEST_ERROR_MSG}. Exiting...')
             return
@@ -166,15 +161,10 @@ def ingest_zarr_archive(
         # Set as ingesting
         zarr.status = ZarrArchive.Status.INGESTING
         zarr.save()
-    logger.info(f'Unlocked ZarrArchive {zarr_id}.')
 
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
-        logger.info(
-            f'ZarrArchive {zarr_id} is in correct state, locking until ingestion finishes...'
-        )
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-        logger.info(f'Locked ZarrArchive {zarr_id}.')
 
         # Reset before compute
         if not no_size:
@@ -185,7 +175,6 @@ def ingest_zarr_archive(
         # Instantiate updater and add files as they come in
         updated = False
         updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
-        logger.info(f'Beginning file ingestion for ZarrArchive {zarr_id}.')
         for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
             if len(files):
                 updated = True
@@ -209,21 +198,16 @@ def ingest_zarr_archive(
                     }
                 )
 
-        logger.info(f'Finished file ingestion for ZarrArchive {zarr_id}.')
-
         # If no files were actually yielded, remove all checksum files
         if not updated:
-            logger.info(f'No files yielded, clearing checksum files for ZarrArchive {zarr_id}.')
             clear_checksum_files(zarr)
 
         # Save zarr after completion
         zarr.save()
 
-        logger.info(f'Saving all assets for ZarrArchive {zarr_id}...')
         # Save all assets that reference this zarr, so their metadata is updated
         for asset in zarr.assets.all():
             asset.save()
-        logger.info(f'Finished saving all assets for ZarrArchive {zarr_id}.')
 
         # Set status
         zarr.status = ZarrArchive.Status.COMPLETE
