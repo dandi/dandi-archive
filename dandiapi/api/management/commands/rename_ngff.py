@@ -28,7 +28,7 @@ def rename_ngff(dandiset_id: int | None):
         new_name = f'{zarr.name[:-5]}.ome.zarr'
 
         # only rename the ngff if a ome.zarr hasn't been uploaded already
-        if not ZarrArchive.objects.filter(name=new_name).exists():
+        if not ZarrArchive.objects.filter(name=new_name, dandiset=zarr.dandiset).exists():
             click.echo(f'Renaming ZarrArchive ({zarr.id}) from {zarr.name} to {new_name}.')
             with transaction.atomic():
                 zarr.name = new_name
