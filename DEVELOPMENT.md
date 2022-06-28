@@ -54,7 +54,7 @@ but allows developers to run Python code on their native system.
    2. `./manage.py runserver`
 3. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
-   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256 -B`
+   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive -B`
 4. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
@@ -102,6 +102,11 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+## dandiarchive.org WEB Interface
+
+This repository now also contains sources for the web interface under [web/](./web/) folder.
+If you would like to develop it locally, please see [web/README.md](./web/README.md) file for instructions.
 
 ## API Authentication
 Read-only API endpoints (i.e. `GET`, `HEAD`) do not require any

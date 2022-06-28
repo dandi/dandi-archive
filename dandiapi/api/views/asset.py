@@ -18,6 +18,7 @@ from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
+from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
 from django.http.response import Http404
 from django.urls import reverse
@@ -517,23 +518,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         queryset = self.filter_queryset(self.get_queryset())
         glob_pattern: str | None = serializer.validated_data.get('glob')
-        regex_pattern: str | None = serializer.validated_data.get('regex')
-
-        if regex_pattern is not None:
-            try:
-                # Validate the regex by calling re.compile on it
-                re.compile(regex_pattern)
-                queryset = queryset.filter(path__iregex=regex_pattern)
-            except re.error:
-                return Response(
-                    data=f'{regex_pattern} is not a valid regex pattern.',
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
 
         if glob_pattern is not None:
-            queryset = queryset.filter(
-                path__iregex=glob_pattern.replace('*', '.*').replace('.', '\\.')
-            )
+            # Escape special characters in the glob pattern. This is a security precaution taken
+            # since we are using postgres' regex search. A malicious user who knows this could
+            # include a regex as part of the glob expression, which postgres would happily parse
+            # and use if it's not escaped.
+            glob_pattern = re.escape(glob_pattern)
+            queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -562,11 +554,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         page: int = query_serializer.validated_data['page']
         page_size: int = query_serializer.validated_data['page_size']
 
-        qs = (
+        qs: QuerySet[Asset] = (
             self.get_queryset()
-            .select_related('blob')
-            .select_related('embargoed_blob')
-            .select_related('zarr')
+            .select_related('blob', 'embargoed_blob', 'zarr')
             .filter(path__startswith=path_prefix)
             .order_by('path')
         )
@@ -574,7 +564,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         folders: dict[str, dict] = {}
         files: dict[str, Asset] = {}
 
-        for asset in qs:
+        for asset in qs.iterator():
             # Get the remainder of the path after path_prefix
             base_path: str = asset.path[len(path_prefix) :].strip('/')
 

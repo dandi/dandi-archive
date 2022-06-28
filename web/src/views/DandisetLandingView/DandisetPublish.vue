@@ -93,7 +93,57 @@
     </v-row>
 
     <v-row
-      v-if="currentDandiset.version_validation_errors.length "
+      v-if="currentDandiset.status === 'Pending'"
+      class="mb-4 px-1"
+      no-gutters
+    >
+      <v-menu
+        :nudge-width="200"
+      >
+        <template #activator="{ on: menu, attrs }">
+          <v-tooltip bottom>
+            <template #activator="{ on: tooltip }">
+              <v-card
+                class="amber lighten-5 no-text-transform"
+                outlined
+                v-bind="attrs"
+                v-on="{ ...tooltip, ...menu }"
+              >
+                <v-row class="align-center px-4">
+                  <v-col
+                    cols="1"
+                    class="justify-center py-0"
+                  >
+                    <v-icon
+                      color="warning"
+                      class="mr-1"
+                    >
+                      mdi-playlist-remove
+                    </v-icon>
+                  </v-col>
+                  <v-spacer />
+                  <v-col
+                    cols="9"
+                    class="py-0"
+                  >
+                    <div
+                      v-if="currentDandiset"
+                      class="text-caption"
+                    >
+                      Validation of the dandiset is pending.
+                    </div>
+                  </v-col>
+                </v-row>
+              </v-card>
+            </template>
+            <span>Reload the page to see if validation is over.</span>
+          </v-tooltip>
+        </template>
+      </v-menu>
+    </v-row>
+
+    <v-row
+      v-else-if="currentDandiset.version_validation_errors.length "
       class="mb-4 px-1"
       no-gutters
     >
@@ -168,7 +218,7 @@
           <v-btn
             v-if="isOwner"
             color="primary"
-            :to="meditorLink"
+            @click="openMeditor = true"
           >
             Fix issues
           </v-btn>
@@ -317,7 +367,8 @@ import router from '@/router';
 import { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
-import { Location, RawLocation } from 'vue-router';
+import { RawLocation } from 'vue-router';
+import { open as openMeditor } from '@/components/Meditor/state';
 
 function getValidationErrorIcon(errorField: string): string {
   const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
@@ -420,18 +471,6 @@ export default defineComponent({
       () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
     );
 
-    const meditorLink: ComputedRef<Location|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const version: string = currentVersion.value;
-      const { identifier } = currentDandiset.value.dandiset;
-      return {
-        name: 'metadata',
-        params: { identifier, version },
-      } as Location;
-    });
-
     const showPublishWarningDialog = ref(false);
 
     function formatDate(date: string): string {
@@ -488,13 +527,13 @@ export default defineComponent({
       publishDisabledMessage,
       publishButtonDisabled,
       publishButtonHidden,
-      meditorLink,
       getValidationErrorIcon,
       publish,
       draftVersion,
       showPublishWarning,
       showPublishWarningDialog,
       isOwner,
+      openMeditor,
     };
   },
 });

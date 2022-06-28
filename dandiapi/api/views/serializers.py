@@ -201,11 +201,3 @@ class AssetPathsQueryParameterSerializer(serializers.Serializer):
 
 class AssetListSerializer(serializers.Serializer):
     glob = serializers.CharField(required=False)
-    regex = serializers.CharField(required=False)
-
-    def validate(self, attrs):
-        if 'glob' in attrs and 'regex' in attrs:
-            raise serializers.ValidationError(
-                {'glob': 'Cannot specify both glob and regex'},
-            )
-        return super().validate(attrs)

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+import re
+
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -15,6 +18,19 @@ from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
+logger = logging.getLogger(__name__)
+
+
+def _get_user_status(user: User):
+    # Workaround for https://github.com/dandi/dandi-archive/issues/1085
+    # TODO: remove/robustify some other way whenever underlying reason is
+    # identified
+    metadata = getattr(user, 'metadata', None)
+    if metadata:
+        return metadata.status
+    logger.error("User %s lacks .metadata. Returning user's status as INCOMPLETE", user)
+    return UserMetadata.Status.INCOMPLETE
+
 
 def user_to_dict(user: User):
     """
@@ -26,7 +42,7 @@ def user_to_dict(user: User):
         'admin': user.is_superuser,
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
-        'status': user.metadata.status,
+        'status': _get_user_status(user),
         'created': user.date_joined,
     }
 
@@ -46,7 +62,7 @@ def social_account_to_dict(social_account: SocialAccount):
         'admin': user.is_superuser,
         'username': username,
         'name': name,
-        'status': user.metadata.status,
+        'status': _get_user_status(user),
         'created': created,
     }
 
@@ -88,28 +104,22 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     username: str = request_serializer.validated_data['username']
 
-    # Perform a search, excluding any inactive users
-    social_accounts = SocialAccount.objects.filter(
-        extra_data__icontains=username,
-        user__is_active=True,
-        user__metadata__status=UserMetadata.Status.APPROVED,
-    ).order_by('date_joined')[:10]
-    users = [social_account_to_dict(social_account) for social_account in social_accounts]
+    # Perform a search, excluding any inactive users and the 'AnonymousUser' account
+    qs = (
+        User.objects.exclude(username='AnonymousUser')
+        .filter(
+            is_active=True,
+            metadata__status=UserMetadata.Status.APPROVED,
+        )
+        .filter(
+            Q(first_name__icontains=username)
+            | Q(last_name__icontains=username)
+            | Q(username__icontains=username)
+            # `extra_data` isn't an actual JSON field so we need to search this way
+            | Q(socialaccount__extra_data__iregex=rf'"login": "[^"]*{re.escape(username)}[^"]*"')
+        )
+    )[:10]
 
-    # Try searching Django's regular `User`s if there aren't any results.
-    # This allows this feature to work in development without having to conditionalize
-    # code based on the type of deployment.
-    if not users:
-        # Perform a search, excluding any user accounts that
-        # are inactive + the default 'AnonymousUser' account
-        users = [
-            user_to_dict(user)
-            for user in User.objects.filter(username__icontains=username).filter(
-                ~Q(username='AnonymousUser'),
-                is_active=True,
-                metadata__status=UserMetadata.Status.APPROVED,
-            )[:10]
-        ]
-
+    users = [user_to_dict(user) for user in qs]
     response_serializer = UserDetailSerializer(users, many=True)
     return Response(response_serializer.data)

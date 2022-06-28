@@ -207,7 +207,9 @@ def test_publish_asset(draft_asset: Asset):
 
 
 @pytest.mark.django_db
-def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_factory):
+def test_asset_total_size(
+    draft_version_factory, asset_factory, asset_blob_factory, zarr_archive_factory
+):
     # This asset blob should only be counted once,
     # despite belonging to multiple assets and multiple versions.
     asset_blob = asset_blob_factory()
@@ -225,6 +227,20 @@ def test_asset_total_size(draft_version_factory, asset_factory, asset_blob_facto
     asset_factory()
 
     assert Asset.total_size() == asset_blob.size
+
+    zarr_archive = zarr_archive_factory()
+    # give it some size
+    zarr_archive.size = 100
+    zarr_archive.save()  # save adjusted .size into DB
+
+    # adding of an asset with zarr should be reflected
+    asset3 = asset_factory(zarr=zarr_archive, blob=None)
+    version2.assets.add(asset3)
+
+    assert Asset.total_size() == asset_blob.size + zarr_archive.size
+
+    # TODO: add testing for embargoed zar added, whenever embargoed zarrs
+    # supported, ATM they are not and tested by test_zarr_rest_create_embargoed_dandiset
 
 
 @pytest.mark.django_db
@@ -1255,6 +1271,8 @@ def test_asset_direct_info(api_client, asset):
             ['a/b/c/d.txt', 'a/b/c/e.txt'],
         ),
         ('a/b/d/*', ['a/b/d/e.txt']),
+        ('*b*e.txt', ['a/b/c/e.txt', 'a/b/d/e.txt']),
+        ('.*[a|b].txt', []),  # regexes shouldn't be evaluated
     ],
 )
 def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expected_paths):
@@ -1268,52 +1286,3 @@ def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expec
     )
 
     assert expected_paths == [asset['path'] for asset in resp.json()['results']]
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    'regex_pattern,expected_paths',
-    [
-        (
-            '[0-9].txt',
-            ['1.txt', '1/2/3.txt'],
-        ),
-        (
-            '[a-z].txt',
-            ['a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt'],
-        ),
-    ],
-)
-def test_asset_rest_regex_valid(api_client, asset_factory, version, regex_pattern, expected_paths):
-    paths = ('1.txt', '1/2/3.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
-    for path in paths:
-        version.assets.add(asset_factory(path=path))
-
-    resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'regex': regex_pattern},
-    )
-
-    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
-
-
-@pytest.mark.django_db
-def test_asset_rest_regex_invalid(api_client, version):
-    resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'regex': '[[[[['},  # provide an invalid regex
-    )
-
-    assert resp.status_code == 400
-
-
-@pytest.mark.django_db
-def test_asset_rest_glob_regex_together(api_client, version):
-    """Test that including both a glob and regex returns a 400 error."""
-    resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-        {'regex': '[0-9].txt', 'glob': '*.txt'},
-    )
-
-    assert resp.status_code == 400
-    assert resp.json() == {'glob': ['Cannot specify both glob and regex']}
