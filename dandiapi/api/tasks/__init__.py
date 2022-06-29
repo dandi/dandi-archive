@@ -42,6 +42,8 @@ def calculate_sha256(blob_id: int) -> None:
     asset_blob.save()
 
     # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
+    # Note, we use `.iterator` here and delay each validation as a new task in order to keep memory
+    # usage down.
     for asset in asset_blob.assets.values('id').iterator():
         # Note: while asset metadata is fairly lightweight compute-wise, memory-wise it can become
         # an issue during serialization/deserialization of the JSON blob by pydantic. Therefore,
