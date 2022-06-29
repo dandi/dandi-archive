@@ -161,7 +161,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         responses={200: DandisetListSerializer(many=True)},
     )
     def list(self, request, *args, **kwargs):
-        qs = self.get_queryset().annotate()
+        qs = self.get_queryset()
         dandisets = self.paginate_queryset(self.filter_queryset(qs))
 
         # Query versions, to supply num/count of assets.
@@ -187,7 +187,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # see all drafts first, then any published. Once we have seen both one draft
         # and one published, we're done for that dandiset.
         dandisets_to_versions = {}
-        for version in versions:
+        for version in versions.iterator():
             version: Version
 
             if version.dandiset_id not in dandisets_to_versions:
