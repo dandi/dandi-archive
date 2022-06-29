@@ -42,9 +42,9 @@ def calculate_sha256(blob_id: int) -> None:
     asset_blob.save()
 
     # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
-    for asset in asset_blob.assets.all():
+    for asset in asset_blob.assets.values('id').iterator():
         # validate_asset_metadata runs very quickly, no need to delay it
-        validate_asset_metadata(asset.id)
+        validate_asset_metadata(asset['id'])
 
 
 @shared_task(queue='write_manifest_files')
