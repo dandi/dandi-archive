@@ -5,7 +5,8 @@ import re
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import OuterRef, Q, Subquery
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
@@ -22,14 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def _get_user_status(user: User):
-    # Workaround for https://github.com/dandi/dandi-archive/issues/1085
-    # TODO: remove/robustify some other way whenever underlying reason is
-    # identified
-    metadata = getattr(user, 'metadata', None)
-    if metadata:
-        return metadata.status
-    logger.error("User %s lacks .metadata. Returning user's status as INCOMPLETE", user)
-    return UserMetadata.Status.INCOMPLETE
+    try:
+        return user.metadata.status
+    except ObjectDoesNotExist:
+        return UserMetadata.Status.INCOMPLETE.value
 
 
 def user_to_dict(user: User):
@@ -43,7 +40,6 @@ def user_to_dict(user: User):
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}'.strip(),
         'status': _get_user_status(user),
-        'created': user.date_joined,
     }
 
 
@@ -56,14 +52,30 @@ def social_account_to_dict(social_account: SocialAccount):
     # We are assuming that login is a required field for GitHub users
     username = social_account.extra_data['login']
     name = social_account.extra_data.get('name') or name
-    created = social_account.extra_data.get('created_at')
 
     return {
         'admin': user.is_superuser,
         'username': username,
         'name': name,
         'status': _get_user_status(user),
-        'created': created,
+    }
+
+
+def serialize_user(user: User):
+    """Serialize a user that's been annotated with a `social_account_data` field."""
+    username = user.username
+    name = f'{user.first_name} {user.last_name}'.strip()
+
+    # Prefer social account info if present
+    if user.social_account_data is not None:
+        username = user.social_account_data.get('login') or username
+        name = user.social_account_data.get('name') or name
+
+    return {
+        'admin': user.is_superuser,
+        'username': username,
+        'name': name,
+        'status': _get_user_status(user),
     }
 
 
@@ -106,7 +118,13 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
     # Perform a search, excluding any inactive users and the 'AnonymousUser' account
     qs = (
-        User.objects.exclude(username='AnonymousUser')
+        User.objects.select_related('metadata')
+        .annotate(
+            social_account_data=Subquery(
+                SocialAccount.objects.filter(user=OuterRef('pk')).values('extra_data')
+            )
+        )
+        .exclude(username='AnonymousUser')
         .filter(
             is_active=True,
             metadata__status=UserMetadata.Status.APPROVED,
@@ -121,6 +139,6 @@ def users_search_view(request: Request) -> HttpResponseBase:
         .order_by('date_joined')
     )[:10]
 
-    users = [user_to_dict(user) for user in qs]
+    users = [serialize_user(user) for user in qs]
     response_serializer = UserDetailSerializer(users, many=True)
     return Response(response_serializer.data)
