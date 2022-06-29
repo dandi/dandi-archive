@@ -114,6 +114,7 @@ class DandiMixin(ConfigMixin):
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
+    SHELL_PLUS_PRINT_SQL_TRUNCATE = None
 
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
