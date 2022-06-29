@@ -43,8 +43,10 @@ def calculate_sha256(blob_id: int) -> None:
 
     # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
     for asset in asset_blob.assets.values('id').iterator():
-        # validate_asset_metadata runs very quickly, no need to delay it
-        validate_asset_metadata(asset['id'])
+        # Note: while asset metadata is fairly lightweight compute-wise, memory-wise it can become
+        # an issue during serialization/deserialization of the JSON blob by pydantic. Therefore,
+        # we delay each validation to its own task.
+        validate_asset_metadata.delay(asset['id'])
 
 
 @shared_task(queue='write_manifest_files')
