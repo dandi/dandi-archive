@@ -112,7 +112,7 @@ import {
   defineComponent, computed, ComputedRef, ref,
 } from '@vue/composition-api';
 import { dandiRest, loggedIn } from '@/rest';
-import { IdentifierForAnAward, LicenseType } from '@/types';
+import { IdentifierForAnAward, LicenseType, License } from '@/types';
 
 import store from '@/store';
 
@@ -132,7 +132,7 @@ export default defineComponent({
   setup(props, ctx) {
     const name = ref('');
     const description = ref('');
-    const license = ref<LicenseType>();
+    const license = ref<License>();
     const embargoed = ref(false);
     const awardNumber = ref('');
     const saveDisabled = computed(
