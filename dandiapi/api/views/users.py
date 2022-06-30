@@ -118,6 +118,7 @@ def users_search_view(request: Request) -> HttpResponseBase:
             # `extra_data` isn't an actual JSON field so we need to search this way
             | Q(socialaccount__extra_data__iregex=rf'"login": "[^"]*{re.escape(username)}[^"]*"')
         )
+        .order_by('date_joined')
     )[:10]
 
     users = [user_to_dict(user) for user in qs]
