@@ -112,8 +112,7 @@ import {
   defineComponent, computed, ComputedRef, ref,
 } from '@vue/composition-api';
 import { dandiRest, loggedIn } from '@/rest';
-import { IdentifierForAnAward } from '@/types/schema';
-import { LicenseType } from '@/types';
+import { IdentifierForAnAward, LicenseType } from '@/types';
 
 import store from '@/store';
 
