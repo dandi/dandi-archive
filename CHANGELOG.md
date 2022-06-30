@@ -1,3 +1,15 @@
+# v0.2.28 (Thu Jun 30 2022)
+
+#### 🐛 Bug Fix
+
+- Revert "Add verbose logging to `ingest_zarr_archive` task" [#1133](https://github.com/dandi/dandi-archive/pull/1133) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.27 (Wed Jun 29 2022)
 
 #### 🐛 Bug Fix
