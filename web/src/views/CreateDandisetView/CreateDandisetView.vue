@@ -24,7 +24,6 @@
           outlined
           class="my-4"
         />
-
         <div>
           <v-checkbox
             v-model="embargoed"
