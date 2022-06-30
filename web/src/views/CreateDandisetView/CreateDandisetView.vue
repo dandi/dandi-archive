@@ -76,7 +76,7 @@
             :rules="awardNumberRules"
           />
         </div>
-        <div v-if="embargoed===false">
+        <div v-if="!embargoed">
           <v-select
             v-model="license"
             :items="dandiLicenses"
