@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 from uuid import uuid4
 
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 import djclick as click
@@ -22,14 +23,11 @@ def import_assets_from_response(api_url: str, asset_api_response: dict, version:
         zarr = result.get('zarr')
 
         if blob:
-            asset_metadata = requests.get(
-                urljoin(
-                    api_url,
-                    f'/api/dandisets/{version.dandiset.identifier}/versions/'
-                    f'{version.version}/assets/{result["asset_id"]}/',
-                ),
-                {'page_size': 1000},
-            ).json()
+            asset_metadata = {
+                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+                'encodingFormat': 'text/plain',
+                'schemaKey': 'Asset',
+            }
             asset = Asset.objects.create(
                 blob=asset_blob, metadata=asset_metadata, path=result['path']
             )
