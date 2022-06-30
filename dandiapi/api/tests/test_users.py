@@ -210,7 +210,9 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
         '/api/users/search/?',
         {'username': 'odysseus'},
         format='json',
-    ).data == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
+    ).json() == [
+        serialize_social_account(social_account) for social_account in social_accounts[:10]
+    ]
 
 
 @pytest.mark.django_db
