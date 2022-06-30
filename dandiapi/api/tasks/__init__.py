@@ -99,7 +99,7 @@ def validate_asset_metadata(asset_id: int) -> None:
         metadata = asset.published_metadata()
         validate(metadata, schema_key='PublishedAsset', json_validation=True)
     except dandischema.exceptions.ValidationError as e:
-        logger.error('Error while validating asset %s', asset_id)
+        logger.info('Error while validating asset %s', asset_id)
         asset.status = Asset.Status.INVALID
 
         validation_errors = collect_validation_errors(e)
@@ -137,7 +137,7 @@ def validate_version_metadata(version_id: int) -> None:
 
         validate(metadata, schema_key='PublishedDandiset', json_validation=True)
     except dandischema.exceptions.ValidationError as e:
-        logger.error('Error while validating version %s', version_id)
+        logger.info('Error while validating version %s', version_id)
         version.status = Version.Status.INVALID
 
         validation_errors = collect_validation_errors(e)
