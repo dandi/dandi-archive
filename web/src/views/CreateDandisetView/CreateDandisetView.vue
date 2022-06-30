@@ -132,13 +132,14 @@ export default defineComponent({
   setup(props, ctx) {
     const name = ref('');
     const description = ref('');
-    const license = ref<License>();
+    const license = ref<LicenseType>();
     const embargoed = ref(false);
     const awardNumber = ref('');
     const saveDisabled = computed(
       () => !name.value
       || !description.value
-      || (embargoed.value && !awardNumberValidator(awardNumber.value)),
+      || (embargoed.value && !awardNumberValidator(awardNumber.value))
+      || (!embargoed.value && !license.value),
     );
 
     const awardNumberRules = computed(
