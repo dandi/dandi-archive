@@ -5,7 +5,7 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, OuterRef, Subquery, Sum, F
+from django.db.models import Count, F, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.utils import IntegrityError
 from django.http import Http404
