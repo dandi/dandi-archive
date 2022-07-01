@@ -29,9 +29,17 @@ from dandiapi.api.models.dandiset import Dandiset
 )
 @pytest.mark.django_db
 def test_dandiset_rest_unembargo(
-    api_client, dandiset_factory, user_factory, embargo_status, user_status, resp_code
+    api_client,
+    dandiset_factory,
+    draft_version_factory,
+    user_factory,
+    embargo_status,
+    user_status,
+    resp_code,
 ):
     dandiset: Dandiset = dandiset_factory(embargo_status=embargo_status)
+    draft_version_factory(dandiset=dandiset)
+
     if user_status == 'anonymous':
         user = AnonymousUser
     else:
