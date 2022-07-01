@@ -1,3 +1,17 @@
+# v0.2.29 (Fri Jul 01 2022)
+
+#### 🐛 Bug Fix
+
+- Use `logging.info` for user errors instead of `logging.error` [#1152](https://github.com/dandi/dandi-archive/pull/1152) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add support for cloning assets to `import_dandisets` script [#1131](https://github.com/dandi/dandi-archive/pull/1131) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Sort user search results [#1146](https://github.com/dandi/dandi-archive/pull/1146) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.28 (Thu Jun 30 2022)
 
 #### 🐛 Bug Fix
