@@ -227,7 +227,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             raise ValidationError('No upload to cancel.')
         # Cancelling involves deleting any data uploaded to S3, which involves a batch of S3 API
         # requests. These are done in a task to avoid Heroku request timeouts.
-        cancel_zarr_upload.delay()
+        cancel_zarr_upload.delay(zarr_id)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(

@@ -194,9 +194,9 @@ def test_zarr_rest_upload_cancel(
     resp = authenticated_api_client.delete(f'/api/zarr/{zarr_archive.zarr_id}/upload/')
     assert resp.status_code == 204
 
-    # The task was delayed but has not yet started, so nothing has changed
-    assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
-    assert zarr_archive.upload_in_progress
+    # Check that no uploads are in progress (tasks run synchronously in testing)
+    assert not zarr_archive.upload_in_progress
+    assert not zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
 
 
 @pytest.mark.django_db
