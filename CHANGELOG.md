@@ -1,3 +1,15 @@
+# v0.2.30 (Fri Jul 01 2022)
+
+#### 🐛 Bug Fix
+
+- Fix missing zarr_id in `cancel_zarr_upload` [#1154](https://github.com/dandi/dandi-archive/pull/1154) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.2.29 (Fri Jul 01 2022)
 
 #### 🐛 Bug Fix
