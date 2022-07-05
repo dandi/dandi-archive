@@ -198,7 +198,7 @@ class BaseZarrArchive(TimeStampedModel):
         except ValidationError:
             return EMPTY_CHECKSUM
         except pydantic.ValidationError as e:
-            logger.error(e, exc_info=True)
+            logger.info(e, exc_info=True)
             return None
 
     @property

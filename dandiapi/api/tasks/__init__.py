@@ -42,9 +42,13 @@ def calculate_sha256(blob_id: int) -> None:
     asset_blob.save()
 
     # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
-    for asset in asset_blob.assets.all():
-        # validate_asset_metadata runs very quickly, no need to delay it
-        validate_asset_metadata(asset.id)
+    # Note, we use `.iterator` here and delay each validation as a new task in order to keep memory
+    # usage down.
+    for asset in asset_blob.assets.values('id').iterator():
+        # Note: while asset metadata is fairly lightweight compute-wise, memory-wise it can become
+        # an issue during serialization/deserialization of the JSON blob by pydantic. Therefore,
+        # we delay each validation to its own task.
+        validate_asset_metadata.delay(asset['id'])
 
 
 @shared_task(queue='write_manifest_files')
@@ -95,7 +99,7 @@ def validate_asset_metadata(asset_id: int) -> None:
         metadata = asset.published_metadata()
         validate(metadata, schema_key='PublishedAsset', json_validation=True)
     except dandischema.exceptions.ValidationError as e:
-        logger.error('Error while validating asset %s', asset_id)
+        logger.info('Error while validating asset %s', asset_id)
         asset.status = Asset.Status.INVALID
 
         validation_errors = collect_validation_errors(e)
@@ -133,7 +137,7 @@ def validate_version_metadata(version_id: int) -> None:
 
         validate(metadata, schema_key='PublishedDandiset', json_validation=True)
     except dandischema.exceptions.ValidationError as e:
-        logger.error('Error while validating version %s', version_id)
+        logger.info('Error while validating version %s', version_id)
         version.status = Version.Status.INVALID
 
         validation_errors = collect_validation_errors(e)

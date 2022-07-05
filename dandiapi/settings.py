@@ -130,6 +130,7 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_ALLOW_LOCALHOST_URLS = True
 
     # Ensure celery tasks run synchronously
+    CELERY_TASK_EAGER_PROPAGATES = True
     CELERY_TASK_ALWAYS_EAGER = True
 
 

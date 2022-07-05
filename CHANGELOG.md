@@ -1,3 +1,69 @@
+# v0.2.30 (Fri Jul 01 2022)
+
+#### 🐛 Bug Fix
+
+- Fix missing zarr_id in `cancel_zarr_upload` [#1154](https://github.com/dandi/dandi-archive/pull/1154) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
+# v0.2.29 (Fri Jul 01 2022)
+
+#### 🐛 Bug Fix
+
+- Use `logging.info` for user errors instead of `logging.error` [#1152](https://github.com/dandi/dandi-archive/pull/1152) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add support for cloning assets to `import_dandisets` script [#1131](https://github.com/dandi/dandi-archive/pull/1131) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Sort user search results [#1146](https://github.com/dandi/dandi-archive/pull/1146) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.28 (Thu Jun 30 2022)
+
+#### 🐛 Bug Fix
+
+- Revert "Add verbose logging to `ingest_zarr_archive` task" [#1133](https://github.com/dandi/dandi-archive/pull/1133) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.27 (Wed Jun 29 2022)
+
+#### 🐛 Bug Fix
+
+- Optimize loop in checksum task [#1139](https://github.com/dandi/dandi-archive/pull/1139) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.26 (Mon Jun 27 2022)
+
+#### 🐛 Bug Fix
+
+- Fix broken search bar [#1121](https://github.com/dandi/dandi-archive/pull/1121) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Restrict user search [#1124](https://github.com/dandi/dandi-archive/pull/1124) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add timeout to gunicorn in heroku [#1127](https://github.com/dandi/dandi-archive/pull/1127) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Use QuerySet.iterator in asset paths endpoint [#1126](https://github.com/dandi/dandi-archive/pull/1126) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.25 (Wed Jun 22 2022)
 
 #### 🐛 Bug Fix

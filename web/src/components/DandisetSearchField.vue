@@ -43,7 +43,9 @@ export default defineComponent({
       currentSearch.value = search;
     }
 
-    function performSearch() {
+    function performSearch(evt: Event) {
+      evt.preventDefault(); // prevent form submission from refreshing page
+
       const router = ctx.root.$router;
       const route = ctx.root.$route;
       if (currentSearch.value === route.query.search) {

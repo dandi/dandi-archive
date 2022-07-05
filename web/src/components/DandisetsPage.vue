@@ -165,7 +165,8 @@ export default defineComponent({
         page_size: DANDISETS_PER_PAGE,
         ordering,
         user: props.user ? 'me' : null,
-        search: props.search ? route.query.search : null,
+        // note: use ctx.root.$route here for reactivity
+        search: props.search ? ctx.root.$route.query.search : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
         embargoed: props.user,
@@ -194,13 +195,14 @@ export default defineComponent({
     }));
     watch(queryParams, (params) => {
       ctx.root.$router.replace({
-        ...route,
+        // note: use ctx.root.$route here for reactivity
+        ...ctx.root.$route,
         // replace() takes a RawLocation, which has a name: string
         // Route has a name: string | null, so we need to tweak this
-        name: route.name || undefined,
+        name: ctx.root.$route.name || undefined,
         query: {
           // do not override the search parameter, if present
-          ...route.query,
+          ...ctx.root.$route.query,
           ...params,
         },
       });

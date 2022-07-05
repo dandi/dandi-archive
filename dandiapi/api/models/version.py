@@ -227,7 +227,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
                 # If so, just use the placeholder summary.
-                logger.error('Error calculating assetsSummary', exc_info=1)
+                logger.info('Error calculating assetsSummary', exc_info=1)
 
         # Import here to avoid dependency cycle
         from dandiapi.api.manifests import manifest_location
