@@ -29,8 +29,9 @@ def validate_draft_version_metadata():
         .filter(version='draft')
         .values_list('id', flat=True)
     )
-    if pending_draft_versions.count() > 0:
-        logger.info('Found %s versions to validate', pending_draft_versions.count())
+    pending_draft_versions_count = pending_draft_versions.count()
+    if pending_draft_versions_count > 0:
+        logger.info('Found %s versions to validate', pending_draft_versions_count)
         for draft_version_id in pending_draft_versions.iterator():
             validate_version_metadata.delay(draft_version_id)
 
