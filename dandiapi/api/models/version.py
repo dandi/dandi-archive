@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+from typing import TYPE_CHECKING
 
 from dandischema.metadata import aggregate_assets_summary
 from django.conf import settings
@@ -13,6 +14,9 @@ from django_extensions.db.models import TimeStampedModel
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
+
+if TYPE_CHECKING:
+    from .asset import Asset
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +207,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
-    def _populate_metadata(self, version_with_assets: Version = None):
+    def _populate_metadata(self, version_with_assets: Version | None = None):
 
         # When validating a draft version, we create a published version without saving it,
         # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
@@ -221,8 +225,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         }
         if version_with_assets.id:
             try:
+                assets: models.QuerySet[Asset] = version_with_assets.assets
                 summary = aggregate_assets_summary(
-                    [asset['metadata'] for asset in version_with_assets.assets.values('metadata')]
+                    # There is no limit to how many assets a dandiset can have, so use
+                    # `values_list` and `iterator` here to keep the memory footprint
+                    # of this list low.
+                    assets.values_list('metadata', flat=True).iterator()
                 )
             except Exception:
                 # The assets summary aggregation may fail if any asset metadata is invalid.
