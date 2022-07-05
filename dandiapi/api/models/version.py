@@ -203,7 +203,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
-    def _populate_metadata(self, version_with_assets: Version = None):
+    def _populate_metadata(self, version_with_assets: Version | None = None):
 
         # When validating a draft version, we create a published version without saving it,
         # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
