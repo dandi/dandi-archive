@@ -18,7 +18,7 @@ describe('dandiset registration page', () => {
 
     await expect(page).toFillXPath(vTextField('Name*'), name);
     await expect(page).toFillXPath(vTextarea('Description*'), description);
-    await expect(page).toClickXPath('//label[contains(.,"License *")]/following::input[1]');
+    await expect(page).toClickXPath('//label[contains(.,"License*")]/following::input[1]');
     await expect(page).toClickXPath(vListItem('spdx:CC0-1.0'));
     await page.waitForTimeout(500); // Form validation can *sometimes* take too long
 
