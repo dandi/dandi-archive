@@ -2,6 +2,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import validate
+from django.db import transaction
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -48,7 +49,7 @@ def calculate_sha256(blob_id: int) -> None:
         # Note: while asset metadata is fairly lightweight compute-wise, memory-wise it can become
         # an issue during serialization/deserialization of the JSON blob by pydantic. Therefore,
         # we delay each validation to its own task.
-        validate_asset_metadata.delay(asset['id'])
+        transaction.on_commit(lambda: validate_asset_metadata.delay(asset['id']))
 
 
 @shared_task(queue='write_manifest_files')
