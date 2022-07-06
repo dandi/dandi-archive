@@ -79,7 +79,7 @@
           <v-select
             v-model="license"
             :items="dandiLicenses"
-            :label="`License ${embargoed ? '' : '*'}`"
+            label="License*"
             class="my-4"
             multiple
             outlined
