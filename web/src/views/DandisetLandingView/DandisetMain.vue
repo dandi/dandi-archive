@@ -8,7 +8,8 @@
       <v-row class="mx-2 my-2 mb-0">
         <v-col>
           <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
-            <ShareDialog />{{ meta.name }}
+            <ShareDialog />
+            {{ meta.name }}
           </h1>
         </v-col>
       </v-row>
