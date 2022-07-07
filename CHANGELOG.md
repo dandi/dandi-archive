@@ -1,3 +1,31 @@
+# v0.2.33 (Thu Jul 07 2022)
+
+#### 🐛 Bug Fix
+
+- Fix race condition in sha256 calculation [#1164](https://github.com/dandi/dandi-archive/pull/1164) ([@mvandenburgh](https://github.com/mvandenburgh) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.32 (Wed Jul 06 2022)
+
+#### 🐛 Bug Fix
+
+- Optimize dandiset list endpoint [#1134](https://github.com/dandi/dandi-archive/pull/1134) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- adding license field to the create dandiset page [#839](https://github.com/dandi/dandi-archive/pull/839) ([@djarecka](https://github.com/djarecka) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Dorota Jarecka ([@djarecka](https://github.com/djarecka))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.31 (Tue Jul 05 2022)
 
 #### 🐛 Bug Fix

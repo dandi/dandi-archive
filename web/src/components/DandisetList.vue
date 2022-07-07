@@ -49,7 +49,7 @@
 
           DANDI:<b>{{ item.dandiset.identifier }}</b>
           ·
-          Contact <b>{{ item.contact_person }}</b>
+          Contact <b>{{ item.dandiset.contact_person }}</b>
           ·
           Updated on <b>{{ formatDate(item.modified) }}</b>
           ·
