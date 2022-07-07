@@ -1,3 +1,16 @@
+# v0.2.34 (Thu Jul 07 2022)
+
+#### 🐛 Bug Fix
+
+- Fix more memory issues in tasks [#1161](https://github.com/dandi/dandi-archive/pull/1161) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Use iteration instead of recursion in `import_dandisets` script [#1150](https://github.com/dandi/dandi-archive/pull/1150) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.33 (Thu Jul 07 2022)
 
 #### 🐛 Bug Fix
