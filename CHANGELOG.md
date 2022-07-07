@@ -1,3 +1,16 @@
+# v0.2.33 (Thu Jul 07 2022)
+
+#### 🐛 Bug Fix
+
+- Fix race condition in sha256 calculation [#1164](https://github.com/dandi/dandi-archive/pull/1164) ([@mvandenburgh](https://github.com/mvandenburgh) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.32 (Wed Jul 06 2022)
 
 #### 🐛 Bug Fix
