@@ -206,7 +206,7 @@ def ingest_zarr_archive(
         zarr.save()
 
         # Save all assets that reference this zarr, so their metadata is updated
-        for asset in zarr.assets.all():
+        for asset in zarr.assets.iterator():
             asset.save()
 
         # Set status

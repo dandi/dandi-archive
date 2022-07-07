@@ -3,6 +3,7 @@ from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import validate
 from django.db import transaction
+from django.db.models import QuerySet
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -174,10 +175,10 @@ def unembargo_dandiset(dandiset_id: int):
 
     # Only the draft version is needed, since embargoed dandisets can't be published
     draft_version: Version = dandiset.draft_version
-    embargoed_assets: list[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
+    embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(embargoed_blob__isnull=False)
 
     # Unembargo all assets
-    for asset in embargoed_assets:
+    for asset in embargoed_assets.iterator():
         asset.unembargo()
 
     # Update draft version metadata
