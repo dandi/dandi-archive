@@ -55,7 +55,7 @@ def import_assets_from_response(api_url: str, asset_api_response: dict, version:
         if not next_link:
             break
 
-        asset_api_response = requests.get(asset_api_response.get('next')).json()
+        asset_api_response = requests.get(next_link).json()
 
 
 @transaction.atomic
@@ -102,7 +102,7 @@ def import_versions_from_response(
         if not next_link:
             break
 
-        version_api_response = requests.get(version_api_response.get('next')).json()
+        version_api_response = requests.get(next_link).json()
 
 
 @transaction.atomic
@@ -169,7 +169,7 @@ def import_dandisets_from_response(
         if not next_link:
             break
 
-        dandiset_api_response = requests.get(dandiset_api_response.get('next')).json()
+        dandiset_api_response = requests.get(next_link).json()
 
 
 @click.command()
