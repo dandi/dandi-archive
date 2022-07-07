@@ -18,40 +18,44 @@ def import_assets_from_response(api_url: str, asset_api_response: dict, version:
         etag=etag, defaults=dict(blob_id=uuid4(), blob=uploaded_file, etag=etag, size=20)
     )[0]
 
-    for result in asset_api_response['results']:
-        blob = result.get('blob')
-        zarr = result.get('zarr')
+    while True:
+        for result in asset_api_response['results']:
+            blob = result.get('blob')
+            zarr = result.get('zarr')
 
-        if blob:
-            asset_metadata = {
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-                'encodingFormat': 'text/plain',
-                'schemaKey': 'Asset',
-            }
-            asset = Asset.objects.create(
-                blob=asset_blob, metadata=asset_metadata, path=result['path']
-            )
-            click.echo(f'    Importing AssetBlob "{asset.path}"')
-            version.assets.add(asset)
+            if blob:
+                asset_metadata = {
+                    'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+                    'encodingFormat': 'text/plain',
+                    'schemaKey': 'Asset',
+                }
+                asset = Asset.objects.create(
+                    blob=asset_blob, metadata=asset_metadata, path=result['path']
+                )
+                click.echo(f'    Importing AssetBlob "{asset.path}"')
+                version.assets.add(asset)
 
-        elif zarr:
-            zarr_info = requests.get(urljoin(api_url, f'/api/zarr/{zarr}/')).json()
-            zarr_archive = ZarrArchive.objects.create(
-                name=zarr_info['name'],
-                dandiset=version.dandiset,
-                zarr_id=zarr_info['zarr_id'],
-                file_count=zarr_info['file_count'],
-                size=zarr_info['size'],
-                status=zarr_info['status'],
-            )
-            asset = Asset.objects.create(zarr=zarr_archive, path=zarr_info['name'])
-            click.echo(f'    Importing ZarrArchive "{asset.path}"')
-            version.assets.add(asset)
+            elif zarr:
+                zarr_info = requests.get(urljoin(api_url, f'/api/zarr/{zarr}/')).json()
+                zarr_archive = ZarrArchive.objects.create(
+                    name=zarr_info['name'],
+                    dandiset=version.dandiset,
+                    zarr_id=zarr_info['zarr_id'],
+                    file_count=zarr_info['file_count'],
+                    size=zarr_info['size'],
+                    status=zarr_info['status'],
+                )
+                asset = Asset.objects.create(zarr=zarr_archive, path=zarr_info['name'])
+                click.echo(f'    Importing ZarrArchive "{asset.path}"')
+                version.assets.add(asset)
 
-    # Handle API pagination
-    if asset_api_response.get('next'):
-        next_assets = requests.get(asset_api_response.get('next')).json()
-        import_assets_from_response(api_url, next_assets, version)
+        # Handle API pagination
+        next_link = asset_api_response.get('next')
+
+        if not next_link:
+            break
+
+        asset_api_response = requests.get(next_link).json()
 
 
 @transaction.atomic
@@ -59,40 +63,46 @@ def import_versions_from_response(
     api_url: str, version_api_response: dict, dandiset: Dandiset, include_assets: bool
 ):
     """Import versions given a response from /api/dandisets/{identifier}/versions/."""
-    for result in version_api_response['results']:
-        # get the metadata of this version
-        metadata = requests.get(
-            urljoin(
-                api_url,
-                f'/api/dandisets/{result["dandiset"]["identifier"]}/versions/{result["version"]}/',
-            )
-        ).json()
-
-        click.echo(f'  Importing version "{result["version"]}"')
-
-        version = Version(
-            dandiset=dandiset,
-            name=result['name'],
-            version=result['version'],
-            doi=result.get('doi'),
-            status=Version.Status.PENDING,
-            metadata=metadata,
-        )
-        version.save()
-
-        if include_assets:
-            assets = requests.get(
+    while True:
+        for result in version_api_response['results']:
+            # get the metadata of this version
+            metadata = requests.get(
                 urljoin(
                     api_url,
-                    f'/api/dandisets/{dandiset.identifier}/versions/{result["version"]}/assets/',
+                    f'/api/dandisets/{result["dandiset"]["identifier"]}'
+                    f'/versions/{result["version"]}/',
                 )
             ).json()
-            import_assets_from_response(api_url, assets, version)
 
-    # Handle API pagination
-    if version_api_response.get('next'):
-        next_versions = requests.get(version_api_response.get('next')).json()
-        import_versions_from_response(api_url, next_versions, dandiset)
+            click.echo(f'  Importing version "{result["version"]}"')
+
+            version = Version(
+                dandiset=dandiset,
+                name=result['name'],
+                version=result['version'],
+                doi=result.get('doi'),
+                status=Version.Status.PENDING,
+                metadata=metadata,
+            )
+            version.save()
+
+            if include_assets:
+                assets = requests.get(
+                    urljoin(
+                        api_url,
+                        f'/api/dandisets/{dandiset.identifier}/versions'
+                        f'/{result["version"]}/assets/',
+                    )
+                ).json()
+                import_assets_from_response(api_url, assets, version)
+
+        # Handle API pagination
+        next_link = version_api_response.get('next')
+
+        if not next_link:
+            break
+
+        version_api_response = requests.get(next_link).json()
 
 
 @transaction.atomic
@@ -143,21 +153,23 @@ def import_dandisets_from_response(
     include_assets: bool,
 ):
     """Import dandisets given a response from /api/dandisets/."""
-    for result in dandiset_api_response['results']:
-        import_dandiset_from_response(
-            api_url,
-            result,
-            identifier_offset=identifier_offset,
-            should_replace=should_replace,
-            include_assets=include_assets,
-        )
+    while True:
+        for result in dandiset_api_response['results']:
+            import_dandiset_from_response(
+                api_url,
+                result,
+                identifier_offset=identifier_offset,
+                should_replace=should_replace,
+                include_assets=include_assets,
+            )
 
-    # Handle API pagination
-    if dandiset_api_response.get('next'):
-        new_dandisets = requests.get(dandiset_api_response.get('next')).json()
-        import_dandisets_from_response(
-            api_url, new_dandisets, identifier_offset, should_replace, include_assets
-        )
+        # Handle API pagination
+        next_link = dandiset_api_response.get('next')
+
+        if not next_link:
+            break
+
+        dandiset_api_response = requests.get(next_link).json()
 
 
 @click.command()
