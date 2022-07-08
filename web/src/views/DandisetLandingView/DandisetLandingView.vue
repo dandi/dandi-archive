@@ -3,6 +3,11 @@
     <Meditor v-if="currentDandiset" />
     <v-toolbar class="grey darken-2 white--text">
       <DandisetSearchField />
+      <v-pagination
+        v-model="page"
+        :length="pages"
+        :total-visible="0"
+      />
     </v-toolbar>
     <v-container
       v-if="currentDandiset"
@@ -42,16 +47,17 @@
 
 <script lang="ts">
 import {
-  defineComponent, computed, watchEffect, watch, onMounted,
+  defineComponent, computed, watchEffect, watch, onMounted, Ref, ref,
 } from '@vue/composition-api';
 import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import store from '@/store';
-import { Version } from '@/types';
+import { Version, Dandiset, Paginated } from '@/types';
 import { draftVersion } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
+import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -86,6 +92,16 @@ export default defineComponent({
       type: String,
       required: false,
       default: null,
+    },
+    user: { // todo - check how do we send the prop?
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    search: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   setup(props, ctx) {
@@ -140,6 +156,65 @@ export default defineComponent({
       }
     });
 
+    const route = ctx.root.$route;
+    const page = ref(Number(route.query.page) || 1);
+    const sortOption = ref(Number(route.query.sortOption) || 0);
+    const sortDir = ref(Number(route.query.sortDir || -1));
+
+    const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
+    watchEffect(async () => {
+      const response = await dandiRest.dandisets({
+        page: page.value,
+        page_size: 1,
+        user: props.user ? 'me' : null,
+        // note: use ctx.root.$route here for reactivity
+        search: props.search ? ctx.root.$route.query.search : null,
+        draft: true,
+        empty: true,
+        embargoed: props.user,
+      });
+      djangoDandisetRequest.value = response.data;
+    });
+
+    const nextDandiset = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
+      ...(dandiset.most_recent_published_version || dandiset.draft_version),
+      contact_person: dandiset.contact_person,
+      identifier: dandiset.identifier,
+    })));
+
+    // todo - update the currentdandiset => either set version in props or call
+    watch(nextDandiset, async () => {
+      if (nextDandiset.value) {
+        const { identifier } = nextDandiset.value[0];
+        await store.dispatch.dandiset.fetchDandiset({ identifier });
+      }
+    });
+
+    const pages = computed(() => {
+      const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
+      return Math.ceil(totalDandisets) || 1;
+    });
+
+    const queryParams = computed(() => ({
+      page: String(page.value),
+      sortOption: String(sortOption.value),
+      sortDir: String(sortDir.value),
+    }));
+    watch(queryParams, (params) => {
+      ctx.root.$router.replace({
+        // note: use ctx.root.$route here for reactivity
+        ...ctx.root.$route,
+        // replace() takes a RawLocation, which has a name: string
+        // Route has a name: string | null, so we need to tweak this
+        name: ctx.root.$route.name || undefined,
+        query: {
+          // do not override the search parameter, if present
+          ...ctx.root.$route.query,
+          ...params,
+        },
+      });
+    });
+
     onMounted(() => {
       // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
       // clicking external links. The `beforeRouteLeave` function above handles "soft"
@@ -161,6 +236,9 @@ export default defineComponent({
       schema,
       userCanModifyDandiset,
       meta,
+      nextDandiset,
+      pages,
+      page,
     };
   },
 });
