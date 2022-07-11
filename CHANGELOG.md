@@ -1,3 +1,19 @@
+# v0.2.35 (Mon Jul 11 2022)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Dan LaManna ([@danlamanna](https://github.com/danlamanna)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Improve load times of admin pages [#1169](https://github.com/dandi/dandi-archive/pull/1169) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.2.34 (Thu Jul 07 2022)
 
 #### 🐛 Bug Fix
