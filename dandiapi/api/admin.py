@@ -1,11 +1,12 @@
 import csv
 
+from allauth.socialaccount.models import SocialAccount
 from django.contrib import admin, messages
 from django.contrib.admin.options import TabularInline
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
-from django.db.models.query import QuerySet
+from django.db.models.query import Prefetch, QuerySet
 from django.forms.models import BaseInlineFormSet
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
@@ -45,6 +46,15 @@ class UserAdmin(BaseUserAdmin):
     search_fields = ['email', 'first_name', 'last_name']
     inlines = [UserMetadataInline]
 
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .prefetch_related(
+                Prefetch('socialaccount_set', queryset=SocialAccount.objects.order_by('id'))
+            )
+        )
+
     @admin.action(description="Export selected users\' emails")
     def export_emails_to_plaintext(self, request, queryset):
         response = HttpResponse(content_type='text/plain')
@@ -58,7 +68,7 @@ class UserAdmin(BaseUserAdmin):
         self.list_filter = ('metadata__status',) + self.list_filter
         self.actions += ['export_emails_to_csv', 'export_emails_to_plaintext']
 
-    @admin.display()
+    @admin.display(ordering='metadata__status')
     def status(self, obj):
         return mark_safe(
             f'<a href="{reverse("user-approval", args=[obj.username])}">{obj.metadata.status}</a>'
@@ -118,6 +128,7 @@ class DandisetAdmin(GuardedModelAdmin):
 
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
+    search_fields = ['name']
     list_display = [
         'id',
         'dandiset',
@@ -130,9 +141,13 @@ class VersionAdmin(admin.ModelAdmin):
     list_display_links = ['id', 'version']
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
+        qs = super().get_queryset(request).select_related('dandiset')
+
         # Using the `asset_count` property here results in N queries being made
         # for N versions. Instead, use annotation to make one query for N versions.
-        return super().get_queryset(request).annotate(number_of_assets=Count('assets'))
+        qs = qs.annotate(number_of_assets=Count('assets'))
+
+        return qs
 
     def number_of_assets(self, obj):
         return obj.number_of_assets
@@ -140,8 +155,12 @@ class VersionAdmin(admin.ModelAdmin):
 
 @admin.register(AssetBlob)
 class AssetBlobAdmin(admin.ModelAdmin):
+    search_fields = ['blob']
     list_display = ['id', 'blob_id', 'blob', 'references', 'size', 'sha256', 'modified', 'created']
     list_display_links = ['id', 'blob_id']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('assets')
 
 
 @admin.register(EmbargoedAssetBlob)
@@ -165,8 +184,19 @@ class AssetBlobInline(LimitedTabularInline):
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    # list_display = ['id', 'uuid', 'path']
-    # list_display_links = ['id', 'uuid']
+    autocomplete_fields = ['blob', 'embargoed_blob', 'zarr', 'versions']
+    fields = [
+        'asset_id',
+        'path',
+        'blob',
+        'embargoed_blob',
+        'zarr',
+        'metadata',
+        'versions',
+        'status',
+        'validation_errors',
+        'published',
+    ]
     list_display = [
         'id',
         'asset_id',
@@ -178,7 +208,7 @@ class AssetAdmin(admin.ModelAdmin):
         'created',
     ]
     list_display_links = ['id', 'asset_id', 'path']
-    # inlines = [AssetBlobInline]
+    list_select_related = ['zarr', 'blob']
 
 
 @admin.register(Upload)
@@ -189,6 +219,7 @@ class UploadAdmin(admin.ModelAdmin):
 
 @admin.register(ZarrArchive)
 class ZarrArchiveAdmin(admin.ModelAdmin):
+    search_fields = ['path']
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
 
@@ -216,17 +247,20 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
 
 @admin.register(EmbargoedZarrArchive)
 class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
+    search_fields = ['path']
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
 
 
 @admin.register(ZarrUploadFile)
 class ZarrUploadFileAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['zarr_archive']
     list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
     list_display_links = ['id']
 
 
 @admin.register(EmbargoedZarrUploadFile)
 class EmbargoedZarrUploadFileAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['zarr_archive']
     list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
     list_display_links = ['id']
