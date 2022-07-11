@@ -1,3 +1,17 @@
+# v0.2.36 (Mon Jul 11 2022)
+
+#### 🐛 Bug Fix
+
+- Write manifest files after committing transaction [#1176](https://github.com/dandi/dandi-archive/pull/1176) ([@danlamanna](https://github.com/danlamanna))
+- Upgrade django-composed-configuration [#1174](https://github.com/dandi/dandi-archive/pull/1174) ([@danlamanna](https://github.com/danlamanna))
+- Allow longer zarr blob names [#1173](https://github.com/dandi/dandi-archive/pull/1173) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.2.35 (Mon Jul 11 2022)
 
 :tada: This release contains work from a new contributor! :tada:
