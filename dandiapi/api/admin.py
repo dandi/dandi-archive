@@ -219,7 +219,7 @@ class UploadAdmin(admin.ModelAdmin):
 
 @admin.register(ZarrArchive)
 class ZarrArchiveAdmin(admin.ModelAdmin):
-    search_fields = ['path']
+    search_fields = ['zarr_id', 'name']
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
 
@@ -247,7 +247,7 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
 
 @admin.register(EmbargoedZarrArchive)
 class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
-    search_fields = ['path']
+    search_fields = ['zarr_id', 'name']
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
 
