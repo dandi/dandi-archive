@@ -9,7 +9,8 @@
       selectable
       :to="{
         name: 'dandisetLanding',
-        params: { identifier: item.dandiset.identifier, origin }
+        params: { identifier: item.dandiset.identifier, origin },
+        query: $route.query,
       }"
     >
       <v-list-item-content>

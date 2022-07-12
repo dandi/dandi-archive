@@ -55,7 +55,7 @@ import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import store from '@/store';
 import { Version, Dandiset, Paginated } from '@/types';
-import { draftVersion } from '@/utils/constants';
+import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
@@ -94,11 +94,6 @@ export default defineComponent({
       default: null,
     },
     user: { // todo - check how do we send the prop?
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    search: {
       type: Boolean,
       required: false,
       default: false,
@@ -160,15 +155,19 @@ export default defineComponent({
     const page = ref(Number(route.query.page) || 1);
     const sortOption = ref(Number(route.query.sortOption) || 0);
     const sortDir = ref(Number(route.query.sortDir || -1));
+    const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
 
     const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
     watchEffect(async () => {
+      // console.log('landing', route); //to be removed
+      const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
       const response = await dandiRest.dandisets({
         page: page.value,
         page_size: 1,
+        ordering,
         user: props.user ? 'me' : null,
         // note: use ctx.root.$route here for reactivity
-        search: props.search ? ctx.root.$route.query.search : null,
+        search: route.query.search,
         draft: true,
         empty: true,
         embargoed: props.user,
@@ -201,12 +200,15 @@ export default defineComponent({
       sortDir: String(sortDir.value),
     }));
     watch(queryParams, (params) => {
+      const identifier = nextDandiset.value ? nextDandiset.value[0].identifier
+        : props.identifier;
       ctx.root.$router.replace({
         // note: use ctx.root.$route here for reactivity
         ...ctx.root.$route,
         // replace() takes a RawLocation, which has a name: string
         // Route has a name: string | null, so we need to tweak this
         name: ctx.root.$route.name || undefined,
+        params: { identifier },
         query: {
           // do not override the search parameter, if present
           ...ctx.root.$route.query,
