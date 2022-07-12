@@ -22,7 +22,7 @@ from dandiapi.api.models.zarr import ZarrArchive
 logger = get_task_logger(__name__)
 
 
-@shared_task(queue='calculate_sha256')
+@shared_task(queue='calculate_sha256', soft_time_limit=86_400)
 @atomic
 def calculate_sha256(blob_id: int) -> None:
     logger.info('Starting sha256 calculation for blob %s', blob_id)
@@ -90,7 +90,7 @@ def collect_validation_errors(
     return [encoder(error) for error in error.errors]
 
 
-@shared_task
+@shared_task(soft_time_limit=10)
 @atomic
 # This method takes both a version_id and an asset_id because asset metadata renders differently
 # depending on which version the asset belongs to.
@@ -125,7 +125,7 @@ def validate_asset_metadata(asset_id: int) -> None:
     asset.save()
 
 
-@shared_task
+@shared_task(soft_time_limit=30)
 @atomic
 def validate_version_metadata(version_id: int) -> None:
     logger.info('Validating dandiset metadata for version %s', version_id)
@@ -192,7 +192,7 @@ def unembargo_dandiset(dandiset_id: int):
     dandiset.save(update_fields=['embargo_status'])
 
 
-@shared_task
+@shared_task(soft_time_limit=60)
 @atomic
 def cancel_zarr_upload(zarr_id: str):
     zarr_archive: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
