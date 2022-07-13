@@ -244,14 +244,14 @@ const sortByName = (a: AssetStats, b: AssetStats) => {
 const EXTERNAL_SERVICES = [
   {
     name: 'Bioimagesuite/Viewer',
-    regex: '.nii(.gz)?$',
+    regex: '\.nii(\.gz)?$',
     maxsize: 1e9,
     endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
   },
 
   {
     name: 'MetaCell/NWBExplorer',
-    regex: '.nwb$',
+    regex: '\.nwb$',
     maxsize: 1e9,
     endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
   },
