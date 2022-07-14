@@ -47,7 +47,7 @@
 
 <script lang="ts">
 import {
-  defineComponent, computed, watchEffect, watch, onMounted, Ref, ref,
+  defineComponent, computed, watch, onMounted, Ref, ref,
 } from '@vue/composition-api';
 import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
