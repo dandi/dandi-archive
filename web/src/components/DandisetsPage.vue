@@ -100,9 +100,7 @@ import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
-import { sortingOptions } from '@/utils/constants';
-
-const DANDISETS_PER_PAGE = 8;
+import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
 
 export default defineComponent({
   name: 'DandisetsPage',
@@ -141,8 +139,6 @@ export default defineComponent({
 
     const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
     watchEffect(async () => {
-      // console.log('page', ctx.root.$route);
-
       const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
       const response = await dandiRest.dandisets({
         page: page.value,

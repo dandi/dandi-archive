@@ -46,6 +46,8 @@ const sortingOptions = [
   },
 ];
 
+const DANDISETS_PER_PAGE = 8;
+
 export {
   dandiUrl,
   dandiAboutUrl,
@@ -55,4 +57,5 @@ export {
   dandiHelpUrl,
   VALIDATION_ICONS,
   sortingOptions,
+  DANDISETS_PER_PAGE,
 };

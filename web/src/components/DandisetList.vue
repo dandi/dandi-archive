@@ -4,13 +4,13 @@
     subheader
   >
     <v-list-item
-      v-for="item in dandisets"
+      v-for="(item, index) in dandisets"
       :key="item.dandiset.identifier"
       selectable
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier, origin },
-        query: $route.query,
+        query: { ...$route.query, pos: getPos(index) },
       }"
     >
       <v-list-item-content>
@@ -83,6 +83,7 @@ import moment from 'moment';
 import filesize from 'filesize';
 
 import { Version } from '@/types';
+import { DANDISETS_PER_PAGE } from '@/utils/constants';
 
 export default defineComponent({
   name: 'DandisetList',
@@ -101,7 +102,10 @@ export default defineComponent({
       const { name, params, query } = route;
       return { name, params, query };
     });
-
+    // current position in search result set = items on prev pages + position on current page
+    function getPos(index: number) {
+      return (Number(ctx.root.$route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
+    }
     function formatDate(date: string) {
       return moment(date).format('LL');
     }
@@ -109,7 +113,7 @@ export default defineComponent({
     return {
       origin,
       formatDate,
-
+      getPos,
       // Returned imports
       filesize,
     };

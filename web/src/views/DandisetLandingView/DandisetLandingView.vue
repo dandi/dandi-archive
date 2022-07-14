@@ -93,11 +93,6 @@ export default defineComponent({
       required: false,
       default: null,
     },
-    user: { // todo - check how do we send the prop?
-      type: Boolean,
-      required: false,
-      default: false,
-    },
   },
   setup(props, ctx) {
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
@@ -129,7 +124,7 @@ export default defineComponent({
       }
     }, { immediate: true });
 
-    watchEffect(async () => {
+    watch([() => props.identifier, () => props.version], async () => {
       const { identifier, version } = props;
       if (version) {
       // On version change, fetch the new dandiset (not initial)
@@ -151,73 +146,61 @@ export default defineComponent({
       }
     });
 
-    const route = ctx.root.$route;
-    const page = ref(Number(route.query.page) || 1);
-    const sortOption = ref(Number(route.query.sortOption) || 0);
-    const sortDir = ref(Number(route.query.sortDir || -1));
+    const pos = ref(Number(ctx.root.$route.query.pos));
+    const page = ref(pos.value || 1);
+    const sortOption = ref(Number(ctx.root.$route.query.sortOption) || 0);
+    const sortDir = ref(Number(ctx.root.$route.query.sortDir || -1));
     const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
 
     const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
-    watchEffect(async () => {
-      // console.log('landing', route); //to be removed
+    async function nextPage() {
       const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
       const response = await dandiRest.dandisets({
         page: page.value,
         page_size: 1,
         ordering,
-        user: props.user ? 'me' : null,
-        // note: use ctx.root.$route here for reactivity
-        search: route.query.search,
+        search: ctx.root.$route.query.search,
         draft: true,
         empty: true,
-        embargoed: props.user,
+        // embargoed: props.user,
       });
       djangoDandisetRequest.value = response.data;
-    });
+    }
 
+    const pages = computed(() => {
+      const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
+      return Math.ceil(totalDandisets) || 1;
+    });
     const nextDandiset = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
       ...(dandiset.most_recent_published_version || dandiset.draft_version),
       contact_person: dandiset.contact_person,
       identifier: dandiset.identifier,
     })));
 
-    // todo - update the currentdandiset => either set version in props or call
-    watch(nextDandiset, async () => {
+    function navigateToPage() {
       if (nextDandiset.value) {
         const { identifier } = nextDandiset.value[0];
-        await store.dispatch.dandiset.fetchDandiset({ identifier });
+        if (identifier !== props.identifier) { // to avoid redundant navigation
+          ctx.root.$router.push({
+            name: ctx.root.$route.name || undefined,
+            params: { identifier },
+            query: {
+              ...ctx.root.$route.query,
+            },
+          });
+        }
+      }
+    }
+
+    watch(page, async (newValue, oldValue) => {
+      if (oldValue !== newValue) {
+        nextPage();
       }
     });
 
-    const pages = computed(() => {
-      const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
-      return Math.ceil(totalDandisets) || 1;
-    });
+    watch(nextDandiset, navigateToPage);
 
-    const queryParams = computed(() => ({
-      page: String(page.value),
-      sortOption: String(sortOption.value),
-      sortDir: String(sortDir.value),
-    }));
-    watch(queryParams, (params) => {
-      const identifier = nextDandiset.value ? nextDandiset.value[0].identifier
-        : props.identifier;
-      ctx.root.$router.replace({
-        // note: use ctx.root.$route here for reactivity
-        ...ctx.root.$route,
-        // replace() takes a RawLocation, which has a name: string
-        // Route has a name: string | null, so we need to tweak this
-        name: ctx.root.$route.name || undefined,
-        params: { identifier },
-        query: {
-          // do not override the search parameter, if present
-          ...ctx.root.$route.query,
-          ...params,
-        },
-      });
-    });
-
-    onMounted(() => {
+    onMounted(async () => {
       // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
       // clicking external links. The `beforeRouteLeave` function above handles "soft"
       // page navigations, such as using the back/forward buttons or clicking a link
@@ -230,6 +213,7 @@ export default defineComponent({
           e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
         }
       });
+      await nextPage(); // get the current page and total count
     });
 
     return {
