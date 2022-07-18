@@ -5,10 +5,10 @@ from django.db import migrations, models
 
 
 def migrate_metadata(apps, schema_editor):
-    Version = apps.get_model('api', 'Version')  # noqa: N806
-    VersionMetadata = apps.get_model('api', 'VersionMetadata')  # noqa: N806
-    Asset = apps.get_model('api', 'Asset')  # noqa: N806
-    AssetMetadata = apps.get_model('api', 'AssetMetadata')  # noqa: N806
+    Version = apps.get_model('api', 'Version')
+    VersionMetadata = apps.get_model('api', 'VersionMetadata')
+    Asset = apps.get_model('api', 'Asset')
+    AssetMetadata = apps.get_model('api', 'AssetMetadata')
 
     moved_metadata = VersionMetadata.objects.filter(id=models.OuterRef('old_metadata')).values_list(
         'metadata'
