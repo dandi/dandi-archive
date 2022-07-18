@@ -17,6 +17,7 @@ import os.path
 from pathlib import PurePosixPath
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
 from django.db.models import QuerySet
@@ -275,6 +276,8 @@ class AssetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
         if re.search(multiple_occurrence_regex, path):
             raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
+
+        data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
 
         return data
 

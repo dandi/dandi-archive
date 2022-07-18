@@ -117,21 +117,6 @@ def test_validate_asset_metadata(asset: Asset):
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_no_schema_version(asset: Asset):
-    asset.metadata = {}
-    asset.save()
-
-    tasks.validate_asset_metadata(asset.id)
-
-    asset.refresh_from_db()
-
-    assert asset.status == Asset.Status.INVALID
-    assert len(asset.validation_errors) == 1
-    assert asset.validation_errors[0]['field'] == ''
-    assert asset.validation_errors[0]['message'].startswith('Metadata version None is not allowed.')
-
-
-@pytest.mark.django_db
 def test_validate_asset_metadata_malformed_schema_version(asset: Asset):
     asset.metadata['schemaVersion'] = 'xxx'
     asset.save()
@@ -201,25 +186,6 @@ def test_validate_version_metadata(version: Version, asset: Asset):
 
     assert version.status == Version.Status.VALID
     assert version.validation_errors == []
-
-
-@pytest.mark.django_db
-def test_validate_version_metadata_no_schema_version(version: Version, asset: Asset):
-    version.assets.add(asset)
-
-    del version.metadata['schemaVersion']
-    version.save()
-
-    tasks.validate_version_metadata(version.id)
-
-    version.refresh_from_db()
-
-    assert version.status == Version.Status.INVALID
-    assert len(version.validation_errors) == 1
-    assert version.validation_errors[0]['field'] == ''
-    assert version.validation_errors[0]['message'].startswith(
-        'Metadata version None is not allowed.'
-    )
 
 
 @pytest.mark.django_db
