@@ -15,6 +15,7 @@ except ImportError:
 
 import os.path
 from urllib.parse import urlencode
+from pathlib import Path, PurePath
 
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
@@ -251,8 +252,32 @@ class AssetRequestSerializer(serializers.Serializer):
                 {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
             )
 
-        if 'path' not in data['metadata']:
+        if 'path' not in data['metadata'] or not data['metadata']['path']:
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
+
+        path = data['metadata']['path']
+        # paths starting with /
+        if PurePath.is_absolute(Path(path)):
+            raise serializers.ValidationError(
+                {'metadata': 'Absolute path not allowed for an asset'}
+            )
+
+        sub_paths = path.split('/')
+        # checking for . in path
+        for sub_path in sub_paths:
+            if len(set(sub_path)) == 1 and sub_path[0] == '.':
+                raise serializers.ValidationError(
+                    {'metadata': 'Invalid characters (.) in file path'}
+                )
+
+        # Invalid characters ['\0']
+        filepath_regex = '^[^\0]+$'
+        # match characters repeating more than once
+        multiple_occurrence_regex = '[/]{2,}'
+        if not re.search(filepath_regex, path):
+            raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
+        if re.search(multiple_occurrence_regex, path):
+            raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
 
         return data
 
@@ -409,6 +434,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         _maybe_validate_asset_metadata(asset)
 
         serializer = AssetDetailSerializer(instance=asset)
+        print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
