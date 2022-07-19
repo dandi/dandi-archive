@@ -191,6 +191,13 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
                 del metadata[key]
         return metadata
 
+    @classmethod
+    def _adjust_kwargs(cls, **kwargs):
+        path = kwargs['path']
+        if path[0] == '/':
+            kwargs['path'] = path.replace(path[0], '')
+        return kwargs
+
 
 class PublishedAssetFactory(DraftAssetFactory):
     @classmethod

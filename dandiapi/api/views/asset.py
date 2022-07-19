@@ -14,8 +14,8 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
-from urllib.parse import urlencode
 from pathlib import Path, PurePath
+from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
