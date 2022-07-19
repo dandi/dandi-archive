@@ -107,13 +107,15 @@
                         For best results, please check the following
                         items before you publish:
                       </span>
-
+                      <!-- Note: this is safe as we aren't rendering any user-generated input -->
+                      <!-- eslint-disable vue/no-v-html -->
                       <v-list-item
                         v-for="(item, i) in PUBLISH_CHECKLIST"
                         :key="`checklist_item_${i}`"
                         class="text-body-2 my-1"
-                        v-text="`${i+1}. ${item}`"
+                        v-html="`<span>${i+1}. ${item}</span>`"
                       />
+                      <!-- eslint-enable vue/no-v-html -->
                     </v-list>
                   </v-card-text>
 
