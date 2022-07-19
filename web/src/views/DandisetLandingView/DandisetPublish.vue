@@ -104,8 +104,8 @@
                   <v-card-text>
                     <v-list>
                       <span class="text-body-1 font-weight-bold">
-                        To maximize utility, have you checked the list of
-                        authors and keywords and have you added:
+                        For best results, please check the following
+                        items before you publish:
                       </span>
 
                       <v-list-item
@@ -423,12 +423,12 @@ import { RawLocation } from 'vue-router';
 import { open as openMeditor } from '@/components/Meditor/state';
 
 const PUBLISH_CHECKLIST = [
-  'a descriptive title (e.g., Data related to foraging behavior in bees vs Smith et al 2022)',
-  'a description that clearly describes the dataset for another neuroscientist',
-  'a reference to a protocol in protocols.io detailing how you collected the data? this can also be another publication added as a resource.',
-  'a reference to an ethics protocol number if you have an institutional review board review the study.',
-  'funding information: dandi treats funding agencies as contributors. you can add multiple contributing institutions. unless you are the funder, you can add a new contributor of type organization, uncheck include contributor in citation, include dcite:Funder role and add the relevant award info.',
-  'reference pointers to code in github, related publications, etc.,.',
+  'A descriptive title (e.g., "Data related to foraging behavior in bees" rather than "Smith et al 2022")',
+  'A clear, informative description that is helpful for other neuroscientists',
+  'A reference to a protocol in protocols.io detailing how you collected the data (this can also be another publication added as a resource)',
+  'A reference to an ethics protocol number if you are working with an Institutional Review Board on this study',
+  'Funding information (DANDI treats funding agencies as contributors, so you can add multiple contributing institutions as needed. If you are the funder, you can add a new contributor of type "organization", uncheck "include contributor in citation", set the role as "dcite:Funder", and include the relevant award information)',
+  'References to code in GitHub, related publications, etc.',
 ];
 
 function getValidationErrorIcon(errorField: string): string {
