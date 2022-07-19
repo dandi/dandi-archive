@@ -425,7 +425,7 @@ import { RawLocation } from 'vue-router';
 import { open as openMeditor } from '@/components/Meditor/state';
 
 const PUBLISH_CHECKLIST = [
-  'A descriptive title (e.g., "Data related to foraging behavior in bees" rather than "Smith et al 2022")',
+  'A descriptive title (e.g., <span class="font-italic">Data related to foraging behavior in bees</span> rather than <span class="font-italic">Smith et al 2022</span>)',
   'A clear, informative description that is helpful for other neuroscientists',
   'A reference to a protocol in protocols.io detailing how you collected the data (this can also be another publication added as a resource)',
   'A reference to an ethics protocol number if you are working with an Institutional Review Board on this study',
