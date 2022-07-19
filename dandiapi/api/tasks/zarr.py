@@ -143,7 +143,7 @@ class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
         return file_updater
 
 
-@shared_task(queue='ingest_zarr_archive')
+@shared_task(queue='ingest_zarr_archive', time_limit=3600)
 def ingest_zarr_archive(
     zarr_id: str,
     no_checksum: bool = False,

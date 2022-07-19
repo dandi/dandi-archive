@@ -20,7 +20,7 @@ from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 logger = get_task_logger(__name__)
 
 
-@shared_task
+@shared_task(soft_time_limit=20)
 @atomic
 def validate_draft_version_metadata():
     # Select only the id of draft versions that have status PENDING
@@ -40,7 +40,7 @@ def validate_draft_version_metadata():
             write_manifest_files.delay(draft_version_id)
 
 
-@shared_task
+@shared_task(soft_time_limit=20)
 def send_pending_users_email() -> None:
     """Send an email to admins listing users with status set to PENDING."""
     pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)
