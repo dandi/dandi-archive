@@ -174,7 +174,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
 
-    path = factory.Faker('file_path', extension='nwb')
+    path = factory.Faker('file_path', absolute=False, extension='nwb')
     blob = factory.SubFactory(AssetBlobFactory)
 
     @factory.lazy_attribute
@@ -190,13 +190,6 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
             if key in metadata:
                 del metadata[key]
         return metadata
-
-    @classmethod
-    def _adjust_kwargs(cls, **kwargs):
-        path = kwargs['path']
-        if path[0] == '/':
-            kwargs['path'] = path.replace(path[0], '')
-        return kwargs
 
 
 class PublishedAssetFactory(DraftAssetFactory):
