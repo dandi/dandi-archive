@@ -100,7 +100,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     serializer_class = ZarrSerializer
     pagination_class = DandiPagination
 
-    queryset = ZarrArchive.objects.all()
+    queryset = ZarrArchive.objects.all().order_by('created')
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
 
