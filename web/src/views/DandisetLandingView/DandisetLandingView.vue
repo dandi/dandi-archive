@@ -146,15 +146,16 @@ export default defineComponent({
       }
     });
 
-    const pos = ref(Number(ctx.root.$route.query.pos));
-    const page = ref(pos.value || 1);
-    const sortOption = ref(Number(ctx.root.$route.query.sortOption) || 0);
-    const sortDir = ref(Number(ctx.root.$route.query.sortDir || -1));
-    const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
+    const page = ref(Number(ctx.root.$route.query.pos) || 1);
+    const pages = ref(1);
+    const nextDandiset : Ref<any[]> = ref([]);
 
     const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
-    async function nextPage() {
-      const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
+    async function fetchNextPage() {
+      const sortOption = Number(ctx.root.$route.query.sortOption) || 0;
+      const sortDir = Number(ctx.root.$route.query.sortDir || -1);
+      const sortField = sortingOptions[sortOption].djangoField;
+      const ordering = ((sortDir === -1) ? '-' : '') + sortField;
       const response = await dandiRest.dandisets({
         page: page.value,
         page_size: 1,
@@ -162,20 +163,16 @@ export default defineComponent({
         search: ctx.root.$route.query.search,
         draft: true,
         empty: true,
-        // embargoed: props.user,
       });
       djangoDandisetRequest.value = response.data;
-    }
 
-    const pages = computed(() => {
-      const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
-      return Math.ceil(totalDandisets) || 1;
-    });
-    const nextDandiset = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
-      ...(dandiset.most_recent_published_version || dandiset.draft_version),
-      contact_person: dandiset.contact_person,
-      identifier: dandiset.identifier,
-    })));
+      pages.value = (djangoDandisetRequest.value?.count) ? djangoDandisetRequest.value?.count : 1;
+      nextDandiset.value = djangoDandisetRequest.value?.results.map((dandiset) => ({
+        ...(dandiset.most_recent_published_version || dandiset.draft_version),
+        contact_person: dandiset.contact_person,
+        identifier: dandiset.identifier,
+      }));
+    }
 
     function navigateToPage() {
       if (nextDandiset.value) {
@@ -194,11 +191,10 @@ export default defineComponent({
 
     watch(page, async (newValue, oldValue) => {
       if (oldValue !== newValue) {
-        nextPage();
+        await fetchNextPage();
+        navigateToPage();
       }
     });
-
-    watch(nextDandiset, navigateToPage);
 
     onMounted(async () => {
       // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
@@ -213,7 +209,7 @@ export default defineComponent({
           e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
         }
       });
-      await nextPage(); // get the current page and total count
+      await fetchNextPage(); // get the current page and total count
     });
 
     return {
@@ -222,7 +218,6 @@ export default defineComponent({
       schema,
       userCanModifyDandiset,
       meta,
-      nextDandiset,
       pages,
       page,
     };
