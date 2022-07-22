@@ -1,3 +1,18 @@
+# v0.2.39 (Fri Jul 22 2022)
+
+#### 🐛 Bug Fix
+
+- Enable Sentry performance tracking [#1209](https://github.com/dandi/dandi-archive/pull/1209) ([@danlamanna](https://github.com/danlamanna))
+- Add ngff rename script as a management command [#1120](https://github.com/dandi/dandi-archive/pull/1120) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add publish "checklist" [#1122](https://github.com/dandi/dandi-archive/pull/1122) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.38 (Tue Jul 19 2022)
 
 #### 🐛 Bug Fix
