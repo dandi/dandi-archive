@@ -57,7 +57,7 @@ def calculate_sha256(blob_id: int) -> None:
 @atomic
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
-    logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
+    _log_version_action('Writing manifests for', version_id, version)
 
     write_dandiset_yaml(version)
     write_assets_yaml(version)
@@ -124,8 +124,8 @@ def validate_asset_metadata(asset_id: int) -> None:
 @shared_task(soft_time_limit=30)
 @atomic
 def validate_version_metadata(version_id: int) -> None:
-    logger.info('Validating dandiset metadata for version %s', version_id)
     version: Version = Version.objects.get(id=version_id)
+    _log_version_action('Validating dandiset metadata', version_id, version)
 
     version.status = Version.Status.VALIDATING
     version.save()
@@ -153,7 +153,7 @@ def validate_version_metadata(version_id: int) -> None:
         version.validation_errors = [{'field': '', 'message': str(e)}]
         version.save()
         return
-    logger.info('Successfully validated version %s', version_id)
+    _log_version_action('Successfully validated dandiset metadata', version_id, version)
     version.status = Version.Status.VALID
     version.validation_errors = []
     version.save()
@@ -237,3 +237,10 @@ def publish_task(version_id: int):
         version.save()
 
     transaction.on_commit(lambda: _create_doi(new_version.id))
+
+
+def _log_version_action(msg:str, version_id: int, version: Version) -> None:
+    """Helper to centralize/harmonize logging of operations over a Version
+    """
+    logger.info('%s for version %d %s:%s',
+                msg, version_id, version.dandiset.identifier, version.version)
