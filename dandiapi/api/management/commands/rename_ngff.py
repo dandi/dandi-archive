@@ -10,7 +10,7 @@ from dandiapi.api.models import ZarrArchive
 @click.argument('dandiset_id', type=int, required=False)
 def rename_ngff(dandiset_id: int | None):
     """
-    Change extension of all .ngff ZarrArchives (plus they're associated Asset paths) to .ome.zarr.
+    Change extension of all .ngff ZarrArchives (plus their associated Asset paths) to .ome.zarr.
 
     If DANDISET_ID is provided, only ZarrArchives in that dandiset will be modified.
     Otherwise, every ZarrArchive in the DB is modified.
