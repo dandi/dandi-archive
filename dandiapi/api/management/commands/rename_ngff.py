@@ -34,7 +34,7 @@ def rename_ngff(dandiset_id: int | None):
                 zarr.name = new_name
                 zarr.save(update_fields=['name'])
 
-                for asset in zarr.assets.all():
+                for asset in zarr.assets.iterator():
                     if asset.path.endswith('.ngff'):
                         new_path = f'{asset.path[:-5]}.ome.zarr'
                         click.echo(
