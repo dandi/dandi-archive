@@ -150,7 +150,6 @@ export default defineComponent({
     const pages = ref(1);
     const nextDandiset : Ref<any[]> = ref([]);
 
-    const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
     async function fetchNextPage() {
       const sortOption = Number(ctx.root.$route.query.sortOption) || 0;
       const sortDir = Number(ctx.root.$route.query.sortDir || -1);
@@ -164,10 +163,9 @@ export default defineComponent({
         draft: true,
         empty: true,
       });
-      djangoDandisetRequest.value = response.data;
 
-      pages.value = (djangoDandisetRequest.value?.count) ? djangoDandisetRequest.value?.count : 1;
-      nextDandiset.value = djangoDandisetRequest.value?.results.map((dandiset) => ({
+      pages.value = (response.data?.count) ? response.data?.count : 1;
+      nextDandiset.value = response.data?.results.map((dandiset) => ({
         ...(dandiset.most_recent_published_version || dandiset.draft_version),
         contact_person: dandiset.contact_person,
         identifier: dandiset.identifier,
