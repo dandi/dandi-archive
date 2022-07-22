@@ -118,7 +118,7 @@ export default defineComponent({
       }
     }, { immediate: true });
 
-    watchEffect(async () => {
+    watch([() => props.version, () => props.identifier], async () => {
       const { identifier, version } = props;
       if (version) {
       // On version change, fetch the new dandiset (not initial)

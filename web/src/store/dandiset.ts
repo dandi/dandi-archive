@@ -15,6 +15,7 @@ interface DandisetState {
   loading: boolean,
   owners: User[]|null,
   schema: any,
+  versionCount: Number,
 }
 
 const dandisetGetterContext = (
@@ -30,6 +31,7 @@ const dandisetModule = defineModule({
     loading: false, // No mutation, as we don't want this mutated by the user
     owners: null,
     schema: null,
+    versionCount: 0,
   } as DandisetState,
   getters: {
     version(...args): string {
@@ -75,6 +77,9 @@ const dandisetModule = defineModule({
     setLoading(state: DandisetState, loading: boolean) {
       state.loading = loading;
     },
+    setVersionCount(state: DandisetState, versionCount: Number) {
+      state.versionCount = versionCount;
+    },
   },
   actions: {
     async uninitializeDandisets(context: any) {
@@ -84,24 +89,27 @@ const dandisetModule = defineModule({
       commit.setVersions(null);
       commit.setOwners(null);
       commit.setLoading(false);
+      commit.setVersionCount(0);
     },
     async initializeDandisets(context: any, { identifier, version }) {
       const { dispatch } = dandisetActionContext(context);
       await dispatch.uninitializeDandisets();
 
-      // this can be done concurrently, don't await
-      dispatch.fetchDandisetVersions({ identifier });
+      // first fetch all versions, set total count
+      // use count to fetch latest dandiset, must be sequential
+      await dispatch.fetchDandisetVersions({ identifier });
       await dispatch.fetchDandiset({ identifier, version });
       await dispatch.fetchOwners(identifier);
     },
+    // fetch versions and total version count
     async fetchDandisetVersions(context: any, { identifier }) {
       const { commit } = dandisetActionContext(context);
       commit.setLoading(true);
-
       const res = await dandiRest.versions(identifier);
       if (res) {
         const { results } = res;
         commit.setVersions(results || []);
+        commit.setVersionCount(res.count);
       }
 
       commit.setLoading(false);
