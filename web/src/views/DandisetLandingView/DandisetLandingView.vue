@@ -160,8 +160,8 @@ export default defineComponent({
         page_size: 1,
         ordering,
         search: ctx.root.$route.query.search,
-        draft: true,
-        empty: true,
+        draft: ctx.root.$route.query.showDrafts || true,
+        empty: ctx.root.$route.query.showEmpty,
       });
 
       pages.value = (response.data?.count) ? response.data?.count : 1;

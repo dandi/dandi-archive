@@ -172,6 +172,8 @@ export default defineComponent({
       page: String(page.value),
       sortOption: String(sortOption.value),
       sortDir: String(sortDir.value),
+      showDrafts: String(showDrafts.value),
+      showEmpty: String(showEmpty.value),
     }));
     watch(queryParams, (params) => {
       ctx.root.$router.replace({
