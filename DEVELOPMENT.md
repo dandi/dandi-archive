@@ -103,6 +103,11 @@ Useful sub-commands include:
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
 
+### Profiling with Memray
+To include a memory profile with your tests, add `--memray` at the end of your test command invocation. For example, to run a memory profile with all tests, you would run `tox -e test -- --memray`. This can be used in conjuction with other pytest CLI flags (like `-k`) as well. See the `pytest-memray` [docs](https://github.com/bloomberg/pytest-memray) for more invocation details.
+
+#### NOTE: If you have an existing dandi-archive installation in which you have previously run tox, you may need to recreate the tox environment (by adding `-r` to your tox invocation) the first time you attempt to use memray. If your attempt to use the `--memray` flag fails with `pytest: error: unrecognized arguments: --memray`, this is likely why.
+
 ## dandiarchive.org WEB Interface
 
 This repository now also contains sources for the web interface under [web/](./web/) folder.
