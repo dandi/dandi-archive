@@ -539,25 +539,27 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
 
 
 @pytest.mark.parametrize(
-    'path,valid',
+    'path,expected_status_code',
     [
-        ('foo.txt', True),
-        ('/foo', False),
-        ('', False),
-        ('/', False),
-        ('./foo', False),
-        ('../foo', False),
-        ('foo/.', False),
-        ('foo/..', False),
-        ('foo/./bar', False),
-        ('foo/../bar', False),
-        ('foo//bar', False),
-        ('foo\0bar', False),
-        ('foo/.bar', True),
+        ('foo.txt', 200),
+        ('/foo', 400),
+        ('', 400),
+        ('/', 400),
+        ('./foo', 400),
+        ('../foo', 400),
+        ('foo/.', 400),
+        ('foo/..', 400),
+        ('foo/./bar', 400),
+        ('foo/../bar', 400),
+        ('foo//bar', 400),
+        ('foo\0bar', 400),
+        ('foo/.bar', 200),
     ],
 )
 @pytest.mark.django_db
-def test_asset_create_path_validation(api_client, user, draft_version, asset_blob, path, valid):
+def test_asset_create_path_validation(
+    api_client, user, draft_version, asset_blob, path, expected_status_code
+):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
@@ -577,10 +579,7 @@ def test_asset_create_path_validation(api_client, user, draft_version, asset_blo
         format='json',
     )
 
-    if valid:
-        assert resp.status_code == 200, resp.data
-    else:
-        assert resp.status_code != 200, resp.data
+    assert resp.status_code == expected_status_code, resp.data
 
 
 @pytest.mark.django_db
