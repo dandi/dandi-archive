@@ -14,7 +14,7 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
-from pathlib import Path, PurePath
+from pathlib import PurePosixPath
 from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
@@ -251,13 +251,12 @@ class AssetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
             )
-
         if 'path' not in data['metadata'] or not data['metadata']['path']:
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
 
         path = data['metadata']['path']
         # paths starting with /
-        if PurePath.is_absolute(Path(path)):
+        if PurePosixPath(path).is_absolute():
             raise serializers.ValidationError(
                 {'metadata': 'Absolute path not allowed for an asset'}
             )
@@ -270,11 +269,9 @@ class AssetRequestSerializer(serializers.Serializer):
                     {'metadata': 'Invalid characters (.) in file path'}
                 )
 
-        # Invalid characters ['\0']
-        filepath_regex = '^[^\0]+$'
         # match characters repeating more than once
         multiple_occurrence_regex = '[/]{2,}'
-        if not re.search(filepath_regex, path):
+        if '\0' in path:
             raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
         if re.search(multiple_occurrence_regex, path):
             raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
@@ -434,7 +431,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         _maybe_validate_asset_metadata(asset)
 
         serializer = AssetDetailSerializer(instance=asset)
-        print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(

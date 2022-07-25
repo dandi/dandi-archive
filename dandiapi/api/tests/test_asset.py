@@ -567,9 +567,6 @@ def test_asset_create_path_validation(
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': path,
-        'meta': 'data',
-        'foo': ['bar', 'baz'],
-        '1': 2,
     }
 
     resp = api_client.post(
@@ -784,7 +781,7 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == {'metadata': ['No path specified in metadata.']}
+    assert resp.data == {'metadata': ['No path specified in metadata.']}, resp.data
 
 
 @pytest.mark.django_db
