@@ -17,6 +17,7 @@ from rest_framework.test import APIClient
 from dandiapi.api.mail import ADMIN_EMAIL
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.views.auth import COLLECT_USER_NAME_QUESTIONS, NEW_USER_QUESTIONS, QUESTIONS
+from dandiapi.api.views.users import user_to_dict
 
 
 def serialize_social_account(social_account):
@@ -126,6 +127,27 @@ def test_user_search(api_client, social_account, social_account_factory):
 
 
 @pytest.mark.django_db
+def test_user_search_prefer_social(api_client, user_factory, social_account):
+    api_client.force_authenticate(user=social_account.user)
+
+    # Check that when social account is present, it is used
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': social_account.user.username},
+        format='json',
+    ).data == [serialize_social_account(social_account)]
+
+    # Create user without a social account
+    user = user_factory()
+    api_client.force_authenticate(user=user)
+    assert api_client.get(
+        '/api/users/search/?',
+        {'username': user.username},
+        format='json',
+    ).data == [user_to_dict(user)]
+
+
+@pytest.mark.django_db
 def test_user_search_blank_username(api_client, user):
     api_client.force_authenticate(user=user)
 
@@ -188,7 +210,9 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
         '/api/users/search/?',
         {'username': 'odysseus'},
         format='json',
-    ).data == [serialize_social_account(social_account) for social_account in social_accounts[:10]]
+    ).json() == [
+        serialize_social_account(social_account) for social_account in social_accounts[:10]
+    ]
 
 
 @pytest.mark.django_db
