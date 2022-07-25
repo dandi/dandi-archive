@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def _get_user_status(user: User):
     try:
         return user.metadata.status
-    except ObjectDoesNotExist:
+    except UserMetadata.DoesNotExist:
         return UserMetadata.Status.INCOMPLETE.value
 
 
