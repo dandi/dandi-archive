@@ -116,12 +116,14 @@
                 <v-spacer />
                 <v-btn
                   color="secondary"
+                  elevation="0"
                   @click="selfRemovalWarningDialog = false"
                 >
                   Cancel
                 </v-btn>
                 <v-btn
                   color="error"
+                  elevation="0"
                   @click="removeOwner(user)"
                 >
                   Confirm
