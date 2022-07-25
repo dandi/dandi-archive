@@ -96,6 +96,8 @@
 import {
   defineComponent, ref, computed, watch, Ref, watchEffect,
 } from '@vue/composition-api';
+
+import omit from 'lodash/omit';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
@@ -176,7 +178,7 @@ export default defineComponent({
 
     const dandisets = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
       ...(dandiset.most_recent_published_version || dandiset.draft_version),
-      contact_person: dandiset.contact_person,
+      dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
     })));
 
     const pages = computed(() => {

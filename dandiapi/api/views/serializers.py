@@ -86,6 +86,63 @@ class VersionSerializer(serializers.ModelSerializer):
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
 
+class DandisetVersionSerializer(serializers.ModelSerializer):
+    """The verison serializer nested within the Dandiset Serializer."""
+
+    class Meta:
+        model = Version
+        fields = [
+            'version',
+            'name',
+            'asset_count',
+            'size',
+            'status',
+            'created',
+            'modified',
+        ]
+        read_only_fields = ['created']
+
+    # Override the model methods with fields populated from a query
+    asset_count = serializers.IntegerField(source='num_assets')
+    size = serializers.IntegerField(source='total_size')
+
+
+class DandisetListSerializer(DandisetSerializer):
+    """The dandiset serializer to be used in the listing endpoint."""
+
+    class Meta(DandisetSerializer.Meta):
+        fields = DandisetSerializer.Meta.fields + ['most_recent_published_version', 'draft_version']
+
+    def get_draft_version(self, dandiset):
+        draft = self.context['dandisets'].get(dandiset.id, {}).get('draft')
+        if draft is None:
+            return None
+
+        return DandisetVersionSerializer(draft).data
+
+    def get_most_recent_published_version(self, dandiset):
+        version = self.context['dandisets'].get(dandiset.id, {}).get('published')
+        if version is None:
+            return None
+
+        return DandisetVersionSerializer(version).data
+
+    def get_contact_person(self, dandiset):
+        draft = self.context['dandisets'].get(dandiset.id, {}).get('draft')
+        published = self.context['dandisets'].get(dandiset.id, {}).get('published')
+
+        contact = ''
+        if published is not None:
+            contact = extract_contact_person(published)
+        elif draft is not None:
+            contact = extract_contact_person(draft)
+
+        return contact
+
+    most_recent_published_version = serializers.SerializerMethodField()
+    draft_version = serializers.SerializerMethodField()
+
+
 class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
         fields = DandisetSerializer.Meta.fields + ['most_recent_published_version', 'draft_version']
