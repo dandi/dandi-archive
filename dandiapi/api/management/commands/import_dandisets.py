@@ -90,7 +90,7 @@ def import_versions_from_response(
                 assets = requests.get(
                     urljoin(
                         api_url,
-                        f'/api/dandisets/{dandiset.identifier}/versions'
+                        f'/api/dandisets/{result["dandiset"]["identifier"]}/versions'
                         f'/{result["version"]}/assets/',
                     )
                 ).json()
