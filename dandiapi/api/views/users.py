@@ -5,7 +5,6 @@ import re
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import OuterRef, Q, Subquery
 from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
