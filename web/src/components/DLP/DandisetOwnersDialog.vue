@@ -284,7 +284,11 @@ export default defineComponent({
     }
 
     const selfRemovalWarningDialog = ref(false);
-    function removeOwner(owner: User) {
+    function removeOwner(owner: User | null) {
+      if (owner === null) {
+        throw new Error('Cannot remove null owner from dandiset!');
+      }
+
       // If current user, open dialog and wait for second call to this function
       if (ownerIsCurrentUser(owner) && selfRemovalWarningDialog.value === false) {
         selfRemovalWarningDialog.value = true;
