@@ -68,8 +68,8 @@ def serialize_user(user: User):
 
     # Prefer social account info if present
     if user.social_account_data is not None:
-        username = user.social_account_data.get('login') or username
-        name = user.social_account_data.get('name') or name
+        username = user.social_account_data.get('login', username)
+        name = user.social_account_data.get('name', name)
 
     return {
         'admin': user.is_superuser,
