@@ -100,7 +100,7 @@ class BaseZarrUploadFile(TimeStampedModel):
     def size(self) -> int:
         return self.blob.storage.size(self.blob.name)
 
-    def actual_etag(self) -> str:
+    def actual_etag(self) -> str | None:
         storage = self.blob.storage
         try:
             from botocore.exceptions import ClientError
@@ -251,7 +251,11 @@ class BaseZarrArchive(TimeStampedModel):
             raise ValidationError('No upload in progress.')
         active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
         for upload in active_uploads:
-            if upload.etag != upload.actual_etag():
+            etag = upload.actual_etag()
+            if etag is None:
+                raise ValidationError(f'File {upload.path} does not exist.')
+
+            if upload.etag != etag:
                 raise ValidationError(
                     f'File {upload.path} ETag {upload.actual_etag()} does not match reported checksum {upload.etag}.'  # noqa: E501
                 )
@@ -259,6 +263,7 @@ class BaseZarrArchive(TimeStampedModel):
         active_uploads.delete()
 
         # New files added, ingest must be run again
+        self.checksum = None
         self.status = self.Status.PENDING
         self.save()
 
@@ -282,6 +287,7 @@ class BaseZarrArchive(TimeStampedModel):
             self.storage.delete(self.s3_path(path))
 
         # Files deleted, ingest must be run again
+        self.checksum = None
         self.status = self.Status.PENDING
         self.save()
 
