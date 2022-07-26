@@ -6,6 +6,7 @@ from pathlib import Path
 import boto3
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.db import transaction
 
@@ -174,11 +175,11 @@ def ingest_zarr_archive(
             zarr.file_count = 0
 
         # Instantiate updater and add files as they come in
-        updated = False
+        empty = True
         updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
         for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
             if len(files):
-                updated = True
+                empty = False
 
             # Update size and file count
             if not no_size:
@@ -200,22 +201,33 @@ def ingest_zarr_archive(
                 )
 
         # If no files were actually yielded, remove all checksum files
-        if not updated:
+        if empty:
             clear_checksum_files(zarr)
+
+        # Set checksum field to top level checksum, after ingestion completion
+        checksum = zarr.get_checksum()
+
+        # Raise an exception if empty and checksum are ever out of sync.
+        # The reported checksum should never be None if there are files,
+        # and there shouldn't be any files if the checksum is None
+        if (checksum is None) != empty:
+            raise Exception(
+                (
+                    f'Inconsistency between reported files and computed checksum. Checksum is '
+                    f'{checksum}, while {"no" if empty else ""} files were found in the zarr.'
+                )
+            )
+
+        # If checksum is None, that means there were no files, and we should set
+        # the checksum to EMPTY_CHECKSUM, as it's still been ingested, it's just empty.
+        zarr.checksum = checksum or EMPTY_CHECKSUM
+        zarr.status = ZarrArchive.Status.COMPLETE
+        zarr.save(update_fields=['status', 'checksum'])
 
         # Save all assets that reference this zarr, so their metadata is updated
         zarr.save(update_fields=['size', 'file_count'])
         for asset in zarr.assets.all().iterator():
             asset.save()
-
-        # Set checksum field to top level checksum, after ingestion completion
-        zarr.checksum = zarr.get_checksum()
-        if zarr.checksum is None:
-            zarr.status = ZarrArchive.Status.PENDING
-        else:
-            zarr.status = ZarrArchive.Status.COMPLETE
-
-        zarr.save(update_fields=['status', 'checksum'])
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
