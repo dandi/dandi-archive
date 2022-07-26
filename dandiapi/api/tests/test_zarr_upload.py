@@ -1,6 +1,5 @@
 import hashlib
 
-from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
 import requests
@@ -102,13 +101,15 @@ def test_zarr_rest_upload_complete(
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_archive.upload_in_progress
-    assert zarr_archive.checksum == EMPTY_CHECKSUM
+    assert zarr_archive.checksum is None
 
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
     assert resp.status_code == 201
 
     # Completing the upload means that it is no longer in progress
+    zarr_archive.refresh_from_db()
     assert not zarr_archive.upload_in_progress
+    assert zarr_archive.checksum is None
 
 
 @pytest.mark.django_db
@@ -123,7 +124,7 @@ def test_zarr_rest_upload_complete_not_an_owner(
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_archive.upload_in_progress
-    assert zarr_archive.checksum == EMPTY_CHECKSUM
+    assert zarr_archive.checksum is None
 
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
     assert resp.status_code == 403

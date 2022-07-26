@@ -7,6 +7,7 @@ import pytest
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
@@ -824,7 +825,10 @@ def test_version_rest_publish_zarr(
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
+    # create and ingest zarr archive
     zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
     zarr_asset: Asset = draft_asset_factory(zarr=zarr_archive, blob=None)
     normal_asset: Asset = draft_asset_factory()
     draft_version.assets.add(zarr_asset)

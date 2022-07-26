@@ -29,7 +29,7 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'zarr_id': UUID_RE,
         'dandiset': dandiset.identifier,
         'status': ZarrArchive.Status.PENDING,
-        'checksum': EMPTY_CHECKSUM,
+        'checksum': None,
         'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
@@ -116,12 +116,13 @@ def test_zarr_rest_get(
 
     # Ingest archive so checksum files are written.
     ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
 
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
-        'zarr_id': zarr_archive.zarr_id,
+        'zarr_id': str(zarr_archive.zarr_id),
         'dandiset': zarr_archive.dandiset.identifier,
         'status': ZarrArchive.Status.COMPLETE,
         'checksum': zarr_archive.checksum,

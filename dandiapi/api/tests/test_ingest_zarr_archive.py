@@ -1,6 +1,5 @@
 import time
 
-from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -229,7 +228,7 @@ def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_facto
     # Assert asset size, metadata
     assert asset.size == 0
     assert asset.metadata['contentSize'] == 0
-    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] is None
 
     # Compute checksum
     ingest_zarr_archive(str(zarr.zarr_id))
