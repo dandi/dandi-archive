@@ -329,6 +329,28 @@ def test_asset_rest_list(api_client, version, asset, asset_factory):
     }
 
 
+@pytest.mark.django_db
+def test_asset_rest_list_include_metadata(api_client, version, asset, asset_factory):
+    version.assets.add(asset)
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset_factory()
+
+    # Assert false has no effect
+    r = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'metadata': False},
+    )
+    assert 'metadata' not in r.json()['results'][0]
+
+    # Test positive case
+    r = api_client.get(
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
+        {'metadata': True},
+    )
+    assert r.json()['results'][0]['metadata'] == asset.metadata
+
+
 @pytest.mark.parametrize(
     'path,result_indices',
     [
