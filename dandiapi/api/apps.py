@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.apps import AppConfig
 from django.conf import settings
@@ -14,17 +15,36 @@ class PublishConfig(AppConfig):
 
     @staticmethod
     def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:
-        """
-        Determine sample rate of sentry performance.
+        from dandiapi.api.models.asset import Asset
+        from dandiapi.api.models.dandiset import Dandiset
+        from dandiapi.api.models.version import Version
 
-        Only sample 1% of requests for performance monitoring, and significantly
-        fewer for backups2datalad since it's particularly noisy.
-        """
-        if len(args) and 'wsgi_environ' in args[0]:
-            if 'backups2datalad' in args[0]['wsgi_environ']['HTTP_USER_AGENT']:
-                return 0.001
+        def is_noisy():
+            # these are 2 noisy routes that we can reduce the sampling size for.
+            # TODO: use the django url resolver to avoid redefining regular expressions.
+            noisy_route_regex = [
+                f'zarr/{Asset.UUID_REGEX}.zarr/[0-9/]+',
+                (
+                    f'dandisets/{Dandiset.IDENTIFIER_REGEX}/versions/{Version.VERSION_REGEX}/'
+                    'assets/{Asset.UUID_REGEX}'
+                ),
+            ]
 
-        return 0.01
+            if len(args) and 'wsgi_environ' in args[0]:
+                wsgi_environ = args[0]['wsgi_environ']
+
+                # datalad user agent can be noisy
+                if 'backups2datalad' in wsgi_environ.get('HTTP_USER_AGENT', ''):
+                    return True
+
+                if wsgi_environ.get('REQUEST_METHOD') == 'GET':
+                    for route in noisy_route_regex:
+                        if re.search(route, wsgi_environ.get('PATH_INFO', '')):
+                            return True
+
+            return False
+
+        return 0.001 if is_noisy() else 0.01
 
     def ready(self):
         import dandiapi.api.checks  # noqa: F401
@@ -32,9 +52,6 @@ class PublishConfig(AppConfig):
 
         if hasattr(settings, 'SENTRY_DSN'):
             sentry_sdk.init(
-                # If a "dsn" is not explicitly passed, sentry_sdk will attempt to find the DSN in
-                # the SENTRY_DSN environment variable; however, by pulling it from an explicit
-                # setting, it can be overridden by downstream project settings.
                 dsn=settings.SENTRY_DSN,
                 environment=settings.SENTRY_ENVIRONMENT,
                 release=settings.SENTRY_RELEASE,
@@ -43,6 +60,8 @@ class PublishConfig(AppConfig):
                     DjangoIntegration(),
                     CeleryIntegration(),
                 ],
+                # Only include dandiapi/ in the default stack trace
+                in_app_include=['dandiapi'],
                 # Send traces for non-exception events too
                 attach_stacktrace=True,
                 # Submit request User info from Django
