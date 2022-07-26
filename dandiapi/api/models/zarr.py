@@ -145,7 +145,7 @@ class BaseZarrUploadFile(TimeStampedModel):
 
 
 class ZarrUploadFile(BaseZarrUploadFile):
-    blob = models.FileField(blank=True, storage=get_storage)
+    blob = models.FileField(blank=True, storage=get_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
     zarr_archive: 'ZarrArchive' = models.ForeignKey(
@@ -156,7 +156,7 @@ class ZarrUploadFile(BaseZarrUploadFile):
 
 
 class EmbargoedZarrUploadFile(BaseZarrUploadFile):
-    blob = models.FileField(blank=True, storage=get_embargo_storage)
+    blob = models.FileField(blank=True, storage=get_embargo_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
     zarr_archive: 'EmbargoedZarrArchive' = models.ForeignKey(

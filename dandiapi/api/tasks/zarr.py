@@ -144,7 +144,7 @@ class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
         return file_updater
 
 
-@shared_task(queue='ingest_zarr_archive')
+@shared_task(queue='ingest_zarr_archive', time_limit=3600)
 def ingest_zarr_archive(
     zarr_id: str,
     no_checksum: bool = False,
@@ -226,7 +226,7 @@ def ingest_zarr_archive(
 
         # Save all assets that reference this zarr, so their metadata is updated
         zarr.save(update_fields=['size', 'file_count'])
-        for asset in zarr.assets.all().iterator():
+        for asset in zarr.assets.iterator():
             asset.save()
 
 

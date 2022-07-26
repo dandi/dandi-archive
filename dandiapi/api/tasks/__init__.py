@@ -3,6 +3,7 @@ from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import validate
 from django.db import transaction
+from django.db.models import QuerySet
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -21,7 +22,7 @@ from dandiapi.api.models.zarr import ZarrArchive
 logger = get_task_logger(__name__)
 
 
-@shared_task(queue='calculate_sha256')
+@shared_task(queue='calculate_sha256', soft_time_limit=86_400)
 @atomic
 def calculate_sha256(blob_id: int) -> None:
     logger.info('Starting sha256 calculation for blob %s', blob_id)
@@ -56,17 +57,17 @@ def calculate_sha256(blob_id: int) -> None:
     transaction.on_commit(dispatch_validation)
 
 
-@shared_task(queue='write_manifest_files')
+@shared_task(soft_time_limit=40)
 @atomic
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
     logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
 
-    write_dandiset_yaml(version, logger=logger)
-    write_assets_yaml(version, logger=logger)
-    write_dandiset_jsonld(version, logger=logger)
-    write_assets_jsonld(version, logger=logger)
-    write_collection_jsonld(version, logger=logger)
+    write_dandiset_yaml(version)
+    write_assets_yaml(version)
+    write_dandiset_jsonld(version)
+    write_assets_jsonld(version)
+    write_collection_jsonld(version)
 
 
 def encode_pydantic_error(error) -> dict[str, str]:
@@ -89,7 +90,7 @@ def collect_validation_errors(
     return [encoder(error) for error in error.errors]
 
 
-@shared_task
+@shared_task(soft_time_limit=10)
 @atomic
 # This method takes both a version_id and an asset_id because asset metadata renders differently
 # depending on which version the asset belongs to.
@@ -124,7 +125,7 @@ def validate_asset_metadata(asset_id: int) -> None:
     asset.save()
 
 
-@shared_task
+@shared_task(soft_time_limit=30)
 @atomic
 def validate_version_metadata(version_id: int) -> None:
     logger.info('Validating dandiset metadata for version %s', version_id)
@@ -174,10 +175,10 @@ def unembargo_dandiset(dandiset_id: int):
 
     # Only the draft version is needed, since embargoed dandisets can't be published
     draft_version: Version = dandiset.draft_version
-    embargoed_assets: list[Asset] = list(draft_version.assets.filter(embargoed_blob__isnull=False))
+    embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(embargoed_blob__isnull=False)
 
     # Unembargo all assets
-    for asset in embargoed_assets:
+    for asset in embargoed_assets.iterator():
         asset.unembargo()
 
     # Update draft version metadata
@@ -191,7 +192,7 @@ def unembargo_dandiset(dandiset_id: int):
     dandiset.save(update_fields=['embargo_status'])
 
 
-@shared_task
+@shared_task(soft_time_limit=60)
 @atomic
 def cancel_zarr_upload(zarr_id: str):
     zarr_archive: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)

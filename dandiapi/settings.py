@@ -114,7 +114,6 @@ class DandiMixin(ConfigMixin):
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
-    SHELL_PLUS_PRINT_SQL_TRUNCATE = None
 
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
@@ -139,6 +138,11 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 
 
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
+    @staticmethod
+    def mutate_configuration(configuration: Type[ComposedConfiguration]):
+        # We're configuring sentry by hand since we need to pass custom options (traces_sampler).
+        configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
+
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
 

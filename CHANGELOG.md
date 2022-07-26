@@ -1,3 +1,114 @@
+# v0.2.40 (Tue Jul 26 2022)
+
+#### 🐛 Bug Fix
+
+- Improve sentry configuration [#1215](https://github.com/dandi/dandi-archive/pull/1215) ([@danlamanna](https://github.com/danlamanna))
+- Prefer social account data over direct user data [#1140](https://github.com/dandi/dandi-archive/pull/1140) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Present dialog if attempting to remove self from dandiset [#1125](https://github.com/dandi/dandi-archive/pull/1125) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Unpin `numpy` dependency in CLI tests [#1212](https://github.com/dandi/dandi-archive/pull/1212) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix bug in `import_dandisets` script [#1211](https://github.com/dandi/dandi-archive/pull/1211) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix partial filename from paths_prefix [#591](https://github.com/dandi/dandi-archive/pull/591) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🏠 Internal
+
+- Properly include "data packages" in project [#1114](https://github.com/dandi/dandi-archive/pull/1114) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 4
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.39 (Fri Jul 22 2022)
+
+#### 🐛 Bug Fix
+
+- Enable Sentry performance tracking [#1209](https://github.com/dandi/dandi-archive/pull/1209) ([@danlamanna](https://github.com/danlamanna))
+- Add ngff rename script as a management command [#1120](https://github.com/dandi/dandi-archive/pull/1120) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add publish "checklist" [#1122](https://github.com/dandi/dandi-archive/pull/1122) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.38 (Tue Jul 19 2022)
+
+#### 🐛 Bug Fix
+
+- Improve manifest file writing performance [#1184](https://github.com/dandi/dandi-archive/pull/1184) ([@danlamanna](https://github.com/danlamanna))
+- Add time limits to celery tasks [#1187](https://github.com/dandi/dandi-archive/pull/1187) ([@danlamanna](https://github.com/danlamanna))
+- boost copyright to 2022 from 2019 [#893](https://github.com/dandi/dandi-archive/pull/893) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.2.37 (Tue Jul 12 2022)
+
+#### 🐛 Bug Fix
+
+- Fix admin search fields [#1185](https://github.com/dandi/dandi-archive/pull/1185) ([@danlamanna](https://github.com/danlamanna))
+- Fix flaky e2e test [#1178](https://github.com/dandi/dandi-archive/pull/1178) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.2.36 (Mon Jul 11 2022)
+
+#### 🐛 Bug Fix
+
+- Write manifest files after committing transaction [#1176](https://github.com/dandi/dandi-archive/pull/1176) ([@danlamanna](https://github.com/danlamanna))
+- Upgrade django-composed-configuration [#1174](https://github.com/dandi/dandi-archive/pull/1174) ([@danlamanna](https://github.com/danlamanna))
+- Allow longer zarr blob names [#1173](https://github.com/dandi/dandi-archive/pull/1173) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
+# v0.2.35 (Mon Jul 11 2022)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Dan LaManna ([@danlamanna](https://github.com/danlamanna)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Improve load times of admin pages [#1169](https://github.com/dandi/dandi-archive/pull/1169) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
+# v0.2.34 (Thu Jul 07 2022)
+
+#### 🐛 Bug Fix
+
+- Fix more memory issues in tasks [#1161](https://github.com/dandi/dandi-archive/pull/1161) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Use iteration instead of recursion in `import_dandisets` script [#1150](https://github.com/dandi/dandi-archive/pull/1150) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.33 (Thu Jul 07 2022)
 
 #### 🐛 Bug Fix
