@@ -73,6 +73,7 @@ setup(
             'ipython',
             'tox',
             'boto3-stubs[s3]',
+            'memray',
         ],
         'test': [
             'factory-boy',
@@ -82,6 +83,7 @@ setup(
             'pytest-cov',
             'pytest-django',
             'pytest-factoryboy',
+            'pytest-memray',
             'pytest-mock',
             'requests',
         ],
