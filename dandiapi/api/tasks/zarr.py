@@ -160,7 +160,8 @@ def ingest_zarr_archive(
 
         # Set as ingesting
         zarr.status = ZarrArchive.Status.INGESTING
-        zarr.save()
+        zarr.checksum = None
+        zarr.save(update_fields=['status', 'checksum'])
 
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
@@ -202,16 +203,19 @@ def ingest_zarr_archive(
         if not updated:
             clear_checksum_files(zarr)
 
-        # Save zarr after completion
-        zarr.save()
-
         # Save all assets that reference this zarr, so their metadata is updated
-        for asset in zarr.assets.all():
+        zarr.save(update_fields=['size', 'file_count'])
+        for asset in zarr.assets.all().iterator():
             asset.save()
 
-        # Set status
-        zarr.status = ZarrArchive.Status.COMPLETE
-        zarr.save(update_fields=['status'])
+        # Set checksum field to top level checksum, after ingestion completion
+        zarr.checksum = zarr.get_checksum()
+        if zarr.checksum is None:
+            zarr.status = ZarrArchive.Status.PENDING
+        else:
+            zarr.status = ZarrArchive.Status.COMPLETE
+
+        zarr.save(update_fields=['status', 'checksum'])
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
