@@ -6,6 +6,8 @@ from pathlib import Path
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
+from django.db.models import Exists, OuterRef
+from django.db.models.query import QuerySet
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from drf_yasg import openapi
@@ -82,6 +84,23 @@ class ZarrSerializer(serializers.ModelSerializer):
     dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
 
 
+class ZarrListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ZarrArchive
+        read_only_fields = [
+            'zarr_id',
+            'status',
+            'checksum',
+            'upload_in_progress',
+            'file_count',
+            'size',
+        ]
+        fields = ['name', 'dandiset', *read_only_fields]
+
+    dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
+    upload_in_progress = serializers.BooleanField(source='uploads_exist')
+
+
 class ZarrExploreSerializer(serializers.Serializer):
     directories = serializers.ListField(child=serializers.URLField())
     files = serializers.ListField(child=serializers.URLField())
@@ -91,7 +110,7 @@ class ZarrExploreSerializer(serializers.Serializer):
     checksum = serializers.RegexField('^[0-9a-f]{32}-[0-9]+--[0-9]+$')
 
 
-class ZarrListSerializer(serializers.Serializer):
+class ZarrListQuerySerializer(serializers.Serializer):
     dandiset = serializers.RegexField(Dandiset.IDENTIFIER_REGEX, required=False)
     name = serializers.CharField(required=False)
 
@@ -100,31 +119,36 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     serializer_class = ZarrSerializer
     pagination_class = DandiPagination
 
-    queryset = ZarrArchive.objects.all()
+    queryset = ZarrArchive.objects.select_related('dandiset').order_by('created').all()
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
 
-    def get_queryset(self):
-        query_serializer = ZarrListSerializer(data=self.request.query_params)
+    @swagger_auto_schema(
+        query_serializer=ZarrListQuerySerializer(),
+        responses={200: ZarrListSerializer(many=True)},
+        operation_summary='List zarr archives.',
+    )
+    def list(self, request, *args, **kwargs):
+        query_serializer = ZarrListQuerySerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
-        # Filter by search params
-        queryset = self.queryset
+        # Add filters from query parameters
         data = query_serializer.validated_data
+        queryset: QuerySet[ZarrArchive] = self.get_queryset()
         if 'dandiset' in data:
             queryset = queryset.filter(dandiset=int(data['dandiset'].lstrip('0')))
         if 'name' in data:
             queryset = queryset.filter(name=data['name'])
 
-        return queryset
+        # Add active uploads annotation
+        queryset = queryset.annotate(
+            uploads_exist=Exists(ZarrUploadFile.objects.filter(zarr_archive_id=OuterRef('id')))
+        )
 
-    @swagger_auto_schema(
-        query_serializer=ZarrListSerializer(),
-        responses={200: ZarrSerializer(many=True)},
-        operation_summary='List zarr archives.',
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        # Final response
+        queryset = self.paginate_queryset(queryset)
+        serializer = ZarrListSerializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         request_body=ZarrSerializer(),
