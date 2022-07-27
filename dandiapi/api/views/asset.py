@@ -533,13 +533,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             glob_pattern = re.escape(glob_pattern)
             queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
-        # Paginate if necessary
+        # Paginate and return
         page = self.paginate_queryset(queryset)
         if page is not None:
-            queryset = page
+            serializer = self.get_serializer(page, many=True, metadata=include_metadata)
+            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True, metadata=include_metadata)
-        return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         manual_parameters=[PATH_PREFIX_PARAM],
