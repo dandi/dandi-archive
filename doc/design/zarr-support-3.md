@@ -1,5 +1,5 @@
 # Zarr Support
-A zarr archive contains directories and zarr files. 
+A zarr archive contains directories and zarr files.
 Zarr archives are stored in their entirety in S3.
 Zarr archives are represented by a single Asset through the API.
 A tree hash is computed as the zarr archive is uploaded.
@@ -32,7 +32,7 @@ The intended use of Zarr archives is primarily to support use cases where data a
 * **GET /api/zarr/{zarr_id}/{path}**
 
   When the path exists in S3, returns some information about the zarr file, like name, S3 path+url, and checksum.
-  When the path is a directory in S3, returns a paginated list of files and directories. 
+  When the path is a directory in S3, returns a paginated list of files and directories.
   Returns 404 if the path is not present in S3.
 
 * **GET /api/zarr/{zarr_id}/upload/**
@@ -87,13 +87,13 @@ Paths for zarr files, or any assets in the archive, should never use a `/` prefi
 
 If a client uploaded a file `1/2/3/foo.bar`, it would be stored at `dandiarchive/zarr/c1223302-aff4-44aa-bd4b-952aed997c78/1/2/3/foo.bar`.
 
-To avoid polluting the zarr archive data, tree hash checksums are stored next to the zarr archive: `dandiarchive/zarr_checksums/c1223302-aff4-44aa-bd4b-952aed997c78/...`
+To avoid polluting the zarr archive data, only the root checksum is stored in the database. All subdirectory tree hash checksums (including the root) are stored next to the zarr archive: `dandiarchive/zarr_checksums/c1223302-aff4-44aa-bd4b-952aed997c78/...`
 The algorithm used to generate the checksum files themselves is described below.
 
 ## Upload flow
 1. The client `POST`s to create a new zarr archive, or uses existing API endpoints to find the `zarr_id` of a zarr asset to modify.
 1. The client identifies some files in the zarr archive that it wants to upload.
-1. The client calculates the MD5 of each file. 
+1. The client calculates the MD5 of each file.
 1. The client sends the paths+MD5s to `POST .../upload/` and receives a list of presigned upload URLs.
    * The size of the batch sent can be tuned by the client, up to a certain maximum.
    * Larger batches mean less overhead, but more data to retry in case of failure.
