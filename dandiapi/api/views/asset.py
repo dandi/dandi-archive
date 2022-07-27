@@ -533,14 +533,22 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(query_serializer=AssetListSerializer)
+    @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer()})
     def list(self, request, *args, **kwargs):
         serializer = AssetListSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        queryset = self.filter_queryset(self.get_queryset())
-        glob_pattern: str | None = serializer.validated_data.get('glob')
+        # Fetch initial queryset
+        queryset: QuerySet[Asset] = self.filter_queryset(
+            self.get_queryset().select_related('blob', 'embargoed_blob', 'zarr')
+        )
 
+        # Don't include metadata field if not asked for
+        include_metadata = serializer.validated_data['metadata']
+        if not include_metadata:
+            queryset = queryset.defer('metadata')
+
+        glob_pattern: str | None = serializer.validated_data.get('glob')
         if glob_pattern is not None:
             # Escape special characters in the glob pattern. This is a security precaution taken
             # since we are using postgres' regex search. A malicious user who knows this could
@@ -549,12 +557,13 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             glob_pattern = re.escape(glob_pattern)
             queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
+        # Paginate and return
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, metadata=include_metadata)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True, metadata=include_metadata)
         return Response(serializer.data)
 
     @swagger_auto_schema(
