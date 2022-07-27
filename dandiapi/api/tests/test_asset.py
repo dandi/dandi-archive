@@ -538,6 +538,47 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     assert draft_version.status == Version.Status.PENDING
 
 
+@pytest.mark.parametrize(
+    'path,expected_status_code',
+    [
+        ('foo.txt', 200),
+        ('/foo', 400),
+        ('', 400),
+        ('/', 400),
+        ('./foo', 400),
+        ('../foo', 400),
+        ('foo/.', 400),
+        ('foo/..', 400),
+        ('foo/./bar', 400),
+        ('foo/../bar', 400),
+        ('foo//bar', 400),
+        ('foo\0bar', 400),
+        ('foo/.bar', 200),
+    ],
+)
+@pytest.mark.django_db
+def test_asset_create_path_validation(
+    api_client, user, draft_version, asset_blob, path, expected_status_code
+):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
+        format='json',
+    )
+
+    assert resp.status_code == expected_status_code, resp.data
+
+
 @pytest.mark.django_db
 def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
@@ -740,7 +781,7 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == {'metadata': ['No path specified in metadata.']}
+    assert resp.data == {'metadata': ['No path specified in metadata.']}, resp.data
 
 
 @pytest.mark.django_db

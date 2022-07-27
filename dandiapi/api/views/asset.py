@@ -14,6 +14,7 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
+from pathlib import PurePosixPath
 from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
@@ -250,9 +251,30 @@ class AssetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
             )
-
-        if 'path' not in data['metadata']:
+        if 'path' not in data['metadata'] or not data['metadata']['path']:
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
+
+        path = data['metadata']['path']
+        # paths starting with /
+        if PurePosixPath(path).is_absolute():
+            raise serializers.ValidationError(
+                {'metadata': 'Absolute path not allowed for an asset'}
+            )
+
+        sub_paths = path.split('/')
+        # checking for . in path
+        for sub_path in sub_paths:
+            if len(set(sub_path)) == 1 and sub_path[0] == '.':
+                raise serializers.ValidationError(
+                    {'metadata': 'Invalid characters (.) in file path'}
+                )
+
+        # match characters repeating more than once
+        multiple_occurrence_regex = '[/]{2,}'
+        if '\0' in path:
+            raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
+        if re.search(multiple_occurrence_regex, path):
+            raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
 
         return data
 
