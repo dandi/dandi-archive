@@ -516,10 +516,12 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         serializer = AssetListSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        # Don't include metadata field if not asked for
+        # Fetch initial queryset
         queryset: QuerySet[Asset] = self.filter_queryset(
             self.get_queryset().select_related('blob', 'embargoed_blob', 'zarr')
         )
+
+        # Don't include metadata field if not asked for
         include_metadata = serializer.validated_data['metadata']
         if not include_metadata:
             queryset = queryset.defer('metadata')
