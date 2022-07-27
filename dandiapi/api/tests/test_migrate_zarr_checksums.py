@@ -2,8 +2,8 @@ from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.management.commands.migrate_zarr_checksums import migrate_zarr_checksums
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.models import ZarrArchive
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
 
 
 @pytest.mark.django_db
