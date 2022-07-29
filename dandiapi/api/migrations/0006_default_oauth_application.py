@@ -1,5 +1,3 @@
-# flake8: noqa N806
-
 from django.db import migrations
 from django.db.models import Q
 

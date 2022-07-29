@@ -6,8 +6,8 @@ import django.db.models.deletion
 
 def set_default_zarrarchive_dandiset(apps, schema_editor):
     """Set the dandiset field for all existing uploads to the first dandiset."""
-    Dandiset = apps.get_model('api', 'Dandiset')  # noqa: N806
-    ZarrArchive = apps.get_model('api', 'ZarrArchive')  # noqa: N806
+    Dandiset = apps.get_model('api', 'Dandiset')
+    ZarrArchive = apps.get_model('api', 'ZarrArchive')
     # noqa: E501 Fresh installations will have no dandisets, but also no zarr_archives, so initialize this inside the loop
     first_dandiset = None
     zarr_archives = list(ZarrArchive.objects.filter(dandiset=None).all())
