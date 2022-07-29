@@ -304,6 +304,7 @@ class ZarrArchive(BaseZarrArchive):
                 name='unique-dandiset-name',
                 fields=['dandiset', 'name'],
             ),
+            # Requires importing the django `Length` function
             models.CheckConstraint(
                 name='nonempty-checksum',
                 check=models.Q(checksum__length__gt=0),
@@ -337,6 +338,7 @@ class EmbargoedZarrArchive(BaseZarrArchive):
                 name='unique-embargo-dandiset-name',
                 fields=['dandiset', 'name'],
             ),
+            # Requires importing the django `Length` function
             models.CheckConstraint(
                 name='nonempty-embargo-checksum',
                 check=models.Q(checksum__length__gt=0),
