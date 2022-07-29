@@ -5,11 +5,10 @@ from django.db import migrations, models
 
 def forward_set_checksum(apps, schema_editor):
     ZarrArchive = apps.get_model('api', 'ZarrArchive')  # noqa: N806
-    zarrs = ZarrArchive.objects.filter(checksum__isnull=True)
-    for zarr in zarrs.iterator():
-        zarr.checksum = None
-        zarr.status = 'Pending'
-        zarr.save(update_fields=['checksum', 'status'])
+
+    # Set any zarrs with a checksum of `None` (should be all) to have the status of `Pending`,
+    # in order to satisfy model constraints.
+    ZarrArchive.objects.filter(checksum__isnull=True).update(status='Pending')
 
 
 class Migration(migrations.Migration):
