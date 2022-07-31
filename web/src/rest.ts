@@ -5,7 +5,6 @@ import {
   Asset, Dandiset, Paginated, User, Version, Info, AssetFile, AssetFolder,
 } from '@/types';
 import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
-import store from '@/store';
 
 if (!process.env.VUE_APP_DANDI_API_ROOT) {
   throw new Error('Environment variable "VUE_APP_DANDI_API_ROOT" must be set.');
@@ -162,12 +161,8 @@ const dandiRest = new Vue({
       }
     },
     async mostRecentVersion(identifier: string) {
-      const count = store.state.dandiset.versionCount; // todo - this.$store.state is undefined?
-      if (!count) {
-        return null;
-      }
       // Look up the last version using page filters
-      const versions = await this.versions(identifier, { page: count, page_size: 1 });
+      const versions = await this.versions(identifier, { page_size: 1, ordering: '-created' });
       if (versions === null) {
         return null;
       }
