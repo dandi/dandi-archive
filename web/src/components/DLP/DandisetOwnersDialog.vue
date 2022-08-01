@@ -100,6 +100,37 @@
       </v-col>
       <v-col class="grey lighten-3">
         <div class="my-6">
+          <v-dialog
+            v-model="selfRemovalWarningDialog"
+            width="40vw"
+          >
+            <v-card>
+              <v-card-title>
+                Remove yourself from this Dandiset?
+              </v-card-title>
+              <v-card-subtitle>
+                To regain ownership of this dandiset, you will
+                need another owner or an admin to add you.
+              </v-card-subtitle>
+              <v-card-actions>
+                <v-spacer />
+                <v-btn
+                  color="secondary"
+                  elevation="0"
+                  @click="selfRemovalWarningDialog = false"
+                >
+                  Cancel
+                </v-btn>
+                <v-btn
+                  color="error"
+                  elevation="0"
+                  @click="removeOwner(user)"
+                >
+                  Confirm
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
           <v-card
             v-for="(owner, i) in newOwners"
             :key="i"
@@ -249,20 +280,39 @@ export default defineComponent({
       }
     }
 
-    function removeOwner(owner: User) {
-      newOwners.value.splice(newOwners.value.map(
-        (u: User) => u.username,
-      ).indexOf(owner.username), 1);
+    const user = computed(() => dandiRest.user);
+    function ownerIsCurrentUser(owner: User) {
+      return user.value && user.value.username === owner.username;
     }
 
-    function checkBoxHandler(user: User) {
+    const selfRemovalWarningDialog = ref(false);
+    function removeOwner(owner: User | null) {
+      if (owner === null) {
+        throw new Error('Cannot remove null owner from dandiset!');
+      }
+
+      // If current user, open dialog and wait for second call to this function
+      if (ownerIsCurrentUser(owner) && selfRemovalWarningDialog.value === false) {
+        selfRemovalWarningDialog.value = true;
+        return;
+      }
+
+      // Remove at index
+      const index = newOwners.value.findIndex((u) => u.username === owner.username);
+      newOwners.value.splice(index, 1);
+
+      // Set dialog to false in any case
+      selfRemovalWarningDialog.value = false;
+    }
+
+    function checkBoxHandler(_user: User) {
       const selectedUsersUsernames = selectedUsers.value.map((u: User) => u.username);
-      if (selectedUsersUsernames.includes(user.username)) {
+      if (selectedUsersUsernames.includes(_user.username)) {
         selectedUsers.value = selectedUsers.value.splice(
-          selectedUsersUsernames.indexOf(user.username), 1,
+          selectedUsersUsernames.indexOf(_user.username), 1,
         );
       } else {
-        selectedUsers.value.push(user);
+        selectedUsers.value.push(_user);
       }
     }
 
@@ -294,14 +344,15 @@ export default defineComponent({
       }
     }
 
-    const user = computed(() => dandiRest.user);
-
     return {
       searchQuery,
       searchResults,
       newOwners,
       throttledUpdate,
       addOwner,
+      user,
+      ownerIsCurrentUser,
+      selfRemovalWarningDialog,
       removeOwner,
       isSelected,
       save,
@@ -309,7 +360,6 @@ export default defineComponent({
       addSelected,
       checkBoxHandler,
       selectedUsers,
-      user,
       adminWarningDisplay,
     };
   },

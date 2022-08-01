@@ -155,13 +155,6 @@ def test_dandiset_versions(
                 'status': 'Pending',
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                'dandiset': {
-                    'identifier': dandiset.identifier,
-                    'created': TIMESTAMP_RE,
-                    'modified': TIMESTAMP_RE,
-                    'contact_person': contact_person,
-                    'embargo_status': 'OPEN',
-                },
             }
             if draft_version is not None
             else None,
@@ -173,13 +166,6 @@ def test_dandiset_versions(
                 'status': 'Pending',
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
-                'dandiset': {
-                    'identifier': dandiset.identifier,
-                    'created': TIMESTAMP_RE,
-                    'modified': TIMESTAMP_RE,
-                    'contact_person': contact_person,
-                    'embargo_status': 'OPEN',
-                },
             }
             if published_version is not None
             else None,

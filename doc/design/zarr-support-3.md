@@ -122,23 +122,26 @@ If a zarr archive `c1223302-aff4-44aa-bd4b-952aed997c78` contained only a single
 
 The last `.checksum` contains the final tree hash for the entire zarr archive.
 
-### .checksum file format
-Each zarr file and directory in the archive has a path and a checksum (`md5`).
-For files, this is simply the ETag.
+### Zarr entry checksum format
+Each zarr file and directory in the archive has a path and a checksum.
+For files, this is simply the MD5 ETag.
 For directories, it is calculated like so:
-1. List all immediate child files and directories in JSON objects like `{"md5":"12345...67890","path":"foo/bar"}` (key order matters).
-1. Create an object `{"directories":[...],"files":[...]}` (key order matters) containing those child objects, ordered alphabetically by `path`.
-1. Take the resulting JSON list, serialize it to a string, and take the MD5 hash of that string.
+1. List all immediate child files and directories in JSON objects like `{"digest":"12345...67890","name":"foo","size":69105}` (key order matters).
+    - The size of a directory is the sum of the sizes of all files recursively within it.
+1. Create an object `{"directories":[...],"files":[...]}` (key order matters) containing those child objects, ordered alphabetically by `name`.
+1. Take the resulting JSON object, serialize it to a string (escaping all non-ASCII characters and with no spaces between tokens), and take the MD5 hash of that string.
+1. The final checksum for the directory is then a string of the form `{md5_digest}-{file_count}--{size}`, where `file_count` is the total number of files recursively within the directory and `size` is the sum of their sizes.
 
+### .checksum file format
 For every directory in the zarr archive, the API server maintains a `.checksum` file which contains the checksum of the directory, and also the checksums of the directory contents for easier updates.
 The `.checksum` file is stored in JSON format, exactly like the format used to calculate the checksum:
 ```
-{"checksums":{"directories":[{"md5":"abc...def","path":"foo/baz"},...],"files":[{"md5":"12345...67890","path":"foo/bar"},...]},"md5":"09876...54321"}
+{"checksums":{"directories":[{"digest":"abc...def-10--23","name":"foo","size":69105},...],"files":[{"digest":"12345...67890","name":"bar","size":42},...]},"digest":"09876...54321-501--65537"}
 ```
 
 To update a `.checksum` file, the API server simply needs to read the existing contents, modify `checksums` to reflect the new state of the zarr archive, serialize and calculate the MD5, then save the new contents.
 
-Every update to a `.checksum` file also requires updating the `.checksum` of the parent directory, since the `md5` of the child has change.
+Every update to a `.checksum` file also requires updating the `.checksum` of the parent directory, since the `digest` of the child has changed.
 This bubbles up to the top of the zarr archive, where the final `.checksum` for the entire archive can be found.
 
 No spaces are used in JSON encodings.

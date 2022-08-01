@@ -75,17 +75,71 @@
                 </span>
               </v-col>
             </v-row>
-            <v-btn
-              block
-              :color="showPublishWarning ? 'error' : 'success'"
-              depressed
-              :disabled="publishButtonDisabled"
-              @click="publish"
+            <div
+              class="text-center"
             >
-              Publish
-              <v-spacer />
-              <v-icon>mdi-upload</v-icon>
-            </v-btn>
+              <v-dialog
+                v-model="showPublishChecklistDialog"
+                width="900"
+              >
+                <template #activator>
+                  <v-btn
+                    block
+                    :color="showPublishWarning ? 'error' : 'success'"
+                    depressed
+                    :disabled="publishButtonDisabled"
+                    @click="showPublishChecklistDialog = true"
+                  >
+                    Publish
+                    <v-spacer />
+                    <v-icon>mdi-upload</v-icon>
+                  </v-btn>
+                </template>
+
+                <v-card>
+                  <v-card-title class="text-h5 grey lighten-2">
+                    Publish Checklist
+                  </v-card-title>
+
+                  <v-card-text>
+                    <v-list>
+                      <span class="text-body-1 font-weight-bold">
+                        For best results, please check the following
+                        items before you publish:
+                      </span>
+                      <!-- Note: this is safe as we aren't rendering any user-generated input -->
+                      <!-- eslint-disable vue/no-v-html -->
+                      <v-list-item
+                        v-for="(item, i) in PUBLISH_CHECKLIST"
+                        :key="`checklist_item_${i}`"
+                        class="text-body-2 my-1"
+                        v-html="`<span>${i+1}. ${item}</span>`"
+                      />
+                      <!-- eslint-enable vue/no-v-html -->
+                    </v-list>
+                  </v-card-text>
+
+                  <v-divider />
+
+                  <v-card-actions class="justify-end">
+                    <v-btn
+                      color="dropzone"
+                      depressed
+                      @click="showPublishChecklistDialog = false"
+                    >
+                      Cancel
+                    </v-btn>
+                    <v-btn
+                      :color="showPublishWarning ? 'error' : 'success'"
+                      depressed
+                      @click="publish"
+                    >
+                      Publish
+                    </v-btn>
+                  </v-card-actions>
+                </v-card>
+              </v-dialog>
+            </div>
           </div>
         </template>
         <span>{{ publishDisabledMessage }}</span>
@@ -370,6 +424,15 @@ import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
 import { RawLocation } from 'vue-router';
 import { open as openMeditor } from '@/components/Meditor/state';
 
+const PUBLISH_CHECKLIST = [
+  'A descriptive title (e.g., <span class="font-italic">Data related to foraging behavior in bees</span> rather than <span class="font-italic">Smith et al 2022</span>)',
+  'A clear, informative description that is helpful for other neuroscientists',
+  'A reference to a protocol in protocols.io detailing how you collected the data (this can also be another publication added as a resource)',
+  'A reference to an ethics protocol number if you are working with an Institutional Review Board on this study',
+  'Funding information (DANDI treats funding agencies as contributors, so you can add multiple contributing institutions as needed. If you are the funder, you can add a new contributor of type "organization", uncheck "include contributor in citation", set the role as "dcite:Funder", and include the relevant award information)',
+  'References to code in GitHub, related publications, etc.',
+];
+
 function getValidationErrorIcon(errorField: string): string {
   const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
   if (icons.length > 0) {
@@ -473,6 +536,8 @@ export default defineComponent({
 
     const showPublishWarningDialog = ref(false);
 
+    const showPublishChecklistDialog = ref(false);
+
     function formatDate(date: string): string {
       return moment(date).format('ll');
     }
@@ -504,6 +569,8 @@ export default defineComponent({
           return;
         }
 
+        showPublishChecklistDialog.value = false;
+
         const version = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
         // navigate to the newly published version
         router.push({
@@ -532,8 +599,10 @@ export default defineComponent({
       draftVersion,
       showPublishWarning,
       showPublishWarningDialog,
+      showPublishChecklistDialog,
       isOwner,
       openMeditor,
+      PUBLISH_CHECKLIST,
     };
   },
 });

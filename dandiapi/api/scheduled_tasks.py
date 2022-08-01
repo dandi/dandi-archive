@@ -20,24 +20,27 @@ from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
 logger = get_task_logger(__name__)
 
 
-@shared_task
+@shared_task(soft_time_limit=20)
 @atomic
 def validate_draft_version_metadata():
     # Select only the id of draft versions that have status PENDING
     pending_draft_versions = (
-        Version.objects.filter(status=Version.Status.PENDING).filter(version='draft').values('id')
+        Version.objects.filter(status=Version.Status.PENDING)
+        .filter(version='draft')
+        .values_list('id', flat=True)
     )
-    if pending_draft_versions.count() > 0:
-        logger.info('Found %s versions to validate', pending_draft_versions.count())
-        for draft_version in pending_draft_versions:
-            validate_version_metadata.delay(draft_version['id'])
+    pending_draft_versions_count = pending_draft_versions.count()
+    if pending_draft_versions_count > 0:
+        logger.info('Found %s versions to validate', pending_draft_versions_count)
+        for draft_version_id in pending_draft_versions.iterator():
+            validate_version_metadata.delay(draft_version_id)
 
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
-            write_manifest_files.delay(draft_version['id'])
+            write_manifest_files.delay(draft_version_id)
 
 
-@shared_task
+@shared_task(soft_time_limit=20)
 def send_pending_users_email() -> None:
     """Send an email to admins listing users with status set to PENDING."""
     pending_users = User.objects.filter(metadata__status=UserMetadata.Status.PENDING)

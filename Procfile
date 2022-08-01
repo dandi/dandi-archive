@@ -9,5 +9,3 @@ web: gunicorn --bind 0.0.0.0:$PORT dandiapi.wsgi --timeout 25
 worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery -B
 # The checksum-worker calculates blob checksums and updates zarr checksum files
 checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q calculate_sha256,ingest_zarr_archive
-# Manifests can be very memory intensive for large numbers of assets, so limit concurrency to 1
-manifest-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q write_manifest_files -c 1

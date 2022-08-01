@@ -5,7 +5,8 @@ from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, OuterRef, Subquery, Sum
+from django.db.models import Count, F, OuterRef, Subquery, Sum
+from django.db.models.functions import Coalesce
 from django.db.utils import IntegrityError
 from django.http import Http404
 from django.utils.decorators import method_decorator
@@ -29,6 +30,7 @@ from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
+    DandisetListSerializer,
     DandisetQueryParameterSerializer,
     UserSerializer,
     VersionMetadataSerializer,
@@ -153,6 +155,65 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 # The user does not have ownership permission
                 raise PermissionDenied()
         return dandiset
+
+    @swagger_auto_schema(
+        query_serializer=DandisetQueryParameterSerializer(),
+        responses={200: DandisetListSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        dandisets = self.paginate_queryset(self.filter_queryset(qs))
+
+        # Query versions, to supply size/count of assets.
+        base_query = (
+            Version.objects.select_related('dandiset')
+            .annotate(
+                num_assets=Count('assets'),
+                total_size=(
+                    Coalesce(Sum('assets__blob__size'), 0)
+                    + Coalesce(Sum('assets__embargoed_blob__size'), 0)
+                    + Coalesce(Sum('assets__zarr__size'), 0)
+                ),
+            )
+            .filter(dandiset__in=dandisets)
+            .order_by('-version', '-modified')
+        )
+
+        latest_dandiset_version = (
+            Version.objects.exclude(version='draft')
+            .order_by('-version')
+            .filter(dandiset_id=OuterRef('dandiset_id'))
+            .values('version')[:1]
+        )
+        published = (
+            base_query.exclude(version='draft')
+            .alias(latest=Subquery(latest_dandiset_version))
+            .filter(version=F('latest'))
+        )
+        drafts = base_query.filter(version='draft')
+
+        # Union with drafts
+        versions = published.union(drafts).order_by('dandiset_id', '-version')
+
+        # Organize draft and most recently published for each dandiset.
+        # Because of above query, a max of 1 of each (per dandiset) will be present.
+        dandisets_to_versions = {}
+        for version in versions.iterator():
+            version: Version
+
+            if version.dandiset_id not in dandisets_to_versions:
+                dandisets_to_versions[version.dandiset_id] = {'draft': None, 'published': None}
+
+            entry = dandisets_to_versions[version.dandiset_id]
+            if version.version == 'draft' and entry['draft'] is None:
+                entry['draft'] = version
+            elif entry['published'] is None:
+                entry['published'] = version
+
+        serializer = DandisetListSerializer(
+            dandisets, many=True, context={'dandisets': dandisets_to_versions}
+        )
+        return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         request_body=VersionMetadataSerializer(),

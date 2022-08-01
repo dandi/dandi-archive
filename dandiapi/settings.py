@@ -138,6 +138,11 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 
 
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
+    @staticmethod
+    def mutate_configuration(configuration: Type[ComposedConfiguration]):
+        # We're configuring sentry by hand since we need to pass custom options (traces_sampler).
+        configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
+
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
 

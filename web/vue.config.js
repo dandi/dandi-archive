@@ -34,7 +34,19 @@ module.exports = {
   devServer: {
     // The default port 8080 conflicts with Girder
     port: 8085,
+
+    // This proxy emulates the Netlify redirect to the backend (on the staging
+    // and production deploys).
+    proxy: {
+      '^/server-info/$': {
+        target: process.env.VUE_APP_DANDI_API_ROOT,
+        pathRewrite: {
+          '/server-info': '/info',
+        },
+      },
+    },
   },
+
   chainWebpack: (config) => {
     config
       .plugin('moment-locales')

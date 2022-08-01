@@ -56,9 +56,9 @@ class DashboardView(DashboardMixin, TemplateView):
 
     def _non_valid_assets(self):
         return (
-            Asset.objects.annotate(
-                has_version=Exists(Version.objects.filter(assets=OuterRef('id')))
-            )
+            Asset.objects.prefetch_related('versions__dandiset')
+            .select_related('zarr')
+            .annotate(has_version=Exists(Version.objects.filter(assets=OuterRef('id'))))
             .filter(has_version=True)
             .exclude(status=Asset.Status.VALID)
         )

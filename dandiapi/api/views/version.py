@@ -132,7 +132,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
             new_version.save()
             # Bulk create the join table rows to optimize linking assets to new_version
-            AssetVersions = Version.assets.through  # noqa: N806
+            AssetVersions = Version.assets.through
 
             # Add a new many-to-many association directly to any already published assets
             already_published_assets = old_version.assets.filter(published=True)
@@ -167,7 +167,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             old_version.status = Version.Status.PUBLISHED
             old_version.save()
 
-            write_manifest_files.delay(new_version.id)
+            transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
             serializer = VersionSerializer(new_version)
             return Response(serializer.data, status=status.HTTP_200_OK)

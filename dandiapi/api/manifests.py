@@ -1,12 +1,25 @@
+from contextlib import contextmanager
+import os
+import tempfile
 from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
-from django.core.files.base import ContentFile
+from django.core.files.base import File
 from rest_framework.renderers import JSONRenderer
-from rest_framework_yaml.renderers import YAMLRenderer
+import yaml
 
 from dandiapi.api.models import AssetBlob, Version
 from dandiapi.api.storage import create_s3_storage
+
+
+def s3_url(path: str):
+    """Turn an object path into a fully qualified S3 URL."""
+    storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+    signed_url = storage.url(path)
+    # Strip off the query parameters from the presigning, as they are different every time
+    parsed = urlparse(signed_url)
+    s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+    return s3_url
 
 
 def _manifests_path(version: Version):
@@ -14,6 +27,18 @@ def _manifests_path(version: Version):
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
         f'dandisets/{version.dandiset.identifier}/{version.version}'
     )
+
+
+def manifest_location(version: Version):
+    """Calculate the manifestLocation field for a Version."""
+    if version.version == 'draft':
+        return [
+            (
+                f'{settings.DANDI_API_URL}/api/dandisets/{version.dandiset.identifier}'
+                f'/versions/draft/assets/'
+            )
+        ]
+    return [s3_url(assets_yaml_path(version))]
 
 
 def dandiset_jsonld_path(version: Version):
@@ -36,79 +61,76 @@ def collection_jsonld_path(version: Version):
     return f'{_manifests_path(version)}/collection.jsonld'
 
 
-def s3_url(path: str):
-    """Turn an object path into a fully qualified S3 URL."""
-    storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
-    signed_url = storage.url(path)
-    # Strip off the query parameters from the presigning, as they are different every time
-    parsed = urlparse(signed_url)
-    s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
-    return s3_url
+@contextmanager
+def streaming_file_upload(path: str, mode: str = 'w'):
+    temp_file_name = None
+
+    try:
+        with tempfile.NamedTemporaryFile(mode=mode, delete=False) as outfile:
+            temp_file_name = outfile.name
+            yield outfile
+
+        # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
+        storage = AssetBlob.blob.field.storage
+        with open(temp_file_name, 'rb') as temp_file:
+            storage._save(path, File(temp_file))
+    finally:
+        if temp_file_name:
+            os.remove(temp_file_name)
 
 
-def manifest_location(version: Version):
-    """Calculate the manifestLocation field for a Version."""
-    if version.version == 'draft':
-        return [
-            (
-                f'{settings.DANDI_API_URL}/api/dandisets/{version.dandiset.identifier}'
-                f'/versions/draft/assets/'
+def write_dandiset_jsonld(version: Version):
+    with streaming_file_upload(dandiset_jsonld_path(version)) as stream:
+        stream.write(JSONRenderer().render(version.metadata).decode())
+
+
+def write_assets_jsonld(version: Version):
+    with streaming_file_upload(assets_jsonld_path(version)) as stream:
+        stream.write('[')
+        for i, obj in enumerate(version.assets.values_list('metadata', flat=True).iterator()):
+            if i > 0:
+                stream.write(',')
+            stream.write(JSONRenderer().render(obj).decode())
+
+        stream.write(']')
+
+
+def write_dandiset_yaml(version: Version):
+    with streaming_file_upload(dandiset_yaml_path(version)) as stream:
+        yaml.dump(version.metadata, stream, Dumper=yaml.CSafeDumper, allow_unicode=True)
+
+
+def _yaml_dump_sequence_from_generator(stream, generator):
+    for obj in generator:
+        for i, line in enumerate(
+            yaml.dump(obj, Dumper=yaml.CSafeDumper, allow_unicode=True).splitlines()
+        ):
+            if i == 0:
+                prefix = '- '
+            else:
+                prefix = '  '
+
+            stream.write(f'{prefix}{line}\n')
+
+
+def write_assets_yaml(version: Version):
+    with streaming_file_upload(assets_yaml_path(version)) as stream:
+        _yaml_dump_sequence_from_generator(
+            stream, version.assets.values_list('metadata', flat=True).order_by('created').iterator()
+        )
+
+
+def write_collection_jsonld(version: Version):
+    with streaming_file_upload(collection_jsonld_path(version)) as stream:
+        stream.write(
+            JSONRenderer()
+            .render(
+                {
+                    '@context': version.metadata['@context'],
+                    'id': version.metadata['id'],
+                    '@type': 'prov:Collection',
+                    'hasMember': list(version.assets.values_list('metadata__id', flat=True)),
+                },
             )
-        ]
-    return [s3_url(assets_yaml_path(version))]
-
-
-def _write_manifest_file(path: str, metadata, logger):
-    # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
-    storage = AssetBlob.blob.field.storage
-
-    if logger:
-        logger.info('Saving %s', path)
-    storage._save(path, ContentFile(metadata))
-
-
-def write_dandiset_jsonld(version: Version, logger=None):
-    _write_manifest_file(
-        dandiset_jsonld_path(version),
-        JSONRenderer().render(version.metadata),
-        logger,
-    )
-
-
-def write_assets_jsonld(version: Version, logger=None):
-    _write_manifest_file(
-        assets_jsonld_path(version),
-        JSONRenderer().render([asset.metadata for asset in version.assets.all()]),
-        logger,
-    )
-
-
-def write_dandiset_yaml(version: Version, logger=None):
-    _write_manifest_file(
-        dandiset_yaml_path(version),
-        YAMLRenderer().render(version.metadata),
-        logger,
-    )
-
-
-def write_assets_yaml(version: Version, logger=None):
-    _write_manifest_file(
-        assets_yaml_path(version),
-        YAMLRenderer().render([asset.metadata for asset in version.assets.all()]),
-        logger,
-    )
-
-
-def write_collection_jsonld(version: Version, logger=None):
-    _write_manifest_file(
-        collection_jsonld_path(version),
-        JSONRenderer().render(
-            {
-                '@context': version.metadata['@context'],
-                'id': version.metadata['id'],
-                '@type': 'prov:Collection',
-                'hasMember': [asset.metadata['id'] for asset in version.assets.all()],
-            }
-        ),
-        logger,
-    )
+            .decode()
+        )

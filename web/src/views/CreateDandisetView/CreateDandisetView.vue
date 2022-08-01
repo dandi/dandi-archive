@@ -75,6 +75,17 @@
             :rules="awardNumberRules"
           />
         </div>
+        <div v-if="!embargoed">
+          <v-select
+            v-model="license"
+            :items="dandiLicenses"
+            label="License*"
+            class="my-4"
+            multiple
+            outlined
+            dense
+          />
+        </div>
         <small class="float-right font-weight-bold">*indicates required field</small>
       </v-form>
     </v-card-text>
@@ -97,9 +108,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from '@vue/composition-api';
+import {
+  defineComponent, computed, ComputedRef, ref,
+} from '@vue/composition-api';
 import { dandiRest, loggedIn } from '@/rest';
-import { IdentifierForAnAward } from '@/types/schema';
+import { IdentifierForAnAward, LicenseType, License } from '@/types';
+
+import store from '@/store';
 
 // Regular expression to validate an NIH award number.
 // Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
@@ -117,16 +132,22 @@ export default defineComponent({
   setup(props, ctx) {
     const name = ref('');
     const description = ref('');
+    const license = ref<License>();
     const embargoed = ref(false);
     const awardNumber = ref('');
     const saveDisabled = computed(
       () => !name.value
       || !description.value
-      || (embargoed.value && !awardNumberValidator(awardNumber.value)),
+      || (embargoed.value && !awardNumberValidator(awardNumber.value))
+      || (!embargoed.value && !license.value),
     );
 
     const awardNumberRules = computed(
       () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
+    );
+
+    const dandiLicenses: ComputedRef<LicenseType[]> = computed(
+      () => store.state.dandiset.schema.definitions.LicenseType.enum,
     );
 
     if (!loggedIn()) {
@@ -134,7 +155,7 @@ export default defineComponent({
     }
 
     async function registerDandiset() {
-      const metadata = { name: name.value, description: description.value };
+      const metadata = { name: name.value, description: description.value, license: license.value };
 
       const { data } = embargoed.value
         ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
@@ -146,6 +167,8 @@ export default defineComponent({
     return {
       name,
       description,
+      license,
+      dandiLicenses,
       embargoed,
       awardNumber,
       saveDisabled,

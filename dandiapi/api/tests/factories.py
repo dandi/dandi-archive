@@ -27,7 +27,7 @@ class UserMetadataFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = UserMetadata
 
-    status = UserMetadata.Status.APPROVED
+    status = UserMetadata.Status.APPROVED.value
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -54,10 +54,20 @@ class SocialAccountFactory(factory.django.DjangoModelFactory):
         first_name = self.user.first_name
         last_name = self.user.last_name
         name = f'{first_name} {last_name}'
+
+        # Supply a fake created date at least 1 year before now
+        created = (
+            faker.Faker()
+            .date_time_between(end_date=datetime.datetime.now() - datetime.timedelta(days=365))
+            .isoformat()
+        )
+
+        # Supply different values from User object, since social account values maybe be different
         return {
-            'login': self.user.username,
+            'login': faker.Faker().user_name(),
             'name': name,
-            'email': self.user.username,
+            'email': faker.Faker().ascii_email(),
+            'created_at': created,
         }
 
 
@@ -174,7 +184,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
 
-    path = factory.Faker('file_path', extension='nwb')
+    path = factory.Faker('file_path', absolute=False, extension='nwb')
     blob = factory.SubFactory(AssetBlobFactory)
 
     @factory.lazy_attribute
