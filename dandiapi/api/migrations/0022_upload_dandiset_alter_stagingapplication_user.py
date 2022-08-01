@@ -6,8 +6,8 @@ import django.db.models.deletion
 
 def set_default_upload_dandiset(apps, schema_editor):
     """Set the dandiset field for all existing uploads to the first dandiset."""
-    Dandiset = apps.get_model('api', 'Dandiset')  # noqa: N806
-    Upload = apps.get_model('api', 'Upload')  # noqa: N806
+    Dandiset = apps.get_model('api', 'Dandiset')
+    Upload = apps.get_model('api', 'Upload')
     # noqa: E501 Fresh installations will have no dandisets, but also no uploads, so initialize this inside the loop
     first_dandiset = None
     uploads = list(Upload.objects.filter(dandiset=None).all())

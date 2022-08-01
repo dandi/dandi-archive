@@ -1,3 +1,27 @@
+# v0.2.41 (Wed Jul 27 2022)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Deepika Ghodki ([@DeepikaGhodki](https://github.com/DeepikaGhodki)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Add metadata flag for asset listing [#1216](https://github.com/dandi/dandi-archive/pull/1216) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Handle forbidden characters in asset path [#1201](https://github.com/dandi/dandi-archive/pull/1201) ([@DeepikaGhodki](https://github.com/DeepikaGhodki))
+- Add memray dev deps to setup.py [#1143](https://github.com/dandi/dandi-archive/pull/1143) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 📝 Documentation
+
+- Update Zarr design doc for changes to checksum format [#1175](https://github.com/dandi/dandi-archive/pull/1175) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 3
+
+- Deepika Ghodki ([@DeepikaGhodki](https://github.com/DeepikaGhodki))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+
+---
+
 # v0.2.40 (Tue Jul 26 2022)
 
 #### 🐛 Bug Fix

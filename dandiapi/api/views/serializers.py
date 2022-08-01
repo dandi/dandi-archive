@@ -226,11 +226,20 @@ class AssetSerializer(serializers.ModelSerializer):
             'size',
             'created',
             'modified',
+            'metadata',
         ]
         read_only_fields = ['created']
 
     blob = EmbargoedSlugRelatedField(slug_field='blob_id', read_only=True)
     zarr = serializers.SlugRelatedField(slug_field='zarr_id', read_only=True)
+
+    def __init__(self, *args, metadata=True, **kwargs):
+        # Instantiate the superclass normally
+        super().__init__(*args, **kwargs)
+
+        # Don't include metadata unless specified
+        if not metadata:
+            self.fields.pop('metadata')
 
 
 class AssetDetailSerializer(AssetSerializer):
@@ -258,3 +267,4 @@ class AssetPathsQueryParameterSerializer(serializers.Serializer):
 
 class AssetListSerializer(serializers.Serializer):
     glob = serializers.CharField(required=False)
+    metadata = serializers.BooleanField(required=False, default=False)

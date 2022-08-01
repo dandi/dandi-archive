@@ -129,7 +129,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
             new_version.save()
             # Bulk create the join table rows to optimize linking assets to new_version
-            AssetVersions = Version.assets.through  # noqa: N806
+            AssetVersions = Version.assets.through
 
             # Add a new many-to-many association directly to any already published assets
             already_published_assets = old_version.assets.filter(published=True)

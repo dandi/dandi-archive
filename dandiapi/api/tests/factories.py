@@ -184,7 +184,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Asset
 
-    path = factory.Faker('file_path', extension='nwb')
+    path = factory.Faker('file_path', absolute=False, extension='nwb')
     blob = factory.SubFactory(AssetBlobFactory)
 
     @factory.lazy_attribute

@@ -14,6 +14,7 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
+from pathlib import PurePosixPath
 from urllib.parse import urlencode
 
 from django.core.paginator import EmptyPage, Page, Paginator
@@ -250,9 +251,30 @@ class AssetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
             )
-
-        if 'path' not in data['metadata']:
+        if 'path' not in data['metadata'] or not data['metadata']['path']:
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
+
+        path = data['metadata']['path']
+        # paths starting with /
+        if PurePosixPath(path).is_absolute():
+            raise serializers.ValidationError(
+                {'metadata': 'Absolute path not allowed for an asset'}
+            )
+
+        sub_paths = path.split('/')
+        # checking for . in path
+        for sub_path in sub_paths:
+            if len(set(sub_path)) == 1 and sub_path[0] == '.':
+                raise serializers.ValidationError(
+                    {'metadata': 'Invalid characters (.) in file path'}
+                )
+
+        # match characters repeating more than once
+        multiple_occurrence_regex = '[/]{2,}'
+        if '\0' in path:
+            raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
+        if re.search(multiple_occurrence_regex, path):
+            raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
 
         return data
 
@@ -511,14 +533,22 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(query_serializer=AssetListSerializer)
+    @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer()})
     def list(self, request, *args, **kwargs):
         serializer = AssetListSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        queryset = self.filter_queryset(self.get_queryset())
-        glob_pattern: str | None = serializer.validated_data.get('glob')
+        # Fetch initial queryset
+        queryset: QuerySet[Asset] = self.filter_queryset(
+            self.get_queryset().select_related('blob', 'embargoed_blob', 'zarr')
+        )
 
+        # Don't include metadata field if not asked for
+        include_metadata = serializer.validated_data['metadata']
+        if not include_metadata:
+            queryset = queryset.defer('metadata')
+
+        glob_pattern: str | None = serializer.validated_data.get('glob')
         if glob_pattern is not None:
             # Escape special characters in the glob pattern. This is a security precaution taken
             # since we are using postgres' regex search. A malicious user who knows this could
@@ -527,12 +557,13 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             glob_pattern = re.escape(glob_pattern)
             queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
+        # Paginate and return
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, many=True, metadata=include_metadata)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(queryset, many=True, metadata=include_metadata)
         return Response(serializer.data)
 
     @swagger_auto_schema(
