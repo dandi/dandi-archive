@@ -76,6 +76,7 @@ setup(
             'memray',
         ],
         'test': [
+            'django-test-migrations',
             'factory-boy',
             'girder-pytest-pyppeteer==0.0.9',
             'pytest',
