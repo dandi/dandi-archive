@@ -44,7 +44,7 @@ class UserAdmin(BaseUserAdmin):
     list_select_related = ['metadata']
     list_display = ['email', 'first_name', 'last_name', 'github_username', 'status', 'date_joined']
     search_fields = ['email', 'first_name', 'last_name']
-    inlines = [UserMetadataInline]
+    inlines = (UserMetadataInline,)
 
     def get_queryset(self, request):
         return (
@@ -66,7 +66,7 @@ class UserAdmin(BaseUserAdmin):
     def __init__(self, model, admin_site) -> None:
         super().__init__(model, admin_site)
         self.list_filter = ('metadata__status',) + self.list_filter
-        self.actions += ['export_emails_to_csv', 'export_emails_to_plaintext']
+        self.actions += ('export_emails_to_csv', 'export_emails_to_plaintext')
 
     @admin.display(ordering='metadata__status')
     def status(self, obj):
@@ -106,7 +106,7 @@ class VersionInline(LimitedTabularInline):
 class DandisetAdmin(GuardedModelAdmin):
     list_display = ['identifier', 'modified', 'created']
     readonly_fields = ['identifier', 'created']
-    inlines = [VersionInline]
+    inlines = (VersionInline,)
 
     @admin.action(description='Ingest selected dandiset zarr archives')
     def ingest_dandiset_zarrs(self, request, queryset):
@@ -123,7 +123,7 @@ class DandisetAdmin(GuardedModelAdmin):
 
     def __init__(self, model, admin_site) -> None:
         super().__init__(model, admin_site)
-        self.actions += ['ingest_dandiset_zarrs']
+        self.actions += ('ingest_dandiset_zarrs',)
 
 
 @admin.register(Version)
@@ -242,7 +242,7 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
 
     def __init__(self, model, admin_site) -> None:
         super().__init__(model, admin_site)
-        self.actions += ['ingest_zarr_archive']
+        self.actions += ('ingest_zarr_archive',)
 
 
 @admin.register(EmbargoedZarrArchive)
