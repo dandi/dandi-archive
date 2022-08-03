@@ -1,3 +1,28 @@
+# v0.2.42 (Wed Aug 03 2022)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Deepika Ghodki ([@DeepikaGhodki](https://github.com/DeepikaGhodki)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Use an ordered QuerySet in Zarr viewset [#1202](https://github.com/dandi/dandi-archive/pull/1202) ([@waxlamp](https://github.com/waxlamp))
+- Navigation buttons on landing page [#1172](https://github.com/dandi/dandi-archive/pull/1172) ([@DeepikaGhodki](https://github.com/DeepikaGhodki))
+- Pin flake8 version [#1226](https://github.com/dandi/dandi-archive/pull/1226) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Remove flake8 linting rule [#1223](https://github.com/dandi/dandi-archive/pull/1223) ([@danlamanna](https://github.com/danlamanna))
+- Escape . in regex for EXTERNAL_SERVICES [#1191](https://github.com/dandi/dandi-archive/pull/1191) ([@yarikoptic](https://github.com/yarikoptic))
+- Add "/server-info/" frontend endpoint in development builds [#1190](https://github.com/dandi/dandi-archive/pull/1190) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 5
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Deepika Ghodki ([@DeepikaGhodki](https://github.com/DeepikaGhodki))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.41 (Wed Jul 27 2022)
 
 :tada: This release contains work from a new contributor! :tada:

@@ -27,6 +27,27 @@ const VALIDATION_ICONS = {
   DEFAULT: 'mdi-alert',
 };
 
+const sortingOptions = [
+  {
+    name: 'Modified',
+    djangoField: 'modified',
+  },
+  {
+    name: 'Identifier',
+    djangoField: 'id',
+  },
+  {
+    name: 'Name',
+    djangoField: 'name',
+  },
+  {
+    name: 'Size',
+    djangoField: 'size',
+  },
+];
+
+const DANDISETS_PER_PAGE = 8;
+
 export {
   dandiUrl,
   dandiAboutUrl,
@@ -35,4 +56,6 @@ export {
   draftVersion,
   dandiHelpUrl,
   VALIDATION_ICONS,
+  sortingOptions,
+  DANDISETS_PER_PAGE,
 };
