@@ -2,7 +2,7 @@ from django.db import transaction
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
@@ -27,6 +27,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     serializer_class = VersionSerializer
     serializer_detail_class = VersionDetailSerializer
     pagination_class = DandiPagination
+
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created']
 
     lookup_field = 'version'
     lookup_value_regex = Version.VERSION_REGEX
