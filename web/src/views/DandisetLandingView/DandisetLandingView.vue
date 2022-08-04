@@ -3,6 +3,11 @@
     <Meditor v-if="currentDandiset" />
     <v-toolbar class="grey darken-2 white--text">
       <DandisetSearchField />
+      <v-pagination
+        v-model="page"
+        :length="pages"
+        :total-visible="0"
+      />
     </v-toolbar>
     <v-container
       v-if="currentDandiset"
@@ -50,8 +55,9 @@ import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import store from '@/store';
 import { Version } from '@/types';
-import { draftVersion } from '@/utils/constants';
+import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
+import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -118,7 +124,7 @@ export default defineComponent({
       }
     }, { immediate: true });
 
-    watch([() => props.version, () => props.identifier], async () => {
+    watch([() => props.identifier, () => props.version], async () => {
       const { identifier, version } = props;
       if (version) {
       // On version change, fetch the new dandiset (not initial)
@@ -140,7 +146,55 @@ export default defineComponent({
       }
     });
 
-    onMounted(() => {
+    const page = ref(Number(ctx.root.$route.query.pos) || 1);
+    const pages = ref(1);
+    const nextDandiset : Ref<any[]> = ref([]);
+
+    async function fetchNextPage() {
+      const sortOption = Number(ctx.root.$route.query.sortOption) || 0;
+      const sortDir = Number(ctx.root.$route.query.sortDir || -1);
+      const sortField = sortingOptions[sortOption].djangoField;
+      const ordering = ((sortDir === -1) ? '-' : '') + sortField;
+      const response = await dandiRest.dandisets({
+        page: page.value,
+        page_size: 1,
+        ordering,
+        search: ctx.root.$route.query.search,
+        draft: ctx.root.$route.query.showDrafts || true,
+        empty: ctx.root.$route.query.showEmpty,
+      });
+
+      pages.value = (response.data?.count) ? response.data?.count : 1;
+      nextDandiset.value = response.data?.results.map((dandiset) => ({
+        ...(dandiset.most_recent_published_version || dandiset.draft_version),
+        contact_person: dandiset.contact_person,
+        identifier: dandiset.identifier,
+      }));
+    }
+
+    function navigateToPage() {
+      if (nextDandiset.value) {
+        const { identifier } = nextDandiset.value[0];
+        if (identifier !== props.identifier) { // to avoid redundant navigation
+          ctx.root.$router.push({
+            name: ctx.root.$route.name || undefined,
+            params: { identifier },
+            query: {
+              ...ctx.root.$route.query,
+            },
+          });
+        }
+      }
+    }
+
+    watch(page, async (newValue, oldValue) => {
+      if (oldValue !== newValue) {
+        await fetchNextPage();
+        navigateToPage();
+      }
+    });
+
+    onMounted(async () => {
       // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
       // clicking external links. The `beforeRouteLeave` function above handles "soft"
       // page navigations, such as using the back/forward buttons or clicking a link
@@ -153,6 +207,7 @@ export default defineComponent({
           e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
         }
       });
+      await fetchNextPage(); // get the current page and total count
     });
 
     return {
@@ -161,6 +216,8 @@ export default defineComponent({
       schema,
       userCanModifyDandiset,
       meta,
+      pages,
+      page,
     };
   },
 });

@@ -40,7 +40,7 @@ setup(
     install_requires=[
         'celery',
         'dandischema~=0.7.1',
-        'django>=4.0.3',
+        'django~=4.1.0',
         'django-admin-display',
         'django-allauth',
         'django-click',

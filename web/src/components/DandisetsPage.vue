@@ -102,27 +102,7 @@ import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
-
-const DANDISETS_PER_PAGE = 8;
-
-const sortingOptions = [
-  {
-    name: 'Modified',
-    djangoField: 'modified',
-  },
-  {
-    name: 'Identifier',
-    djangoField: 'id',
-  },
-  {
-    name: 'Name',
-    djangoField: 'name',
-  },
-  {
-    name: 'Size',
-    djangoField: 'size',
-  },
-];
+import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
 
 export default defineComponent({
   name: 'DandisetsPage',
@@ -194,6 +174,8 @@ export default defineComponent({
       page: String(page.value),
       sortOption: String(sortOption.value),
       sortDir: String(sortDir.value),
+      showDrafts: String(showDrafts.value),
+      showEmpty: String(showEmpty.value),
     }));
     watch(queryParams, (params) => {
       ctx.root.$router.replace({
