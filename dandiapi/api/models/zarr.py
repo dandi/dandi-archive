@@ -98,44 +98,7 @@ class BaseZarrUploadFile(TimeStampedModel):
         return self.blob.storage.size(self.blob.name)
 
     def actual_etag(self) -> str | None:
-        storage = self.blob.storage
-        try:
-            from botocore.exceptions import ClientError
-            from storages.backends.s3boto3 import S3Boto3Storage
-        except ImportError:
-            pass
-        else:
-            if isinstance(storage, S3Boto3Storage):
-                client = storage.connection.meta.client
-
-                try:
-                    response = client.head_object(
-                        Bucket=storage.bucket_name,
-                        Key=self.blob.name,
-                    )
-                    etag = response['ETag']
-                    # S3 wraps the ETag in double quotes, so we need to strip them
-                    if etag[0] == '"' and etag[-1] == '"':
-                        return etag[1:-1]
-                    return etag
-                except ClientError:
-                    return None
-
-        try:
-            from minio.error import NoSuchKey
-            from minio_storage.storage import MinioStorage
-        except ImportError:
-            pass
-        else:
-            if isinstance(storage, MinioStorage):
-                client = storage.client
-                try:
-                    response = client.stat_object(storage.bucket_name, self.blob.name)
-                    return response.etag
-                except NoSuchKey:
-                    return None
-
-        raise UnsupportedStorageError('Unsupported storage provider.')
+        return self.blob.storage.etag_from_blob_name(self.blob.name)
 
     def to_checksum(self) -> ZarrChecksum:
         return ZarrChecksum(name=Path(self.path).name, digest=self.etag, size=self.size())

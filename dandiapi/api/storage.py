@@ -1,10 +1,18 @@
-from typing import Any
+from __future__ import annotations
+
+from datetime import timedelta
+import hashlib
+from typing import Any, Iterator
 from urllib.parse import urlsplit, urlunsplit
 
+from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
+from minio.error import NoSuchKey
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
+from s3_file_field._multipart_boto3 import Boto3MultipartManager
+from s3_file_field._multipart_minio import MinioMultipartManager
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
@@ -42,11 +50,32 @@ class VerbatimNameStorageMixin:
 
 
 class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
-    pass
+    def etag_from_blob_name(self, blob_name) -> str | None:
+        client = self.connection.meta.client
+
+        try:
+            response = client.head_object(
+                Bucket=self.bucket_name,
+                Key=blob_name,
+            )
+        except ClientError:
+            return None
+        else:
+            etag = response['ETag']
+            # S3 wraps the ETag in double quotes, so we need to strip them
+            if etag[0] == '"' and etag[-1] == '"':
+                return etag[1:-1]
+            return etag
 
 
 class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioStorage):
-    pass
+    def etag_from_blob_name(self, blob_name) -> str | None:
+        try:
+            response = self.client.stat_object(self.bucket_name, blob_name)
+        except NoSuchKey:
+            return None
+        else:
+            return response.etag
 
 
 def create_s3_storage(bucket_name: str) -> Storage:

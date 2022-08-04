@@ -82,26 +82,7 @@ class BaseUpload(TimeStampedModel):
         return self.blob.field.storage.size(self.blob.name)
 
     def actual_etag(self):
-        storage = self.blob.storage
-        if isinstance(storage, S3Boto3Storage):
-            client = storage.connection.meta.client
-
-            response = client.head_object(
-                Bucket=storage.bucket_name,
-                Key=self.blob.name,
-            )
-            etag = response['ETag']
-            # S3 wraps the ETag in double quotes, so we need to strip them
-            if etag[0] == '"' and etag[-1] == '"':
-                return etag[1:-1]
-            return etag
-
-        elif isinstance(storage, MinioStorage):
-            client = storage.client
-            response = client.stat_object(storage.bucket_name, self.blob.name)
-            return response.etag
-        else:
-            raise ValueError(f'Unknown storage {self.blob.field.storage}')
+        return self.blob.storage.etag_from_blob_name(self.blob.name)
 
 
 class Upload(BaseUpload):
