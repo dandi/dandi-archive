@@ -254,9 +254,24 @@ class AssetFolderSerializer(serializers.Serializer):
     modified = serializers.DateTimeField()
 
 
+class AssetFileSerializer(AssetSerializer):
+    class Meta(AssetSerializer.Meta):
+        fields = AssetSerializer.Meta.fields + ['url']
+
+    url = serializers.SerializerMethodField(method_name='get_url')
+
+    def get_url(self, asset: Asset):
+        if asset.is_blob:
+            return asset.blob.s3_url
+        elif asset.is_embargoed_blob:
+            return asset.embargoed_blob.s3_url
+        else:
+            return asset.zarr.s3_url
+
+
 class AssetPathsResponseSerializer(serializers.Serializer):
     folders = serializers.DictField(child=AssetFolderSerializer())
-    files = serializers.DictField(child=AssetSerializer())
+    files = serializers.DictField(child=AssetFileSerializer())
 
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):
