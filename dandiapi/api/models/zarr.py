@@ -10,6 +10,7 @@ from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import QuerySet
 from django_extensions.db.models import TimeStampedModel
 import pydantic
 from rest_framework.exceptions import ValidationError
@@ -243,7 +244,9 @@ class BaseZarrArchive(TimeStampedModel):
     def complete_upload(self):
         if not self.upload_in_progress:
             raise ValidationError('No upload in progress.')
-        active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
+        active_uploads: QuerySet[
+            ZarrUploadFile | EmbargoedZarrUploadFile
+        ] = self.active_uploads.all()
         for upload in active_uploads:
             if upload.etag != upload.actual_etag():
                 raise ValidationError(
@@ -257,7 +260,9 @@ class BaseZarrArchive(TimeStampedModel):
         self.save()
 
     def cancel_upload(self):
-        active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
+        active_uploads: QuerySet[
+            ZarrUploadFile | EmbargoedZarrUploadFile
+        ] = self.active_uploads.all()
         for upload in active_uploads:
             upload.blob.delete()
         active_uploads.delete()
