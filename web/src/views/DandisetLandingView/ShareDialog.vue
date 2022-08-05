@@ -7,9 +7,13 @@
     max-width="500"
   >
     <template #activator="{ on }">
-      <div v-on="on">
+      <div
+        class="d-inline"
+        v-on="on"
+      >
         <v-icon
           color="primary"
+          style="cursor: pointer;"
         >
           mdi-share-variant
         </v-icon>
