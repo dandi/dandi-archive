@@ -180,6 +180,15 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         else:
             return self.zarr.digest
 
+    @property
+    def s3_url(self) -> str:
+        if self.is_blob:
+            return self.blob.s3_url
+        elif self.is_embargoed_blob:
+            return self.embargoed_blob.s3_url
+        else:
+            return self.zarr.s3_url
+
     def _populate_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
             'asset-download',

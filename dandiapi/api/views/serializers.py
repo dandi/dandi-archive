@@ -254,9 +254,16 @@ class AssetFolderSerializer(serializers.Serializer):
     modified = serializers.DateTimeField()
 
 
+class AssetFileSerializer(AssetSerializer):
+    class Meta(AssetSerializer.Meta):
+        fields = AssetSerializer.Meta.fields + ['url']
+
+    url = serializers.URLField(source='s3_url')
+
+
 class AssetPathsResponseSerializer(serializers.Serializer):
     folders = serializers.DictField(child=AssetFolderSerializer())
-    files = serializers.DictField(child=AssetSerializer())
+    files = serializers.DictField(child=AssetFileSerializer())
 
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):

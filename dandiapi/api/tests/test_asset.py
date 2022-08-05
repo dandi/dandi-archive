@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
+from dandiapi.api.views.serializers import AssetFileSerializer, AssetFolderSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -101,7 +101,7 @@ def test_asset_rest_path(
         assert file_path in paths['results']['files']
 
         asset: Asset = Asset.objects.get(path=f'{query_prefix}{file_path}')
-        assert paths['results']['files'][file_path] == AssetSerializer(asset).data
+        assert paths['results']['files'][file_path] == AssetFileSerializer(asset).data
 
 
 @pytest.mark.django_db
