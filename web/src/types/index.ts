@@ -94,5 +94,5 @@ export interface AssetFile extends AssetStats {
   asset_id: string,
   path: string,
   services: AssetServices[],
-  url: URL;
+  url: string;
 }
