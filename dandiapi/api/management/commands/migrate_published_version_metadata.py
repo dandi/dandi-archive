@@ -21,10 +21,6 @@ def migrate_published_version_metadata(dandiset: str, published_version: str, to
     )
     metadata = version.metadata
 
-    # If there is no schemaVersion, assume to_version
-    if 'schemaVersion' not in metadata:
-        metadata['schemaVersion'] = to_version
-
     try:
         metanew = migrate(metadata, to_version=to_version, skip_validation=False)
     except Exception as e:

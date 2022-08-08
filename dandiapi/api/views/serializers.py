@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
@@ -65,6 +66,10 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
         # This will fail serialization if the version metadata already exists,
         # which we do not want.
         validators = []
+
+    def validate(self, data):
+        data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
+        return super().validate(data)
 
 
 class VersionSerializer(serializers.ModelSerializer):

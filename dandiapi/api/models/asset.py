@@ -140,7 +140,11 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
                 check=Q(blob__isnull=True, embargoed_blob__isnull=True, zarr__isnull=False)
                 | Q(blob__isnull=True, embargoed_blob__isnull=False, zarr__isnull=True)
                 | Q(blob__isnull=False, embargoed_blob__isnull=True, zarr__isnull=True),
-            )
+            ),
+            models.CheckConstraint(
+                name='asset_metadata_has_schema_version',
+                check=Q(metadata__schemaVersion__isnull=False),
+            ),
         ]
 
     @property

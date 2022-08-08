@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models.query_utils import Q
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
@@ -49,6 +50,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     class Meta:
         unique_together = ['dandiset', 'version']
+        constraints = [
+            models.CheckConstraint(
+                name='version_metadata_has_schema_version',
+                check=Q(metadata__schemaVersion__isnull=False),
+            )
+        ]
         indexes = [
             HashIndex(fields=['metadata']),
             HashIndex(fields=['name']),
@@ -255,12 +262,10 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         if self.doi:
             metadata['doi'] = self.doi
         metadata['citation'] = self.citation(metadata)
-        if 'schemaVersion' in metadata:
-            schema_version = metadata['schemaVersion']
-            metadata['@context'] = (
-                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
-                f'{schema_version}/context.json'
-            )
+        metadata['@context'] = (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{metadata["schemaVersion"]}/context.json'
+        )
         return metadata
 
     def save(self, *args, **kwargs):
