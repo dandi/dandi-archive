@@ -223,6 +223,7 @@ import {
 } from '@vue/composition-api';
 import { RawLocation } from 'vue-router';
 import filesize from 'filesize';
+import { trimEnd } from 'lodash';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
@@ -301,7 +302,7 @@ export default defineComponent({
           .test(name) && (asset.size || 0) <= service.maxsize)
         .map((service) => ({
           name: service.name,
-          url: `${service.endpoint}${asset.url}`,
+          url: `${service.endpoint}${trimEnd(asset.url, '/')}`,
         }));
     }
 
