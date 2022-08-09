@@ -67,6 +67,33 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
                 return etag[1:-1]
             return etag
 
+    def generate_presigned_put_object_url(self, blob_name: str) -> str:
+        return self.connection.meta.client.generate_presigned_url(
+            ClientMethod='put_object',
+            Params={
+                'Bucket': self.bucket_name,
+                'Key': blob_name,
+                'ACL': 'bucket-owner-full-control',
+            },
+            ExpiresIn=600,  # TODO proper expiration
+        )
+
+    def generate_presigned_head_object_url(self, key: str) -> str:
+        return self.bucket.meta.client.generate_presigned_url(
+            'head_object',
+            Params={'Bucket': self.bucket.name, 'Key': key},
+        )
+
+    def generate_presigned_download_url(self, key: str, path: str) -> str:
+        return self.connection.meta.client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': self.bucket_name,
+                'Key': key,
+                'ResponseContentDisposition': f'attachment; filename="{path}"',
+            },
+        )
+
 
 class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioStorage):
     def etag_from_blob_name(self, blob_name) -> str | None:
@@ -76,6 +103,26 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
             return None
         else:
             return response.etag
+
+    def generate_presigned_put_object_url(self, blob_name: str) -> str:
+        # storage.client will generate URLs like `http://minio:9000/...` when running in
+        # docker. To avoid this, use the secondary base_url_client which is configured to
+        # generate URLs like `http://localhost:9000/...`.
+        return self.base_url_client.presigned_put_object(
+            bucket_name=self.bucket_name,
+            object_name=blob_name,
+            expires=timedelta(seconds=600),  # TODO proper expiration
+        )
+
+    def generate_presigned_head_object_url(self, key: str) -> str:
+        return self.base_url_client.presigned_url('HEAD', self.bucket_name, key)
+
+    def generate_presigned_download_url(self, key: str, path: str) -> str:
+        return self.base_url_client.presigned_get_object(
+            self.bucket_name,
+            key,
+            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+        )
 
 
 def create_s3_storage(bucket_name: str) -> Storage:

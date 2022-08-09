@@ -202,31 +202,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
         # Redirect to correct presigned URL
         storage = asset_blob.blob.storage
-        if isinstance(storage, S3Boto3Storage):
-            client = storage.connection.meta.client
-            path = os.path.basename(asset.path)
-            url = client.generate_presigned_url(
-                'get_object',
-                Params={
-                    'Bucket': storage.bucket_name,
-                    'Key': asset_blob.blob.name,
-                    'ResponseContentDisposition': f'attachment; filename="{path}"',
-                },
+        return HttpResponseRedirect(
+            storage.generate_presigned_download_url(
+                asset_blob.blob.name, os.path.basename(asset.path)
             )
-            return HttpResponseRedirect(url)
-        elif isinstance(storage, MinioStorage):
-            client = storage.client if storage.base_url is None else storage.base_url_client
-            bucket = storage.bucket_name
-            obj = asset_blob.blob.name
-            path = os.path.basename(asset.path)
-            url = client.presigned_get_object(
-                bucket,
-                obj,
-                response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
-            )
-            return HttpResponseRedirect(url)
-        else:
-            raise ValueError(f'Unknown storage {storage}')
+        )
 
     @swagger_auto_schema(
         method='GET',

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
@@ -15,7 +14,6 @@ import pydantic
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.multipart import UnsupportedStorageError
 from dandiapi.api.storage import get_embargo_storage, get_storage
 from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
@@ -59,40 +57,7 @@ class BaseZarrUploadFile(TimeStampedModel):
 
     @property
     def upload_url(self) -> str:
-        storage = self.blob.field.storage
-        try:
-            from storages.backends.s3boto3 import S3Boto3Storage
-        except ImportError:
-            pass
-        else:
-            if isinstance(storage, S3Boto3Storage):
-                return storage.connection.meta.client.generate_presigned_url(
-                    ClientMethod='put_object',
-                    Params={
-                        'Bucket': storage.bucket_name,
-                        'Key': self.blob.name,
-                        'ACL': 'bucket-owner-full-control',
-                    },
-                    ExpiresIn=600,  # TODO proper expiration
-                )
-
-        try:
-            from minio_storage.storage import MinioStorage
-        except ImportError:
-            pass
-        else:
-            if isinstance(storage, MinioStorage):
-                # storage.client will generate URLs like `http://minio:9000/...` when running in
-                # docker. To avoid this, use the secondary base_url_client which is configured to
-                # generate URLs like `http://localhost:9000/...`.
-                client = getattr(storage, 'base_url_client', storage.client)
-                return client.presigned_put_object(
-                    bucket_name=storage.bucket_name,
-                    object_name=self.blob.name,
-                    expires=timedelta(seconds=600),  # TODO proper expiration
-                )
-
-        raise UnsupportedStorageError('Unsupported storage provider.')
+        return self.blob.field.storage.generate_presigned_put_object_url(self.blob.name)
 
     def size(self) -> int:
         return self.blob.storage.size(self.blob.name)

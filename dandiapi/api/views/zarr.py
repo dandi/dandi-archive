@@ -12,14 +12,12 @@ from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
-from minio_storage.storage import MinioStorage
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
@@ -356,15 +354,7 @@ def explore_zarr_archive(request, zarr_id: str, path: str):
         # We cannot use storage.url because that presigns a GET request.
         # Instead, we need to presign the HEAD request using the storage-appropriate client.
         storage = ZarrUploadFile.blob.field.storage
-        if issubclass(storage.__class__, S3Boto3Storage):
-            url = storage.bucket.meta.client.generate_presigned_url(
-                'head_object',
-                Params={'Bucket': storage.bucket.name, 'Key': zarr_archive.s3_path(path)},
-            )
-        elif issubclass(storage.__class__, MinioStorage):
-            url = storage.base_url_client.presigned_url(
-                'HEAD', storage.bucket_name, zarr_archive.s3_path(path)
-            )
+        url = storage.generate_presigned_head_object_url(zarr_archive.s3_path(path))
         return HttpResponseRedirect(url)
     # If a path ends with a /, assume it is a directory.
     # Return a JSON blob which contains URLs to the contents of the directory.
