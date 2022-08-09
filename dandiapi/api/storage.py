@@ -18,6 +18,20 @@ from s3_file_field._multipart_minio import MinioMultipartManager
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
+class ChecksumCalculatorFile:
+    """File-like object that calculates the checksum of everything written to it."""
+
+    def __init__(self):
+        self.h = hashlib.sha256()
+
+    def write(self, bytes):
+        self.h.update(bytes)
+
+    @property
+    def checksum(self):
+        return self.h.hexdigest()
+
+
 class DandiMultipartMixin:
     @staticmethod
     def _iter_part_sizes(file_size: int) -> Iterator[tuple[int, int]]:
@@ -129,6 +143,12 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
             },
         )
 
+    def sha256_checksum(self, key: str) -> str:
+        calculator = ChecksumCalculatorFile()
+        obj = self.bucket.Object(key)
+        obj.download_fileobj(calculator)
+        return calculator.checksum
+
 
 class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioStorage):
     @property
@@ -162,6 +182,13 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
             key,
             response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
         )
+
+    def sha256_checksum(self, key: str) -> str:
+        calculator = ChecksumCalculatorFile()
+        obj = self.client.get_object(self.bucket_name, key)
+        for chunk in obj.stream(amt=1024 * 1024 * 16):
+            calculator.write(chunk)
+        return calculator.checksum
 
 
 def create_s3_storage(bucket_name: str) -> Storage:
