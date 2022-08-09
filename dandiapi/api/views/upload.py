@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.request import Request
 from rest_framework.response import Response
-from s3_file_field._multipart import MultipartManager, TransferredPart, TransferredParts
+from s3_file_field._multipart import TransferredPart, TransferredParts
 
 from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedUpload, Upload
 from dandiapi.api.models.asset import EmbargoedAssetBlob
@@ -205,9 +205,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
         parts=parts,
     )
 
-    completed_upload = MultipartManager.from_storage(upload.blob.field.storage).complete_upload(
-        completion
-    )
+    completed_upload = upload.blob.field.storage.multipart_manager.complete_upload(completion)
 
     response_serializer = UploadCompletionResponseSerializer(
         {

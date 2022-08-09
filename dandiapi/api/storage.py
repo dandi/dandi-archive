@@ -7,6 +7,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 from botocore.exceptions import ClientError
+from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
 from minio.error import NoSuchKey
@@ -15,6 +16,35 @@ from minio_storage.storage import MinioStorage, create_minio_client_from_setting
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
 from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class DandiMultipartMixin:
+    @staticmethod
+    def _iter_part_sizes(file_size: int) -> Iterator[tuple[int, int]]:
+        generator = PartGenerator.for_file_size(file_size)
+        for part in generator:
+            yield part.number, part.size
+
+    _url_expiration = timedelta(days=7)
+
+
+class DandiBoto3MultipartManager(DandiMultipartMixin, Boto3MultipartManager):
+    def _create_upload_id(self, object_key: str) -> str:
+        resp = self._client.create_multipart_upload(
+            Bucket=self._bucket_name,
+            Key=object_key,
+            ACL='bucket-owner-full-control',
+        )
+        return resp['UploadId']
+
+
+class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
+    def _create_upload_id(self, object_key: str) -> str:
+        return self._client._new_multipart_upload(
+            bucket_name=self._bucket_name,
+            object_name=object_key,
+            metadata={'x-amz-acl': 'bucket-owner-full-control'},
+        )
 
 
 class DeconstructableMinioStorage(MinioStorage):
@@ -51,6 +81,10 @@ class VerbatimNameStorageMixin:
 
 
 class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
+    @property
+    def multipart_manager(self):
+        return DandiBoto3MultipartManager(self)
+
     def etag_from_blob_name(self, blob_name) -> str | None:
         client = self.connection.meta.client
 
@@ -97,6 +131,10 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
 
 
 class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioStorage):
+    @property
+    def multipart_manager(self):
+        return DandiMinioMultipartManager(self)
+
     def etag_from_blob_name(self, blob_name) -> str | None:
         try:
             response = self.client.stat_object(self.bucket_name, blob_name)
