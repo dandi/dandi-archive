@@ -1,14 +1,12 @@
-from typing import TYPE_CHECKING
-
-from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.files.storage import Storage
-from minio import Minio
 from minio_storage.storage import MinioStorage
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 from storages.backends.s3boto3 import S3Boto3Storage
+
+from dandiapi.api.storage import create_s3_storage
 
 from .factories import (
     AssetBlobFactory,
@@ -25,11 +23,6 @@ from .factories import (
     ZarrArchiveFactory,
     ZarrUploadFileFactory,
 )
-
-if TYPE_CHECKING:
-    # mypy_boto3_s3 only provides types
-    import mypy_boto3_s3 as s3
-
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
@@ -86,26 +79,7 @@ def authenticated_api_client(user) -> APIClient:
 
 
 def base_s3boto3_storage_factory(bucket_name: str) -> 'S3Boto3Storage':
-    storage = S3Boto3Storage(
-        access_key=settings.MINIO_STORAGE_ACCESS_KEY,
-        secret_key=settings.MINIO_STORAGE_SECRET_KEY,
-        region_name='test-region',
-        bucket_name=bucket_name,
-        # For testing, connect to a local Minio instance
-        endpoint_url=(
-            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
-            f'//{settings.MINIO_STORAGE_ENDPOINT}'
-        ),
-    )
-
-    resource: s3.ServiceResource = storage.connection
-    client: s3.Client = resource.meta.client
-    try:
-        client.head_bucket(Bucket=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME)
-    except ClientError:
-        client.create_bucket(Bucket=settings.MINIO_STORAGE_MEDIA_BUCKET_NAME)
-
-    return storage
+    return create_s3_storage(bucket_name)
 
 
 def s3boto3_storage_factory():
@@ -117,24 +91,7 @@ def embargoed_s3boto3_storage_factory():
 
 
 def base_minio_storage_factory(bucket_name: str) -> MinioStorage:
-    return MinioStorage(
-        minio_client=Minio(
-            endpoint=settings.MINIO_STORAGE_ENDPOINT,
-            secure=settings.MINIO_STORAGE_USE_HTTPS,
-            access_key=settings.MINIO_STORAGE_ACCESS_KEY,
-            secret_key=settings.MINIO_STORAGE_SECRET_KEY,
-            # Don't use s3_connection_params.region, let Minio set its own value internally
-        ),
-        bucket_name=bucket_name,
-        auto_create_bucket=True,
-        presign_urls=True,
-        # For testing, connect to a local Minio instance
-        base_url=(
-            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
-            f'//{settings.MINIO_STORAGE_ENDPOINT}'
-            f'/{bucket_name}'
-        ),
-    )
+    return create_s3_storage(bucket_name)
 
 
 def minio_storage_factory() -> MinioStorage:
@@ -166,8 +123,26 @@ def embargoed_minio_storage() -> MinioStorage:
 
 
 @pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
-def storage(request) -> Storage:
+def storage(request, settings) -> Storage:
     storage_factory = request.param
+    if storage_factory == s3boto3_storage_factory:
+        settings.DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        settings.AWS_S3_ACCESS_KEY_ID = settings.MINIO_STORAGE_ACCESS_KEY
+        settings.AWS_S3_SECRET_ACCESS_KEY = settings.MINIO_STORAGE_SECRET_KEY
+        settings.AWS_S3_REGION_NAME = 'test-region'
+        settings.AWS_S3_ENDPOINT_URL = (
+            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
+            f'//{settings.MINIO_STORAGE_ENDPOINT}'
+        )
+    else:
+        # fake-bucket-name is unused, this setting is just parsed for the base url
+        # components in create_s3_storage. TODO: refactor storage construction in the future.
+        settings.MINIO_STORAGE_MEDIA_URL = (
+            f'{"https" if settings.MINIO_STORAGE_USE_HTTPS else "http"}:'
+            f'//{settings.MINIO_STORAGE_ENDPOINT}'
+            f'/fake-bucket-name'
+        )
+
     return storage_factory()
 
 
