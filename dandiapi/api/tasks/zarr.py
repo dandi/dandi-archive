@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-import boto3
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from dandischema.digests.zarr import EMPTY_CHECKSUM
@@ -11,7 +10,7 @@ from django.conf import settings
 from django.db import transaction
 
 from dandiapi.api.models.zarr import ZarrArchive, ZarrArchiveStatus
-from dandiapi.api.storage import get_storage
+from dandiapi.api.storage import get_boto_client, yield_files
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
@@ -20,61 +19,12 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumUpdater,
 )
 
-try:
-    from minio_storage.storage import MinioStorage
-except ImportError:
-    # This should only be used for type interrogation, never instantiation
-    MinioStorage = type('FakeMinioStorage', (), {})
-
-
 logger = get_task_logger(__name__)
-
-
-def get_client():
-    """Return an s3 client from the current storage."""
-    storage = get_storage()
-    if isinstance(storage, MinioStorage):
-        return boto3.client(
-            's3',
-            endpoint_url=storage.client._endpoint_url,
-            aws_access_key_id=storage.client._access_key,
-            aws_secret_access_key=storage.client._secret_key,
-            region_name='us-east-1',
-        )
-
-    return storage.connection.meta.client
-
-
-def yield_files(bucket: str, prefix: str | None = None):
-    """Get all objects in the bucket, through repeated object listing."""
-    client = get_client()
-    common_options = {'Bucket': bucket}
-    if prefix is not None:
-        common_options['Prefix'] = prefix
-
-    continuation_token = None
-    while True:
-        options = {**common_options}
-        if continuation_token is not None:
-            options['ContinuationToken'] = continuation_token
-
-        # Fetch
-        res = client.list_objects_v2(**options)
-
-        # Yield this batch of files
-        yield res.get('Contents', [])
-
-        # If all files fetched, end
-        if res['IsTruncated'] is False:
-            break
-
-        # Get next continuation token
-        continuation_token = res['NextContinuationToken']
 
 
 def clear_checksum_files(zarr: ZarrArchive):
     """Remove all checksum files."""
-    client = get_client()
+    client = get_boto_client()
     bucket = zarr.storage.bucket_name
     prefix = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'

@@ -5,6 +5,7 @@ import hashlib
 from typing import Any, Iterator
 from urllib.parse import urlsplit, urlunsplit
 
+import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
@@ -178,6 +179,48 @@ def create_s3_storage(bucket_name: str) -> Storage:
         raise Exception(f'Unknown storage: {default_storage_class}')
 
     return storage
+
+
+def get_boto_client(storage: Storage | None = None):
+    """Return an s3 client from the current storage."""
+    storage = storage if storage else get_storage()
+    if isinstance(storage, MinioStorage):
+        return boto3.client(
+            's3',
+            endpoint_url=storage.client._endpoint_url,
+            aws_access_key_id=storage.client._access_key,
+            aws_secret_access_key=storage.client._secret_key,
+            region_name='us-east-1',
+        )
+
+    return storage.connection.meta.client
+
+
+def yield_files(bucket: str, prefix: str | None = None):
+    """Get all objects in the bucket, through repeated object listing."""
+    client = get_boto_client()
+    common_options = {'Bucket': bucket}
+    if prefix is not None:
+        common_options['Prefix'] = prefix
+
+    continuation_token = None
+    while True:
+        options = {**common_options}
+        if continuation_token is not None:
+            options['ContinuationToken'] = continuation_token
+
+        # Fetch
+        res = client.list_objects_v2(**options)
+
+        # Yield this batch of files
+        yield res.get('Contents', [])
+
+        # If all files fetched, end
+        if res['IsTruncated'] is False:
+            break
+
+        # Get next continuation token
+        continuation_token = res['NextContinuationToken']
 
 
 def get_storage() -> Storage:
