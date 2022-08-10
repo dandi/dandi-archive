@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 import logging
 
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import mail
-from django.db.models.query import QuerySet
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ def send_rejected_user_message(user: User, socialaccount: SocialAccount):
         connection.send_messages(messages)
 
 
-def build_pending_users_message(users: QuerySet | list[User]):
+def build_pending_users_message(users: Iterable[User]):
     render_context = {**BASE_RENDER_CONTEXT, 'users': users}
     return build_message(
         subject='DANDI: new user registrations to review',
@@ -175,7 +175,7 @@ def build_pending_users_message(users: QuerySet | list[User]):
     )
 
 
-def send_pending_users_message(users: QuerySet | list[User]):
+def send_pending_users_message(users: Iterable[User]):
     logger.info(f'Sending pending users message to admins at {ADMIN_EMAIL}')
     messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
