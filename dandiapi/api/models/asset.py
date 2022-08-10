@@ -262,12 +262,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
         metadata = {
             **self.metadata,
-            'id': f'dandiasset:{self.asset_id}',
-            'path': self.path,
-            'identifier': str(self.asset_id),
-            'contentUrl': [download_url, s3_url],
             'contentSize': self.size,
+            'contentUrl': [download_url, s3_url],
             'digest': self.digest,
+            'id': f'dandiasset:{self.asset_id}',
+            'identifier': str(self.asset_id),
+            'path': self.path,
         }
         schema_version = metadata['schemaVersion']
         metadata['@context'] = (
@@ -307,13 +307,13 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def strip_metadata(cls, metadata):
         """Strip away computed fields from a metadata dict."""
         computed_fields = [
-            'id',
-            'path',
-            'identifier',
-            'contentUrl',
             'contentSize',
-            'digest',
+            'contentUrl',
             'datePublished',
+            'digest',
+            'id',
+            'identifier',
+            'path',
             'publishedBy',
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}

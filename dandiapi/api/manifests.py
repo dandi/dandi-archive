@@ -127,9 +127,9 @@ def write_collection_jsonld(version: Version):
             .render(
                 {
                     '@context': version.metadata['@context'],
-                    'id': version.metadata['id'],
                     '@type': 'prov:Collection',
                     'hasMember': list(version.assets.values_list('metadata__id', flat=True)),
+                    'id': version.metadata['id'],
                 },
             )
             .decode()

@@ -178,13 +178,13 @@ def test_asset_populate_metadata(draft_asset_factory):
     blob_url = asset.blob.s3_url
     assert asset.metadata == {
         **raw_metadata,
-        'id': f'dandiasset:{asset.asset_id}',
-        'path': asset.path,
-        'identifier': str(asset.asset_id),
-        'contentUrl': [download_url, blob_url],
-        'contentSize': asset.blob.size,
-        'digest': asset.blob.digest,
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'contentSize': asset.blob.size,
+        'contentUrl': [download_url, blob_url],
+        'digest': asset.blob.digest,
+        'id': f'dandiasset:{asset.asset_id}',
+        'identifier': str(asset.asset_id),
+        'path': asset.path,
     }
 
 
@@ -205,15 +205,15 @@ def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
     s3_url = f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/'  # noqa: E501
     assert asset.metadata == {
         **raw_metadata,
-        'id': f'dandiasset:{asset.asset_id}',
-        'path': asset.path,
-        'identifier': str(asset.asset_id),
-        'contentUrl': [download_url, s3_url],
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
         'contentSize': asset.size,
+        'contentUrl': [download_url, s3_url],
         'digest': asset.digest,
         # This should be injected on all zarr assets
         'encodingFormat': 'application/x-zarr',
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        'id': f'dandiasset:{asset.asset_id}',
+        'identifier': str(asset.asset_id),
+        'path': asset.path,
     }
 
 
