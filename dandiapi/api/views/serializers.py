@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
@@ -65,6 +66,10 @@ class VersionMetadataSerializer(serializers.ModelSerializer):
         # This will fail serialization if the version metadata already exists,
         # which we do not want.
         validators = []
+
+    def validate(self, data):
+        data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
+        return super().validate(data)
 
 
 class VersionSerializer(serializers.ModelSerializer):
@@ -254,9 +259,16 @@ class AssetFolderSerializer(serializers.Serializer):
     modified = serializers.DateTimeField()
 
 
+class AssetFileSerializer(AssetSerializer):
+    class Meta(AssetSerializer.Meta):
+        fields = AssetSerializer.Meta.fields + ['url']
+
+    url = serializers.URLField(source='s3_url')
+
+
 class AssetPathsResponseSerializer(serializers.Serializer):
     folders = serializers.DictField(child=AssetFolderSerializer())
-    files = serializers.DictField(child=AssetSerializer())
+    files = serializers.DictField(child=AssetFileSerializer())
 
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):

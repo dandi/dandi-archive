@@ -9,6 +9,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import QuerySet
 from django.db.models.functions import Length
 from django_extensions.db.models import TimeStampedModel
 import pydantic
@@ -148,7 +149,7 @@ class ZarrUploadFile(BaseZarrUploadFile):
     blob = models.FileField(blank=True, storage=get_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
-    zarr_archive: 'ZarrArchive' = models.ForeignKey(
+    zarr_archive: ZarrArchive = models.ForeignKey(
         'ZarrArchive',
         related_name='active_uploads',
         on_delete=models.CASCADE,
@@ -159,7 +160,7 @@ class EmbargoedZarrUploadFile(BaseZarrUploadFile):
     blob = models.FileField(blank=True, storage=get_embargo_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
-    zarr_archive: 'EmbargoedZarrArchive' = models.ForeignKey(
+    zarr_archive: EmbargoedZarrArchive = models.ForeignKey(
         'EmbargoedZarrArchive',
         related_name='active_uploads',
         on_delete=models.CASCADE,
@@ -249,7 +250,9 @@ class BaseZarrArchive(TimeStampedModel):
     def complete_upload(self):
         if not self.upload_in_progress:
             raise ValidationError('No upload in progress.')
-        active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
+        active_uploads: QuerySet[
+            ZarrUploadFile | EmbargoedZarrUploadFile
+        ] = self.active_uploads.all()
         for upload in active_uploads:
             etag = upload.actual_etag()
             if etag is None:
@@ -268,7 +271,9 @@ class BaseZarrArchive(TimeStampedModel):
         self.save()
 
     def cancel_upload(self):
-        active_uploads: list[ZarrUploadFile | EmbargoedZarrUploadFile] = self.active_uploads.all()
+        active_uploads: QuerySet[
+            ZarrUploadFile | EmbargoedZarrUploadFile
+        ] = self.active_uploads.all()
         for upload in active_uploads:
             upload.blob.delete()
         active_uploads.delete()

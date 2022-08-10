@@ -140,7 +140,11 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
                 check=Q(blob__isnull=True, embargoed_blob__isnull=True, zarr__isnull=False)
                 | Q(blob__isnull=True, embargoed_blob__isnull=False, zarr__isnull=True)
                 | Q(blob__isnull=False, embargoed_blob__isnull=True, zarr__isnull=True),
-            )
+            ),
+            models.CheckConstraint(
+                name='asset_metadata_has_schema_version',
+                check=Q(metadata__schemaVersion__isnull=False),
+            ),
         ]
 
     @property
@@ -179,6 +183,15 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.embargoed_blob.digest
         else:
             return self.zarr.digest
+
+    @property
+    def s3_url(self) -> str:
+        if self.is_blob:
+            return self.blob.s3_url
+        elif self.is_embargoed_blob:
+            return self.embargoed_blob.s3_url
+        else:
+            return self.zarr.s3_url
 
     def _populate_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(

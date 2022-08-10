@@ -1,5 +1,4 @@
 from dandischema import migrate
-from django.conf import settings
 import djclick as click
 
 from dandiapi.api.models import Version
@@ -13,9 +12,6 @@ def migrate_version_metadata(to_version: str):
         print(f'Migrating {version.dandiset.identifier}/{version.version}')
 
         metadata = version.metadata
-        # If there is no schemaVersion, assume the most recent
-        if 'schemaVersion' not in metadata:
-            metadata['schemaVersion'] = settings.DANDI_SCHEMA_VERSION
 
         try:
             metanew = migrate(metadata, to_version=to_version, skip_validation=True)

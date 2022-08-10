@@ -14,7 +14,7 @@ def forward_set_checksum(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0030_alter_embargoedzarruploadfile_blob_and_more'),
+        ('api', '0031_asset_asset_metadata_has_schema_version_and_more'),
     ]
 
     operations = [

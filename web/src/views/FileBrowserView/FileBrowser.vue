@@ -186,6 +186,8 @@
                         v-for="el in item.services"
                         :key="el.name"
                         :href="el.url"
+                        target="_blank"
+                        rel="noopener"
                       >
                         <v-list-item-title class="font-weight-light">
                           {{ el.name }}
@@ -221,6 +223,7 @@ import {
 } from '@vue/composition-api';
 import { RawLocation } from 'vue-router';
 import filesize from 'filesize';
+import { trimEnd } from 'lodash';
 
 import { dandiRest } from '@/rest';
 import store from '@/store';
@@ -255,6 +258,13 @@ const EXTERNAL_SERVICES = [
     maxsize: 1e9,
     endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
   },
+
+  {
+    name: 'VTK/ITK Viewer',
+    regex: /\.ome\.zarr$/,
+    maxsize: Infinity,
+    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=',
+  },
 ];
 
 export default defineComponent({
@@ -286,14 +296,13 @@ export default defineComponent({
       dandiRest.user
       && owners.value?.includes(dandiRest.user?.username)
     ));
-
-    function getExternalServices(asset_id: string, name: string, size: number) {
-      const { identifier, version } = props;
+    function getExternalServices(name: string, asset: AssetFile) {
       return EXTERNAL_SERVICES
-        .filter((service) => new RegExp(service.regex).test(name) && size <= service.maxsize)
+        .filter((service) => new RegExp(service.regex)
+          .test(name) && (asset.size || 0) <= service.maxsize)
         .map((service) => ({
           name: service.name,
-          url: `${service.endpoint}${dandiRest.assetDownloadURI(identifier, version, asset_id)}`,
+          url: `${service.endpoint}${trimEnd(asset.url, '/')}`,
         }));
     }
 
@@ -352,8 +361,7 @@ export default defineComponent({
       // Add items
       newItems.push(...Object.keys(files).map(
         (key) => {
-          const { asset_id, size } = files[key];
-          const services = getExternalServices(asset_id, key, size || 0);
+          const services = getExternalServices(key, files[key]);
           return {
             ...files[key],
             name: key,

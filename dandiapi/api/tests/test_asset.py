@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.views.serializers import AssetFolderSerializer, AssetSerializer
+from dandiapi.api.views.serializers import AssetFileSerializer, AssetFolderSerializer
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -101,7 +101,7 @@ def test_asset_rest_path(
         assert file_path in paths['results']['files']
 
         asset: Asset = Asset.objects.get(path=f'{query_prefix}{file_path}')
-        assert paths['results']['files'][file_path] == AssetSerializer(asset).data
+        assert paths['results']['files'][file_path] == AssetFileSerializer(asset).data
 
 
 @pytest.mark.django_db
@@ -522,7 +522,6 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': path,
         'meta': 'data',
@@ -608,7 +607,6 @@ def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_b
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': path,
         'meta': 'data',
@@ -653,7 +651,6 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
@@ -703,7 +700,6 @@ def test_asset_create_zarr_wrong_dandiset(
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
@@ -728,7 +724,6 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
@@ -753,7 +748,6 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
 
     path = 'test/create/asset.txt'
     metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-zarr',
         'path': path,
         'meta': 'data',
@@ -873,7 +867,6 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': new_path,
         'foo': 'bar',
@@ -929,7 +922,6 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
         'path': new_path,
         'foo': 'bar',
@@ -985,7 +977,6 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-zarr',
         'path': new_path,
         'foo': 'bar',

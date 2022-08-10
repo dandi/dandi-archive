@@ -94,10 +94,10 @@ const dandisetModule = defineModule({
       await dispatch.fetchDandiset({ identifier, version });
       await dispatch.fetchOwners(identifier);
     },
+    // fetch versions and total version count
     async fetchDandisetVersions(context: any, { identifier }) {
       const { commit } = dandisetActionContext(context);
       commit.setLoading(true);
-
       const res = await dandiRest.versions(identifier);
       if (res) {
         const { results } = res;

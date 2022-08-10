@@ -466,84 +466,11 @@ def test_version_rest_update(api_client, user, draft_version):
 
     new_name = 'A unique and special name!'
     new_metadata = {
-        'foo': 'bar',
-        'num': 123,
-        'list': ['a', 'b', 'c'],
-        'contributor': [
-            {
-                'name': 'Bogart, Humphrey',
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-            }
-        ],
-        # This should be stripped out
-        'dateCreated': 'foobar',
-    }
-    year = datetime.now().year
-    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/draft'
-    saved_metadata = {
-        **new_metadata,
-        'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
-        ],
-        'name': new_name,
-        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
-        'id': f'DANDI:{draft_version.dandiset.identifier}/draft',
-        'version': 'draft',
-        'url': url,
-        'repository': settings.DANDI_WEB_APP_URL,
-        'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
-        'assetsSummary': {
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-            'schemaKey': 'AssetsSummary',
-        },
-    }
-
-    assert api_client.put(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
-        {'metadata': new_metadata, 'name': new_name},
-        format='json',
-    ).data == {
-        'dandiset': {
-            'identifier': draft_version.dandiset.identifier,
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-            'contact_person': 'Bogart, Humphrey',
-            'embargo_status': 'OPEN',
-        },
-        'version': draft_version.version,
-        'name': new_name,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-        'asset_count': draft_version.asset_count,
-        'metadata': saved_metadata,
-        'size': draft_version.size,
-        'status': 'Pending',
-        'asset_validation_errors': [],
-        'version_validation_errors': [],
-        'contact_person': 'Bogart, Humphrey',
-    }
-
-    # The version modified date should be updated
-    start_time = draft_version.modified
-    draft_version.refresh_from_db()
-    end_time = draft_version.modified
-    assert start_time < end_time
-
-    assert draft_version.metadata == saved_metadata
-    assert draft_version.name == new_name
-    assert draft_version.status == Version.Status.PENDING
-
-
-@pytest.mark.django_db
-def test_version_rest_update_large(api_client, user, draft_version):
-    assign_perm('owner', user, draft_version.dandiset)
-    api_client.force_authenticate(user=user)
-
-    new_name = 'A unique and special name!'
-    new_metadata = {
+        '@context': (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{settings.DANDI_SCHEMA_VERSION}/context.json'
+        ),
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
@@ -555,11 +482,14 @@ def test_version_rest_update_large(api_client, user, draft_version):
                 'schemaKey': 'Person',
             }
         ],
+        # This should be stripped out
+        'dateCreated': 'foobar',
     }
     year = datetime.now().year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'manifestLocation': [
             f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
         ],
@@ -603,7 +533,12 @@ def test_version_rest_update_large(api_client, user, draft_version):
         'contact_person': 'Vargas, Getúlio',
     }
 
+    # The version modified date should be updated
+    start_time = draft_version.modified
     draft_version.refresh_from_db()
+    end_time = draft_version.modified
+    assert start_time < end_time
+
     assert draft_version.metadata == saved_metadata
     assert draft_version.name == new_name
     assert draft_version.status == Version.Status.PENDING

@@ -184,3 +184,8 @@ python manage.py import_dandisets [API_URL] --identifier 000005
 This imports dandiset 000005 from `API_URL` into your local dev environment. Note that if there is already
 a dandiset with an identifier of 000005, nothing will happen. Use the --replace flag to have the script
 overwrite it instead if desired.
+
+## Abbreviations
+
+- DLP: Dataset Landing Page (e.g. https://dandiarchive.org/dandiset/000027)
+
