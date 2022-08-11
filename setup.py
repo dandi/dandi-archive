@@ -58,7 +58,8 @@ setup(
         'boto3[s3]',
         # Production-only
         'django-composed-configuration[prod]>=0.22.0',
-        'django-s3-file-field[boto3]==0.1.1',
+        # pin directly to a version since we're extending the private multipart interface
+        'django-s3-file-field[boto3]==0.3.2',
         'django-storages[boto3]',
         'gunicorn',
         # Development-only, but required
