@@ -53,7 +53,6 @@ setup(
         'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
-        'httpx',
         'jsonschema',
         'pydantic',
         'boto3[s3]',
