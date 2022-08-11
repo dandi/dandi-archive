@@ -23,6 +23,7 @@ from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.zarr import ZarrArchiveStatus
 from dandiapi.api.tasks import cancel_zarr_upload
 from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.views.common import DandiPagination
@@ -194,7 +195,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchive.Status.INGESTING:
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
@@ -270,7 +271,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchive.Status.INGESTING:
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
@@ -305,7 +306,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             # The user does not have ownership permission
             raise PermissionDenied()
 
-        if zarr_archive.status != ZarrArchive.Status.PENDING:
+        if zarr_archive.status != ZarrArchiveStatus.PENDING:
             return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
         if zarr_archive.upload_in_progress:
             return Response(

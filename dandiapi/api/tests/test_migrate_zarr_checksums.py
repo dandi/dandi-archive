@@ -2,6 +2,7 @@ import pytest
 
 from dandiapi.api.management.commands.migrate_zarr_checksums import migrate_zarr_checksums
 from dandiapi.api.models import ZarrArchive
+from dandiapi.api.models.zarr import ZarrArchiveStatus
 from dandiapi.api.tasks.zarr import ingest_zarr_archive
 
 
@@ -21,7 +22,7 @@ def test_migrate_zarr_checksums(zarr_archive_factory, zarr_upload_file_factory):
 
     # Intentionally update checksum and status fields, to simulate the migration
     zarr_archive.checksum = None
-    zarr_archive.status = ZarrArchive.Status.PENDING
+    zarr_archive.status = ZarrArchiveStatus.PENDING
     zarr_archive.save()
 
     # Migrate checksums
@@ -30,7 +31,7 @@ def test_migrate_zarr_checksums(zarr_archive_factory, zarr_upload_file_factory):
     # Assert values have changed
     zarr_archive.refresh_from_db()
     assert zarr_archive.checksum is not None
-    assert zarr_archive.status == ZarrArchive.Status.COMPLETE
+    assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
 
 
 @pytest.mark.django_db
@@ -47,7 +48,7 @@ def test_migrate_zarr_checksums_uningested(zarr_archive_factory, zarr_upload_fil
     # Intentionally don't run ingestion
     # Intentionally update checksum and status fields, to simulate the migration
     zarr_archive.checksum = None
-    zarr_archive.status = ZarrArchive.Status.PENDING
+    zarr_archive.status = ZarrArchiveStatus.PENDING
     zarr_archive.save()
 
     # Migrate checksums
@@ -56,4 +57,4 @@ def test_migrate_zarr_checksums_uningested(zarr_archive_factory, zarr_upload_fil
     # Assert values have changed
     zarr_archive.refresh_from_db()
     assert zarr_archive.checksum is None
-    assert zarr_archive.status == ZarrArchive.Status.PENDING
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING

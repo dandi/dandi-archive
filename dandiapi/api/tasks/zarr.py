@@ -10,7 +10,7 @@ from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.db import transaction
 
-from dandiapi.api.models.zarr import ZarrArchive
+from dandiapi.api.models.zarr import ZarrArchive, ZarrArchiveStatus
 from dandiapi.api.storage import get_storage
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
@@ -155,12 +155,12 @@ def ingest_zarr_archive(
     # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-        if not force and zarr.status != ZarrArchive.Status.PENDING:
+        if not force and zarr.status != ZarrArchiveStatus.PENDING:
             logger.info(f'{ZarrArchive.INGEST_ERROR_MSG}. Exiting...')
             return
 
         # Set as ingesting
-        zarr.status = ZarrArchive.Status.INGESTING
+        zarr.status = ZarrArchiveStatus.INGESTING
         zarr.checksum = None
         zarr.save(update_fields=['status', 'checksum'])
 
@@ -221,7 +221,7 @@ def ingest_zarr_archive(
         # If checksum is None, that means there were no files, and we should set
         # the checksum to EMPTY_CHECKSUM, as it's still been ingested, it's just empty.
         zarr.checksum = checksum or EMPTY_CHECKSUM
-        zarr.status = ZarrArchive.Status.COMPLETE
+        zarr.status = ZarrArchiveStatus.COMPLETE
         zarr.save(update_fields=['status', 'checksum'])
 
         # Save all assets that reference this zarr, so their metadata is updated

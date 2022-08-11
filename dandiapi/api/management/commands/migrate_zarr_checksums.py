@@ -1,7 +1,7 @@
 from django.db.models.query import QuerySet
 import djclick as click
 
-from dandiapi.api.models.zarr import ZarrArchive
+from dandiapi.api.models.zarr import ZarrArchive, ZarrArchiveStatus
 
 
 @click.command()
@@ -17,5 +17,5 @@ def migrate_zarr_checksums(*args, **kwargs):
         # If checksum exists, save
         if checksum is not None:
             zarr.checksum = checksum
-            zarr.status = ZarrArchive.Status.COMPLETE
+            zarr.status = ZarrArchiveStatus.COMPLETE
             zarr.save(update_fields=['status', 'checksum'])

@@ -167,6 +167,13 @@ class EmbargoedZarrUploadFile(BaseZarrUploadFile):
     )
 
 
+# The status of the zarr ingestion (checksums, size, file count)
+class ZarrArchiveStatus(models.TextChoices):
+    PENDING = 'Pending'
+    INGESTING = 'Ingesting'
+    COMPLETE = 'Complete'
+
+
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive already ingested'
@@ -175,21 +182,15 @@ class BaseZarrArchive(TimeStampedModel):
         get_latest_by = 'modified'
         abstract = True
 
-    # The status of the zarr ingestion (checksums, size, file count)
-    class Status(models.TextChoices):
-        PENDING = 'Pending'
-        INGESTING = 'Ingesting'
-        COMPLETE = 'Complete'
-
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
     checksum = models.CharField(max_length=512, null=True, default=None)
     status = models.CharField(
-        max_length=max(len(choice[0]) for choice in Status.choices),
-        choices=Status.choices,
-        default=Status.PENDING,
+        max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
+        choices=ZarrArchiveStatus.choices,
+        default=ZarrArchiveStatus.PENDING,
     )
 
     @property
@@ -267,7 +268,7 @@ class BaseZarrArchive(TimeStampedModel):
 
         # New files added, ingest must be run again
         self.checksum = None
-        self.status = self.Status.PENDING
+        self.status = ZarrArchiveStatus.PENDING
         self.save()
 
     def cancel_upload(self):
@@ -293,7 +294,7 @@ class BaseZarrArchive(TimeStampedModel):
 
         # Files deleted, ingest must be run again
         self.checksum = None
-        self.status = self.Status.PENDING
+        self.status = ZarrArchiveStatus.PENDING
         self.save()
 
 
@@ -318,9 +319,9 @@ class ZarrArchive(BaseZarrArchive):
                 name='consistent-checksum-status',
                 check=models.Q(
                     checksum__isnull=True,
-                    status__in=[BaseZarrArchive.Status.PENDING, BaseZarrArchive.Status.INGESTING],
+                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
                 )
-                | models.Q(checksum__isnull=False, status=BaseZarrArchive.Status.COMPLETE),
+                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
             ),
         ]
 
@@ -352,9 +353,9 @@ class EmbargoedZarrArchive(BaseZarrArchive):
                 name='consistent-embargo-checksum-status',
                 check=models.Q(
                     checksum__isnull=True,
-                    status__in=[BaseZarrArchive.Status.PENDING, BaseZarrArchive.Status.INGESTING],
+                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
                 )
-                | models.Q(checksum__isnull=False, status=BaseZarrArchive.Status.COMPLETE),
+                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
             ),
         ]
 
