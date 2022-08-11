@@ -181,6 +181,25 @@ class BaseZarrArchive(TimeStampedModel):
     class Meta:
         get_latest_by = 'modified'
         abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                name='%(app_label)s-%(class)s-unique-name',
+                fields=['dandiset', 'name'],
+            ),
+            # Requires importing the django `Length` function
+            models.CheckConstraint(
+                name='%(app_label)s-%(class)s-nonempty-checksum',
+                check=models.Q(checksum__length__gt=0),
+            ),
+            models.CheckConstraint(
+                name='%(app_label)s-%(class)s-consistent-checksum-status',
+                check=models.Q(
+                    checksum__isnull=True,
+                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
+                )
+                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
+            ),
+        ]
 
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     name = models.CharField(max_length=512)
@@ -304,27 +323,6 @@ class ZarrArchive(BaseZarrArchive):
 
     dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
 
-    class Meta(BaseZarrArchive.Meta):
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-dandiset-name',
-                fields=['dandiset', 'name'],
-            ),
-            # Requires importing the django `Length` function
-            models.CheckConstraint(
-                name='nonempty-checksum',
-                check=models.Q(checksum__length__gt=0),
-            ),
-            models.CheckConstraint(
-                name='consistent-checksum-status',
-                check=models.Q(
-                    checksum__isnull=True,
-                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
-                )
-                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
-            ),
-        ]
-
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
         return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{str(zarr_path)}'  # noqa: E501
@@ -337,27 +335,6 @@ class EmbargoedZarrArchive(BaseZarrArchive):
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
     )
-
-    class Meta(BaseZarrArchive.Meta):
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-embargo-dandiset-name',
-                fields=['dandiset', 'name'],
-            ),
-            # Requires importing the django `Length` function
-            models.CheckConstraint(
-                name='nonempty-embargo-checksum',
-                check=models.Q(checksum__length__gt=0),
-            ),
-            models.CheckConstraint(
-                name='consistent-embargo-checksum-status',
-                check=models.Q(
-                    checksum__isnull=True,
-                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
-                )
-                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
-            ),
-        ]
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
