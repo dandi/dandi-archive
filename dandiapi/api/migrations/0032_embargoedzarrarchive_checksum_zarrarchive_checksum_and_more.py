@@ -28,18 +28,6 @@ class Migration(migrations.Migration):
             name='checksum',
             field=models.CharField(default=None, max_length=512, null=True),
         ),
-        migrations.AddConstraint(
-            model_name='zarrarchive',
-            constraint=models.CheckConstraint(
-                check=models.Q(('checksum__length__gt', 0)), name='nonempty-checksum'
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name='embargoedzarrarchive',
-            constraint=models.CheckConstraint(
-                check=models.Q(('checksum__length__gt', 0)), name='nonempty-embargo-checksum'
-            ),
-        ),
         # Mark zarrs with null checksums as pending, to satisfy below constraints
         migrations.RunPython(forward_set_checksum),
         migrations.AddConstraint(

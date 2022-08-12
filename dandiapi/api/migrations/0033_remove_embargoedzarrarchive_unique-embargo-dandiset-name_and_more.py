@@ -16,19 +16,11 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveConstraint(
             model_name='embargoedzarrarchive',
-            name='nonempty-embargo-checksum',
-        ),
-        migrations.RemoveConstraint(
-            model_name='embargoedzarrarchive',
             name='consistent-embargo-checksum-status',
         ),
         migrations.RemoveConstraint(
             model_name='zarrarchive',
             name='unique-dandiset-name',
-        ),
-        migrations.RemoveConstraint(
-            model_name='zarrarchive',
-            name='nonempty-checksum',
         ),
         migrations.RemoveConstraint(
             model_name='zarrarchive',
@@ -38,13 +30,6 @@ class Migration(migrations.Migration):
             model_name='embargoedzarrarchive',
             constraint=models.UniqueConstraint(
                 fields=('dandiset', 'name'), name='api-embargoedzarrarchive-unique-name'
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name='embargoedzarrarchive',
-            constraint=models.CheckConstraint(
-                check=models.Q(('checksum__length__gt', 0)),
-                name='api-embargoedzarrarchive-nonempty-checksum',
             ),
         ),
         migrations.AddConstraint(
@@ -62,13 +47,6 @@ class Migration(migrations.Migration):
             model_name='zarrarchive',
             constraint=models.UniqueConstraint(
                 fields=('dandiset', 'name'), name='api-zarrarchive-unique-name'
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name='zarrarchive',
-            constraint=models.CheckConstraint(
-                check=models.Q(('checksum__length__gt', 0)),
-                name='api-zarrarchive-nonempty-checksum',
             ),
         ),
         migrations.AddConstraint(

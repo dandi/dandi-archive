@@ -10,7 +10,6 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import QuerySet
-from django.db.models.functions import Length
 from django_extensions.db.models import TimeStampedModel
 import pydantic
 from rest_framework.exceptions import ValidationError
@@ -21,9 +20,6 @@ from dandiapi.api.storage import get_embargo_storage, get_storage
 from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
 logger = logging.Logger(name=__name__)
-
-# Register length lookup for below check constraint
-models.CharField.register_lookup(Length)
 
 
 class ZarrUploadFileManager(models.Manager):
@@ -185,11 +181,6 @@ class BaseZarrArchive(TimeStampedModel):
             models.UniqueConstraint(
                 name='%(app_label)s-%(class)s-unique-name',
                 fields=['dandiset', 'name'],
-            ),
-            # Requires importing the django `Length` function
-            models.CheckConstraint(
-                name='%(app_label)s-%(class)s-nonempty-checksum',
-                check=models.Q(checksum__length__gt=0),
             ),
             models.CheckConstraint(
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
