@@ -6,7 +6,6 @@ from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
-from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
@@ -98,7 +97,7 @@ class BaseZarrUploadFile(TimeStampedModel):
     def size(self) -> int:
         return self.blob.storage.size(self.blob.name)
 
-    def actual_etag(self) -> str:
+    def actual_etag(self) -> str | None:
         storage = self.blob.storage
         try:
             from botocore.exceptions import ClientError
@@ -120,7 +119,7 @@ class BaseZarrUploadFile(TimeStampedModel):
                         return etag[1:-1]
                     return etag
                 except ClientError:
-                    raise ValidationError(f'File {self.path} does not exist.', code=404)
+                    return None
 
         try:
             from minio.error import NoSuchKey
@@ -134,7 +133,7 @@ class BaseZarrUploadFile(TimeStampedModel):
                     response = client.stat_object(storage.bucket_name, self.blob.name)
                     return response.etag
                 except NoSuchKey:
-                    raise ValidationError(f'File {self.path} does not exist.', code=404)
+                    return None
 
         raise UnsupportedStorageError('Unsupported storage provider.')
 
@@ -164,6 +163,13 @@ class EmbargoedZarrUploadFile(BaseZarrUploadFile):
     )
 
 
+# The status of the zarr ingestion (checksums, size, file count)
+class ZarrArchiveStatus(models.TextChoices):
+    PENDING = 'Pending'
+    INGESTING = 'Ingesting'
+    COMPLETE = 'Complete'
+
+
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive already ingested'
@@ -171,36 +177,35 @@ class BaseZarrArchive(TimeStampedModel):
     class Meta:
         get_latest_by = 'modified'
         abstract = True
-
-    # The status of the zarr ingestion (checksums, size, file count)
-    class Status(models.TextChoices):
-        PENDING = 'Pending'
-        INGESTING = 'Ingesting'
-        COMPLETE = 'Complete'
+        constraints = [
+            models.UniqueConstraint(
+                name='%(app_label)s-%(class)s-unique-name',
+                fields=['dandiset', 'name'],
+            ),
+            models.CheckConstraint(
+                name='%(app_label)s-%(class)s-consistent-checksum-status',
+                check=models.Q(
+                    checksum__isnull=True,
+                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
+                )
+                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
+            ),
+        ]
 
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
+    checksum = models.CharField(max_length=512, null=True, default=None)
     status = models.CharField(
-        max_length=max(len(choice[0]) for choice in Status.choices),
-        choices=Status.choices,
-        default=Status.PENDING,
+        max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
+        choices=ZarrArchiveStatus.choices,
+        default=ZarrArchiveStatus.PENDING,
     )
 
     @property
     def upload_in_progress(self) -> bool:
         return self.active_uploads.exists()
-
-    @property
-    def checksum(self) -> str | None:
-        try:
-            return self.get_checksum()
-        except ValidationError:
-            return EMPTY_CHECKSUM
-        except pydantic.ValidationError as e:
-            logger.info(e, exc_info=True)
-            return None
 
     @property
     def digest(self) -> dict[str, str]:
@@ -214,16 +219,28 @@ class BaseZarrArchive(TimeStampedModel):
         s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
         return s3_url
 
-    def get_checksum(self, path: str | Path = ''):
+    def fetch_checksum(self, path: str | Path = '') -> str | None:
+        """
+        Fetch the zarr checksum at a specific subdirectory (defaults to root).
+
+        If a checksum file doesn't exist at the specified path, `None` is returned.
+        """
         listing = ZarrChecksumFileUpdater(self, path).read_checksum_file()
         if listing is not None:
             return listing.digest
-        else:
-            zarr_file = self.upload_file_class.objects.create_zarr_upload_file(
-                zarr_archive=self, path=path
-            )
-            # This will throw a 404 if the file doesn't exist
-            return zarr_file.actual_etag()
+
+        return None
+
+    def get_checksum(self) -> str | None:
+        """Return the top level zarr checksum."""
+        try:
+            return self.fetch_checksum()
+
+        # Handle case where checksum file is malformed,
+        # log error and return None
+        except pydantic.ValidationError as e:
+            logger.error(e, exc_info=True)
+            return None
 
     def begin_upload(self, files):
         if self.upload_in_progress:
@@ -248,7 +265,11 @@ class BaseZarrArchive(TimeStampedModel):
             ZarrUploadFile | EmbargoedZarrUploadFile
         ] = self.active_uploads.all()
         for upload in active_uploads:
-            if upload.etag != upload.actual_etag():
+            etag = upload.actual_etag()
+            if etag is None:
+                raise ValidationError(f'File {upload.path} does not exist.')
+
+            if upload.etag != etag:
                 raise ValidationError(
                     f'File {upload.path} ETag {upload.actual_etag()} does not match reported checksum {upload.etag}.'  # noqa: E501
                 )
@@ -256,7 +277,8 @@ class BaseZarrArchive(TimeStampedModel):
         active_uploads.delete()
 
         # New files added, ingest must be run again
-        self.status = self.Status.PENDING
+        self.checksum = None
+        self.status = ZarrArchiveStatus.PENDING
         self.save()
 
     def cancel_upload(self):
@@ -281,7 +303,8 @@ class BaseZarrArchive(TimeStampedModel):
             self.storage.delete(self.s3_path(path))
 
         # Files deleted, ingest must be run again
-        self.status = self.Status.PENDING
+        self.checksum = None
+        self.status = ZarrArchiveStatus.PENDING
         self.save()
 
 
@@ -290,14 +313,6 @@ class ZarrArchive(BaseZarrArchive):
     upload_file_class = ZarrUploadFile
 
     dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
-
-    class Meta(BaseZarrArchive.Meta):
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-dandiset-name',
-                fields=['dandiset', 'name'],
-            )
-        ]
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
@@ -311,14 +326,6 @@ class EmbargoedZarrArchive(BaseZarrArchive):
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
     )
-
-    class Meta(BaseZarrArchive.Meta):
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-embargo-dandiset-name',
-                fields=['dandiset', 'name'],
-            )
-        ]
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""

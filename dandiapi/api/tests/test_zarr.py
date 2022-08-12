@@ -6,6 +6,7 @@ import pytest
 
 from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.zarr import ZarrArchiveStatus
 from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
@@ -28,8 +29,8 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'name': name,
         'zarr_id': UUID_RE,
         'dandiset': dandiset.identifier,
-        'status': ZarrArchive.Status.PENDING,
-        'checksum': EMPTY_CHECKSUM,
+        'status': ZarrArchiveStatus.PENDING,
+        'checksum': None,
         'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
@@ -116,14 +117,15 @@ def test_zarr_rest_get(
 
     # Ingest archive so checksum files are written.
     ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
 
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
     assert resp.json() == {
         'name': zarr_archive.name,
-        'zarr_id': zarr_archive.zarr_id,
+        'zarr_id': str(zarr_archive.zarr_id),
         'dandiset': zarr_archive.dandiset.identifier,
-        'status': ZarrArchive.Status.COMPLETE,
+        'status': ZarrArchiveStatus.COMPLETE,
         'checksum': zarr_archive.checksum,
         'upload_in_progress': False,
         'file_count': 1,
@@ -189,7 +191,7 @@ def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
-        'status': ZarrArchive.Status.PENDING,
+        'status': ZarrArchiveStatus.PENDING,
         'checksum': zarr_archive.checksum,
         'upload_in_progress': False,
         'file_count': ten_quadrillion,
@@ -205,7 +207,7 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
-        'status': ZarrArchive.Status.PENDING,
+        'status': ZarrArchiveStatus.PENDING,
         'checksum': zarr_archive.checksum,
         'upload_in_progress': False,
         'file_count': 0,
@@ -233,7 +235,7 @@ def test_zarr_rest_get_invalid_checksum_file(authenticated_api_client, zarr_arch
         'name': zarr_archive.name,
         'zarr_id': zarr_archive.zarr_id,
         'dandiset': zarr_archive.dandiset.identifier,
-        'status': ZarrArchive.Status.PENDING,
+        'status': ZarrArchiveStatus.PENDING,
         'checksum': None,
         'upload_in_progress': False,
         'file_count': 0,

@@ -1,12 +1,12 @@
 import time
 
-from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
 from dandiapi.api.management.commands.ingest_zarr_archive import ingest_zarr_archive
 from dandiapi.api.models import Dandiset, ZarrArchive, ZarrUploadFile
+from dandiapi.api.models.zarr import ZarrArchiveStatus
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
@@ -24,7 +24,7 @@ def test_ingest_zarr_archive_rest(authenticated_api_client, zarr_archive: ZarrAr
     # Check status is pending
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
-    assert resp.json()['status'] == ZarrArchive.Status.PENDING
+    assert resp.json()['status'] == ZarrArchiveStatus.PENDING
 
     # Start ingest
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
@@ -33,7 +33,7 @@ def test_ingest_zarr_archive_rest(authenticated_api_client, zarr_archive: ZarrAr
     # Check status is valid
     resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
     assert resp.status_code == 200
-    assert resp.json()['status'] == ZarrArchive.Status.COMPLETE
+    assert resp.json()['status'] == ZarrArchiveStatus.COMPLETE
 
 
 @pytest.mark.django_db(transaction=True)
@@ -43,7 +43,7 @@ def test_ingest_zarr_archive_rest_already_active(
     assign_perm('owner', user, zarr_archive.dandiset)
 
     # Emulate ongoing ingest
-    zarr_archive.status = ZarrArchive.Status.INGESTING
+    zarr_archive.status = ZarrArchiveStatus.INGESTING
     zarr_archive.save()
 
     # Ensure second ingest fails
@@ -229,7 +229,7 @@ def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_facto
     # Assert asset size, metadata
     assert asset.size == 0
     assert asset.metadata['contentSize'] == 0
-    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] is None
 
     # Compute checksum
     ingest_zarr_archive(str(zarr.zarr_id))
