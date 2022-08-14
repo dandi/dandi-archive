@@ -57,6 +57,7 @@
               :url="permalink"
               :title="meta.name"
               :twitter-user="twitterUser"
+              @open="track"
             >
               <v-icon
                 class="mr-1"
@@ -79,6 +80,7 @@ import { defineComponent, computed, ref } from '@vue/composition-api';
 import CopyText from '@/components/CopyText.vue';
 import store from '@/store';
 import { dandiUrl } from '@/utils/constants';
+import { event } from 'vue-gtag';
 
 // Twitter user to mention
 const twitterUser = 'DANDIarchive';
@@ -105,8 +107,15 @@ export default defineComponent({
 
     const dialog = ref(false);
 
+    function track() {
+      event('share', {
+        event_category: 'engagement',
+        event_label: 'method',
+        value: 'twitter',
+      });
+    }
     return {
-      dialog, twitterUser, meta, permalink,
+      dialog, twitterUser, meta, permalink, track,
     };
   },
 });
