@@ -116,7 +116,7 @@ def ingest_zarr_archive(
 
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
-        zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+        zarr = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
 
         # Reset before compute
         if not no_size:
