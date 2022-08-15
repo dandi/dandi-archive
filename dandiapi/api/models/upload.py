@@ -8,7 +8,6 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from dandiapi.api.multipart import DandiMultipartManager
 from dandiapi.api.storage import (
     get_embargo_storage,
     get_embargo_storage_prefix,
@@ -18,17 +17,6 @@ from dandiapi.api.storage import (
 
 from .asset import AssetBlob, EmbargoedAssetBlob
 from .dandiset import Dandiset
-
-try:
-    from storages.backends.s3boto3 import S3Boto3Storage
-except ImportError:
-    # This should only be used for type interrogation, never instantiation
-    S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
-try:
-    from minio_storage.storage import MinioStorage
-except ImportError:
-    # This should only be used for type interrogation, never instantiation
-    MinioStorage = type('FakeMinioStorage', (), {})
 
 
 class BaseUpload(TimeStampedModel):
@@ -60,9 +48,9 @@ class BaseUpload(TimeStampedModel):
     def initialize_multipart_upload(cls, etag, size, dandiset: Dandiset):
         upload_id = uuid4()
         object_key = cls.object_key(upload_id, dandiset)
-        multipart_initialization = DandiMultipartManager.from_storage(
-            cls.blob.field.storage
-        ).initialize_upload(object_key, size)
+        multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
+            object_key, size
+        )
 
         upload = cls(
             upload_id=upload_id,
@@ -82,26 +70,7 @@ class BaseUpload(TimeStampedModel):
         return self.blob.field.storage.size(self.blob.name)
 
     def actual_etag(self):
-        storage = self.blob.storage
-        if isinstance(storage, S3Boto3Storage):
-            client = storage.connection.meta.client
-
-            response = client.head_object(
-                Bucket=storage.bucket_name,
-                Key=self.blob.name,
-            )
-            etag = response['ETag']
-            # S3 wraps the ETag in double quotes, so we need to strip them
-            if etag[0] == '"' and etag[-1] == '"':
-                return etag[1:-1]
-            return etag
-
-        elif isinstance(storage, MinioStorage):
-            client = storage.client
-            response = client.stat_object(storage.bucket_name, self.blob.name)
-            return response.etag
-        else:
-            raise ValueError(f'Unknown storage {self.blob.field.storage}')
+        return self.blob.storage.etag_from_blob_name(self.blob.name)
 
 
 class Upload(BaseUpload):

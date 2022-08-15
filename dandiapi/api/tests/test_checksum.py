@@ -3,8 +3,6 @@ import hashlib
 from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 
-from dandiapi.api.checksum import calculate_sha256_checksum
-
 
 def test_checksum(faker, storage: Storage):
     name = faker.file_name()
@@ -17,6 +15,6 @@ def test_checksum(faker, storage: Storage):
     h.update(sentence)
     expected_sha256 = h.hexdigest()
 
-    actual_sha256 = calculate_sha256_checksum(storage, name)
+    actual_sha256 = storage.sha256_checksum(name)
 
     assert actual_sha256 == expected_sha256

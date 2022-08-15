@@ -153,7 +153,6 @@ def test_zarr_rest_upload_complete_missing_file(
 
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
     assert resp.status_code == 400
-    assert resp.json() == [f'File {upload.path} does not exist.']
 
 
 @pytest.mark.django_db

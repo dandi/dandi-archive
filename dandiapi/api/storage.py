@@ -1,11 +1,64 @@
-from typing import Any
+from __future__ import annotations
+
+from datetime import timedelta
+import hashlib
+from typing import Any, Iterator
 from urllib.parse import urlsplit, urlunsplit
 
+import boto3
+from botocore.exceptions import ClientError
+from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
+from minio.error import NoSuchKey
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
+from s3_file_field._multipart_boto3 import Boto3MultipartManager
+from s3_file_field._multipart_minio import MinioMultipartManager
 from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class ChecksumCalculatorFile:
+    """File-like object that calculates the checksum of everything written to it."""
+
+    def __init__(self):
+        self.h = hashlib.sha256()
+
+    def write(self, bytes):
+        self.h.update(bytes)
+
+    @property
+    def checksum(self):
+        return self.h.hexdigest()
+
+
+class DandiMultipartMixin:
+    @staticmethod
+    def _iter_part_sizes(file_size: int) -> Iterator[tuple[int, int]]:
+        generator = PartGenerator.for_file_size(file_size)
+        for part in generator:
+            yield part.number, part.size
+
+    _url_expiration = timedelta(days=7)
+
+
+class DandiBoto3MultipartManager(DandiMultipartMixin, Boto3MultipartManager):
+    def _create_upload_id(self, object_key: str) -> str:
+        resp = self._client.create_multipart_upload(
+            Bucket=self._bucket_name,
+            Key=object_key,
+            ACL='bucket-owner-full-control',
+        )
+        return resp['UploadId']
+
+
+class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
+    def _create_upload_id(self, object_key: str) -> str:
+        return self._client._new_multipart_upload(
+            bucket_name=self._bucket_name,
+            object_name=object_key,
+            metadata={'x-amz-acl': 'bucket-owner-full-control'},
+        )
 
 
 class DeconstructableMinioStorage(MinioStorage):
@@ -42,11 +95,100 @@ class VerbatimNameStorageMixin:
 
 
 class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
-    pass
+    @property
+    def multipart_manager(self):
+        return DandiBoto3MultipartManager(self)
+
+    def etag_from_blob_name(self, blob_name) -> str | None:
+        client = self.connection.meta.client
+
+        try:
+            response = client.head_object(
+                Bucket=self.bucket_name,
+                Key=blob_name,
+            )
+        except ClientError:
+            return None
+        else:
+            etag = response['ETag']
+            # S3 wraps the ETag in double quotes, so we need to strip them
+            if etag[0] == '"' and etag[-1] == '"':
+                return etag[1:-1]
+            return etag
+
+    def generate_presigned_put_object_url(self, blob_name: str) -> str:
+        return self.connection.meta.client.generate_presigned_url(
+            ClientMethod='put_object',
+            Params={
+                'Bucket': self.bucket_name,
+                'Key': blob_name,
+                'ACL': 'bucket-owner-full-control',
+            },
+            ExpiresIn=600,  # TODO proper expiration
+        )
+
+    def generate_presigned_head_object_url(self, key: str) -> str:
+        return self.bucket.meta.client.generate_presigned_url(
+            'head_object',
+            Params={'Bucket': self.bucket.name, 'Key': key},
+        )
+
+    def generate_presigned_download_url(self, key: str, path: str) -> str:
+        return self.connection.meta.client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': self.bucket_name,
+                'Key': key,
+                'ResponseContentDisposition': f'attachment; filename="{path}"',
+            },
+        )
+
+    def sha256_checksum(self, key: str) -> str:
+        calculator = ChecksumCalculatorFile()
+        obj = self.bucket.Object(key)
+        obj.download_fileobj(calculator)
+        return calculator.checksum
 
 
 class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioStorage):
-    pass
+    @property
+    def multipart_manager(self):
+        return DandiMinioMultipartManager(self)
+
+    def etag_from_blob_name(self, blob_name) -> str | None:
+        try:
+            response = self.client.stat_object(self.bucket_name, blob_name)
+        except NoSuchKey:
+            return None
+        else:
+            return response.etag
+
+    def generate_presigned_put_object_url(self, blob_name: str) -> str:
+        # storage.client will generate URLs like `http://minio:9000/...` when running in
+        # docker. To avoid this, use the secondary base_url_client which is configured to
+        # generate URLs like `http://localhost:9000/...`.
+        return self.base_url_client.presigned_put_object(
+            bucket_name=self.bucket_name,
+            object_name=blob_name,
+            expires=timedelta(seconds=600),  # TODO proper expiration
+        )
+
+    def generate_presigned_head_object_url(self, key: str) -> str:
+        return self.base_url_client.presigned_url('HEAD', self.bucket_name, key)
+
+    def generate_presigned_download_url(self, key: str, path: str) -> str:
+        return self.base_url_client.presigned_get_object(
+            self.bucket_name,
+            key,
+            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
+        )
+
+    def sha256_checksum(self, key: str) -> str:
+        calculator = ChecksumCalculatorFile()
+        obj = self.client.get_object(self.bucket_name, key)
+        for chunk in obj.stream(amt=1024 * 1024 * 16):
+            calculator.write(chunk)
+        return calculator.checksum
 
 
 def create_s3_storage(bucket_name: str) -> Storage:
@@ -102,6 +244,48 @@ def create_s3_storage(bucket_name: str) -> Storage:
         raise Exception(f'Unknown storage: {default_storage_class}')
 
     return storage
+
+
+def get_boto_client(storage: Storage | None = None):
+    """Return an s3 client from the current storage."""
+    storage = storage if storage else get_storage()
+    if isinstance(storage, MinioStorage):
+        return boto3.client(
+            's3',
+            endpoint_url=storage.client._endpoint_url,
+            aws_access_key_id=storage.client._access_key,
+            aws_secret_access_key=storage.client._secret_key,
+            region_name='us-east-1',
+        )
+
+    return storage.connection.meta.client
+
+
+def yield_files(bucket: str, prefix: str | None = None):
+    """Get all objects in the bucket, through repeated object listing."""
+    client = get_boto_client()
+    common_options = {'Bucket': bucket}
+    if prefix is not None:
+        common_options['Prefix'] = prefix
+
+    continuation_token = None
+    while True:
+        options = {**common_options}
+        if continuation_token is not None:
+            options['ContinuationToken'] = continuation_token
+
+        # Fetch
+        res = client.list_objects_v2(**options)
+
+        # Yield this batch of files
+        yield res.get('Contents', [])
+
+        # If all files fetched, end
+        if res['IsTruncated'] is False:
+            break
+
+        # Get next continuation token
+        continuation_token = res['NextContinuationToken']
 
 
 def get_storage() -> Storage:

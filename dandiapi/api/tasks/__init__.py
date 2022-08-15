@@ -7,7 +7,6 @@ from django.db.models import QuerySet
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
-from dandiapi.api.checksum import calculate_sha256_checksum
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -25,7 +24,6 @@ logger = get_task_logger(__name__)
 @shared_task(queue='calculate_sha256', soft_time_limit=86_400)
 @atomic
 def calculate_sha256(blob_id: int) -> None:
-    logger.info('Starting sha256 calculation for blob %s', blob_id)
     try:
         asset_blob = AssetBlob.objects.get(blob_id=blob_id)
         logger.info(f'Found AssetBlob {blob_id}')
@@ -33,12 +31,9 @@ def calculate_sha256(blob_id: int) -> None:
         asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
         logger.info(f'Found EmbargoedAssetBlob {blob_id}')
 
-    sha256 = calculate_sha256_checksum(asset_blob.blob.storage, asset_blob.blob.name)
-    logger.info('Calculated sha256 %s', sha256)
+    sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
 
     # TODO: Run dandi-cli validation
-
-    logger.info('Saving sha256 %s to blob %s', sha256, blob_id)
 
     asset_blob.sha256 = sha256
     asset_blob.save()

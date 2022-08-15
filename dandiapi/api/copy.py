@@ -3,8 +3,9 @@ from __future__ import annotations
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 
-import boto3
 from django.conf import settings
+
+from dandiapi.api.storage import get_boto_client
 
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -64,20 +65,7 @@ def copy_object_multipart(
     storage, source_bucket: str, source_key: str, dest_bucket: str, dest_key: str
 ) -> CopyObjectResponse:
     """Copy an object, returning the new object key and etag."""
-    if isinstance(storage, S3Boto3Storage):
-        client = storage.connection.meta.client
-    elif isinstance(storage, MinioStorage):
-        # Instantiate an s3 client against the minio storage
-        client = boto3.client(
-            's3',
-            endpoint_url=storage.client._endpoint_url,
-            aws_access_key_id=storage.client._access_key,
-            aws_secret_access_key=storage.client._secret_key,
-            region_name='us-east-1',
-        )
-    else:
-        raise ValueError(f'Unknown storage {storage}')
-
+    client = get_boto_client(storage)
     return _copy_object_multipart_s3(
         client,
         source_bucket=source_bucket,
