@@ -43,21 +43,35 @@ class DandiMultipartMixin:
 
 
 class DandiBoto3MultipartManager(DandiMultipartMixin, Boto3MultipartManager):
-    def _create_upload_id(self, object_key: str) -> str:
-        resp = self._client.create_multipart_upload(
-            Bucket=self._bucket_name,
-            Key=object_key,
-            ACL='bucket-owner-full-control',
-        )
+    """A custom multipart manager for passing ACL information."""
+
+    def _create_upload_id(self, object_key: str, content_type: str | None = None) -> str:
+        kwargs = {
+            'Bucket': self._bucket_name,
+            'Key': object_key,
+            'ACL': 'bucket-owner-full-control',
+        }
+
+        if content_type is not None:
+            kwargs['Content-Type'] = content_type
+
+        resp = self._client.create_multipart_upload(**kwargs)
         return resp['UploadId']
 
 
 class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
-    def _create_upload_id(self, object_key: str) -> str:
+    """A custom multipart manager for passing ACL information."""
+
+    def _create_upload_id(self, object_key: str, content_type: str | None = None) -> str:
+        metadata = {'x-amz-acl': 'bucket-owner-full-control'}
+
+        if content_type is not None:
+            metadata['Content-Type'] = content_type
+
         return self._client._new_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
-            metadata={'x-amz-acl': 'bucket-owner-full-control'},
+            metadata=metadata,
         )
 
 
