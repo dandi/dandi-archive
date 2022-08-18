@@ -73,6 +73,9 @@ setup(
             'ipython',
             'tox',
             'boto3-stubs[s3]',
+            'django-stubs',
+            'djangorestframework-stubs',
+            'types-setuptools',
             'memray',
         ],
         'test': [
