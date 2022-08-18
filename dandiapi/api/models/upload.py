@@ -41,13 +41,13 @@ class BaseUpload(TimeStampedModel):
 
     @staticmethod
     @abstractmethod
-    def object_key(upload_id, dandiset: Dandiset | None = None):  # noqa: N805
+    def object_key(upload_id, *, dandiset: Dandiset):  # noqa: N805
         pass
 
     @classmethod
     def initialize_multipart_upload(cls, etag, size, dandiset: Dandiset):
         upload_id = uuid4()
-        object_key = cls.object_key(upload_id, dandiset)
+        object_key = cls.object_key(upload_id, dandiset=dandiset)
         multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
             object_key, size
         )
@@ -78,7 +78,7 @@ class Upload(BaseUpload):
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
     @staticmethod
-    def object_key(upload_id, dandiset: Dandiset | None = None):
+    def object_key(upload_id, *, dandiset: Dandiset | None = None):
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -104,7 +104,7 @@ class EmbargoedUpload(BaseUpload):
     )
 
     @staticmethod
-    def object_key(upload_id, dandiset: Dandiset):
+    def object_key(upload_id, *, dandiset: Dandiset):
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}'

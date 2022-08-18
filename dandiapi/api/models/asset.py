@@ -255,7 +255,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
                 source_key=self.embargoed_blob.blob.name,
                 dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
                 dest_key=Upload.object_key(
-                    self.embargoed_blob.blob_id, self.embargoed_blob.dandiset
+                    self.embargoed_blob.blob_id, dandiset=self.embargoed_blob.dandiset
                 ),
             )
 
