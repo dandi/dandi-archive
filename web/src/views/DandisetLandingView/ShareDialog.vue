@@ -110,7 +110,6 @@ export default defineComponent({
     function track() {
       event('share', {
         event_category: 'engagement',
-        event_label: 'method',
         value: 'twitter',
       });
     }

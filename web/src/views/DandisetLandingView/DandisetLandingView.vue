@@ -7,6 +7,8 @@
         v-model="page"
         :length="pages"
         :total-visible="0"
+        @prev="track"
+        @next="track"
       />
     </v-toolbar>
     <v-container
@@ -58,6 +60,7 @@ import { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
+import { event } from 'vue-gtag';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -210,6 +213,13 @@ export default defineComponent({
       await fetchNextPage(); // get the current page and total count
     });
 
+    function track() {
+      event('click', {
+        event_category: 'engagement',
+        value: 'navigate',
+      });
+    }
+
     return {
       currentDandiset,
       loading,
@@ -218,6 +228,7 @@ export default defineComponent({
       meta,
       pages,
       page,
+      track,
     };
   },
 });
