@@ -50,10 +50,10 @@ class BaseZarrUploadFile(TimeStampedModel):
 
     objects = ZarrUploadFileManager()
 
-    path: str = models.CharField(max_length=512)
+    path = models.CharField(max_length=512)
     """The path relative to the zarr root"""
 
-    etag: str = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
+    etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
 
     @property
     def upload_url(self) -> str:
@@ -73,7 +73,7 @@ class ZarrUploadFile(BaseZarrUploadFile):
     blob = models.FileField(blank=True, storage=get_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
-    zarr_archive: ZarrArchive = models.ForeignKey(
+    zarr_archive = models.ForeignKey(
         'ZarrArchive',
         related_name='active_uploads',
         on_delete=models.CASCADE,
@@ -84,7 +84,7 @@ class EmbargoedZarrUploadFile(BaseZarrUploadFile):
     blob = models.FileField(blank=True, storage=get_embargo_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
-    zarr_archive: EmbargoedZarrArchive = models.ForeignKey(
+    zarr_archive = models.ForeignKey(
         'EmbargoedZarrArchive',
         related_name='active_uploads',
         on_delete=models.CASCADE,
