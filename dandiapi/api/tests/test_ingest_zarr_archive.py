@@ -83,7 +83,7 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
     ]
 
     # Calculate size and file count
-    total_size = sum([f.blob.size for f in (foo_bar_files + foo_baz_files)])
+    total_size = sum(f.blob.size for f in (foo_bar_files + foo_baz_files))
     total_file_count = len(foo_bar_files) + len(foo_baz_files)
 
     # Generate correct listings

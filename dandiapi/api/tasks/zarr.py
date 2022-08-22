@@ -133,7 +133,7 @@ def ingest_zarr_archive(
 
             # Update size and file count
             if not no_size:
-                zarr.size += sum((file['Size'] for file in files))
+                zarr.size += sum(file['Size'] for file in files)
             if not no_count:
                 zarr.file_count += len(files)
 
@@ -162,10 +162,8 @@ def ingest_zarr_archive(
         # and there shouldn't be any files if the checksum is None
         if (checksum is None) != empty:
             raise Exception(
-                (
-                    f'Inconsistency between reported files and computed checksum. Checksum is '
-                    f'{checksum}, while {"no" if empty else ""} files were found in the zarr.'
-                )
+                f'Inconsistency between reported files and computed checksum. Checksum is '
+                f'{checksum}, while {"no" if empty else ""} files were found in the zarr.'
             )
 
         # If checksum is None, that means there were no files, and we should set

@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Type
 
 from composed_configuration import (
     ComposedConfiguration,
@@ -27,7 +26,7 @@ class DandiMixin(ConfigMixin):
     DANDI_ALLOW_LOCALHOST_URLS = False
 
     @staticmethod
-    def mutate_configuration(configuration: Type[ComposedConfiguration]):
+    def mutate_configuration(configuration: type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'dandiapi.api.apps.PublishConfig',
@@ -139,7 +138,7 @@ class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
 
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
     @staticmethod
-    def mutate_configuration(configuration: Type[ComposedConfiguration]):
+    def mutate_configuration(configuration: type[ComposedConfiguration]):
         # We're configuring sentry by hand since we need to pass custom options (traces_sampler).
         configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
 

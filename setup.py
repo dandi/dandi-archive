@@ -31,10 +31,10 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python',
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     packages=find_namespace_packages(include=['dandiapi*']),
     include_package_data=True,
     install_requires=[
@@ -80,7 +80,7 @@ setup(
         ],
         'test': [
             'factory-boy',
-            'girder-pytest-pyppeteer==0.0.9',
+            'girder-pytest-pyppeteer==0.0.12',
             'pytest',
             'pytest-asyncio',
             'pytest-cov',

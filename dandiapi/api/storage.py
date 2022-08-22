@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import timedelta
 import hashlib
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
