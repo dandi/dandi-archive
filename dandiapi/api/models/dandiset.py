@@ -53,7 +53,7 @@ class Dandiset(TimeStampedModel):
         permissions = [('owner', 'Owns the dandiset')]
 
     @property
-    def identifier(self) -> str | None:
+    def identifier(self) -> str:
         # Compare against None, to allow id 0
         return f'{self.id:06}' if self.id is not None else ''
 

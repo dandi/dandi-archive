@@ -176,7 +176,7 @@ class EmbargoedAssetBlobFactory(AssetBlobFactory):
     def blob(self):
         return django_files.File(
             file=django_files.base.ContentFile(faker.Faker().binary(self.size)).file,
-            name=EmbargoedUpload.object_key(self.blob_id, self.dandiset),
+            name=EmbargoedUpload.object_key(self.blob_id, dandiset=self.dandiset),
         )
 
 
