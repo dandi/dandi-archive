@@ -137,7 +137,7 @@ class AssetFilter(filters.FilterSet):
 
 
 class AssetViewSet(DetailSerializerMixin, GenericViewSet):
-    queryset = Asset.objects.all().order_by('created')
+    queryset = Asset.objects.all().select_related('zarr').order_by('created')
 
     serializer_class = AssetSerializer
     serializer_detail_class = AssetDetailSerializer
