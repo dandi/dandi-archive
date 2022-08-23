@@ -21,10 +21,10 @@ ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
 def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
-    message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
+    email_message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
     if html_message is not None:
-        message.attach_alternative(html_message, 'text/html')
-    return message
+        email_message.attach_alternative(html_message, 'text/html')
+    return email_message
 
 
 def build_removed_message(dandiset, removed_owner):
