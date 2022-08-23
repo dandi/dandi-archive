@@ -266,18 +266,16 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         # Update url
         url = self.request.build_absolute_uri()
-
-        # Next
-        next_url = None
-        next_page = page_number + 1 if page_number + 1 <= paths_paginator.num_pages else None
-        if next_page is not None:
-            next_url = replace_query_param(url, DandiPagination.page_query_param, next_page)
-
-        # Prev
-        prev_url = None
-        prev_page = page_number - 1 if page_number - 1 > 0 else None
-        if prev_page is not None:
-            prev_url = replace_query_param(url, DandiPagination.page_query_param, prev_page)
+        next_url = (
+            replace_query_param(url, DandiPagination.page_query_param, page_number + 1)
+            if page_number + 1 <= paths_paginator.num_pages
+            else None
+        )
+        prev_url = (
+            replace_query_param(url, DandiPagination.page_query_param, page_number - 1)
+            if page_number - 1 > 0
+            else None
+        )
 
         return {
             'count': asset_count,
