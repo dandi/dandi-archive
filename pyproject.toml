@@ -21,7 +21,6 @@ exclude = [
     "^dandiapi/api/admin.py",
     "^dandiapi/api/mail.py",
     "^dandiapi/api/tests/",
-    "^dandiapi/api/management/",
     "^dandiapi/api/views/",
 ]
 
