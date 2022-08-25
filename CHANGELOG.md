@@ -1,3 +1,45 @@
+# v0.2.43 (Thu Aug 25 2022)
+
+#### 🐛 Bug Fix
+
+- Update assets path pagination [#1253](https://github.com/dandi/dandi-archive/pull/1253) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Fix type errors in `mail.py` [#1250](https://github.com/dandi/dandi-archive/pull/1250) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove `management/` directory from excluded mypy files [#1252](https://github.com/dandi/dandi-archive/pull/1252) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove `migrations/` from excluded mypy files [#1251](https://github.com/dandi/dandi-archive/pull/1251) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix asset list performance issue [#1222](https://github.com/dandi/dandi-archive/pull/1222) ([@danlamanna](https://github.com/danlamanna))
+- Fix `target-version` for black [#1249](https://github.com/dandi/dandi-archive/pull/1249) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Require Python 3.10 [#1247](https://github.com/dandi/dandi-archive/pull/1247) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix type errors in `models` [#1246](https://github.com/dandi/dandi-archive/pull/1246) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix type errors in `tasks` [#1244](https://github.com/dandi/dandi-archive/pull/1244) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update s3-file-field dependency [#1241](https://github.com/dandi/dandi-archive/pull/1241) ([@danlamanna](https://github.com/danlamanna))
+- Clean up storage layer [#1238](https://github.com/dandi/dandi-archive/pull/1238) ([@danlamanna](https://github.com/danlamanna))
+- Optimize zarr list endpoint [#1220](https://github.com/dandi/dandi-archive/pull/1220) ([@AlmightyYakob](https://github.com/AlmightyYakob) [@danlamanna](https://github.com/danlamanna))
+- Remove unused dependency httpx [#1240](https://github.com/dandi/dandi-archive/pull/1240) ([@danlamanna](https://github.com/danlamanna))
+- Fix incorrect type hints [#1231](https://github.com/dandi/dandi-archive/pull/1231) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Require metadata/asset schemaVersion [#1199](https://github.com/dandi/dandi-archive/pull/1199) ([@danlamanna](https://github.com/danlamanna))
+- Fix zarr viewer [#1236](https://github.com/dandi/dandi-archive/pull/1236) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add external viewer for NGFF files [#1067](https://github.com/dandi/dandi-archive/pull/1067) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Revert "Pin flake8 version" [#1233](https://github.com/dandi/dandi-archive/pull/1233) ([@mvandenburgh](https://github.com/mvandenburgh))
+- changes in ShareDialog: using inline style [#828](https://github.com/dandi/dandi-archive/pull/828) ([@djarecka](https://github.com/djarecka) [@mvandenburgh](https://github.com/mvandenburgh))
+- DOC: add DLP abbreviation to initiate Abbreviations in DEVELOPMENT.md [#1224](https://github.com/dandi/dandi-archive/pull/1224) ([@yarikoptic](https://github.com/yarikoptic))
+- De-Duplicate API calls in DLP [#1208](https://github.com/dandi/dandi-archive/pull/1208) ([@DeepikaGhodki](https://github.com/DeepikaGhodki))
+- Use tuples for Admin model actions and inlines [#1229](https://github.com/dandi/dandi-archive/pull/1229) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🧪 Tests
+
+- Configure mypy [#1243](https://github.com/dandi/dandi-archive/pull/1243) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 6
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Deepika Ghodki ([@DeepikaGhodki](https://github.com/DeepikaGhodki))
+- Dorota Jarecka ([@djarecka](https://github.com/djarecka))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.2.42 (Wed Aug 03 2022)
 
 :tada: This release contains work from a new contributor! :tada:
