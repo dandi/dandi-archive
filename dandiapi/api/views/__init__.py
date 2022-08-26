@@ -1,6 +1,7 @@
 from .asset import AssetViewSet, NestedAssetViewSet
 from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
+from .dashboard import DashboardView, user_approval_view
 from .info import info_view
 from .root import root_content_view
 from .stats import stats_view
@@ -18,6 +19,7 @@ __all__ = [
     'NestedAssetViewSet',
     'AssetViewSet',
     'DandisetViewSet',
+    'DashboardView',
     'VersionViewSet',
     'ZarrViewSet',
     'authorize_view',
@@ -27,6 +29,7 @@ __all__ = [
     'upload_initialize_view',
     'upload_complete_view',
     'upload_validate_view',
+    'user_approval_view',
     'users_me_view',
     'user_questionnaire_form_view',
     'users_search_view',

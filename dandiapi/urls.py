@@ -6,10 +6,10 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 from rest_framework_extensions.routers import ExtendedSimpleRouter
 
-from dandiapi.api.dashboard import DashboardView, user_approval_view
 from dandiapi.api.views import (
     AssetViewSet,
     DandisetViewSet,
+    DashboardView,
     NestedAssetViewSet,
     VersionViewSet,
     ZarrViewSet,
@@ -23,6 +23,7 @@ from dandiapi.api.views import (
     upload_complete_view,
     upload_initialize_view,
     upload_validate_view,
+    user_approval_view,
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
