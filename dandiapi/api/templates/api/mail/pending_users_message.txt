@@ -3,6 +3,5 @@ The following new DANDI users are awaiting approval:
 {% for user in users %}
 Username: {{ user.username }}
 Joined: {{ user.date_joined }}
-{# TODO: use Django Sites here instead of hardcoding URL. #}
 Link to approve: {{ dandi_api_url }}{% url 'user-approval' username=user.username %}
 {% endfor %}
