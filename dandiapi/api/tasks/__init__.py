@@ -16,7 +16,7 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
-from dandiapi.api.models.zarr import ZarrArchive
+from dandiapi.zarr.models import ZarrArchive
 
 logger = get_task_logger(__name__)
 

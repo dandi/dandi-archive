@@ -7,7 +7,8 @@ from django.db import transaction
 import djclick as click
 import requests
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.zarr.models import ZarrArchive
 
 
 @transaction.atomic

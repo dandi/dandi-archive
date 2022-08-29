@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from dandiapi.zarr.models import ZarrArchive
+
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
 except ImportError:
@@ -36,7 +38,7 @@ from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version, ZarrArchive
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (

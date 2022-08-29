@@ -5,8 +5,7 @@ import pytest
 
 from dandiapi.api.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
 from dandiapi.api.management.commands.ingest_zarr_archive import ingest_zarr_archive
-from dandiapi.api.models import Dandiset, ZarrArchive, ZarrUploadFile
-from dandiapi.api.models.zarr import ZarrArchiveStatus
+from dandiapi.api.models import Dandiset
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
@@ -15,6 +14,7 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumUpdater,
     ZarrJSONChecksumSerializer,
 )
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 
 
 @pytest.mark.django_db(transaction=True)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.db import transaction
 import djclick as click
 
-from dandiapi.api.models import ZarrArchive
+from dandiapi.zarr.models import ZarrArchive
 
 
 @click.command()

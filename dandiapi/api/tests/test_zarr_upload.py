@@ -4,10 +4,10 @@ from guardian.shortcuts import assign_perm
 import pytest
 import requests
 
-from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.tasks import cancel_zarr_upload
 from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
+from dandiapi.zarr.models import ZarrArchive, ZarrUploadFile
 
 
 @pytest.mark.django_db

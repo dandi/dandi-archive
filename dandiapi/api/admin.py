@@ -20,16 +20,18 @@ from dandiapi.api.models import (
     AssetBlob,
     Dandiset,
     EmbargoedAssetBlob,
-    EmbargoedZarrArchive,
-    EmbargoedZarrUploadFile,
     Upload,
     UserMetadata,
     Version,
-    ZarrArchive,
-    ZarrUploadFile,
 )
 from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs, ingest_zarr_archive
 from dandiapi.api.views.users import social_account_to_dict
+from dandiapi.zarr.models import (
+    EmbargoedZarrArchive,
+    EmbargoedZarrUploadFile,
+    ZarrArchive,
+    ZarrUploadFile,
+)
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'

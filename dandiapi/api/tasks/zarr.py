@@ -9,7 +9,6 @@ from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.db import transaction
 
-from dandiapi.api.models.zarr import ZarrArchive, ZarrArchiveStatus
 from dandiapi.api.storage import get_boto_client, yield_files
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
@@ -18,6 +17,7 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumModification,
     ZarrChecksumUpdater,
 )
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
 

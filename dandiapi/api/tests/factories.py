@@ -18,9 +18,8 @@ from dandiapi.api.models import (
     Upload,
     UserMetadata,
     Version,
-    ZarrArchive,
-    ZarrUploadFile,
 )
+from dandiapi.zarr.models import ZarrArchive, ZarrUploadFile
 
 
 class UserMetadataFactory(factory.django.DjangoModelFactory):
