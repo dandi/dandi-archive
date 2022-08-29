@@ -18,6 +18,6 @@ app.autodiscover_tasks()
 
 @signals.import_modules.connect
 def _register_scheduled_tasks(sender, **kwargs):
-    from dandiapi.api.scheduled_tasks import register_scheduled_tasks
+    from dandiapi.api.tasks.scheduled import register_scheduled_tasks
 
     register_scheduled_tasks(sender, **kwargs)
