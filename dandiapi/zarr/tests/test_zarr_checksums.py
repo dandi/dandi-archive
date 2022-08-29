@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from dandiapi.api.zarr_checksums import (
+from dandiapi.zarr.checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
     ZarrChecksumListing,

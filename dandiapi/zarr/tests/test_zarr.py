@@ -6,7 +6,7 @@ import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.zarr.checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 from dandiapi.zarr.tasks import ingest_zarr_archive
 

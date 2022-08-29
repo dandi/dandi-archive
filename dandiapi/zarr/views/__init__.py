@@ -21,7 +21,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
+from dandiapi.zarr.checksums import ZarrChecksumFileUpdater
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 from dandiapi.zarr.tasks import cancel_zarr_upload, ingest_zarr_archive
 

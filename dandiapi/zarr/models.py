@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
+from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
 logger = logging.Logger(name=__name__)
 

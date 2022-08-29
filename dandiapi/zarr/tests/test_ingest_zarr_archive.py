@@ -4,7 +4,7 @@ from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.zarr_checksums import (
+from dandiapi.zarr.checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
     ZarrChecksumListing,

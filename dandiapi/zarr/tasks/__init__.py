@@ -11,7 +11,7 @@ from django.db import transaction
 from django.db.transaction import atomic
 
 from dandiapi.api.storage import get_boto_client, yield_files
-from dandiapi.api.zarr_checksums import (
+from dandiapi.zarr.checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
     ZarrChecksumListing,
