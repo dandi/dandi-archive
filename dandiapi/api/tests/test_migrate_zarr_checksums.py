@@ -1,6 +1,6 @@
 import pytest
 
-from dandiapi.api.management.commands.migrate_zarr_checksums import migrate_zarr_checksums
+from dandiapi.zarr.management.commands.migrate_zarr_checksums import migrate_zarr_checksums
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 

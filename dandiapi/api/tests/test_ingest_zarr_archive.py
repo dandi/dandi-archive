@@ -3,8 +3,6 @@ import time
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
-from dandiapi.api.management.commands.ingest_zarr_archive import ingest_zarr_archive
 from dandiapi.api.models import Dandiset
 from dandiapi.api.zarr_checksums import (
     ZarrChecksum,
@@ -14,6 +12,8 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumUpdater,
     ZarrJSONChecksumSerializer,
 )
+from dandiapi.zarr.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
+from dandiapi.zarr.management.commands.ingest_zarr_archive import ingest_zarr_archive
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 
 
