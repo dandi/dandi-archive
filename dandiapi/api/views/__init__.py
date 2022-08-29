@@ -13,7 +13,6 @@ from .upload import (
 )
 from .users import users_me_view, users_search_view
 from .version import VersionViewSet
-from .zarr import ZarrViewSet, explore_zarr_archive
 
 __all__ = [
     'NestedAssetViewSet',
@@ -21,11 +20,9 @@ __all__ = [
     'DandisetViewSet',
     'DashboardView',
     'VersionViewSet',
-    'ZarrViewSet',
     'authorize_view',
     'auth_token_view',
     'blob_read_view',
-    'explore_zarr_archive',
     'upload_initialize_view',
     'upload_complete_view',
     'upload_validate_view',
