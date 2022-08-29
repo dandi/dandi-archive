@@ -8,6 +8,7 @@ from celery.utils.log import get_task_logger
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.db import transaction
+from django.db.transaction import atomic
 
 from dandiapi.api.storage import get_boto_client, yield_files
 from dandiapi.api.zarr_checksums import (
@@ -181,3 +182,10 @@ def ingest_zarr_archive(
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
     for zarr in ZarrArchive.objects.filter(dandiset__id=dandiset_id):
         ingest_zarr_archive.delay(str(zarr.zarr_id), **kwargs)
+
+
+@shared_task(soft_time_limit=60)
+@atomic
+def cancel_zarr_upload(zarr_id: str):
+    zarr_archive: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+    zarr_archive.cancel_upload()

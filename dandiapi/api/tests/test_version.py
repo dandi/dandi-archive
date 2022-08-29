@@ -7,7 +7,7 @@ import pytest
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 

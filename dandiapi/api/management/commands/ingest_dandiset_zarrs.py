@@ -1,6 +1,6 @@
 import djclick as click
 
-from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs as _ingest_dandiset_zarrs
+from dandiapi.zarr.tasks import ingest_dandiset_zarrs as _ingest_dandiset_zarrs
 
 
 @click.command()

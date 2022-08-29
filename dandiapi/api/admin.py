@@ -23,8 +23,8 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
-from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs
 from dandiapi.api.views.users import social_account_to_dict
+from dandiapi.zarr.tasks import ingest_dandiset_zarrs
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'

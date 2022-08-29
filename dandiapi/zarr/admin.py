@@ -1,13 +1,13 @@
 from django.contrib import admin, messages
 from django.utils.translation import ngettext
 
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.zarr.models import (
     EmbargoedZarrArchive,
     EmbargoedZarrUploadFile,
     ZarrArchive,
     ZarrUploadFile,
 )
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
 @admin.register(ZarrArchive)
