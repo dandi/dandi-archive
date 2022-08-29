@@ -12,7 +12,6 @@ from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.translation import ngettext
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
@@ -24,14 +23,8 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
-from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs, ingest_zarr_archive
+from dandiapi.api.tasks.zarr import ingest_dandiset_zarrs
 from dandiapi.api.views.users import social_account_to_dict
-from dandiapi.zarr.models import (
-    EmbargoedZarrArchive,
-    EmbargoedZarrUploadFile,
-    ZarrArchive,
-    ZarrUploadFile,
-)
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'
@@ -217,52 +210,3 @@ class AssetAdmin(admin.ModelAdmin):
 class UploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
     list_display_links = ['id', 'upload_id']
-
-
-@admin.register(ZarrArchive)
-class ZarrArchiveAdmin(admin.ModelAdmin):
-    search_fields = ['zarr_id', 'name']
-    list_display = ['id', 'zarr_id', 'name', 'dandiset']
-    list_display_links = ['id', 'zarr_id', 'name']
-
-    @admin.action(description='Ingest selected zarr archives')
-    def ingest_zarr_archive(self, request, queryset):
-        for zarr in queryset:
-            ingest_zarr_archive.delay(zarr_id=(str(zarr.zarr_id)))
-
-        # Return message
-        self.message_user(
-            request,
-            ngettext(
-                '%d zarr archive has begun ingesting.',
-                '%d zarr archives have begun ingesting.',
-                queryset.count(),
-            )
-            % queryset.count(),
-            messages.SUCCESS,
-        )
-
-    def __init__(self, model, admin_site) -> None:
-        super().__init__(model, admin_site)
-        self.actions += ('ingest_zarr_archive',)
-
-
-@admin.register(EmbargoedZarrArchive)
-class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
-    search_fields = ['zarr_id', 'name']
-    list_display = ['id', 'zarr_id', 'name', 'dandiset']
-    list_display_links = ['id', 'zarr_id', 'name']
-
-
-@admin.register(ZarrUploadFile)
-class ZarrUploadFileAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['zarr_archive']
-    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
-    list_display_links = ['id']
-
-
-@admin.register(EmbargoedZarrUploadFile)
-class EmbargoedZarrUploadFileAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['zarr_archive']
-    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
-    list_display_links = ['id']

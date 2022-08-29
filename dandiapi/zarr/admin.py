@@ -1,0 +1,59 @@
+from django.contrib import admin, messages
+from django.utils.translation import ngettext
+
+from dandiapi.api.tasks.zarr import ingest_zarr_archive
+from dandiapi.zarr.models import (
+    EmbargoedZarrArchive,
+    EmbargoedZarrUploadFile,
+    ZarrArchive,
+    ZarrUploadFile,
+)
+
+
+@admin.register(ZarrArchive)
+class ZarrArchiveAdmin(admin.ModelAdmin):
+    search_fields = ['zarr_id', 'name']
+    list_display = ['id', 'zarr_id', 'name', 'dandiset']
+    list_display_links = ['id', 'zarr_id', 'name']
+
+    @admin.action(description='Ingest selected zarr archives')
+    def ingest_zarr_archive(self, request, queryset):
+        for zarr in queryset:
+            ingest_zarr_archive.delay(zarr_id=(str(zarr.zarr_id)))
+
+        # Return message
+        self.message_user(
+            request,
+            ngettext(
+                '%d zarr archive has begun ingesting.',
+                '%d zarr archives have begun ingesting.',
+                queryset.count(),
+            )
+            % queryset.count(),
+            messages.SUCCESS,
+        )
+
+    def __init__(self, model, admin_site) -> None:
+        super().__init__(model, admin_site)
+        self.actions += ('ingest_zarr_archive',)
+
+
+@admin.register(EmbargoedZarrArchive)
+class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
+    search_fields = ['zarr_id', 'name']
+    list_display = ['id', 'zarr_id', 'name', 'dandiset']
+    list_display_links = ['id', 'zarr_id', 'name']
+
+
+@admin.register(ZarrUploadFile)
+class ZarrUploadFileAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['zarr_archive']
+    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
+    list_display_links = ['id']
+
+
+@admin.register(EmbargoedZarrUploadFile)
+class EmbargoedZarrUploadFileAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['zarr_archive']
+    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
+    list_display_links = ['id']
