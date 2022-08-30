@@ -54,7 +54,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, Ref, ref } from '@vue/composition-api';
+import { defineComponent, Ref, ref } from 'vue';
 
 export default defineComponent({
   name: 'ApiKeyItem',

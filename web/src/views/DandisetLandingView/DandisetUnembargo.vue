@@ -114,7 +114,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from 'vue';
 import moment from 'moment';
 import { dandiRest } from '@/rest';
 import store from '@/store';

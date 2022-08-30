@@ -220,8 +220,9 @@
 <script lang="ts">
 import {
   computed, defineComponent, onMounted, Ref, ref, watch,
-} from '@vue/composition-api';
+} from 'vue';
 import { RawLocation } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router/composables';
 import filesize from 'filesize';
 import { trimEnd } from 'lodash';
 
@@ -279,7 +280,10 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
+  setup(props) {
+    const route = useRoute();
+    const router = useRouter();
+
     const location = ref(rootDirectory);
     const itemToDelete: Ref<AssetFile | null> = ref(null);
     const page = ref(1);
@@ -397,15 +401,15 @@ export default defineComponent({
 
     // Update URL if location changes
     watch(location, () => {
-      const { location: existingLocation } = ctx.root.$route.query;
+      const { location: existingLocation } = route.query;
 
       // Reset page to 1 when location changes
       page.value = 1;
 
       // Update route when location changes
       if (existingLocation === location.value) { return; }
-      ctx.root.$router.push({
-        ...ctx.root.$route,
+      router.push({
+        ...route,
         query: { location: location.value },
       } as RawLocation);
     });
@@ -418,11 +422,11 @@ export default defineComponent({
     });
 
     // go to the directory specified in the URL if it changes
-    watch(() => ctx.root.$route, (route) => {
+    watch(() => route.query, (newRouteQuery) => {
       location.value = (
-        Array.isArray(route.query.location)
-          ? route.query.location[0]
-          : route.query.location
+        Array.isArray(newRouteQuery.location)
+          ? newRouteQuery.location[0]
+          : newRouteQuery.location
       ) || rootDirectory;
 
       // Retrieve with new location

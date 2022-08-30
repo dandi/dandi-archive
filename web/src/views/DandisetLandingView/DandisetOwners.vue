@@ -96,7 +96,7 @@
 import { dandiRest, loggedIn } from '@/rest';
 import store from '@/store';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
-import { computed, defineComponent, ref } from '@vue/composition-api';
+import { computed, defineComponent, ref } from 'vue';
 
 export default defineComponent({
   name: 'DandisetOwners',

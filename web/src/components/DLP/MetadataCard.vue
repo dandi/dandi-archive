@@ -74,7 +74,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from '@vue/composition-api';
+import {
+  computed, defineComponent, getCurrentInstance, PropType,
+} from 'vue';
 
 // The maximum amount of columns to show on a metadata card,
 // regardless of how many entries there are.
@@ -100,15 +102,15 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
-    const { $vuetify } = ctx.root;
+  setup(props) {
+    const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
 
-    const borderLeftColor = computed(() => $vuetify.theme.themes.light.primary);
+    const borderLeftColor = computed(() => $vuetify.value?.theme.themes.light.primary);
 
     // Try to estimate the ideal number of columns to break the items into.
     // When viewing on a smaller screen, force the number of columns to 1.
     const columnCount = computed(
-      () => ($vuetify.breakpoint.mdAndDown
+      () => ($vuetify.value?.breakpoint.mdAndDown
         ? 1 : Math.min(Math.ceil(props.items.length / 2), MAX_COLUMNS)),
     );
 

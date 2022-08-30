@@ -95,7 +95,7 @@
 <script lang="ts">
 import {
   defineComponent, ref, computed, watch, Ref, watchEffect,
-} from '@vue/composition-api';
+} from 'vue';
 
 import omit from 'lodash/omit';
 import DandisetList from '@/components/DandisetList.vue';
@@ -103,6 +103,8 @@ import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
+import { useRoute } from 'vue-router/composables';
+import router from '@/router';
 
 export default defineComponent({
   name: 'DandisetsPage',
@@ -123,10 +125,10 @@ export default defineComponent({
       default: false,
     },
   },
-  setup(props, ctx) {
+  setup(props) {
     // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
     // https://next.router.vuejs.org/api/#useroute
-    const route = ctx.root.$route;
+    const route = useRoute();
 
     const showDrafts = ref(true);
     const showEmpty = ref(false);
@@ -147,8 +149,8 @@ export default defineComponent({
         page_size: DANDISETS_PER_PAGE,
         ordering,
         user: props.user ? 'me' : null,
-        // note: use ctx.root.$route here for reactivity
-        search: props.search ? ctx.root.$route.query.search : null,
+        // note: use useRoute() here for reactivity
+        search: props.search ? useRoute().query.search : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
         embargoed: props.user,
@@ -178,15 +180,15 @@ export default defineComponent({
       showEmpty: String(showEmpty.value),
     }));
     watch(queryParams, (params) => {
-      ctx.root.$router.replace({
-        // note: use ctx.root.$route here for reactivity
-        ...ctx.root.$route,
+      const currentRoute = useRoute();
+      router.replace({
+        ...currentRoute,
         // replace() takes a RawLocation, which has a name: string
         // Route has a name: string | null, so we need to tweak this
-        name: ctx.root.$route.name || undefined,
+        name: currentRoute.name || undefined,
         query: {
           // do not override the search parameter, if present
-          ...ctx.root.$route.query,
+          ...currentRoute.query,
           ...params,
         },
       });

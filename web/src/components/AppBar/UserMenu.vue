@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent } from 'vue';
 
 import { user as userFunc, dandiRest } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';

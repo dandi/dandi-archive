@@ -78,7 +78,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType } from '@vue/composition-api';
+import { defineComponent, computed, PropType } from 'vue';
+import { useRoute } from 'vue-router/composables';
 import moment from 'moment';
 import filesize from 'filesize';
 
@@ -93,10 +94,8 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
-    // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
-    // https://next.router.vuejs.org/api/#useroute
-    const route = ctx.root.$route;
+  setup() {
+    const route = useRoute();
 
     const origin = computed(() => {
       const { name, params, query } = route;
@@ -104,7 +103,7 @@ export default defineComponent({
     });
     // current position in search result set = items on prev pages + position on current page
     function getPos(index: number) {
-      return (Number(ctx.root.$route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
+      return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
     }
     function formatDate(date: string) {
       return moment(date).format('LL');

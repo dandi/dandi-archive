@@ -218,7 +218,7 @@ import { dandiRest } from '@/rest';
 import store from '@/store';
 import {
   computed, defineComponent, Ref, ref, watch,
-} from '@vue/composition-api';
+} from 'vue';
 import { User } from '@/types';
 
 export default defineComponent({

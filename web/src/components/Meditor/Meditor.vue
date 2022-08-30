@@ -84,9 +84,7 @@
                     v-on="on"
                     @click="save"
                   >
-                    <v-icon
-                      v-text="modified ? 'mdi-content-save-alert' : 'mdi-content-save'"
-                    />
+                    <v-icon>{{ modified ? 'mdi-content-save-alert' : 'mdi-content-save' }}</v-icon>
                   </v-btn>
                 </template>
                 <span>Save</span>
@@ -229,7 +227,7 @@ import type { JSONSchema7 } from 'json-schema';
 
 import {
   defineComponent, ref, computed, ComputedRef, onMounted,
-} from '@vue/composition-api';
+} from 'vue';
 
 import jsYaml from 'js-yaml';
 
@@ -268,6 +266,7 @@ function renderField(fieldSchema: JSONSchema7) {
 }
 
 export default defineComponent({
+  // eslint-disable-next-line vue/multi-word-component-names
   name: 'Meditor',
   components: { VJsf, VJsfWrapper },
   setup() {

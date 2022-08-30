@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import { dandiRest } from '@/rest';
-import { computed, ComputedRef, defineComponent } from '@vue/composition-api';
+import { computed, ComputedRef, defineComponent } from 'vue';
 
 interface StatusBanner {
   text: string,

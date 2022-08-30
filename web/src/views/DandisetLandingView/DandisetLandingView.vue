@@ -48,7 +48,7 @@
 <script lang="ts">
 import {
   defineComponent, computed, watch, onMounted, Ref, ref,
-} from '@vue/composition-api';
+} from 'vue';
 import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
@@ -58,6 +58,7 @@ import { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
+import { useRoute, useRouter } from 'vue-router/composables';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -94,7 +95,10 @@ export default defineComponent({
       default: null,
     },
   },
-  setup(props, ctx) {
+  setup(props) {
+    const route = useRoute();
+    const router = useRouter();
+
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const loading = computed(() => store.state.dandiset.loading);
     const schema = computed(() => store.state.dandiset.schema);
@@ -103,16 +107,16 @@ export default defineComponent({
     const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
 
     function navigateToVersion(versionToNavigateTo: string) {
-      if (ctx.root.$route.params.version === versionToNavigateTo) return;
+      if (route.params.version === versionToNavigateTo) return;
 
-      const route = {
-        ...ctx.root.$route,
+      const newRoute = {
+        ...route,
         params: {
-          ...ctx.root.$route.params,
+          ...route.params,
           versionToNavigateTo,
         },
       } as RawLocation;
-      ctx.root.$router.replace(route);
+      router.replace(newRoute);
     }
 
     // () => props.identifier is needed since we're using Vue 2
@@ -146,22 +150,22 @@ export default defineComponent({
       }
     });
 
-    const page = ref(Number(ctx.root.$route.query.pos) || 1);
+    const page = ref(Number(route.query.pos) || 1);
     const pages = ref(1);
     const nextDandiset : Ref<any[]> = ref([]);
 
     async function fetchNextPage() {
-      const sortOption = Number(ctx.root.$route.query.sortOption) || 0;
-      const sortDir = Number(ctx.root.$route.query.sortDir || -1);
+      const sortOption = Number(route.query.sortOption) || 0;
+      const sortDir = Number(route.query.sortDir || -1);
       const sortField = sortingOptions[sortOption].djangoField;
       const ordering = ((sortDir === -1) ? '-' : '') + sortField;
       const response = await dandiRest.dandisets({
         page: page.value,
         page_size: 1,
         ordering,
-        search: ctx.root.$route.query.search,
-        draft: ctx.root.$route.query.showDrafts || true,
-        empty: ctx.root.$route.query.showEmpty,
+        search: route.query.search,
+        draft: route.query.showDrafts || true,
+        empty: route.query.showEmpty,
       });
 
       pages.value = (response.data?.count) ? response.data?.count : 1;
@@ -176,11 +180,11 @@ export default defineComponent({
       if (nextDandiset.value) {
         const { identifier } = nextDandiset.value[0];
         if (identifier !== props.identifier) { // to avoid redundant navigation
-          ctx.root.$router.push({
-            name: ctx.root.$route.name || undefined,
+          router.push({
+            name: route.name || undefined,
             params: { identifier },
             query: {
-              ...ctx.root.$route.query,
+              ...route.query,
             },
           });
         }

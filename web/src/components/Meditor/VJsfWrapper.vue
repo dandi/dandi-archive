@@ -149,7 +149,7 @@
 <script lang="ts">
 import {
   computed, defineComponent, ref, watch,
-} from '@vue/composition-api';
+} from 'vue';
 
 import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';

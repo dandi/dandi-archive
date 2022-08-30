@@ -58,7 +58,7 @@ const dandiRest = new Vue({
         this.user = await this.me();
       } catch (e) {
         // A status of 401 indicates login failed, so the exception should be supressed.
-        if (e.response.status === 401) {
+        if (axios.isAxiosError(e) && e.response?.status === 401) {
           await oauthClient.logout();
         } else {
           // Any other kind of exception indicates an error that shouldn't occur
@@ -93,7 +93,7 @@ const dandiRest = new Vue({
         return data;
       } catch (e) {
         // If the request returned 404, the user doesn't have an API key yet
-        if (e.response.status === 404) {
+        if (axios.isAxiosError(e) && e.response?.status === 404) {
           // Create a new API key
           const data = await this.newApiKey();
           return data;
@@ -109,7 +109,7 @@ const dandiRest = new Vue({
         } = await client.get(`dandisets/${identifier}/versions/${version}/assets`, config);
         return data;
       } catch (error) {
-        if (error.response && error.response.status === 404) {
+        if (axios.isAxiosError(error) && error.response && error.response.status === 404) {
           return null;
         }
         throw error;
@@ -140,10 +140,10 @@ const dandiRest = new Vue({
         const { data } = await client.get(`dandisets/${identifier}/versions/`, { params });
         return data;
       } catch (error) {
-        if (error.response && error.response.status === 404) {
+        if (axios.isAxiosError(error) && error.response && error.response.status === 404) {
           return null;
         }
-        if (error.message === 'Network Error') {
+        if (axios.isAxiosError(error) && error.message === 'Network Error') {
           return null;
         }
         throw error;
@@ -154,7 +154,7 @@ const dandiRest = new Vue({
         const { data } = await client.get(`dandisets/${identifier}/versions/${version}/info/`);
         return data;
       } catch (error) {
-        if (error.response && error.response.status === 404) {
+        if (axios.isAxiosError(error) && error.response && error.response.status === 404) {
           return null;
         }
         throw error;

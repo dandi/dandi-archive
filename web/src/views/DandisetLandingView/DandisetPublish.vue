@@ -108,14 +108,14 @@
                         items before you publish:
                       </span>
                       <!-- Note: this is safe as we aren't rendering any user-generated input -->
-                      <!-- eslint-disable vue/no-v-html -->
+                      <!-- eslint-disable vue/no-v-html vue/no-v-text-v-html-on-component -->
                       <v-list-item
                         v-for="(item, i) in PUBLISH_CHECKLIST"
                         :key="`checklist_item_${i}`"
                         class="text-body-2 my-1"
                         v-html="`<span>${i+1}. ${item}</span>`"
                       />
-                      <!-- eslint-enable vue/no-v-html -->
+                      <!-- eslint-enable vue/no-v-html vue/no-v-text-v-html-on-component -->
                     </v-list>
                   </v-card-text>
 
@@ -411,7 +411,7 @@
 <script lang="ts">
 import {
   defineComponent, computed, ComputedRef, ref,
-} from '@vue/composition-api';
+} from 'vue';
 
 import moment from 'moment';
 
@@ -423,6 +423,7 @@ import { User, Version } from '@/types';
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
 import { RawLocation } from 'vue-router';
 import { open as openMeditor } from '@/components/Meditor/state';
+import { useRoute } from 'vue-router/composables';
 
 const PUBLISH_CHECKLIST = [
   'A descriptive title (e.g., <span class="font-italic">Data related to foraging behavior in bees</span> rather than <span class="font-italic">Smith et al 2022</span>)',
@@ -462,7 +463,7 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
+  setup(props) {
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const currentVersion = computed(() => store.getters.dandiset.version);
 
@@ -545,11 +546,13 @@ export default defineComponent({
     function setVersion({ version: newVersion }: any) {
       const version = newVersion || draftVersion;
 
-      if (ctx.root.$route.params.version !== version) {
-        ctx.root.$router.replace({
-          ...ctx.root.$route,
+      const route = useRoute();
+
+      if (route.params.version !== version) {
+        router.replace({
+          ...route,
           params: {
-            ...ctx.root.$route.params,
+            ...route.params,
             version,
           },
         } as RawLocation);
