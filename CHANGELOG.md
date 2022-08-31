@@ -1,3 +1,18 @@
+# v0.2.44 (Wed Aug 31 2022)
+
+#### 🐛 Bug Fix
+
+- Create django app for zarr functionality [#1256](https://github.com/dandi/dandi-archive/pull/1256) ([@danlamanna](https://github.com/danlamanna))
+- Rearrange file structure [#1255](https://github.com/dandi/dandi-archive/pull/1255) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove TODO about Django Sites [#1254](https://github.com/dandi/dandi-archive/pull/1254) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.43 (Thu Aug 25 2022)
 
 #### 🐛 Bug Fix
