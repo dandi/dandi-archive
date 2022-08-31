@@ -75,7 +75,7 @@
             :options="options"
             @input="setComplexModelProp($event)"
           >
-            <template slot-scope="slotProps">
+            <template #default="slotProps">
               <v-card
                 outlined
                 class="d-flex flex-column"

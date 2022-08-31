@@ -269,7 +269,7 @@ export default defineComponent({
       () => props.meta.wasGeneratedBy,
     );
 
-    const assetSummary = computed(
+    const assetSummary = computed<Record<string, any>>(
       () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
         // filter out assetSummary fields we don't want to display
         ([key, value]) => !!value && !ASSET_SUMMARY_BLACKLIST.has(key),
