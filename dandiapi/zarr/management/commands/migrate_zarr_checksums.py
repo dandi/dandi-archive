@@ -1,7 +1,7 @@
 from django.db.models.query import QuerySet
 import djclick as click
 
-from dandiapi.api.models.zarr import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 
 @click.command()

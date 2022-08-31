@@ -16,7 +16,6 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
-from dandiapi.api.models.zarr import ZarrArchive
 
 logger = get_task_logger(__name__)
 
@@ -185,10 +184,3 @@ def unembargo_dandiset(dandiset_id: int):
     # Set access on dandiset
     dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
     dandiset.save(update_fields=['embargo_status'])
-
-
-@shared_task(soft_time_limit=60)
-@atomic
-def cancel_zarr_upload(zarr_id: str):
-    zarr_archive: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-    zarr_archive.cancel_upload()

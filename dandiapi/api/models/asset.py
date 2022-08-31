@@ -114,7 +114,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         EmbargoedAssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
     zarr = models.ForeignKey(
-        'ZarrArchive', related_name='assets', on_delete=models.CASCADE, null=True, blank=True
+        'zarr.ZarrArchive', related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
     metadata = models.JSONField(blank=True, default=dict)
     versions = models.ManyToManyField(Version, related_name='assets')
@@ -310,8 +310,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        # delayed import to avoid present imports circularity
-        from .zarr import ZarrArchive
+        from dandiapi.zarr.models import ZarrArchive
 
         return sum(
             cls.objects.filter(assets__versions__isnull=False)

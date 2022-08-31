@@ -4,12 +4,11 @@ from django.core.files.base import ContentFile
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.models.zarr import ZarrArchiveStatus
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.zarr.checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
 @pytest.mark.django_db

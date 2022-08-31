@@ -4,8 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from dandiapi.api.models import ZarrArchive, ZarrUploadFile
-from dandiapi.api.zarr_checksums import (
+from dandiapi.zarr.checksums import (
     ZarrChecksum,
     ZarrChecksumFileUpdater,
     ZarrChecksumListing,
@@ -15,6 +14,7 @@ from dandiapi.api.zarr_checksums import (
     ZarrChecksumUpdater,
     ZarrJSONChecksumSerializer,
 )
+from dandiapi.zarr.models import ZarrArchive, ZarrUploadFile
 
 
 def test_zarr_checksum_sort_order():

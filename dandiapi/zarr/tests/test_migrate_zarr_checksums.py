@@ -1,9 +1,8 @@
 import pytest
 
-from dandiapi.api.management.commands.migrate_zarr_checksums import migrate_zarr_checksums
-from dandiapi.api.models import ZarrArchive
-from dandiapi.api.models.zarr import ZarrArchiveStatus
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
+from dandiapi.zarr.management.commands.migrate_zarr_checksums import migrate_zarr_checksums
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
 @pytest.mark.django_db

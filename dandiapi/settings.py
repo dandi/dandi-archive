@@ -30,6 +30,7 @@ class DandiMixin(ConfigMixin):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'dandiapi.api.apps.PublishConfig',
+            'dandiapi.zarr.apps.ZarrConfig',
         ] + configuration.INSTALLED_APPS
 
         # Install additional apps

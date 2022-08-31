@@ -7,8 +7,7 @@ from rest_framework.test import APIClient
 from storages.backends.s3boto3 import S3Boto3Storage
 
 from dandiapi.api.storage import create_s3_storage
-
-from .factories import (
+from dandiapi.api.tests.factories import (
     AssetBlobFactory,
     DandisetFactory,
     DraftAssetFactory,
@@ -20,9 +19,8 @@ from .factories import (
     SocialAccountFactory,
     UploadFactory,
     UserFactory,
-    ZarrArchiveFactory,
-    ZarrUploadFileFactory,
 )
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory, ZarrUploadFileFactory
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
@@ -38,6 +36,8 @@ register(DraftVersionFactory, _name='draft_version')
 register(UserFactory)
 register(SocialAccountFactory)
 register(UploadFactory)
+
+# zarr app
 register(ZarrArchiveFactory)
 register(ZarrUploadFileFactory)
 

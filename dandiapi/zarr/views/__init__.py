@@ -19,13 +19,11 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.models import ZarrArchive, ZarrUploadFile
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.models.zarr import ZarrArchiveStatus
-from dandiapi.api.tasks import cancel_zarr_upload
-from dandiapi.api.tasks.zarr import ingest_zarr_archive
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.api.zarr_checksums import ZarrChecksumFileUpdater
+from dandiapi.zarr.checksums import ZarrChecksumFileUpdater
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
+from dandiapi.zarr.tasks import cancel_zarr_upload, ingest_zarr_archive
 
 logger = logging.getLogger(__name__)
 

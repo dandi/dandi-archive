@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 
 if TYPE_CHECKING:
-    from dandiapi.api.models import EmbargoedZarrArchive, ZarrArchive
+    from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
 from dandischema.digests.zarr import (
     ZarrChecksum,

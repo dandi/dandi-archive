@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.api.zarr_checksums import ZarrChecksum, ZarrChecksumFileUpdater
+from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumFileUpdater
 
 logger = logging.Logger(name=__name__)
 
@@ -70,6 +70,9 @@ class BaseZarrUploadFile(TimeStampedModel):
 
 
 class ZarrUploadFile(BaseZarrUploadFile):
+    class Meta(BaseZarrUploadFile.Meta):
+        db_table = 'api_zarruploadfile'
+
     blob = models.FileField(blank=True, storage=get_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
@@ -81,6 +84,9 @@ class ZarrUploadFile(BaseZarrUploadFile):
 
 
 class EmbargoedZarrUploadFile(BaseZarrUploadFile):
+    class Meta(BaseZarrUploadFile.Meta):
+        db_table = 'api_embargoedzarruploadfile'
+
     blob = models.FileField(blank=True, storage=get_embargo_storage, max_length=1_000)
     """The fully qualified S3 object key"""
 
@@ -237,6 +243,9 @@ class BaseZarrArchive(TimeStampedModel):
 
 
 class ZarrArchive(BaseZarrArchive):
+    class Meta(BaseZarrArchive.Meta):
+        db_table = 'api_zarrarchive'
+
     storage = get_storage()
     upload_file_class = ZarrUploadFile
 
@@ -248,6 +257,9 @@ class ZarrArchive(BaseZarrArchive):
 
 
 class EmbargoedZarrArchive(BaseZarrArchive):
+    class Meta(BaseZarrArchive.Meta):
+        db_table = 'api_embargoedzarrarchive'
+
     storage = get_embargo_storage()
     upload_file_class = EmbargoedZarrUploadFile
 

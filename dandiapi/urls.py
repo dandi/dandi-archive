@@ -12,11 +12,9 @@ from dandiapi.api.views import (
     DashboardView,
     NestedAssetViewSet,
     VersionViewSet,
-    ZarrViewSet,
     auth_token_view,
     authorize_view,
     blob_read_view,
-    explore_zarr_archive,
     info_view,
     root_content_view,
     stats_view,
@@ -28,6 +26,7 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
 )
+from dandiapi.zarr.views import ZarrViewSet, explore_zarr_archive
 
 router = ExtendedSimpleRouter()
 (
