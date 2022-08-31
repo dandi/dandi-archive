@@ -23,8 +23,8 @@ jobs:
       - name: Lint Vue app
         run: yarn run lint --no-fix
 
-      - name: Type-check Vue templates
-        run: yarn run lint:templates
+      - name: Type-check Vue app
+        run: yarn run type
 
       - name: Build Vue app
         run: yarn run build
@@ -133,12 +133,6 @@ jobs:
       - name: Install web app
         if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile --prefer-offline
-        working-directory: web
-
-      - name: Lint web app
-        run: |
-          yarn run lint --no-fix --max-warnings=0
-          yarn run lint:templates
         working-directory: web
 
       - name: Set up Python
