@@ -98,12 +98,12 @@ import {
 } from 'vue';
 
 import omit from 'lodash/omit';
+import { useRoute } from 'vue-router/composables';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
-import { useRoute } from 'vue-router/composables';
 import router from '@/router';
 
 export default defineComponent({
@@ -126,8 +126,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
-    // https://next.router.vuejs.org/api/#useroute
     const route = useRoute();
 
     const showDrafts = ref(true);
