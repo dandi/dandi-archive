@@ -98,12 +98,12 @@ import {
 } from 'vue';
 
 import omit from 'lodash/omit';
+import { useRoute } from 'vue-router/composables';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
 import { Dandiset, Paginated, Version } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
-import { useRoute } from 'vue-router/composables';
 import router from '@/router';
 
 export default defineComponent({
@@ -126,8 +126,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
-    // https://next.router.vuejs.org/api/#useroute
     const route = useRoute();
 
     const showDrafts = ref(true);
@@ -149,8 +147,7 @@ export default defineComponent({
         page_size: DANDISETS_PER_PAGE,
         ordering,
         user: props.user ? 'me' : null,
-        // note: use useRoute() here for reactivity
-        search: props.search ? useRoute().query.search : null,
+        search: props.search ? route.query.search : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
         embargoed: props.user,
@@ -182,15 +179,14 @@ export default defineComponent({
       showEmpty: String(showEmpty.value),
     }));
     watch(queryParams, (params) => {
-      const currentRoute = useRoute();
       router.replace({
-        ...currentRoute,
+        ...route,
         // replace() takes a RawLocation, which has a name: string
         // Route has a name: string | null, so we need to tweak this
-        name: currentRoute.name || undefined,
+        name: route.name || undefined,
         query: {
           // do not override the search parameter, if present
-          ...currentRoute.query,
+          ...route.query,
           ...params,
         },
       });
