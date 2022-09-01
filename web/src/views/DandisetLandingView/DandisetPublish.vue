@@ -464,6 +464,8 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const route = useRoute();
+
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const currentVersion = computed(() => store.getters.dandiset.version);
 
@@ -545,8 +547,6 @@ export default defineComponent({
 
     function setVersion({ version: newVersion }: any) {
       const version = newVersion || draftVersion;
-
-      const route = useRoute();
 
       if (route.params.version !== version) {
         router.replace({
