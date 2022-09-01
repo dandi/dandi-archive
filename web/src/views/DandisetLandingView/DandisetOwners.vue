@@ -84,6 +84,7 @@
           </v-tooltip>
         </template>
         <DandisetOwnersDialog
+          v-if="owners"
           :owners="owners"
           @close="ownerDialog = false"
         />

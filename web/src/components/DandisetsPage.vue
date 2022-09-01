@@ -94,7 +94,7 @@
 
 <script lang="ts">
 import {
-  defineComponent, ref, computed, watch, Ref, watchEffect,
+  defineComponent, ref, computed, watch, Ref, watchEffect, ComputedRef,
 } from 'vue';
 
 import omit from 'lodash/omit';
@@ -102,7 +102,7 @@ import { useRoute } from 'vue-router/composables';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
-import { Dandiset, Paginated } from '@/types';
+import { Dandiset, Paginated, Version } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
 import router from '@/router';
 
@@ -155,10 +155,12 @@ export default defineComponent({
       djangoDandisetRequest.value = response.data;
     });
 
-    const dandisets = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
-      ...(dandiset.most_recent_published_version || dandiset.draft_version),
-      dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
-    })));
+    const dandisets = computed(
+      () => djangoDandisetRequest.value?.results.map((dandiset) => ({
+        ...(dandiset.most_recent_published_version || dandiset.draft_version),
+        dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
+      })),
+    ) as ComputedRef<Version[] | undefined>;
 
     const pages = computed(() => {
       const totalDandisets: number = djangoDandisetRequest.value?.count || 0;

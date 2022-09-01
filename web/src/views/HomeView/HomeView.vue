@@ -50,9 +50,7 @@
 <script lang="ts">
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import {
-  computed, defineComponent, getCurrentInstance, watchEffect,
-} from 'vue';
+import { defineComponent, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router/composables';
 
 export default defineComponent({
@@ -71,11 +69,6 @@ export default defineComponent({
         router.replace(trimmed);
       }
     });
-
-    return {
-      // Hack to satisfy template type checker
-      $vuetify: computed(() => getCurrentInstance()?.proxy.$vuetify),
-    };
   },
 });
 </script>

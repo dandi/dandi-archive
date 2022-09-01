@@ -230,6 +230,7 @@ import {
 } from 'vue';
 
 import jsYaml from 'js-yaml';
+import axios from 'axios';
 
 import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';
@@ -352,7 +353,7 @@ export default defineComponent({
           }, 500);
         }
       } catch (error) {
-        if (error.response.status === 403) {
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
           invalidPermissionSnackbar.value = true;
         }
 

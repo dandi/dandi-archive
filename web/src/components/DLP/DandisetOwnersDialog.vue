@@ -10,7 +10,7 @@
         :small="$vuetify.breakpoint.xs"
         color="info"
         elevation="0"
-        @click="save() && $emit('close')"
+        @click="save()"
       >
         Done
       </v-btn>
@@ -229,7 +229,7 @@ export default defineComponent({
       required: true,
     },
   },
-  setup() {
+  setup(props, ctx) {
     const currentDandiset = computed(() => store.state.dandiset.dandiset);
     const owners = computed(() => store.state.dandiset.owners);
 
@@ -342,6 +342,7 @@ export default defineComponent({
         setOwners(data);
         adminWarningDisplay.value = false;
       }
+      ctx.emit('close');
     }
 
     return {
