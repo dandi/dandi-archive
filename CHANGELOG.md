@@ -1,3 +1,16 @@
+# v0.2.45 (Thu Sep 01 2022)
+
+#### 🐛 Bug Fix
+
+- Upgrade frontend to Vue 2.7 [#1258](https://github.com/dandi/dandi-archive/pull/1258) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Replace `vue-type-check` with `vue-tsc` [#1259](https://github.com/dandi/dandi-archive/pull/1259) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.44 (Wed Aug 31 2022)
 
 #### 🐛 Bug Fix
