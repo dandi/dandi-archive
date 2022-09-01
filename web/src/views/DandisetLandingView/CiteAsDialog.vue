@@ -23,7 +23,7 @@
 <script lang="ts">
 import CopyText from '@/components/CopyText.vue';
 
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent } from 'vue';
 
 import store from '@/store';
 

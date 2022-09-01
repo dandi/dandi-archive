@@ -204,7 +204,7 @@
 <script lang="ts">
 import {
   defineComponent, computed, ComputedRef, ref,
-} from '@vue/composition-api';
+} from 'vue';
 
 import filesize from 'filesize';
 import moment from 'moment';

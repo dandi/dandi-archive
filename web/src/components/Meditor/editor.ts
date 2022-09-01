@@ -1,9 +1,8 @@
 import type { JSONSchema7 } from 'json-schema';
 
-import Vue from 'vue';
-import {
+import Vue, {
   computed, reactive, ref, ComputedRef, Ref, watch,
-} from '@vue/composition-api';
+} from 'vue';
 import { cloneDeep } from 'lodash';
 
 // eslint-disable-next-line import/no-cycle

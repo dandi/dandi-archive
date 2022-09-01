@@ -50,29 +50,25 @@
 <script lang="ts">
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import { computed, defineComponent, watchEffect } from '@vue/composition-api';
+import { defineComponent, watchEffect } from 'vue';
+import { useRoute, useRouter } from 'vue-router/composables';
 
 export default defineComponent({
   name: 'HomeView',
   components: { StatsBar, DandisetSearchField },
-  setup(props, ctx) {
+  setup() {
     /**
     * Redirect old hash URLS to the correct one. This is only done on
     * the home page, since any URL with a hash will default to here.
     */
-    const currentRoute = computed(() => ctx.root.$route);
+    const currentRoute = useRoute();
     watchEffect(() => {
-      const router = ctx.root.$router;
-      if (currentRoute.value.hash) {
+      const router = useRouter();
+      if (currentRoute.hash) {
         const trimmed = router.currentRoute.hash.replace('#', '');
         router.replace(trimmed);
       }
     });
-
-    return {
-      // Hack to satisfy template type checker
-      $vuetify: (ctx.root as any).$vuetify,
-    };
   },
 });
 </script>

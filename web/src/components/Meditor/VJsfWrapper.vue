@@ -75,7 +75,7 @@
             :options="options"
             @input="setComplexModelProp($event)"
           >
-            <template slot-scope="slotProps">
+            <template #default="slotProps">
               <v-card
                 outlined
                 class="d-flex flex-column"
@@ -149,7 +149,7 @@
 <script lang="ts">
 import {
   computed, defineComponent, ref, watch,
-} from '@vue/composition-api';
+} from 'vue';
 
 import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';

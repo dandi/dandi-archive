@@ -1,5 +1,4 @@
-import Vue from 'vue';
-import { computed, ref } from '@vue/composition-api';
+import Vue, { computed, ref } from 'vue';
 import { EditorInterface } from './editor';
 
 // NOTE: it would be better to use a single ref here instead of seperate state/computed

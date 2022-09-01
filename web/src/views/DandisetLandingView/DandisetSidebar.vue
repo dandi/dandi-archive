@@ -19,7 +19,7 @@
 <script lang="ts">
 import {
   defineComponent, computed,
-} from '@vue/composition-api';
+} from 'vue';
 
 import store from '@/store';
 import { Version } from '@/types';

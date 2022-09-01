@@ -206,8 +206,8 @@ import { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
 import {
   computed,
   ComputedRef,
-  defineComponent, PropType,
-} from '@vue/composition-api';
+  defineComponent, getCurrentInstance, PropType,
+} from 'vue';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 
@@ -245,7 +245,9 @@ export default defineComponent({
       required: true,
     },
   },
-  setup(props, ctx) {
+  setup(props) {
+    const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
+
     const contributors = computed(
       () => props.meta.contributor?.filter(
         (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
@@ -267,7 +269,7 @@ export default defineComponent({
       () => props.meta.wasGeneratedBy,
     );
 
-    const assetSummary = computed(
+    const assetSummary = computed<Record<string, any>>(
       () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
         // filter out assetSummary fields we don't want to display
         ([key, value]) => !!value && !ASSET_SUMMARY_BLACKLIST.has(key),
@@ -284,7 +286,7 @@ export default defineComponent({
 
     // Approximate a good column count for asset summary card
     const assetSummaryColumnCount = computed(
-      () => (ctx.root.$vuetify.breakpoint.mdAndDown ? 1
+      () => ($vuetify.value?.breakpoint.mdAndDown ? 1
         : Math.min(Object.keys(assetSummary.value).length, 3)),
     );
 

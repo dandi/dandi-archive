@@ -133,7 +133,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from '@vue/composition-api';
+import { computed, defineComponent } from 'vue';
 
 import {
   cookiesEnabled as cookiesEnabledFunc,
@@ -145,6 +145,7 @@ import {
   dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
+import { useRoute } from 'vue-router/composables';
 
 interface NavigationItem {
   text: string,
@@ -156,9 +157,9 @@ interface NavigationItem {
 export default defineComponent({
   name: 'AppBar',
   components: { UserMenu },
-  setup(props, ctx) {
+  setup() {
     const returnObject = computed(() => {
-      const { name, query, params } = ctx.root.$route;
+      const { name, query, params } = useRoute();
       return JSON.stringify({ name, query, params });
     });
 

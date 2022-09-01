@@ -94,15 +94,17 @@
 
 <script lang="ts">
 import {
-  defineComponent, ref, computed, watch, Ref, watchEffect,
-} from '@vue/composition-api';
+  defineComponent, ref, computed, watch, Ref, watchEffect, ComputedRef,
+} from 'vue';
 
 import omit from 'lodash/omit';
+import { useRoute } from 'vue-router/composables';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
-import { Dandiset, Paginated } from '@/types';
+import { Dandiset, Paginated, Version } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
+import router from '@/router';
 
 export default defineComponent({
   name: 'DandisetsPage',
@@ -123,10 +125,8 @@ export default defineComponent({
       default: false,
     },
   },
-  setup(props, ctx) {
-    // Will be replaced by `useRoute` if vue-router is upgraded to vue-router@next
-    // https://next.router.vuejs.org/api/#useroute
-    const route = ctx.root.$route;
+  setup(props) {
+    const route = useRoute();
 
     const showDrafts = ref(true);
     const showEmpty = ref(false);
@@ -147,8 +147,7 @@ export default defineComponent({
         page_size: DANDISETS_PER_PAGE,
         ordering,
         user: props.user ? 'me' : null,
-        // note: use ctx.root.$route here for reactivity
-        search: props.search ? ctx.root.$route.query.search : null,
+        search: props.search ? route.query.search : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
         embargoed: props.user,
@@ -156,10 +155,12 @@ export default defineComponent({
       djangoDandisetRequest.value = response.data;
     });
 
-    const dandisets = computed(() => djangoDandisetRequest.value?.results.map((dandiset) => ({
-      ...(dandiset.most_recent_published_version || dandiset.draft_version),
-      dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
-    })));
+    const dandisets = computed(
+      () => djangoDandisetRequest.value?.results.map((dandiset) => ({
+        ...(dandiset.most_recent_published_version || dandiset.draft_version),
+        dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
+      })),
+    ) as ComputedRef<Version[] | undefined>;
 
     const pages = computed(() => {
       const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
@@ -178,15 +179,14 @@ export default defineComponent({
       showEmpty: String(showEmpty.value),
     }));
     watch(queryParams, (params) => {
-      ctx.root.$router.replace({
-        // note: use ctx.root.$route here for reactivity
-        ...ctx.root.$route,
+      router.replace({
+        ...route,
         // replace() takes a RawLocation, which has a name: string
         // Route has a name: string | null, so we need to tweak this
-        name: ctx.root.$route.name || undefined,
+        name: route.name || undefined,
         query: {
           // do not override the search parameter, if present
-          ...ctx.root.$route.query,
+          ...route.query,
           ...params,
         },
       });

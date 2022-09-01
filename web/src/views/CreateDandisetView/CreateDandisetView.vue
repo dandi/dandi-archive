@@ -110,11 +110,12 @@
 <script lang="ts">
 import {
   defineComponent, computed, ComputedRef, ref,
-} from '@vue/composition-api';
+} from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { IdentifierForAnAward, LicenseType, License } from '@/types';
 
 import store from '@/store';
+import { useRouter } from 'vue-router/composables';
 
 // Regular expression to validate an NIH award number.
 // Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
@@ -129,7 +130,9 @@ const VALIDATION_FAIL_MESSAGE = 'Award number must be properly space-delimited.\
 
 export default defineComponent({
   name: 'CreateDandisetView',
-  setup(props, ctx) {
+  setup() {
+    const router = useRouter();
+
     const name = ref('');
     const description = ref('');
     const license = ref<License>();
@@ -151,7 +154,7 @@ export default defineComponent({
     );
 
     if (!loggedIn()) {
-      ctx.root.$router.push({ name: 'home' });
+      router.push({ name: 'home' });
     }
 
     async function registerDandiset() {
@@ -161,7 +164,7 @@ export default defineComponent({
         ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
         : await dandiRest.createDandiset(name.value, metadata);
       const { identifier } = data;
-      ctx.root.$router.push({ name: 'dandisetLanding', params: { identifier } });
+      router.push({ name: 'dandisetLanding', params: { identifier } });
     }
 
     return {

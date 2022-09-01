@@ -15,7 +15,6 @@
         <DownloadDialog>
           <template
             #activator="{ on }"
-            class="justify-left"
           >
             <v-btn
               id="download"
@@ -42,7 +41,6 @@
         <CiteAsDialog>
           <template
             #activator="{ on }"
-            class="justify-left"
           >
             <v-btn
               id="download"
@@ -141,7 +139,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ComputedRef } from '@vue/composition-api';
+import { defineComponent, computed, ComputedRef } from 'vue';
 import { Location } from 'vue-router';
 
 import { dandiRest } from '@/rest';

@@ -74,7 +74,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from '@vue/composition-api';
+import { defineComponent, computed, ref } from 'vue';
 
 import CopyText from '@/components/CopyText.vue';
 import store from '@/store';

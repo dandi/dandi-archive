@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/composition-api';
+import { defineComponent } from 'vue';
 import CookieLaw from 'vue-cookie-law';
 
 import { dandiAboutUrl } from '@/utils/constants';

@@ -24,8 +24,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api';
+import { defineComponent, ref } from 'vue';
 import { RawLocation } from 'vue-router';
+import { useRoute } from 'vue-router/composables';
+import router from '@/router';
 
 export default defineComponent({
   name: 'DandisetSearchField',
@@ -36,8 +38,9 @@ export default defineComponent({
       default: true,
     },
   },
-  setup(props, ctx) {
-    const currentSearch = ref(ctx.root.$route.query.search || '');
+  setup() {
+    const route = useRoute();
+    const currentSearch = ref(route.query.search || '');
 
     function updateSearch(search: string) {
       currentSearch.value = search;
@@ -46,8 +49,6 @@ export default defineComponent({
     function performSearch(evt: Event) {
       evt.preventDefault(); // prevent form submission from refreshing page
 
-      const router = ctx.root.$router;
-      const route = ctx.root.$route;
       if (currentSearch.value === route.query.search) {
         // nothing has changed, do nothing
         return;

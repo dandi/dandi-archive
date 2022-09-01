@@ -1,4 +1,4 @@
-import { ref, Ref, watch } from '@vue/composition-api';
+import { ref, Ref, watch } from 'vue';
 import { cloneDeep, isEqual } from 'lodash';
 // eslint-disable-next-line import/no-cycle
 import {
