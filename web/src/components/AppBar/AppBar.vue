@@ -145,7 +145,6 @@ import {
   dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
-import { useRoute } from 'vue-router/composables';
 
 interface NavigationItem {
   text: string,
@@ -153,10 +152,6 @@ interface NavigationItem {
   if?(): boolean,
   external: boolean,
 }
-const returnObject = computed(() => {
-  const { name, query, params } = useRoute();
-  return JSON.stringify({ name, query, params });
-});
 
 const cookiesEnabled = computed(cookiesEnabledFunc);
 const loggedIn = computed(loggedInFunc);
