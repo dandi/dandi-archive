@@ -19,32 +19,21 @@
   </v-list-item>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
-
+<script setup lang="ts">
+import { ref } from 'vue';
 import CopyText from '@/components/CopyText.vue';
 import { dandiRest } from '@/rest';
 
-export default defineComponent({
-  name: 'ApiKeyItem',
-  components: { CopyText },
-  setup() {
-    const apiKey = ref('');
+const apiKey = ref('');
 
-    async function fetchApiKey() {
-      apiKey.value = await dandiRest.getApiKey();
-    }
-    async function refreshApiKey() {
-      apiKey.value = await dandiRest.newApiKey();
-    }
+async function fetchApiKey() {
+  apiKey.value = await dandiRest.getApiKey();
+}
+async function refreshApiKey() {
+  apiKey.value = await dandiRest.newApiKey();
+}
 
-    // fetch API key when component is created
-    fetchApiKey();
+// fetch API key when component is created
+fetchApiKey();
 
-    return {
-      apiKey,
-      refreshApiKey,
-    };
-  },
-});
 </script>

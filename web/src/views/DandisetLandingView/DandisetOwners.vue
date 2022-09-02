@@ -93,51 +93,34 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { dandiRest, loggedIn } from '@/rest';
 import store from '@/store';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, ref } from 'vue';
 
-export default defineComponent({
-  name: 'DandisetOwners',
-  components: {
-    DandisetOwnersDialog,
-  },
-  setup() {
-    const ownerDialog = ref(false);
-    const owners = computed(() => store.state.dandiset.owners);
+const ownerDialog = ref(false);
+const owners = computed(() => store.state.dandiset.owners);
 
-    const manageOwnersDisabled = computed(() => {
-      if (dandiRest.user?.admin) {
-        return false;
-      }
-      if (!dandiRest.user || !owners.value) {
-        return true;
-      }
-      return !owners.value.find((owner) => owner.username === dandiRest.user?.username);
-    });
-    const limitedOwners = computed(() => {
-      if (!owners.value) {
-        return [];
-      }
-      return owners.value.slice(0, 5);
-    });
-    const numExtraOwners = computed(() => {
-      if (!owners.value) {
-        return 0;
-      }
-      return owners.value.length - limitedOwners.value.length;
-    });
-
-    return {
-      ownerDialog,
-      owners,
-      manageOwnersDisabled,
-      limitedOwners,
-      numExtraOwners,
-      loggedIn,
-    };
-  },
+const manageOwnersDisabled = computed(() => {
+  if (dandiRest.user?.admin) {
+    return false;
+  }
+  if (!dandiRest.user || !owners.value) {
+    return true;
+  }
+  return !owners.value.find((owner) => owner.username === dandiRest.user?.username);
+});
+const limitedOwners = computed(() => {
+  if (!owners.value) {
+    return [];
+  }
+  return owners.value.slice(0, 5);
+});
+const numExtraOwners = computed(() => {
+  if (!owners.value) {
+    return 0;
+  }
+  return owners.value.length - limitedOwners.value.length;
 });
 </script>

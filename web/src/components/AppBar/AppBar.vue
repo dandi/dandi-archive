@@ -95,7 +95,7 @@
     <div v-if="!insideIFrame">
       <template v-if="loggedIn">
         <v-btn
-          :disabled="!approved"
+          :disabled="!dandiRest.user?.approved"
           :to="{ name: 'createDandiset' }"
           exact
           class="mx-3"
@@ -132,8 +132,8 @@
   </v-app-bar>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent } from 'vue';
+<script setup lang="ts">
+import { computed } from 'vue';
 
 import {
   cookiesEnabled as cookiesEnabledFunc,
@@ -153,67 +153,50 @@ interface NavigationItem {
   if?(): boolean,
   external: boolean,
 }
-
-export default defineComponent({
-  name: 'AppBar',
-  components: { UserMenu },
-  setup() {
-    const returnObject = computed(() => {
-      const { name, query, params } = useRoute();
-      return JSON.stringify({ name, query, params });
-    });
-
-    const cookiesEnabled = computed(cookiesEnabledFunc);
-    const loggedIn = computed(loggedInFunc);
-    const insideIFrame = computed(insideIFrameFunc);
-
-    const navItems: NavigationItem[] = [
-      {
-        text: 'Public Dandisets',
-        to: 'publicDandisets',
-        external: false,
-      },
-      {
-        text: 'My Dandisets',
-        to: 'myDandisets',
-        external: false,
-        if: loggedInFunc,
-      },
-      {
-        text: 'About',
-        to: dandiAboutUrl,
-        external: true,
-      },
-      {
-        text: 'Documentation',
-        to: dandiDocumentationUrl,
-        external: true,
-      },
-      {
-        text: 'Help',
-        to: dandiHelpUrl,
-        external: true,
-      },
-      {
-        text: 'DandiHub',
-        to: dandihubUrl,
-        external: true,
-      },
-    ];
-
-    function login() {
-      dandiRest.login();
-    }
-
-    return {
-      returnObject,
-      login,
-      navItems,
-      cookiesEnabled,
-      insideIFrame,
-      loggedIn,
-      approved: dandiRest.user?.approved,
-    };
-  },
+const returnObject = computed(() => {
+  const { name, query, params } = useRoute();
+  return JSON.stringify({ name, query, params });
 });
+
+const cookiesEnabled = computed(cookiesEnabledFunc);
+const loggedIn = computed(loggedInFunc);
+const insideIFrame = computed(insideIFrameFunc);
+
+const navItems: NavigationItem[] = [
+  {
+    text: 'Public Dandisets',
+    to: 'publicDandisets',
+    external: false,
+  },
+  {
+    text: 'My Dandisets',
+    to: 'myDandisets',
+    external: false,
+    if: loggedInFunc,
+  },
+  {
+    text: 'About',
+    to: dandiAboutUrl,
+    external: true,
+  },
+  {
+    text: 'Documentation',
+    to: dandiDocumentationUrl,
+    external: true,
+  },
+  {
+    text: 'Help',
+    to: dandiHelpUrl,
+    external: true,
+  },
+  {
+    text: 'DandiHub',
+    to: dandihubUrl,
+    external: true,
+  },
+];
+
+function login() {
+  dandiRest.login();
+}
 </script>

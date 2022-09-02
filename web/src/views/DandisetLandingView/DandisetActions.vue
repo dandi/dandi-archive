@@ -138,8 +138,8 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed, ComputedRef } from 'vue';
+<script setup lang="ts">
+import { computed, ComputedRef } from 'vue';
 import { Location } from 'vue-router';
 
 import { dandiRest } from '@/rest';
@@ -150,48 +150,31 @@ import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
 
-export default defineComponent({
-  name: 'DandisetActions',
-  components: {
-    CiteAsDialog,
-    DownloadDialog,
-    ShareDialog,
-  },
-  setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const currentVersion = computed(() => store.getters.dandiset.version);
+const currentDandiset = computed(() => store.state.dandiset.dandiset);
+const currentVersion = computed(() => store.getters.dandiset.version);
 
-    const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const version: string = currentVersion.value;
-      const { identifier } = currentDandiset.value.dandiset;
-      return {
-        name: 'fileBrowser',
-        params: { identifier, version },
-        query: {
-          location: '',
-        },
-      };
-    });
-
-    const manifestLocation = computed(
-      () => dandiRest.assetManifestURI(
-        currentDandiset.value?.dandiset.identifier || '',
-        currentDandiset.value?.version || '',
-      ),
-    );
-
-    return {
-      currentDandiset,
-      currentVersion,
-      fileBrowserLink,
-      manifestLocation,
-      openMeditor,
-    };
-  },
+const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
+  if (!currentDandiset.value) {
+    return null;
+  }
+  const version: string = currentVersion.value;
+  const { identifier } = currentDandiset.value.dandiset;
+  return {
+    name: 'fileBrowser',
+    params: { identifier, version },
+    query: {
+      location: '',
+    },
+  };
 });
+
+const manifestLocation = computed(
+  () => dandiRest.assetManifestURI(
+    currentDandiset.value?.dandiset.identifier || '',
+    currentDandiset.value?.version || '',
+  ),
+);
+
 </script>
 
 <style scoped>

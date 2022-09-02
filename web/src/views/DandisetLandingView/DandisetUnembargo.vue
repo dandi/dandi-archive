@@ -113,8 +113,8 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, ref } from 'vue';
+<script setup lang="ts">
+import { computed, ref } from 'vue';
 import moment from 'moment';
 import { dandiRest } from '@/rest';
 import store from '@/store';
@@ -123,42 +123,28 @@ function formatDate(date: string): string {
   return moment(date).format('ll');
 }
 
-export default defineComponent({
-  name: 'DandisetUnembargo',
-  setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const unembargoing = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
-    const showWarningDialog = ref(false);
-    const confirmationPhrase = ref('');
+const currentDandiset = computed(() => store.state.dandiset.dandiset);
+const unembargoing = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
+const showWarningDialog = ref(false);
+const confirmationPhrase = ref('');
 
-    async function unembargo() {
-      if (currentDandiset.value) {
-        // Display the warning dialog before releasing
-        if (!showWarningDialog.value) {
-          showWarningDialog.value = true;
-          return;
-        }
-
-        await dandiRest.unembargo(currentDandiset.value.dandiset.identifier);
-
-        // re-fetch the dandiset to refresh the embargo_status
-        store.dispatch.dandiset.fetchDandiset({
-          identifier: currentDandiset.value.dandiset.identifier,
-          version: currentDandiset.value.version,
-        });
-
-        showWarningDialog.value = false;
-      }
+async function unembargo() {
+  if (currentDandiset.value) {
+    // Display the warning dialog before releasing
+    if (!showWarningDialog.value) {
+      showWarningDialog.value = true;
+      return;
     }
 
-    return {
-      currentDandiset,
-      showWarningDialog,
-      unembargoing,
-      confirmationPhrase,
-      unembargo,
-      formatDate,
-    };
-  },
-});
+    await dandiRest.unembargo(currentDandiset.value.dandiset.identifier);
+
+    // re-fetch the dandiset to refresh the embargo_status
+    store.dispatch.dandiset.fetchDandiset({
+      identifier: currentDandiset.value.dandiset.identifier,
+      version: currentDandiset.value.version,
+    });
+
+    showWarningDialog.value = false;
+  }
+}
 </script>

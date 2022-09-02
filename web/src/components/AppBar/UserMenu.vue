@@ -19,7 +19,7 @@
       id="user-menu"
       dense
     >
-      <ApiKeyItem v-if="approved" />
+      <ApiKeyItem v-if="dandiRest.user?.approved" />
       <v-list-item @click="logout">
         <v-list-item-content>
           Logout
@@ -32,45 +32,32 @@
   </v-menu>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent } from 'vue';
+<script setup lang="ts">
+import { computed } from 'vue';
 
 import { user as userFunc, dandiRest } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
-export default defineComponent({
-  name: 'UserMenu',
-  components: {
-    ApiKeyItem,
-  },
-  setup() {
-    const user = computed(userFunc);
-    const userInitials = computed(() => {
-      if (user.value) {
-        const { name } = user.value;
-        if (name) {
-          const name_parts = name.split(' ');
-          if (name_parts.length >= 2) {
-            const first_name = name_parts[0];
-            const last_name = name_parts[name_parts.length - 1];
-            return (
-              first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase()
-            );
-          }
-        }
+const user = computed(userFunc);
+const userInitials = computed(() => {
+  if (user.value) {
+    const { name } = user.value;
+    if (name) {
+      const name_parts = name.split(' ');
+      if (name_parts.length >= 2) {
+        const first_name = name_parts[0];
+        const last_name = name_parts[name_parts.length - 1];
+        return (
+          first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase()
+        );
       }
-      return '??';
-    });
-
-    async function logout() {
-      await dandiRest.logout();
     }
-
-    return {
-      userInitials,
-      approved: dandiRest.user?.approved,
-      logout,
-    };
-  },
+  }
+  return '??';
 });
+
+async function logout() {
+  await dandiRest.logout();
+}
+
 </script>
