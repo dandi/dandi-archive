@@ -20,23 +20,10 @@
     </v-card>
   </v-menu>
 </template>
-<script lang="ts">
+<script setup lang="ts">
 import CopyText from '@/components/CopyText.vue';
-
-import { computed, defineComponent } from 'vue';
-
+import { computed } from 'vue';
 import store from '@/store';
 
-export default defineComponent({
-  name: 'CiteAsDialog',
-  components: {
-    CopyText,
-  },
-  setup() {
-    const citation = computed(() => store.state.dandiset.dandiset?.metadata?.citation);
-    return {
-      citation,
-    };
-  },
-});
+const citation = computed(() => store.state.dandiset.dandiset?.metadata?.citation);
 </script>

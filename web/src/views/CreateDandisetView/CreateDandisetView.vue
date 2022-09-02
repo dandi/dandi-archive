@@ -107,10 +107,8 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import {
-  defineComponent, computed, ComputedRef, ref,
-} from 'vue';
+<script setup lang="ts">
+import { computed, ComputedRef, ref } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { IdentifierForAnAward, LicenseType, License } from '@/types';
 
@@ -128,58 +126,40 @@ function awardNumberValidator(awardNumber: IdentifierForAnAward): boolean {
 
 const VALIDATION_FAIL_MESSAGE = 'Award number must be properly space-delimited.\n\nExample (exclude quotes):\n"1 R01 CA 123456-01A1"';
 
-export default defineComponent({
-  name: 'CreateDandisetView',
-  setup() {
-    const router = useRouter();
+const router = useRouter();
 
-    const name = ref('');
-    const description = ref('');
-    const license = ref<License>();
-    const embargoed = ref(false);
-    const awardNumber = ref('');
-    const saveDisabled = computed(
-      () => !name.value
+const name = ref('');
+const description = ref('');
+const license = ref<License>();
+const embargoed = ref(false);
+const awardNumber = ref('');
+const saveDisabled = computed(
+  () => !name.value
       || !description.value
       || (embargoed.value && !awardNumberValidator(awardNumber.value))
       || (!embargoed.value && !license.value),
-    );
+);
 
-    const awardNumberRules = computed(
-      () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
-    );
+const awardNumberRules = computed(
+  () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
+);
 
-    const dandiLicenses: ComputedRef<LicenseType[]> = computed(
-      () => store.state.dandiset.schema.definitions.LicenseType.enum,
-    );
+const dandiLicenses: ComputedRef<LicenseType[]> = computed(
+  () => store.state.dandiset.schema.definitions.LicenseType.enum,
+);
 
-    if (!loggedIn()) {
-      router.push({ name: 'home' });
-    }
+if (!loggedIn()) {
+  router.push({ name: 'home' });
+}
 
-    async function registerDandiset() {
-      const metadata = { name: name.value, description: description.value, license: license.value };
+async function registerDandiset() {
+  const metadata = { name: name.value, description: description.value, license: license.value };
 
-      const { data } = embargoed.value
-        ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
-        : await dandiRest.createDandiset(name.value, metadata);
-      const { identifier } = data;
-      router.push({ name: 'dandisetLanding', params: { identifier } });
-    }
-
-    return {
-      name,
-      description,
-      license,
-      dandiLicenses,
-      embargoed,
-      awardNumber,
-      saveDisabled,
-      registerDandiset,
-      awardNumberRules,
-      awardNumberValidator,
-    };
-  },
-});
+  const { data } = embargoed.value
+    ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
+    : await dandiRest.createDandiset(name.value, metadata);
+  const { identifier } = data;
+  router.push({ name: 'dandisetLanding', params: { identifier } });
+}
 
 </script>
