@@ -1,5 +1,3 @@
-/* eslint-disable no-use-before-define */
-
 import { defineStore } from 'pinia';
 
 import axios from 'axios';
