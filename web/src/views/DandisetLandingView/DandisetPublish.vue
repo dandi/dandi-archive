@@ -375,7 +375,7 @@
         {{ formatDate(currentDandiset.modified) }}
       </v-col>
       <v-col>
-        <h3>{{ currentVersion.toUpperCase() }}</h3>
+        <h3>{{ currentVersion?.toUpperCase() }}</h3>
       </v-col>
     </v-row>
     <v-row>
@@ -416,7 +416,7 @@ import {
 import moment from 'moment';
 
 import { dandiRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
 import { User, Version } from '@/types';
 
@@ -465,12 +465,13 @@ export default defineComponent({
   },
   setup(props) {
     const route = useRoute();
+    const store = useDandisetStore();
 
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const currentVersion = computed(() => store.getters.dandiset.version);
+    const currentDandiset = computed(() => store.dandiset);
+    const currentVersion = computed(() => store.dandiset?.version);
 
     const otherVersions: ComputedRef<Version[]|undefined> = computed(
-      () => store.state.dandiset.versions?.filter(
+      () => store.versions?.filter(
         (version: Version) => version.version !== currentVersion.value,
       ).sort(sortVersions),
     );
@@ -479,7 +480,7 @@ export default defineComponent({
     const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
     const isOwner: ComputedRef<boolean> = computed(
-      () => !!(store.state.dandiset.owners?.find(
+      () => !!(store.owners?.find(
         (owner: User) => owner.username === user.value?.username,
       )),
     );
@@ -520,7 +521,7 @@ export default defineComponent({
     ));
 
     const publishButtonHidden: ComputedRef<boolean> = computed(() => {
-      if (!store.state.dandiset.owners) {
+      if (!store.owners) {
         return true;
       }
       // always show the publish button to admins
@@ -548,6 +549,12 @@ export default defineComponent({
     function setVersion({ version: newVersion }: any) {
       const version = newVersion || draftVersion;
 
+      const identifier = currentDandiset.value?.dandiset.identifier;
+
+      if (!identifier) {
+        return;
+      }
+
       if (route.params.version !== version) {
         router.replace({
           ...route,
@@ -557,7 +564,7 @@ export default defineComponent({
           },
         } as RawLocation);
 
-        store.dispatch.dandiset.fetchDandiset({
+        store.fetchDandiset({
           identifier: currentDandiset.value?.dandiset.identifier,
           version: newVersion,
         });

@@ -77,7 +77,7 @@
 import { defineComponent, computed, ref } from 'vue';
 
 import CopyText from '@/components/CopyText.vue';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { dandiUrl } from '@/utils/constants';
 
 // Twitter user to mention
@@ -93,8 +93,10 @@ export default defineComponent({
     },
   },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const currentVersion = computed(() => store.getters.dandiset.version);
+    const store = useDandisetStore();
+
+    const currentDandiset = computed(() => store.dandiset);
+    const currentVersion = computed(() => store.version);
     const meta = computed(() => currentDandiset.value?.metadata);
     const permalink = computed(() => {
       if (currentDandiset.value?.dandiset && currentVersion.value) {

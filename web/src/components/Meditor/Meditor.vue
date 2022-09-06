@@ -237,7 +237,7 @@ import '@koumoul/vjsf/lib/deps/third-party';
 import '@koumoul/vjsf/lib/VJsf.css';
 
 import { dandiRest } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { DandiModel, isJSONSchema } from './types';
 import { EditorInterface } from './editor';
 
@@ -271,11 +271,13 @@ export default defineComponent({
   name: 'Meditor',
   components: { VJsf, VJsfWrapper },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
+    const store = useDandisetStore();
+
+    const currentDandiset = computed(() => store.dandiset);
     const id = computed(() => currentDandiset.value?.dandiset.identifier);
-    const schema: ComputedRef<JSONSchema7> = computed(() => store.state.dandiset.schema);
+    const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
     const model = computed(() => currentDandiset.value?.metadata);
-    const readonly = computed(() => !store.getters.dandiset.userCanModifyDandiset);
+    const readonly = computed(() => !store.userCanModifyDandiset);
     const isDataInLocalStorage = computed(
       () => (model.value ? dataInLocalStorage(model.value.id) : false),
     );
@@ -345,7 +347,7 @@ export default defineComponent({
           clearLocalStorage(model.value.id);
           // wait 0.5 seconds to give the celery worker some time to finish validation
           setTimeout(async () => {
-            await store.dispatch.dandiset.fetchDandiset({
+            await store.fetchDandiset({
               identifier: data.dandiset.identifier,
               version: data.version,
             });

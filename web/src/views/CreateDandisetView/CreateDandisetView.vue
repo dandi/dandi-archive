@@ -112,7 +112,7 @@ import { computed, ComputedRef, ref } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { IdentifierForAnAward, LicenseType, License } from '@/types';
 
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { useRouter } from 'vue-router/composables';
 
 // Regular expression to validate an NIH award number.
@@ -127,6 +127,7 @@ function awardNumberValidator(awardNumber: IdentifierForAnAward): boolean {
 const VALIDATION_FAIL_MESSAGE = 'Award number must be properly space-delimited.\n\nExample (exclude quotes):\n"1 R01 CA 123456-01A1"';
 
 const router = useRouter();
+const store = useDandisetStore();
 
 const name = ref('');
 const description = ref('');
@@ -145,7 +146,7 @@ const awardNumberRules = computed(
 );
 
 const dandiLicenses: ComputedRef<LicenseType[]> = computed(
-  () => store.state.dandiset.schema.definitions.LicenseType.enum,
+  () => store.schema.definitions.LicenseType.enum,
 );
 
 if (!loggedIn()) {

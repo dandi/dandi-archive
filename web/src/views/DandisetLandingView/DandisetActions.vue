@@ -143,15 +143,17 @@ import { computed, ComputedRef } from 'vue';
 import { Location } from 'vue-router';
 
 import { dandiRest } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 
 import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
 
-const currentDandiset = computed(() => store.state.dandiset.dandiset);
-const currentVersion = computed(() => store.getters.dandiset.version);
+const store = useDandisetStore();
+
+const currentDandiset = computed(() => store.dandiset);
+const currentVersion = computed(() => store.version);
 
 const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
   if (!currentDandiset.value) {

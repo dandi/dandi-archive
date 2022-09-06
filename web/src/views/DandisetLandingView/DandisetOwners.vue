@@ -95,12 +95,14 @@
 
 <script setup lang="ts">
 import { dandiRest, loggedIn } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
 import { computed, ref } from 'vue';
 
+const store = useDandisetStore();
+
 const ownerDialog = ref(false);
-const owners = computed(() => store.state.dandiset.owners);
+const owners = computed(() => store.owners);
 
 const manageOwnersDisabled = computed(() => {
   if (dandiRest.user?.admin) {

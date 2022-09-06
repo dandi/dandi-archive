@@ -23,7 +23,9 @@
 <script setup lang="ts">
 import CopyText from '@/components/CopyText.vue';
 import { computed } from 'vue';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 
-const citation = computed(() => store.state.dandiset.dandiset?.metadata?.citation);
+const store = useDandisetStore();
+
+const citation = computed(() => store.dandiset?.metadata?.citation);
 </script>

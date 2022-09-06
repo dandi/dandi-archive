@@ -23,10 +23,12 @@
 import { onMounted, ref } from 'vue';
 
 import { dandiRest } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import AppBar from '@/components/AppBar/AppBar.vue';
 import DandiFooter from '@/components/DandiFooter.vue';
 import UserStatusBanner from '@/components/UserStatusBanner.vue';
+
+const store = useDandisetStore();
 
 const SERVER_DOWNTIME_MESSAGE = process.env.VUE_APP_SERVER_DOWNTIME_MESSAGE || 'Connection to server failed.';
 
@@ -35,7 +37,7 @@ const connectedToServer = ref(true);
 
 onMounted(() => {
   Promise.all([
-    store.dispatch.dandiset.fetchSchema(),
+    store.fetchSchema(),
     dandiRest.restoreLogin(),
   ]).then(() => {
     connectedToServer.value = true;

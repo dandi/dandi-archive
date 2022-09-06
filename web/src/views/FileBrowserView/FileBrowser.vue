@@ -227,7 +227,7 @@ import filesize from 'filesize';
 import { trimEnd } from 'lodash';
 
 import { dandiRest } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { AssetFile, AssetFolder, AssetStats } from '@/types';
 
 const parentDirectory = '..';
@@ -283,6 +283,7 @@ export default defineComponent({
   setup(props) {
     const route = useRoute();
     const router = useRouter();
+    const store = useDandisetStore();
 
     const location = ref(rootDirectory);
     const itemToDelete: Ref<AssetFile | null> = ref(null);
@@ -292,8 +293,8 @@ export default defineComponent({
     const items: Ref<AssetStats[]> = ref([]);
 
     // Computed
-    const owners = computed(() => store.state.dandiset.owners?.map((u) => u.username) || null);
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
+    const owners = computed(() => store.owners?.map((u) => u.username) || null);
+    const currentDandiset = computed(() => store.dandiset);
     const splitLocation = computed(() => location.value.split('/'));
     const isAdmin = computed(() => dandiRest.user?.admin || false);
     const isOwner = computed(() => !!(
@@ -438,8 +439,8 @@ export default defineComponent({
 
     // Fetch dandiset if necessary
     onMounted(() => {
-      if (!store.state.dandiset.dandiset) {
-        store.dispatch.dandiset.initializeDandisets({
+      if (!store.dandiset) {
+        store.initializeDandisets({
           identifier: props.identifier,
           version: props.version,
         });

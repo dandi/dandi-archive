@@ -53,7 +53,7 @@ import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
@@ -98,11 +98,12 @@ export default defineComponent({
   setup(props) {
     const route = useRoute();
     const router = useRouter();
+    const store = useDandisetStore();
 
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const loading = computed(() => store.state.dandiset.loading);
-    const schema = computed(() => store.state.dandiset.schema);
-    const userCanModifyDandiset = computed(() => store.getters.dandiset.userCanModifyDandiset);
+    const currentDandiset = computed(() => store.dandiset);
+    const loading = computed(() => store.loading);
+    const schema = computed(() => store.schema);
+    const userCanModifyDandiset = computed(() => store.userCanModifyDandiset);
 
     const meta = computed(() => (currentDandiset.value ? currentDandiset.value.metadata : {}));
 
@@ -124,7 +125,7 @@ export default defineComponent({
     watch(() => props.identifier, async () => {
       const { identifier, version } = props;
       if (identifier) {
-        await store.dispatch.dandiset.initializeDandisets({ identifier, version });
+        await store.initializeDandisets({ identifier, version });
       }
     }, { immediate: true });
 
@@ -132,14 +133,14 @@ export default defineComponent({
       const { identifier, version } = props;
       if (version) {
       // On version change, fetch the new dandiset (not initial)
-        await store.dispatch.dandiset.fetchDandiset({ identifier, version });
+        await store.fetchDandiset({ identifier, version });
       } else {
-        await store.dispatch.dandiset.fetchDandiset({ identifier });
+        await store.fetchDandiset({ identifier });
       }
       // If the above await call didn't result in dandiset being set, navigate to a default
       if (!currentDandiset.value) {
         // Omitting version will fetch the most recent version instead
-        await store.dispatch.dandiset.fetchDandiset({ identifier });
+        await store.fetchDandiset({ identifier });
 
         if (currentDandiset.value) {
           navigateToVersion((currentDandiset.value as Version).version);
