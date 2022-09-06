@@ -27,10 +27,11 @@ def test_asset_no_blob_zarr():
 
 
 @pytest.mark.django_db
-def test_asset_blob_and_zarr(asset_blob, zarr_archive):
+def test_asset_blob_and_zarr(draft_asset, zarr_archive):
     # An integrity error is thrown by the constraint that both blob and zarr cannot both be defined
     with pytest.raises(IntegrityError):
-        Asset(blob=asset_blob, zarr=zarr_archive).save()
+        draft_asset.zarr = zarr_archive
+        draft_asset.save()
 
 
 @pytest.mark.django_db

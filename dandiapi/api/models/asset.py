@@ -214,12 +214,11 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'contentSize': self.size,
             'digest': self.digest,
         }
-        if 'schemaVersion' in metadata:
-            schema_version = metadata['schemaVersion']
-            metadata['@context'] = (
-                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
-                f'{schema_version}/context.json'
-            )
+        schema_version = metadata['schemaVersion']
+        metadata['@context'] = (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{schema_version}/context.json'
+        )
         if self.is_zarr:
             metadata['encodingFormat'] = 'application/x-zarr'
         return metadata
