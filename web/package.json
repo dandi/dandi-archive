@@ -18,19 +18,17 @@
     "ajv": "^8.3.0",
     "axios": "^0.21.2",
     "core-js": "^3.12.1",
-    "direct-vuex": "^0.12.1",
     "filesize": "^6.3.0",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
+    "pinia": "^2.0.22",
     "vue": "^2.7.10",
     "vue-cookie-law": "^1.13.3",
     "vue-gtag": "^1.16.1",
     "vue-router": "^3.6.4",
     "vue-social-sharing": "^3.0.8",
-    "vuetify": "~2.3.6",
-    "vuex": "^3.6.2",
-    "vuex-router-sync": "^5.0.0"
+    "vuetify": "~2.3.6"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.1",
