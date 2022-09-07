@@ -20,7 +20,7 @@ export const useDandisetStore = defineStore('dandiset', {
   state: (): State => ({
     dandiset: null,
     versions: null,
-    loading: false, // No mutation, as we don't want this mutated by the user
+    loading: false,
     owners: null,
     schema: null,
   }),
