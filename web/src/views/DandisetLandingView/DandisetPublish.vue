@@ -263,7 +263,10 @@
                 </v-list-item-icon>
 
                 <v-list-item-content>
-                  {{ error.field }}: {{ error.message }}
+                  <template v-if="error.field">
+                    {{ error.field }}:
+                  </template>
+                  {{ error.message }}
                 </v-list-item-content>
               </v-list-item>
               <v-divider />
@@ -348,7 +351,10 @@
                 </v-list-item-icon>
 
                 <v-list-item-content>
-                  {{ error.field }}: {{ error.message }}
+                  <template v-if="error.field">
+                    {{ error.field }}:
+                  </template>
+                  {{ error.message }}
                 </v-list-item-content>
               </v-list-item>
               <v-divider />
