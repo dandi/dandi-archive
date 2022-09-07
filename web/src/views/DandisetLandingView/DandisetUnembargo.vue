@@ -117,13 +117,15 @@
 import { computed, ref } from 'vue';
 import moment from 'moment';
 import { dandiRest } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 
 function formatDate(date: string): string {
   return moment(date).format('ll');
 }
 
-const currentDandiset = computed(() => store.state.dandiset.dandiset);
+const store = useDandisetStore();
+
+const currentDandiset = computed(() => store.dandiset);
 const unembargoing = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
 const showWarningDialog = ref(false);
 const confirmationPhrase = ref('');
@@ -139,7 +141,7 @@ async function unembargo() {
     await dandiRest.unembargo(currentDandiset.value.dandiset.identifier);
 
     // re-fetch the dandiset to refresh the embargo_status
-    store.dispatch.dandiset.fetchDandiset({
+    store.fetchDandiset({
       identifier: currentDandiset.value.dandiset.identifier,
       version: currentDandiset.value.version,
     });

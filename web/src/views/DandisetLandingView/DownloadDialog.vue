@@ -117,7 +117,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import CopyText from '@/components/CopyText.vue';
 
 function formatDownloadCommand(identifier: string, version: string): string {
@@ -130,9 +130,11 @@ function formatDownloadCommand(identifier: string, version: string): string {
   return `dandi download DANDI:${identifier}/${version}`;
 }
 
-const currentDandiset = computed(() => store.state.dandiset.dandiset);
-const publishedVersions = computed(() => store.state.dandiset.versions);
-const currentVersion = computed(() => store.getters.dandiset.version);
+const store = useDandisetStore();
+
+const currentDandiset = computed(() => store.dandiset);
+const publishedVersions = computed(() => store.versions);
+const currentVersion = computed(() => store.version);
 
 const selectedDownloadOption = ref('draft');
 const selectedVersion = ref(0);

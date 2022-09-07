@@ -1,10 +1,13 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import Vue from 'vue';
+import { mapState } from 'pinia';
 import OAuthClient from '@girder/oauth-client';
 import {
   Asset, Dandiset, Paginated, User, Version, Info, AssetFile, AssetFolder,
 } from '@/types';
 import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
+// eslint-disable-next-line import/no-cycle
+import { useDandisetStore } from '@/stores/dandiset';
 
 if (!process.env.VUE_APP_DANDI_API_ROOT) {
   throw new Error('Environment variable "VUE_APP_DANDI_API_ROOT" must be set.');
@@ -37,11 +40,7 @@ const dandiRest = new Vue({
     };
   },
   computed: {
-    schemaVersion(): string {
-      // Use injected $store instead of importing to
-      // avoid dependency cycle
-      return this.$store?.direct.getters.dandiset.schemaVersion;
-    },
+    ...mapState(useDandisetStore, ['schemaVersion']),
   },
   methods: {
     async restoreLogin() {

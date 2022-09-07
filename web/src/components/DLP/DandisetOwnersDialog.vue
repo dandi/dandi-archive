@@ -215,7 +215,7 @@
 import { debounce } from 'lodash';
 
 import { dandiRest } from '@/rest';
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import {
   computed, defineComponent, Ref, ref, watch,
 } from 'vue';
@@ -230,8 +230,10 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const owners = computed(() => store.state.dandiset.owners);
+    const store = useDandisetStore();
+
+    const currentDandiset = computed(() => store.dandiset);
+    const owners = computed(() => store.owners);
 
     const searchQuery = ref('');
     const newOwners: Ref<User[]> = ref([]);
@@ -269,7 +271,9 @@ export default defineComponent({
     const isSelected = (user: User) => selectedUsers.value.map(
       (u) => u.username,
     ).includes(user.username);
-    const setOwners = (ownersToSet: User[]) => store.commit.dandiset.setOwners(ownersToSet);
+    const setOwners = (ownersToSet: User[]) => {
+      store.owners = ownersToSet;
+    };
 
     /**
      * Add a user as an owner

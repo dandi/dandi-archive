@@ -209,7 +209,7 @@ import {
 import filesize from 'filesize';
 import moment from 'moment';
 
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
 import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
@@ -273,7 +273,9 @@ export default defineComponent({
     },
   },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
+    const store = useDandisetStore();
+
+    const currentDandiset = computed(() => store.dandiset);
 
     const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
 

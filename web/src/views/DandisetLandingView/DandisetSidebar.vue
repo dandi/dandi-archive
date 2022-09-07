@@ -21,7 +21,7 @@ import {
   defineComponent, computed,
 } from 'vue';
 
-import store from '@/store';
+import { useDandisetStore } from '@/stores/dandiset';
 import { Version } from '@/types';
 
 import DandisetActions from './DandisetActions.vue';
@@ -44,10 +44,12 @@ export default defineComponent({
     },
   },
   setup() {
-    const currentDandiset = computed(() => store.state.dandiset.dandiset);
-    const currentVersion = computed(() => store.getters.dandiset.version);
+    const store = useDandisetStore();
 
-    const otherVersions = computed(() => store.state.dandiset.versions?.filter(
+    const currentDandiset = computed(() => store.dandiset);
+    const currentVersion = computed(() => store.version);
+
+    const otherVersions = computed(() => store.versions?.filter(
       (version: Version) => version.version !== currentVersion.value,
     ));
 
