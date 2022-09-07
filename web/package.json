@@ -13,6 +13,7 @@
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
     "@girder/oauth-client": "^0.7.7",
     "@koumoul/vjsf": "^2.5.2",
+    "@sentry/integrations": "^7.12.1",
     "@sentry/vue": "^7.12.1",
     "ajv": "^8.3.0",
     "axios": "^0.21.2",
