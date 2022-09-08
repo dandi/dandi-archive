@@ -82,13 +82,13 @@
                 v-model="showPublishChecklistDialog"
                 width="900"
               >
-                <template #activator>
+                <template #activator="{ on: onNested }">
                   <v-btn
                     block
                     :color="showPublishWarning ? 'error' : 'success'"
                     depressed
                     :disabled="publishButtonDisabled"
-                    @click="showPublishChecklistDialog = true"
+                    v-on="onNested"
                   >
                     Publish
                     <v-spacer />
