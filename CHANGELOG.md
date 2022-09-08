@@ -1,3 +1,15 @@
+# v0.2.47 (Thu Sep 08 2022)
+
+#### 🐛 Bug Fix
+
+- Fix vuetify console error on DLP [#1269](https://github.com/dandi/dandi-archive/pull/1269) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.46 (Thu Sep 08 2022)
 
 #### 🐛 Bug Fix
