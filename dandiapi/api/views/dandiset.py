@@ -76,7 +76,11 @@ class DandisetFilterBackend(filters.OrderingFilter):
                 )[:1]
                 queryset = queryset.annotate(
                     size=Subquery(
-                        latest_version.annotate(size=Sum('assets__blob__size')).values('size')
+                        latest_version.annotate(
+                            size=Coalesce(Sum('assets__blob__size'), 0)
+                            + Coalesce(Sum('assets__embargoed_blob__size'), 0)
+                            + Coalesce(Sum('assets__zarr__size'), 0)
+                        ).values('size')
                     )
                 )
                 return queryset.order_by(ordering)
