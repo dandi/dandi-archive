@@ -1,3 +1,22 @@
+# v0.2.46 (Thu Sep 08 2022)
+
+#### 🐛 Bug Fix
+
+- Update Sentry frontend configuration and report error logs [#1268](https://github.com/dandi/dandi-archive/pull/1268) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix display of validation errors when there's no associated field [#1266](https://github.com/dandi/dandi-archive/pull/1266) ([@danlamanna](https://github.com/danlamanna))
+- Migrate Vuex store to Pinia [#1265](https://github.com/dandi/dandi-archive/pull/1265) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix missing package error when first using docker-compose setup [#1158](https://github.com/dandi/dandi-archive/pull/1158) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Remove unnecessary conditional check for schemaVersion [#1257](https://github.com/dandi/dandi-archive/pull/1257) ([@danlamanna](https://github.com/danlamanna))
+- Convert some vue components to `<script setup>` [#1263](https://github.com/dandi/dandi-archive/pull/1263) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.45 (Thu Sep 01 2022)
 
 #### 🐛 Bug Fix
