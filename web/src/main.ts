@@ -4,8 +4,8 @@ import VueGtag from 'vue-gtag';
 import VueSocialSharing from 'vue-social-sharing';
 
 // @ts-ignore missing definitions
-import * as Sentry from '@sentry/browser';
-import * as Integrations from '@sentry/integrations';
+import * as Sentry from '@sentry/vue';
+import { CaptureConsole } from '@sentry/integrations';
 
 // Import plugins first (order may matter)
 import pinia from '@/plugins/pinia';
@@ -21,7 +21,11 @@ import router from '@/router';
 Sentry.init({
   dsn: process.env.VUE_APP_SENTRY_DSN,
   environment: process.env.VUE_APP_SENTRY_ENVIRONMENT,
-  integrations: [new Integrations.Vue({ Vue, logErrors: true })],
+  integrations: [
+    new CaptureConsole({
+      levels: ['error'],
+    }),
+  ],
 });
 
 Vue.use(VueGtag, {
