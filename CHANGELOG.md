@@ -1,3 +1,17 @@
+# v0.2.48 (Tue Sep 13 2022)
+
+#### 🐛 Bug Fix
+
+- Add social accounts to user admin page [#1274](https://github.com/dandi/dandi-archive/pull/1274) ([@danlamanna](https://github.com/danlamanna))
+- Use direct foreign keys with django-guardian [#1273](https://github.com/dandi/dandi-archive/pull/1273) ([@danlamanna](https://github.com/danlamanna))
+- Make Dandiset sorting account for zarr files [#1271](https://github.com/dandi/dandi-archive/pull/1271) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.2.47 (Thu Sep 08 2022)
 
 #### 🐛 Bug Fix
