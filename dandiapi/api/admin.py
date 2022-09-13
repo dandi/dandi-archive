@@ -35,11 +35,18 @@ class UserMetadataInline(TabularInline):
     fields = ['status', 'questionnaire_form', 'rejection_reason']
 
 
+class SocialAccountInline(TabularInline):
+    model = SocialAccount
+
+
 class UserAdmin(BaseUserAdmin):
     list_select_related = ['metadata']
     list_display = ['email', 'first_name', 'last_name', 'github_username', 'status', 'date_joined']
     search_fields = ['email', 'first_name', 'last_name']
-    inlines = (UserMetadataInline,)
+    inlines = (
+        UserMetadataInline,
+        SocialAccountInline,
+    )
 
     def get_queryset(self, request):
         return (
