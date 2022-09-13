@@ -98,6 +98,7 @@ class EmbargoedAssetBlob(BaseAssetBlob):
 
 class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+    ASSET_CHARS_REGEX = r'[A-z0-9()\s+~_-]+'
 
     class Status(models.TextChoices):
         PENDING = 'Pending'
@@ -106,7 +107,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         INVALID = 'Invalid'
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512)
+    path = models.CharField(
+        max_length=512,
+        validators=[RegexValidator(fr'^({ASSET_CHARS_REGEX}\/)*({ASSET_CHARS_REGEX}\.?)+$')],
+    )
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
