@@ -1,4 +1,4 @@
-Dear {{ name }} (Github ID: {{ github_id }}),
+Dear {{ greeting_name }},
 
 Your DANDI account has been denied approval.
 {% if rejection_reason %}

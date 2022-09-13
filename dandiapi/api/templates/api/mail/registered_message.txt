@@ -1,4 +1,4 @@
-Dear {{ name }} (Github ID: {{ github_id }}),
+Dear {{ greeting_name }},
 
 Welcome to DANDI.
 

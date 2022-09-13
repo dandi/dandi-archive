@@ -20,6 +20,23 @@ BASE_RENDER_CONTEXT = {
 ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
+def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
+    """Return a suitable name to greet the user with in an email."""
+    from dandiapi.api.views.users import social_account_to_dict, user_to_dict
+
+    if socialaccount is None:
+        return user_to_dict(user)['name']
+    else:
+        social_user = social_account_to_dict(socialaccount)
+
+        # it's possible to have social users without a name if they've signed up, not filled out
+        # the questionnaire, and their github account has no attached name.
+        if social_user.get('name'):
+            return f'{social_user["name"]} (Github ID: {social_user["username"]})'
+        else:
+            return social_user['username']
+
+
 def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
     email_message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
     if html_message is not None:
@@ -63,14 +80,13 @@ def send_ownership_change_emails(dandiset, removed_owners, added_owners):
 
 
 def build_registered_message(user: User, socialaccount: SocialAccount):
-    render_context = {
-        'name': socialaccount.extra_data.get('name', user.username),
-        'github_id': socialaccount.extra_data['login'],
-    }
     # Email sent to the DANDI list when a new user logs in for the first time
     return build_message(
         subject=f'DANDI: New user registered: {user.email}',
-        message=render_to_string('api/mail/registered_message.txt', render_context),
+        message=render_to_string(
+            'api/mail/registered_message.txt',
+            {'greeting_name': user_greeting_name(user, socialaccount)},
+        ),
         to=[ADMIN_EMAIL, user.email],
     )
 
@@ -103,26 +119,15 @@ def send_new_user_message_email(user: User, socialaccount: SocialAccount):
 
 
 def build_approved_user_message(user: User, socialaccount: SocialAccount = None):
-    # import here to avoid circular dependency
-    from dandiapi.api.views.users import social_account_to_dict, user_to_dict
-
-    if socialaccount is None:
-        native_user = user_to_dict(user)
-        render_context = {
-            **BASE_RENDER_CONTEXT,
-            'name': native_user['name'],
-            'github_id': None,
-        }
-    else:
-        social_user = social_account_to_dict(socialaccount)
-        render_context = {
-            **BASE_RENDER_CONTEXT,
-            'name': social_user['name'],
-            'github_id': social_user['username'],
-        }
     return build_message(
         subject='Your DANDI Account',
-        message=render_to_string('api/mail/approved_user_message.txt', render_context),
+        message=render_to_string(
+            'api/mail/approved_user_message.txt',
+            {
+                **BASE_RENDER_CONTEXT,
+                'greeting_name': user_greeting_name(user, socialaccount),
+            },
+        ),
         to=[ADMIN_EMAIL, user.email],
     )
 
@@ -135,26 +140,12 @@ def send_approved_user_message(user: User, socialaccount: SocialAccount):
 
 
 def build_rejected_user_message(user: User, socialaccount: SocialAccount = None):
-    # import here to avoid circular dependency
-    from dandiapi.api.views.users import social_account_to_dict, user_to_dict
-
-    if socialaccount is None:
-        native_user = user_to_dict(user)
-        render_context = {
-            'name': native_user['name'],
-            'github_id': None,
-            'rejection_reason': user.metadata.rejection_reason,
-        }
-    else:
-        social_user = social_account_to_dict(socialaccount)
-        render_context = {
-            'name': social_user['name'],
-            'github_id': social_user['username'],
-            'rejection_reason': user.metadata.rejection_reason,
-        }
     return build_message(
         subject='Your DANDI Account',
-        message=render_to_string('api/mail/rejected_user_message.txt', render_context),
+        message=render_to_string(
+            'api/mail/rejected_user_message.txt',
+            {'greeting_name': user_greeting_name(user, socialaccount)},
+        ),
         to=[ADMIN_EMAIL, user.email],
     )
 
