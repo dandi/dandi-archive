@@ -115,6 +115,10 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
 
+    SHELL_PLUS_IMPORTS = [
+        'from dandiapi.api.mail import *',
+    ]
+
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
