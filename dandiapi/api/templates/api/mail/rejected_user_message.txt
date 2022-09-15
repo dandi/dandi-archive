@@ -1,3 +1,4 @@
+{% autoescape off %}
 Dear {{ greeting_name }},
 
 Your DANDI account has been denied approval.
@@ -11,3 +12,4 @@ If you would like to appeal this decision, please contact the DANDI admins at he
 Sincerely,
 
 The DANDI team
+{% endautoescape %}
