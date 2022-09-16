@@ -1,4 +1,4 @@
-Dear {{ name }} (Github ID: {{ github_id }}),
+Dear {{ greeting_name }},
 
 Your DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account
 to start creating dandisets and uploading data.
