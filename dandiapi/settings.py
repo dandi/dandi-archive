@@ -10,6 +10,7 @@ from composed_configuration import (
     TestingBaseConfiguration,
 )
 from configurations import values
+from corsheaders.defaults import default_headers
 from dandischema.consts import DANDI_SCHEMA_VERSION as _DANDI_SCHEMA_VERSION
 
 
@@ -24,6 +25,9 @@ class DandiMixin(ConfigMixin):
     ACCOUNT_EMAIL_VERIFICATION = 'none'
 
     DANDI_ALLOW_LOCALHOST_URLS = False
+
+    # Needed for Sentry Performance to work in frontend
+    CORS_ALLOW_HEADERS = default_headers + ('baggage', 'sentry-trace')
 
     @staticmethod
     def mutate_configuration(configuration: type[ComposedConfiguration]):
