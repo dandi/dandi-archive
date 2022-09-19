@@ -48,18 +48,18 @@
 </template>
 
 <script setup lang="ts">
-import StatsBar from '@/views/HomeView/StatsBar.vue';
-import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router/composables';
+import StatsBar from '@/views/HomeView/StatsBar.vue';
+import DandisetSearchField from '@/components/DandisetSearchField.vue';
 
 /**
 * Redirect old hash URLS to the correct one. This is only done on
 * the home page, since any URL with a hash will default to here.
 */
+const router = useRouter();
 const currentRoute = useRoute();
 watchEffect(() => {
-  const router = useRouter();
   if (currentRoute.hash) {
     const trimmed = router.currentRoute.hash.replace('#', '');
     router.replace(trimmed);
