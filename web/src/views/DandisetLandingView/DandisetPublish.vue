@@ -493,9 +493,6 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if ((isOwner.value || user.value?.admin) && currentVersion.value !== draftVersion) {
     return 'Only draft versions can be published.';
   }
-  // NOTE: must access the prop directly instead of destructuring to preserve reactivity
-  // i.e. `const { userCanModifyDandiset } = props;` won't be reactive
-  // See https://github.com/vuejs/composition-api/issues/156
   if (!props.userCanModifyDandiset && !user.value?.admin) {
     return 'You do not have permission to edit this dandiset.';
   }
