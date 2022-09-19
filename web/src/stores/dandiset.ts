@@ -81,7 +81,11 @@ export const useDandisetStore = defineStore('dandiset', {
         const data = await dandiRest.specificVersion(identifier, sanitizedVersion);
         this.dandiset = data;
       } catch (err) {
-        this.dandiset = null;
+        if (axios.isAxiosError(err) && err.response && err.response.status < 500) {
+          this.dandiset = null;
+        } else {
+          throw err;
+        }
       }
 
       this.loading = false;
