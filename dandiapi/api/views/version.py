@@ -87,14 +87,18 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         serializer.is_valid(raise_exception=True)
 
         name = serializer.validated_data['name']
-        metadata = serializer.validated_data['metadata']
-        # Strip away any computed fields
-        metadata = Version.strip_metadata(metadata)
+        new_metadata = serializer.validated_data['metadata']
 
-        version.name = name
-        version.metadata = metadata
-        version.status = Version.Status.PENDING
-        version.save()
+        # Strip away any computed fields from current and new metadata
+        new_metadata = Version.strip_metadata(new_metadata)
+        old_metadata = Version.strip_metadata(version.metadata)
+
+        # Only save version if metadata has actually changed
+        if (name, new_metadata) != (version.name, old_metadata):
+            version.name = name
+            version.metadata = new_metadata
+            version.status = Version.Status.PENDING
+            version.save()
 
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
