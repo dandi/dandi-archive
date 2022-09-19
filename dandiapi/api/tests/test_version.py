@@ -684,14 +684,24 @@ def test_version_rest_publish_not_a_draft(api_client, user, published_version, a
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'status',
+    'status,expected_data,expected_status_code',
     [
-        Version.Status.PENDING,
-        Version.Status.VALIDATING,
-        Version.Status.INVALID,
+        (Version.Status.PENDING, 'Dandiset metadata or asset metadata is not valid', 400),
+        (Version.Status.VALIDATING, 'Dandiset is currently being validated', 409),
+        (Version.Status.INVALID, 'Dandiset metadata or asset metadata is not valid', 400),
+        (Version.Status.PUBLISHED, 'No changes since last publish', 400),
+        (Version.Status.PUBLISHING, 'Dandiset is currently being published', 423),
     ],
 )
-def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, asset, status):
+def test_version_rest_publish_invalid(
+    api_client: APIClient,
+    user: User,
+    draft_version: Version,
+    asset: Asset,
+    status: str,
+    expected_data: str,
+    expected_status_code: int,
+):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
@@ -703,8 +713,8 @@ def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, 
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/publish/'
     )
-    assert resp.status_code == 400
-    assert resp.data == 'Dandiset metadata or asset metadata is not valid'
+    assert resp.status_code == expected_status_code
+    assert resp.data == expected_data
 
 
 @pytest.mark.django_db

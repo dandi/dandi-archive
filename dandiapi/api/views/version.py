@@ -137,14 +137,28 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         ):
             raise ValidationError('Cannot publish dandisets which contain zarrs')
         if not version.valid:
-            resp_text = (
-                'No changes since last publish'
-                if version.status == Version.Status.PUBLISHED
-                else 'Dandiset is currently being published'
-                if version.status == Version.Status.PUBLISHING
-                else 'Dandiset metadata or asset metadata is not valid'
-            )
-            return Response(resp_text, status=status.HTTP_400_BAD_REQUEST)
+            match version.status:
+                case Version.Status.PUBLISHED:
+                    resp_text, resp_status = (
+                        'No changes since last publish',
+                        status.HTTP_400_BAD_REQUEST,
+                    )
+                case Version.Status.PUBLISHING:
+                    resp_text, resp_status = (
+                        'Dandiset is currently being published',
+                        status.HTTP_423_LOCKED,
+                    )
+                case Version.Status.VALIDATING:
+                    resp_text, resp_status = (
+                        'Dandiset is currently being validated',
+                        status.HTTP_409_CONFLICT,
+                    )
+                case _:
+                    resp_text, resp_status = (
+                        'Dandiset metadata or asset metadata is not valid',
+                        status.HTTP_400_BAD_REQUEST,
+                    )
+            return Response(resp_text, status=resp_status)
 
         version.status = Version.Status.PUBLISHING
         version.save(update_fields=['status'])
