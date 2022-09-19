@@ -1,3 +1,18 @@
+# v0.2.49 (Mon Sep 19 2022)
+
+#### 🐛 Bug Fix
+
+- Enable sentry performance for frontend [#1270](https://github.com/dandi/dandi-archive/pull/1270) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Only suppress 4xx errors in pinia action [#1281](https://github.com/dandi/dandi-archive/pull/1281) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Improve edge cases around email greetings [#1275](https://github.com/dandi/dandi-archive/pull/1275) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.48 (Tue Sep 13 2022)
 
 #### 🐛 Bug Fix
