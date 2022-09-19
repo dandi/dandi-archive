@@ -1,3 +1,5 @@
 {% autoescape off %}
-You have been made an owner of Dandiset "{{ dandiset_name }}".
+You have been made an owner of dandiset {{ dandiset_identifier }} - "{{ dandiset_name }}".
+
+View this dandiset: {{ dandi_web_app_url }}/dandiset/{{ dandiset_identifier }}
 {% endautoescape %}
