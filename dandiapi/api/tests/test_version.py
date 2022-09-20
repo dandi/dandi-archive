@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime
+from time import sleep
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from guardian.shortcuts import assign_perm
 import pytest
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
@@ -831,6 +838,28 @@ def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, 
     )
     assert resp.status_code == 400
     assert resp.data == 'Dandiset metadata or asset metadata is not valid'
+
+
+@pytest.mark.django_db
+def test_version_rest_update_no_changed_metadata(
+    api_client: APIClient, admin_user, draft_version: Version
+):
+    """Test that PUT'ing unchanged metadata doesn't trigger revalidation or DB modifications."""
+    api_client.force_authenticate(user=admin_user)
+
+    old_modified_time = draft_version.modified
+
+    sleep(0.1)
+
+    api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': draft_version.metadata, 'name': draft_version.name},
+        format='json',
+    )
+
+    draft_version.refresh_from_db()
+
+    assert draft_version.modified == old_modified_time
 
 
 @pytest.mark.django_db
