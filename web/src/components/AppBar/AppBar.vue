@@ -24,7 +24,6 @@
             >
               <v-list-item-content
                 v-if="!navItem.external"
-                exact
                 text
                 class="text-md"
               >
