@@ -61,6 +61,7 @@
               />
               <router-link
                 :to="{ name: 'fileBrowser', query: { location: rootDirectory } }"
+                exact
                 style="text-decoration: none;"
                 class="mx-2"
               >
@@ -73,6 +74,7 @@
                   <router-link
                     :key="part"
                     :to="{ name: 'fileBrowser', query: { location: locationSlice(i) } }"
+                    exact
                     style="text-decoration: none;"
                     class="mx-2"
                   >

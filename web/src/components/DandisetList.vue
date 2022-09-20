@@ -12,6 +12,7 @@
         params: { identifier: item.dandiset.identifier, origin },
         query: { ...$route.query, pos: getPos(index) },
       }"
+      exact
     >
       <v-list-item-content>
         <v-list-item-title class="wrap-text text-h6 grey--text text--darken-3 pb-1">

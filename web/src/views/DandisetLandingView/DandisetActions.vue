@@ -74,6 +74,7 @@
           block
           :disabled="currentDandiset.dandiset.embargo_status === 'UNEMBARGOING'"
           :to="fileBrowserLink"
+          exact
         >
           <v-icon
             left
