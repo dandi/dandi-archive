@@ -78,6 +78,7 @@ def test_approved_or_readonly(
     method,
     url_format,
     owner_required,
+    storage,
 ):
     dandiset = dandiset_factory()
     version = draft_version_factory(dandiset=dandiset)

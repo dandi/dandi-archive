@@ -6,6 +6,7 @@ from pytest_factoryboy import register
 from rest_framework.test import APIClient
 from storages.backends.s3boto3 import S3Boto3Storage
 
+from dandiapi.api.models import AssetBlob, EmbargoedAssetBlob, EmbargoedUpload, Upload
 from dandiapi.api.storage import create_s3_storage
 from dandiapi.api.tests.factories import (
     AssetBlobFactory,
@@ -20,6 +21,7 @@ from dandiapi.api.tests.factories import (
     UploadFactory,
     UserFactory,
 )
+from dandiapi.zarr.models import EmbargoedZarrUploadFile, ZarrUploadFile
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory, ZarrUploadFileFactory
 
 register(PublishedAssetFactory, _name='published_asset')
@@ -123,7 +125,7 @@ def embargoed_minio_storage() -> MinioStorage:
 
 
 @pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
-def storage(request, settings) -> Storage:
+def storage(request, settings, monkeypatch) -> Storage:
     storage_factory = request.param
     if storage_factory == s3boto3_storage_factory:
         settings.DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -143,25 +145,26 @@ def storage(request, settings) -> Storage:
             f'/fake-bucket-name'
         )
 
-    return storage_factory()
+    # Monkeypatch normal storage fields, which will be un-done after this fixture exits
+    storage = storage_factory()
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
+    monkeypatch.setattr(Upload.blob.field, 'storage', storage)
+    monkeypatch.setattr(ZarrUploadFile.blob.field, 'storage', storage)
+
+    return storage
 
 
 @pytest.fixture(
     params=[embargoed_s3boto3_storage_factory, embargoed_minio_storage_factory],
     ids=['s3boto3', 'minio'],
 )
-def embargoed_storage(request) -> Storage:
+def embargoed_storage(request, monkeypatch) -> Storage:
     storage_factory = request.param
-    return storage_factory()
 
+    # Monkeypatch embargoed storage fields, which will be un-done after this fixture exits
+    storage = storage_factory()
+    monkeypatch.setattr(EmbargoedAssetBlob.blob.field, 'storage', storage)
+    monkeypatch.setattr(EmbargoedUpload.blob.field, 'storage', storage)
+    monkeypatch.setattr(EmbargoedZarrUploadFile.blob.field, 'storage', storage)
 
-@pytest.fixture(
-    params=[
-        (s3boto3_storage_factory, embargoed_s3boto3_storage_factory),
-        (minio_storage_factory, embargoed_minio_storage_factory),
-    ],
-    ids=['s3boto3', 'minio'],
-)
-def storage_tuple(request) -> tuple[Storage, Storage]:
-    storage_factory, embargoed_storage_factory = request.param
-    return (storage_factory(), embargoed_storage_factory())
+    return storage

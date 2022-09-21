@@ -17,9 +17,6 @@ from dandiapi.api.models.dandiset import Dandiset
 def test_asset_unembargo(
     embargoed_storage, asset_factory, embargoed_asset_blob_factory, draft_version
 ):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
-
     embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
     embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
     draft_version.assets.add(embargoed_asset)
@@ -98,16 +95,12 @@ def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
-    storage_tuple,
     file_size,
     part_size,
     monkeypatch,
+    storage,
+    embargoed_storage,
 ):
-    # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
-    storage, embargoed_storage = storage_tuple
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-    monkeypatch.setattr(EmbargoedAssetBlob.blob.field, 'storage', embargoed_storage)
-
     # Monkey patch PartGenerator so that upload and copy use a smaller part size
     monkeypatch.setattr(PartGenerator, 'DEFAULT_PART_SIZE', part_size, raising=True)
 
@@ -166,13 +159,9 @@ def test_unembargo_dandiset_existing_blobs(
     asset_factory,
     asset_blob_factory,
     embargoed_asset_blob_factory,
-    storage_tuple,
+    storage,
+    embargoed_storage,
 ):
-    # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
-    storage, embargoed_storage = storage_tuple
-    AssetBlob.blob.field.storage = storage
-    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
-
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
@@ -228,9 +217,6 @@ def test_unembargo_dandiset_normal_asset_blob(
     asset_blob_factory,
     storage,
 ):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)

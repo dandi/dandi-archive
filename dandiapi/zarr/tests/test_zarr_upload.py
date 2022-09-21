@@ -10,7 +10,7 @@ from dandiapi.zarr.tasks import cancel_zarr_upload, ingest_zarr_archive
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_start(authenticated_api_client, user, zarr_archive: ZarrArchive):
+def test_zarr_rest_upload_start(authenticated_api_client, user, zarr_archive: ZarrArchive, storage):
     assign_perm('owner', user, zarr_archive.dandiset)
     path = 'foo/bar.txt'
     text = b'Some fascinating zarr content.\n'
@@ -95,8 +95,7 @@ def test_zarr_rest_upload_complete(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_archive.upload_in_progress
@@ -118,8 +117,6 @@ def test_zarr_rest_upload_complete_not_an_owner(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_archive.upload_in_progress
@@ -163,8 +160,6 @@ def test_zarr_rest_upload_complete_incorrect_etag(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, etag='incorrect')
 
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/upload/complete/')
@@ -183,8 +178,7 @@ def test_zarr_rest_upload_cancel(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
@@ -205,8 +199,6 @@ def test_zarr_rest_upload_cancel_not_an_owner(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
@@ -237,8 +229,7 @@ def test_zarr_rest_upload_cancel_task(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+
     # Creating a zarr upload file means that the zarr has an upload in progress
     zarr_upload_file: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     assert zarr_upload_file.blob.field.storage.exists(zarr_upload_file.blob.name)
@@ -253,8 +244,6 @@ def test_zarr_rest_upload_cancel_task(
 @pytest.mark.django_db
 def test_zarr_rest_upload_flow(authenticated_api_client, user, storage, zarr_archive: ZarrArchive):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
 
     path = 'foo/bar.txt'
     text = b'Some fascinating zarr content.\n'

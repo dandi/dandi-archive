@@ -129,8 +129,6 @@ def test_zarr_checksum_file_updater_checksum_file_path(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     upload_parent_path = str(Path(upload.path).parent)
     assert (
@@ -155,8 +153,6 @@ def test_zarr_checksum_file_updater_write_checksum_file(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     upload_parent_path = str(Path(upload.path).parent)
     listing = ZarrChecksumListing(
@@ -196,8 +192,6 @@ def test_zarr_checksum_file_updater_read_checksum_file(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     upload_parent_path = str(Path(upload.path).parent)
     listing = ZarrChecksumListing(
@@ -215,8 +209,6 @@ def test_zarr_checksum_file_updater_delete_checksum_file(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     upload_parent_path = str(Path(upload.path).parent)
 
@@ -232,8 +224,6 @@ def test_zarr_checksum_file_updater_context_manager(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive)
     upload_parent_path = str(Path(upload.path).parent)
     serializer = ZarrJSONChecksumSerializer()
@@ -386,8 +376,6 @@ def test_zarr_checksum_modification_queue(
 
 @pytest.mark.django_db
 def test_zarr_checksum_updater(storage, zarr_archive: ZarrArchive, zarr_upload_file_factory):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
     b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
     c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')

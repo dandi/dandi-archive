@@ -108,8 +108,6 @@ def test_zarr_rest_create_embargoed_dandiset(
 def test_zarr_rest_get(
     authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_upload_file_factory
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     # We need to complete the upload for the checksum files to be written.
     zarr_archive.complete_upload()
@@ -251,8 +249,6 @@ def test_zarr_rest_delete_file(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
 
@@ -290,8 +286,6 @@ def test_zarr_rest_delete_file_asset_metadata(
     asset_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
     asset = asset_factory(zarr=zarr_archive, blob=None)
@@ -320,8 +314,6 @@ def test_zarr_rest_delete_file_not_an_owner(
     zarr_archive: ZarrArchive,
     zarr_upload_file_factory,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
 
@@ -340,8 +332,6 @@ def test_zarr_rest_delete_multiple_files(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     uploads = [zarr_upload_file_factory(zarr_archive=zarr_archive) for i in range(0, 10)]
     zarr_archive.complete_upload()
 
@@ -368,8 +358,6 @@ def test_zarr_rest_delete_missing_file(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
     zarr_archive.complete_upload()
 
@@ -401,8 +389,6 @@ def test_zarr_rest_delete_upload_in_progress(
     zarr_upload_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
 
     resp = authenticated_api_client.delete(
@@ -436,8 +422,6 @@ def test_zarr_explore_directory(
     directories,
     files,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
     b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
     c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')
@@ -477,8 +461,6 @@ def test_zarr_explore_directory_does_not_exist(
     storage,
     zarr_archive: ZarrArchive,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}.zarr/does/not/exist/',
     )
@@ -502,8 +484,6 @@ def test_zarr_explore_file(
     zarr_archive: ZarrArchive,
     path,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
     )
@@ -531,9 +511,6 @@ def test_zarr_explore_head(
     zarr_archive: ZarrArchive,
     path,
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-
     resp = api_client.head(
         f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
     )

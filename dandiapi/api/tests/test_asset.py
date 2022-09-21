@@ -10,7 +10,7 @@ import pytest
 import requests
 from rest_framework.test import APIClient
 
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, Version
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.views.serializers import AssetFileSerializer, AssetFolderSerializer
 
@@ -170,7 +170,7 @@ def test_asset_s3_url(asset_blob):
 
 
 @pytest.mark.django_db
-def test_publish_asset(draft_asset: Asset):
+def test_asset_publish(draft_asset: Asset):
     draft_asset_id = draft_asset.asset_id
     draft_blob = draft_asset.blob
     draft_metadata = draft_asset.metadata
@@ -1151,9 +1151,6 @@ def test_asset_rest_delete_published_version(api_client, user, published_version
 
 @pytest.mark.django_db
 def test_asset_download(api_client, storage, version, asset):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
     version.assets.add(asset)
 
     response = api_client.get(
@@ -1179,15 +1176,13 @@ def test_asset_download(api_client, storage, version, asset):
 def test_asset_download_embargo(
     authenticated_api_client,
     user,
-    storage,
     draft_version_factory,
     dandiset_factory,
     asset_factory,
     embargoed_asset_blob_factory,
+    storage,
+    embargoed_storage,
 ):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = storage
-
     # Set draft version as embargoed
     version = draft_version_factory(
         dandiset=dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -1238,9 +1233,6 @@ def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
 
 @pytest.mark.django_db
 def test_asset_direct_download(api_client, storage, version, asset):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
     version.assets.add(asset)
 
     response = api_client.get(f'/api/assets/{asset.asset_id}/download/')
@@ -1273,9 +1265,6 @@ def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_arc
 
 @pytest.mark.django_db
 def test_asset_direct_download_head(api_client, storage, version, asset):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
     version.assets.add(asset)
 
     response = api_client.head(f'/api/assets/{asset.asset_id}/download/')

@@ -5,14 +5,11 @@ from django.core.files.storage import Storage
 import pytest
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, Version
 
 
 @pytest.mark.django_db
 def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
     asset_blob = asset_blob_factory(sha256=None)
 
     h = hashlib.sha256()
@@ -28,9 +25,6 @@ def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
 
 @pytest.mark.django_db
 def test_calculate_checksum_task_embargo(storage: Storage, embargoed_asset_blob_factory):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = storage
-
     asset_blob = embargoed_asset_blob_factory(sha256=None)
 
     h = hashlib.sha256()
@@ -45,11 +39,9 @@ def test_calculate_checksum_task_embargo(storage: Storage, embargoed_asset_blob_
 
 
 @pytest.mark.django_db
-def test_checksum_task_invokes_asset_validation(
+def test_calculate_checksum_task_invokes_asset_validation(
     storage: Storage, asset_blob_factory, asset_factory, django_capture_on_commit_callbacks
 ):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
     asset_blob = asset_blob_factory(sha256=None)
     assets: list[Asset] = [asset_factory(blob=asset_blob) for _ in range(3)]
 
@@ -68,10 +60,6 @@ def test_checksum_task_invokes_asset_validation(
 
 @pytest.mark.django_db
 def test_write_manifest_files(storage: Storage, version: Version, asset_factory):
-    # Pretend like AssetBlob was defined with the given storage
-    # The task piggybacks off of the AssetBlob storage to write the yamls
-    AssetBlob.blob.field.storage = storage
-
     # Create a new asset in the version so there is information to write
     version.assets.add(asset_factory())
 
