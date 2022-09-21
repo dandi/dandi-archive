@@ -14,7 +14,12 @@ from dandiapi.api.models.dandiset import Dandiset
 
 
 @pytest.mark.django_db
-def test_asset_unembargo(asset_factory, embargoed_asset_blob_factory, draft_version):
+def test_asset_unembargo(
+    embargoed_storage, asset_factory, embargoed_asset_blob_factory, draft_version
+):
+    # Pretend like EmbargoedAssetBlob was defined with the given storage
+    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
+
     embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
     embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
     draft_version.assets.add(embargoed_asset)
