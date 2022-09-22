@@ -1,3 +1,19 @@
+# v0.2.50 (Thu Sep 22 2022)
+
+#### 🐛 Bug Fix
+
+- Fix asset unembargo method [#1282](https://github.com/dandi/dandi-archive/pull/1282) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Remove `-s` and `-v` flags from CLI integration test invocation [#1287](https://github.com/dandi/dandi-archive/pull/1287) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Don't revalidate version metadata on PUT unless it has changed [#1280](https://github.com/dandi/dandi-archive/pull/1280) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix `useRouter()` sentry error [#1284](https://github.com/dandi/dandi-archive/pull/1284) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.49 (Mon Sep 19 2022)
 
 #### 🐛 Bug Fix
