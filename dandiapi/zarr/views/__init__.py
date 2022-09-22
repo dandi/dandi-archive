@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.db.models import Exists, OuterRef
 from django.db.models.query import QuerySet
@@ -14,7 +13,7 @@ from drf_yasg import openapi
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
