@@ -13,6 +13,38 @@ from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
 
 
+@pytest.mark.django_db
+def test_asset_unembargo(
+    embargoed_storage, asset_factory, embargoed_asset_blob_factory, draft_version
+):
+    # Pretend like EmbargoedAssetBlob was defined with the given storage
+    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
+
+    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
+    embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
+    draft_version.assets.add(embargoed_asset)
+
+    # Assert embargoed properties
+    embargoed_sha256 = embargoed_asset.sha256
+    embargoed_etag = embargoed_asset.embargoed_blob.etag
+    assert embargoed_asset.blob is None
+    assert embargoed_asset.embargoed_blob is not None
+    assert embargoed_asset.sha256 is not None
+    assert 'embargo' in embargoed_asset.metadata['contentUrl'][1]
+
+    # Unembargo
+    embargoed_asset.unembargo()
+    asset = embargoed_asset
+    asset.refresh_from_db()
+
+    # Assert unembargoed properties
+    assert asset.blob is not None
+    assert asset.embargoed_blob is None
+    assert asset.sha256 == embargoed_sha256
+    assert asset.blob.etag == embargoed_etag
+    assert 'embargo' not in asset.metadata['contentUrl'][1]
+
+
 @pytest.mark.parametrize(
     ('embargo_status', 'user_status', 'resp_code'),
     [

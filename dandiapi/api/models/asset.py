@@ -261,18 +261,19 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             # Assert files are equal
             assert resp.etag == self.embargoed_blob.etag
 
-            # Assign blob
+            # Assign blob (changing only blob)
             self.blob = AssetBlob(
-                blob_id=self.embargoed_blob.blob_id,
-                etag=resp.etag,
                 blob=resp.key,
+                blob_id=self.embargoed_blob.blob_id,
+                sha256=self.embargoed_blob.sha256,
+                etag=self.embargoed_blob.etag,
                 size=self.embargoed_blob.size,
             )
             self.blob.save()
 
         # Save updated blob field
         self.embargoed_blob = None
-        self.save(update_fields=['blob', 'embargoed_blob'])
+        self.save()
 
     def publish(self):
         """
