@@ -19,7 +19,7 @@
         <v-tooltip right>
           <template #activator="{ on }">
             <v-btn
-              href="https://www.dandiarchive.org/handbook/10_using_dandi/#downloading-from-dandi"
+              href="https://www.dandiarchive.org/handbook/12_download/"
               target="_blank"
               rel="noopener"
               text
