@@ -1150,7 +1150,7 @@ def test_asset_rest_delete_published_version(api_client, user, published_version
 
 
 @pytest.mark.django_db
-def test_asset_download(api_client, storage, version, asset):
+def test_asset_download(api_client, version, asset):
     version.assets.add(asset)
 
     response = api_client.get(
@@ -1232,7 +1232,10 @@ def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
 
 
 @pytest.mark.django_db
+# def test_asset_direct_download(api_client, version, asset):
 def test_asset_direct_download(api_client, storage, version, asset):
+    # breakpoint()
+
     version.assets.add(asset)
 
     response = api_client.get(f'/api/assets/{asset.asset_id}/download/')

@@ -124,6 +124,8 @@ def embargoed_minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
+# @pytest.fixture(params=[minio_storage_factory], ids=['minio'])
+# @pytest.fixture(params=[s3boto3_storage_factory], ids=['s3boto3'])
 @pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
 def storage(request, settings, monkeypatch) -> Storage:
     storage_factory = request.param
