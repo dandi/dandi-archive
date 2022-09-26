@@ -414,10 +414,8 @@
   </v-card>
 </template>
 
-<script lang="ts">
-import {
-  defineComponent, computed, ComputedRef, ref,
-} from 'vue';
+<script setup lang="ts">
+import { computed, ComputedRef, ref } from 'vue';
 
 import moment from 'moment';
 
@@ -461,165 +459,136 @@ function sortVersions(v1: Version, v2: Version): number {
   return 0;
 }
 
-export default defineComponent({
-  name: 'DandisetPublish',
-  props: {
-    userCanModifyDandiset: {
-      type: Boolean,
-      required: true,
-    },
+const props = defineProps({
+  userCanModifyDandiset: {
+    type: Boolean,
+    required: true,
   },
-  setup(props) {
-    const route = useRoute();
-    const store = useDandisetStore();
+});
+const route = useRoute();
+const store = useDandisetStore();
 
-    const currentDandiset = computed(() => store.dandiset);
-    const currentVersion = computed(() => store.dandiset?.version);
+const currentDandiset = computed(() => store.dandiset);
+const currentVersion = computed(() => store.dandiset?.version);
 
-    const otherVersions: ComputedRef<Version[]|undefined> = computed(
-      () => store.versions?.filter(
-        (version: Version) => version.version !== currentVersion.value,
-      ).sort(sortVersions),
-    );
+const otherVersions: ComputedRef<Version[]|undefined> = computed(
+  () => store.versions?.filter(
+    (version: Version) => version.version !== currentVersion.value,
+  ).sort(sortVersions),
+);
 
-    const user: ComputedRef<User|null> = computed(userFunc);
-    const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
+const user: ComputedRef<User|null> = computed(userFunc);
+const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
-    const isOwner: ComputedRef<boolean> = computed(
-      () => !!(store.owners?.find(
-        (owner: User) => owner.username === user.value?.username,
-      )),
-    );
+const isOwner: ComputedRef<boolean> = computed(
+  () => !!(store.owners?.find(
+    (owner: User) => owner.username === user.value?.username,
+  )),
+);
 
-    const publishDisabledMessage: ComputedRef<string> = computed(() => {
-      if (!loggedIn.value) {
-        return 'You must be logged in to edit.';
-      }
-      if ((isOwner.value || user.value?.admin) && currentVersion.value !== draftVersion) {
-        return 'Only draft versions can be published.';
-      }
-      // NOTE: must access the prop directly instead of destructuring to preserve reactivity
-      // i.e. `const { userCanModifyDandiset } = props;` won't be reactive
-      // See https://github.com/vuejs/composition-api/issues/156
-      if (!props.userCanModifyDandiset && !user.value?.admin) {
-        return 'You do not have permission to edit this dandiset.';
-      }
-      if (currentDandiset.value?.status === 'Pending') {
-        return 'This dandiset has not yet been validated.';
-      }
-      if (currentDandiset.value?.status === 'Validating') {
-        return 'Currently validating this dandiset.';
-      }
-      if (currentDandiset.value?.status === 'Published') {
-        return 'No changes since last publish.';
-      }
-      if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
-        return 'This dandiset is being unembargoed, please wait.';
-      }
-      return '';
-    });
+const publishDisabledMessage: ComputedRef<string> = computed(() => {
+  if (!loggedIn.value) {
+    return 'You must be logged in to edit.';
+  }
+  if ((isOwner.value || user.value?.admin) && currentVersion.value !== draftVersion) {
+    return 'Only draft versions can be published.';
+  }
+  if (!props.userCanModifyDandiset && !user.value?.admin) {
+    return 'You do not have permission to edit this dandiset.';
+  }
+  if (currentDandiset.value?.status === 'Pending') {
+    return 'This dandiset has not yet been validated.';
+  }
+  if (currentDandiset.value?.status === 'Validating') {
+    return 'Currently validating this dandiset.';
+  }
+  if (currentDandiset.value?.status === 'Published') {
+    return 'No changes since last publish.';
+  }
+  if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
+    return 'This dandiset is being unembargoed, please wait.';
+  }
+  return '';
+});
 
-    const publishButtonDisabled = computed(() => !!(
-      currentDandiset.value?.version_validation_errors.length
+const publishButtonDisabled = computed(() => !!(
+  currentDandiset.value?.version_validation_errors.length
       || currentDandiset.value?.asset_validation_errors.length
       || currentDandiset.value?.dandiset.embargo_status !== 'OPEN'
       || publishDisabledMessage.value
-    ));
+));
 
-    const publishButtonHidden: ComputedRef<boolean> = computed(() => {
-      if (!store.owners) {
-        return true;
-      }
-      // always show the publish button to admins
-      if (user.value?.admin) {
-        return false;
-      }
-      // otherwise, only show it when the logged in user is an owner
-      return !isOwner.value;
-    });
-
-    // Show warning message above publish button if user
-    // is an admin but not an owner of the dandiset
-    const showPublishWarning: ComputedRef<boolean> = computed(
-      () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
-    );
-
-    const showPublishWarningDialog = ref(false);
-
-    const showPublishChecklistDialog = ref(false);
-
-    function formatDate(date: string): string {
-      return moment(date).format('ll');
-    }
-
-    function setVersion({ version: newVersion }: any) {
-      const version = newVersion || draftVersion;
-
-      const identifier = currentDandiset.value?.dandiset.identifier;
-
-      if (!identifier) {
-        return;
-      }
-
-      if (route.params.version !== version) {
-        router.replace({
-          ...route,
-          params: {
-            ...route.params,
-            version,
-          },
-        } as RawLocation);
-
-        store.fetchDandiset({
-          identifier: currentDandiset.value?.dandiset.identifier,
-          version: newVersion,
-        });
-      }
-    }
-
-    async function publish() {
-      if (currentDandiset.value) {
-        // If user is an admin but not an owner, display the warning dialog before publishing
-        if (showPublishWarning.value && !showPublishWarningDialog.value) {
-          showPublishWarningDialog.value = true;
-          return;
-        }
-
-        showPublishChecklistDialog.value = false;
-
-        const version = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
-        // navigate to the newly published version
-        router.push({
-          name: 'dandisetLanding',
-          params: {
-            identifier: currentDandiset.value?.dandiset.identifier,
-            version: version.version,
-          },
-        });
-      }
-    }
-
-    return {
-      currentDandiset,
-      currentVersion,
-      otherVersions,
-      setVersion,
-      formatDate,
-      sortVersions,
-      user,
-      publishDisabledMessage,
-      publishButtonDisabled,
-      publishButtonHidden,
-      getValidationErrorIcon,
-      publish,
-      draftVersion,
-      showPublishWarning,
-      showPublishWarningDialog,
-      showPublishChecklistDialog,
-      isOwner,
-      openMeditor,
-      PUBLISH_CHECKLIST,
-    };
-  },
+const publishButtonHidden: ComputedRef<boolean> = computed(() => {
+  if (!store.owners) {
+    return true;
+  }
+  // always show the publish button to admins
+  if (user.value?.admin) {
+    return false;
+  }
+  // otherwise, only show it when the logged in user is an owner
+  return !isOwner.value;
 });
+
+// Show warning message above publish button if user
+// is an admin but not an owner of the dandiset
+const showPublishWarning: ComputedRef<boolean> = computed(
+  () => !!(!publishButtonDisabled.value && user.value?.admin && !isOwner.value),
+);
+
+const showPublishWarningDialog = ref(false);
+
+const showPublishChecklistDialog = ref(false);
+
+function formatDate(date: string): string {
+  return moment(date).format('ll');
+}
+
+function setVersion({ version: newVersion }: any) {
+  const version = newVersion || draftVersion;
+
+  const identifier = currentDandiset.value?.dandiset.identifier;
+
+  if (!identifier) {
+    return;
+  }
+
+  if (route.params.version !== version) {
+    router.replace({
+      ...route,
+      params: {
+        ...route.params,
+        version,
+      },
+    } as RawLocation);
+
+    store.fetchDandiset({
+      identifier: currentDandiset.value?.dandiset.identifier,
+      version: newVersion,
+    });
+  }
+}
+
+async function publish() {
+  if (currentDandiset.value) {
+    // If user is an admin but not an owner, display the warning dialog before publishing
+    if (showPublishWarning.value && !showPublishWarningDialog.value) {
+      showPublishWarningDialog.value = true;
+      return;
+    }
+
+    showPublishChecklistDialog.value = false;
+
+    const version = await dandiRest.publish(currentDandiset.value.dandiset.identifier);
+    // navigate to the newly published version
+    router.push({
+      name: 'dandisetLanding',
+      params: {
+        identifier: currentDandiset.value?.dandiset.identifier,
+        version: version.version,
+      },
+    });
+  }
+}
+
 </script>
