@@ -1,3 +1,4 @@
+{% autoescape off %}
 The following new DANDI users are awaiting approval:
 
 {% for user in users %}
@@ -5,3 +6,4 @@ Username: {{ user.username }}
 Joined: {{ user.date_joined }}
 Link to approve: {{ dandi_api_url }}{% url 'user-approval' username=user.username %}
 {% endfor %}
+{% endautoescape %}

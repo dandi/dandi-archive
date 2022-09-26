@@ -1,3 +1,4 @@
+{% autoescape off %}
 Dear {{ greeting_name }},
 
 Welcome to DANDI.
@@ -21,3 +22,4 @@ Thank you for choosing DANDI for your neurophysiology data needs.
 Sincerely,
 
 The DANDI team
+{% endautoescape %}
