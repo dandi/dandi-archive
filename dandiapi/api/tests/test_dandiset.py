@@ -693,7 +693,7 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user, 
         format='json',
     )
     assert response.status_code == 400
-    assert response.data == f'Dandiset {identifier} Already Exists'
+    assert response.data == f'Dandiset {identifier} already exists'
 
 
 @pytest.mark.django_db
