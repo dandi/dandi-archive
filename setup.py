@@ -49,9 +49,7 @@ setup(
         'django-filter',
         'django-guardian',
         'django-oauth-toolkit>=1.7,<2',
-        # DRF 3.14 is incompatible with drf-yasg, see
-        # https://github.com/axnsan12/drf-yasg/issues/810
-        'djangorestframework<3.14',
+        'djangorestframework',
         'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
