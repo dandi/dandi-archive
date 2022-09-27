@@ -2,8 +2,7 @@ from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 
 
 def extract_contact_person(version):
@@ -259,24 +258,34 @@ class AssetFolderSerializer(serializers.Serializer):
     modified = serializers.DateTimeField()
 
 
-class AssetFileSerializer(AssetSerializer):
-    class Meta(AssetSerializer.Meta):
-        fields = AssetSerializer.Meta.fields + ['url']
-
-    url = serializers.URLField(source='s3_url')
-
-
-class AssetPathsResponseSerializer(serializers.Serializer):
-    folders = serializers.DictField(child=AssetFolderSerializer())
-    files = serializers.DictField(child=AssetFileSerializer())
+class AssetListSerializer(serializers.Serializer):
+    glob = serializers.CharField(required=False)
+    metadata = serializers.BooleanField(required=False, default=False)
 
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):
     path_prefix = serializers.CharField(default='')
-    page = serializers.IntegerField(default=1)
-    page_size = serializers.IntegerField(default=DandiPagination.page_size)
 
 
-class AssetListSerializer(serializers.Serializer):
-    glob = serializers.CharField(required=False)
-    metadata = serializers.BooleanField(required=False, default=False)
+class AssetFileSerializer(AssetSerializer):
+    class Meta(AssetSerializer.Meta):
+        fields = ['asset_id', 'url']
+
+    url = serializers.URLField(source='s3_url')
+
+
+class AssetPathsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssetPath
+        fields = [
+            'created',
+            'modified',
+            'path',
+            'version',
+            'aggregate_files',
+            'aggregate_size',
+            'asset',
+        ]
+        read_only_fields = ['created']
+
+    asset = AssetFileSerializer()

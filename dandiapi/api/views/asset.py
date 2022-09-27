@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from dandiapi.api.services.asset import search_path
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -43,7 +44,6 @@ from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
-    PATH_PREFIX_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
     DandiPagination,
@@ -52,7 +52,7 @@ from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
     AssetListSerializer,
     AssetPathsQueryParameterSerializer,
-    AssetPathsResponseSerializer,
+    AssetPathsSerializer,
     AssetSerializer,
     AssetValidationSerializer,
 )
@@ -264,7 +264,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             else:
                 folders[k] = v
 
-        paths = AssetPathsResponseSerializer({'folders': folders, 'files': files})
+        paths = AssetPathsSerializer({'folders': folders, 'files': files})
 
         # Update url
         url = self.request.build_absolute_uri()
@@ -557,11 +557,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         return Response(serializer.data)
 
     @swagger_auto_schema(
-        manual_parameters=[PATH_PREFIX_PARAM],
-        responses={200: AssetPathsResponseSerializer()},
+        query_serializer=AssetPathsQueryParameterSerializer(),
+        responses={200: AssetPathsSerializer()},
     )
     @action(detail=False, methods=['GET'], filter_backends=[])
-    def paths(self, *args, **kwargs):
+    def paths(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """
         Return the unique files/directories that directly reside under the specified path.
 
@@ -571,48 +571,26 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         query_serializer = AssetPathsQueryParameterSerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
-        path_prefix: str = query_serializer.validated_data['path_prefix']
-        qs: QuerySet[Asset] = (
-            self.get_queryset()
-            .select_related('blob', 'embargoed_blob', 'zarr')
-            .filter(path__startswith=path_prefix)
-            .order_by('path')
+        # Fetch version
+        version = get_object_or_404(
+            Version,
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
         )
 
-        folders: dict[str, dict] = {}
-        files: dict[str, Asset] = {}
+        # Fetch child paths
+        path: str = query_serializer.validated_data['path_prefix']
+        children_paths = search_path(path, version)
+        if children_paths is None:
+            raise ValidationError('Specified path not found.')
 
-        for asset in qs.iterator():
-            # Get the remainder of the path after path_prefix
-            base_path: str = asset.path[len(path_prefix) :].strip('/')
+        # Paginate and return
+        page = self.paginate_queryset(children_paths)
+        if page is not None:
+            serializer = AssetPathsSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-            # Since we stripped slashes, any remaining slashes indicate a folder
-            folder_index = base_path.find('/')
-            is_folder = folder_index >= 0
-
-            if not is_folder:
-                # Ensure base_path is entire filename
-                base_path = asset.path[asset.path.rfind('/') + 1 :]
-                files[base_path] = asset
-            else:
-                base_path = base_path[:folder_index]
-                entry = folders.get(base_path)
-                if entry is None:
-                    folders[base_path] = {
-                        'size': asset.size,
-                        'num_files': 1,
-                        'created': asset.created,
-                        'modified': asset.modified,
-                    }
-                else:
-                    entry['size'] += asset.size
-                    entry['num_files'] += 1
-                    entry['created'] = min(entry['created'], asset.created)  # earliest
-                    entry['modified'] = max(entry['modified'], asset.modified)  # latest
-
-        items = folders
-        items.update(files)
-        resp = self._paginate_asset_paths(items)
-        return Response(resp)
+        serializer = AssetPathsSerializer(children_paths, many=True)
+        return Response(serializer.data)
 
     # TODO: add create to forge an asset from a validation

@@ -31,8 +31,6 @@ DANDISET_PK_PARAM = openapi.Parameter(
     required=True,
 )
 
-PATH_PREFIX_PARAM = openapi.Parameter('path_prefix', openapi.IN_QUERY, type=openapi.TYPE_STRING)
-
 VERSION_PARAM = openapi.Parameter(
     'version',
     openapi.IN_PATH,
