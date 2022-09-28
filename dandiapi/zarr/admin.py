@@ -15,6 +15,7 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
     search_fields = ['zarr_id', 'name']
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
+    actions = ('ingest_zarr_archive',)
 
     @admin.action(description='Ingest selected zarr archives')
     def ingest_zarr_archive(self, request, queryset):
@@ -32,10 +33,6 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
             % queryset.count(),
             messages.SUCCESS,
         )
-
-    def __init__(self, model, admin_site) -> None:
-        super().__init__(model, admin_site)
-        self.actions += ('ingest_zarr_archive',)
 
 
 @admin.register(EmbargoedZarrArchive)
