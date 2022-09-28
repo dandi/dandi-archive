@@ -21,9 +21,7 @@ exclude = [
     "^dandiapi/api/admin.py",
     "^dandiapi/api/tests/",
     "^dandiapi/api/views/",
-    "^dandiapi/zarr/admin.py",
     "^dandiapi/zarr/tests/",
-    "^dandiapi/zarr/views/",
 ]
 
 # Re-enable these when https://github.com/typeddjango/django-stubs/issues/417 is fixed.
