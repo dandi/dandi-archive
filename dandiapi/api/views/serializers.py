@@ -55,7 +55,7 @@ class DandisetSerializer(serializers.ModelSerializer):
 
 
 class CreateDandisetQueryParameterSerializer(serializers.Serializer):
-    embargo = serializers.BooleanField(required=False)
+    embargo = serializers.BooleanField(required=False, default=False)
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):

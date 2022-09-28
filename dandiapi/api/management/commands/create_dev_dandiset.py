@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 import djclick as click
 
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.api.models import Asset, AssetBlob
+from dandiapi.api.services.dandiset import create_dandiset
 from dandiapi.api.tasks import calculate_sha256, validate_asset_metadata, validate_version_metadata
 
 
@@ -15,35 +16,13 @@ from dandiapi.api.tasks import calculate_sha256, validate_asset_metadata, valida
 def create_dev_dandiset(name: str, owner: str):
     owner = User.objects.get(email=owner)
 
-    # Create a new dandiset
-    dandiset = Dandiset()
-    dandiset.save()
-    dandiset.add_owner(owner)
-
-    # Create the draft version
     version_metadata = {
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Dandiset',
         'description': 'An informative description',
         'license': ['spdx:CC0-1.0'],
-        'contributor': [
-            {
-                'name': f'{owner.last_name}, {owner.first_name}',
-                'email': owner.email,
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            },
-        ],
     }
-    draft_version = Version(
-        dandiset=dandiset,
-        name=name,
-        metadata=version_metadata,
-        version='draft',
+    _, draft_version = create_dandiset(
+        user=owner, embargo=False, version_name=name, version_metadata=version_metadata
     )
-    draft_version.save()
 
     uploaded_file = SimpleUploadedFile(name='foo/bar.txt', content=b'A' * 20)
     etag = '76d36e98f312e98ff908c8c82c8dd623-0'

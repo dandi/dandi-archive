@@ -1,18 +1,13 @@
-import logging
-
 from allauth.socialaccount.models import SocialAccount
-from dandischema.models import Dandiset as PydanticDandiset
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, F, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
-from django.db.utils import IntegrityError
 from django.http import Http404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import assign_perm, get_objects_for_user
+from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
@@ -25,6 +20,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.tasks import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -233,92 +229,25 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         query_serializer = CreateDandisetQueryParameterSerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
-        if query_serializer.validated_data['embargo']:
-            embargo_status = Dandiset.EmbargoStatus.EMBARGOED
-        else:
-            embargo_status = Dandiset.EmbargoStatus.OPEN
 
-        name = serializer.validated_data['name']
-        metadata = serializer.validated_data['metadata']
-        # Strip away any computed fields
-        metadata = Version.strip_metadata(metadata)
-
-        # Only inject a schemaVersion and default contributor field if they are
-        # not specified in the metadata
-        metadata = {
-            'schemaKey': 'Dandiset',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-            'contributor': [
-                {
-                    'name': f'{request.user.last_name}, {request.user.first_name}',
-                    'email': request.user.email,
-                    'roleName': ['dcite:ContactPerson'],
-                    'schemaKey': 'Person',
-                    'affiliation': [],
-                    'includeInCitation': True,
-                },
-            ],
-            # TODO: move this into dandischema
-            'access': [
-                {
-                    'schemaKey': 'AccessRequirements',
-                    'status': 'dandi:OpenAccess'
-                    if embargo_status == Dandiset.EmbargoStatus.OPEN
-                    else 'dandi:EmbargoedAccess',
-                }
-            ],
-            **metadata,
-        }
-        # Run the metadata through the pydantic model to automatically include any boilerplate
-        # like the access or repository fields
-        metadata = PydanticDandiset.unvalidated(**metadata).json_dict()
-
+        identifier = None
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
-            if identifier and not request.user.is_superuser:
-                return Response(
-                    'Creating a dandiset for a given identifier '
-                    f'({identifier} was provided) is admin only operation.',
-                    status=403,
-                )
             if identifier.startswith('DANDI:'):
                 identifier = identifier[6:]
+
             try:
-                dandiset = Dandiset(id=int(identifier), embargo_status=embargo_status)
+                identifier = int(identifier)
             except ValueError:
                 return Response(f'Invalid Identifier {identifier}', status=400)
-        else:
-            dandiset = Dandiset(embargo_status=embargo_status)
-        try:
-            # Without force_insert, Django will try to UPDATE an existing dandiset if one exists.
-            # We want to throw an error if a dandiset already exists.
-            dandiset.save(force_insert=True)
-        except IntegrityError as e:
-            # https://stackoverflow.com/questions/25368020/django-deduce-duplicate-key-exception-from-integrityerror
-            # https://www.postgresql.org/docs/13/errcodes-appendix.html
-            # Postgres error code 23505 == unique_violation
-            if e.__cause__.pgcode == '23505':
-                return Response(f'Dandiset {dandiset.identifier} Already Exists', status=400)
-            raise e
 
-        logging.info(
-            'Created dandiset %s given request with name=%s and metadata=%s',
-            dandiset.identifier,
-            name,
-            metadata,
+        dandiset, _ = create_dandiset(
+            user=request.user,
+            identifier=identifier,
+            embargo=query_serializer.validated_data['embargo'],
+            version_name=serializer.validated_data['name'],
+            version_metadata=serializer.validated_data['metadata'],
         )
-
-        assign_perm('owner', request.user, dandiset)
-
-        # Create new draft version
-        version = Version(
-            dandiset=dandiset,
-            name=name,
-            metadata=metadata,
-            version='draft',
-            status=Version.Status.PENDING,
-        )
-        version.save()
 
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -326,22 +255,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM],
     )
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def destroy(self, request, dandiset__pk):
         """
         Delete a dandiset.
 
         Deletes a dandiset. Only dandisets without published versions are deletable.
         """
-        dandiset: Dandiset = self.get_object()
-
-        if dandiset.versions.exclude(version='draft').exists():
-            return Response(
-                'Cannot delete dandisets with published versions.',
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        dandiset.delete()
+        delete_dandiset(user=request.user, dandiset=self.get_object())
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
