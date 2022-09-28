@@ -251,13 +251,6 @@ class AssetDetailSerializer(AssetSerializer):
         fields = AssetSerializer.Meta.fields + ['metadata']
 
 
-class AssetFolderSerializer(serializers.Serializer):
-    size = serializers.IntegerField()
-    num_files = serializers.IntegerField()
-    created = serializers.DateTimeField()
-    modified = serializers.DateTimeField()
-
-
 class AssetListSerializer(serializers.Serializer):
     glob = serializers.CharField(required=False)
     metadata = serializers.BooleanField(required=False, default=False)

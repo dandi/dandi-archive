@@ -8,11 +8,10 @@ from django.urls import reverse
 from guardian.shortcuts import assign_perm
 import pytest
 import requests
-from rest_framework.test import APIClient
 
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.views.serializers import AssetFileSerializer, AssetFolderSerializer
+from dandiapi.api.services.asset import add_asset
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -35,130 +34,44 @@ def test_asset_blob_and_zarr(draft_asset, zarr_archive):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    'path,asset_paths,expected',
-    [
-        ('', ['foo', 'bar/baz'], {'folders': ['bar'], 'files': ['foo']}),
-        # ('', ['/foo', '/bar/baz'], {'folders': ['bar'], 'files': ['foo']}),  # edge case
-        ('/', ['/foo', '/bar/baz'], {'folders': ['bar'], 'files': ['foo']}),
-        ('', ['foo/bar', 'foo/baz', 'foo/boo'], {'folders': ['foo'], 'files': []}),
-        ('/', ['foo/bar', 'foo/baz', 'foo/boo'], {'folders': [], 'files': []}),  # Negative test
-        ('////', ['/foo', '/bar/baz'], {'folders': [], 'files': []}),
-        ('a', ['a/b', 'a/c/d'], {'folders': ['c'], 'files': ['b']}),
-        ('a/', ['a/b', 'a/c/d'], {'folders': ['c'], 'files': ['b']}),
-        ('/a', ['/a/b', '/a/c/d'], {'folders': ['c'], 'files': ['b']}),
-        ('/a/', ['/a/b', '/a/c/d'], {'folders': ['c'], 'files': ['b']}),
-    ],
-)
-def test_asset_rest_path(
-    api_client,
-    draft_version_factory,
-    asset_factory,
-    asset_blob_factory,
-    path,
-    asset_paths,
-    expected,
-):
+def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
     # Initialize version and contained assets
-    asset_blob = asset_blob_factory()
-    assets = [asset_factory(blob=asset_blob, path=p) for p in asset_paths]
     version: Version = draft_version_factory()
-    for asset in assets:
-        version.assets.add(asset)
+    asset = asset_factory(path='foo/bar/baz/a.txt')
+    version.assets.add(asset)
 
-    # Retrieve paths from endpointF
-    paths = api_client.get(
+    # Add asset path
+    add_asset(asset, version)
+
+    # Retrieve root paths
+    resp = api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/paths/',
-        {'path_prefix': path},
+        {'path_prefix': ''},
     ).data
-
-    # Ensure slash between path prefix and folders/files
-    query_prefix = path
-    if query_prefix and query_prefix[-1] != '/':
-        query_prefix = f'{query_prefix}/'
-
-    # Do folder assertions
-    for folder_path in expected['folders']:
-        assert folder_path in paths['results']['folders']
-
-        folder_entry = paths['results']['folders'][folder_path]
-        folder_assets = list(
-            Asset.objects.all().filter(path__startswith=f'{query_prefix}{folder_path}')
-        )
-        serialized_folder = AssetFolderSerializer(
-            {
-                'created': min(asset.created for asset in folder_assets),
-                'modified': max(asset.modified for asset in folder_assets),
-                'size': sum(asset.size for asset in folder_assets),
-                'num_files': len(folder_assets),
-            }
-        ).data
-
-        assert folder_entry == serialized_folder
-
-    # Do file assertions
-    for file_path in expected['files']:
-        assert file_path in paths['results']['files']
-
-        asset: Asset = Asset.objects.get(path=f'{query_prefix}{file_path}')
-        assert paths['results']['files'][file_path] == AssetFileSerializer(asset).data
+    assert resp['count'] == 1
+    val = resp['results'][0]
+    assert val['aggregate_files'] == 1
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    'path,asset_paths,page,expected_count,expected_results',
-    [
-        ('', ['a/b/c/d/e/f/g', 'foo', 'bar/baz'], 1, 3, {'folders': ['a'], 'files': []}),
-        ('', ['a/b/c/d/e/f/g', 'foo', 'bar/baz'], 2, 3, {'folders': ['bar'], 'files': []}),
-        ('', ['a/b/c/d/e/f/g', 'foo', 'bar/baz'], 3, 3, {'folders': [], 'files': ['foo']}),
-    ],
-)
-def test_asset_rest_path_pagination(
-    api_client: APIClient,
-    draft_version_factory,
-    asset_factory,
-    asset_blob_factory,
-    path: str,
-    asset_paths: list,
-    page: int,
-    expected_count: int,
-    expected_results: dict,
-):
+def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_factory):
     # Initialize version and contained assets
-    asset_blob = asset_blob_factory()
-    assets = [asset_factory(blob=asset_blob, path=p) for p in asset_paths]
     version: Version = draft_version_factory()
-    for asset in assets:
-        version.assets.add(asset)
+    asset = asset_factory(path='foo/a.txt')
+    version.assets.add(asset)
 
-    # Retrieve paths from endpoint
-    paths = api_client.get(
+    # Add asset path
+    add_asset(asset, version)
+
+    # Retrieve root paths
+    resp = api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/paths/',
-        {'path_prefix': path, 'page': page, 'page_size': 1},
-    ).data
-
-    assert paths.get('count') == expected_count
-
-    assert (
-        paths.get('previous') is None
-        if page == 1
-        else f'/api/dandisets/{version.dandiset.identifier}/versions'
-        f'/draft/assets/paths/?page={page-1}&page_size=1'
+        {'path_prefix': 'bar'},
     )
-
-    assert (
-        paths.get('next') is None
-        if page == expected_count
-        else f'/api/dandisets/{version.dandiset.identifier}/versions'
-        f'/draft/assets/paths/?page={page+1}&page_size=1'
-    )
-
-    for item_type in ('files', 'folders'):
-        assert len(paths['results'][item_type]) == len(expected_results[item_type])
-        for name in paths['results']['folders']:
-            assert name in expected_results['folders']
+    assert resp.status_code == 400
+    assert resp.json() == ['Specified path not found.']
 
 
 @pytest.mark.django_db

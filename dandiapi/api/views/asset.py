@@ -20,11 +20,9 @@ import os.path
 from pathlib import PurePosixPath
 
 from django.conf import settings
-from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
-from django.http.response import Http404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -35,7 +33,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
@@ -232,59 +229,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             if not self.request.user.has_perm('owner', version.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
-
-    def _paginate_asset_paths(self, items: dict) -> dict:
-        """Paginates a list of files and folders to be returned by the asset paths endpoint."""
-        asset_count = len(items)
-        page_number = int(self.request.query_params.get(DandiPagination.page_query_param, 1))
-        page_size = min(
-            int(
-                self.request.query_params.get(
-                    DandiPagination.page_size_query_param, DandiPagination.page_size
-                )
-            ),
-            DandiPagination.max_page_size,
-        )
-
-        paths_paginator: Paginator = Paginator(list(items.items()), page_size)
-        try:
-            assets_page: Page = paths_paginator.page(page_number)
-        except EmptyPage:
-            raise Http404()
-
-        # Divide into folders and files
-        folders = {}
-        files = {}
-
-        # Note that this loop runs in constant time, since the length of assets_page
-        # will never exceed DandiPagination.max_page_size.
-        for k, v in dict(assets_page).items():
-            if isinstance(v, Asset):
-                files[k] = v
-            else:
-                folders[k] = v
-
-        paths = AssetPathsSerializer({'folders': folders, 'files': files})
-
-        # Update url
-        url = self.request.build_absolute_uri()
-        next_url = (
-            replace_query_param(url, DandiPagination.page_query_param, page_number + 1)
-            if page_number + 1 <= paths_paginator.num_pages
-            else None
-        )
-        prev_url = (
-            replace_query_param(url, DandiPagination.page_query_param, page_number - 1)
-            if page_number - 1 > 0
-            else None
-        )
-
-        return {
-            'count': asset_count,
-            'next': next_url,
-            'previous': prev_url,
-            'results': paths.data,
-        }
 
     def asset_from_request(self) -> Asset:
         """
@@ -570,6 +514,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         """
         query_serializer = AssetPathsQueryParameterSerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
+
+        # Permission check
+        self.raise_if_unauthorized()
 
         # Fetch version
         version = get_object_or_404(

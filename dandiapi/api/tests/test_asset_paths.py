@@ -3,7 +3,7 @@ import pytest
 
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.services.asset import add_asset, delete_asset, publish_version
+from dandiapi.api.services.asset import add_asset, delete_asset, publish_version, search_path
 
 
 @pytest.fixture
@@ -70,6 +70,27 @@ def test_asset_path_delete_asset(ingested_asset):
     # Ensure it no longer exists
     assert not AssetPath.objects.filter(asset=asset, version=version).exists()
     assert not AssetPath.objects.filter(path=asset.path, version=version).exists()
+
+
+def test_asset_path_search_path(draft_version_factory, asset_factory):
+    version: Version = draft_version_factory()
+    assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]
+    for asset in assets:
+        version.assets.add(asset)
+        add_asset(asset, version)
+
+    # Search root path
+    qs = search_path('', version)
+
+    # Assert that there are two folders
+    assert qs.count() == 2
+    assert sorted([x.path for x in qs]) == ['bar', 'foo']
+    assert all([x.asset is None for x in qs])
+
+    # Search foo, assert there are two files
+    qs = search_path('foo', version)
+    assert qs.count() == 2
+    assert all([x.asset is not None for x in qs])
 
 
 @pytest.mark.django_db
