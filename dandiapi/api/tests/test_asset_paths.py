@@ -4,6 +4,7 @@ import pytest
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
 from dandiapi.api.services.asset import add_asset, delete_asset, publish_version, search_path
+from dandiapi.api.services.asset.utils import extract_paths
 
 
 @pytest.fixture
@@ -16,6 +17,18 @@ def ingested_asset(draft_version_factory, asset_factory) -> Asset:
     add_asset(asset, version)
 
     return asset
+
+
+@pytest.mark.parametrize(
+    'path,expected',
+    [
+        ('foo.txt', ['foo.txt']),
+        ('foo/bar.txt', ['foo', 'foo/bar.txt']),
+        ('foo/bar/baz.txt', ['foo', 'foo/bar', 'foo/bar/baz.txt']),
+    ],
+)
+def test_extract_paths(path, expected):
+    assert extract_paths(path) == expected
 
 
 @pytest.mark.django_db

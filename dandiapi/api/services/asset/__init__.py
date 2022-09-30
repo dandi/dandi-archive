@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import os
-
 from django.db import transaction
 from django.db.models import F, QuerySet
 
 from dandiapi.api.models import Asset, AssetPath, AssetPathRelation, Version
+from dandiapi.api.services.asset.utils import extract_paths
 
 from .query import get_path_children, get_root_paths
 
@@ -35,9 +34,7 @@ def add_asset(asset: Asset, version: Version):
         return
 
     # Create absolute paths (exclude leaf node)
-    nodepaths: list[str] = asset.path.split('/')[:-1]
-    for i in range(len(nodepaths))[1:]:
-        nodepaths[i] = os.path.join(nodepaths[i - 1], nodepaths[i])
+    nodepaths = extract_paths(asset.path)[:-1]
 
     # Create nodes
     AssetPath.objects.bulk_create(

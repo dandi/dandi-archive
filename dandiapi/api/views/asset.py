@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from dandiapi.api.services.asset import search_path
+from dandiapi.api.services.asset import add_asset, search_path
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -17,7 +17,6 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
-from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.db import transaction
@@ -187,29 +186,10 @@ class AssetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
 
         path = data['metadata']['path']
-        # paths starting with /
-        if PurePosixPath(path).is_absolute():
-            raise serializers.ValidationError(
-                {'metadata': 'Absolute path not allowed for an asset'}
-            )
-
-        sub_paths = path.split('/')
-        # checking for . in path
-        for sub_path in sub_paths:
-            if len(set(sub_path)) == 1 and sub_path[0] == '.':
-                raise serializers.ValidationError(
-                    {'metadata': 'Invalid characters (.) in file path'}
-                )
-
-        # match characters repeating more than once
-        multiple_occurrence_regex = '[/]{2,}'
-        if '\0' in path:
-            raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
-        if re.search(multiple_occurrence_regex, path):
-            raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
+        if not re.match(Asset.ASSET_PATH_REGEX, path):
+            raise serializers.ValidationError({'path': 'Invalid path.'})
 
         data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
-
         return data
 
 
@@ -355,6 +335,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         asset.save()
         version.assets.add(asset)
+
+        # Add asset paths
+        add_asset(asset, version)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
         version.status = Version.Status.PENDING

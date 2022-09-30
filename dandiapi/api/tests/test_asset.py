@@ -10,8 +10,10 @@ import pytest
 import requests
 
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset
+from dandiapi.api.services.asset.utils import extract_paths
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -460,8 +462,18 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.metadata,
     }
+
+    # Assert all provided metadata exists
     for key in metadata:
         assert resp['metadata'][key] == metadata[key]
+
+    # Assert paths are properly ingested
+    for subpath in extract_paths(path):
+        obj = AssetPath.objects.get(version=draft_version, path=subpath)
+        if subpath == path:
+            assert obj.asset == new_asset
+        else:
+            assert obj.asset is None
 
     # The version modified date should be updated
     start_time = draft_version.modified
