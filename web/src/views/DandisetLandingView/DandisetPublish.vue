@@ -42,7 +42,6 @@
     </v-dialog>
     <v-row
       v-if="!publishButtonHidden"
-      class="mb-4"
       no-gutters
     >
       <v-tooltip
@@ -148,7 +147,7 @@
 
     <v-row
       v-if="currentDandiset.status === 'Pending'"
-      class="mb-4 px-1"
+      class="my-2 px-1"
       no-gutters
     >
       <v-menu
@@ -198,7 +197,7 @@
 
     <v-row
       v-else-if="currentDandiset.version_validation_errors.length "
-      class="mb-4 px-1"
+      class="my-2 px-1"
       no-gutters
     >
       <v-menu
@@ -285,7 +284,7 @@
 
     <v-row
       v-if="currentDandiset.asset_validation_errors.length"
-      class="mb-4"
+      class="my-2 px-1"
       no-gutters
     >
       <v-menu
