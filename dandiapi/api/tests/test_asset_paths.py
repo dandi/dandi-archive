@@ -73,6 +73,25 @@ def test_asset_path_add_asset(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db
+def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory):
+    # Create asset with version
+    version: Version = draft_version_factory()
+    asset1: Asset = asset_factory(path='foo/bar.txt')
+    asset2: Asset = asset_factory(path='foo/baz.txt')
+    version.assets.add(asset1)
+    version.assets.add(asset2)
+
+    # Add asset to paths
+    add_asset(asset1, version)
+    add_asset(asset2, version)
+
+    # Get path
+    path = AssetPath.objects.get(path='foo', version=version)
+    assert path.aggregate_size == asset1.blob.size + asset2.blob.size
+    assert path.aggregate_files == 2
+
+
+@pytest.mark.django_db
 def test_asset_path_delete_asset(ingested_asset):
     asset = ingested_asset
     version = ingested_asset.versions.first()
@@ -85,6 +104,31 @@ def test_asset_path_delete_asset(ingested_asset):
     assert not AssetPath.objects.filter(path=asset.path, version=version).exists()
 
 
+@pytest.mark.django_db
+def test_asset_path_delete_asset_shared_paths(
+    draft_version_factory, asset_factory, asset_blob_factory
+):
+    # Create asset with version
+    version: Version = draft_version_factory()
+    asset1: Asset = asset_factory(path='foo/bar.txt', blob=asset_blob_factory(size=128))
+    asset2: Asset = asset_factory(path='foo/baz.txt', blob=asset_blob_factory(size=256))
+    version.assets.add(asset1)
+    version.assets.add(asset2)
+
+    # Add asset to paths
+    add_asset(asset1, version)
+    add_asset(asset2, version)
+
+    # Delete asset
+    delete_asset(asset1, version)
+
+    # Get path
+    path = AssetPath.objects.get(path='foo', version=version)
+    assert path.aggregate_size == asset2.blob.size
+    assert path.aggregate_files == 1
+
+
+@pytest.mark.django_db
 def test_asset_path_search_path(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]

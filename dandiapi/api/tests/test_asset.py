@@ -1023,10 +1023,14 @@ def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_fa
 
 @pytest.mark.django_db
 def test_asset_rest_delete(api_client, user, draft_version, asset):
-    api_client.force_authenticate(user=user)
     assign_perm('owner', user, draft_version.dandiset)
     draft_version.assets.add(asset)
 
+    # Add paths
+    add_asset(asset, draft_version)
+
+    # Make request
+    api_client.force_authenticate(user=user)
     response = api_client.delete(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/'
@@ -1035,6 +1039,9 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
     assert asset not in draft_version.assets.all()
     assert asset in Asset.objects.all()
+
+    # Check paths
+    assert not AssetPath.objects.filter(path=asset.path, version=draft_version).exists()
 
     # The version modified date should be updated
     start_time = draft_version.modified

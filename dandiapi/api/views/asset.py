@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from dandiapi.api.services.asset import add_asset, search_path
+from dandiapi.api.services.asset import add_asset, delete_asset, search_path
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -442,6 +442,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             )
 
         version.assets.remove(asset)
+        delete_asset(asset, version)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
         version.status = Version.Status.PENDING
