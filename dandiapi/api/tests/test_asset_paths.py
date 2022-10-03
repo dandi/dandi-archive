@@ -3,7 +3,13 @@ import pytest
 
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.services.asset import add_asset, delete_asset, publish_version, search_path
+from dandiapi.api.services.asset import (
+    add_asset,
+    delete_asset,
+    publish_version,
+    search_path,
+    update_asset,
+)
 from dandiapi.api.services.asset.utils import extract_paths
 
 
@@ -102,6 +108,33 @@ def test_asset_path_delete_asset(ingested_asset):
     # Ensure it no longer exists
     assert not AssetPath.objects.filter(asset=asset, version=version).exists()
     assert not AssetPath.objects.filter(path=asset.path, version=version).exists()
+
+
+@pytest.mark.django_db
+def test_asset_path_update_asset(draft_version_factory, asset_factory):
+    # Create asset with version
+    version: Version = draft_version_factory()
+    old_asset: Asset = asset_factory(path='a/b.txt')
+    version.assets.add(old_asset)
+    add_asset(old_asset, version)
+
+    # Create new asset
+    new_asset: Asset = asset_factory(path='c/d.txt')
+    version.assets.add(new_asset)
+    add_asset(new_asset, version)
+
+    # Update asset
+    update_asset(old_asset=old_asset, new_asset=new_asset, version=version)
+
+    # Assert none of old paths exist
+    old_paths = extract_paths(old_asset.path)
+    for path in old_paths:
+        assert not AssetPath.objects.filter(path=path, version=version).exists()
+
+    # Assert new paths exist
+    new_paths = extract_paths(new_asset.path)
+    for path in new_paths:
+        assert AssetPath.objects.filter(path=path, version=version).exists()
 
 
 @pytest.mark.django_db

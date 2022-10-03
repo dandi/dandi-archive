@@ -790,7 +790,9 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
+    add_asset(asset=asset, version=draft_version)
 
+    old_path = asset.path
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
         'encodingFormat': 'application/x-nwb',
@@ -830,6 +832,10 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     # The new asset should have a reference to the old asset
     assert new_asset.previous == asset
 
+    # Ensure new path is ingested
+    assert not AssetPath.objects.filter(path=old_path, version=draft_version).exists()
+    assert AssetPath.objects.filter(path=new_path, version=draft_version).exists()
+
     # The version modified date should be updated
     start_time = draft_version.modified
     draft_version.refresh_from_db()
@@ -845,6 +851,7 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
+    add_asset(asset=asset, version=draft_version)
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
@@ -900,6 +907,7 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
+    add_asset(asset=asset, version=draft_version)
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {

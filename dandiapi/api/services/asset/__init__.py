@@ -98,6 +98,12 @@ def delete_asset(asset: Asset, version: Version):
 
 
 @transaction.atomic()
+def update_asset(old_asset: Asset, new_asset: Version, version: Version):
+    delete_asset(old_asset, version)
+    add_asset(new_asset, version)
+
+
+@transaction.atomic()
 def publish_version(draft_version: Version, published_version: Version):
     # Add every asset from the draft version to the published version
     for asset in draft_version.assets.all().iterator():
