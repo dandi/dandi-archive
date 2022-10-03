@@ -74,11 +74,11 @@ jobs:
       CLIENT_URL: http://localhost:8085
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: '14.x'
+          node-version: '16'
           cache: 'yarn'
           cache-dependency-path: web/yarn.lock
 
@@ -88,14 +88,14 @@ jobs:
         working-directory: web
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Install latest version of pip
         run: pip install --upgrade pip
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: pip-cache
         with:
           path: ${{ env.pythonLocation}}/lib/python3.10/site-packages/*
