@@ -12,8 +12,8 @@ import requests
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.asset import add_asset_paths
-from dandiapi.api.services.asset.utils import extract_paths
+from dandiapi.api.services.asset.paths import add_asset_paths
+from dandiapi.api.services.asset.paths.utils import extract_paths
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 

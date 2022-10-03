@@ -3,14 +3,14 @@ import pytest
 
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.services.asset import (
+from dandiapi.api.services.asset.paths import (
     add_asset_paths,
     delete_asset_paths,
     publish_version,
-    search_path,
+    search_asset_paths,
     update_asset_paths,
 )
-from dandiapi.api.services.asset.utils import extract_paths
+from dandiapi.api.services.asset.paths.utils import extract_paths
 
 
 @pytest.fixture
@@ -162,7 +162,7 @@ def test_asset_path_delete_asset_shared_paths(
 
 
 @pytest.mark.django_db
-def test_asset_path_search_path(draft_version_factory, asset_factory):
+def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]
     for asset in assets:
@@ -170,7 +170,7 @@ def test_asset_path_search_path(draft_version_factory, asset_factory):
         add_asset_paths(asset, version)
 
     # Search root path
-    qs = search_path('', version)
+    qs = search_asset_paths('', version)
 
     # Assert that there are two folders
     assert qs.count() == 2
@@ -178,7 +178,7 @@ def test_asset_path_search_path(draft_version_factory, asset_factory):
     assert all([x.asset is None for x in qs])
 
     # Search foo, assert there are two files
-    qs = search_path('foo', version)
+    qs = search_asset_paths('foo', version)
     assert qs.count() == 2
     assert all([x.asset is not None for x in qs])
 

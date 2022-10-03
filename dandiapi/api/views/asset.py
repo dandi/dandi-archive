@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import re
 
-from dandiapi.api.services.asset import (
+from dandiapi.api.services.asset.paths import (
     add_asset_paths,
     delete_asset_paths,
-    search_path,
+    search_asset_paths,
     update_asset_paths,
 )
 from dandiapi.zarr.models import ZarrArchive
@@ -519,7 +519,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         # Fetch child paths
         path: str = query_serializer.validated_data['path_prefix']
-        children_paths = search_path(path, version)
+        children_paths = search_asset_paths(path, version)
         if children_paths is None:
             raise ValidationError('Specified path not found.')
 
