@@ -8,6 +8,7 @@
     "test-debug": "DEBUG=true jest --runInBand"
   },
   "dependencies": {
+    "@faker-js/faker": "^7.5.0",
     "expect-puppeteer": "^5.0.3",
     "jest": "^26.6.3",
     "jest-puppeteer": "^5.0.3",
@@ -35,7 +36,9 @@
     ],
     "rules": {
       "jest/no-hooks": "off",
-      "jest/prefer-expect-assertions": "off"
+      "jest/prefer-expect-assertions": "off",
+      "no-await-in-loop": "off",
+      "no-restricted-syntax":"off"
     },
     "globals": {
       "page": true,
