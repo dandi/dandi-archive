@@ -144,7 +144,10 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
         subject='Your DANDI Account',
         message=render_to_string(
             'api/mail/rejected_user_message.txt',
-            {'greeting_name': user_greeting_name(user, socialaccount)},
+            {
+                'greeting_name': user_greeting_name(user, socialaccount),
+                'rejection_reason': user.metadata.rejection_reason,
+            },
         ),
         to=[ADMIN_EMAIL, user.email],
     )
