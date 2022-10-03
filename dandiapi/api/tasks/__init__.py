@@ -51,7 +51,7 @@ def calculate_sha256(blob_id: int) -> None:
     transaction.on_commit(dispatch_validation)
 
 
-@shared_task(soft_time_limit=40)
+@shared_task(soft_time_limit=60)
 @atomic
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
