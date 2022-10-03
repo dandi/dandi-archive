@@ -80,7 +80,7 @@
                   <v-btn
                     icon
                     :color="modified ? 'warning' : 'primary'"
-                    :disabled="readonly"
+                    :disabled="readonly || !modified"
                     v-on="on"
                     @click="save"
                   >
