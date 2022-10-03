@@ -71,28 +71,17 @@ export interface DandisetStats {
   size: number,
 }
 
-export interface AssetStats {
-  folder: boolean,
-  name: string,
-  created?: string,
-  modified?: string,
-  size?: number,
-  services?: { name: string, url: string }[],
-  asset_id?: string,
-}
-
-export interface AssetFolder extends AssetStats {
-  num_files?: number,
-}
-
-export interface AssetServices {
-  name: string,
-  url: string,
-}
-
-export interface AssetFile extends AssetStats {
-  asset_id: string,
-  path: string,
-  services: AssetServices[],
+export interface AssetFile {
+  asset_id: string;
   url: string;
+}
+
+export interface AssetPath {
+  created: string;
+  modified: string;
+  path: string;
+  version: number;
+  aggregate_files: number;
+  aggregate_size: number;
+  asset: AssetFile | null;
 }

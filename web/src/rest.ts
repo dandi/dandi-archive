@@ -3,7 +3,7 @@ import Vue from 'vue';
 import { mapState } from 'pinia';
 import OAuthClient from '@girder/oauth-client';
 import {
-  Asset, Dandiset, Paginated, User, Version, Info, AssetFile, AssetFolder,
+  Asset, Dandiset, Paginated, User, Version, Info, AssetPath,
 } from '@/types';
 import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 // eslint-disable-next-line import/no-cycle
@@ -20,7 +20,7 @@ const dandiApiRoot = process.env.VUE_APP_DANDI_API_ROOT.endsWith('/')
 
 const client = axios.create({ baseURL: dandiApiRoot });
 
-let oauthClient: OAuthClient|null = null;
+let oauthClient: OAuthClient | null = null;
 try {
   if (process.env.VUE_APP_OAUTH_API_ROOT && process.env.VUE_APP_OAUTH_CLIENT_ID) {
     oauthClient = new OAuthClient(
@@ -114,13 +114,13 @@ const dandiRest = new Vue({
         throw error;
       }
     },
-    // eslint-disable-next-line max-len
-    async assetPaths(identifier: string, version: string, location: string, page: number, page_size: number):
-    Promise<{
-      folders: Record<string, AssetFolder>,
-      files: Record<string, AssetFile>,
-      count: number}
-    > {
+    async assetPaths(
+      identifier: string,
+      version: string,
+      location: string,
+      page: number,
+      page_size: number,
+    ): Promise<{ count: number, results: AssetPath[] }> {
       const {
         data,
       } = await client.get(`dandisets/${identifier}/versions/${version}/assets/paths/`, {
@@ -131,8 +131,7 @@ const dandiRest = new Vue({
         },
       });
       const { count, results } = data;
-      const { files, folders } = results;
-      return { folders, files, count };
+      return { count, results };
     },
     async versions(identifier: string, params?: any): Promise<Paginated<Version> | null> {
       try {
