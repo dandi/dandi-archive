@@ -289,9 +289,6 @@ const {
   basicModel,
   basicModelValid,
   complexSchema,
-  complexModel,
-  setComplexModelProp,
-  complexModelValid,
   complexModelValidation,
   transactionTracker,
 } = editorInterface.value;
