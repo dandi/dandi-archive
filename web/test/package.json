@@ -8,6 +8,7 @@
     "test-debug": "DEBUG=true jest --runInBand"
   },
   "dependencies": {
+    "@faker-js/faker": "^7.5.0",
     "expect-puppeteer": "^5.0.3",
     "jest": "^26.6.3",
     "jest-puppeteer": "^5.0.3",
