@@ -39,10 +39,8 @@ describe('dandisets page', () => {
       const name = faker.lorem.words();
       const description = faker.lorem.sentences();
 
-      /* eslint-disable no-await-in-loop */
       const identifier = await registerDandiset(name, description);
       await waitForRequestsToFinish();
-      /* eslint-enable no-await-in-loop */
 
       // Save dandiset identifier/name mapping so we can search for it later
       dandisetIdentifierNameMapping.set(identifier, name);
@@ -63,8 +61,6 @@ describe('dandisets page', () => {
     await waitForRequestsToFinish();
 
     // Search for each dandiset we created above and assert that they show up in the search results
-    /* eslint-disable no-restricted-syntax */
-    /* eslint-disable no-await-in-loop */
     for (const [dandisetIdentifier, dandisetName] of dandisetIdentifierNameMapping) {
       await expect(page).toFillXPath(vTextField('Search Dandisets by name, description, identifier, or contributor name'), dandisetIdentifierNameMapping.get(dandisetIdentifier));
       await page.keyboard.press('Enter');
@@ -80,7 +76,5 @@ describe('dandisets page', () => {
       await page.keyboard.press('Backspace');
       await page.keyboard.up('ControlLeft');
     }
-    /* eslint-enable no-await-in-loop */
-    /* eslint-enable no-restricted-syntax */
   });
 });
