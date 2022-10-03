@@ -4,11 +4,11 @@ import pytest
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
 from dandiapi.api.services.asset import (
-    add_asset,
-    delete_asset,
+    add_asset_paths,
+    delete_asset_paths,
     publish_version,
     search_path,
-    update_asset,
+    update_asset_paths,
 )
 from dandiapi.api.services.asset.utils import extract_paths
 
@@ -20,7 +20,7 @@ def ingested_asset(draft_version_factory, asset_factory) -> Asset:
     version.assets.add(asset)
 
     # Add asset to paths
-    add_asset(asset, version)
+    add_asset_paths(asset, version)
 
     return asset
 
@@ -45,7 +45,7 @@ def test_asset_path_add_asset(draft_version_factory, asset_factory):
     version.assets.add(asset)
 
     # Add asset to paths
-    add_asset(asset, version)
+    add_asset_paths(asset, version)
 
     # Get asset path
     path: AssetPath = AssetPath.objects.get(asset=asset, version=version)
@@ -88,8 +88,8 @@ def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory)
     version.assets.add(asset2)
 
     # Add asset to paths
-    add_asset(asset1, version)
-    add_asset(asset2, version)
+    add_asset_paths(asset1, version)
+    add_asset_paths(asset2, version)
 
     # Get path
     path = AssetPath.objects.get(path='foo', version=version)
@@ -103,7 +103,7 @@ def test_asset_path_delete_asset(ingested_asset):
     version = ingested_asset.versions.first()
 
     # Delete asset
-    delete_asset(asset, version)
+    delete_asset_paths(asset, version)
 
     # Ensure it no longer exists
     assert not AssetPath.objects.filter(asset=asset, version=version).exists()
@@ -116,15 +116,15 @@ def test_asset_path_update_asset(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     old_asset: Asset = asset_factory(path='a/b.txt')
     version.assets.add(old_asset)
-    add_asset(old_asset, version)
+    add_asset_paths(old_asset, version)
 
     # Create new asset
     new_asset: Asset = asset_factory(path='c/d.txt')
     version.assets.add(new_asset)
-    add_asset(new_asset, version)
+    add_asset_paths(new_asset, version)
 
     # Update asset
-    update_asset(old_asset=old_asset, new_asset=new_asset, version=version)
+    update_asset_paths(old_asset=old_asset, new_asset=new_asset, version=version)
 
     # Assert none of old paths exist
     old_paths = extract_paths(old_asset.path)
@@ -149,11 +149,11 @@ def test_asset_path_delete_asset_shared_paths(
     version.assets.add(asset2)
 
     # Add asset to paths
-    add_asset(asset1, version)
-    add_asset(asset2, version)
+    add_asset_paths(asset1, version)
+    add_asset_paths(asset2, version)
 
     # Delete asset
-    delete_asset(asset1, version)
+    delete_asset_paths(asset1, version)
 
     # Get path
     path = AssetPath.objects.get(path='foo', version=version)
@@ -167,7 +167,7 @@ def test_asset_path_search_path(draft_version_factory, asset_factory):
     assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]
     for asset in assets:
         version.assets.add(asset)
-        add_asset(asset, version)
+        add_asset_paths(asset, version)
 
     # Search root path
     qs = search_path('', version)
@@ -188,7 +188,7 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     asset = asset_factory(path='foo/bar.txt')
     version.assets.add(asset)
-    add_asset(asset, version)
+    add_asset_paths(asset, version)
 
     # Publish version
     published_version = version.publish_version

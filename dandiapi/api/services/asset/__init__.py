@@ -27,7 +27,7 @@ def search_path(query: str, version: Version) -> QuerySet[AssetPath] | None:
 
 # TODO: Make idempotent
 @transaction.atomic()
-def add_asset(asset: Asset, version: Version):
+def add_asset_paths(asset: Asset, version: Version):
     # Get or create leaf path
     leaf, created = AssetPath.objects.get_or_create(path=asset.path, asset=asset, version=version)
     if not created:
@@ -72,7 +72,7 @@ def add_asset(asset: Asset, version: Version):
 
 
 @transaction.atomic()
-def delete_asset(asset: Asset, version: Version):
+def delete_asset_paths(asset: Asset, version: Version):
     leaf: AssetPath = AssetPath.objects.get(asset=asset, version=version)
 
     # Fetch parents
@@ -98,13 +98,13 @@ def delete_asset(asset: Asset, version: Version):
 
 
 @transaction.atomic()
-def update_asset(old_asset: Asset, new_asset: Version, version: Version):
-    delete_asset(old_asset, version)
-    add_asset(new_asset, version)
+def update_asset_paths(old_asset: Asset, new_asset: Version, version: Version):
+    delete_asset_paths(old_asset, version)
+    add_asset_paths(new_asset, version)
 
 
 @transaction.atomic()
 def publish_version(draft_version: Version, published_version: Version):
     # Add every asset from the draft version to the published version
     for asset in draft_version.assets.all().iterator():
-        add_asset(asset, published_version)
+        add_asset_paths(asset, published_version)

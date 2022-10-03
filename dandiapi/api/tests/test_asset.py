@@ -12,7 +12,7 @@ import requests
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.asset import add_asset
+from dandiapi.api.services.asset import add_asset_paths
 from dandiapi.api.services.asset.utils import extract_paths
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -43,7 +43,7 @@ def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
     version.assets.add(asset)
 
     # Add asset path
-    add_asset(asset, version)
+    add_asset_paths(asset, version)
 
     # Retrieve root paths
     resp = api_client.get(
@@ -64,7 +64,7 @@ def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_fact
     version.assets.add(asset)
 
     # Add asset path
-    add_asset(asset, version)
+    add_asset_paths(asset, version)
 
     # Retrieve root paths
     resp = api_client.get(
@@ -790,7 +790,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
-    add_asset(asset=asset, version=draft_version)
+    add_asset_paths(asset=asset, version=draft_version)
 
     old_path = asset.path
     new_path = 'test/asset/rest/update.txt'
@@ -851,7 +851,7 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
-    add_asset(asset=asset, version=draft_version)
+    add_asset_paths(asset=asset, version=draft_version)
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
@@ -907,7 +907,7 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
-    add_asset(asset=asset, version=draft_version)
+    add_asset_paths(asset=asset, version=draft_version)
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
@@ -1035,7 +1035,7 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
     draft_version.assets.add(asset)
 
     # Add paths
-    add_asset(asset, draft_version)
+    add_asset_paths(asset, draft_version)
 
     # Make request
     api_client.force_authenticate(user=user)
