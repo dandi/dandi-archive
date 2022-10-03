@@ -27,10 +27,10 @@ jobs:
           - 5672:5672
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnami/minio:2022.3.3
+        image: bitnami/minio:latest
         env:
-          MINIO_ACCESS_KEY: minioAccessKey
-          MINIO_SECRET_KEY: minioSecretKey
+          MINIO_ROOT_USER: minioAccessKey
+          MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
     steps:
