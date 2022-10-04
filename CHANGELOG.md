@@ -1,3 +1,15 @@
+# v0.2.52 (Tue Oct 04 2022)
+
+#### 🐛 Bug Fix
+
+- Update frontend to use new query parameter for version listing endpoint [#1309](https://github.com/dandi/dandi-archive/pull/1309) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.51 (Tue Oct 04 2022)
 
 #### 🐛 Bug Fix
