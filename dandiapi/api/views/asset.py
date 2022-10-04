@@ -34,7 +34,7 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
@@ -190,9 +190,9 @@ class AssetRequestSerializer(serializers.Serializer):
         if 'path' not in data['metadata'] or not data['metadata']['path']:
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
 
-        path = data['metadata']['path']
-        if not re.match(Asset.ASSET_PATH_REGEX, path):
-            raise serializers.ValidationError({'path': 'Invalid path.'})
+        # Validate the asset path. If this fails, it will raise a django ValidationError, which
+        # will be caught further up the stack and be converted to a DRF ValidationError
+        Asset.validate_path(data['metadata']['path'])
 
         data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
         return data
@@ -336,7 +336,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         # Ensure zarr archive doesn't already belong to a dandiset
         if asset.zarr and asset.zarr.dandiset != version.dandiset:
-            raise ValidationError('The zarr archive belongs to a different dandiset')
+            raise serializers.ValidationError('The zarr archive belongs to a different dandiset')
 
         asset.save()
         version.assets.add(asset)
@@ -521,7 +521,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         path: str = query_serializer.validated_data['path_prefix']
         children_paths = search_asset_paths(path, version)
         if children_paths is None:
-            raise ValidationError('Specified path not found.')
+            raise serializers.ValidationError('Specified path not found.')
 
         # Paginate and return
         page = self.paginate_queryset(children_paths)
