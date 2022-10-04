@@ -10,6 +10,7 @@ from django.core.exceptions import FieldError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.fields.json import KeyTextTransform
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -144,6 +145,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             models.CheckConstraint(
                 name='asset_metadata_has_schema_version',
                 check=Q(metadata__schemaVersion__isnull=False),
+            ),
+            models.CheckConstraint(
+                name='asset_metadata_path_matches_path',
+                check=Q(path=KeyTextTransform('path', 'metadata')),
             ),
         ]
 
