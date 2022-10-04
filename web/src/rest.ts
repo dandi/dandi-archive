@@ -161,7 +161,7 @@ const dandiRest = new Vue({
     },
     async mostRecentVersion(identifier: string) {
       // Look up the last version using page filters
-      const versions = await this.versions(identifier, { page_size: 1, ordering: '-created' });
+      const versions = await this.versions(identifier, { page_size: 1, order: '-created' });
       if (versions === null) {
         return null;
       }
