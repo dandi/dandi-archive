@@ -1,3 +1,36 @@
+# v0.2.51 (Tue Oct 04 2022)
+
+#### 🐛 Bug Fix
+
+- Use `django_filters` instead of DRF for Version viewset filtering [#1308](https://github.com/dandi/dandi-archive/pull/1308) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Unpin minio docker image and update env var names [#1307](https://github.com/dandi/dandi-archive/pull/1307) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update e2e test dependencies [#1306](https://github.com/dandi/dandi-archive/pull/1306) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Convert dandiset search test to jest/puppeteer, remove pyppeteer config from project [#1300](https://github.com/dandi/dandi-archive/pull/1300) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Disable save button in Meditor if no changes have been made [#1302](https://github.com/dandi/dandi-archive/pull/1302) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Include rejection reason in rejected user email [#1301](https://github.com/dandi/dandi-archive/pull/1301) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Increase time limit for write_manifest_files [#1299](https://github.com/dandi/dandi-archive/pull/1299) ([@danlamanna](https://github.com/danlamanna))
+- Fix missing spacing for validation error UI when logged out [#1297](https://github.com/dandi/dandi-archive/pull/1297) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Rename file without a trailing space [#1298](https://github.com/dandi/dandi-archive/pull/1298) ([@waxlamp](https://github.com/waxlamp))
+- Replace pyppeteer test for cookie behavior with puppeteer test [#1295](https://github.com/dandi/dandi-archive/pull/1295) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Turn on mypy for `zarr/admin.py` and `zarr/views/` + fix type errors [#1296](https://github.com/dandi/dandi-archive/pull/1296) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Refactor dandiset create/delete methods [#1292](https://github.com/dandi/dandi-archive/pull/1292) ([@danlamanna](https://github.com/danlamanna))
+- Revert "Temporarily pin DRF" [#1293](https://github.com/dandi/dandi-archive/pull/1293) ([@danlamanna](https://github.com/danlamanna))
+- Convert `DandisetPublish.vue` to `<script setup>` [#1283](https://github.com/dandi/dandi-archive/pull/1283) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Make misc fixes to the dandiset ownership email [#1279](https://github.com/dandi/dandi-archive/pull/1279) ([@danlamanna](https://github.com/danlamanna))
+- Fix link to download help handbook page [#1289](https://github.com/dandi/dandi-archive/pull/1289) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Allow for using django core exceptions with DRF [#1290](https://github.com/dandi/dandi-archive/pull/1290) ([@danlamanna](https://github.com/danlamanna))
+- Use `exact` prop consistently [#1285](https://github.com/dandi/dandi-archive/pull/1285) ([@waxlamp](https://github.com/waxlamp))
+- Temporarily pin DRF [#1291](https://github.com/dandi/dandi-archive/pull/1291) ([@danlamanna](https://github.com/danlamanna))
+- Turn off autoescaping for text/plain emails [#1276](https://github.com/dandi/dandi-archive/pull/1276) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 3
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.2.50 (Thu Sep 22 2022)
 
 #### 🐛 Bug Fix
