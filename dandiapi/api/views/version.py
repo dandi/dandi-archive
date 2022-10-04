@@ -1,8 +1,9 @@
 from django.db import transaction
 from django.utils.decorators import method_decorator
+from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from rest_framework import filters, status
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
@@ -21,6 +22,14 @@ from dandiapi.api.views.serializers import (
 )
 
 
+class VersionFilter(filters.FilterSet):
+    order = filters.OrderingFilter(fields=['created'])
+
+    class Meta:
+        model = Version
+        fields = ['created']
+
+
 class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelViewSet):
     queryset = Version.objects.all().select_related('dandiset').order_by('created')
 
@@ -28,8 +37,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     serializer_detail_class = VersionDetailSerializer
     pagination_class = DandiPagination
 
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['created']
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = VersionFilter
 
     lookup_field = 'version'
     lookup_value_regex = Version.VERSION_REGEX
