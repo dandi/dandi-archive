@@ -1,11 +1,16 @@
 import hashlib
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.files.storage import Storage
+from guardian.shortcuts import assign_perm
 import pytest
+from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+
+from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
 
 
 @pytest.mark.django_db
@@ -238,3 +243,126 @@ def test_validate_version_metadata_malformed_license(version: Version, asset: As
     assert version.validation_errors == [
         {'field': 'license', 'message': "'foo' is not of type 'array'"}
     ]
+
+
+@pytest.mark.django_db
+def test_publish_task(
+    api_client: APIClient,
+    user: User,
+    draft_asset_factory,
+    published_asset_factory,
+    draft_version_factory,
+):
+    # Create a draft_version in PUBLISHING state
+    draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
+
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    old_draft_asset: Asset = draft_asset_factory()
+    old_published_asset: Asset = published_asset_factory()
+    old_published_asset.publish()
+    old_published_asset.save()
+    assert not old_draft_asset.published
+    assert old_published_asset.published
+
+    draft_version.assets.set([old_draft_asset, old_published_asset])
+
+    # Ensure that the number of versions increases by 1 after publishing
+    starting_version_count = draft_version.dandiset.versions.count()
+    tasks.publish_task(draft_version.id)
+    assert draft_version.dandiset.versions.count() == starting_version_count + 1
+
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHED
+
+    published_version = draft_version.dandiset.versions.latest('created')
+
+    assert published_version.metadata == {
+        **draft_version.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
+        'manifestLocation': [
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
+        ],
+        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+        'version': published_version.version,
+        'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
+        'url': (
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
+            f'/{published_version.version}'
+        ),
+        'citation': published_version.citation(published_version.metadata),
+        'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
+        # Once the assets are linked, assetsSummary should be computed properly
+        'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
+            'numberOfBytes': 200,
+            'numberOfFiles': 2,
+            'dataStandard': [
+                {
+                    'schemaKey': 'StandardsType',
+                    'identifier': 'RRID:SCR_015242',
+                    'name': 'Neurodata Without Borders (NWB)',
+                }
+            ],
+            'approach': [],
+            'measurementTechnique': [],
+            'variableMeasured': [],
+            'species': [],
+        },
+    }
+
+    assert published_version.assets.count() == 2
+    new_draft_asset: Asset = published_version.assets.get(asset_id=old_draft_asset.asset_id)
+    new_published_asset: Asset = published_version.assets.get(asset_id=old_published_asset.asset_id)
+
+    # The former draft asset should have been modified into a published asset
+    assert new_draft_asset.published
+    assert new_draft_asset.asset_id == old_draft_asset.asset_id
+    assert new_draft_asset.path == old_draft_asset.path
+    assert new_draft_asset.blob == old_draft_asset.blob
+    assert new_draft_asset.metadata == {
+        **old_draft_asset.metadata,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            # TODO endDate needs to be defined before publish is complete
+            'endDate': UTC_ISO_TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
+            ],
+            'schemaKey': 'PublishActivity',
+        },
+    }
+
+    # The published_asset should be completely unchanged
+    assert new_published_asset.published
+    assert new_published_asset.asset_id == old_published_asset.asset_id
+    assert new_published_asset.path == old_published_asset.path
+    assert new_published_asset.blob == old_published_asset.blob
+    assert new_published_asset.metadata == old_published_asset.metadata

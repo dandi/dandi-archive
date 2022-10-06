@@ -587,105 +587,8 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.django_db
-def test_version_rest_publish(api_client, user: User, draft_version: Version, asset: Asset):
-    assign_perm('owner', user, draft_version.dandiset)
-    api_client.force_authenticate(user=user)
-    draft_version.assets.add(asset)
-
-    # Validate the metadata to mark the version and asset as `VALID`
-    tasks.validate_version_metadata(draft_version.id)
-    tasks.validate_asset_metadata(asset.id)
-    draft_version.refresh_from_db()
-    assert draft_version.valid
-
-    resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}'
-        f'/versions/{draft_version.version}/publish/'
-    )
-    assert resp.data == {
-        'dandiset': {
-            'identifier': draft_version.dandiset.identifier,
-            'created': TIMESTAMP_RE,
-            'modified': TIMESTAMP_RE,
-            'contact_person': draft_version.metadata['contributor'][0]['name'],
-            'embargo_status': 'OPEN',
-        },
-        'version': VERSION_ID_RE,
-        'name': draft_version.name,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-        'asset_count': 1,
-        'size': draft_version.size,
-        'status': 'Valid',
-    }
-    published_version = Version.objects.get(version=resp.data['version'])
-    assert published_version
-    assert draft_version.dandiset.versions.count() == 2
-
-    published_asset: Asset = published_version.assets.get()
-    assert published_asset.published
-    # The asset should be the same after publishing
-    assert asset.asset_id == published_asset.asset_id
-
-    assert published_version.metadata == {
-        **draft_version.metadata,
-        'publishedBy': {
-            'id': URN_RE,
-            'name': 'DANDI publish',
-            'startDate': UTC_ISO_TIMESTAMP_RE,
-            'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
-                    # TODO version the API
-                    'version': '0.1.0',
-                    'schemaKey': 'Software',
-                }
-            ],
-            'schemaKey': 'PublishActivity',
-        },
-        'datePublished': UTC_ISO_TIMESTAMP_RE,
-        'manifestLocation': [
-            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
-        ],
-        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
-        'version': published_version.version,
-        'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
-        'url': (
-            f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
-            f'/{published_version.version}'
-        ),
-        'citation': published_version.citation(published_version.metadata),
-        'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
-        # Once the assets are linked, assetsSummary should be computed properly
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 100,
-            'numberOfFiles': 1,
-            'dataStandard': [
-                {
-                    'schemaKey': 'StandardsType',
-                    'identifier': 'RRID:SCR_015242',
-                    'name': 'Neurodata Without Borders (NWB)',
-                }
-            ],
-            'approach': [],
-            'measurementTechnique': [],
-            'variableMeasured': [],
-            'species': [],
-        },
-    }
-
-    draft_version.refresh_from_db()
-    assert draft_version.status == Version.Status.PUBLISHED
-    assert not draft_version.valid
-
-
-@pytest.mark.django_db
-def test_version_rest_publish_assets(
-    api_client,
+def test_version_rest_publish(
+    api_client: APIClient,
     user: User,
     draft_version: Version,
     draft_asset_factory,
@@ -714,46 +617,10 @@ def test_version_rest_publish_assets(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/publish/'
     )
-    assert resp.status_code == 200
-    published_version = Version.objects.get(version=resp.data['version'])
+    assert resp.status_code == 202
 
-    assert published_version.assets.count() == 2
-    new_draft_asset: Asset = published_version.assets.get(asset_id=old_draft_asset.asset_id)
-    new_published_asset: Asset = published_version.assets.get(asset_id=old_published_asset.asset_id)
-
-    # The former draft asset should have been modified into a published asset
-    assert new_draft_asset.published
-    assert new_draft_asset.asset_id == old_draft_asset.asset_id
-    assert new_draft_asset.path == old_draft_asset.path
-    assert new_draft_asset.blob == old_draft_asset.blob
-    assert new_draft_asset.metadata == {
-        **old_draft_asset.metadata,
-        'datePublished': UTC_ISO_TIMESTAMP_RE,
-        'publishedBy': {
-            'id': URN_RE,
-            'name': 'DANDI publish',
-            'startDate': UTC_ISO_TIMESTAMP_RE,
-            # TODO endDate needs to be defined before publish is complete
-            'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
-                    'version': '0.1.0',
-                    'schemaKey': 'Software',
-                }
-            ],
-            'schemaKey': 'PublishActivity',
-        },
-    }
-
-    # The published_asset should be completely unchanged
-    assert new_published_asset.published
-    assert new_published_asset.asset_id == old_published_asset.asset_id
-    assert new_published_asset.path == old_published_asset.path
-    assert new_published_asset.blob == old_published_asset.blob
-    assert new_published_asset.metadata == old_published_asset.metadata
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.PUBLISHING
 
 
 @pytest.mark.django_db
@@ -817,14 +684,24 @@ def test_version_rest_publish_not_a_draft(api_client, user, published_version, a
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'status',
+    'status,expected_data,expected_status_code',
     [
-        Version.Status.PENDING,
-        Version.Status.VALIDATING,
-        Version.Status.INVALID,
+        (Version.Status.PENDING, 'Dandiset metadata or asset metadata is not valid', 400),
+        (Version.Status.VALIDATING, 'Dandiset is currently being validated', 409),
+        (Version.Status.INVALID, 'Dandiset metadata or asset metadata is not valid', 400),
+        (Version.Status.PUBLISHED, 'No changes since last publish', 400),
+        (Version.Status.PUBLISHING, 'Dandiset is currently being published', 423),
     ],
 )
-def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, asset, status):
+def test_version_rest_publish_invalid(
+    api_client: APIClient,
+    user: User,
+    draft_version: Version,
+    asset: Asset,
+    status: str,
+    expected_data: str,
+    expected_status_code: int,
+):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
@@ -836,8 +713,8 @@ def test_version_rest_publish_invalid_metadata(api_client, user, draft_version, 
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/publish/'
     )
-    assert resp.status_code == 400
-    assert resp.data == 'Dandiset metadata or asset metadata is not valid'
+    assert resp.status_code == expected_status_code
+    assert resp.data == expected_data
 
 
 @pytest.mark.django_db
