@@ -1,3 +1,19 @@
+# v0.2.53 (Thu Oct 06 2022)
+
+#### 🐛 Bug Fix
+
+- Prevent double-publishing [#1006](https://github.com/dandi/dandi-archive/pull/1006) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🧪 Tests
+
+- Add additional waits to account E2E test [#1310](https://github.com/dandi/dandi-archive/pull/1310) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.52 (Tue Oct 04 2022)
 
 #### 🐛 Bug Fix
