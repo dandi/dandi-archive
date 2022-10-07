@@ -71,7 +71,8 @@
 import {
   defineComponent, computed, watch, onMounted, Ref, ref,
 } from 'vue';
-import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
+import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
@@ -80,7 +81,6 @@ import { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
-import { useRoute, useRouter } from 'vue-router/composables';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
 
@@ -91,20 +91,6 @@ export default defineComponent({
     DandisetSearchField,
     DandisetSidebar,
     Meditor,
-  },
-  // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking a
-  // link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
-  // "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
-  //
-  beforeRouteLeave(to: Route, from: Route, next: NavigationGuardNext) {
-    // Prompt user if they try to leave the DLP with unsaved changes in the meditor
-    if (!editorInterface.value?.transactionTracker?.isModified()
-    // eslint-disable-next-line no-alert
-    || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
-      next();
-      return true;
-    }
-    return false;
   },
   props: {
     identifier: {
@@ -118,6 +104,20 @@ export default defineComponent({
     },
   },
   setup(props) {
+    // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking
+    // a link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
+    // "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
+    onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
+      // Prompt user if they try to leave the DLP with unsaved changes in the meditor
+      if (!editorInterface.value?.transactionTracker?.isModified()
+      // eslint-disable-next-line no-alert
+    || window.confirm('You have unsaved changes, are you suryhe you want to leave?')) {
+        next();
+        return true;
+      }
+      return false;
+    });
+
     const route = useRoute();
     const router = useRouter();
     const store = useDandisetStore();
