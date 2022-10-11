@@ -449,8 +449,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
-        version.assets.remove(asset)
+        # Remove asset paths and asset itself from version
         delete_asset_paths(asset, version)
+        version.assets.remove(asset)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
         version.status = Version.Status.PENDING
