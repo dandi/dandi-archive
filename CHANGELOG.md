@@ -1,3 +1,15 @@
+# v0.2.54 (Tue Oct 11 2022)
+
+#### 🐛 Bug Fix
+
+- Fix 401 errors from `/versions/` endpoint being reported to sentry [#1321](https://github.com/dandi/dandi-archive/pull/1321) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.2.53 (Thu Oct 06 2022)
 
 #### 🐛 Bug Fix
