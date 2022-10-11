@@ -59,7 +59,18 @@ export const useDandisetStore = defineStore('dandiset', {
     },
     async fetchDandisetVersions({ identifier }: Record<string, string>) {
       this.loading = true;
-      const res = await dandiRest.versions(identifier);
+      let res;
+      try {
+        res = await dandiRest.versions(identifier);
+      } catch (err) {
+        // 401 errors are normal, and indicate that this dandiset is embargoed
+        // and the user doesn't have permission to view it.
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          res = null;
+        } else {
+          throw err;
+        }
+      }
       if (res) {
         const { results } = res;
         this.versions = results || [];
