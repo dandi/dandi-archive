@@ -41,7 +41,7 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
+from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob, validate_asset_path
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
@@ -192,7 +192,7 @@ class AssetRequestSerializer(serializers.Serializer):
 
         # Validate the asset path. If this fails, it will raise a django ValidationError, which
         # will be caught further up the stack and be converted to a DRF ValidationError
-        Asset.validate_path(data['metadata']['path'])
+        validate_asset_path(data['metadata']['path'])
 
         data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
         return data

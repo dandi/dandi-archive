@@ -30,6 +30,15 @@ ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_-]'
 ASSET_PATH_REGEX = fr'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
 
 
+def validate_asset_path(path: str):
+    if path.startswith('/'):
+        raise ValidationError('Path must not begin with /')
+    if not re.match(ASSET_PATH_REGEX, path):
+        raise ValidationError(f'Path violates regex: {ASSET_PATH_REGEX}')
+
+    return path
+
+
 class BaseAssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
@@ -109,16 +118,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         VALID = 'Valid'
         INVALID = 'Invalid'
 
-    def validate_path(path: str):
-        if path.startswith('/'):
-            raise ValidationError('Path must not begin with /')
-        if not re.match(ASSET_PATH_REGEX, path):
-            raise ValidationError(f'Path violates regex: {ASSET_PATH_REGEX}')
-
-        return path
-
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512, validators=[validate_path])
+    path = models.CharField(max_length=512, validators=[validate_asset_path])
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
