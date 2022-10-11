@@ -1,7 +1,7 @@
 import djclick as click
 
+from dandiapi.api.asset_paths import add_asset_paths
 from dandiapi.api.models import Version
-from dandiapi.api.services.asset.paths import add_asset_paths
 
 
 def ingest_version_assets(version: Version):

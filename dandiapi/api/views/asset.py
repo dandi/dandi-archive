@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from dandiapi.api.services.asset.paths import (
+from dandiapi.api.asset_paths import (
     add_asset_paths,
     delete_asset_paths,
     search_asset_paths,

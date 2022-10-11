@@ -1,16 +1,16 @@
 from django.db.models import QuerySet
 import pytest
 
-from dandiapi.api.models import Asset, AssetPath, Version
-from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.services.asset.paths import (
+from dandiapi.api.asset_paths import (
     add_asset_paths,
     delete_asset_paths,
+    extract_paths,
     publish_version,
     search_asset_paths,
     update_asset_paths,
 )
-from dandiapi.api.services.asset.paths.utils import extract_paths
+from dandiapi.api.models import Asset, AssetPath, Version
+from dandiapi.api.models.asset_paths import AssetPathRelation
 
 
 @pytest.fixture
