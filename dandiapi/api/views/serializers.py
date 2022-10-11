@@ -271,8 +271,6 @@ class AssetPathsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetPath
         fields = [
-            'created',
-            'modified',
             'path',
             'version',
             'aggregate_files',

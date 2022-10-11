@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from django.db import models
-from django.db.models import Q
-from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.version import Version
 
 
-class AssetPath(TimeStampedModel):
+class AssetPath(models.Model):
     path = models.CharField(max_length=512)
 
     # TODO: Determine what should be done on delete
@@ -23,13 +21,13 @@ class AssetPath(TimeStampedModel):
     class Meta:
         constraints = [
             # Disallow slashses in path
-            models.CheckConstraint(check=~Q(path__endswith='/'), name='consistent-slash'),
+            models.CheckConstraint(check=~models.Q(path__endswith='/'), name='consistent-slash'),
             models.UniqueConstraint(fields=['asset', 'version'], name='unique-asset-version'),
             models.UniqueConstraint(fields=['version', 'path'], name='unique-version-path'),
         ]
 
 
-class AssetPathRelation(TimeStampedModel):
+class AssetPathRelation(models.Model):
     # Give related name of child_links, because for any entry with parent=node,
     # all links from node.child_links have the form (parent=node, child=child_node)
     parent = models.ForeignKey(AssetPath, related_name='child_links', on_delete=models.CASCADE)
