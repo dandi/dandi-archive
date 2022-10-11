@@ -69,10 +69,11 @@
 
 <script setup lang="ts">
 import {
-  computed, watch, onMounted, Ref, ref,
+  computed, watch, onMounted, ref,
 } from 'vue';
+import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
-import { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
