@@ -1,8 +1,9 @@
-from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
+from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExists
+from dandiapi.api.services.exceptions import AdminOnlyOperation, NotAllowed
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 
 
@@ -15,13 +16,13 @@ def create_dandiset(
     version_metadata: dict,
 ) -> tuple[Dandiset, Version]:
     if identifier and not user.is_superuser:
-        raise PermissionDenied(
+        raise AdminOnlyOperation(
             'Creating a dandiset for a given identifier is an admin only operation.'
         )
 
     existing_dandiset = Dandiset.objects.filter(id=identifier).first()
     if existing_dandiset:
-        raise ValidationError(f'Dandiset {existing_dandiset.identifier} already exists')
+        raise DandisetAlreadyExists(f'Dandiset {existing_dandiset.identifier} already exists')
 
     embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargo else Dandiset.EmbargoStatus.OPEN
     version_metadata = _normalize_version_metadata(
@@ -50,12 +51,12 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         not user.has_perm('owner', dandiset)
         or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
     ):
-        raise PermissionDenied()
+        raise NotAllowed()
 
     if dandiset.versions.exclude(version='draft').exists():
-        raise PermissionDenied('Cannot delete dandisets with published versions.')
+        raise NotAllowed('Cannot delete dandisets with published versions.')
     if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
-        raise PermissionDenied('Cannot delete dandisets that are currently being published.')
+        raise NotAllowed('Cannot delete dandisets that are currently being published.')
 
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
