@@ -16,11 +16,33 @@
     >
       {{ SERVER_DOWNTIME_MESSAGE }}
     </v-main>
+    <v-snackbar
+      :value="showError"
+      :timeout="-1"
+      top
+      right
+      color="error"
+    >
+      <span>
+        Sorry, something went wrong on our side (the developers have been notified).
+        Please try that operation again later.
+      </span>
+      <template #action="{ attrs }">
+        <v-btn
+          color="white"
+          text
+          v-bind="attrs"
+          @click="showError = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import Vue, { onMounted, ref } from 'vue';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -34,6 +56,13 @@ const SERVER_DOWNTIME_MESSAGE = process.env.VUE_APP_SERVER_DOWNTIME_MESSAGE || '
 
 const verifiedServerConnection = ref(false);
 const connectedToServer = ref(true);
+
+// Catch any unhandled errors and display a snackbar prompt notifying the user.
+const showError = ref(false);
+Vue.config.errorHandler = (err: Error) => {
+  showError.value = true;
+  throw err;
+};
 
 onMounted(() => {
   Promise.all([
