@@ -54,5 +54,7 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
 
     if dandiset.versions.exclude(version='draft').exists():
         raise PermissionDenied('Cannot delete dandisets with published versions.')
+    if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
+        raise PermissionDenied('Cannot delete dandisets that are currently being published.')
 
     dandiset.delete()
