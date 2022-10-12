@@ -34,7 +34,7 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
@@ -522,7 +522,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         path: str = query_serializer.validated_data['path_prefix']
         children_paths = search_asset_paths(path, version)
         if children_paths is None:
-            raise serializers.ValidationError('Specified path not found.')
+            raise NotFound('Specified path not found.')
 
         # Paginate and return
         page = self.paginate_queryset(children_paths)

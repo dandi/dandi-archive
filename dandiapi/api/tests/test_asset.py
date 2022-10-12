@@ -71,8 +71,8 @@ def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_fact
         f'versions/{version.version}/assets/paths/',
         {'path_prefix': 'bar'},
     )
-    assert resp.status_code == 400
-    assert resp.json() == ['Specified path not found.']
+    assert resp.status_code == 404
+    assert resp.json() == {'detail': 'Specified path not found.'}
 
 
 @pytest.mark.django_db
