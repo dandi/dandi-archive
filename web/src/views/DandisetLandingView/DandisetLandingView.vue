@@ -10,7 +10,6 @@
       />
     </v-toolbar>
     <v-container
-      v-if="currentDandiset"
       fluid
       class="grey lighten-4 pa-0"
     >
@@ -20,7 +19,16 @@
       />
       <v-row no-gutters>
         <v-col :cols="$vuetify.breakpoint.smAndDown ? 12 : 10">
+          <v-sheet
+            v-if="!currentDandiset || loading"
+            class="py-8 px-7"
+          >
+            <v-skeleton-loader
+              type="article, list-item, image@2"
+            />
+          </v-sheet>
           <DandisetMain
+            v-else
             :schema="schema"
             :meta="meta"
           />
@@ -29,14 +37,28 @@
           v-if="!$vuetify.breakpoint.smAndDown"
           cols="2"
         >
+          <v-sheet
+            v-if="!currentDandiset || loading"
+            class="py-3"
+          >
+            <v-skeleton-loader type="card@3" />
+          </v-sheet>
           <DandisetSidebar
+            v-else
             :user-can-modify-dandiset="userCanModifyDandiset"
           />
         </v-col>
       </v-row>
       <v-row v-if="$vuetify.breakpoint.smAndDown">
         <v-col cols="12">
+          <v-sheet
+            v-if="!currentDandiset || loading"
+            class="py-3"
+          >
+            <v-skeleton-loader type="card-heading, list-item@5" />
+          </v-sheet>
           <DandisetSidebar
+            v-else
             :user-can-modify-dandiset="userCanModifyDandiset"
           />
         </v-col>
