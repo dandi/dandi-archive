@@ -39,7 +39,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     version = models.CharField(
         max_length=13,
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
-    )  # TODO: rename this?
+    )
     doi = models.CharField(max_length=64, null=True, blank=True)
     """Track the validation status of this version, without considering assets"""
     status = models.CharField(
