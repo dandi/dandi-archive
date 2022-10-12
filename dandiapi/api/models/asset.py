@@ -34,7 +34,7 @@ def validate_asset_path(path: str):
     if path.startswith('/'):
         raise ValidationError('Path must not begin with /')
     if not re.match(ASSET_PATH_REGEX, path):
-        raise ValidationError(f'Path violates regex: {ASSET_PATH_REGEX}')
+        raise ValidationError('Path improperly formatted')
 
     return path
 
