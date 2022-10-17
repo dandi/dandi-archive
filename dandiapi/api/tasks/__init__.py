@@ -192,8 +192,6 @@ def unembargo_dandiset(dandiset_id: int):
 def publish_task(version_id: int):
     old_version: Version = Version.objects.get(id=version_id)
     new_version: Version = old_version.publish_version
-
-    new_version.doi = doi.create_doi(new_version)
     new_version.save()
 
     # Bulk create the join table rows to optimize linking assets to new_version
@@ -226,4 +224,12 @@ def publish_task(version_id: int):
     old_version.status = Version.Status.PUBLISHED
     old_version.save()
 
+    # Write updated manifest files and create DOI after published version has been committed to DB.
     transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
+
+    def _create_doi(version_id: int):
+        version = Version.objects.get(id=version_id)
+        version.doi = doi.create_doi(version)
+        version.save()
+
+    transaction.on_commit(lambda: _create_doi(new_version.id))

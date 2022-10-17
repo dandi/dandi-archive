@@ -252,6 +252,7 @@ def test_publish_task(
     draft_asset_factory,
     published_asset_factory,
     draft_version_factory,
+    django_capture_on_commit_callbacks,
 ):
     # Create a draft_version in PUBLISHING state
     draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
@@ -270,7 +271,10 @@ def test_publish_task(
 
     # Ensure that the number of versions increases by 1 after publishing
     starting_version_count = draft_version.dandiset.versions.count()
-    tasks.publish_task(draft_version.id)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        tasks.publish_task(draft_version.id)
+
     assert draft_version.dandiset.versions.count() == starting_version_count + 1
 
     draft_version.refresh_from_db()
