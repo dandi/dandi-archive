@@ -226,6 +226,10 @@ def publish_task(version_id: int):
 
     # Write updated manifest files and create DOI after published version has been committed to DB.
     transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
-    transaction.on_commit(
-        lambda: Version.objects.filter(id=new_version.id).update(doi=doi.create_doi(new_version))
-    )
+
+    def _create_doi(version_id: int):
+        version = Version.objects.get(id=version_id)
+        version.doi = doi.create_doi(version)
+        version.save()
+
+    transaction.on_commit(lambda: _create_doi(new_version.id))
