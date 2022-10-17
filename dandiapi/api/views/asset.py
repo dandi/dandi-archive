@@ -495,7 +495,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(
         query_serializer=AssetPathsQueryParameterSerializer(),
-        responses={200: AssetPathsSerializer()},
+        responses={200: AssetPathsSerializer(many=True)},
     )
     @action(detail=False, methods=['GET'], filter_backends=[])
     def paths(self, request, versions__dandiset__pk, versions__version, **kwargs):
