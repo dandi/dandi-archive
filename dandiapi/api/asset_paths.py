@@ -140,7 +140,7 @@ def update_asset_paths(old_asset: Asset, new_asset: Version, version: Version):
 
 
 @transaction.atomic()
-def publish_version(draft_version: Version, published_version: Version):
-    # Add every asset from the draft version to the published version
-    for asset in draft_version.assets.all().iterator():
-        add_asset_paths(asset, published_version)
+def add_version_asset_paths(version: Version):
+    """Add every asset from a version."""
+    for asset in version.assets.iterator():
+        add_asset_paths(asset, version)
