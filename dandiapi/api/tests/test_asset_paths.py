@@ -5,12 +5,12 @@ from dandiapi.api.asset_paths import (
     add_asset_paths,
     delete_asset_paths,
     extract_paths,
-    publish_version,
     search_asset_paths,
     update_asset_paths,
 )
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
+from dandiapi.api.tasks import publish_task
 
 
 @pytest.fixture
@@ -190,16 +190,20 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory):
     version.assets.add(asset)
     add_asset_paths(asset, version)
 
-    # Publish version
-    published_version = version.publish_version
-    published_version.save()
-
-    # Check doesn't already exist
+    # Get existing paths
     paths = AssetPath.objects.filter(version=version).values_list('path', flat=True)
-    assert not AssetPath.objects.filter(version=published_version).exists()
 
-    # Publish version paths
-    publish_version(version, published_version)
+    # Publish
+    publish_task(version.id)
+
+    # Get published version
+    published_version = (
+        Version.objects.filter(dandiset=version.dandiset)
+        .exclude(version='draft')
+        .order_by('-version')
+        .first()
+    )
+    assert published_version is not None
 
     # Assert all paths copied
     for path in paths:
