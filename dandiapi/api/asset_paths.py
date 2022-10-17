@@ -7,6 +7,11 @@ from django.db.models import Count, F, QuerySet
 
 from dandiapi.api.models import Asset, AssetPath, AssetPathRelation, Version
 
+####################################################################
+# Dandiset and version deletion will cascade to asset path deletion.
+# Thus, no explicit action is needed for these.
+####################################################################
+
 
 def extract_paths(path: str) -> list[str]:
     nodepaths: list[str] = path.split('/')
