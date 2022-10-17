@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 import uuid
 
@@ -37,6 +38,9 @@ def validate_asset_path(path: str):
         raise ValidationError('Path improperly formatted')
 
     return path
+
+if TYPE_CHECKING:
+    from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
 
 class BaseAssetBlob(TimeStampedModel):
@@ -209,6 +213,40 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.embargoed_blob.s3_url
         else:
             return self.zarr.s3_url
+
+    def is_different_from(
+        self,
+        *,
+        asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
+        zarr_archive: ZarrArchive | EmbargoedZarrArchive | None = None,
+        metadata: dict,
+    ) -> bool:
+        from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
+
+        if isinstance(asset_blob, AssetBlob) and self.blob is not None and self.blob != asset_blob:
+            return True
+
+        if (
+            isinstance(asset_blob, EmbargoedAssetBlob)
+            and self.embargoed_blob is not None
+            and self.embargoed_blob != asset_blob
+        ):
+            return True
+
+        if (
+            isinstance(zarr_archive, ZarrArchive)
+            and self.zarr is not None
+            and self.zarr != zarr_archive
+        ):
+            return True
+
+        if isinstance(zarr_archive, EmbargoedZarrArchive):
+            raise NotImplementedError
+
+        if self.metadata != metadata:
+            return True
+
+        return False
 
     def _populate_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
