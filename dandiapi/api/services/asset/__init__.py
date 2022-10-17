@@ -87,6 +87,7 @@ def change_asset(
         # Set previous asset and save
         new_asset.previous = asset
         new_asset.save()
+        update_asset_paths(old_asset=asset, new_asset=new_asset, version=version)
 
     return new_asset, True
 
@@ -134,6 +135,7 @@ def add_asset_to_version(
             metadata=metadata,
         )
         version.assets.add(asset)
+        add_asset_paths(asset, version)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
         version.status = Version.Status.PENDING

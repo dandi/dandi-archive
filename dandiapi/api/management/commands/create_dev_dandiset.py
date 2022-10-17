@@ -5,7 +5,8 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 import djclick as click
 
-from dandiapi.api.models import Asset, AssetBlob
+from dandiapi.api.models import AssetBlob
+from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.dandiset import create_dandiset
 from dandiapi.api.tasks import calculate_sha256, validate_asset_metadata, validate_version_metadata
 
@@ -40,10 +41,11 @@ def create_dev_dandiset(name: str, owner: str):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'text/plain',
         'schemaKey': 'Asset',
+        'path': 'foo/bar.txt',
     }
-    asset = Asset(blob=asset_blob, metadata=asset_metadata, path='foo/bar.txt')
-    asset.save()
-    draft_version.assets.add(asset)
+    asset = add_asset_to_version(
+        user=owner, version=draft_version, asset_blob=asset_blob, metadata=asset_metadata
+    )
 
     calculate_sha256(blob_id=asset_blob.blob_id)
     validate_asset_metadata(asset_id=asset.id)

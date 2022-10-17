@@ -1,6 +1,7 @@
 import djclick as click
 
 from dandiapi.api.models import Asset, Version
+from dandiapi.api.services.asset.metadata import bulk_recalculate_asset_metadata
 
 
 @click.command()
@@ -16,8 +17,7 @@ def refresh_metadata(assets: bool, versions: bool):
     """
     if assets:
         click.echo('Refreshing asset metadata')
-        for asset in Asset.objects.all():
-            asset.save()
+        bulk_recalculate_asset_metadata(assets=Asset.objects.all())
 
     if versions:
         click.echo('Refreshing draft version metadata')

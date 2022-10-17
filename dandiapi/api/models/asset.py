@@ -39,6 +39,7 @@ def validate_asset_path(path: str):
 
     return path
 
+
 if TYPE_CHECKING:
     from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
