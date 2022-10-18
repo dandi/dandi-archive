@@ -139,7 +139,7 @@ def delete_asset_paths(asset: Asset, version: Version):
 
 
 @transaction.atomic()
-def update_asset_paths(old_asset: Asset, new_asset: Version, version: Version):
+def update_asset_paths(old_asset: Asset, new_asset: Asset, version: Version):
     delete_asset_paths(old_asset, version)
     add_asset_paths(new_asset, version)
 
