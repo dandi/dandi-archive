@@ -18,7 +18,6 @@ show_error_codes = true
 disable_error_code = ["attr-defined", "var-annotated"]
 follow_imports = "skip" # Don't follow imports into other files. This should be removed once all type errors have been resolved.
 exclude = [
-    "^dandiapi/api/admin.py",
     "^dandiapi/api/tests/",
     "^dandiapi/api/views/",
     "^dandiapi/zarr/tests/",
