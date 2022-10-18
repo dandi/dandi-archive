@@ -47,6 +47,8 @@ class UserAdmin(BaseUserAdmin):
         UserMetadataInline,
         SocialAccountInline,
     )
+    actions = ['export_emails_to_plaintext']
+    list_filter = ['metadata__status', 'is_staff', 'is_superuser', 'is_active']
 
     def get_queryset(self, request):
         return (
@@ -64,11 +66,6 @@ class UserAdmin(BaseUserAdmin):
         emails = [obj.email for obj in queryset]
         writer.writerow(emails)
         return response
-
-    def __init__(self, model, admin_site) -> None:
-        super().__init__(model, admin_site)
-        self.list_filter = ('metadata__status',) + self.list_filter
-        self.actions += ('export_emails_to_plaintext')
 
     @admin.display(ordering='metadata__status')
     def status(self, obj):
