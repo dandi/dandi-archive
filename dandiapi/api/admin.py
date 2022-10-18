@@ -68,7 +68,7 @@ class UserAdmin(BaseUserAdmin):
     def __init__(self, model, admin_site) -> None:
         super().__init__(model, admin_site)
         self.list_filter = ('metadata__status',) + self.list_filter
-        self.actions += ('export_emails_to_csv', 'export_emails_to_plaintext')
+        self.actions += ('export_emails_to_plaintext')
 
     @admin.display(ordering='metadata__status')
     def status(self, obj):
