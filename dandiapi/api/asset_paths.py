@@ -31,7 +31,12 @@ def get_root_paths(version: Version) -> QuerySet[AssetPath]:
         'asset__embargoed_blob',
         'asset__zarr',
     )
-    return qs.filter(version=version).alias(num_parents=Count('parent_links')).filter(num_parents=1)
+    return (
+        qs.filter(version=version)
+        .alias(num_parents=Count('parent_links'))
+        .filter(num_parents=1)
+        .order_by('path')
+    )
 
 
 def get_path_children(path: AssetPath) -> QuerySet[AssetPath]:
@@ -47,7 +52,7 @@ def get_path_children(path: AssetPath) -> QuerySet[AssetPath]:
         .values_list('child', flat=True)
         .distinct()
     )
-    return qs.filter(id__in=path_ids)
+    return qs.filter(id__in=path_ids).order_by('path')
 
 
 def search_asset_paths(query: str, version: Version) -> QuerySet[AssetPath] | None:
