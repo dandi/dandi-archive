@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import re
 
+from dandiapi.api.asset_paths import (
+    add_asset_paths,
+    delete_asset_paths,
+    search_asset_paths,
+    update_asset_paths,
+)
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -16,14 +22,11 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
-from pathlib import PurePosixPath
 
 from django.conf import settings
-from django.core.paginator import EmptyPage, Page, Paginator
 from django.db import transaction
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
-from django.http.response import Http404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -31,19 +34,17 @@ from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob
+from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob, validate_asset_path
 from dandiapi.api.tasks import validate_asset_metadata
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
-    PATH_PREFIX_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
     DandiPagination,
@@ -52,7 +53,7 @@ from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
     AssetListSerializer,
     AssetPathsQueryParameterSerializer,
-    AssetPathsResponseSerializer,
+    AssetPathsSerializer,
     AssetSerializer,
     AssetValidationSerializer,
 )
@@ -189,30 +190,11 @@ class AssetRequestSerializer(serializers.Serializer):
         if 'path' not in data['metadata'] or not data['metadata']['path']:
             raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
 
-        path = data['metadata']['path']
-        # paths starting with /
-        if PurePosixPath(path).is_absolute():
-            raise serializers.ValidationError(
-                {'metadata': 'Absolute path not allowed for an asset'}
-            )
-
-        sub_paths = path.split('/')
-        # checking for . in path
-        for sub_path in sub_paths:
-            if len(set(sub_path)) == 1 and sub_path[0] == '.':
-                raise serializers.ValidationError(
-                    {'metadata': 'Invalid characters (.) in file path'}
-                )
-
-        # match characters repeating more than once
-        multiple_occurrence_regex = '[/]{2,}'
-        if '\0' in path:
-            raise serializers.ValidationError({'metadata': 'Invalid characters (\0) in file name'})
-        if re.search(multiple_occurrence_regex, path):
-            raise serializers.ValidationError({'metadata': 'Invalid characters (/)) in file name'})
+        # Validate the asset path. If this fails, it will raise a django ValidationError, which
+        # will be caught further up the stack and be converted to a DRF ValidationError
+        validate_asset_path(data['metadata']['path'])
 
         data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
-
         return data
 
 
@@ -232,59 +214,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             if not self.request.user.has_perm('owner', version.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
-
-    def _paginate_asset_paths(self, items: dict) -> dict:
-        """Paginates a list of files and folders to be returned by the asset paths endpoint."""
-        asset_count = len(items)
-        page_number = int(self.request.query_params.get(DandiPagination.page_query_param, 1))
-        page_size = min(
-            int(
-                self.request.query_params.get(
-                    DandiPagination.page_size_query_param, DandiPagination.page_size
-                )
-            ),
-            DandiPagination.max_page_size,
-        )
-
-        paths_paginator: Paginator = Paginator(list(items.items()), page_size)
-        try:
-            assets_page: Page = paths_paginator.page(page_number)
-        except EmptyPage:
-            raise Http404()
-
-        # Divide into folders and files
-        folders = {}
-        files = {}
-
-        # Note that this loop runs in constant time, since the length of assets_page
-        # will never exceed DandiPagination.max_page_size.
-        for k, v in dict(assets_page).items():
-            if isinstance(v, Asset):
-                files[k] = v
-            else:
-                folders[k] = v
-
-        paths = AssetPathsResponseSerializer({'folders': folders, 'files': files})
-
-        # Update url
-        url = self.request.build_absolute_uri()
-        next_url = (
-            replace_query_param(url, DandiPagination.page_query_param, page_number + 1)
-            if page_number + 1 <= paths_paginator.num_pages
-            else None
-        )
-        prev_url = (
-            replace_query_param(url, DandiPagination.page_query_param, page_number - 1)
-            if page_number - 1 > 0
-            else None
-        )
-
-        return {
-            'count': asset_count,
-            'next': next_url,
-            'previous': prev_url,
-            'results': paths.data,
-        }
 
     def asset_from_request(self) -> Asset:
         """
@@ -407,10 +336,13 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         # Ensure zarr archive doesn't already belong to a dandiset
         if asset.zarr and asset.zarr.dandiset != version.dandiset:
-            raise ValidationError('The zarr archive belongs to a different dandiset')
+            raise serializers.ValidationError('The zarr archive belongs to a different dandiset')
 
         asset.save()
         version.assets.add(asset)
+
+        # Add asset paths
+        add_asset_paths(asset, version)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
         version.status = Version.Status.PENDING
@@ -481,6 +413,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 version.assets.add(new_asset)
                 version.assets.remove(old_asset)
 
+                # Update asset paths
+                update_asset_paths(old_asset=old_asset, new_asset=new_asset, version=version)
+
         # Trigger a version metadata validation, as saving the version might change the metadata
         version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
@@ -514,6 +449,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
+        # Remove asset paths and asset itself from version
+        delete_asset_paths(asset, version)
         version.assets.remove(asset)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
@@ -557,11 +494,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         return Response(serializer.data)
 
     @swagger_auto_schema(
-        manual_parameters=[PATH_PREFIX_PARAM],
-        responses={200: AssetPathsResponseSerializer()},
+        query_serializer=AssetPathsQueryParameterSerializer(),
+        responses={200: AssetPathsSerializer(many=True)},
     )
     @action(detail=False, methods=['GET'], filter_backends=[])
-    def paths(self, *args, **kwargs):
+    def paths(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """
         Return the unique files/directories that directly reside under the specified path.
 
@@ -571,48 +508,29 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         query_serializer = AssetPathsQueryParameterSerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
-        path_prefix: str = query_serializer.validated_data['path_prefix']
-        qs: QuerySet[Asset] = (
-            self.get_queryset()
-            .select_related('blob', 'embargoed_blob', 'zarr')
-            .filter(path__startswith=path_prefix)
-            .order_by('path')
+        # Permission check
+        self.raise_if_unauthorized()
+
+        # Fetch version
+        version = get_object_or_404(
+            Version,
+            dandiset__pk=versions__dandiset__pk,
+            version=versions__version,
         )
 
-        folders: dict[str, dict] = {}
-        files: dict[str, Asset] = {}
+        # Fetch child paths
+        path: str = query_serializer.validated_data['path_prefix']
+        children_paths = search_asset_paths(path, version)
+        if children_paths is None:
+            raise NotFound('Specified path not found.')
 
-        for asset in qs.iterator():
-            # Get the remainder of the path after path_prefix
-            base_path: str = asset.path[len(path_prefix) :].strip('/')
+        # Paginate and return
+        page = self.paginate_queryset(children_paths)
+        if page is not None:
+            serializer = AssetPathsSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-            # Since we stripped slashes, any remaining slashes indicate a folder
-            folder_index = base_path.find('/')
-            is_folder = folder_index >= 0
-
-            if not is_folder:
-                # Ensure base_path is entire filename
-                base_path = asset.path[asset.path.rfind('/') + 1 :]
-                files[base_path] = asset
-            else:
-                base_path = base_path[:folder_index]
-                entry = folders.get(base_path)
-                if entry is None:
-                    folders[base_path] = {
-                        'size': asset.size,
-                        'num_files': 1,
-                        'created': asset.created,
-                        'modified': asset.modified,
-                    }
-                else:
-                    entry['size'] += asset.size
-                    entry['num_files'] += 1
-                    entry['created'] = min(entry['created'], asset.created)  # earliest
-                    entry['modified'] = max(entry['modified'], asset.modified)  # latest
-
-        items = folders
-        items.update(files)
-        resp = self._paginate_asset_paths(items)
-        return Response(resp)
+        serializer = AssetPathsSerializer(children_paths, many=True)
+        return Response(serializer.data)
 
     # TODO: add create to forge an asset from a validation

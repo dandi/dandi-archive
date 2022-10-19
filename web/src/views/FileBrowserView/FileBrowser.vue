@@ -19,7 +19,7 @@
           <v-card-text>
             Are you sure you want to delete asset <span
               class="font-italic"
-            >{{ itemToDelete.name }}</span>?
+            >{{ itemToDelete.path }}</span>?
             <strong>This action cannot be undone.</strong>
           </v-card-text>
 
@@ -93,9 +93,23 @@
 
             <v-divider v-else />
             <v-list>
+              <!-- Extra item to navigate up the tree -->
+              <v-list-item
+                v-if="location !== rootDirectory"
+                @click="navigateToParent"
+              >
+                <v-icon
+                  class="mr-2"
+                  color="primary"
+                >
+                  mdi-folder
+                </v-icon>
+                ..
+              </v-list-item>
+
               <v-list-item
                 v-for="item in items"
-                :key="item.name"
+                :key="item.path"
                 color="primary"
                 @click="selectPath(item)"
               >
@@ -103,7 +117,7 @@
                   class="mr-2"
                   color="primary"
                 >
-                  <template v-if="item.folder">
+                  <template v-if="item.asset === null">
                     mdi-folder
                   </template>
                   <template v-else>
@@ -125,10 +139,10 @@
                   </v-btn>
                 </v-list-item-action>
 
-                <v-list-item-action v-if="item.asset_id">
+                <v-list-item-action v-if="item.asset">
                   <v-btn
                     icon
-                    :href="downloadURI(item.asset_id)"
+                    :href="downloadURI(item.asset.asset_id)"
                   >
                     <v-icon color="primary">
                       mdi-download
@@ -136,10 +150,10 @@
                   </v-btn>
                 </v-list-item-action>
 
-                <v-list-item-action v-if="item.asset_id">
+                <v-list-item-action v-if="item.asset">
                   <v-btn
                     icon
-                    :href="assetMetadataURI(item.asset_id)"
+                    :href="assetMetadataURI(item.asset.asset_id)"
                     target="_blank"
                     rel="noopener"
                   >
@@ -149,7 +163,7 @@
                   </v-btn>
                 </v-list-item-action>
 
-                <v-list-item-action v-if="item.asset_id">
+                <v-list-item-action v-if="item.asset">
                   <v-menu
                     bottom
                     left
@@ -200,7 +214,7 @@
                 </v-list-item-action>
 
                 <v-list-item-action
-                  v-if="item.size"
+                  v-if="item.aggregate_size"
                   class="justify-end"
                   :style="{width: '4.5em'}"
                 >
@@ -230,20 +244,40 @@ import { trimEnd } from 'lodash';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import { AssetFile, AssetFolder, AssetStats } from '@/types';
+import { AssetFile, AssetPath } from '@/types';
 
-const parentDirectory = '..';
 const rootDirectory = '';
-
 const FILES_PER_PAGE = 15;
 
-const sortByName = (a: AssetStats, b: AssetStats) => {
-  if (a.name > b.name) {
-    return 1;
-  }
-  if (b.name > a.name) {
+// AssetService is slightly different from Service
+export interface AssetService {
+  name: string,
+  url: string,
+}
+
+interface ExtendedAssetPath extends AssetPath {
+  services?: AssetService[];
+  name: string;
+}
+
+const sortByFolderThenName = (a: ExtendedAssetPath, b: ExtendedAssetPath) => {
+  // Sort folders first
+  if (a.asset === null && b.asset !== null) {
     return -1;
   }
+  if (b.asset === null && a.asset !== null) {
+    return 1;
+  }
+
+  // Items are either both files or both folders
+  // Sort by name
+  if (a.path < b.path) {
+    return -1;
+  }
+  if (a.path > b.path) {
+    return 1;
+  }
+
   return 0;
 };
 
@@ -269,6 +303,7 @@ const EXTERNAL_SERVICES = [
     endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=',
   },
 ];
+type Service = typeof EXTERNAL_SERVICES[0];
 
 export default defineComponent({
   name: 'FileBrowser',
@@ -288,11 +323,14 @@ export default defineComponent({
     const store = useDandisetStore();
 
     const location = ref(rootDirectory);
-    const itemToDelete: Ref<AssetFile | null> = ref(null);
+    const items: Ref<ExtendedAssetPath[]> = ref([]);
+
+    // Value is the asset id of the item to delete
+    const itemToDelete: Ref<AssetPath | null> = ref(null);
+
     const page = ref(1);
     const pages = ref(0);
     const updating = ref(false);
-    const items: Ref<AssetStats[]> = ref([]);
 
     // Computed
     const owners = computed(() => store.owners?.map((u) => u.username) || null);
@@ -303,13 +341,18 @@ export default defineComponent({
       dandiRest.user
       && owners.value?.includes(dandiRest.user?.username)
     ));
-    function getExternalServices(name: string, asset: AssetFile) {
+    function getExternalServices(path: AssetPath) {
+      const servicePredicate = (service: Service, _path: AssetPath) => (
+        new RegExp(service.regex).test(path.path)
+          && _path.asset !== null
+          && _path.aggregate_size <= service.maxsize
+      );
+
       return EXTERNAL_SERVICES
-        .filter((service) => new RegExp(service.regex)
-          .test(name) && (asset.size || 0) <= service.maxsize)
+        .filter((service) => servicePredicate(service, path))
         .map((service) => ({
           name: service.name,
-          url: `${service.endpoint}${trimEnd(asset.url, '/')}`,
+          url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}`,
         }));
     }
 
@@ -317,16 +360,16 @@ export default defineComponent({
       return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
     }
 
-    function selectPath(item: AssetFolder) {
-      const { name, folder } = item;
+    function selectPath(item: AssetPath) {
+      const { asset, path } = item;
 
-      if (!folder) { return; }
-      if (name === parentDirectory) {
-        const slicedLocation = location.value.split('/').slice(0, -2);
-        location.value = slicedLocation.length ? `${slicedLocation.join('/')}/` : '';
-      } else {
-        location.value = `${location.value}${name}`;
-      }
+      // Return early if path is a file
+      if (asset) { return; }
+      location.value = path;
+    }
+
+    function navigateToParent() {
+      location.value = location.value.split('/').slice(0, -1).join('/');
     }
 
     function downloadURI(asset_id: string) {
@@ -337,68 +380,57 @@ export default defineComponent({
       return dandiRest.assetMetadataURI(props.identifier, props.version, asset_id);
     }
 
-    function fileSize(item: AssetStats) {
-      return filesize(item.size || 0, { round: 1, base: 10, standard: 'iec' });
+    function fileSize(item: AssetPath) {
+      return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'iec' });
     }
 
-    function showDelete(item: AssetStats) {
-      return props.version === 'draft' && !item.folder && (isAdmin.value || isOwner.value);
+    function showDelete(item: AssetPath) {
+      return props.version === 'draft' && item.asset && (isAdmin.value || isOwner.value);
     }
 
     async function getItems() {
       updating.value = true;
-      const { folders, files, count } = await dandiRest.assetPaths(
+      const { count, results } = await dandiRest.assetPaths(
         props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
       );
 
       // Set num pages
       pages.value = Math.ceil(count / FILES_PER_PAGE);
 
-      // Create items
-      // Parent directory if necessary
-      const newItems = location.value !== rootDirectory
-        ? [{ name: parentDirectory, folder: true }]
-        : [];
-
-      // Add folders
-      newItems.push(...Object.keys(folders).map(
-        (key) => ({ ...folders[key], name: `${key}/`, folder: true }),
-      ).sort(sortByName));
-
-      // Add items
-      newItems.push(...Object.keys(files).map(
-        (key) => {
-          const services = getExternalServices(key, files[key]);
-          return {
-            ...files[key],
-            name: key,
-            folder: false,
-            services,
-          };
-        },
-      ).sort(sortByName));
+      // Inject extra properties
+      const extendedItems: ExtendedAssetPath[] = results
+        .map((path) => ({
+          ...path,
+          // Inject relative path
+          name: path.path.split('/').pop()!,
+          // Inject services
+          services: getExternalServices(path) || undefined,
+        }))
+        .sort(sortByFolderThenName);
 
       // Assign values
-      items.value = newItems;
+      items.value = extendedItems;
       updating.value = false;
     }
 
-    function setItemToDelete(item: AssetStats) {
-      itemToDelete.value = item as AssetFile;
+    function setItemToDelete(item: AssetPath) {
+      itemToDelete.value = item;
     }
 
     async function deleteAsset() {
       if (!itemToDelete.value) {
         return;
       }
-      const { asset_id } = itemToDelete.value;
-      if (asset_id !== undefined) {
-        // Delete the asset on the server.
-        await dandiRest.deleteAsset(props.identifier, props.version, asset_id);
-
-        // Recompute the items to display in the browser.
-        getItems();
+      const { asset } = itemToDelete.value;
+      if (asset === null) {
+        throw new Error('Attempted to delete path with no asset!');
       }
+
+      // Delete the asset on the server.
+      await dandiRest.deleteAsset(props.identifier, props.version, asset.asset_id);
+
+      // Recompute the items to display in the browser.
+      getItems();
       itemToDelete.value = null;
     }
 
@@ -461,6 +493,7 @@ export default defineComponent({
       updating,
       locationSlice,
       selectPath,
+      navigateToParent,
       downloadURI,
       assetMetadataURI,
       fileSize,

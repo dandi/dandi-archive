@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import datetime
+import re
 from urllib.parse import urlparse, urlunparse
 import uuid
 
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
-from django.core.exceptions import FieldError
+from django.core.exceptions import FieldError, ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
@@ -24,6 +25,18 @@ from dandiapi.api.storage import (
 
 from .dandiset import Dandiset
 from .version import Version
+
+ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
+ASSET_PATH_REGEX = fr'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
+
+
+def validate_asset_path(path: str):
+    if path.startswith('/'):
+        raise ValidationError('Path must not begin with /')
+    if not re.match(ASSET_PATH_REGEX, path):
+        raise ValidationError('Path improperly formatted')
+
+    return path
 
 
 class BaseAssetBlob(TimeStampedModel):
@@ -106,7 +119,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         INVALID = 'Invalid'
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512)
+    path = models.CharField(max_length=512, validators=[validate_asset_path])
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
@@ -144,6 +157,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             models.CheckConstraint(
                 name='asset_metadata_has_schema_version',
                 check=Q(metadata__schemaVersion__isnull=False),
+            ),
+            models.CheckConstraint(name='asset_path_regex', check=Q(path__regex=ASSET_PATH_REGEX)),
+            models.CheckConstraint(
+                name='asset_path_no_leading_slash', check=~Q(path__startswith='/')
             ),
         ]
 

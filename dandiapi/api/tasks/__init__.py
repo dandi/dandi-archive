@@ -8,6 +8,7 @@ from django.db.transaction import atomic
 import jsonschema.exceptions
 
 from dandiapi.api import doi
+from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -218,6 +219,9 @@ def publish_task(version_id: int):
 
     # Save again to recompute metadata, specifically assetsSummary
     new_version.save()
+
+    # Add asset paths with new version
+    add_version_asset_paths(version=new_version)
 
     # Set the version of the draft to PUBLISHED so that it cannot be published again without
     # being modified and revalidated
