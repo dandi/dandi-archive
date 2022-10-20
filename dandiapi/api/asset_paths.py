@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Count, F, QuerySet
 
 from dandiapi.api.models import Asset, AssetPath, AssetPathRelation, Version
+from dandiapi.zarr.models import ZarrArchive
 
 ####################################################################
 # Dandiset and version deletion will cascade to asset path deletion.
@@ -154,3 +155,19 @@ def add_version_asset_paths(version: Version):
     """Add every asset from a version."""
     for asset in version.assets.iterator():
         add_asset_paths(asset, version)
+
+
+def add_zarr_paths(zarr: ZarrArchive):
+    """Add all asset paths that are associated with a zarr."""
+    # Only act on draft assets/versions
+    for asset in zarr.assets.filter(published=False):
+        for version in asset.versions.filter(version='draft'):
+            add_asset_paths(asset, version)
+
+
+def delete_zarr_paths(zarr: ZarrArchive):
+    """Remove all asset paths that are associated with a zarr."""
+    # Only act on draft assets/versions
+    for asset in zarr.assets.filter(published=False):
+        for version in asset.versions.filter(version='draft'):
+            delete_asset_paths(asset, version)

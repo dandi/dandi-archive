@@ -13,6 +13,7 @@ from dandiapi.api.asset_paths import add_asset_paths, extract_paths
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
 
@@ -902,11 +903,20 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
 
 
 @pytest.mark.django_db
-def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_archive):
+def test_asset_rest_update_zarr(
+    api_client, user, draft_version, draft_asset_factory, zarr_archive, zarr_upload_file_factory
+):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
+
+    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
     draft_version.assets.add(asset)
     add_asset_paths(asset=asset, version=draft_version)
+
+    # Upload file and perform ingest
+    zarr_upload_file_factory(zarr_archive=zarr_archive)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
 
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
@@ -916,7 +926,6 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
         'num': 123,
         'list': ['a', 'b', 'c'],
     }
-
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
@@ -929,7 +938,7 @@ def test_asset_rest_update_zarr(api_client, user, draft_version, asset, zarr_arc
         'path': new_path,
         'size': zarr_archive.size,
         'blob': None,
-        'zarr': zarr_archive.zarr_id,
+        'zarr': str(zarr_archive.zarr_id),
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.metadata,
