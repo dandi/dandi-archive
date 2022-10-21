@@ -32,6 +32,7 @@
       :maxlength="pageCount"
       :rules="[pageIsValid]"
     />
+    <span>of {{ pageCount }}</span>
     <v-btn
       class="mx-2"
       color="white"
