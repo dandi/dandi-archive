@@ -238,9 +238,9 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
-  computed, defineComponent, onMounted, Ref, ref, watch,
+  computed, onMounted, Ref, ref, watch,
 } from 'vue';
 import { RawLocation } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router/composables';
@@ -319,210 +319,182 @@ const EXTERNAL_SERVICES = [
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
 
-export default defineComponent({
-  name: 'FileBrowser',
-  components: { FileBrowserPagination },
-  props: {
-    identifier: {
-      type: String,
-      required: true,
-    },
-    version: {
-      type: String,
-      required: true,
-    },
+const props = defineProps({
+  identifier: {
+    type: String,
+    required: true,
   },
-  setup(props) {
-    const route = useRoute();
-    const router = useRouter();
-    const store = useDandisetStore();
+  version: {
+    type: String,
+    required: true,
+  },
+});
 
-    const location = ref(rootDirectory);
-    const items: Ref<ExtendedAssetPath[]> = ref([]);
+const route = useRoute();
+const router = useRouter();
+const store = useDandisetStore();
 
-    // Value is the asset id of the item to delete
-    const itemToDelete: Ref<AssetPath | null> = ref(null);
+const location = ref(rootDirectory);
+const items: Ref<ExtendedAssetPath[]> = ref([]);
 
-    const page = ref(1);
-    const pages = ref(0);
-    const updating = ref(false);
+// Value is the asset id of the item to delete
+const itemToDelete: Ref<AssetPath | null> = ref(null);
 
-    // Computed
-    const owners = computed(() => store.owners?.map((u) => u.username) || null);
-    const currentDandiset = computed(() => store.dandiset);
-    const splitLocation = computed(() => location.value.split('/'));
-    const isAdmin = computed(() => dandiRest.user?.admin || false);
-    const isOwner = computed(() => !!(
-      dandiRest.user
-      && owners.value?.includes(dandiRest.user?.username)
-    ));
-    const itemsNotFound = computed(() => items.value && !items.value.length);
+const page = ref(1);
+const pages = ref(0);
+const updating = ref(false);
 
-    function getExternalServices(path: AssetPath) {
-      const servicePredicate = (service: Service, _path: AssetPath) => (
-        new RegExp(service.regex).test(path.path)
+// Computed
+const owners = computed(() => store.owners?.map((u) => u.username) || null);
+const currentDandiset = computed(() => store.dandiset);
+const splitLocation = computed(() => location.value.split('/'));
+const isAdmin = computed(() => dandiRest.user?.admin || false);
+const isOwner = computed(() => !!(
+  dandiRest.user && owners.value?.includes(dandiRest.user?.username)
+));
+const itemsNotFound = computed(() => items.value && !items.value.length);
+
+function getExternalServices(path: AssetPath) {
+  const servicePredicate = (service: Service, _path: AssetPath) => (
+    new RegExp(service.regex).test(path.path)
           && _path.asset !== null
           && _path.aggregate_size <= service.maxsize
-      );
+  );
 
-      return EXTERNAL_SERVICES
-        .filter((service) => servicePredicate(service, path))
-        .map((service) => ({
-          name: service.name,
-          url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}`,
-        }));
-    }
+  return EXTERNAL_SERVICES
+    .filter((service) => servicePredicate(service, path))
+    .map((service) => ({
+      name: service.name,
+      url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}`,
+    }));
+}
 
-    function locationSlice(index: number) {
-      return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
-    }
+function locationSlice(index: number) {
+  return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
+}
 
-    function selectPath(item: AssetPath) {
-      const { asset, path } = item;
+function selectPath(item: AssetPath) {
+  const { asset, path } = item;
 
-      // Return early if path is a file
-      if (asset) { return; }
-      location.value = path;
-    }
+  // Return early if path is a file
+  if (asset) { return; }
+  location.value = path;
+}
 
-    function navigateToParent() {
-      location.value = location.value.split('/').slice(0, -1).join('/');
-    }
+function navigateToParent() {
+  location.value = location.value.split('/').slice(0, -1).join('/');
+}
 
-    function downloadURI(asset_id: string) {
-      return dandiRest.assetDownloadURI(props.identifier, props.version, asset_id);
-    }
+function downloadURI(asset_id: string) {
+  return dandiRest.assetDownloadURI(props.identifier, props.version, asset_id);
+}
 
-    function assetMetadataURI(asset_id: string) {
-      return dandiRest.assetMetadataURI(props.identifier, props.version, asset_id);
-    }
+function assetMetadataURI(asset_id: string) {
+  return dandiRest.assetMetadataURI(props.identifier, props.version, asset_id);
+}
 
-    function fileSize(item: AssetPath) {
-      return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'iec' });
-    }
+function fileSize(item: AssetPath) {
+  return filesize(item.aggregate_size, { round: 1, base: 10, standard: 'iec' });
+}
 
-    function showDelete(item: AssetPath) {
-      return props.version === 'draft' && item.asset && (isAdmin.value || isOwner.value);
-    }
+function showDelete(item: AssetPath) {
+  return props.version === 'draft' && item.asset && (isAdmin.value || isOwner.value);
+}
 
-    async function getItems() {
-      updating.value = true;
-      let resp;
-      try {
-        resp = await dandiRest.assetPaths(
-          props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
-        );
-      } catch (e) {
-        if (axios.isAxiosError(e) && e.response?.status === 404) {
-          items.value = [];
-          updating.value = false;
-          return;
-        }
-        throw e;
-      }
-      const { count, results } = resp;
-
-      // Set num pages
-      pages.value = Math.ceil(count / FILES_PER_PAGE);
-
-      // Inject extra properties
-      const extendedItems: ExtendedAssetPath[] = results
-        .map((path) => ({
-          ...path,
-          // Inject relative path
-          name: path.path.split('/').pop()!,
-          // Inject services
-          services: getExternalServices(path) || undefined,
-        }))
-        .sort(sortByFolderThenName);
-
-      // Assign values
-      items.value = extendedItems;
+async function getItems() {
+  updating.value = true;
+  let resp;
+  try {
+    resp = await dandiRest.assetPaths(
+      props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
+    );
+  } catch (e) {
+    if (axios.isAxiosError(e) && e.response?.status === 404) {
+      items.value = [];
       updating.value = false;
+      return;
     }
+    throw e;
+  }
+  const { count, results } = resp;
 
-    function setItemToDelete(item: AssetPath) {
-      itemToDelete.value = item;
-    }
+  // Set num pages
+  pages.value = Math.ceil(count / FILES_PER_PAGE);
 
-    async function deleteAsset() {
-      if (!itemToDelete.value) {
-        return;
-      }
-      const { asset } = itemToDelete.value;
-      if (asset === null) {
-        throw new Error('Attempted to delete path with no asset!');
-      }
+  // Inject extra properties
+  const extendedItems: ExtendedAssetPath[] = results
+    .map((path) => ({
+      ...path,
+      // Inject relative path
+      name: path.path.split('/').pop()!,
+      // Inject services
+      services: getExternalServices(path) || undefined,
+    }))
+    .sort(sortByFolderThenName);
 
-      // Delete the asset on the server.
-      await dandiRest.deleteAsset(props.identifier, props.version, asset.asset_id);
+  // Assign values
+  items.value = extendedItems;
+  updating.value = false;
+}
 
-      // Recompute the items to display in the browser.
-      getItems();
-      itemToDelete.value = null;
-    }
+function setItemToDelete(item: AssetPath) {
+  itemToDelete.value = item;
+}
 
-    // Update URL if location changes
-    watch(location, () => {
-      const { location: existingLocation } = route.query;
+async function deleteAsset() {
+  if (!itemToDelete.value) {
+    return;
+  }
+  const { asset } = itemToDelete.value;
+  if (asset === null) {
+    throw new Error('Attempted to delete path with no asset!');
+  }
 
-      // Reset page to 1 when location changes
-      page.value = 1;
+  // Delete the asset on the server.
+  await dandiRest.deleteAsset(props.identifier, props.version, asset.asset_id);
 
-      // Update route when location changes
-      if (existingLocation === location.value) { return; }
-      router.push({
-        ...route,
-        query: { location: location.value },
-      } as RawLocation);
+  // Recompute the items to display in the browser.
+  getItems();
+  itemToDelete.value = null;
+}
+
+// Update URL if location changes
+watch(location, () => {
+  const { location: existingLocation } = route.query;
+
+  // Reset page to 1 when location changes
+  page.value = 1;
+
+  // Update route when location changes
+  if (existingLocation === location.value) { return; }
+  router.push({
+    ...route,
+    query: { location: location.value },
+  } as RawLocation);
+});
+
+// go to the directory specified in the URL if it changes
+watch(() => route.query, (newRouteQuery) => {
+  location.value = (
+    Array.isArray(newRouteQuery.location)
+      ? newRouteQuery.location[0]
+      : newRouteQuery.location
+  ) || rootDirectory;
+
+  // Retrieve with new location
+  getItems();
+}, { immediate: true });
+
+// fetch new page of items when a new one is selected
+watch(page, getItems);
+
+// Fetch dandiset if necessary
+onMounted(() => {
+  if (!store.dandiset) {
+    store.initializeDandisets({
+      identifier: props.identifier,
+      version: props.version,
     });
-
-    // go to the directory specified in the URL if it changes
-    watch(() => route.query, (newRouteQuery) => {
-      location.value = (
-        Array.isArray(newRouteQuery.location)
-          ? newRouteQuery.location[0]
-          : newRouteQuery.location
-      ) || rootDirectory;
-
-      // Retrieve with new location
-      getItems();
-    }, { immediate: true });
-
-    // fetch new page of items when a new one is selected
-    watch(page, getItems);
-
-    // Fetch dandiset if necessary
-    onMounted(() => {
-      if (!store.dandiset) {
-        store.initializeDandisets({
-          identifier: props.identifier,
-          version: props.version,
-        });
-      }
-    });
-
-    return {
-      location,
-      currentDandiset,
-      splitLocation,
-      itemToDelete,
-      rootDirectory,
-      items,
-      pages,
-      page,
-      updating,
-      itemsNotFound,
-      locationSlice,
-      selectPath,
-      navigateToParent,
-      downloadURI,
-      assetMetadataURI,
-      fileSize,
-      showDelete,
-      deleteAsset,
-      setItemToDelete,
-    };
-  },
+  }
 });
 </script>
