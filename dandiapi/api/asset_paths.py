@@ -160,14 +160,14 @@ def add_version_asset_paths(version: Version):
 def add_zarr_paths(zarr: ZarrArchive):
     """Add all asset paths that are associated with a zarr."""
     # Only act on draft assets/versions
-    for asset in zarr.assets.filter(published=False):
-        for version in asset.versions.filter(version='draft'):
+    for asset in zarr.assets.filter(published=False).iterator():
+        for version in asset.versions.filter(version='draft').iterator():
             add_asset_paths(asset, version)
 
 
 def delete_zarr_paths(zarr: ZarrArchive):
     """Remove all asset paths that are associated with a zarr."""
     # Only act on draft assets/versions
-    for asset in zarr.assets.filter(published=False):
-        for version in asset.versions.filter(version='draft'):
+    for asset in zarr.assets.filter(published=False).iterator():
+        for version in asset.versions.filter(version='draft').iterator():
             delete_asset_paths(asset, version)
