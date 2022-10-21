@@ -257,7 +257,7 @@ const rootDirectory = '';
 const FILES_PER_PAGE = 15;
 
 // AssetService is slightly different from Service
-export interface AssetService {
+interface AssetService {
   name: string,
   url: string,
 }
