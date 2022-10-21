@@ -225,9 +225,10 @@
           </v-card>
         </v-col>
       </v-row>
-      <v-pagination
-        v-model="page"
-        :length="pages"
+      <FileBrowserPagination
+        :page="page"
+        :page-count="pages"
+        @changePage="page = $event;"
       />
     </v-container>
   </div>
@@ -245,6 +246,7 @@ import { trimEnd } from 'lodash';
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import { AssetFile, AssetPath } from '@/types';
+import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 
 const rootDirectory = '';
 const FILES_PER_PAGE = 15;
@@ -314,6 +316,7 @@ type Service = typeof EXTERNAL_SERVICES[0];
 
 export default defineComponent({
   name: 'FileBrowser',
+  components: { FileBrowserPagination },
   props: {
     identifier: {
       type: String,
