@@ -10,6 +10,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.transaction import atomic
 
+from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.storage import get_boto_client, yield_files
 from dandiapi.zarr.checksums import (
     ZarrChecksum,
@@ -119,6 +120,9 @@ def ingest_zarr_archive(
     with transaction.atomic():
         zarr = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
 
+        # Remove all asset paths associated with this zarr before ingest
+        delete_zarr_paths(zarr)
+
         # Reset before compute
         if not no_size:
             zarr.size = 0
@@ -177,6 +181,9 @@ def ingest_zarr_archive(
         zarr.save(update_fields=['size', 'file_count'])
         for asset in zarr.assets.iterator():
             asset.save()
+
+        # Add asset paths after ingest is finished
+        add_zarr_paths(zarr)
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
