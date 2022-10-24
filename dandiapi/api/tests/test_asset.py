@@ -1070,6 +1070,31 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
 
 @pytest.mark.django_db
+def test_asset_rest_delete_zarr(
+    api_client, user, draft_version, draft_asset_factory, zarr_archive, zarr_upload_file_factory
+):
+    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
+    assign_perm('owner', user, draft_version.dandiset)
+    draft_version.assets.add(asset)
+
+    # Add paths
+    add_asset_paths(asset=asset, version=draft_version)
+
+    # Upload zarr file and perform ingest
+    zarr_upload_file_factory(zarr_archive=zarr_archive)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+
+    # Delete
+    api_client.force_authenticate(user=user)
+    resp = api_client.delete(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
+    )
+    assert resp.status_code == 204
+
+
+@pytest.mark.django_db
 def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
     api_client.force_authenticate(user=user)
     version.assets.add(asset)
