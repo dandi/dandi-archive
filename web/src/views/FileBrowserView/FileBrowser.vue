@@ -231,6 +231,7 @@
         </v-col>
       </v-row>
       <FileBrowserPagination
+        v-if="currentDandiset.asset_count"
         :page="page"
         :page-count="pages"
         @changePage="page = $event;"
