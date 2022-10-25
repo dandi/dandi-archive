@@ -57,4 +57,7 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
         raise PermissionDenied('Cannot delete dandisets that are currently being published.')
 
+    # Delete all versions first, so that AssetPath deletion is cascaded
+    # through versions, rather than through zarrs directly
+    dandiset.versions.all().delete()
     dandiset.delete()
