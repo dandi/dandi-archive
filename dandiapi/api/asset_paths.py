@@ -169,15 +169,13 @@ def add_version_asset_paths(version: Version):
     for asset in version.assets.all().iterator():
         insert_asset_paths(asset, version)
 
-    # Compute aggregate file size + count for each non-leaf asset path, instead of when each asset
+    # Compute aggregate file size + count for each asset path, instead of when each asset
     # is added. This is done because updating the same row many times within a transaction is slow.
     # https://stackoverflow.com/a/60221875
-    nodes = AssetPath.objects.filter(version=version, asset__isnull=True)
+    nodes = AssetPath.objects.filter(version=version)
     for node in nodes:
         child_link_ids = node.child_links.distinct('child_id').values_list('child_id', flat=True)
-        child_leaves = AssetPath.objects.filter(id__in=child_link_ids, asset__isnull=False).exclude(
-            id=node.id
-        )
+        child_leaves = AssetPath.objects.filter(id__in=child_link_ids, asset__isnull=False)
 
         # Get all aggregates
         sizes = child_leaves.aggregate(
@@ -188,6 +186,7 @@ def add_version_asset_paths(version: Version):
 
         node.aggregate_files += child_leaves.count()
         node.aggregate_size += sizes['size'] + sizes['esize'] + sizes['zsize']
+        node.save()
 
 
 @atomic()

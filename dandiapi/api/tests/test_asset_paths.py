@@ -1,8 +1,9 @@
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 import pytest
 
 from dandiapi.api.asset_paths import (
     add_asset_paths,
+    add_version_asset_paths,
     delete_asset_paths,
     extract_paths,
     search_asset_paths,
@@ -76,6 +77,40 @@ def test_asset_path_add_asset(draft_version_factory, asset_factory):
             AssetPathRelation.objects.filter(parent=path, child__in=child_paths).count()
             == child_paths.count()
         )
+
+
+@pytest.mark.django_db
+def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory):
+    # Create asset with version
+    version: Version = draft_version_factory()
+    version.assets.add(asset_factory(path='foo/bar/baz.txt'))
+    version.assets.add(asset_factory(path='foo/bar/baz2.txt'))
+    version.assets.add(asset_factory(path='foo/baz/file.txt'))
+    version.assets.add(asset_factory(path='top.txt'))
+
+    # Add verison asset paths
+    add_version_asset_paths(version)
+
+    # Check paths have expected file count and size
+    paths = [
+        ('foo', 3, 300),
+        ('foo/bar', 2, 200),
+        ('foo/baz', 1, 100),
+        ('top.txt', 1, 100),
+    ]
+
+    # Check parent paths and relations
+    for path, count, size in paths:
+        asset_path = AssetPath.objects.get(version=version, path=path)
+        assert asset_path.aggregate_files == count
+        assert asset_path.aggregate_size == size
+
+    # Assert no paths have size or file count of zero
+    assert (
+        not AssetPath.objects.filter(version=version)
+        .filter(Q(aggregate_size=0) | Q(aggregate_files=0))
+        .exists()
+    )
 
 
 @pytest.mark.django_db
