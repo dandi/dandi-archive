@@ -5,6 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.asset_paths import add_asset_paths
 from dandiapi.api.models import Dandiset, Version
 
 from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE, UTC_ISO_TIMESTAMP_RE
@@ -720,6 +721,28 @@ def test_dandiset_rest_delete(api_client, draft_version, user):
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert response.status_code == 204
 
+    assert not Dandiset.objects.all()
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_delete_with_zarrs(
+    api_client,
+    draft_version,
+    user,
+    zarr_archive_factory,
+    draft_asset_factory,
+):
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, draft_version.dandiset)
+    zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
+    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr)
+
+    # Add paths
+    add_asset_paths(asset=asset, version=draft_version)
+
+    # Delete
+    response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
+    assert response.status_code == 204
     assert not Dandiset.objects.all()
 
 
