@@ -77,5 +77,10 @@ const emit = defineEmits(['changePage']);
 const pageInput = ref(props.page.toString());
 
 watch(() => props.page, (newPage) => { pageInput.value = newPage.toString(); });
-watch(pageInput, (newPage) => emit('changePage', Number(newPage)));
+watch(pageInput, (newPage) => {
+  const page = Number(newPage);
+  if (page > 0 && page <= props.pageCount) {
+    emit('changePage', page);
+  }
+});
 </script>
