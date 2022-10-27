@@ -1,18 +1,18 @@
-from django.db import transaction
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotAuthenticated, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.tasks import delete_doi_task, publish_task
+from dandiapi.api.services.publish import publish_dandiset
+from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     VersionDetailSerializer,
@@ -117,54 +117,15 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={200: VersionSerializer()},
     )
     @action(detail=True, methods=['POST'])
-    @transaction.atomic  # needed for `select_for_update`
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def publish(self, request, **kwargs):
         """Publish a version."""
-        version: Version | None = self.get_queryset().select_for_update().filter(**kwargs).first()
-
-        if version is None:
-            return Response('Version not found', status=status.HTTP_404_NOT_FOUND)
-
-        if version.version != 'draft':
+        if kwargs['version'] != 'draft':
             return Response(
                 'Only draft versions can be published',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
-        if (
-            version.dandiset.zarr_archives.exists()
-            or version.dandiset.embargoed_zarr_archives.exists()
-        ):
-            raise ValidationError('Cannot publish dandisets which contain zarrs')
-        if not version.valid:
-            match version.status:
-                case Version.Status.PUBLISHED:
-                    resp_text, resp_status = (
-                        'No changes since last publish',
-                        status.HTTP_400_BAD_REQUEST,
-                    )
-                case Version.Status.PUBLISHING:
-                    resp_text, resp_status = (
-                        'Dandiset is currently being published',
-                        status.HTTP_423_LOCKED,
-                    )
-                case Version.Status.VALIDATING:
-                    resp_text, resp_status = (
-                        'Dandiset is currently being validated',
-                        status.HTTP_409_CONFLICT,
-                    )
-                case _:
-                    resp_text, resp_status = (
-                        'Dandiset metadata or asset metadata is not valid',
-                        status.HTTP_400_BAD_REQUEST,
-                    )
-            return Response(resp_text, status=resp_status)
-
-        version.status = Version.Status.PUBLISHING
-        version.save(update_fields=['status'])
-
-        transaction.on_commit(lambda: publish_task.delay(version.id))
-
+        publish_dandiset(user=request.user, dandiset=self.get_object().dandiset)
         return Response(None, status=status.HTTP_202_ACCEPTED)
 
     @swagger_auto_schema(
