@@ -15,6 +15,7 @@ from rest_framework import serializers, status
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
@@ -62,6 +63,14 @@ class ZarrUploadBatchSerializer(serializers.Serializer):
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
     path = serializers.CharField()
+
+
+class ZarrIngestRequestSerializer(serializers.Serializer):
+    force = serializers.BooleanField(
+        required=False, default=False,
+        help_text="Force ingest-ion of possibly already ingested zarr "
+                  "(admin-only operation)"
+    )
 
 
 class ZarrSerializer(serializers.ModelSerializer):
@@ -284,7 +293,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         method='POST',
-        request_body=no_body,
+        request_body=ZarrIngestRequestSerializer(),
         responses={
             # Note: Having proper None results in no documentation in /swagger
             204: 'None - expected normal return without any content',
@@ -294,13 +303,21 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         operation_description='',
     )
     @action(methods=['POST'], detail=True)
-    def ingest(self, request, zarr_id):
+    def ingest(self, request: Request, zarr_id: str):
         """Ingest a zarr archive."""
         zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
+
+        serializer = ZarrIngestRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        force = serializer.validated_data['force']
+
         if not self.request.user.has_perm('owner', zarr_archive.dandiset):
             # The user does not have ownership permission
             raise PermissionDenied()
-
+        if force and not self.request.user.is_superuser:
+            raise PermissionDenied(
+                'Forcing reingestion of zarr is an admin only operation.'
+            )
         if zarr_archive.status != ZarrArchiveStatus.PENDING:
             return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
         if zarr_archive.upload_in_progress:
@@ -310,7 +327,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             )
 
         # Dispatch ingestion
-        ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
+        ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id, force=force)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
