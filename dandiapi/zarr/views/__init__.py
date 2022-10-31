@@ -67,9 +67,7 @@ class ZarrDeleteFileRequestSerializer(serializers.Serializer):
 
 class ZarrIngestRequestSerializer(serializers.Serializer):
     force = serializers.BooleanField(
-        required=False, default=False,
-        help_text="Force ingest-ion of possibly already ingested zarr "
-                  "(admin-only operation)"
+        required=False, default=False, help_text='Force re-ingest if necessary (admin only)'
     )
 
 
@@ -307,24 +305,29 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         """Ingest a zarr archive."""
         zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
 
-        serializer = ZarrIngestRequestSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        force = serializer.validated_data['force']
-
-        if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-            # The user does not have ownership permission
+        # Fail if user isn't an owner
+        if not request.user.has_perm('owner', zarr_archive.dandiset):
             raise PermissionDenied()
-        if force and not self.request.user.is_superuser:
-            raise PermissionDenied(
-                'Forcing reingestion of zarr is an admin only operation.'
-            )
-        if zarr_archive.status != ZarrArchiveStatus.PENDING:
-            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fail if uploads are in progress
         if zarr_archive.upload_in_progress:
             return Response(
                 'Upload in progress. Please cancel or complete this existing upload.',
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Check force flag
+        serializer = ZarrIngestRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        force = serializer.validated_data['force']
+
+        # Return if not forced and already ingested
+        if not force and zarr_archive.status != ZarrArchiveStatus.PENDING:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure user is admin if forced
+        if force and not request.user.is_superuser:
+            raise PermissionDenied('Forceful re-ingestion of zarr is an admin only operation.')
 
         # Dispatch ingestion
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id, force=force)
