@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import contextlib
 import os
 
+from django.db import transaction
 from django.db.models import Count, F, QuerySet, Sum
 from django.db.models.functions import Coalesce
-from django.db.transaction import atomic
 
 from dandiapi.api.models import Asset, AssetPath, AssetPathRelation, Version
 from dandiapi.zarr.models import ZarrArchive
@@ -110,60 +109,67 @@ def insert_asset_paths(asset: Asset, version: Version):
 
 
 # TODO: Make idempotent
-def add_asset_paths(asset: Asset, version: Version, transaction=True):
-    with atomic() if transaction else contextlib.nullcontext():
-        # Insert leaf node and all required parent paths
-        leaf = insert_asset_paths(asset, version)
+def _add_asset_paths(asset: Asset, version: Version):
+    leaf = insert_asset_paths(asset, version)
 
-        # Increment the size and file count of all parent paths.
-        # Get all relations (including leaf node)
-        parent_ids = (
-            AssetPathRelation.objects.filter(child=leaf)
-            .distinct('parent')
-            .values_list('parent', flat=True)
-        )
+    # Increment the size and file count of all parent paths.
+    # Get all relations (including leaf node)
+    parent_ids = (
+        AssetPathRelation.objects.filter(child=leaf)
+        .distinct('parent')
+        .values_list('parent', flat=True)
+    )
 
-        # Update size + file count
-        AssetPath.objects.filter(id__in=parent_ids).update(
-            aggregate_size=F('aggregate_size') + leaf.asset.size,
-            aggregate_files=F('aggregate_files') + 1,
-        )
+    # Update size + file count
+    AssetPath.objects.filter(id__in=parent_ids).update(
+        aggregate_size=F('aggregate_size') + leaf.asset.size,
+        aggregate_files=F('aggregate_files') + 1,
+    )
 
 
-def delete_asset_paths(asset: Asset, version: Version, transaction=True):
-    with atomic() if transaction else contextlib.nullcontext():
-        leaf: AssetPath = AssetPath.objects.get(asset=asset, version=version)
+def _delete_asset_paths(asset: Asset, version: Version):
+    leaf: AssetPath = AssetPath.objects.get(asset=asset, version=version)
 
-        # Fetch parents
-        parent_ids = (
-            AssetPathRelation.objects.filter(child=leaf)
-            .distinct('parent')
-            .values_list('parent', flat=True)
-        )
-        parent_paths = AssetPath.objects.filter(id__in=parent_ids)
+    # Fetch parents
+    parent_ids = (
+        AssetPathRelation.objects.filter(child=leaf)
+        .distinct('parent')
+        .values_list('parent', flat=True)
+    )
+    parent_paths = AssetPath.objects.filter(id__in=parent_ids)
 
-        # Update parents
-        parent_paths.update(
-            aggregate_size=F('aggregate_size') - asset.size,
-            aggregate_files=F('aggregate_files') - 1,
-        )
+    # Update parents
+    parent_paths.update(
+        aggregate_size=F('aggregate_size') - asset.size,
+        aggregate_files=F('aggregate_files') - 1,
+    )
 
-        # Ensure integrity
-        leaf.refresh_from_db()
-        assert leaf.aggregate_size == 0
-        assert leaf.aggregate_files == 0
+    # Ensure integrity
+    leaf.refresh_from_db()
+    assert leaf.aggregate_size == 0
+    assert leaf.aggregate_files == 0
 
-        # Delete leaf node and any other paths with no contained files
-        AssetPath.objects.filter(aggregate_files=0).delete()
+    # Delete leaf node and any other paths with no contained files
+    AssetPath.objects.filter(aggregate_files=0).delete()
 
 
-@atomic()
+@transaction.atomic
+def add_asset_paths(asset: Asset, version: Version):
+    _add_asset_paths(asset, version)
+
+
+@transaction.atomic
+def delete_asset_paths(asset: Asset, version: Version):
+    _delete_asset_paths(asset, version)
+
+
+@transaction.atomic
 def update_asset_paths(old_asset: Asset, new_asset: Asset, version: Version):
-    delete_asset_paths(old_asset, version, transaction=False)
-    add_asset_paths(new_asset, version, transaction=False)
+    _delete_asset_paths(old_asset, version)
+    _add_asset_paths(new_asset, version)
 
 
-@atomic()
+@transaction.atomic
 def add_version_asset_paths(version: Version):
     """Add every asset from a version."""
     for asset in version.assets.all().iterator():
@@ -189,19 +195,19 @@ def add_version_asset_paths(version: Version):
         node.save()
 
 
-@atomic()
+@transaction.atomic
 def add_zarr_paths(zarr: ZarrArchive):
     """Add all asset paths that are associated with a zarr."""
     # Only act on draft assets/versions
     for asset in zarr.assets.filter(published=False).iterator():
         for version in asset.versions.filter(version='draft').iterator():
-            add_asset_paths(asset, version, transaction=False)
+            _add_asset_paths(asset, version)
 
 
-@atomic()
+@transaction.atomic
 def delete_zarr_paths(zarr: ZarrArchive):
     """Remove all asset paths that are associated with a zarr."""
     # Only act on draft assets/versions
     for asset in zarr.assets.filter(published=False).iterator():
         for version in asset.versions.filter(version='draft').iterator():
-            delete_asset_paths(asset, version, transaction=False)
+            _delete_asset_paths(asset, version)
