@@ -108,9 +108,12 @@ def insert_asset_paths(asset: Asset, version: Version):
     return leaf
 
 
-# TODO: Make idempotent
 def _add_asset_paths(asset: Asset, version: Version):
     leaf = insert_asset_paths(asset, version)
+
+    # Only increment if it hasn't been performed yet
+    if leaf.aggregate_files == 1:
+        return
 
     # Increment the size and file count of all parent paths.
     # Get all relations (including leaf node)
@@ -128,7 +131,9 @@ def _add_asset_paths(asset: Asset, version: Version):
 
 
 def _delete_asset_paths(asset: Asset, version: Version):
-    leaf: AssetPath = AssetPath.objects.get(asset=asset, version=version)
+    leaf: AssetPath | None = AssetPath.objects.filter(asset=asset, version=version).first()
+    if leaf is None:
+        return
 
     # Fetch parents
     parent_ids = (
@@ -178,7 +183,9 @@ def add_version_asset_paths(version: Version):
     # Compute aggregate file size + count for each asset path, instead of when each asset
     # is added. This is done because updating the same row many times within a transaction is slow.
     # https://stackoverflow.com/a/60221875
-    nodes = AssetPath.objects.filter(version=version)
+
+    # Get all nodes which haven't been computed yet
+    nodes = AssetPath.objects.filter(version=version, aggregate_files=0)
     for node in nodes:
         child_link_ids = node.child_links.distinct('child_id').values_list('child_id', flat=True)
         child_leaves = AssetPath.objects.filter(id__in=child_link_ids, asset__isnull=False)
