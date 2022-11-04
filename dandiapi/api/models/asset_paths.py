@@ -28,6 +28,14 @@ class AssetPath(models.Model):
             models.CheckConstraint(check=~models.Q(path__endswith='/'), name='consistent-slash'),
             models.UniqueConstraint(fields=['asset', 'version'], name='unique-asset-version'),
             models.UniqueConstraint(fields=['version', 'path'], name='unique-version-path'),
+            # Ensure all leaf paths have at most 1 associated file
+            models.CheckConstraint(
+                check=(
+                    models.Q(asset__isnull=True)
+                    | models.Q(asset__isnull=False, aggregate_files__lte=1)
+                ),
+                name='consistent-leaf-paths',
+            ),
         ]
 
 
