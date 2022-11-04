@@ -12,15 +12,12 @@ def _maybe_validate_asset_metadata(asset: Asset):
     If the checksum isn't there yet, it's the responsibility of the checksum code
     to trigger validation for all assets pointing to its blob.
     """
-    if asset.is_blob:
-        blob = asset.blob
-    elif asset.is_embargoed_blob:
-        blob = asset.embargoed_blob
-    else:
+    if asset.is_zarr():
         # TODO: assert? zarr?
         return
 
-    if blob.sha256 is None:
+    blob = asset.blob
+    if blob is None:
         return
 
     # If the blob already has a sha256, then the asset metadata is ready to validate.

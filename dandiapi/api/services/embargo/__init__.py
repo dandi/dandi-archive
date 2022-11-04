@@ -12,47 +12,40 @@ from .exceptions import AssetNotEmbargoed, DandisetNotEmbargoed
 
 def _unembargo_asset(asset: Asset):
     """Unembargo an asset by copying its blob to the public bucket."""
-    if asset.embargoed_blob is None:
+    if not asset.is_embargoed:
         raise AssetNotEmbargoed()
 
     # Use existing AssetBlob if possible
-    etag = asset.embargoed_blob.etag
-    matching_blob = AssetBlob.objects.filter(etag=etag).first()
+    matching_blob = AssetBlob.objects.filter(etag=asset.blob.etag, embargoed=False).first()
     if matching_blob is not None:
         asset.blob = matching_blob
     else:
         # Matching AssetBlob doesn't exist, copy blob to public bucket
         resp = copy_object_multipart(
-            asset.embargoed_blob.blob.storage,
+            asset.blob.blob.storage,
             source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
-            source_key=asset.embargoed_blob.blob.name,
+            source_key=asset.blob.blob.name,
             dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
             dest_key=Upload.object_key(
-                asset.embargoed_blob.blob_id, dandiset=asset.embargoed_blob.dandiset
+                upload_id=asset.blob.blob_id, dandiset=asset.blob.dandiset, embargoed=False
             ),
         )
 
         # Assert files are equal
-        assert resp.etag == asset.embargoed_blob.etag
+        assert resp.etag == asset.blob.etag
 
-        # Assign blob (changing only blob)
-        asset.blob = AssetBlob(
-            blob=resp.key,
-            blob_id=asset.embargoed_blob.blob_id,
-            sha256=asset.embargoed_blob.sha256,
-            etag=asset.embargoed_blob.etag,
-            size=asset.embargoed_blob.size,
-        )
+        # Change AssetBlob key and embargoed flag
+        asset.blob.blob = resp.key
+        asset.blob.embargoed = False
         asset.blob.save()
 
-    # Save updated blob field
-    asset.embargoed_blob = None
+    # Save asset
     asset.save()
 
 
 def _unembargo_dandiset(dandiset: Dandiset):
     draft_version: Version = dandiset.draft_version
-    embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(embargoed_blob__isnull=False)
+    embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(blob__embargoed=True)
 
     # Unembargo all assets
     for asset in embargoed_assets.iterator():

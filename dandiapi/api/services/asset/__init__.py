@@ -6,7 +6,7 @@ from dandiapi.api.asset_paths import (
     get_conflicting_paths,
     update_asset_paths,
 )
-from dandiapi.api.models.asset import Asset, AssetBlob, EmbargoedAssetBlob
+from dandiapi.api.models.asset import Asset, AssetBlob
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExists,
@@ -23,7 +23,6 @@ def _create_asset(
     *,
     path: str,
     asset_blob: AssetBlob | None = None,
-    embargoed_asset_blob: EmbargoedAssetBlob | None = None,
     zarr_archive: ZarrArchive | None = None,
     metadata: dict,
 ):
@@ -32,7 +31,6 @@ def _create_asset(
     asset = Asset(
         path=path,
         blob=asset_blob,
-        embargoed_blob=embargoed_asset_blob,
         zarr=zarr_archive,
         metadata=metadata,
         status=Asset.Status.PENDING,
@@ -48,7 +46,7 @@ def change_asset(
     user,
     asset: Asset,
     version: Version,
-    new_asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
+    new_asset_blob: AssetBlob | None = None,
     new_zarr_archive: ZarrArchive | None = None,
     new_metadata: dict,
 ) -> tuple[Asset, bool]:
@@ -102,7 +100,7 @@ def add_asset_to_version(
     *,
     user,
     version: Version,
-    asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
+    asset_blob: AssetBlob | None = None,
     zarr_archive: ZarrArchive | None = None,
     metadata: dict,
 ) -> Asset:
@@ -131,18 +129,10 @@ def add_asset_to_version(
     if zarr_archive and zarr_archive.dandiset != version.dandiset:
         raise ZarrArchiveBelongsToDifferentDandiset()
 
-    if isinstance(asset_blob, EmbargoedAssetBlob):
-        embargoed_asset_blob = asset_blob
-        asset_blob = None
-    else:
-        embargoed_asset_blob = None
-        asset_blob = asset_blob
-
     with transaction.atomic():
         asset = _create_asset(
             path=path,
             asset_blob=asset_blob,
-            embargoed_asset_blob=embargoed_asset_blob,
             zarr_archive=zarr_archive,
             metadata=metadata,
         )

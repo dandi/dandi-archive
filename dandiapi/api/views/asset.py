@@ -41,7 +41,7 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.models.asset import EmbargoedAssetBlob, validate_asset_path
+from dandiapi.api.models.asset import validate_asset_path
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -126,12 +126,9 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             return HttpResponseRedirect(
                 reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
             )
-        elif asset.is_blob:
-            asset_blob = asset.blob
-        elif asset.is_embargoed_blob:
-            asset_blob = asset.embargoed_blob
 
         # Redirect to correct presigned URL
+        asset_blob = asset.blob
         storage = asset_blob.blob.storage
         return HttpResponseRedirect(
             storage.generate_presigned_download_url(
@@ -157,19 +154,13 @@ class AssetRequestSerializer(serializers.Serializer):
     blob_id = serializers.UUIDField(required=False)
     zarr_id = serializers.UUIDField(required=False)
 
-    def get_blob(self) -> AssetBlob | EmbargoedAssetBlob | None:
+    def get_blob(self) -> AssetBlob | None:
         asset_blob = None
-        embargoed_asset_blob = None
 
         if 'blob_id' in self.validated_data:
-            try:
-                asset_blob = AssetBlob.objects.get(blob_id=self.validated_data['blob_id'])
-            except AssetBlob.DoesNotExist:
-                embargoed_asset_blob = get_object_or_404(
-                    EmbargoedAssetBlob, blob_id=self.validated_data['blob_id']
-                )
+            asset_blob = AssetBlob.objects.get(blob_id=self.validated_data['blob_id'])
 
-        return asset_blob or embargoed_asset_blob
+        return asset_blob
 
     def get_zarr_archive(self) -> ZarrArchive | None:
         zarr_archive = None

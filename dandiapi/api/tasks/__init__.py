@@ -15,7 +15,7 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 
 logger = get_task_logger(__name__)
 
@@ -23,17 +23,11 @@ logger = get_task_logger(__name__)
 @shared_task(queue='calculate_sha256', soft_time_limit=86_400)
 @atomic
 def calculate_sha256(blob_id: int) -> None:
-    try:
-        asset_blob = AssetBlob.objects.get(blob_id=blob_id)
-        logger.info(f'Found AssetBlob {blob_id}')
-    except AssetBlob.DoesNotExist:
-        asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
-        logger.info(f'Found EmbargoedAssetBlob {blob_id}')
-
-    sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
+    asset_blob = AssetBlob.objects.get(blob_id=blob_id)
+    logger.info(f'Found AssetBlob {blob_id}')
 
     # TODO: Run dandi-cli validation
-
+    sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
     asset_blob.sha256 = sha256
     asset_blob.save()
 

@@ -11,6 +11,8 @@ from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
+from django.db import models
+from django.db.models.fields.files import FieldFile
 from minio.error import NoSuchKey
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
@@ -317,3 +319,32 @@ def get_embargo_storage() -> Storage:
 
 def get_embargo_storage_prefix(instance: Any, filename: str) -> str:
     return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{filename}'
+
+
+class DynamicStorageFieldFile(FieldFile):
+    """
+    Will automatically use the correct storage based on the instance.
+
+    NOTE: The utilizing instance must have a boolean field named `embargoed`.
+    """
+
+    def __init__(self, instance, field, name):
+        super().__init__(instance, field, name)
+
+        # Set storage based on asset blob instance
+        self.storage = get_embargo_storage() if instance.embargoed else get_storage()
+
+
+class DynamicStorageFileField(models.FileField):
+    """
+    Will automatically use the correct storage based on the instance.
+
+    NOTE: The utilizing instance must have a boolean field named `embargoed`.
+    """
+
+    attr_class = DynamicStorageFieldFile
+
+    def pre_save(self, model_instance, add):
+        self.upload_to = get_storage_prefix
+        self.storage = get_embargo_storage() if model_instance.embargoed else get_storage()
+        return super().pre_save(model_instance, add)

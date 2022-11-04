@@ -16,14 +16,8 @@ from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
-from dandiapi.api.storage import (
-    get_embargo_storage,
-    get_embargo_storage_prefix,
-    get_storage,
-    get_storage_prefix,
-)
+from dandiapi.api.storage import DynamicStorageFileField
 
-from .dandiset import Dandiset
 from .version import Version
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
@@ -43,10 +37,20 @@ if TYPE_CHECKING:
     from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
 
-class BaseAssetBlob(TimeStampedModel):
+class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
+    class Meta:
+        indexes = [HashIndex(fields=['etag'])]
+        constraints = [
+            models.UniqueConstraint(
+                name='unique-etag-size-embargoed', fields=['etag', 'size', 'embargoed']
+            ),
+        ]
+
+    embargoed = models.BooleanField(default=False)
+    blob = DynamicStorageFileField(blank=True)
     blob_id = models.UUIDField(unique=True)
     sha256 = models.CharField(
         null=True,
@@ -56,10 +60,6 @@ class BaseAssetBlob(TimeStampedModel):
     )
     etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
     size = models.PositiveBigIntegerField()
-
-    class Meta:
-        abstract = True
-        indexes = [HashIndex(fields=['etag'])]
 
     @property
     def references(self) -> int:
@@ -84,35 +84,6 @@ class BaseAssetBlob(TimeStampedModel):
         return self.blob.name
 
 
-class AssetBlob(BaseAssetBlob):
-    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
-
-    class Meta(BaseAssetBlob.Meta):
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-etag-size',
-                fields=['etag', 'size'],
-            )
-        ]
-
-
-class EmbargoedAssetBlob(BaseAssetBlob):
-    blob = models.FileField(
-        blank=True, storage=get_embargo_storage, upload_to=get_embargo_storage_prefix
-    )
-    dandiset = models.ForeignKey(
-        Dandiset, related_name='embargoed_asset_blobs', on_delete=models.CASCADE
-    )
-
-    class Meta(BaseAssetBlob.Meta):
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-embargo-etag-size',
-                fields=['dandiset', 'etag', 'size'],
-            )
-        ]
-
-
 class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
@@ -126,9 +97,6 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     path = models.CharField(max_length=512, validators=[validate_asset_path])
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
-    )
-    embargoed_blob = models.ForeignKey(
-        EmbargoedAssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
     zarr = models.ForeignKey(
         'zarr.ZarrArchive', related_name='assets', on_delete=models.CASCADE, null=True, blank=True
@@ -154,9 +122,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 name='exactly-one-blob',
-                check=Q(blob__isnull=True, embargoed_blob__isnull=True, zarr__isnull=False)
-                | Q(blob__isnull=True, embargoed_blob__isnull=False, zarr__isnull=True)
-                | Q(blob__isnull=False, embargoed_blob__isnull=True, zarr__isnull=True),
+                check=Q(blob__isnull=True, zarr__isnull=False)
+                | Q(blob__isnull=False, zarr__isnull=True),
             ),
             models.CheckConstraint(
                 name='asset_metadata_has_schema_version',
@@ -169,12 +136,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         ]
 
     @property
-    def is_blob(self):
-        return self.blob is not None
-
-    @property
-    def is_embargoed_blob(self):
-        return self.embargoed_blob is not None
+    def is_embargoed(self):
+        return self.blob is not None and self.blob.embargoed
 
     @property
     def is_zarr(self):
@@ -182,55 +145,39 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def size(self):
-        if self.is_blob:
-            return self.blob.size
-        elif self.is_embargoed_blob:
-            return self.embargoed_blob.size
-        else:
+        if self.is_zarr:
             return self.zarr.size
+
+        return self.blob.size
 
     @property
     def sha256(self):
-        if self.is_blob:
-            return self.blob.sha256
-        elif self.is_embargoed_blob:
-            return self.embargoed_blob.sha256
+        return self.blob.sha256
 
     @property
     def digest(self) -> dict[str, str]:
-        if self.is_blob:
-            return self.blob.digest
-        elif self.is_embargoed_blob:
-            return self.embargoed_blob.digest
-        else:
+        if self.is_zarr:
             return self.zarr.digest
+
+        return self.blob.digest
 
     @property
     def s3_url(self) -> str:
-        if self.is_blob:
-            return self.blob.s3_url
-        elif self.is_embargoed_blob:
-            return self.embargoed_blob.s3_url
-        else:
+        if self.is_zarr:
             return self.zarr.s3_url
+
+        return self.blob.s3_url
 
     def is_different_from(
         self,
         *,
-        asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
+        asset_blob: AssetBlob | None = None,
         zarr_archive: ZarrArchive | EmbargoedZarrArchive | None = None,
         metadata: dict,
     ) -> bool:
         from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
         if isinstance(asset_blob, AssetBlob) and self.blob is not None and self.blob != asset_blob:
-            return True
-
-        if (
-            isinstance(asset_blob, EmbargoedAssetBlob)
-            and self.embargoed_blob is not None
-            and self.embargoed_blob != asset_blob
-        ):
             return True
 
         if (
@@ -253,13 +200,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
-        if self.is_blob:
-            s3_url = self.blob.s3_url
-        elif self.is_embargoed_blob:
-            s3_url = self.embargoed_blob.s3_url
-        else:
-            s3_url = self.zarr.s3_url
 
+        s3_url = self.zarr.s3_url if self.is_zarr else self.blob.s3_url
         metadata = {
             **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
@@ -330,7 +272,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0
-            for cls in (AssetBlob, EmbargoedAssetBlob, ZarrArchive)
+            for cls in (AssetBlob, ZarrArchive)
             # adding of Zarrs to embargoed dandisets is not supported
             # so no point of adding EmbargoedZarr here since would also result in error
             # TODO: add EmbagoedZarr whenever supported
