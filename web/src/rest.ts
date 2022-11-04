@@ -24,8 +24,9 @@ let oauthClient: OAuthClient | null = null;
 try {
   if (process.env.VUE_APP_OAUTH_API_ROOT && process.env.VUE_APP_OAUTH_CLIENT_ID) {
     oauthClient = new OAuthClient(
-      process.env.VUE_APP_OAUTH_API_ROOT,
+      new URL(process.env.VUE_APP_OAUTH_API_ROOT),
       process.env.VUE_APP_OAUTH_CLIENT_ID,
+      { redirectUrl: new URL(window.location.origin) },
     );
   }
 } catch (e) {
