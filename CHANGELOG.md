@@ -1,3 +1,49 @@
+# v0.3.0 (Mon Nov 07 2022)
+
+#### 🚀 Enhancement
+
+- [gh-actions](deps): Bump actions/add-to-project from 0.0.3 to 0.3.0 [#1331](https://github.com/dandi/dandi-archive/pull/1331) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### 🐛 Bug Fix
+
+- Add tqdm to asset path version ingestion [#1358](https://github.com/dandi/dandi-archive/pull/1358) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Fix oauth client error [#1354](https://github.com/dandi/dandi-archive/pull/1354) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Make asset paths operations idempotent [#1351](https://github.com/dandi/dandi-archive/pull/1351) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Delete unused management command import_dandisets.py [#1335](https://github.com/dandi/dandi-archive/pull/1335) ([@danlamanna](https://github.com/danlamanna))
+- Optimize version/zarr asset path ingestion [#1343](https://github.com/dandi/dandi-archive/pull/1343) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add Dandi exception classes [#1337](https://github.com/dandi/dandi-archive/pull/1337) ([@danlamanna](https://github.com/danlamanna))
+- Disable APPROVE button if user is already approved [#1348](https://github.com/dandi/dandi-archive/pull/1348) ([@waxlamp](https://github.com/waxlamp))
+- Fix dandiset deletion when containing zarrs [#1345](https://github.com/dandi/dandi-archive/pull/1345) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Fix asset update/deletion when associated with zarr [#1338](https://github.com/dandi/dandi-archive/pull/1338) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Optimize Asset Paths [#1312](https://github.com/dandi/dandi-archive/pull/1312) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Wait until after publish transaction commits to create DOI [#1330](https://github.com/dandi/dandi-archive/pull/1330) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Revert "[gh-actions](deps): Bump actions/add-to-project from 0.0.3 to 0.3.0" [#1327](https://github.com/dandi/dandi-archive/pull/1327) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Restore DLP loading bar, add skeleton loader [#1315](https://github.com/dandi/dandi-archive/pull/1315) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove vague TODO comment [#1288](https://github.com/dandi/dandi-archive/pull/1288) ([@danlamanna](https://github.com/danlamanna))
+- Prevent deletion of dandisets currently being published [#1323](https://github.com/dandi/dandi-archive/pull/1323) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Render error message in UI when uncaught exception happens [#1320](https://github.com/dandi/dandi-archive/pull/1320) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Fix mypy errors in `api/admin.py` [#1333](https://github.com/dandi/dandi-archive/pull/1333) ([@mvandenburgh](https://github.com/mvandenburgh))
+- [gh-actions](deps): Bump actions/add-to-project from 0.0.3 to 0.3.0 [#1325](https://github.com/dandi/dandi-archive/pull/1325) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Update GitHub Actions action versions [#1324](https://github.com/dandi/dandi-archive/pull/1324) ([@jwodder](https://github.com/jwodder))
+
+#### 🧪 Tests
+
+- Disable pulling of all Docker images from Docker Hub [#1339](https://github.com/dandi/dandi-archive/pull/1339) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 6
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.2.54 (Tue Oct 11 2022)
 
 #### 🐛 Bug Fix
