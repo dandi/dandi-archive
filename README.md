@@ -1,29 +1,31 @@
-# dandi-archive
+# DANDI Archive
 
 ![](https://www.dandiarchive.org/assets/dandi_logo.svg)
 
-*DANDI: Distributed Archives for Neurophysiology Data Integration*
+##DANDI: Distributed Archives for Neurophysiology Data Integration
 
-DANDI is a platform for publishing, sharing, and processing neurophysiology data
+[DANDI](https://dandiarchive.org/) is a platform for publishing, sharing, and processing neurophysiology data
 funded by the [BRAIN Initiative](https://braininitiative.nih.gov/). The archive
 accepts cellular neurophysiology data including electrophysiology,
 optophysiology, and behavioral time-series, and images from immunostaining
-experiments. The platform is [now available](https://dandiarchive.org/) for data
-upload and distribution. For instructions on how to interact with the archive
-see [the handbook](https://www.dandiarchive.org/handbook/).
+experiments. This archive is not just an endpoint to store data, it is intended as a living repository that enables
+collaboration within and across labs, as well as the entry point for research.
 
 ## Structure
 
-This repository contains a Django-based backend to run the DANDI REST API, and a
+The dandi-archive repository contains a Django-based [backend](dandiapi/) to run the DANDI REST API, and a
 Vue-based [frontend](web/) to provide a user interface to the archive.
 
 ## Resources
 
-To get help:
-- ask a question: https://github.com/dandi/helpdesk/discussions
-- file a feature request or bug report: https://github.com/dandi/helpdesk/issues/new/choose
-- contact the DANDI team: help@dandiarchive.org
+* To learn how to interact with the archive,
+see [the handbook](https://www.dandiarchive.org/handbook/).
 
-To hack on the archive codebase:
-- Django backend: [`DEVELOPMENT.md`](DEVELOPMENT.md)
-- Vue frontend: [`web/README.md`](web/README.md)
+* To get help:
+  - ask a question: https://github.com/dandi/helpdesk/discussions
+  - file a feature request or bug report: https://github.com/dandi/helpdesk/issues/new/choose
+  - contact the DANDI team: help@dandiarchive.org
+
+* To understand how to hack on the archive codebase:
+  - Django backend: [`DEVELOPMENT.md`](DEVELOPMENT.md)
+  - Vue frontend: [`web/README.md`](web/README.md)
