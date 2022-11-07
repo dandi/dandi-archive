@@ -64,6 +64,7 @@ setup(
         'gunicorn',
         # Development-only, but required
         'django-minio-storage',
+        'tqdm',
     ],
     extras_require={
         'dev': [
