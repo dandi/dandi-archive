@@ -2,7 +2,7 @@
 
 ![](https://www.dandiarchive.org/assets/dandi_logo.svg)
 
-##DANDI: Distributed Archives for Neurophysiology Data Integration
+## DANDI: Distributed Archives for Neurophysiology Data Integration
 
 [DANDI](https://dandiarchive.org/) is a platform for publishing, sharing, and processing neurophysiology data
 funded by the [BRAIN Initiative](https://braininitiative.nih.gov/). The archive
