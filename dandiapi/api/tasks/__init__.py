@@ -139,7 +139,7 @@ def validate_version_metadata(version_id: int) -> None:
 
         validate(metadata, schema_key='PublishedDandiset', json_validation=True)
     except dandischema.exceptions.ValidationError as e:
-        logger.info('Error while validating version %s', version_id)
+        _log_version_action('Error while validating dandiset metadata', version_id, version)
         version.status = Version.Status.INVALID
 
         validation_errors = collect_validation_errors(e)
