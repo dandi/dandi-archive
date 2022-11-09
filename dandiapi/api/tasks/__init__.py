@@ -88,8 +88,6 @@ def collect_validation_errors(
 
 @shared_task(soft_time_limit=10)
 @atomic
-# This method takes both a version_id and an asset_id because asset metadata renders differently
-# depending on which version the asset belongs to.
 def validate_asset_metadata(asset_id: int) -> None:
     logger.info('Validating asset metadata for asset %s', asset_id)
     asset: Asset = Asset.objects.get(id=asset_id)

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import re
 
-from dandiapi.api.asset_paths import (
-    add_asset_paths,
-    delete_asset_paths,
-    search_asset_paths,
-    update_asset_paths,
+from dandiapi.api.asset_paths import search_asset_paths
+from dandiapi.api.services.asset import (
+    add_asset_to_version,
+    change_asset,
+    remove_asset_from_version,
 )
+from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiable
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -24,7 +25,6 @@ except ImportError:
 import os.path
 
 from django.conf import settings
-from django.db import transaction
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -41,8 +41,7 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.models.asset import BaseAssetBlob, EmbargoedAssetBlob, validate_asset_path
-from dandiapi.api.tasks import validate_asset_metadata
+from dandiapi.api.models.asset import EmbargoedAssetBlob, validate_asset_path
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -57,29 +56,6 @@ from dandiapi.api.views.serializers import (
     AssetSerializer,
     AssetValidationSerializer,
 )
-
-
-def _maybe_validate_asset_metadata(asset: Asset):
-    if asset.is_blob:
-        blob = asset.blob
-    elif asset.is_embargoed_blob:
-        blob = asset.embargoed_blob
-    else:
-        return
-
-    # Refresh the blob to be sure the sha256 values is up to date
-    blob: BaseAssetBlob
-    blob.refresh_from_db()
-
-    # If the blob is still waiting to have it's checksum calculated, there's no point in
-    # validating now; in fact, it could cause a race condition. Once the blob's sha256 is
-    # calculated, it will revalidate this asset.
-    if blob.sha256 is None:
-        return
-
-    # If the blob already has a sha256, then the asset metadata is ready to validate.
-    # We do not bother to delay it because it should run very quickly.
-    validate_asset_metadata(asset.id)
 
 
 class AssetFilter(filters.FilterSet):
@@ -181,6 +157,27 @@ class AssetRequestSerializer(serializers.Serializer):
     blob_id = serializers.UUIDField(required=False)
     zarr_id = serializers.UUIDField(required=False)
 
+    def get_blob(self) -> AssetBlob | EmbargoedAssetBlob | None:
+        asset_blob = None
+        embargoed_asset_blob = None
+
+        if 'blob_id' in self.validated_data:
+            try:
+                asset_blob = AssetBlob.objects.get(blob_id=self.validated_data['blob_id'])
+            except AssetBlob.DoesNotExist:
+                embargoed_asset_blob = get_object_or_404(
+                    EmbargoedAssetBlob, blob_id=self.validated_data['blob_id']
+                )
+
+        return asset_blob or embargoed_asset_blob
+
+    def get_zarr_archive(self) -> ZarrArchive | None:
+        zarr_archive = None
+        if 'zarr_id' in self.validated_data:
+            zarr_archive = get_object_or_404(ZarrArchive, zarr_id=self.validated_data['zarr_id'])
+
+        return zarr_archive
+
     def validate(self, data):
         """Ensure blob_id and zarr_id are mutually exclusive."""
         if ('blob_id' in data) == ('zarr_id' in data):
@@ -214,47 +211,6 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             if not self.request.user.has_perm('owner', version.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied()
-
-    def asset_from_request(self) -> Asset:
-        """
-        Return an unsaved Asset, constructed from the request data.
-
-        Any necessary validation errors will be raised in this method.
-        """
-        serializer = AssetRequestSerializer(data=self.request.data)
-        serializer.is_valid(raise_exception=True)
-
-        asset_blob = None
-        embargoed_asset_blob = None
-        zarr_archive = None
-        if 'blob_id' in serializer.validated_data:
-            try:
-                asset_blob = AssetBlob.objects.get(blob_id=serializer.validated_data['blob_id'])
-            except AssetBlob.DoesNotExist:
-                embargoed_asset_blob = get_object_or_404(
-                    EmbargoedAssetBlob, blob_id=serializer.validated_data['blob_id']
-                )
-        elif 'zarr_id' in serializer.validated_data:
-            zarr_archive = get_object_or_404(
-                ZarrArchive, zarr_id=serializer.validated_data['zarr_id']
-            )
-        else:
-            # This shouldn't ever occur
-            raise NotImplementedError('Storage type not handled.')
-
-        # Construct Asset
-        path = serializer.validated_data['metadata']['path']
-        metadata = Asset.strip_metadata(serializer.validated_data['metadata'])
-        asset = Asset(
-            path=path,
-            blob=asset_blob,
-            embargoed_blob=embargoed_asset_blob,
-            zarr=zarr_archive,
-            metadata=metadata,
-            status=Asset.Status.PENDING,
-        )
-
-        return asset
 
     # Redefine info and download actions to update swagger manual_parameters
 
@@ -318,39 +274,17 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             dandiset=versions__dandiset__pk,
             version=versions__version,
         )
-        if version.version != 'draft':
-            return Response(
-                'Only draft versions can be modified.',
-                status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            )
 
-        # Retrieve blobs and metadata
-        asset = self.asset_from_request()
+        serializer = AssetRequestSerializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
 
-        # Check if there are already any assets with the same path
-        if version.assets.filter(path=asset.path).exists():
-            return Response(
-                'An asset with that path already exists',
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # Ensure zarr archive doesn't already belong to a dandiset
-        if asset.zarr and asset.zarr.dandiset != version.dandiset:
-            raise serializers.ValidationError('The zarr archive belongs to a different dandiset')
-
-        asset.save()
-        version.assets.add(asset)
-
-        # Add asset paths
-        add_asset_paths(asset, version)
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        version.status = Version.Status.PENDING
-        # Save the version so that the modified field is updated
-        version.save()
-
-        # Validate the asset metadata if able
-        _maybe_validate_asset_metadata(asset)
+        asset = add_asset_to_version(
+            user=request.user,
+            version=version,
+            asset_blob=serializer.get_blob(),
+            zarr_archive=serializer.get_zarr_archive(),
+            metadata=serializer.validated_data['metadata'],
+        )
 
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -368,63 +302,27 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     )
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
-        old_asset: Asset = self.get_object()
-        version = get_object_or_404(
+        version: Version = get_object_or_404(
             Version,
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
         if version.version != 'draft':
-            return Response(
-                'Only draft versions can be modified.',
-                status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            )
+            raise DraftDandisetNotModifiable()
 
-        # Retrieve blobs and metadata
-        new_asset = self.asset_from_request()
+        serializer = AssetRequestSerializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if (
-            new_asset.metadata == old_asset.metadata
-            and new_asset.blob == old_asset.blob
-            and new_asset.embargoed_blob == old_asset.embargoed_blob
-            and new_asset.zarr_archive == old_asset.zarr
-        ):
-            # No changes, don't create a new asset
-            new_asset = old_asset
-        else:
-            # Verify we aren't changing path to the same value as an existing asset
-            if (
-                version.assets.filter(path=new_asset.path)
-                .exclude(asset_id=old_asset.asset_id)
-                .exists()
-            ):
-                return Response(
-                    'An asset with that path already exists',
-                    status=status.HTTP_409_CONFLICT,
-                )
+        asset, _ = change_asset(
+            user=request.user,
+            asset=self.get_object(),
+            version=version,
+            new_asset_blob=serializer.get_blob(),
+            new_zarr_archive=serializer.get_zarr_archive(),
+            new_metadata=serializer.validated_data['metadata'],
+        )
 
-            # Mint a new Asset whenever blob or metadata are modified
-            with transaction.atomic():
-                # Set previous asset and save
-                new_asset.previous = old_asset
-                new_asset.save()
-
-                # Replace the old asset with the new one
-                version.assets.add(new_asset)
-                version.assets.remove(old_asset)
-
-                # Update asset paths
-                update_asset_paths(old_asset=old_asset, new_asset=new_asset, version=version)
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        version.status = Version.Status.PENDING
-        # Save the version so that the modified field is updated
-        version.save()
-
-        # Validate the asset metadata if able
-        _maybe_validate_asset_metadata(new_asset)
-
-        serializer = AssetDetailSerializer(instance=new_asset)
+        serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @method_decorator(
@@ -443,20 +341,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
-        if version.version != 'draft':
-            return Response(
-                'Only draft versions can be modified.',
-                status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            )
 
-        # Remove asset paths and asset itself from version
-        delete_asset_paths(asset, version)
-        version.assets.remove(asset)
-
-        # Trigger a version metadata validation, as saving the version might change the metadata
-        version.status = Version.Status.PENDING
-        # Save the version so that the modified field is updated
-        version.save()
+        remove_asset_from_version(user=request.user, asset=asset, version=version)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 

@@ -640,7 +640,7 @@ def test_asset_create_zarr_wrong_dandiset(
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.json() == ['The zarr archive belongs to a different dandiset']
+    assert resp.json() == 'The zarr archive belongs to a different dandiset'
 
 
 @pytest.mark.django_db
