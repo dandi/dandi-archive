@@ -273,7 +273,7 @@ def test_publish_task(
     starting_version_count = draft_version.dandiset.versions.count()
 
     with django_capture_on_commit_callbacks(execute=True):
-        tasks.publish_task(draft_version.id)
+        tasks.publish_dandiset_task(draft_version.dandiset.id)
 
     assert draft_version.dandiset.versions.count() == starting_version_count + 1
 

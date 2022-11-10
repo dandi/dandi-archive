@@ -11,7 +11,7 @@ from dandiapi.api.asset_paths import (
 )
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.tasks import publish_task
+from dandiapi.api.tasks import publish_dandiset_task
 
 
 @pytest.fixture
@@ -278,8 +278,12 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory):
     # Get existing paths
     paths = AssetPath.objects.filter(version=version).values_list('path', flat=True)
 
+    # Pretend this dandiset is locked for publishing
+    version.status = Version.Status.PUBLISHING
+    version.save()
+
     # Publish
-    publish_task(version.id)
+    publish_dandiset_task(version.dandiset.id)
 
     # Get published version
     published_version = (
