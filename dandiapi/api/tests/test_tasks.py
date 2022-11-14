@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 
 from django.conf import settings
@@ -179,6 +180,22 @@ def test_validate_asset_metadata_malformed_keywords(asset: Asset):
     assert asset.validation_errors == [
         {'field': 'keywords', 'message': "'foo' is not of type 'array'"}
     ]
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version: Version):
+    draft_version.assets.add(draft_asset)
+
+    # Update version with queryset so modified isn't auto incremented
+    old_datetime = datetime.datetime.fromtimestamp(1573782390).astimezone(datetime.timezone.utc)
+    Version.objects.filter(id=draft_version.id).update(modified=old_datetime)
+
+    # Run task
+    tasks.validate_asset_metadata(draft_asset.id)
+
+    # Test that version has new modified timestamp
+    draft_version.refresh_from_db()
+    assert draft_version.modified != old_datetime
 
 
 @pytest.mark.django_db

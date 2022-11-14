@@ -98,25 +98,27 @@ def validate_asset_metadata(asset_id: int) -> None:
     try:
         metadata = asset.published_metadata()
         validate(metadata, schema_key='PublishedAsset', json_validation=True)
+        logger.info('Successfully validated asset %s', asset_id)
+        asset.status = Asset.Status.VALID
+        asset.validation_errors = []
     except dandischema.exceptions.ValidationError as e:
         logger.info('Error while validating asset %s', asset_id)
         asset.status = Asset.Status.INVALID
 
         validation_errors = collect_validation_errors(e)
         asset.validation_errors = validation_errors
-        asset.save()
-        return
     except ValueError as e:
         # A bare ValueError is thrown when dandischema generates its own exceptions, like a
         # mismatched schemaVersion.
         asset.status = Asset.Status.INVALID
         asset.validation_errors = [{'field': '', 'message': str(e)}]
-        asset.save()
-        return
-    logger.info('Successfully validated asset %s', asset_id)
-    asset.status = Asset.Status.VALID
-    asset.validation_errors = []
+
+    # Save asset
     asset.save()
+
+    # Save any associated draft versions
+    for version in asset.versions.filter(version='draft'):
+        version.save()
 
 
 @shared_task(soft_time_limit=30)
