@@ -1,5 +1,6 @@
 <template>
   <v-sheet
+    v-if="dandisetIdentifier"
     class="d-flex"
     height="70vh"
   >
