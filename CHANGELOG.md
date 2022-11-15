@@ -1,3 +1,30 @@
+# v0.3.1 (Tue Nov 15 2022)
+
+#### 🐛 Bug Fix
+
+- Save draft versions during asset metadata validation [#1366](https://github.com/dandi/dandi-archive/pull/1366) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Refactor asset create/update/delete [#1352](https://github.com/dandi/dandi-archive/pull/1352) ([@danlamanna](https://github.com/danlamanna))
+- Add YouTube channel to approved/registered emails [#1305](https://github.com/dandi/dandi-archive/pull/1305) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 📝 Documentation
+
+- dandi-archive readme edit [#1357](https://github.com/dandi/dandi-archive/pull/1357) ([@melster1010](https://github.com/melster1010))
+
+#### 🧪 Tests
+
+- Separate backend CI into separate jobs [#1360](https://github.com/dandi/dandi-archive/pull/1360) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Pin mypy [#1359](https://github.com/dandi/dandi-archive/pull/1359) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 5
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mary Elise Dedicke ([@melster1010](https://github.com/melster1010))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.0 (Mon Nov 07 2022)
 
 #### 🚀 Enhancement
