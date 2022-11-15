@@ -3,7 +3,6 @@ from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import validate
 from django.db import transaction
-from django.db.models import QuerySet
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
@@ -163,27 +162,11 @@ def delete_doi_task(doi: str) -> None:
 
 
 @shared_task
-def unembargo_dandiset(dandiset_id: int):
-    """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
-    dandiset: Dandiset = Dandiset.objects.get(id=dandiset_id)
+def unembargo_dandiset_task(dandiset_id: int):
+    from dandiapi.api.services.embargo import _unembargo_dandiset
 
-    # Only the draft version is needed, since embargoed dandisets can't be published
-    draft_version: Version = dandiset.draft_version
-    embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(embargoed_blob__isnull=False)
-
-    # Unembargo all assets
-    for asset in embargoed_assets.iterator():
-        asset.unembargo()
-
-    # Update draft version metadata
-    draft_version.metadata['access'] = [
-        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
-    ]
-    draft_version.save(update_fields=['metadata'])
-
-    # Set access on dandiset
-    dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
-    dandiset.save(update_fields=['embargo_status'])
+    dandiset = Dandiset.objects.get(id=dandiset_id)
+    _unembargo_dandiset(dandiset)
 
 
 @shared_task

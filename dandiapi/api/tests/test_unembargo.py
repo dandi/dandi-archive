@@ -11,6 +11,7 @@ import pytest
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.embargo import unembargo_dandiset
 
 
 @pytest.mark.django_db
@@ -134,7 +135,7 @@ def test_unembargo_dandiset(
     assert embargoed_asset.embargoed_blob.etag != ''
 
     # Run unembargo and validate version metadata
-    tasks.unembargo_dandiset(dandiset.pk)
+    unembargo_dandiset(dandiset)
     tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
@@ -197,7 +198,7 @@ def test_unembargo_dandiset_existing_blobs(
     assert embargoed_asset_blob.etag == existing_asset_blob.etag
 
     # Run unembargo
-    tasks.unembargo_dandiset(dandiset.pk)
+    unembargo_dandiset(dandiset)
     tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
@@ -245,7 +246,7 @@ def test_unembargo_dandiset_normal_asset_blob(
     assert asset.blob is not None
 
     # Run unembargo
-    tasks.unembargo_dandiset(dandiset.pk)
+    unembargo_dandiset(dandiset)
     tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
