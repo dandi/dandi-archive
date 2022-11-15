@@ -310,15 +310,14 @@ def get_storage() -> Storage:
 
 
 def get_storage_prefix(instance: Any, filename: str) -> str:
+    """Return the storage prefix depending on if the AssetBlob instance is embargoed or not."""
+    if instance.embargoed:
+        return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{filename}'
     return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'
 
 
 def get_embargo_storage() -> Storage:
     return create_s3_storage(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
-
-
-def get_embargo_storage_prefix(instance: Any, filename: str) -> str:
-    return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{filename}'
 
 
 class DynamicStorageFieldFile(FieldFile):

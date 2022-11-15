@@ -2,6 +2,7 @@
 
 import uuid
 
+from django.conf import settings
 import django.contrib.postgres.indexes
 import django.core.validators
 from django.db import migrations, models
@@ -9,6 +10,10 @@ import django.db.models.deletion
 import django_extensions.db.fields
 
 import dandiapi.api.storage
+
+
+def get_embargo_storage_prefix(instance, filename: str) -> str:
+    return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{filename}'
 
 
 class Migration(migrations.Migration):
@@ -77,7 +82,7 @@ class Migration(migrations.Migration):
                     models.FileField(
                         blank=True,
                         storage=dandiapi.api.storage.get_embargo_storage,
-                        upload_to=dandiapi.api.storage.get_embargo_storage_prefix,
+                        upload_to=get_embargo_storage_prefix,
                     ),
                 ),
             ],
@@ -144,7 +149,7 @@ class Migration(migrations.Migration):
                     models.FileField(
                         blank=True,
                         storage=dandiapi.api.storage.get_embargo_storage,
-                        upload_to=dandiapi.api.storage.get_embargo_storage_prefix,
+                        upload_to=get_embargo_storage_prefix,
                     ),
                 ),
             ],
