@@ -1,10 +1,16 @@
 from django.db import transaction
 
-from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, update_asset_paths
+from dandiapi.api.asset_paths import (
+    add_asset_paths,
+    delete_asset_paths,
+    get_conflicting_paths,
+    update_asset_paths,
+)
 from dandiapi.api.models.asset import Asset, AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExists,
+    AssetPathConflict,
     DandisetOwnerRequired,
     DraftDandisetNotModifiable,
     ZarrArchiveBelongsToDifferentDandiset,
@@ -112,8 +118,14 @@ def add_asset_to_version(
         raise DraftDandisetNotModifiable()
 
     # Check if there are already any assets with the same path
-    if version.assets.filter(path=metadata['path']).exists():
+    path = metadata['path']
+    if version.assets.filter(path=path).exists():
         raise AssetAlreadyExists()
+
+    # Check if there are any assets that conflict with this path
+    conflicts = get_conflicting_paths(path, version)
+    if conflicts:
+        raise AssetPathConflict(new_path=path, existing_paths=conflicts)
 
     # Ensure zarr archive doesn't already belong to a dandiset
     if zarr_archive and zarr_archive.dandiset != version.dandiset:
@@ -128,7 +140,7 @@ def add_asset_to_version(
 
     with transaction.atomic():
         asset = _create_asset(
-            path=metadata['path'],
+            path=path,
             asset_blob=asset_blob,
             embargoed_asset_blob=embargoed_asset_blob,
             zarr_archive=zarr_archive,
