@@ -1,8 +1,10 @@
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.models import QuerySet
 
 from dandiapi.api.copy import copy_object_multipart
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+from dandiapi.api.services.asset.exceptions import DandisetOwnerRequired
 from dandiapi.api.tasks import unembargo_dandiset_task
 
 from .exceptions import AssetNotEmbargoed, DandisetNotEmbargoed
@@ -67,9 +69,12 @@ def _unembargo_dandiset(dandiset: Dandiset):
     dandiset.save()
 
 
-def unembargo_dandiset(dandiset: Dandiset):
+def unembargo_dandiset(*, user: User, dandiset: Dandiset):
     """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
     if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
         raise DandisetNotEmbargoed
+
+    if not user.has_perm('owner', dandiset):
+        raise DandisetOwnerRequired()
 
     unembargo_dandiset_task.delay(dandiset.id)

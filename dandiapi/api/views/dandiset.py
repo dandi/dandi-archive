@@ -282,7 +282,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
-        unembargo_dandiset(dandiset)
+        unembargo_dandiset(user=request.user, dandiset=dandiset)
 
         return Response(None, status=status.HTTP_200_OK)
 
