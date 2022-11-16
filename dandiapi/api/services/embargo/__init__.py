@@ -8,7 +8,7 @@ from dandiapi.api.tasks import unembargo_dandiset_task
 from .exceptions import AssetNotEmbargoed, DandisetNotEmbargoed
 
 
-def unembargo_asset(asset: Asset):
+def _unembargo_asset(asset: Asset):
     """Unembargo an asset by copying its blob to the public bucket."""
     if asset.embargoed_blob is None:
         raise AssetNotEmbargoed()
@@ -54,7 +54,7 @@ def _unembargo_dandiset(dandiset: Dandiset):
 
     # Unembargo all assets
     for asset in embargoed_assets.iterator():
-        unembargo_asset(asset)
+        _unembargo_asset(asset)
 
     # Update draft version metadata
     draft_version.metadata['access'] = [
