@@ -42,20 +42,45 @@ def get_root_paths(version: Version) -> QuerySet[AssetPath]:
     )
 
 
-def get_path_children(path: AssetPath) -> QuerySet[AssetPath]:
-    """Get all direct children from an existing path."""
-    qs = AssetPath.objects.select_related(
-        'asset',
-        'asset__blob',
-        'asset__embargoed_blob',
-        'asset__zarr',
+def get_path_children(path: AssetPath, depth: int | None = 1) -> QuerySet[AssetPath]:
+    """
+    Get all children from an existing path.
+
+    By default, returns only the direct children.
+    If depth is `None`, all children will be returned, regardless of depth.
+    """
+    relation_qs = AssetPathRelation.objects.filter(parent=path).exclude(child=path)
+    if depth is not None:
+        relation_qs = relation_qs.filter(depth=depth)
+
+    path_ids = relation_qs.values_list('child', flat=True).distinct()
+    return (
+        AssetPath.objects.select_related(
+            'asset',
+            'asset__blob',
+            'asset__embargoed_blob',
+            'asset__zarr',
+        )
+        .filter(id__in=path_ids)
+        .order_by('path')
     )
-    path_ids = (
-        AssetPathRelation.objects.filter(parent=path, depth=1)
-        .values_list('child', flat=True)
-        .distinct()
+
+
+def get_conflicting_paths(path: str, version: Version) -> list[str]:
+    """Return a list of existing paths that conflict with the given path."""
+    # Check that this path isn't already occupied by a "folder"
+    # Database constraints ensure this queryset could return at most 1 result
+    folder = AssetPath.objects.filter(version=version, path=path, asset__isnull=True).first()
+    if folder:
+        return list(get_path_children(folder, depth=None).values_list('path', flat=True))
+
+    # Check that this path doesn't conflict with any existing "files"
+    nodepaths = extract_paths(path)[:-1]
+    return list(
+        AssetPath.objects.filter(
+            version=version, path__in=nodepaths, asset__isnull=False
+        ).values_list('path', flat=True)
     )
-    return qs.filter(id__in=path_ids).order_by('path')
 
 
 def search_asset_paths(query: str, version: Version) -> QuerySet[AssetPath] | None:

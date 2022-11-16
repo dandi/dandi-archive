@@ -13,6 +13,8 @@ from dandiapi.api.asset_paths import add_asset_paths, extract_paths
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.asset import add_asset_to_version
+from dandiapi.api.services.asset.exceptions import AssetPathConflict
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -524,6 +526,47 @@ def test_asset_create_path_validation(
     )
 
     assert resp.status_code == expected_status_code, resp.data
+
+
+@pytest.mark.django_db
+def test_asset_create_conflicting_path(api_client, user, draft_version, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    # Add first asset
+    add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata={
+            'path': 'foo/bar.txt',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+
+    # Add an asset that has a path which fully contains that of the first asset
+    with pytest.raises(AssetPathConflict):
+        add_asset_to_version(
+            user=user,
+            version=draft_version,
+            asset_blob=asset_blob,
+            metadata={
+                'path': 'foo/bar.txt/baz.txt',
+                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            },
+        )
+
+    # Add an asset that's path is fully contained by the first asset
+    with pytest.raises(AssetPathConflict):
+        add_asset_to_version(
+            user=user,
+            version=draft_version,
+            asset_blob=asset_blob,
+            metadata={
+                'path': 'foo',
+                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            },
+        )
 
 
 @pytest.mark.django_db
