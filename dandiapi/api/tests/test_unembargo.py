@@ -11,6 +11,7 @@ import pytest
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.embargo import _unembargo_asset, unembargo_dandiset
 
 
 @pytest.mark.django_db
@@ -33,7 +34,7 @@ def test_asset_unembargo(
     assert 'embargo' in embargoed_asset.metadata['contentUrl'][1]
 
     # Unembargo
-    embargoed_asset.unembargo()
+    _unembargo_asset(embargoed_asset)
     asset = embargoed_asset
     asset.refresh_from_db()
 
@@ -94,6 +95,7 @@ def test_dandiset_rest_unembargo(
 )
 @pytest.mark.django_db
 def test_unembargo_dandiset(
+    user,
     dandiset_factory,
     draft_version_factory,
     asset_factory,
@@ -114,6 +116,7 @@ def test_unembargo_dandiset(
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
+    assign_perm('owner', user, dandiset)
 
     # Create an embargoed asset blob
     embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(
@@ -134,7 +137,7 @@ def test_unembargo_dandiset(
     assert embargoed_asset.embargoed_blob.etag != ''
 
     # Run unembargo and validate version metadata
-    tasks.unembargo_dandiset(dandiset.pk)
+    unembargo_dandiset(user=user, dandiset=dandiset)
     tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
@@ -161,6 +164,7 @@ def test_unembargo_dandiset(
 
 @pytest.mark.django_db
 def test_unembargo_dandiset_existing_blobs(
+    user,
     dandiset_factory,
     draft_version_factory,
     asset_factory,
@@ -176,6 +180,7 @@ def test_unembargo_dandiset_existing_blobs(
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
+    assign_perm('owner', user, dandiset)
 
     # Create embargoed assets
     embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
@@ -197,7 +202,7 @@ def test_unembargo_dandiset_existing_blobs(
     assert embargoed_asset_blob.etag == existing_asset_blob.etag
 
     # Run unembargo
-    tasks.unembargo_dandiset(dandiset.pk)
+    unembargo_dandiset(user=user, dandiset=dandiset)
     tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
@@ -222,6 +227,7 @@ def test_unembargo_dandiset_existing_blobs(
 
 @pytest.mark.django_db
 def test_unembargo_dandiset_normal_asset_blob(
+    user,
     dandiset_factory,
     draft_version_factory,
     asset_factory,
@@ -234,6 +240,7 @@ def test_unembargo_dandiset_normal_asset_blob(
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version: Version = draft_version_factory(dandiset=dandiset)
+    assign_perm('owner', user, dandiset)
 
     # Create asset
     asset_blob: AssetBlob = asset_blob_factory()
@@ -245,7 +252,7 @@ def test_unembargo_dandiset_normal_asset_blob(
     assert asset.blob is not None
 
     # Run unembargo
-    tasks.unembargo_dandiset(dandiset.pk)
+    unembargo_dandiset(user=user, dandiset=dandiset)
     tasks.validate_version_metadata(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()

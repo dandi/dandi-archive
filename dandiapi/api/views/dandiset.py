@@ -21,7 +21,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
-from dandiapi.api.tasks import unembargo_dandiset
+from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
@@ -282,11 +282,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        unembargo_dandiset(user=request.user, dandiset=dandiset)
 
-        if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
-            return Response('Dandiset not embargoed', status=status.HTTP_400_BAD_REQUEST)
-
-        unembargo_dandiset.delay(dandiset.pk)
         return Response(None, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
