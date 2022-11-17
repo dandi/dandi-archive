@@ -76,6 +76,7 @@ const dandiRest = new Vue({
         await oauthClient.logout();
         this.user = null;
         localStorage.clear();
+        await axios.post(`${dandiApiRoot.replace('/api/', '/accounts/logout/')}`);
       }
     },
     async me(): Promise<User> {
