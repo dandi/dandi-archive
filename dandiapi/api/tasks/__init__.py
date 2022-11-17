@@ -6,8 +6,6 @@ from django.db import transaction
 from django.db.transaction import atomic
 import jsonschema.exceptions
 
-from dandiapi.api import doi
-from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -173,50 +171,7 @@ def unembargo_dandiset_task(dandiset_id: int):
 
 @shared_task
 @atomic
-def publish_task(version_id: int):
-    old_version: Version = Version.objects.get(id=version_id)
-    new_version: Version = old_version.publish_version
-    new_version.save()
+def publish_dandiset_task(dandiset_id: int):
+    from dandiapi.api.services.publish import _publish_dandiset
 
-    # Bulk create the join table rows to optimize linking assets to new_version
-    AssetVersions = Version.assets.through
-
-    # Add a new many-to-many association directly to any already published assets
-    already_published_assets = old_version.assets.filter(published=True)
-    AssetVersions.objects.bulk_create(
-        [
-            AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-            for asset in already_published_assets.values('id')
-        ]
-    )
-
-    # Publish any draft assets
-    draft_assets = old_version.assets.filter(published=False).all()
-    for draft_asset in draft_assets:
-        draft_asset.publish()
-    Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
-
-    AssetVersions.objects.bulk_create(
-        [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
-    )
-
-    # Save again to recompute metadata, specifically assetsSummary
-    new_version.save()
-
-    # Add asset paths with new version
-    add_version_asset_paths(version=new_version)
-
-    # Set the version of the draft to PUBLISHED so that it cannot be published again without
-    # being modified and revalidated
-    old_version.status = Version.Status.PUBLISHED
-    old_version.save()
-
-    # Write updated manifest files and create DOI after published version has been committed to DB.
-    transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
-
-    def _create_doi(version_id: int):
-        version = Version.objects.get(id=version_id)
-        version.doi = doi.create_doi(version)
-        version.save()
-
-    transaction.on_commit(lambda: _create_doi(new_version.id))
+    _publish_dandiset(dandiset_id=dandiset_id)
