@@ -34,20 +34,13 @@
         <span class="text-subtitle-1">Don't have DANDI CLI?</span>
         <div>
           <span class="text-body-2 grey--text text--darken-1">
-            Install the Python client (DANDI CLI) in a Python 3.7+ environment using command:
+            <span class="text-body-2 grey--text text--darken-1">
+              Follow the installation instructions in the
+              <a href="https://www.dandiarchive.org/handbook/10_using_dandi/#dandi-python-client">
+                DANDI handbook
+              </a> .
+            </span>
           </span>
-        </div>
-        <div
-          class="d-flex justify-center"
-          style="font-family: monospace;"
-        >
-          <v-sheet
-            color="black"
-            width="60%"
-            class="white--text pl-2 py-1 text-left"
-          >
-            <span>> pip install "dandi>=0.13.0"</span>
-          </v-sheet>
         </div>
       </div>
     </v-row>
