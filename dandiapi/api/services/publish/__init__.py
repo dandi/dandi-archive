@@ -124,15 +124,6 @@ def _publish_dandiset(dandiset_id: int) -> None:
 def publish_dandiset(*, user: User, dandiset: Dandiset) -> None:
     from dandiapi.api.tasks import publish_dandiset_task
 
-    if (
-        not user.has_perm('owner', dandiset)
-        or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
-    ):
-        raise NotAllowed()
-    if dandiset.zarr_archives.exists() or dandiset.embargoed_zarr_archives.exists():
-        # TODO: return a string instead of a list here
-        raise NotAllowed(['Cannot publish dandisets which contain zarrs'], 400)  # type: ignore
-
     with transaction.atomic():
         _lock_dandiset_for_publishing(user=user, dandiset=dandiset)
         transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id))
