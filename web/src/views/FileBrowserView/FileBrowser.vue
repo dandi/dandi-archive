@@ -302,6 +302,13 @@ const EXTERNAL_SERVICES = [
     maxsize: Infinity,
     endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=',
   },
+
+  {
+    name: 'OME Zarr validator',
+    regex: /\.ome\.zarr$/,
+    maxsize: Infinity,
+    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=',
+  },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
 
