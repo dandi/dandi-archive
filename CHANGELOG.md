@@ -1,3 +1,27 @@
+# v0.3.2 (Mon Nov 21 2022)
+
+#### 🐛 Bug Fix
+
+- Fix file browser bug [#1374](https://github.com/dandi/dandi-archive/pull/1374) ([@mvandenburgh](https://github.com/mvandenburgh))
+- After Asset metadata validation, update Version timestamp with single query [#1373](https://github.com/dandi/dandi-archive/pull/1373) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Improved pagination design in file browser [#1311](https://github.com/dandi/dandi-archive/pull/1311) ([@mvandenburgh](https://github.com/mvandenburgh))
+- add zarr validator service [#1370](https://github.com/dandi/dandi-archive/pull/1370) ([@satra](https://github.com/satra))
+- Add embargo service [#1367](https://github.com/dandi/dandi-archive/pull/1367) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Properly handle conflicting asset paths [#1368](https://github.com/dandi/dandi-archive/pull/1368) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🏠 Internal
+
+- Convert `DandisetLandingView` to `<script setup>`, use `vue-router` composable [#1316](https://github.com/dandi/dandi-archive/pull/1316) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Internal publishing service [#1363](https://github.com/dandi/dandi-archive/pull/1363) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
 # v0.3.1 (Tue Nov 15 2022)
 
 #### 🐛 Bug Fix
