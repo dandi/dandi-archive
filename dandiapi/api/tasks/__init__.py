@@ -83,7 +83,7 @@ def collect_validation_errors(
     return [encoder(error) for error in error.errors]
 
 
-@shared_task(soft_time_limit=10)
+@shared_task(soft_time_limit=60)
 @atomic
 def validate_asset_metadata(asset_id: int) -> None:
     logger.info('Validating asset metadata for asset %s', asset_id)
