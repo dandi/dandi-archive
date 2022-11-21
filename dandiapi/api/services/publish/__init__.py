@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import QuerySet
 
 from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
@@ -81,23 +82,21 @@ def _publish_dandiset(dandiset_id: int) -> None:
         AssetVersions = Version.assets.through
 
         # Add a new many-to-many association directly to any already published assets
-        already_published_assets = old_version.assets.filter(published=True)
+        already_published_assets: QuerySet[Asset] = old_version.assets.filter(published=True)
         AssetVersions.objects.bulk_create(
-            [
-                AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in already_published_assets.values('id')
-            ]
+            AssetVersions(asset_id=asset_id, version_id=new_version.id)
+            for asset_id in already_published_assets.values_list('id', flat=True).iterator()
         )
 
         # Publish any draft assets
-        draft_assets = old_version.assets.filter(published=False).all()
-        for draft_asset in draft_assets:
+        draft_assets: QuerySet[Asset] = old_version.assets.filter(published=False)
+        for draft_asset in draft_assets.iterator():
             draft_asset.publish()
 
         Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
 
         AssetVersions.objects.bulk_create(
-            [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
+            AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets
         )
 
         # Save again to recompute metadata, specifically assetsSummary
