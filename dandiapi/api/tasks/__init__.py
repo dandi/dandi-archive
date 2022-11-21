@@ -4,6 +4,7 @@ import dandischema.exceptions
 from dandischema.metadata import validate
 from django.db import transaction
 from django.db.transaction import atomic
+from django.utils import timezone
 import jsonschema.exceptions
 
 from dandiapi.api.doi import delete_doi
@@ -113,9 +114,8 @@ def validate_asset_metadata(asset_id: int) -> None:
     # Save asset
     asset.save()
 
-    # Save any associated draft versions
-    for version in asset.versions.filter(version='draft'):
-        version.save()
+    # Update modified timestamps on all draft versions this asset belongs to
+    asset.versions.filter(version='draft').update(modified=timezone.now())
 
 
 @shared_task(soft_time_limit=30)
