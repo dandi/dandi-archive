@@ -338,7 +338,7 @@ export default defineComponent({
     const store = useDandisetStore();
 
     const location = ref(rootDirectory);
-    const items: Ref<ExtendedAssetPath[]> = ref([]);
+    const items: Ref<ExtendedAssetPath[] | null> = ref(null);
 
     // Value is the asset id of the item to delete
     const itemToDelete: Ref<AssetPath | null> = ref(null);
