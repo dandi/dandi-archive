@@ -92,7 +92,11 @@
             />
 
             <v-divider v-else />
-            <v-list>
+
+            <v-banner v-if="itemsNotFound">
+              No items found at the specified path.
+            </v-banner>
+            <v-list v-else>
               <!-- Extra item to navigate up the tree -->
               <v-list-item
                 v-if="location !== rootDirectory"
@@ -225,9 +229,10 @@
           </v-card>
         </v-col>
       </v-row>
-      <v-pagination
-        v-model="page"
-        :length="pages"
+      <FileBrowserPagination
+        :page="page"
+        :page-count="pages"
+        @changePage="page = $event;"
       />
     </v-container>
   </div>
@@ -241,10 +246,12 @@ import { RawLocation } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router/composables';
 import filesize from 'filesize';
 import { trimEnd } from 'lodash';
+import axios from 'axios';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import { AssetFile, AssetPath } from '@/types';
+import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 
 const rootDirectory = '';
 const FILES_PER_PAGE = 15;
@@ -314,6 +321,7 @@ type Service = typeof EXTERNAL_SERVICES[0];
 
 export default defineComponent({
   name: 'FileBrowser',
+  components: { FileBrowserPagination },
   props: {
     identifier: {
       type: String,
@@ -348,6 +356,8 @@ export default defineComponent({
       dandiRest.user
       && owners.value?.includes(dandiRest.user?.username)
     ));
+    const itemsNotFound = computed(() => items.value && !items.value.length);
+
     function getExternalServices(path: AssetPath) {
       const servicePredicate = (service: Service, _path: AssetPath) => (
         new RegExp(service.regex).test(path.path)
@@ -397,9 +407,20 @@ export default defineComponent({
 
     async function getItems() {
       updating.value = true;
-      const { count, results } = await dandiRest.assetPaths(
-        props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
-      );
+      let resp;
+      try {
+        resp = await dandiRest.assetPaths(
+          props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
+        );
+      } catch (e) {
+        if (axios.isAxiosError(e) && e.response?.status === 404) {
+          items.value = [];
+          updating.value = false;
+          return;
+        }
+        throw e;
+      }
+      const { count, results } = resp;
 
       // Set num pages
       pages.value = Math.ceil(count / FILES_PER_PAGE);
@@ -456,13 +477,6 @@ export default defineComponent({
       } as RawLocation);
     });
 
-    // If the API call returns no items, go back to the root (shouldn't normally happen)
-    watch(items, () => {
-      if (items.value && !items.value.length) {
-        location.value = rootDirectory;
-      }
-    });
-
     // go to the directory specified in the URL if it changes
     watch(() => route.query, (newRouteQuery) => {
       location.value = (
@@ -498,6 +512,7 @@ export default defineComponent({
       pages,
       page,
       updating,
+      itemsNotFound,
       locationSlice,
       selectPath,
       navigateToParent,
