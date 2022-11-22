@@ -9,7 +9,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 
 from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
 
@@ -34,8 +34,8 @@ def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
 
 @pytest.mark.django_db
 def test_calculate_checksum_task_embargo(storage: Storage, embargoed_asset_blob_factory):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = storage
+    # Pretend like AssetBlob was defined with the given storage
+    AssetBlob.blob.field.storage = storage
 
     asset_blob = embargoed_asset_blob_factory(sha256=None)
 

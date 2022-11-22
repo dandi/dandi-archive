@@ -6,7 +6,7 @@ from guardian.shortcuts import assign_perm
 import pytest
 import requests
 
-from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedAssetBlob, EmbargoedUpload, Upload
+from dandiapi.api.models import AssetBlob, Dandiset, Upload
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
@@ -141,7 +141,6 @@ def test_upload_initialize_not_an_owner(api_client, user, dandiset):
     )
     assert resp.status_code == 403
     assert not Upload.objects.all().exists()
-    assert not EmbargoedUpload.objects.all().exists()
 
 
 @pytest.mark.django_db
@@ -176,8 +175,8 @@ def test_upload_initialize_embargo(api_client, user, dandiset_factory):
     # 604800 seconds = 1 week
     assert 'X-Amz-Expires=604800' in upload_url
 
-    assert not Upload.objects.all().exists()
-    upload = EmbargoedUpload.objects.get(upload_id=resp.data['upload_id'])
+    assert not Upload.objects.filter(embargoed=False).exists()
+    upload = Upload.objects.get(upload_id=resp.data['upload_id'], embargoed=True)
     upload_id = str(upload.upload_id)
     assert (
         upload.blob.name
@@ -205,7 +204,6 @@ def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_facto
     assert resp.status_code == 404
     assert resp.json() == {'detail': 'Not found.'}
     assert not Upload.objects.all().exists()
-    assert not EmbargoedUpload.objects.all().exists()
 
 
 @pytest.mark.django_db
@@ -239,7 +237,8 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     assign_perm('owner', user, dandiset)
-    # This EmbargoedAssetBlob is in the same embargoed dandiset, so it should be deduplicated
+
+    # This embargoed AssetBlob is in the same embargoed dandiset, so it should be deduplicated
     embargoed_asset_blob = embargoed_asset_blob_factory(dandiset=dandiset)
 
     resp = api_client.post(
@@ -265,7 +264,8 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob_in_different_da
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     assign_perm('owner', user, dandiset)
     other_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    # This EmbargoedAssetBlob is in a different dandiset, so it needs to be reuploaded, even
+
+    # This embargoed AssetBlob is in a different dandiset, so it needs to be reuploaded, even
     # though this user is an owner of both dandisets.
     embargoed_asset_blob = embargoed_asset_blob_factory(dandiset=other_dandiset)
     assign_perm('owner', user, other_dandiset)
@@ -421,8 +421,8 @@ def test_upload_initialize_and_complete_embargo(
     storage, api_client, user, dandiset_factory, content_size
 ):
     # Pretend like the blobs were defined with the given storage
-    EmbargoedUpload.blob.field.storage = storage
-    EmbargoedAssetBlob.blob.field.storage = storage
+    Upload.blob.field.storage = storage
+    AssetBlob.blob.field.storage = storage
 
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -465,11 +465,12 @@ def test_upload_initialize_and_complete_embargo(
     assert completion_response.status_code == 200
 
     # Verify object was uploaded
-    upload = EmbargoedUpload.objects.get(upload_id=upload_id)
-    assert EmbargoedAssetBlob.blob.field.storage.exists(upload.blob.name)
+    upload = Upload.objects.get(upload_id=upload_id, embargoed=True)
+    assert AssetBlob.blob.field.storage.exists(upload.blob.name)
     assert upload.blob.name.startswith(f'test-embargo-prefix/{dandiset.identifier}/blobs/')
+
     # Verify nothing public was created
-    assert not Upload.objects.all().exists()
+    assert not Upload.objects.filter(embargoed=False).exists()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -509,12 +510,12 @@ def test_upload_validate_embargo(api_client, user, dandiset_factory, embargoed_u
         'size': embargoed_upload.size,
     }
 
-    # Verify that a new EmbargoedAssetBlob was created
-    embargoed_asset_blob = EmbargoedAssetBlob.objects.get(blob_id=embargoed_upload.upload_id)
+    # Verify that a new AssetBlob was created
+    embargoed_asset_blob = AssetBlob.objects.get(blob_id=embargoed_upload.upload_id, embargoed=True)
     assert embargoed_asset_blob.blob.name == embargoed_upload.blob.name
 
     # Verify that the Upload was deleted
-    assert not EmbargoedUpload.objects.all().exists()
+    assert not Upload.objects.all().exists()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -602,13 +603,13 @@ def test_upload_validate_embargo_existing_assetblob(
         'size': asset_blob.size,
     }
 
-    assert AssetBlob.objects.all().count() == 1
-    assert not EmbargoedAssetBlob.objects.all().exists()
-    assert not EmbargoedUpload.objects.all().exists()
+    assert AssetBlob.objects.filter(embargoed=False).count() == 1
+    assert AssetBlob.objects.filter(embargoed=True).count() == 1
+    assert not Upload.objects.filter(embargoed=True).exists()
 
 
 @pytest.mark.django_db(transaction=True)
-def test_upload_validate_embargo_existing_embargoedassetblob(
+def test_upload_validate_embargo_existing_embargoed_assetblob(
     api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
 ):
     api_client.force_authenticate(user=user)
@@ -616,7 +617,7 @@ def test_upload_validate_embargo_existing_embargoedassetblob(
     assign_perm('owner', user, dandiset)
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
-    # The upload should recognize this preexisting EmbargoedAssetBlob and use it instead
+    # The upload should recognize this preexisting embargoed AssetBlob and use it instead
     # This only works because the embargoed asset blob belongs to the same dandiset
     embargoed_asset_blob = embargoed_asset_blob_factory(
         etag=embargoed_upload.etag, size=embargoed_upload.size, dandiset=dandiset
@@ -631,13 +632,14 @@ def test_upload_validate_embargo_existing_embargoedassetblob(
         'size': embargoed_asset_blob.size,
     }
 
-    assert EmbargoedAssetBlob.objects.all().count() == 1
-    assert not AssetBlob.objects.all().exists()
-    assert not EmbargoedUpload.objects.all().exists()
+    assert AssetBlob.objects.filter(embargoed=True).count() == 1
+    assert not AssetBlob.objects.filter(embargoed=False).exists()
+
+    assert not Upload.objects.filter(embargoed=True).exists()
 
 
 @pytest.mark.django_db(transaction=True)
-def test_upload_validate_embargo_existing_embargoedassetblob_wrong_dandiset(
+def test_upload_validate_embargo_existing_embargoed_assetblob_wrong_dandiset(
     api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
 ):
     api_client.force_authenticate(user=user)
@@ -645,7 +647,7 @@ def test_upload_validate_embargo_existing_embargoedassetblob_wrong_dandiset(
     assign_perm('owner', user, dandiset)
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
-    # This should mint a new EmbargoedAssetBlob because the existing EmbargoedAssetBlob belongs to
+    # This should mint a new embargoed AssetBlob because the existing embargoed AssetBlob belongs to
     # a different dandiset.
     other_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     assign_perm('owner', user, other_dandiset)
@@ -662,11 +664,11 @@ def test_upload_validate_embargo_existing_embargoedassetblob_wrong_dandiset(
         'size': embargoed_upload.size,
     }
 
-    # Verify that a new EmbargoedAssetBlob was created
-    embargoed_asset_blob = EmbargoedAssetBlob.objects.get(blob_id=embargoed_upload.upload_id)
+    # Verify that a new embargoed AssetBlob was created
+    embargoed_asset_blob = AssetBlob.objects.get(embargoed=True, blob_id=embargoed_upload.upload_id)
     assert embargoed_asset_blob.blob.name == embargoed_upload.blob.name
     assert embargoed_asset_blob.blob_id != other_embargoed_asset_blob.blob_id
-    assert EmbargoedAssetBlob.objects.count() == 2
+    assert AssetBlob.objects.filter(embargoed=True).count() == 2
 
     # Verify that the Upload was deleted
-    assert not EmbargoedUpload.objects.all().exists()
+    assert not Upload.objects.filter(embargoed=True).exists()

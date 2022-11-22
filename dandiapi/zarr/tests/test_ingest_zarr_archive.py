@@ -224,7 +224,7 @@ def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_facto
     # Create zarr and asset
     zarr: ZarrArchive = zarr_archive_factory()
     zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a')
-    asset = asset_factory(zarr=zarr, blob=None, embargoed_blob=None)
+    asset = asset_factory(zarr=zarr, blob=None)
 
     # Assert asset size, metadata
     assert asset.size == 0

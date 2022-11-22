@@ -335,9 +335,7 @@ def test_version_size(
     zarr_archive_factory,
 ):
     version.assets.add(asset_factory(blob=asset_blob_factory(size=100)))
-    version.assets.add(
-        asset_factory(blob=None, embargoed_blob=embargoed_asset_blob_factory(size=200))
-    )
+    version.assets.add(asset_factory(blob=embargoed_asset_blob_factory(size=200)))
     version.assets.add(asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
     assert version.size == 700
 

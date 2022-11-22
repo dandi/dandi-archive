@@ -10,7 +10,7 @@ import pytest
 import requests
 
 from dandiapi.api.asset_paths import add_asset_paths, extract_paths
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
@@ -952,7 +952,7 @@ def test_asset_rest_update_zarr(
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
+    asset = draft_asset_factory(blob=None, zarr=zarr_archive)
     draft_version.assets.add(asset)
     add_asset_paths(asset=asset, version=draft_version)
 
@@ -1116,7 +1116,7 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 def test_asset_rest_delete_zarr(
     api_client, user, draft_version, draft_asset_factory, zarr_archive, zarr_upload_file_factory
 ):
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
+    asset = draft_asset_factory(blob=None, zarr=zarr_archive)
     assign_perm('owner', user, draft_version.dandiset)
     draft_version.assets.add(asset)
 
@@ -1201,8 +1201,8 @@ def test_asset_download_embargo(
     asset_factory,
     embargoed_asset_blob_factory,
 ):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = storage
+    # Pretend like AssetBlob was defined with the given storage
+    AssetBlob.blob.field.storage = storage
 
     # Set draft version as embargoed
     version = draft_version_factory(
@@ -1214,8 +1214,7 @@ def test_asset_download_embargo(
     client = authenticated_api_client
 
     # Generate assets and blobs
-    embargoed_blob = embargoed_asset_blob_factory(dandiset=version.dandiset)
-    asset = asset_factory(blob=None, embargoed_blob=embargoed_blob)
+    asset = asset_factory(blob=embargoed_asset_blob_factory(dandiset=version.dandiset))
     version.assets.add(asset)
 
     response = client.get(
@@ -1233,7 +1232,7 @@ def test_asset_download_embargo(
 
     assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
 
-    with asset.embargoed_blob.blob.file.open('rb') as reader:
+    with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
 
 
