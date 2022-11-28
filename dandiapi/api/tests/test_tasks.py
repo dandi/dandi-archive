@@ -52,12 +52,12 @@ def test_calculate_checksum_task_embargo(storage: Storage, embargoed_asset_blob_
 
 @pytest.mark.django_db
 def test_checksum_task_invokes_asset_validation(
-    storage: Storage, asset_blob_factory, asset_factory, django_capture_on_commit_callbacks
+    storage: Storage, asset_blob_factory, draft_asset_factory, django_capture_on_commit_callbacks
 ):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
     asset_blob = asset_blob_factory(sha256=None)
-    assets: list[Asset] = [asset_factory(blob=asset_blob) for _ in range(3)]
+    assets: list[Asset] = [draft_asset_factory(blob=asset_blob) for _ in range(3)]
 
     # Assert status before checksum
     assert all([asset.status == Asset.Status.PENDING for asset in assets])
@@ -113,71 +113,73 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata(asset: Asset):
-    tasks.validate_asset_metadata_task(asset.id)
+def test_validate_asset_metadata(draft_asset: Asset):
+    tasks.validate_asset_metadata_task(draft_asset.id)
 
-    asset.refresh_from_db()
+    draft_asset.refresh_from_db()
 
-    assert asset.status == Asset.Status.VALID
-    assert asset.validation_errors == []
-
-
-@pytest.mark.django_db
-def test_validate_asset_metadata_malformed_schema_version(asset: Asset):
-    asset.metadata['schemaVersion'] = 'xxx'
-    asset.save()
-
-    tasks.validate_asset_metadata_task(asset.id)
-
-    asset.refresh_from_db()
-
-    assert asset.status == Asset.Status.INVALID
-    assert len(asset.validation_errors) == 1
-    assert asset.validation_errors[0]['field'] == ''
-    assert asset.validation_errors[0]['message'].startswith('Metadata version xxx is not allowed.')
+    assert draft_asset.status == Asset.Status.VALID
+    assert draft_asset.validation_errors == []
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_no_encoding_format(asset: Asset):
-    del asset.metadata['encodingFormat']
-    asset.save()
+def test_validate_asset_metadata_malformed_schema_version(draft_asset: Asset):
+    draft_asset.metadata['schemaVersion'] = 'xxx'
+    draft_asset.save()
 
-    tasks.validate_asset_metadata_task(asset.id)
+    tasks.validate_asset_metadata_task(draft_asset.id)
 
-    asset.refresh_from_db()
+    draft_asset.refresh_from_db()
 
-    assert asset.status == Asset.Status.INVALID
-    assert asset.validation_errors == [
+    assert draft_asset.status == Asset.Status.INVALID
+    assert len(draft_asset.validation_errors) == 1
+    assert draft_asset.validation_errors[0]['field'] == ''
+    assert draft_asset.validation_errors[0]['message'].startswith(
+        'Metadata version xxx is not allowed.'
+    )
+
+
+@pytest.mark.django_db
+def test_validate_asset_metadata_no_encoding_format(draft_asset: Asset):
+    del draft_asset.metadata['encodingFormat']
+    draft_asset.save()
+
+    tasks.validate_asset_metadata_task(draft_asset.id)
+
+    draft_asset.refresh_from_db()
+
+    assert draft_asset.status == Asset.Status.INVALID
+    assert draft_asset.validation_errors == [
         {'field': '', 'message': "'encodingFormat' is a required property"}
     ]
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_no_digest(asset: Asset):
-    asset.blob.sha256 = None
-    asset.blob.save()
+def test_validate_asset_metadata_no_digest(draft_asset: Asset):
+    draft_asset.blob.sha256 = None
+    draft_asset.blob.save()
 
-    tasks.validate_asset_metadata_task(asset.id)
+    tasks.validate_asset_metadata_task(draft_asset.id)
 
-    asset.refresh_from_db()
+    draft_asset.refresh_from_db()
 
-    assert asset.status == Asset.Status.INVALID
-    assert asset.validation_errors == [
+    assert draft_asset.status == Asset.Status.INVALID
+    assert draft_asset.validation_errors == [
         {'field': 'digest', 'message': 'A non-zarr asset must have a sha2_256.'}
     ]
 
 
 @pytest.mark.django_db
-def test_validate_asset_metadata_malformed_keywords(asset: Asset):
-    asset.metadata['keywords'] = 'foo'
-    asset.save()
+def test_validate_asset_metadata_malformed_keywords(draft_asset: Asset):
+    draft_asset.metadata['keywords'] = 'foo'
+    draft_asset.save()
 
-    tasks.validate_asset_metadata_task(asset.id)
+    tasks.validate_asset_metadata_task(draft_asset.id)
 
-    asset.refresh_from_db()
+    draft_asset.refresh_from_db()
 
-    assert asset.status == Asset.Status.INVALID
-    assert asset.validation_errors == [
+    assert draft_asset.status == Asset.Status.INVALID
+    assert draft_asset.validation_errors == [
         {'field': 'keywords', 'message': "'foo' is not of type 'array'"}
     ]
 
@@ -199,65 +201,65 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata(version: Version, asset: Asset):
-    version.assets.add(asset)
+def test_validate_version_metadata(draft_version: Version, asset: Asset):
+    draft_version.assets.add(asset)
 
-    tasks.validate_version_metadata_task(version.id)
+    tasks.validate_version_metadata_task(draft_version.id)
 
-    version.refresh_from_db()
+    draft_version.refresh_from_db()
 
-    assert version.status == Version.Status.VALID
-    assert version.validation_errors == []
+    assert draft_version.status == Version.Status.VALID
+    assert draft_version.validation_errors == []
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_malformed_schema_version(version: Version, asset: Asset):
-    version.assets.add(asset)
+def test_validate_version_metadata_malformed_schema_version(draft_version: Version, asset: Asset):
+    draft_version.assets.add(asset)
 
-    version.metadata['schemaVersion'] = 'xxx'
-    version.save()
+    draft_version.metadata['schemaVersion'] = 'xxx'
+    draft_version.save()
 
-    tasks.validate_version_metadata_task(version.id)
+    tasks.validate_version_metadata_task(draft_version.id)
 
-    version.refresh_from_db()
+    draft_version.refresh_from_db()
 
-    assert version.status == Version.Status.INVALID
-    assert len(version.validation_errors) == 1
-    assert version.validation_errors[0]['message'].startswith(
+    assert draft_version.status == Version.Status.INVALID
+    assert len(draft_version.validation_errors) == 1
+    assert draft_version.validation_errors[0]['message'].startswith(
         'Metadata version xxx is not allowed.'
     )
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_no_description(version: Version, asset: Asset):
-    version.assets.add(asset)
+def test_validate_version_metadata_no_description(draft_version: Version, asset: Asset):
+    draft_version.assets.add(asset)
 
-    del version.metadata['description']
-    version.save()
+    del draft_version.metadata['description']
+    draft_version.save()
 
-    tasks.validate_version_metadata_task(version.id)
+    tasks.validate_version_metadata_task(draft_version.id)
 
-    version.refresh_from_db()
+    draft_version.refresh_from_db()
 
-    assert version.status == Version.Status.INVALID
-    assert version.validation_errors == [
+    assert draft_version.status == Version.Status.INVALID
+    assert draft_version.validation_errors == [
         {'field': '', 'message': "'description' is a required property"}
     ]
 
 
 @pytest.mark.django_db
-def test_validate_version_metadata_malformed_license(version: Version, asset: Asset):
-    version.assets.add(asset)
+def test_validate_version_metadata_malformed_license(draft_version: Version, asset: Asset):
+    draft_version.assets.add(asset)
 
-    version.metadata['license'] = 'foo'
-    version.save()
+    draft_version.metadata['license'] = 'foo'
+    draft_version.save()
 
-    tasks.validate_version_metadata_task(version.id)
+    tasks.validate_version_metadata_task(draft_version.id)
 
-    version.refresh_from_db()
+    draft_version.refresh_from_db()
 
-    assert version.status == Version.Status.INVALID
-    assert version.validation_errors == [
+    assert draft_version.status == Version.Status.INVALID
+    assert draft_version.validation_errors == [
         {'field': 'license', 'message': "'foo' is not of type 'array'"}
     ]
 
