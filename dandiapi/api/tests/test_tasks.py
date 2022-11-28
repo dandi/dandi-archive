@@ -114,7 +114,7 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
 
 @pytest.mark.django_db
 def test_validate_asset_metadata(asset: Asset):
-    tasks.validate_asset_metadata(asset.id)
+    tasks.validate_asset_metadata_task(asset.id)
 
     asset.refresh_from_db()
 
@@ -127,7 +127,7 @@ def test_validate_asset_metadata_malformed_schema_version(asset: Asset):
     asset.metadata['schemaVersion'] = 'xxx'
     asset.save()
 
-    tasks.validate_asset_metadata(asset.id)
+    tasks.validate_asset_metadata_task(asset.id)
 
     asset.refresh_from_db()
 
@@ -142,7 +142,7 @@ def test_validate_asset_metadata_no_encoding_format(asset: Asset):
     del asset.metadata['encodingFormat']
     asset.save()
 
-    tasks.validate_asset_metadata(asset.id)
+    tasks.validate_asset_metadata_task(asset.id)
 
     asset.refresh_from_db()
 
@@ -157,7 +157,7 @@ def test_validate_asset_metadata_no_digest(asset: Asset):
     asset.blob.sha256 = None
     asset.blob.save()
 
-    tasks.validate_asset_metadata(asset.id)
+    tasks.validate_asset_metadata_task(asset.id)
 
     asset.refresh_from_db()
 
@@ -172,7 +172,7 @@ def test_validate_asset_metadata_malformed_keywords(asset: Asset):
     asset.metadata['keywords'] = 'foo'
     asset.save()
 
-    tasks.validate_asset_metadata(asset.id)
+    tasks.validate_asset_metadata_task(asset.id)
 
     asset.refresh_from_db()
 
@@ -191,7 +191,7 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
     Version.objects.filter(id=draft_version.id).update(modified=old_datetime)
 
     # Run task
-    tasks.validate_asset_metadata(draft_asset.id)
+    tasks.validate_asset_metadata_task(draft_asset.id)
 
     # Test that version has new modified timestamp
     draft_version.refresh_from_db()
@@ -202,7 +202,7 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
 def test_validate_version_metadata(version: Version, asset: Asset):
     version.assets.add(asset)
 
-    tasks.validate_version_metadata(version.id)
+    tasks.validate_version_metadata_task(version.id)
 
     version.refresh_from_db()
 
@@ -217,7 +217,7 @@ def test_validate_version_metadata_malformed_schema_version(version: Version, as
     version.metadata['schemaVersion'] = 'xxx'
     version.save()
 
-    tasks.validate_version_metadata(version.id)
+    tasks.validate_version_metadata_task(version.id)
 
     version.refresh_from_db()
 
@@ -235,7 +235,7 @@ def test_validate_version_metadata_no_description(version: Version, asset: Asset
     del version.metadata['description']
     version.save()
 
-    tasks.validate_version_metadata(version.id)
+    tasks.validate_version_metadata_task(version.id)
 
     version.refresh_from_db()
 
@@ -252,7 +252,7 @@ def test_validate_version_metadata_malformed_license(version: Version, asset: As
     version.metadata['license'] = 'foo'
     version.save()
 
-    tasks.validate_version_metadata(version.id)
+    tasks.validate_version_metadata_task(version.id)
 
     version.refresh_from_db()
 

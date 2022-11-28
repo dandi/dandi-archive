@@ -138,7 +138,7 @@ def test_unembargo_dandiset(
 
     # Run unembargo and validate version metadata
     unembargo_dandiset(user=user, dandiset=dandiset)
-    tasks.validate_version_metadata(draft_version.pk)
+    tasks.validate_version_metadata_task(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
 
@@ -203,7 +203,7 @@ def test_unembargo_dandiset_existing_blobs(
 
     # Run unembargo
     unembargo_dandiset(user=user, dandiset=dandiset)
-    tasks.validate_version_metadata(draft_version.pk)
+    tasks.validate_version_metadata_task(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
 
@@ -253,7 +253,7 @@ def test_unembargo_dandiset_normal_asset_blob(
 
     # Run unembargo
     unembargo_dandiset(user=user, dandiset=dandiset)
-    tasks.validate_version_metadata(draft_version.pk)
+    tasks.validate_version_metadata_task(draft_version.pk)
     dandiset.refresh_from_db()
     draft_version.refresh_from_db()
 
