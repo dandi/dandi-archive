@@ -15,7 +15,7 @@ from django.db.transaction import atomic
 
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
-from dandiapi.api.tasks import validate_version_metadata, write_manifest_files
+from dandiapi.api.tasks import validate_version_metadata_task, write_manifest_files
 
 logger = get_task_logger(__name__)
 
@@ -33,7 +33,7 @@ def validate_draft_version_metadata():
     if pending_draft_versions_count > 0:
         logger.info('Found %s versions to validate', pending_draft_versions_count)
         for draft_version_id in pending_draft_versions.iterator():
-            validate_version_metadata.delay(draft_version_id)
+            validate_version_metadata_task.delay(draft_version_id)
 
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
