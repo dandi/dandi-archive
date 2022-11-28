@@ -31,7 +31,6 @@ def get_root_paths(version: Version) -> QuerySet[AssetPath]:
     qs = AssetPath.objects.prefetch_related(
         'asset',
         'asset__blob',
-        'asset__embargoed_blob',
         'asset__zarr',
     )
     return (
@@ -58,7 +57,6 @@ def get_path_children(path: AssetPath, depth: int | None = 1) -> QuerySet[AssetP
         AssetPath.objects.select_related(
             'asset',
             'asset__blob',
-            'asset__embargoed_blob',
             'asset__zarr',
         )
         .filter(id__in=path_ids)
@@ -220,13 +218,11 @@ def add_version_asset_paths(version: Version):
 
         # Get all aggregates
         sizes = child_leaves.aggregate(
-            size=Coalesce(Sum('asset__blob__size'), 0),
-            esize=Coalesce(Sum('asset__embargoed_blob__size'), 0),
-            zsize=Coalesce(Sum('asset__zarr__size'), 0),
+            size=Coalesce(Sum('asset__blob__size'), 0), zsize=Coalesce(Sum('asset__zarr__size'), 0)
         )
 
         node.aggregate_files += child_leaves.count()
-        node.aggregate_size += sizes['size'] + sizes['esize'] + sizes['zsize']
+        node.aggregate_size += sizes['size'] + sizes['zsize']
         node.save()
 
 

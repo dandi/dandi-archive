@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from guardian.shortcuts import get_objects_for_user
+
 from dandiapi.api.asset_paths import search_asset_paths
 from dandiapi.api.services.asset import (
     add_asset_to_version,
@@ -85,11 +87,17 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         asset_id = self.kwargs.get('asset_id')
         if asset_id is not None:
             asset = get_object_or_404(Asset, asset_id=asset_id)
-            if asset.embargoed_blob is not None:
+            if asset.is_embargoed:
                 if not self.request.user.is_authenticated:
                     # Clients must be authenticated to access it
                     raise NotAuthenticated()
-                if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
+
+                # Check if the user has owner permissions on any of the associated dandisets
+                owned_dandisets: QuerySet[Dandiset] = get_objects_for_user(
+                    self.request.user, 'owner', Dandiset
+                )
+                owned_asset_versions = asset.versions.filter(dandiset__in=owned_dandisets)
+                if not owned_asset_versions.exists():
                     # The user does not have ownership permission
                     raise PermissionDenied()
 
@@ -158,7 +166,7 @@ class AssetRequestSerializer(serializers.Serializer):
         asset_blob = None
 
         if 'blob_id' in self.validated_data:
-            asset_blob = AssetBlob.objects.get(blob_id=self.validated_data['blob_id'])
+            asset_blob = get_object_or_404(AssetBlob, blob_id=self.validated_data['blob_id'])
 
         return asset_blob
 
@@ -344,7 +352,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         # Fetch initial queryset
         queryset: QuerySet[Asset] = self.filter_queryset(
-            self.get_queryset().select_related('blob', 'embargoed_blob', 'zarr')
+            self.get_queryset().select_related('blob', 'zarr')
         )
 
         # Don't include metadata field if not asked for

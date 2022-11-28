@@ -1214,7 +1214,7 @@ def test_asset_download_embargo(
     client = authenticated_api_client
 
     # Generate assets and blobs
-    asset = asset_factory(blob=embargoed_asset_blob_factory(dandiset=version.dandiset))
+    asset = asset_factory(blob=embargoed_asset_blob_factory())
     version.assets.add(asset)
 
     response = client.get(

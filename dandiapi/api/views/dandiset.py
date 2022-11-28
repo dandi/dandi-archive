@@ -74,7 +74,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     size=Subquery(
                         latest_version.annotate(
                             size=Coalesce(Sum('assets__blob__size'), 0)
-                            + Coalesce(Sum('assets__embargoed_blob__size'), 0)
                             + Coalesce(Sum('assets__zarr__size'), 0)
                         ).values('size')
                     )
@@ -170,9 +169,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             .annotate(
                 num_assets=Count('assets'),
                 total_size=(
-                    Coalesce(Sum('assets__blob__size'), 0)
-                    + Coalesce(Sum('assets__embargoed_blob__size'), 0)
-                    + Coalesce(Sum('assets__zarr__size'), 0)
+                    Coalesce(Sum('assets__blob__size'), 0) + Coalesce(Sum('assets__zarr__size'), 0)
                 ),
             )
             .filter(dandiset__in=dandisets)

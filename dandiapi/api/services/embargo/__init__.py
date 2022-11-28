@@ -26,9 +26,7 @@ def _unembargo_asset(asset: Asset):
             source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
             source_key=asset.blob.blob.name,
             dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-            dest_key=Upload.object_key(
-                upload_id=asset.blob.blob_id, dandiset=asset.blob.dandiset, embargoed=False
-            ),
+            dest_key=Upload.object_key(upload_id=asset.blob.blob_id, embargoed=False),
         )
 
         # Assert files are equal

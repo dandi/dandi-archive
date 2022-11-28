@@ -184,7 +184,9 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         # storage.client will generate URLs like `http://minio:9000/...` when running in
         # docker. To avoid this, use the secondary base_url_client which is configured to
         # generate URLs like `http://localhost:9000/...`.
-        return self.base_url_client.presigned_put_object(
+
+        client = getattr(self, 'base_url_client', 'client')
+        return client.presigned_put_object(
             bucket_name=self.bucket_name,
             object_name=blob_name,
             expires=timedelta(seconds=600),  # TODO proper expiration
@@ -194,7 +196,8 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         return self.base_url_client.presigned_url('HEAD', self.bucket_name, key)
 
     def generate_presigned_download_url(self, key: str, path: str) -> str:
-        return self.base_url_client.presigned_get_object(
+        client = getattr(self, 'base_url_client', self.client)
+        return client.presigned_get_object(
             self.bucket_name,
             key,
             response_headers={'response-content-disposition': f'attachment; filename="{path}"'},

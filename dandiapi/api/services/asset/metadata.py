@@ -12,7 +12,7 @@ def _maybe_validate_asset_metadata(asset: Asset):
     If the checksum isn't there yet, it's the responsibility of the checksum code
     to trigger validation for all assets pointing to its blob.
     """
-    if asset.is_zarr():
+    if asset.is_zarr:
         # TODO: assert? zarr?
         return
 

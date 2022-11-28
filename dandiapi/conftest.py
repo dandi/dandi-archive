@@ -25,10 +25,9 @@ from dandiapi.zarr.tests.factories import ZarrArchiveFactory, ZarrUploadFileFact
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
-register(EmbargoedAssetBlobFactory)
+register(EmbargoedAssetBlobFactory, _name='embargoed_asset_blob')
 register(DandisetFactory)
-register(EmbargoedAssetBlobFactory)
-register(EmbargoedUploadFactory)
+register(EmbargoedUploadFactory, _name='embargoed_upload')
 register(PublishedVersionFactory, _name='published_version')
 register(DraftVersionFactory, _name='draft_version')
 # registering DraftVersionFactory after PublishedVersionFactory means
