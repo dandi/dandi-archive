@@ -1,3 +1,20 @@
+# v0.3.4 (Tue Nov 29 2022)
+
+#### 🐛 Bug Fix
+
+- Add file upload instructions to file browser UI [#1342](https://github.com/dandi/dandi-archive/pull/1342) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Convert FileBrowser component to <script setup> [#1340](https://github.com/dandi/dandi-archive/pull/1340) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Convert `Meditor.vue` to `<script setup>` [#1303](https://github.com/dandi/dandi-archive/pull/1303) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.3 (Tue Nov 29 2022)
 
 #### 🐛 Bug Fix
