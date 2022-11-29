@@ -93,7 +93,8 @@
 
             <v-divider v-else />
 
-            <v-banner v-if="itemsNotFound">
+            <FileUploadInstructions v-if="currentDandiset.asset_count === 0" />
+            <v-banner v-else-if="itemsNotFound">
               No items found at the specified path.
             </v-banner>
             <v-list v-else>
@@ -230,6 +231,7 @@
         </v-col>
       </v-row>
       <FileBrowserPagination
+        v-if="currentDandiset.asset_count"
         :page="page"
         :page-count="pages"
         @changePage="page = $event;"
@@ -252,6 +254,7 @@ import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import { AssetFile, AssetPath } from '@/types';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
+import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
 
 const rootDirectory = '';
 const FILES_PER_PAGE = 15;
