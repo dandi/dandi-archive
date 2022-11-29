@@ -1,3 +1,16 @@
+# v0.3.3 (Tue Nov 29 2022)
+
+#### 🐛 Bug Fix
+
+- Fix publishing being allowed for pending assets [#1383](https://github.com/dandi/dandi-archive/pull/1383) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporarily pin flake8 [#1380](https://github.com/dandi/dandi-archive/pull/1380) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.2 (Mon Nov 21 2022)
 
 #### 🐛 Bug Fix
