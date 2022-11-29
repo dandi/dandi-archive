@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -116,6 +117,34 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         if self._checksums is None:
             raise ValueError('This method is only valid when used by a context manager')
         self._checksums.remove_checksums([Path(path).name for path in paths])
+
+
+class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
+    """Override ZarrChecksumFileUpdater to ignore old files."""
+
+    def __init__(self, *args, session_start: datetime, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Set the start of when new files may have been written
+        self._session_start = session_start
+
+    def read_checksum_file(self) -> ZarrChecksumListing | None:
+        """Load a checksum listing from the checksum file."""
+        storage = self.zarr_archive.storage
+        checksum_path = self.checksum_file_path
+
+        # Check if this file was modified during this session
+        read_existing = False
+        if storage.exists(checksum_path):
+            read_existing = storage.modified_time(self.checksum_file_path) >= self._session_start
+
+        # Read existing file if necessary
+        if read_existing:
+            with storage.open(checksum_path) as f:
+                x = f.read()
+                return self._serializer.deserialize(x)
+        else:
+            return None
 
 
 @dataclass
@@ -239,3 +268,28 @@ class ZarrChecksumUpdater:
         for path in paths:
             modifications.queue_removal(Path(path).parent, path)
         self.modify(modifications)
+
+
+class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
+    """ZarrChecksumUpdater to distinguish existing and new checksum files."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        # Set microseconds to zero, since the timestamp from S3/Minio won't include them
+        # Failure to set this to zero will result in false negatives
+        self._session_start = datetime.now().replace(tzinfo=None, microsecond=0)
+
+    def apply_modification(
+        self, modification: ZarrChecksumModification
+    ) -> SessionZarrChecksumFileUpdater:
+        with SessionZarrChecksumFileUpdater(
+            zarr_archive=self.zarr_archive,
+            zarr_directory_path=modification.path,
+            session_start=self._session_start,
+        ) as file_updater:
+            file_updater.add_file_checksums(modification.files_to_update)
+            file_updater.add_directory_checksums(modification.directories_to_update)
+            file_updater.remove_checksums(modification.paths_to_remove)
+
+        return file_updater
