@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <v-dialog
     v-model="open"
@@ -57,10 +58,10 @@
                 <template #activator="{ on }">
                   <v-icon
                     left
-                    :color="allModelsValid ? 'success' : 'error'"
+                    :color="modelValid ? 'success' : 'error'"
                     v-on="on"
                   >
-                    <template v-if="allModelsValid">
+                    <template v-if="modelValid">
                       mdi-checkbox-marked-circle
                     </template>
                     <template v-else>
@@ -68,7 +69,7 @@
                     </template>
                   </v-icon>
                 </template>
-                <template v-if="allModelsValid">
+                <template v-if="modelValid">
                   All metadata for this dandiset is valid.
                 </template>
                 <template v-else>
@@ -222,11 +223,11 @@
   </v-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import type { JSONSchema7 } from 'json-schema';
 
 import {
-  defineComponent, ref, computed, ComputedRef, onMounted,
+  ref, computed, ComputedRef, onMounted,
 } from 'vue';
 
 import jsYaml from 'js-yaml';
@@ -266,203 +267,152 @@ function renderField(fieldSchema: JSONSchema7) {
   return true;
 }
 
-export default defineComponent({
-  // eslint-disable-next-line vue/multi-word-component-names
-  name: 'Meditor',
-  components: { VJsf, VJsfWrapper },
-  setup() {
-    const store = useDandisetStore();
+const store = useDandisetStore();
 
-    const currentDandiset = computed(() => store.dandiset);
-    const id = computed(() => currentDandiset.value?.dandiset.identifier);
-    const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
-    const model = computed(() => currentDandiset.value?.metadata);
-    const readonly = computed(() => !store.userCanModifyDandiset);
-    const isDataInLocalStorage = computed(
-      () => (model.value ? dataInLocalStorage(model.value.id) : false),
-    );
+const currentDandiset = computed(() => store.dandiset);
+const id = computed(() => currentDandiset.value?.dandiset.identifier);
+const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
+const model = computed(() => currentDandiset.value?.metadata);
+const readonly = computed(() => !store.userCanModifyDandiset);
+const isDataInLocalStorage = computed(
+  () => (model.value ? dataInLocalStorage(model.value.id) : false),
+);
 
-    const invalidPermissionSnackbar = ref(false);
-    const tab = ref(null);
-    const loadFromLocalStoragePrompt = ref(false);
+const invalidPermissionSnackbar = ref(false);
+const tab = ref(null);
+const loadFromLocalStoragePrompt = ref(false);
 
-    editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
-    const {
-      modelValid,
-      basicSchema,
-      basicModel,
-      basicModelValid,
-      complexSchema,
-      complexModel,
-      setComplexModelProp,
-      complexModelValid,
-      complexModelValidation,
-      transactionTracker,
-    } = editorInterface.value;
-    const CommonVJSFOptions = computed(() => ({
-      initialValidation: 'all',
-      disableAll: readonly.value,
-      autoFixArrayItems: false,
-      childrenClass: 'px-2',
-      fieldProps: {
-        outlined: true,
-        dense: true,
-      },
-      arrayItemCardProps: {
-        outlined: true,
-        dense: true,
-      },
-      editMode: 'inline',
-      hideReadOnly: true,
-    }));
-
-    // undo/redo functionality
-    function undoChange() {
-      transactionTracker.undo();
-    }
-    function redoChange() {
-      transactionTracker.redo();
-    }
-    const disableUndo = computed(
-      () => readonly.value || !transactionTracker.areTransactionsBehind(),
-    );
-    const disableRedo = computed(
-      () => readonly.value || !transactionTracker.areTransactionsAhead(),
-    );
-    const vjsfListener = () => transactionTracker.add(basicModel.value, false);
-    const modified = computed(() => transactionTracker.isModified());
-
-    async function save() {
-      if (!id.value || !model.value || !currentDandiset.value?.version) {
-        return;
-      }
-      const dandiset = editorInterface.value?.getModel();
-
-      try {
-        const { status, data } = await dandiRest.saveDandiset(
-          id.value, currentDandiset.value.version, dandiset,
-        );
-
-        if (status === 200) {
-          clearLocalStorage(model.value.id);
-          // wait 0.5 seconds to give the celery worker some time to finish validation
-          setTimeout(async () => {
-            await store.fetchDandiset({
-              identifier: data.dandiset.identifier,
-              version: data.version,
-            });
-            transactionTracker.reset();
-          }, 500);
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 403) {
-          invalidPermissionSnackbar.value = true;
-        }
-
-        throw error;
-      }
-    }
-
-    // TODO: Add back UI to toggle YAML vs JSON
-    const yamlOutput = ref(false);
-    const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
-    const output = computed(() => {
-      const currentModel = editorInterface.value?.getModel();
-      return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
-    });
-
-    function download() {
-      const blob = new Blob([output.value], { type: contentType.value });
-
-      const extension = contentType.value.split('/')[1];
-      const filename = `dandiset.${extension}`;
-      const link = document.createElement('a');
-
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    }
-
-    function getSchemaTitle(propKey: string) {
-      const properties = complexSchema?.properties as any;
-      return properties ? properties[propKey].title || propKey : propKey;
-    }
-
-    const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
-      (p) => renderField((complexSchema as any).properties[p]),
-    );
-
-    function loadDataFromLocalStorage() {
-      if (!model.value) {
-        return;
-      }
-      // load previous meditor data from localStorage
-      editorInterface.value?.setModel(getModelLocalStorage(model.value.id));
-      editorInterface.value?.transactionTracker.setTransactions(
-        getTransactionsLocalStorage(model.value.id),
-      );
-      editorInterface.value?.transactionTracker.setTransactionPointer(
-        getTransactionPointerLocalStorage(model.value.id),
-      );
-      loadFromLocalStoragePrompt.value = false;
-    }
-    function discardDataFromLocalStorage() {
-      if (!model.value) {
-        return;
-      }
-      clearLocalStorage(model.value.id);
-      loadFromLocalStoragePrompt.value = false;
-    }
-    onMounted(() => {
-      // On mount, detect if there is unsaved data stored in local storage and ask the user
-      // if they would like to restore it
-      if (isDataInLocalStorage.value) {
-        loadFromLocalStoragePrompt.value = true;
-      }
-    });
-
-    return {
-      allModelsValid: modelValid,
-      tab,
-      schema,
-      model,
-      readonly,
-      open,
-
-      basicSchema,
-      basicModel,
-      basicModelValid,
-      vjsfListener,
-
-      complexSchema,
-      complexModel,
-      complexModelValid,
-      complexModelValidation,
-
-      invalidPermissionSnackbar,
-      fieldsToRender,
-      getSchemaTitle,
-      save,
-      download,
-
-      modified,
-      undoChange,
-      redoChange,
-      disableUndo,
-      disableRedo,
-
-      CommonVJSFOptions,
-
-      setComplexModelProp,
-
-      editorInterface,
-      transactionTracker,
-
-      loadFromLocalStoragePrompt,
-      loadDataFromLocalStorage,
-      discardDataFromLocalStorage,
-    };
+editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
+const {
+  modelValid,
+  basicSchema,
+  basicModel,
+  basicModelValid,
+  complexSchema,
+  complexModelValidation,
+  transactionTracker,
+} = editorInterface.value;
+const CommonVJSFOptions = computed(() => ({
+  initialValidation: 'all',
+  disableAll: readonly.value,
+  autoFixArrayItems: false,
+  childrenClass: 'px-2',
+  fieldProps: {
+    outlined: true,
+    dense: true,
   },
+  arrayItemCardProps: {
+    outlined: true,
+    dense: true,
+  },
+  editMode: 'inline',
+  hideReadOnly: true,
+}));
+
+// undo/redo functionality
+function undoChange() {
+  transactionTracker.undo();
+}
+function redoChange() {
+  transactionTracker.redo();
+}
+const disableUndo = computed(
+  () => readonly.value || !transactionTracker.areTransactionsBehind(),
+);
+const disableRedo = computed(
+  () => readonly.value || !transactionTracker.areTransactionsAhead(),
+);
+const vjsfListener = () => transactionTracker.add(basicModel.value, false);
+const modified = computed(() => transactionTracker.isModified());
+
+async function save() {
+  if (!id.value || !model.value || !currentDandiset.value?.version) {
+    return;
+  }
+  const dandiset = editorInterface.value?.getModel();
+
+  try {
+    const { status, data } = await dandiRest.saveDandiset(
+      id.value, currentDandiset.value.version, dandiset,
+    );
+
+    if (status === 200) {
+      clearLocalStorage(model.value.id);
+      // wait 0.5 seconds to give the celery worker some time to finish validation
+      setTimeout(async () => {
+        await store.fetchDandiset({
+          identifier: data.dandiset.identifier,
+          version: data.version,
+        });
+        transactionTracker.reset();
+      }, 500);
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 403) {
+      invalidPermissionSnackbar.value = true;
+    }
+
+    throw error;
+  }
+}
+
+// TODO: Add back UI to toggle YAML vs JSON
+const yamlOutput = ref(false);
+const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
+const output = computed(() => {
+  const currentModel = editorInterface.value?.getModel();
+  return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
 });
+
+function download() {
+  const blob = new Blob([output.value], { type: contentType.value });
+
+  const extension = contentType.value.split('/')[1];
+  const filename = `dandiset.${extension}`;
+  const link = document.createElement('a');
+
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function getSchemaTitle(propKey: string) {
+  const properties = complexSchema?.properties as any;
+  return properties ? properties[propKey].title || propKey : propKey;
+}
+
+const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
+  (p) => renderField((complexSchema as any).properties[p]),
+);
+
+function loadDataFromLocalStorage() {
+  if (!model.value) {
+    return;
+  }
+  // load previous meditor data from localStorage
+  editorInterface.value?.setModel(getModelLocalStorage(model.value.id));
+  editorInterface.value?.transactionTracker.setTransactions(
+    getTransactionsLocalStorage(model.value.id),
+  );
+  editorInterface.value?.transactionTracker.setTransactionPointer(
+    getTransactionPointerLocalStorage(model.value.id),
+  );
+  loadFromLocalStoragePrompt.value = false;
+}
+function discardDataFromLocalStorage() {
+  if (!model.value) {
+    return;
+  }
+  clearLocalStorage(model.value.id);
+  loadFromLocalStoragePrompt.value = false;
+}
+onMounted(() => {
+  // On mount, detect if there is unsaved data stored in local storage and ask the user
+  // if they would like to restore it
+  if (isDataInLocalStorage.value) {
+    loadFromLocalStoragePrompt.value = true;
+  }
+});
+
 </script>
