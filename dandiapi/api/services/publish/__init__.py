@@ -33,7 +33,7 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
 
     with transaction.atomic():
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
-        if draft_version.status != Version.Status.VALID:
+        if not draft_version.valid:
             match draft_version.status:
                 case Version.Status.PUBLISHED:
                     raise DandisetAlreadyPublished()
@@ -45,6 +45,8 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
                     raise DandisetInvalidMetadata()
                 case Version.Status.PENDING:
                     raise DandisetValidationPending()
+                case Version.Status.VALID:
+                    raise DandisetInvalidMetadata()
                 case other:
                     raise NotImplementedError(
                         f'Draft version of dandiset {dandiset.identifier} '
