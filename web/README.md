@@ -17,8 +17,7 @@ Instead, install and use `yarnpkg`.
 
 The web app will be served at `http://localhost:8085/`.
 
-To be useful, this app requires a server component, which you can run locally; see the [instructions]
-(https://github.com/dandi/dandi-archive/#dandi-archive).
+To be useful, this app requires a server component, which you can run locally; see the [instructions](https://github.com/dandi/dandi-archive/#dandi-archive).
 
 ### Test
 
