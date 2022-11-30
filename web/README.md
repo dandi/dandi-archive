@@ -12,7 +12,7 @@ yarn install
 yarn run serve
 ```
 
-**Note**: On Debian systems, the `yarn` command is from an unrelated `cmdtest` package.
+**Note**: On Debian systems, the `yarn` command is from the unrelated `cmdtest` package.
 Instead, install and use `yarnpkg`.
 
 The web app will be served at `http://localhost:8085/`.
@@ -29,7 +29,7 @@ yarn run lint
 
 ### Schema Migration
 The web app uses TypeScript typings (src/types/schema.ts) that are automatically generated from the dandiset metadata's
-JSON schema (see https://github.com/dandi/schema). To change the schema version (and as a result, the types),
+[JSON schema](https://github.com/dandi/schema). To change the schema version (and as a result, the types),
 use the `yarn migrate` command.
 
 For example, to migrate to schema version 0.5.1, run:
