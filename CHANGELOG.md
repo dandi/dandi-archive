@@ -1,3 +1,15 @@
+# v0.3.5 (Wed Nov 30 2022)
+
+#### 🐛 Bug Fix
+
+- Prevent locking dandisets during zarr upload [#1385](https://github.com/dandi/dandi-archive/pull/1385) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.4 (Tue Nov 29 2022)
 
 #### 🐛 Bug Fix
