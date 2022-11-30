@@ -187,7 +187,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @action(methods=['POST'], detail=True)
     def upload(self, request, zarr_id):
         """Start an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
+        # reset select_related to prevent locking additional rows
+        queryset = self.get_queryset().select_related(None).select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if zarr_archive.status == ZarrArchiveStatus.INGESTING:
@@ -217,7 +218,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @action(methods=['POST'], url_path='upload/complete', detail=True)
     def upload_complete(self, request, zarr_id):
         """Finish an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
+        # reset select_related to prevent locking additional rows
+        queryset = self.get_queryset().select_related(None).select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
