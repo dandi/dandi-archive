@@ -88,16 +88,17 @@ def _publish_dandiset(dandiset_id: int) -> None:
             for asset_id in already_published_assets.values_list('id', flat=True).iterator()
         )
 
-        # Publish any draft assets
         draft_assets: QuerySet[Asset] = old_version.assets.filter(published=False)
-        for draft_asset in draft_assets.iterator():
-            draft_asset.publish()
-
-        Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
 
         AssetVersions.objects.bulk_create(
-            AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets
+            AssetVersions(asset_id=asset.id, version_id=new_version.id)
+            for asset in draft_assets.iterator()
         )
+
+        # Publish any draft assets
+        for draft_asset in draft_assets.iterator():
+            draft_asset.publish()
+            draft_asset.save()
 
         # Save again to recompute metadata, specifically assetsSummary
         new_version.save()
