@@ -11,7 +11,7 @@ from django.db.transaction import atomic
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.storage import get_boto_client, yield_files
-from dandiapi.zarr.checksums import SessionZarrChecksumUpdater, ZarrChecksum
+from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumModificationQueue
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -74,7 +74,8 @@ def ingest_zarr_archive(
 
         # Instantiate updater and add files as they come in
         empty = True
-        updater = SessionZarrChecksumUpdater(zarr_archive=zarr)
+        queue = ZarrChecksumModificationQueue()
+        print(f'Fetching files for zarr {zarr.zarr_id}...')
         for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
             if len(files):
                 empty = False
@@ -87,16 +88,14 @@ def ingest_zarr_archive(
 
             # Update checksums
             if not no_checksum:
-                updater.update_file_checksums(
-                    {
-                        file['Key'].replace(zarr.s3_path(''), ''): ZarrChecksum(
-                            digest=file['ETag'].strip('"'),
-                            name=Path(file['Key'].replace(zarr.s3_path(''), '')).name,
-                            size=file['Size'],
-                        )
-                        for file in files
-                    }
-                )
+                for file in files:
+                    path = Path(file['Key'].replace(zarr.s3_path(''), ''))
+                    checksum = ZarrChecksum(
+                        name=path.name,
+                        size=file['Size'],
+                        digest=file['ETag'].strip('"'),
+                    )
+                    queue.queue_file_update(key=path.parent, checksum=checksum)
 
         # Set checksum field to top level checksum, after ingestion completion
         checksum = zarr.get_checksum()
