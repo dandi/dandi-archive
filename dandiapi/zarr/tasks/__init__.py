@@ -11,7 +11,12 @@ from django.db.transaction import atomic
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.storage import get_boto_client, yield_files
-from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumModificationQueue
+from dandiapi.zarr.checksums import (
+    SessionZarrChecksumUpdater,
+    ZarrChecksum,
+    ZarrChecksumModificationQueue,
+    parse_checksum_string,
+)
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -37,13 +42,7 @@ def clear_checksum_files(zarr: ZarrArchive):
 
 
 @shared_task(queue='ingest_zarr_archive', time_limit=3600)
-def ingest_zarr_archive(
-    zarr_id: str,
-    no_checksum: bool = False,
-    no_size: bool = False,
-    no_count: bool = False,
-    force: bool = False,
-):
+def ingest_zarr_archive(zarr_id: str, force: bool = False):
     # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
@@ -66,12 +65,6 @@ def ingest_zarr_archive(
         # Clear any existing checksum files before running ingestion
         clear_checksum_files(zarr)
 
-        # Reset before compute
-        if not no_size:
-            zarr.size = 0
-        if not no_count:
-            zarr.file_count = 0
-
         # Instantiate updater and add files as they come in
         empty = True
         queue = ZarrChecksumModificationQueue()
@@ -80,24 +73,18 @@ def ingest_zarr_archive(
             if len(files):
                 empty = False
 
-            # Update size and file count
-            if not no_size:
-                zarr.size += sum(file['Size'] for file in files)
-            if not no_count:
-                zarr.file_count += len(files)
-
             # Update checksums
-            if not no_checksum:
-                for file in files:
-                    path = Path(file['Key'].replace(zarr.s3_path(''), ''))
-                    checksum = ZarrChecksum(
-                        name=path.name,
-                        size=file['Size'],
-                        digest=file['ETag'].strip('"'),
-                    )
-                    queue.queue_file_update(key=path.parent, checksum=checksum)
+            for file in files:
+                path = Path(file['Key'].replace(zarr.s3_path(''), ''))
+                checksum = ZarrChecksum(
+                    name=path.name,
+                    size=file['Size'],
+                    digest=file['ETag'].strip('"'),
+                )
+                queue.queue_file_update(key=path.parent, checksum=checksum)
 
-        # Set checksum field to top level checksum, after ingestion completion
+        # Compute checksum tree and retrieve top level checksum
+        SessionZarrChecksumUpdater(zarr_archive=zarr).modify(modifications=queue)
         checksum = zarr.get_checksum()
 
         # Raise an exception if empty and checksum are ever out of sync.
@@ -112,11 +99,11 @@ def ingest_zarr_archive(
         # If checksum is None, that means there were no files, and we should set
         # the checksum to EMPTY_CHECKSUM, as it's still been ingested, it's just empty.
         zarr.checksum = checksum or EMPTY_CHECKSUM
+        zarr.file_count, zarr.size = parse_checksum_string(zarr.checksum)
         zarr.status = ZarrArchiveStatus.COMPLETE
-        zarr.save(update_fields=['status', 'checksum'])
+        zarr.save()
 
         # Save all assets that reference this zarr, so their metadata is updated
-        zarr.save(update_fields=['size', 'file_count'])
         for asset in zarr.assets.iterator():
             asset.save()
 
