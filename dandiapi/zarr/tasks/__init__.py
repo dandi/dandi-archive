@@ -65,14 +65,13 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         # Clear any existing checksum files before running ingestion
         clear_checksum_files(zarr)
 
-        # Instantiate updater and add files as they come in
-        empty = True
+        # Set the checksum to empty before processing.
+        # If the zarr contains any files, this will be overwritten
+        zarr.checksum = EMPTY_CHECKSUM
         queue = ZarrChecksumModificationQueue()
+
         print(f'Fetching files for zarr {zarr.zarr_id}...')
         for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
-            if len(files):
-                empty = False
-
             # Update checksums
             for file in files:
                 path = Path(file['Key'].replace(zarr.s3_path(''), ''))
@@ -87,18 +86,8 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         SessionZarrChecksumUpdater(zarr_archive=zarr).modify(modifications=queue)
         checksum = zarr.get_checksum()
 
-        # Raise an exception if empty and checksum are ever out of sync.
-        # The reported checksum should never be None if there are files,
-        # and there shouldn't be any files if the checksum is None
-        if (checksum is None) != empty:
-            raise Exception(
-                f'Inconsistency between reported files and computed checksum. Checksum is '
-                f'{checksum}, while {"no" if empty else ""} files were found in the zarr.'
-            )
-
         # If checksum is None, that means there were no files, and we should set
         # the checksum to EMPTY_CHECKSUM, as it's still been ingested, it's just empty.
-        zarr.checksum = checksum or EMPTY_CHECKSUM
         zarr.file_count, zarr.size = parse_checksum_string(zarr.checksum)
         zarr.status = ZarrArchiveStatus.COMPLETE
         zarr.save()

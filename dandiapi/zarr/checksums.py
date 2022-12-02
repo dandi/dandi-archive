@@ -55,28 +55,20 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         if self.zarr_directory_path in ['/', './']:
             self.zarr_directory_path = ''
         self._serializer = serializer
-
-        # This is loaded when an instance is used as a context manager,
-        # then saved when the context manager exits.
-        self._checksums = None
+        self._checksums = ZarrChecksums()
 
     def __enter__(self):
-        existing_zarr_checksum = self.read_checksum_file()
-        if existing_zarr_checksum:
-            self._checksums = existing_zarr_checksum.checksums
-        else:
-            self._checksums = ZarrChecksums()
+        self._checksums = ZarrChecksums()
         return self
 
     def __exit__(self, exc_type, *exc):
         # If there was an exception, do not write anything
         if exc_type:
             return None  # this means throw the exception as normal
-        if not self.checksum_listing.checksums.is_empty:
-            self.write_checksum_file(self.checksum_listing)
-        else:
-            # If there are no checksums to write, simply delete the checksum file.
-            self.delete_checksum_file()
+
+        # Set the
+        if self.zarr_directory_path == '':
+            self.zarr_archive.checksum = self.checksum_listing.digest
 
     @property
     def checksum_file_path(self):
@@ -234,15 +226,12 @@ class ZarrChecksumUpdater:
 
     def __init__(self, zarr_archive: ZarrArchive | EmbargoedZarrArchive) -> None:
         self.zarr_archive = zarr_archive
+        self._checksums = ZarrChecksums()
 
-    def apply_modification(self, modification: ZarrChecksumModification) -> ZarrChecksumFileUpdater:
-        with ZarrChecksumFileUpdater(self.zarr_archive, modification.path) as file_updater:
-            # Removing a checksum takes precedence over adding/modifying that checksum
-            file_updater.add_file_checksums(modification.files_to_update)
-            file_updater.add_directory_checksums(modification.directories_to_update)
-            file_updater.remove_checksums(modification.paths_to_remove)
-
-        return file_updater
+    def apply_modification(self, modification: ZarrChecksumModification):
+        self._checksums.add_file_checksums(modification.files_to_update)
+        self._checksums.add_directory_checksums(modification.directories_to_update)
+        self._checksums.remove_checksums(modification.paths_to_remove)
 
     def modify(self, modifications: ZarrChecksumModificationQueue):
         while not modifications.empty:
@@ -274,6 +263,8 @@ class ZarrChecksumUpdater:
                             size=file_updater.checksum_listing.size,
                         ),
                     )
+
+        return ZarrJSONChecksumSerializer().generate_listing(self._checksums)
 
     def update_file_checksums(self, checksums: Mapping[str, ZarrChecksum]):
         """
