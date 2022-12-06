@@ -123,6 +123,9 @@ def ingest_zarr_archive(
         # Remove all asset paths associated with this zarr before ingest
         delete_zarr_paths(zarr)
 
+        # Clear any existing checksum files before running ingestion
+        clear_checksum_files(zarr)
+
         # Reset before compute
         if not no_size:
             zarr.size = 0
@@ -154,10 +157,6 @@ def ingest_zarr_archive(
                         for file in files
                     }
                 )
-
-        # If no files were actually yielded, remove all checksum files
-        if empty:
-            clear_checksum_files(zarr)
 
         # Set checksum field to top level checksum, after ingestion completion
         checksum = zarr.get_checksum()
