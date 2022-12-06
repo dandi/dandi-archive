@@ -1,3 +1,20 @@
+# v0.3.6 (Tue Dec 06 2022)
+
+#### 🐛 Bug Fix
+
+- Always clear checksum files during zarr ingestion [#1390](https://github.com/dandi/dandi-archive/pull/1390) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 📝 Documentation
+
+- dandi-archive web app readme edit [#1386](https://github.com/dandi/dandi-archive/pull/1386) ([@melster1010](https://github.com/melster1010))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mary Elise Dedicke ([@melster1010](https://github.com/melster1010))
+
+---
+
 # v0.3.5 (Wed Nov 30 2022)
 
 #### 🐛 Bug Fix
