@@ -3,24 +3,21 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Exists, OuterRef
 from django.db.models.query import QuerySet
-from django.http.response import HttpResponseRedirect
-from django.urls import reverse
-from drf_yasg import openapi
+from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.zarr.checksums import ZarrChecksumFileUpdater
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 from dandiapi.zarr.tasks import cancel_zarr_upload, ingest_zarr_archive
 
@@ -97,13 +94,11 @@ class ZarrListSerializer(serializers.ModelSerializer):
     upload_in_progress = serializers.BooleanField(source='uploads_exist')
 
 
-class ZarrExploreSerializer(serializers.Serializer):
-    directories = serializers.ListField(child=serializers.URLField())
-    files = serializers.ListField(child=serializers.URLField())
-    checksums = serializers.DictField(
-        child=serializers.RegexField('^[0-9a-f]{32}(-[0-9]+--[0-9]+)?$')
-    )
-    checksum = serializers.RegexField('^[0-9a-f]{32}-[0-9]+--[0-9]+$')
+class ZarrExploreQuerySerializer(serializers.Serializer):
+    after = serializers.CharField(default='')
+    prefix = serializers.CharField(default='')
+    limit = serializers.IntegerField(default=1000)
+    download = serializers.BooleanField(default=False)
 
 
 class ZarrListQuerySerializer(serializers.Serializer):
@@ -253,38 +248,6 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
-        method='DELETE',
-        request_body=ZarrDeleteFileRequestSerializer(many=True),
-        responses={
-            200: ZarrSerializer(many=True),
-            400: ZarrArchive.INGEST_ERROR_MSG,
-        },
-        operation_summary='Delete files from a zarr archive.',
-        operation_description='',
-    )
-    @action(methods=['DELETE'], url_path='files', detail=True)
-    def delete_files(self, request, zarr_id):
-        """Delete files from a zarr archive."""
-        queryset = self.get_queryset().select_for_update()
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
-                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
-
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied()
-            serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
-            serializer.is_valid(raise_exception=True)
-            paths = [file['path'] for file in serializer.validated_data]
-            zarr_archive.delete_files(paths)
-
-            # Save any zarr assets to trigger metadata updates
-            for asset in zarr_archive.assets.all():
-                asset.save()
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
-
-    @swagger_auto_schema(
         method='POST',
         request_body=no_body,
         responses={
@@ -316,85 +279,97 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-
-@swagger_auto_schema(
-    method='GET',
-    responses={
-        200: ZarrExploreSerializer(),
-        302: 'Redirect to an object in S3',
-    },
-    manual_parameters=[
-        openapi.Parameter(
-            'path',
-            openapi.IN_PATH,
-            'a file or directory path within the zarr file.',
-            type=openapi.TYPE_STRING,
-            required=True,
-            pattern=r'.*',
-        )
-    ],
-    operation_id='zarr_content_read',
-)
-@api_view(['GET', 'HEAD'])
-def explore_zarr_archive(request, zarr_id: str, path: str):
-    """
-    Get information about files in a zarr archive.
-
-    If the path ends with /, it is assumed to be a directory and metadata about the directory is returned.
-    If the path does not end with /, it is assumed to be a file and a redirect to that file in S3 is returned.
-    HEAD requests are all assumed to be files and will return redirects to that file in S3.
-
-    This API is compatible with https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.http.HTTPFileSystem.
-    """  # noqa: E501
-    zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
-    if path == '':
-        path = '/'
-    if request.method == 'HEAD':
-        # We cannot use storage.url because that presigns a GET request.
-        # Instead, we need to presign the HEAD request using the storage-appropriate client.
-        storage = ZarrUploadFile.blob.field.storage
-        url = storage.generate_presigned_head_object_url(zarr_archive.s3_path(path))
-        return HttpResponseRedirect(url)
-    # If a path ends with a /, assume it is a directory.
-    # Return a JSON blob which contains URLs to the contents of the directory.
-    if path.endswith('/'):
-        # Strip off the trailing /, it confuses the ZarrChecksumFileUpdater
-        path = path.rstrip('/')
-        # We use the .checksum file to determine the directory contents, since S3 cannot.
-        listing = ZarrChecksumFileUpdater(
-            zarr_archive=zarr_archive, zarr_directory_path=path
-        ).read_checksum_file()
-        if listing is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        directories = [
-            settings.DANDI_API_URL
-            + reverse('zarr-explore', args=[zarr_id, str(Path(path) / directory.name)])
-            + '/'
-            for directory in listing.checksums.directories
-        ]
-        files = [
-            settings.DANDI_API_URL
-            + reverse('zarr-explore', args=[zarr_id, str(Path(path) / file.name)])
-            for file in listing.checksums.files
-        ]
-        checksums = {
-            **{directory.name: directory.digest for directory in listing.checksums.directories},
-            **{file.name: file.digest for file in listing.checksums.files},
-        }
-        serializer = ZarrExploreSerializer(
-            data={
-                'directories': directories,
-                'files': files,
-                'checksums': checksums,
-                'checksum': listing.digest,
-            }
-        )
+    @swagger_auto_schema(
+        method='GET',
+        responses={
+            200: 'Listing of s3 objects',
+            302: 'Redirect to an object in S3',
+        },
+        query_serializer=ZarrExploreQuerySerializer(),
+    )
+    @action(methods=['HEAD', 'GET'], detail=True)
+    def files(self, request, zarr_id: str):
+        """List files in a zarr archive."""
+        zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
+        serializer = ZarrExploreQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
-        return Response(serializer.data)
-    else:
-        # The path did not end in a /, so it was a file.
-        # Redirect to a presigned S3 URL.
+
+        # The root path for this zarr in s3
+        base_path = Path(zarr_archive.s3_path(''))
+
+        # Retrieve and join query params
+        limit = serializer.validated_data['limit']
+        download = serializer.validated_data['download']
+
+        raw_prefix = serializer.validated_data['prefix']
+        full_prefix = str(base_path / raw_prefix)
+
+        _after = serializer.validated_data['after']
+        after = str(base_path / _after) if _after else ''
+
+        # Handle head request redirects
+        if request.method == 'HEAD':
+            # We cannot use storage.url because that presigns a GET request.
+            # Instead, we need to presign the HEAD request using the storage-appropriate client.
+            storage = ZarrUploadFile.blob.field.storage
+            url = storage.generate_presigned_head_object_url(full_prefix)
+            return HttpResponseRedirect(url)
+
+        # Return a redirect to the file, if requested
         # S3 will 404 if the file does not exist.
-        return HttpResponseRedirect(
-            ZarrUploadFile.blob.field.storage.url(zarr_archive.s3_path(path))
+        if download:
+            return HttpResponseRedirect(
+                ZarrUploadFile.blob.field.storage.url(zarr_archive.s3_path(raw_prefix))
+            )
+
+        # Retrieve file listing
+        client = get_boto_client()
+        listing = client.list_objects_v2(
+            Bucket=zarr_archive.storage.bucket_name,
+            Prefix=full_prefix,
+            StartAfter=after,
+            MaxKeys=limit,
         )
+
+        # Map/filter listing
+        results = [
+            {
+                'Key': str(Path(obj['Key']).relative_to(base_path)),
+                'LastModified': obj['LastModified'],
+                'ETag': obj['ETag'].strip('"'),
+                'Size': obj['Size'],
+            }
+            for obj in listing.get('Contents', [])
+        ]
+
+        return Response(results)
+
+    @swagger_auto_schema(
+        request_body=ZarrDeleteFileRequestSerializer(many=True),
+        responses={
+            200: ZarrSerializer(many=True),
+            400: ZarrArchive.INGEST_ERROR_MSG,
+        },
+        operation_summary='Delete files from a zarr archive.',
+    )
+    @files.mapping.delete
+    def delete_files(self, request, zarr_id):
+        """Delete files from a zarr archive."""
+        queryset = self.get_queryset().select_for_update()
+        with transaction.atomic():
+            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
+            serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
+            serializer.is_valid(raise_exception=True)
+            paths = [file['path'] for file in serializer.validated_data]
+            zarr_archive.delete_files(paths)
+
+            # Save any zarr assets to trigger metadata updates
+            for asset in zarr_archive.assets.all():
+                asset.save()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)

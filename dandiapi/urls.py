@@ -26,7 +26,7 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
 )
-from dandiapi.zarr.views import ZarrViewSet, explore_zarr_archive
+from dandiapi.zarr.views import ZarrViewSet
 
 router = ExtendedSimpleRouter()
 (
@@ -96,11 +96,6 @@ urlpatterns = [
     path('api/users/search/', users_search_view),
     re_path(
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
-    ),
-    re_path(
-        r'^api/zarr/(?P<zarr_id>[0-9a-f\-]{36}).zarr/(?P<path>.*)?$',
-        explore_zarr_archive,
-        name='zarr-explore',
     ),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
