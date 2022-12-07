@@ -6,7 +6,7 @@ import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.zarr.checksums import ZarrChecksumFileUpdater, ZarrChecksumUpdater
+from dandiapi.zarr.checksums import ZarrChecksumFileUpdater
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -413,131 +413,66 @@ def test_zarr_rest_delete_upload_in_progress(
     assert resp.json() == ['Cannot delete files while an upload is in progress.']
 
 
-@pytest.mark.parametrize(
-    ('path', 'directories', 'files'),
-    [
-        ('', ['foo/'], []),
-        ('foo/', ['foo/bar/'], ['foo/a', 'foo/b']),
-        ('foo/bar/', [], ['foo/bar/c']),
-    ],
-    ids=[
-        '/',
-        'foo/',
-        'foo/bar/',
-    ],
-)
 @pytest.mark.django_db
-def test_zarr_explore_directory(
-    api_client,
-    storage,
-    zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
-    path,
-    directories,
-    files,
-):
+def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_upload_file_factory):
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
-    a: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a')
-    b: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='b')
-    c: ZarrUploadFile = zarr_upload_file_factory(zarr_archive=zarr_archive, path='c')
 
-    # Write the checksum files
-    ZarrChecksumUpdater(zarr_archive).update_file_checksums(
-        {
-            'foo/a': a.to_checksum(),
-            'foo/b': b.to_checksum(),
-            'foo/bar/c': c.to_checksum(),
-        }
-    )
-    listing = ZarrChecksumFileUpdater(zarr_archive, path).read_checksum_file()
+    files = [
+        'foo/bar/a.txt',
+        'foo/bar/b.txt',
+        'foo/baz.txt',
+        # These two files are here just to demonstrate filtering
+        'bar/a.txt',
+        'bar/b.txt',
+    ]
+    for file in files:
+        zarr_upload_file_factory(zarr_archive=zarr_archive, path=file)
 
-    resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}')
-    assert resp.status_code == 200
-    assert resp.json() == {
-        'directories': [
-            f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{dirpath}'
-            for dirpath in directories
-        ],
-        'files': [
-            f'http://localhost:8000/api/zarr/{zarr_archive.zarr_id}.zarr/{filepath}'
-            for filepath in files
-        ],
-        'checksums': {
-            **{directory.name: directory.digest for directory in listing.checksums.directories},
-            **{file.name: file.digest for file in listing.checksums.files},
-        },
-        'checksum': listing.digest,
-    }
+    # Check base listing
+    resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/files/')
+    assert [x['Key'] for x in resp.json()] == sorted(files)
 
-
-@pytest.mark.django_db
-def test_zarr_explore_directory_does_not_exist(
-    api_client,
-    storage,
-    zarr_archive: ZarrArchive,
-):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+    # Check that prefix query param works as expected
     resp = api_client.get(
-        f'/api/zarr/{zarr_archive.zarr_id}.zarr/does/not/exist/',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        {'prefix': 'foo/'},
     )
-    assert resp.status_code == 404
+    assert [x['Key'] for x in resp.json()] == ['foo/bar/a.txt', 'foo/bar/b.txt', 'foo/baz.txt']
 
-
-@pytest.mark.parametrize(
-    'path',
-    [
-        'foo',
-        'foo/a',
-        'foo/b',
-        'foo/bar/c',
-        'gibberish',
-    ],
-)
-@pytest.mark.django_db
-def test_zarr_explore_file(
-    api_client,
-    storage,
-    zarr_archive: ZarrArchive,
-    path,
-):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+    # Check that prefix and after work together
     resp = api_client.get(
-        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        {'prefix': 'foo/', 'after': 'foo/bar/a.txt'},
+    )
+    assert [x['Key'] for x in resp.json()] == ['foo/bar/b.txt', 'foo/baz.txt']
+
+    # Use limit query param
+    resp = api_client.get(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        {'prefix': 'foo/', 'after': 'foo/bar/a.txt', 'limit': 1},
+    )
+    assert [x['Key'] for x in resp.json()] == ['foo/bar/b.txt']
+
+    # Check download flag
+    resp = api_client.get(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        {'prefix': 'foo/bar/a.txt', 'download': True},
     )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/foo/bar/a.txt?'  # noqa: E501
     )
 
 
-@pytest.mark.parametrize(
-    'path',
-    [
-        'foo',
-        'foo/a',
-        'foo/b',
-        'foo/bar/c',
-        'gibberish',
-        'gibberish/',
-    ],
-)
 @pytest.mark.django_db
-def test_zarr_explore_head(
-    api_client,
-    storage,
-    zarr_archive: ZarrArchive,
-    path,
-):
+def test_zarr_explore_head(api_client, storage, zarr_archive: ZarrArchive):
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
 
-    resp = api_client.head(
-        f'/api/zarr/{zarr_archive.zarr_id}.zarr/{path}',
-    )
+    filepath = 'foo/bar.txt'
+    resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
-        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{path}?'  # noqa: E501
+        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{filepath}?'  # noqa: E501
     )
