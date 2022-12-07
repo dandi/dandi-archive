@@ -1246,10 +1246,7 @@ def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.asset_id}/download/'
     )
-
-    assert response.status_code == 302
-    download_url = response.get('Location')
-    assert download_url == f'/api/zarr/{zarr_archive.zarr_id}.zarr/'
+    assert response.status_code == 400
 
 
 @pytest.mark.django_db
@@ -1281,10 +1278,7 @@ def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_arc
     version.assets.add(asset)
 
     response = api_client.get(f'/api/assets/{asset.asset_id}/download/')
-
-    assert response.status_code == 302
-    download_url = response.get('Location')
-    assert download_url == f'/api/zarr/{zarr_archive.zarr_id}.zarr/'
+    assert response.status_code == 400
 
 
 @pytest.mark.django_db
