@@ -133,36 +133,26 @@ parent_directory_map = {
 
 
 @pytest.mark.parametrize(
-    'file_updates,directory_updates,removals,modifications',
+    'file_updates,directory_updates,modifications',
     [
         (
             [foo],
-            [],
             [],
             [ZarrChecksumModification(Path('.'), files_to_update=[foo])],
         ),
         (
             [],
             [foo],
-            [],
             [ZarrChecksumModification(Path('.'), directories_to_update=[foo])],
         ),
         (
-            [],
-            [],
-            ['foo'],
-            [ZarrChecksumModification(Path('.'), paths_to_remove=['foo'])],
-        ),
-        (
             [foo, bar],
-            [],
             [],
             [ZarrChecksumModification(Path('.'), files_to_update=[foo, bar])],
         ),
         (
             [foo_bar],
             [foo],
-            [],
             [
                 ZarrChecksumModification(Path('foo'), files_to_update=[foo_bar]),
                 ZarrChecksumModification(Path('.'), directories_to_update=[foo]),
@@ -170,32 +160,15 @@ parent_directory_map = {
         ),
         (
             [],
-            [],
-            ['foo', 'foo/bar'],
-            [
-                ZarrChecksumModification(Path('foo'), paths_to_remove=['foo/bar']),
-                ZarrChecksumModification(Path('.'), paths_to_remove=['foo']),
-            ],
-        ),
-        (
-            [],
             [foo],
-            ['foo/bar'],
-            [
-                ZarrChecksumModification(Path('foo'), paths_to_remove=['foo/bar']),
-                ZarrChecksumModification(Path('.'), directories_to_update=[foo]),
-            ],
+            [ZarrChecksumModification(Path('.'), directories_to_update=[foo])],
         ),
         (
             [foo_bar_baz],
             [foo],
-            ['foo/bar', 'bar'],
             [
                 ZarrChecksumModification(Path('foo/bar'), files_to_update=[foo_bar_baz]),
-                ZarrChecksumModification(Path('foo'), paths_to_remove=['foo/bar']),
-                ZarrChecksumModification(
-                    Path('.'), directories_to_update=[foo], paths_to_remove=['bar']
-                ),
+                ZarrChecksumModification(Path('.'), directories_to_update=[foo]),
             ],
         ),
     ],
@@ -203,8 +176,7 @@ parent_directory_map = {
 def test_zarr_checksum_modification_queue(
     file_updates: list[ZarrChecksum],
     directory_updates: list[ZarrChecksum],
-    removals: list[Path],
-    modifications,
+    modifications: list[ZarrChecksumModification],
 ):
     queue = ZarrChecksumModificationQueue()
     for file_update in file_updates:
@@ -213,8 +185,6 @@ def test_zarr_checksum_modification_queue(
         queue.queue_directory_update(
             parent_directory_map[directory_update.digest], directory_update
         )
-    for removal in removals:
-        queue.queue_removal(Path(removal).parent, removal)
 
     while not queue.empty:
         assert queue.pop_deepest() == modifications[0]

@@ -26,13 +26,11 @@ class ZarrChecksumModification:
     A set of changes to apply to a ZarrChecksumListing.
 
     Additions or modifications are stored in files_to_update and directories_to_update.
-    Removals are stored in paths_to_remove.
     """
 
     path: Path
     files_to_update: list[ZarrChecksum] = field(default_factory=list)
     directories_to_update: list[ZarrChecksum] = field(default_factory=list)
-    paths_to_remove: list[str] = field(default_factory=list)
 
     def __lt__(self, other):
         return str(self.path) < str(other.path)
@@ -72,9 +70,6 @@ class ZarrChecksumModificationQueue:
 
     def queue_directory_update(self, key: Path, checksum: ZarrChecksum):
         self._get_path(key).directories_to_update.append(checksum)
-
-    def queue_removal(self, key: Path, path: Path | str):
-        self._get_path(key).paths_to_remove.append(str(path))
 
     def pop_deepest(self) -> ZarrChecksumModification:
         """Find the deepest path in the queue, and return it and its children to be updated."""
