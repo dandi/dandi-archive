@@ -13,9 +13,9 @@ from dandiapi.api.tasks import calculate_sha256, validate_asset_metadata, valida
 
 @click.command()
 @click.option('--name', default='Development Dandiset')
-@click.option('--owner', required=True, help='The email address of the owner')
-def create_dev_dandiset(name: str, owner: str):
-    owner = User.objects.get(email=owner)
+@click.option('--owner', 'email', required=True, help='The email address of the owner')
+def create_dev_dandiset(name: str, email: str):
+    owner = User.objects.get(email=email)
 
     version_metadata = {
         'description': 'An informative description',
