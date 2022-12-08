@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 import heapq
 from pathlib import Path
 import re
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
 from dandischema.digests.zarr import ZarrChecksum, ZarrJSONChecksumSerializer
 
@@ -92,27 +87,15 @@ class ZarrChecksumModificationQueue:
     def empty(self):
         return len(self._heap) == 0
 
-    def process(self) -> str:
-        pass
+    def process(self):
+        """
+        Process the queue, returning the resulting top level digest.
 
-
-class ZarrChecksumUpdater:
-    """A helper for updating batches of checksums in a zarr archive."""
-
-    def __init__(self, zarr_archive: ZarrArchive | EmbargoedZarrArchive) -> None:
-        self.zarr_archive = zarr_archive
-
-    def modify(self, modifications: ZarrChecksumModificationQueue):
-        latest_checksum = None
-        while not modifications.empty:
+        Returns `None` if no files/directories were processed.
+        """
+        while not self.empty:
             # Pop the deepest directory available
-            modification = modifications.pop_deepest()
-            print(
-                f'Applying modifications to {self.zarr_archive.zarr_id}:{modification.path} '
-                f'({len(modification.files_to_update)} files, '
-                f'{len(modification.directories_to_update)} directories, '
-                f'{len(modification.paths_to_remove)} removals)'
-            )
+            modification = self.pop_deepest()
 
             # Generates a sorted checksum listing for the current path
             checksum_listing = ZarrJSONChecksumSerializer().generate_listing(
@@ -122,10 +105,10 @@ class ZarrChecksumUpdater:
 
             # If we have reached the root node, then we're done.
             if modification.path == Path('.') or modification.path == Path('/'):
-                break
+                return latest_checksum.digest
 
             # The parent needs to incorporate the checksum modification we just made.
-            modifications.queue_directory_update(
+            self.queue_directory_update(
                 modification.path.parent,
                 ZarrChecksum(
                     name=modification.path.name,
@@ -133,5 +116,3 @@ class ZarrChecksumUpdater:
                     size=checksum_listing.size,
                 ),
             )
-
-        return latest_checksum and latest_checksum.digest

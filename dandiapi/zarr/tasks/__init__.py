@@ -13,7 +13,6 @@ from dandiapi.api.storage import yield_files
 from dandiapi.zarr.checksums import (
     ZarrChecksum,
     ZarrChecksumModificationQueue,
-    ZarrChecksumUpdater,
     parse_checksum_string,
 )
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -61,7 +60,8 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
                 queue.queue_file_update(key=path.parent, checksum=checksum)
 
         # Compute checksum tree and retrieve top level checksum
-        checksum = ZarrChecksumUpdater(zarr_archive=zarr).modify(modifications=queue)
+        logger.info(f'Computing checksum for zarr {zarr.zarr_id}...')
+        checksum = queue.process()
 
         # Raise an exception if empty and checksum are ever out of sync.
         # The reported checksum should never be None if there are files,
