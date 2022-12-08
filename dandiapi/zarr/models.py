@@ -10,12 +10,11 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import QuerySet
 from django_extensions.db.models import TimeStampedModel
-import pydantic
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumFileUpdater
+from dandiapi.zarr.checksums import ZarrChecksum
 
 logger = logging.Logger(name=__name__)
 
@@ -152,29 +151,6 @@ class BaseZarrArchive(TimeStampedModel):
         parsed = urlparse(signed_url)
         s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
         return s3_url
-
-    def fetch_checksum(self, path: str | Path = '') -> str | None:
-        """
-        Fetch the zarr checksum at a specific subdirectory (defaults to root).
-
-        If a checksum file doesn't exist at the specified path, `None` is returned.
-        """
-        listing = ZarrChecksumFileUpdater(self, path).read_checksum_file()
-        if listing is not None:
-            return listing.digest
-
-        return None
-
-    def get_checksum(self) -> str | None:
-        """Return the top level zarr checksum."""
-        try:
-            return self.fetch_checksum()
-
-        # Handle case where checksum file is malformed,
-        # log error and return None
-        except pydantic.ValidationError as e:
-            logger.error(e, exc_info=True)
-            return None
 
     def begin_upload(self, files):
         if self.upload_in_progress:

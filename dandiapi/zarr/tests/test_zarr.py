@@ -1,12 +1,10 @@
 from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
-from django.core.files.base import ContentFile
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.zarr.checksums import ZarrChecksumFileUpdater
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -111,10 +109,9 @@ def test_zarr_rest_get(
     # Pretend like ZarrUploadFile was defined with the given storage
     ZarrUploadFile.blob.field.storage = storage
     upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    # We need to complete the upload for the checksum files to be written.
     zarr_archive.complete_upload()
 
-    # Ingest archive so checksum files are written.
+    # Ingest
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
 
@@ -208,34 +205,6 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'dandiset': zarr_archive.dandiset.identifier,
         'status': ZarrArchiveStatus.PENDING,
         'checksum': zarr_archive.checksum,
-        'upload_in_progress': False,
-        'file_count': 0,
-        'size': 0,
-    }
-
-
-@pytest.mark.django_db
-def test_zarr_rest_get_invalid_checksum_file(authenticated_api_client, zarr_archive: ZarrArchive):
-    # Write some invalid content into the .checksum file
-    storage = zarr_archive.storage
-    content_file = ContentFile(b'invalid content')
-    # save() will never overwrite an existing file, it simply appends some garbage to ensure
-    # uniqueness. _save() is an internal storage API that will overwite existing files.
-    storage._save(
-        ZarrChecksumFileUpdater(
-            zarr_archive=zarr_archive, zarr_directory_path=''
-        ).checksum_file_path,
-        content_file,
-    )
-
-    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
-    assert resp.status_code == 200
-    assert resp.json() == {
-        'name': zarr_archive.name,
-        'zarr_id': zarr_archive.zarr_id,
-        'dandiset': zarr_archive.dandiset.identifier,
-        'status': ZarrArchiveStatus.PENDING,
-        'checksum': None,
         'upload_in_progress': False,
         'file_count': 0,
         'size': 0,

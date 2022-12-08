@@ -5,40 +5,20 @@ from pathlib import Path
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from dandischema.digests.zarr import EMPTY_CHECKSUM
-from django.conf import settings
 from django.db import transaction
 from django.db.transaction import atomic
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
-from dandiapi.api.storage import get_boto_client, yield_files
+from dandiapi.api.storage import yield_files
 from dandiapi.zarr.checksums import (
-    SessionZarrChecksumUpdater,
     ZarrChecksum,
     ZarrChecksumModificationQueue,
+    ZarrChecksumUpdater,
     parse_checksum_string,
 )
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
-
-
-def clear_checksum_files(zarr: ZarrArchive):
-    """Remove all checksum files."""
-    client = get_boto_client()
-    bucket = zarr.storage.bucket_name
-    prefix = (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'{settings.DANDI_ZARR_CHECKSUM_PREFIX_NAME}/{zarr.zarr_id}'
-    )
-
-    for files in yield_files(bucket=bucket, prefix=prefix):
-        if not files:
-            break
-
-        # Handle both versioned and non-versioned buckets
-        allowed = {'Key', 'VersionId'}
-        objects = [{k: v for k, v in file.items() if k in allowed} for file in files]
-        client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
 
 
 @shared_task(queue='ingest_zarr_archive', time_limit=3600)
@@ -62,9 +42,6 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         # Remove all asset paths associated with this zarr before ingest
         delete_zarr_paths(zarr)
 
-        # Clear any existing checksum files before running ingestion
-        clear_checksum_files(zarr)
-
         # Instantiate updater and add files as they come in
         empty = True
         queue = ZarrChecksumModificationQueue()
@@ -84,8 +61,7 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
                 queue.queue_file_update(key=path.parent, checksum=checksum)
 
         # Compute checksum tree and retrieve top level checksum
-        SessionZarrChecksumUpdater(zarr_archive=zarr).modify(modifications=queue)
-        checksum = zarr.get_checksum()
+        checksum = ZarrChecksumUpdater(zarr_archive=zarr).modify(modifications=queue)
 
         # Raise an exception if empty and checksum are ever out of sync.
         # The reported checksum should never be None if there are files,
