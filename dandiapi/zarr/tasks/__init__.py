@@ -68,7 +68,7 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         # Instantiate updater and add files as they come in
         empty = True
         queue = ZarrChecksumModificationQueue()
-        print(f'Fetching files for zarr {zarr.zarr_id}...')
+        logger.info(f'Fetching files for zarr {zarr.zarr_id}...')
         for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
             if len(files):
                 empty = False

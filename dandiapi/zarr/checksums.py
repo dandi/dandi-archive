@@ -217,7 +217,7 @@ class ZarrChecksumModificationQueue:
     def queue_removal(self, key: Path, path: Path | str):
         self._get_path(key).paths_to_remove.append(str(path))
 
-    def pop_deepest(self):
+    def pop_deepest(self) -> ZarrChecksumModification:
         """Find the deepest path in the queue, and return it and its children to be updated."""
         _, modification = heapq.heappop(self._heap)
         del self._path_map[modification.path]

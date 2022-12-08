@@ -154,6 +154,11 @@ def add_asset_to_version(
         # Save the version so that the modified field is updated
         version.save()
 
+    # The sha256 may have been newly calculated in the time since the asset was created. If so, we
+    # need to fetch the latest record from the DB so that _maybe_validate_asset_metadata sees the
+    # new sha256 value and includes it in the asset metadata properly.
+    asset.refresh_from_db()
+
     _maybe_validate_asset_metadata(asset)
 
     return asset
