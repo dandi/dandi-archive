@@ -5,7 +5,7 @@ import heapq
 from pathlib import Path
 import re
 
-from dandischema.digests.zarr import ZarrChecksum, ZarrJSONChecksumSerializer
+from dandischema.digests.zarr import EMPTY_CHECKSUM, ZarrChecksum, ZarrJSONChecksumSerializer
 
 ZARR_CHECKSUM_REGEX = r'[0-9a-f]+-(\d+)--(\d+)'
 
@@ -49,6 +49,10 @@ class ZarrChecksumModificationQueue:
         self._heap: list[tuple[int, ZarrChecksumModification]] = []
         self._path_map: dict[Path, ZarrChecksumModification] = {}
 
+    @property
+    def empty(self):
+        return len(self._heap) == 0
+
     def _add_path(self, key: Path):
         modification = ZarrChecksumModification(path=key)
 
@@ -78,16 +82,8 @@ class ZarrChecksumModificationQueue:
 
         return modification
 
-    @property
-    def empty(self):
-        return len(self._heap) == 0
-
     def process(self):
-        """
-        Process the queue, returning the resulting top level digest.
-
-        Returns `None` if no files/directories were processed.
-        """
+        """Process the queue, returning the resulting top level digest."""
         while not self.empty:
             # Pop the deepest directory available
             modification = self.pop_deepest()
@@ -111,3 +107,5 @@ class ZarrChecksumModificationQueue:
                     size=checksum_listing.size,
                 ),
             )
+
+        return EMPTY_CHECKSUM
