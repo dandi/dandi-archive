@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.zarr.checksums import (
@@ -15,6 +16,7 @@ from dandiapi.zarr.checksums import (
     ZarrJSONChecksumSerializer,
 )
 from dandiapi.zarr.models import ZarrArchive, ZarrUploadFile
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
 def test_zarr_checksum_sort_order():
@@ -441,3 +443,44 @@ def test_zarr_checksum_updater(storage, zarr_archive: ZarrArchive, zarr_upload_f
     )
     assert ZarrChecksumFileUpdater(zarr_archive, 'foo').read_checksum_file() == foo_listing
     assert ZarrChecksumFileUpdater(zarr_archive, '').read_checksum_file() == root_listing
+
+
+@pytest.mark.django_db
+def test_zarr_checksum_delete_alone(
+    storage, zarr_archive: ZarrArchive, zarr_upload_file_factory, user, authenticated_api_client
+):
+    ZarrUploadFile.blob.field.storage = storage
+    assign_perm('owner', user, zarr_archive.dandiset)
+
+    # Two files share root directory, and reside two directories down, ensuring there is a
+    # directory between the file and the root directory, in which a checksum file will reside
+    zarr_upload_file_factory(zarr_archive=zarr_archive, path='a/b/c/d.txt')
+    second_file = zarr_upload_file_factory(zarr_archive=zarr_archive, path='a/d/e/f.txt')
+    zarr_archive.complete_upload()
+
+    # Ingest zarr
+    ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
+    old_checksum = ZarrChecksumFileUpdater(zarr_archive, '').read_checksum_file().digest
+
+    # Ensure two subdirs are found
+    subdirs = ZarrChecksumFileUpdater(zarr_archive, 'a').read_checksum_file().checksums.directories
+    assert len(subdirs) == 2
+
+    # Delete one of the files
+    resp = authenticated_api_client.delete(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': str(Path(second_file.path))}]
+    )
+    assert resp.status_code == 204
+
+    # Ingest again
+    ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
+
+    # Ensure only one subdir is found
+    subdirs = ZarrChecksumFileUpdater(zarr_archive, 'a').read_checksum_file().checksums.directories
+    assert len(subdirs) == 1
+    assert subdirs[0].name == 'b'
+
+    # Assert checksum changed
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.checksum != old_checksum
+    assert zarr_archive.checksum is not None

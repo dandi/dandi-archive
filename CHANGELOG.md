@@ -1,3 +1,44 @@
+# v0.3.7 (Wed Dec 07 2022)
+
+#### 🐛 Bug Fix
+
+- Refresh asset object before validating it after creation [#1393](https://github.com/dandi/dandi-archive/pull/1393) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.6 (Tue Dec 06 2022)
+
+#### 🐛 Bug Fix
+
+- Always clear checksum files during zarr ingestion [#1390](https://github.com/dandi/dandi-archive/pull/1390) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 📝 Documentation
+
+- dandi-archive web app readme edit [#1386](https://github.com/dandi/dandi-archive/pull/1386) ([@melster1010](https://github.com/melster1010))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mary Elise Dedicke ([@melster1010](https://github.com/melster1010))
+
+---
+
+# v0.3.5 (Wed Nov 30 2022)
+
+#### 🐛 Bug Fix
+
+- Prevent locking dandisets during zarr upload [#1385](https://github.com/dandi/dandi-archive/pull/1385) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.4 (Tue Nov 29 2022)
 
 #### 🐛 Bug Fix
