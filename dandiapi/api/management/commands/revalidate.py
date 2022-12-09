@@ -1,7 +1,7 @@
 import djclick as click
 
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.tasks import validate_asset_metadata, validate_version_metadata
+from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 
 
 @click.command()
@@ -21,8 +21,8 @@ def revalidate(assets: bool, versions: bool, revalidate_all: bool, dry_run: bool
             asset_qs = asset_qs.filter(status=Asset.Status.INVALID)
         click.echo(f'Revalidating {asset_qs.count()} assets')
         if not dry_run:
-            for asset in asset_qs.values('id'):
-                validate_asset_metadata(asset['id'])
+            for asset in asset_qs.iterator():
+                validate_asset_metadata(asset=asset)
 
     if versions:
         # Only revalidate draft versions
@@ -33,5 +33,5 @@ def revalidate(assets: bool, versions: bool, revalidate_all: bool, dry_run: bool
             )
         click.echo(f'Revalidating {version_qs.count()} versions')
         if not dry_run:
-            for version in version_qs.values('id'):
-                validate_version_metadata(version['id'])
+            for version in version_qs.iterator():
+                validate_version_metadata(version=version)

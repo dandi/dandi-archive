@@ -430,12 +430,12 @@ def test_version_rest_info(api_client, version):
 def test_version_rest_info_with_asset(
     api_client,
     draft_version_factory,
-    asset_factory,
+    draft_asset_factory,
     asset_status: Asset.Status,
     expected_validation_error: str,
 ):
     version = draft_version_factory(status=Version.Status.VALID)
-    asset = asset_factory(status=asset_status)
+    asset = draft_asset_factory(status=asset_status)
     version.assets.add(asset)
 
     # These validation error types should have the asset path prepended to them:
@@ -607,9 +607,8 @@ def test_version_rest_publish(
     draft_version.assets.add(old_published_asset)
 
     # Validate the metadata to mark the assets and version as `VALID`
-    tasks.validate_asset_metadata(old_draft_asset.id)
-    tasks.validate_asset_metadata(old_published_asset.id)
-    tasks.validate_version_metadata(draft_version.id)
+    tasks.validate_asset_metadata_task(old_draft_asset.id)
+    tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()
     assert draft_version.valid
 
@@ -644,9 +643,9 @@ def test_version_rest_publish_zarr(
     draft_version.assets.add(normal_asset)
 
     # Validate the metadata to mark the assets and version as `VALID`
-    tasks.validate_asset_metadata(zarr_asset.id)
-    tasks.validate_asset_metadata(normal_asset.id)
-    tasks.validate_version_metadata(draft_version.id)
+    tasks.validate_asset_metadata_task(zarr_asset.id)
+    tasks.validate_asset_metadata_task(normal_asset.id)
+    tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()
     assert draft_version.valid
 
