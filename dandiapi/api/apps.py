@@ -33,10 +33,6 @@ class PublishConfig(AppConfig):
             if len(args) and 'wsgi_environ' in args[0]:
                 wsgi_environ = args[0]['wsgi_environ']
 
-                # datalad user agent can be noisy
-                if 'backups2datalad' in wsgi_environ.get('HTTP_USER_AGENT', ''):
-                    return True
-
                 if wsgi_environ.get('REQUEST_METHOD') == 'GET':
                     for route in noisy_route_regex:
                         if re.search(route, wsgi_environ.get('PATH_INFO', '')):
