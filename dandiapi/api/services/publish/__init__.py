@@ -17,6 +17,23 @@ from dandiapi.api.services.publish.exceptions import (
 from dandiapi.api.tasks import write_manifest_files
 
 
+def publish_asset(*, asset: Asset) -> None:
+    with transaction.atomic():
+        # Lock asset to ensure it doesn't change out from under us while publishing
+        locked_asset = Asset.objects.select_for_update().get(id=asset.id)
+
+        assert not locked_asset.published, 'asset is already published'
+        assert locked_asset.status == Asset.Status.VALID, 'asset is not VALID'
+
+        # Publish the asset
+        locked_asset.metadata = asset.published_metadata()
+        locked_asset.published = True
+        locked_asset.save()
+
+    # Original asset is now stale, so we need to refresh from DB
+    asset.refresh_from_db()
+
+
 def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
     """
     Prepare a dandiset to be published by locking it and setting its status to PUBLISHING.
@@ -97,8 +114,7 @@ def _publish_dandiset(dandiset_id: int) -> None:
 
         # Publish any draft assets
         for draft_asset in draft_assets.iterator():
-            draft_asset.publish()
-            draft_asset.save()
+            publish_asset(asset=draft_asset)
 
         # Save again to recompute metadata, specifically assetsSummary
         new_version.save()

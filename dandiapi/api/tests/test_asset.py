@@ -15,6 +15,7 @@ from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetPathConflict
+from dandiapi.api.services.publish import publish_asset
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -91,8 +92,7 @@ def test_publish_asset(draft_asset: Asset):
     draft_asset_id = draft_asset.asset_id
     draft_blob = draft_asset.blob
     draft_metadata = draft_asset.metadata
-    draft_asset.publish()
-    draft_asset.save()
+    publish_asset(asset=draft_asset)
 
     # draft_asset has been published, so it is now published_asset
     published_asset = draft_asset
