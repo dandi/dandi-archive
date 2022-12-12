@@ -97,7 +97,7 @@ class ZarrListSerializer(serializers.ModelSerializer):
 class ZarrExploreQuerySerializer(serializers.Serializer):
     after = serializers.CharField(default='')
     prefix = serializers.CharField(default='')
-    limit = serializers.IntegerField(default=1000)
+    limit = serializers.IntegerField(min_value=0, max_value=1000, default=1000)
     download = serializers.BooleanField(default=False)
 
 
