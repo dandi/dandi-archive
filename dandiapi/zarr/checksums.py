@@ -16,23 +16,28 @@ if TYPE_CHECKING:
     from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
 from dandischema.digests.zarr import (
+    EMPTY_CHECKSUM,
     ZarrChecksum,
     ZarrChecksumListing,
     ZarrChecksums,
     ZarrJSONChecksumSerializer,
 )
 
-ZARR_CHECKSUM_REGEX = r'[0-9a-f]+-(\d+)--(\d+)'
+ZARR_CHECKSUM_REGEX = r'([0-9a-f]+)-(\d+)--(\d+)'
 
 
-def parse_checksum_string(checksum: str) -> dict[str, int]:
-    """Return a tuple of (file count, total size)."""
+def parse_zarr_checksum(checksum: str | None) -> dict[str, int]:
+    """Return a dict with keys `digest`, `count` and `size`."""
+    if checksum is None:
+        return parse_zarr_checksum(EMPTY_CHECKSUM)
+
     match = re.match(ZARR_CHECKSUM_REGEX, checksum)
     if match is None:
         raise Exception('Invalid zarr checksum provided.')
 
-    count, size = match.groups()
+    digest, count, size = match.groups()
     return {
+        'digest': digest,
         'count': int(count),
         'size': int(size),
     }

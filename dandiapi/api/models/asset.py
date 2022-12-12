@@ -321,17 +321,25 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def __str__(self) -> str:
         return self.path
 
-    @classmethod
-    def total_size(cls):
+    @staticmethod
+    def total_size():
+        """Total aggregated size of all assets in the system."""
         from dandiapi.zarr.models import ZarrArchive
 
-        return sum(
+        asset_blob_sizes = sum(
             cls.objects.filter(assets__versions__isnull=False)
             .distinct()
             .aggregate(size=models.Sum('size'))['size']
             or 0
-            for cls in (AssetBlob, EmbargoedAssetBlob, ZarrArchive)
-            # adding of Zarrs to embargoed dandisets is not supported
-            # so no point of adding EmbargoedZarr here since would also result in error
-            # TODO: add EmbagoedZarr whenever supported
+            for cls in (AssetBlob, EmbargoedAssetBlob)
         )
+
+        # adding of Zarrs to embargoed dandisets is not supported
+        # so no point of adding EmbargoedZarr here since would also result in error
+        # TODO: add EmbagoedZarr whenever supported
+        zarr_sizes = sum(
+            zarr.size
+            for zarr in ZarrArchive.objects.filter(assets__versions__isnull=False).distinct()
+        )
+
+        return asset_blob_sizes + zarr_sizes

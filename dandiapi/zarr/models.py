@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumFileUpdater, parse_checksum_string
+from dandiapi.zarr.checksums import ZarrChecksum, ZarrChecksumFileUpdater, parse_zarr_checksum
 
 logger = logging.Logger(name=__name__)
 
@@ -137,17 +137,11 @@ class BaseZarrArchive(TimeStampedModel):
 
     @property
     def file_count(self) -> int:
-        if self.checksum is None:
-            return 0
-
-        return parse_checksum_string(self.checksum)['count']
+        return parse_zarr_checksum(self.checksum)['count']
 
     @property
     def size(self) -> int:
-        if self.checksum is None:
-            return 0
-
-        return parse_checksum_string(self.checksum)['size']
+        return parse_zarr_checksum(self.checksum)['size']
 
     @property
     def upload_in_progress(self) -> bool:

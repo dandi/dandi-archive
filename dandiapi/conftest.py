@@ -1,3 +1,6 @@
+import hashlib
+
+from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from django.core.files.storage import Storage
 from minio_storage.storage import MinioStorage
@@ -165,3 +168,15 @@ def embargoed_storage(request) -> Storage:
 def storage_tuple(request) -> tuple[Storage, Storage]:
     storage_factory, embargoed_storage_factory = request.param
     return (storage_factory(), embargoed_storage_factory())
+
+
+@pytest.fixture
+def zarr_checksum_factory():
+    def func(data='', size=0, file_count=0):
+        if not (data or size or file_count):
+            return EMPTY_CHECKSUM
+
+        digest = hashlib.md5(data.encode('utf-8')).hexdigest()
+        return f'{digest}-{file_count}--{size}'
+
+    return func

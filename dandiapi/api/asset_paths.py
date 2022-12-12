@@ -216,17 +216,21 @@ def add_version_asset_paths(version: Version):
     nodes = AssetPath.objects.filter(version=version, aggregate_files=0)
     for node in tqdm(nodes):
         child_link_ids = node.child_links.distinct('child_id').values_list('child_id', flat=True)
-        child_leaves = AssetPath.objects.filter(id__in=child_link_ids, asset__isnull=False)
+        child_leaves = AssetPath.objects.filter(
+            id__in=child_link_ids, asset__isnull=False
+        ).select_related('asset')
 
         # Get all aggregates
-        sizes = child_leaves.aggregate(
+        blob_sizes = child_leaves.aggregate(
             size=Coalesce(Sum('asset__blob__size'), 0),
             esize=Coalesce(Sum('asset__embargoed_blob__size'), 0),
-            zsize=Coalesce(Sum('asset__zarr__size'), 0),
+        )
+        zarr_sizes = sum(
+            leaf.asset.zarr.size for leaf in child_leaves.filter(asset__zarr__isnull=False)
         )
 
         node.aggregate_files += child_leaves.count()
-        node.aggregate_size += sizes['size'] + sizes['esize'] + sizes['zsize']
+        node.aggregate_size += blob_sizes['size'] + blob_sizes['esize'] + zarr_sizes
         node.save()
 
 

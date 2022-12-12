@@ -15,6 +15,7 @@ from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetPathConflict
+from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -126,7 +127,11 @@ def test_publish_asset(draft_asset: Asset):
 
 @pytest.mark.django_db
 def test_asset_total_size(
-    draft_version_factory, asset_factory, asset_blob_factory, zarr_archive_factory
+    draft_version_factory,
+    asset_factory,
+    asset_blob_factory,
+    zarr_archive_factory,
+    zarr_checksum_factory,
 ):
     # This asset blob should only be counted once,
     # despite belonging to multiple assets and multiple versions.
@@ -146,10 +151,11 @@ def test_asset_total_size(
 
     assert Asset.total_size() == asset_blob.size
 
-    zarr_archive = zarr_archive_factory()
-    # give it some size
-    zarr_archive.size = 100
-    zarr_archive.save()  # save adjusted .size into DB
+    # Create zarr with size of 100
+    zarr_archive = zarr_archive_factory(
+        checksum=zarr_checksum_factory(size=100), status=ZarrArchiveStatus.COMPLETE
+    )
+    zarr_archive.save()
 
     # adding of an asset with zarr should be reflected
     asset3 = asset_factory(zarr=zarr_archive, blob=None)
