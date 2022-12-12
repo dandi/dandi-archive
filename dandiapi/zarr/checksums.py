@@ -25,14 +25,17 @@ from dandischema.digests.zarr import (
 ZARR_CHECKSUM_REGEX = r'[0-9a-f]+-(\d+)--(\d+)'
 
 
-def parse_checksum_string(checksum: str) -> tuple[int, int]:
+def parse_checksum_string(checksum: str) -> dict[str, int]:
     """Return a tuple of (file count, total size)."""
     match = re.match(ZARR_CHECKSUM_REGEX, checksum)
     if match is None:
         raise Exception('Invalid zarr checksum provided.')
 
     count, size = match.groups()
-    return (int(count), int(size))
+    return {
+        'count': int(count),
+        'size': int(size),
+    }
 
 
 class ZarrChecksumFileUpdater(AbstractContextManager):

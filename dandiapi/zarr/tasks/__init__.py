@@ -15,7 +15,6 @@ from dandiapi.zarr.checksums import (
     SessionZarrChecksumUpdater,
     ZarrChecksum,
     ZarrChecksumModificationQueue,
-    parse_checksum_string,
 )
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
@@ -99,7 +98,6 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         # If checksum is None, that means there were no files, and we should set
         # the checksum to EMPTY_CHECKSUM, as it's still been ingested, it's just empty.
         zarr.checksum = checksum or EMPTY_CHECKSUM
-        zarr.file_count, zarr.size = parse_checksum_string(zarr.checksum)
         zarr.status = ZarrArchiveStatus.COMPLETE
         zarr.save()
 
