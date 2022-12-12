@@ -13,6 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
@@ -94,11 +95,22 @@ class ZarrListSerializer(serializers.ModelSerializer):
     upload_in_progress = serializers.BooleanField(source='uploads_exist')
 
 
-class ZarrExploreQuerySerializer(serializers.Serializer):
+class ZarrExploreInputSerializer(serializers.Serializer):
     after = serializers.CharField(default='')
     prefix = serializers.CharField(default='')
     limit = serializers.IntegerField(min_value=0, max_value=1000, default=1000)
     download = serializers.BooleanField(default=False)
+
+
+class ZarrExploreOutputSerializer(serializers.Serializer):
+    class ResultsSerializer(serializers.Serializer):
+        Key = serializers.CharField()
+        LastModified = serializers.CharField()
+        ETag = serializers.CharField()
+        Size = serializers.IntegerField(min_value=0)
+
+    next = serializers.CharField(default=None)
+    results = serializers.ListField(child=ResultsSerializer())
 
 
 class ZarrListQuerySerializer(serializers.Serializer):
@@ -285,13 +297,13 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             200: 'Listing of s3 objects',
             302: 'Redirect to an object in S3',
         },
-        query_serializer=ZarrExploreQuerySerializer(),
+        query_serializer=ZarrExploreInputSerializer(),
     )
     @action(methods=['HEAD', 'GET'], detail=True)
     def files(self, request, zarr_id: str):
         """List files in a zarr archive."""
         zarr_archive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
-        serializer = ZarrExploreQuerySerializer(data=request.query_params)
+        serializer = ZarrExploreInputSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
         # The root path for this zarr in s3
@@ -342,7 +354,21 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             for obj in listing.get('Contents', [])
         ]
 
-        return Response(results)
+        # Create next listing if necessary
+        next_link = None
+        if listing['IsTruncated']:
+            url = self.request.build_absolute_uri()
+            next_link = replace_query_param(url, 'after', results[-1]['Key'])
+
+        # Construct serializer and return
+        return Response(
+            ZarrExploreOutputSerializer(
+                instance={
+                    'next': next_link,
+                    'results': results,
+                }
+            ).data
+        )
 
     @swagger_auto_schema(
         request_body=ZarrDeleteFileRequestSerializer(many=True),

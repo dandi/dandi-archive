@@ -431,28 +431,32 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_upl
 
     # Check base listing
     resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/files/')
-    assert [x['Key'] for x in resp.json()] == sorted(files)
+    assert [x['Key'] for x in resp.json()['results']] == sorted(files)
 
     # Check that prefix query param works as expected
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/'},
     )
-    assert [x['Key'] for x in resp.json()] == ['foo/bar/a.txt', 'foo/bar/b.txt', 'foo/baz.txt']
+    assert [x['Key'] for x in resp.json()['results']] == [
+        'foo/bar/a.txt',
+        'foo/bar/b.txt',
+        'foo/baz.txt',
+    ]
 
     # Check that prefix and after work together
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/', 'after': 'foo/bar/a.txt'},
     )
-    assert [x['Key'] for x in resp.json()] == ['foo/bar/b.txt', 'foo/baz.txt']
+    assert [x['Key'] for x in resp.json()['results']] == ['foo/bar/b.txt', 'foo/baz.txt']
 
     # Use limit query param
     resp = api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/', 'after': 'foo/bar/a.txt', 'limit': 1},
     )
-    assert [x['Key'] for x in resp.json()] == ['foo/bar/b.txt']
+    assert [x['Key'] for x in resp.json()['results']] == ['foo/bar/b.txt']
 
     # Check download flag
     resp = api_client.get(
