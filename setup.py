@@ -75,10 +75,6 @@ setup(
             'django-s3-file-field[minio]',
             'ipython',
             'tox',
-            'boto3-stubs[s3]',
-            'django-stubs',
-            'djangorestframework-stubs',
-            'types-setuptools',
             'memray',
         ],
         'test': [
@@ -89,6 +85,21 @@ setup(
             'pytest-factoryboy',
             'pytest-memray',
             'pytest-mock',
+        ],
+        'lint': [
+            'flake8==5.0.4',
+            'flake8-black==0.3.5',
+            'flake8-bugbear==22.12.6',
+            'flake8-docstrings==1.6.0',
+            'flake8-isort==5.0.3',
+            'flake8-quotes==3.3.1',
+        ],
+        'type': [
+            'mypy==0.982',
+            'boto3-stubs[s3]==1.26.27',
+            'django-stubs==1.13.1',
+            'djangorestframework-stubs==1.8.0',
+            'types-setuptools==65.6.0.2',
         ],
     },
 )
