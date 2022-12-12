@@ -3,7 +3,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
+from datetime import datetime
+import heapq
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -18,6 +21,18 @@ from dandischema.digests.zarr import (
     ZarrChecksums,
     ZarrJSONChecksumSerializer,
 )
+
+ZARR_CHECKSUM_REGEX = r'[0-9a-f]+-(\d+)--(\d+)'
+
+
+def parse_checksum_string(checksum: str) -> tuple[int, int]:
+    """Return a tuple of (file count, total size)."""
+    match = re.match(ZARR_CHECKSUM_REGEX, checksum)
+    if match is None:
+        raise Exception('Invalid zarr checksum provided.')
+
+    count, size = match.groups()
+    return (int(count), int(size))
 
 
 class ZarrChecksumFileUpdater(AbstractContextManager):
@@ -118,6 +133,34 @@ class ZarrChecksumFileUpdater(AbstractContextManager):
         self._checksums.remove_checksums([Path(path).name for path in paths])
 
 
+class SessionZarrChecksumFileUpdater(ZarrChecksumFileUpdater):
+    """Override ZarrChecksumFileUpdater to ignore old files."""
+
+    def __init__(self, *args, session_start: datetime, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Set the start of when new files may have been written
+        self._session_start = session_start
+
+    def read_checksum_file(self) -> ZarrChecksumListing | None:
+        """Load a checksum listing from the checksum file."""
+        storage = self.zarr_archive.storage
+        checksum_path = self.checksum_file_path
+
+        # Check if this file was modified during this session
+        read_existing = False
+        if storage.exists(checksum_path):
+            read_existing = storage.modified_time(self.checksum_file_path) >= self._session_start
+
+        # Read existing file if necessary
+        if read_existing:
+            with storage.open(checksum_path) as f:
+                x = f.read()
+                return self._serializer.deserialize(x)
+        else:
+            return None
+
+
 @dataclass
 class ZarrChecksumModification:
     """
@@ -132,6 +175,9 @@ class ZarrChecksumModification:
     directories_to_update: list[ZarrChecksum] = field(default_factory=list)
     paths_to_remove: list[str] = field(default_factory=list)
 
+    def __lt__(self, other):
+        return str(self.path) < str(other.path)
+
 
 class ZarrChecksumModificationQueue:
     """
@@ -143,38 +189,44 @@ class ZarrChecksumModificationQueue:
     """
 
     def __init__(self) -> None:
-        self._queue: dict[Path, ZarrChecksumModification] = {}
+        self._heap: list[tuple[int, ZarrChecksumModification]] = []
+        self._path_map: dict[Path, ZarrChecksumModification] = {}
+
+    def _add_path(self, key: Path):
+        modification = ZarrChecksumModification(path=key)
+
+        # Add link to modification
+        self._path_map[key] = modification
+
+        # Add modification to heap with length (negated to representa max heap)
+        length = len(key.parents)
+        heapq.heappush(self._heap, (-1 * length, modification))
+
+    def _get_path(self, key: Path):
+        if key not in self._path_map:
+            self._add_path(key)
+
+        return self._path_map[key]
 
     def queue_file_update(self, key: Path, checksum: ZarrChecksum):
-        if key not in self._queue:
-            self._queue[key] = ZarrChecksumModification(path=key)
-        self._queue[key].files_to_update.append(checksum)
+        self._get_path(key).files_to_update.append(checksum)
 
     def queue_directory_update(self, key: Path, checksum: ZarrChecksum):
-        if key not in self._queue:
-            self._queue[key] = ZarrChecksumModification(path=key)
-        self._queue[key].directories_to_update.append(checksum)
+        self._get_path(key).directories_to_update.append(checksum)
 
     def queue_removal(self, key: Path, path: Path | str):
-        if key not in self._queue:
-            self._queue[key] = ZarrChecksumModification(path=key)
-        self._queue[key].paths_to_remove.append(str(path))
+        self._get_path(key).paths_to_remove.append(str(path))
 
-    def pop_deepest(self):
+    def pop_deepest(self) -> ZarrChecksumModification:
         """Find the deepest path in the queue, and return it and its children to be updated."""
-        longest_path = list(self._queue.keys())[0]
-        longest_path_length = str(longest_path).split('/')
-        # O(n) performance, consider a priority queue for optimization
-        for path in self._queue.keys():
-            path_length = str(path).split('/')
-            if path_length > longest_path_length:
-                longest_path = path
-                longest_path_length = path_length
-        return self._queue.pop(longest_path)
+        _, modification = heapq.heappop(self._heap)
+        del self._path_map[modification.path]
+
+        return modification
 
     @property
     def empty(self):
-        return len(self._queue) == 0
+        return len(self._heap) == 0
 
 
 class ZarrChecksumUpdater:
@@ -239,3 +291,28 @@ class ZarrChecksumUpdater:
         for path in paths:
             modifications.queue_removal(Path(path).parent, path)
         self.modify(modifications)
+
+
+class SessionZarrChecksumUpdater(ZarrChecksumUpdater):
+    """ZarrChecksumUpdater to distinguish existing and new checksum files."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        # Set microseconds to zero, since the timestamp from S3/Minio won't include them
+        # Failure to set this to zero will result in false negatives
+        self._session_start = datetime.now().replace(tzinfo=None, microsecond=0)
+
+    def apply_modification(
+        self, modification: ZarrChecksumModification
+    ) -> SessionZarrChecksumFileUpdater:
+        with SessionZarrChecksumFileUpdater(
+            zarr_archive=self.zarr_archive,
+            zarr_directory_path=modification.path,
+            session_start=self._session_start,
+        ) as file_updater:
+            file_updater.add_file_checksums(modification.files_to_update)
+            file_updater.add_directory_checksums(modification.directories_to_update)
+            file_updater.remove_checksums(modification.paths_to_remove)
+
+        return file_updater

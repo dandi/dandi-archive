@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import QuerySet
+from more_itertools import ichunked
 
 from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
@@ -81,24 +83,36 @@ def _publish_dandiset(dandiset_id: int) -> None:
         AssetVersions = Version.assets.through
 
         # Add a new many-to-many association directly to any already published assets
-        already_published_assets = old_version.assets.filter(published=True)
-        AssetVersions.objects.bulk_create(
-            [
-                AssetVersions(asset_id=asset['id'], version_id=new_version.id)
-                for asset in already_published_assets.values('id')
-            ]
-        )
+        already_published_assets: QuerySet[Asset] = old_version.assets.filter(published=True)
+
+        # Batch bulk creates to avoid blowing up memory when there are a lot of assets
+        for asset_ids_batch in ichunked(
+            already_published_assets.values_list('id', flat=True).iterator(), 5_000
+        ):
+            AssetVersions.objects.bulk_create(
+                [
+                    AssetVersions(asset_id=asset_id, version_id=new_version.id)
+                    for asset_id in asset_ids_batch
+                ]
+            )
+
+        draft_assets: QuerySet[Asset] = old_version.assets.filter(published=False)
+
+        # Batch bulk creates to avoid blowing up memory when there are a lot of assets
+        for asset_ids_batch in ichunked(
+            draft_assets.values_list('id', flat=True).iterator(), 5_000
+        ):
+            AssetVersions.objects.bulk_create(
+                [
+                    AssetVersions(asset_id=asset_id, version_id=new_version.id)
+                    for asset_id in asset_ids_batch
+                ]
+            )
 
         # Publish any draft assets
-        draft_assets = old_version.assets.filter(published=False).all()
-        for draft_asset in draft_assets:
+        for draft_asset in draft_assets.iterator():
             draft_asset.publish()
-
-        Asset.objects.bulk_update(draft_assets, ['metadata', 'published'])
-
-        AssetVersions.objects.bulk_create(
-            [AssetVersions(asset_id=asset.id, version_id=new_version.id) for asset in draft_assets]
-        )
+            draft_asset.save()
 
         # Save again to recompute metadata, specifically assetsSummary
         new_version.save()

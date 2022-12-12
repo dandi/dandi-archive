@@ -1,3 +1,15 @@
+# v0.3.7 (Wed Dec 07 2022)
+
+#### 🐛 Bug Fix
+
+- Refresh asset object before validating it after creation [#1393](https://github.com/dandi/dandi-archive/pull/1393) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.6 (Tue Dec 06 2022)
 
 #### 🐛 Bug Fix
