@@ -56,6 +56,7 @@ setup(
         'jsonschema',
         'pydantic',
         'boto3[s3]',
+        'more_itertools',
         # Production-only
         'django-composed-configuration[prod]>=0.22.0',
         # pin directly to a version since we're extending the private multipart interface
