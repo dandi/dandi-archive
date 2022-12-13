@@ -206,6 +206,7 @@ class PublishedAssetFactory(DraftAssetFactory):
     def _create(cls, *args, **kwargs):
         asset: Asset = super()._create(*args, **kwargs)
         asset.status = Asset.Status.VALID  # published assets are always valid
+        asset.save()
         publish_asset(asset=asset)
         return asset
 
