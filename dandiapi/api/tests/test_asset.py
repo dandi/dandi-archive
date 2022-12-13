@@ -92,6 +92,10 @@ def test_publish_asset(draft_asset: Asset):
     draft_asset_id = draft_asset.asset_id
     draft_blob = draft_asset.blob
     draft_metadata = draft_asset.metadata
+
+    draft_asset.status = Asset.Status.VALID
+    draft_asset.save()
+
     publish_asset(asset=draft_asset)
 
     # draft_asset has been published, so it is now published_asset

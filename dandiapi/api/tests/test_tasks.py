@@ -10,7 +10,6 @@ from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
-from dandiapi.api.services.publish import publish_asset
 
 from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
 
@@ -280,9 +279,8 @@ def test_publish_task(
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
-    old_draft_asset: Asset = draft_asset_factory()
+    old_draft_asset: Asset = draft_asset_factory(status=Asset.Status.VALID)
     old_published_asset: Asset = published_asset_factory()
-    publish_asset(asset=old_published_asset)
     assert not old_draft_asset.published
     assert old_published_asset.published
 
