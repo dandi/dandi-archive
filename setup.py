@@ -48,7 +48,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-guardian',
-        'django-oauth-toolkit>=1.7,<2',
+        'django-oauth-toolkit>=1.7,<3',
         'djangorestframework',
         'djangorestframework-yaml',
         'drf-extensions',
