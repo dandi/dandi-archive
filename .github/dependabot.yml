@@ -9,3 +9,9 @@ updates:
       include: scope
     labels:
       - internal
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: "weekly"
+    labels:
+      - internal
