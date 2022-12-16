@@ -599,8 +599,6 @@ def test_version_rest_publish(
 
     old_draft_asset: Asset = draft_asset_factory()
     old_published_asset: Asset = published_asset_factory()
-    old_published_asset.publish()
-    old_published_asset.save()
     assert not old_draft_asset.published
     assert old_published_asset.published
     draft_version.assets.add(old_draft_asset)

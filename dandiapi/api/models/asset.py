@@ -288,17 +288,6 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'datePublished': now.isoformat(),
         }
 
-    def publish(self):
-        """
-        Modify the metadata of this asset as if it were being published.
-
-        This is useful to validate asset metadata without saving it.
-        To actually publish this Asset, simply save() after calling publish().
-        """
-        # These fields need to be listed in the bulk_update() in VersionViewSet#publish.
-        self.metadata = self.published_metadata()
-        self.published = True
-
     def save(self, *args, **kwargs):
         self.metadata = self._populate_metadata()
         super().save(*args, **kwargs)
