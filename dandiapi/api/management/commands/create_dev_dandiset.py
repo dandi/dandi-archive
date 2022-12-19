@@ -8,7 +8,8 @@ import djclick as click
 from dandiapi.api.models import AssetBlob
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.dandiset import create_dandiset
-from dandiapi.api.tasks import calculate_sha256, validate_asset_metadata, validate_version_metadata
+from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
+from dandiapi.api.tasks import calculate_sha256
 
 
 @click.command()
@@ -48,5 +49,5 @@ def create_dev_dandiset(name: str, email: str):
     )
 
     calculate_sha256(blob_id=asset_blob.blob_id)
-    validate_asset_metadata(asset_id=asset.id)
-    validate_version_metadata(version_id=draft_version.id)
+    validate_asset_metadata(asset=asset)
+    validate_version_metadata(version=draft_version)

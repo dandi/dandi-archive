@@ -19,6 +19,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.services.publish import publish_asset
 
 
 class UserMetadataFactory(factory.django.DjangoModelFactory):
@@ -204,8 +205,9 @@ class PublishedAssetFactory(DraftAssetFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         asset: Asset = super()._create(*args, **kwargs)
-        asset.publish()
+        asset.status = Asset.Status.VALID  # published assets are always valid
         asset.save()
+        publish_asset(asset=asset)
         return asset
 
 

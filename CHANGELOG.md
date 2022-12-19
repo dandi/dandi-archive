@@ -1,3 +1,36 @@
+# v0.3.8 (Mon Dec 19 2022)
+
+#### 🐛 Bug Fix
+
+- Use flat file listing in zarr file browser [#1394](https://github.com/dandi/dandi-archive/pull/1394) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Use proper syntax for only locking ZarrArchive table [#1398](https://github.com/dandi/dandi-archive/pull/1398) ([@danlamanna](https://github.com/danlamanna))
+- Simplify ingest_zarr_archive task [#1391](https://github.com/dandi/dandi-archive/pull/1391) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Batch bulk_create calls in publish [#1400](https://github.com/dandi/dandi-archive/pull/1400) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove special casing of backups2datalad user agent [#1397](https://github.com/dandi/dandi-archive/pull/1397) ([@danlamanna](https://github.com/danlamanna))
+- Optimize `ingest_zarr_archive` task [#1387](https://github.com/dandi/dandi-archive/pull/1387) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🏠 Internal
+
+- Bump flake8 from 5.0.4 to 6.0.0 [#1404](https://github.com/dandi/dandi-archive/pull/1404) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump flake8-quotes from 3.3.1 to 3.3.2 [#1409](https://github.com/dandi/dandi-archive/pull/1409) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump mypy from 0.982 to 0.991 [#1407](https://github.com/dandi/dandi-archive/pull/1407) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump boto3-stubs[s3] from 1.26.27 to 1.26.32 [#1405](https://github.com/dandi/dandi-archive/pull/1405) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Manage CI dependencies with dependabot [#1402](https://github.com/dandi/dandi-archive/pull/1402) ([@mvandenburgh](https://github.com/mvandenburgh))
+- [gh-actions](deps): Bump actions/add-to-project from 0.3.0 to 0.4.0 [#1382](https://github.com/dandi/dandi-archive/pull/1382) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Move asset publishing to publish service [#1399](https://github.com/dandi/dandi-archive/pull/1399) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Specify `requests` as a prod dependency instead of test [#1401](https://github.com/dandi/dandi-archive/pull/1401) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Optimize memory use in publish service [#1376](https://github.com/dandi/dandi-archive/pull/1376) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Move metadata validation tasks into the service layer [#1379](https://github.com/dandi/dandi-archive/pull/1379) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.7 (Wed Dec 07 2022)
 
 #### 🐛 Bug Fix
