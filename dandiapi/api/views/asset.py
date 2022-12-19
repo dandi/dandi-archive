@@ -27,7 +27,6 @@ import os.path
 from django.conf import settings
 from django.db.models import QuerySet
 from django.http import HttpResponseRedirect
-from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -121,12 +120,16 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
     def download(self, *args, **kwargs):
         asset = self.get_object()
 
-        # Assign asset blob or redirect if zarr
+        # Raise error if zarr
         if asset.is_zarr:
-            return HttpResponseRedirect(
-                reverse('zarr-explore', kwargs={'zarr_id': asset.zarr.zarr_id, 'path': ''})
+            return Response(
+                'Unable to provide download link for zarr assets.'
+                ' Please browse the zarr files directly to do so.',
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        elif asset.is_blob:
+
+        # Assign asset_blob
+        if asset.is_blob:
             asset_blob = asset.blob
         elif asset.is_embargoed_blob:
             asset_blob = asset.embargoed_blob
