@@ -92,7 +92,7 @@ setup(
             'flake8-bugbear==22.12.6',
             'flake8-docstrings==1.6.0',
             'flake8-isort==5.0.3',
-            'flake8-quotes==3.3.1',
+            'flake8-quotes==3.3.2',
             'pep8-naming==0.13.2',
         ],
         'type': [
