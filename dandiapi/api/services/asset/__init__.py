@@ -1,11 +1,6 @@
 from django.db import transaction
 
-from dandiapi.api.asset_paths import (
-    add_asset_paths,
-    delete_asset_paths,
-    get_conflicting_paths,
-    update_asset_paths,
-)
+from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
 from dandiapi.api.models.asset import Asset, AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
@@ -93,7 +88,6 @@ def change_asset(
         # Set previous asset and save
         new_asset.previous = asset
         new_asset.save()
-        update_asset_paths(old_asset=asset, new_asset=new_asset, version=version)
 
     return new_asset, True
 
