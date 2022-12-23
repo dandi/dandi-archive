@@ -20,10 +20,11 @@ class PublishConfig(AppConfig):
         from dandiapi.api.models.version import Version
 
         def is_noisy():
-            # these are 2 noisy routes that we can reduce the sampling size for.
+            # these are noisy routes that we can reduce the sampling size for.
             # TODO: use the django url resolver to avoid redefining regular expressions.
             noisy_route_regex = [
                 f'zarr/{Asset.UUID_REGEX}.zarr/[0-9/]+',
+                f'assets/{Asset.UUID_REGEX}/download',
                 (
                     f'dandisets/{Dandiset.IDENTIFIER_REGEX}/versions/{Version.VERSION_REGEX}/'
                     'assets/{Asset.UUID_REGEX}'
@@ -33,7 +34,7 @@ class PublishConfig(AppConfig):
             if len(args) and 'wsgi_environ' in args[0]:
                 wsgi_environ = args[0]['wsgi_environ']
 
-                if wsgi_environ.get('REQUEST_METHOD') == 'GET':
+                if wsgi_environ.get('REQUEST_METHOD') in ['GET', 'HEAD']:
                     for route in noisy_route_regex:
                         if re.search(route, wsgi_environ.get('PATH_INFO', '')):
                             return True
