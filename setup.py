@@ -88,7 +88,7 @@ setup(
         ],
         'lint': [
             'flake8==6.0.0',
-            'flake8-black==0.3.5',
+            'flake8-black==0.3.6',
             'flake8-bugbear==22.12.6',
             'flake8-docstrings==1.6.0',
             'flake8-isort==5.0.3',
