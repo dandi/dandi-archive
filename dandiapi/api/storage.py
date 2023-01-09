@@ -7,6 +7,7 @@ from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
@@ -109,7 +110,18 @@ class VerbatimNameStorageMixin:
         return filename
 
 
-class VerbatimNameS3Storage(VerbatimNameStorageMixin, S3Boto3Storage):
+class TimeoutS3Boto3Storage(S3Boto3Storage):
+    """Override boto3 default timeout values."""
+
+    def __init__(self, **settings):
+        super().__init__(**settings)
+
+        self.config = self.config.merge(
+            Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 2})
+        )
+
+
+class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Boto3Storage):
     @property
     def multipart_manager(self):
         return DandiBoto3MultipartManager(self)
