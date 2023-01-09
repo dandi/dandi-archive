@@ -1,3 +1,26 @@
+# v0.3.9 (Mon Jan 09 2023)
+
+#### 🐛 Bug Fix
+
+- Reduce sentry performance sample rate for asset download [#1417](https://github.com/dandi/dandi-archive/pull/1417) ([@danlamanna](https://github.com/danlamanna))
+- Ignore patch updates for dependabot [#1426](https://github.com/dandi/dandi-archive/pull/1426) ([@danlamanna](https://github.com/danlamanna))
+- Add more detailed logging to development postgres [#1414](https://github.com/dandi/dandi-archive/pull/1414) ([@danlamanna](https://github.com/danlamanna))
+- Remove redundant call to update_asset_paths [#1413](https://github.com/dandi/dandi-archive/pull/1413) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- Bump flake8-isort from 5.0.3 to 6.0.0 [#1419](https://github.com/dandi/dandi-archive/pull/1419) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump boto3-stubs[s3] from 1.26.32 to 1.26.41 [#1422](https://github.com/dandi/dandi-archive/pull/1422) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump flake8-black from 0.3.5 to 0.3.6 [#1420](https://github.com/dandi/dandi-archive/pull/1420) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump pep8-naming from 0.13.2 to 0.13.3 [#1410](https://github.com/dandi/dandi-archive/pull/1410) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 2
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.8 (Mon Dec 19 2022)
 
 #### 🐛 Bug Fix
