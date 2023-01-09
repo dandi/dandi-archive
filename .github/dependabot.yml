@@ -9,9 +9,13 @@ updates:
       include: scope
     labels:
       - internal
+    ignore:
+      - update-types: ["patch"]
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: "weekly"
     labels:
       - internal
+    ignore:
+    - update-types: ["patch"]
