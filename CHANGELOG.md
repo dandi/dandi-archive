@@ -1,3 +1,24 @@
+# v0.3.10 (Wed Jan 11 2023)
+
+#### 🐛 Bug Fix
+
+- Remove use of checksum files in zarr ingestion [#1395](https://github.com/dandi/dandi-archive/pull/1395) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add request timeouts for S3 storage [#1428](https://github.com/dandi/dandi-archive/pull/1428) ([@danlamanna](https://github.com/danlamanna))
+- Add MINIO_STORAGE_MEDIA_URL to docker-compose-native config [#1427](https://github.com/dandi/dandi-archive/pull/1427) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- Bump boto3-stubs[s3] from 1.26.41 to 1.26.46 [#1429](https://github.com/dandi/dandi-archive/pull/1429) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump types-setuptools from 65.6.0.2 to 65.6.0.3 [#1430](https://github.com/dandi/dandi-archive/pull/1430) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.3.9 (Mon Jan 09 2023)
 
 #### 🐛 Bug Fix
