@@ -183,10 +183,10 @@ locations).
 
 In the rare case that something does go wrong (indicated by a non-matching Zarr
 checksum in the final step of the process), the algorithm for recovery involves
-asking S3 for a list of all objects stored at the Zarr prefix in question, then
-comparing that list with the local list of Zarr chunk files for both existence
-and matching checksum. Any files with an incorrect checksum can be removed from
-S3 and then reuploaded; any missing files can simply be uploaded.
+the client asking the API for the list of all objects currently stored in the
+Zarr in question, then comparing that list with the local list of Zarr chunk files
+for both existence and matching checksum. Any files with an incorrect checksum can
+be removed from S3 and then reuploaded; any missing files can simply be uploaded.
 
 A variant of this algorithm can be used for resuming an interrupted upload
 process: skip the checksum comparison and only look for files that have not yet
