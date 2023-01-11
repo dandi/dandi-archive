@@ -4,15 +4,12 @@ from pathlib import Path
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from dandischema.digests.zarr import EMPTY_CHECKSUM
-from django.conf import settings
 from django.db import transaction
 from django.db.transaction import atomic
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
-from dandiapi.api.storage import get_boto_client, yield_files
+from dandiapi.api.storage import yield_files
 from dandiapi.zarr.checksums import (
-    SessionZarrChecksumUpdater,
     ZarrChecksum,
     ZarrChecksumModificationQueue,
     parse_checksum_string,
@@ -20,25 +17,6 @@ from dandiapi.zarr.checksums import (
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
-
-
-def clear_checksum_files(zarr: ZarrArchive):
-    """Remove all checksum files."""
-    client = get_boto_client()
-    bucket = zarr.storage.bucket_name
-    prefix = (
-        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
-        f'{settings.DANDI_ZARR_CHECKSUM_PREFIX_NAME}/{zarr.zarr_id}'
-    )
-
-    for files in yield_files(bucket=bucket, prefix=prefix):
-        if not files:
-            break
-
-        # Handle both versioned and non-versioned buckets
-        allowed = {'Key', 'VersionId'}
-        objects = [{k: v for k, v in file.items() if k in allowed} for file in files]
-        client.delete_objects(Bucket=bucket, Delete={'Objects': objects})
 
 
 @shared_task(queue='ingest_zarr_archive', time_limit=3600)
@@ -62,17 +40,10 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         # Remove all asset paths associated with this zarr before ingest
         delete_zarr_paths(zarr)
 
-        # Clear any existing checksum files before running ingestion
-        clear_checksum_files(zarr)
-
         # Instantiate updater and add files as they come in
-        empty = True
         queue = ZarrChecksumModificationQueue()
         logger.info(f'Fetching files for zarr {zarr.zarr_id}...')
         for files in yield_files(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path('')):
-            if len(files):
-                empty = False
-
             # Update checksums
             for file in files:
                 path = Path(file['Key'].replace(zarr.s3_path(''), ''))
@@ -84,21 +55,8 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
                 queue.queue_file_update(key=path.parent, checksum=checksum)
 
         # Compute checksum tree and retrieve top level checksum
-        SessionZarrChecksumUpdater(zarr_archive=zarr).modify(modifications=queue)
-        checksum = zarr.get_checksum()
-
-        # Raise an exception if empty and checksum are ever out of sync.
-        # The reported checksum should never be None if there are files,
-        # and there shouldn't be any files if the checksum is None
-        if (checksum is None) != empty:
-            raise Exception(
-                f'Inconsistency between reported files and computed checksum. Checksum is '
-                f'{checksum}, while {"no" if empty else ""} files were found in the zarr.'
-            )
-
-        # If checksum is None, that means there were no files, and we should set
-        # the checksum to EMPTY_CHECKSUM, as it's still been ingested, it's just empty.
-        zarr.checksum = checksum or EMPTY_CHECKSUM
+        logger.info(f'Computing checksum for zarr {zarr.zarr_id}...')
+        zarr.checksum = queue.process()
         zarr.file_count, zarr.size = parse_checksum_string(zarr.checksum)
         zarr.status = ZarrArchiveStatus.COMPLETE
         zarr.save()
