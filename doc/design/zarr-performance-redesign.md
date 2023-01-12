@@ -49,20 +49,21 @@ sequenceDiagram
     end
 ```
 
-The process is as follows. `dandi-cli` asks the server to create a new Zarr
-archive, which is put into the `PENDING` state (steps 1 and 2). For each batch
-of (maxiumum) 255 Zarr chunk files the client wants to upload, `dandi-cli` asks
-the server to create an `Upload`, supplying the list of file paths and
-associated etags, and receiving a list of signed upload URLs (steps 3 and 4).
-`dandi-cli` uses these URLs to upload the files in that batch (step 5). Then,
-`dandi-cli` asks the server to finalize the batch, and the server does so,
-matching etags and verifiying that all files were uploaded (steps 6 and 7).
-*This step is very costly, due to the server's need to contact S3 to verify
-these conditions.* When all batches are uploaded, `dandi-cli` signals the server
-to ingest the Zarr archive (step 8). The server kicks off an asynchronous task
-to compute the treewise Zarr checksum (step 9). Meanwhile, `dandi-cli` sits in a
-loop checking for the Zarr archive to reach a `COMPLETE` state (steps 10 and
-11).
+The process is as follows.
+
+(Steps 1 and 2): `dandi-cli` asks the server to create a new Zarr archive, which is put into the `PENDING` state.
+
+(Steps 3 and 4): For each batch of (maxiumum) 255 Zarr chunk files the client wants to upload, `dandi-cli` asks the server to create an `Upload`, supplying the list of file paths and associated etags, and receiving a list of signed upload URLs.
+
+(Step 5): `dandi-cli` uses these URLs to upload the files in that batch.
+
+(Steps 6 and 7): Then, `dandi-cli` asks the server to finalize the batch, and the server does so, matching etags and verifiying that all files were uploaded. *This step is very costly, due to the server's need to contact S3 to verify these conditions.*
+
+(Step 8): When all batches are uploaded, `dandi-cli` signals the server to ingest the Zarr archive.
+
+(Step 9): The server kicks off an asynchronous task to compute the treewise Zarr checksum.
+
+(Steps 10 and 11): Meanwhile, `dandi-cli` sits in a loop checking for the Zarr archive to reach a `COMPLETE` state.
 
 ### Performance Problem: Slow and Serial Upload Finalization
 
@@ -117,23 +118,19 @@ sequenceDiagram
     end
 ```
 
-**`dandi-cli` computes the Zarr checksum locally** (step 1). (Note that this
-step can actually be taken any time before step 7; it is listed here
-arbitrarily.) `dandi-cli` asks the server to create a new Zarr archive, which is
-put into the `PENDING` state (steps 2 and 3). **`dandi-cli` will request a
-presigned upload URL from the server for each Zarr chunk file** (steps 4 and
-5). Note: For an existing zarr archive, this is where the upload process begins, as requesting a signed url for upload will always place the zarr archive into a `PENDING` state. `dandi-cli` uses these URLs to upload the files **using S3's `Content-MD5`
-header to verify the uploaded file's integrity** (step 6). **Instead of
-finalizing a batch (since there is no longer a batch concept), `dandi-cli`
-repeats these steps until all files are uploaded (repeating steps 4, 5, and
-6).** (Note that `dandi-cli`'s actual strategy here may be more nuanced than a
-simple loop as depicted above; instead, it might maintain a queue of files and a
-set of files "in flight", replenishing them according to some dynamic batching
-strategy, etc. In any such strategy, some combination of steps 4, 5, and 6 will
-repeat until all files are uploaded.) **`dandi-cli` asks the server to finalize
-the Zarr, providing the locally computed zarr checksum to compare against** (steps 7 and 8). The server kicks off an asynchronous task to compute
-the treewise Zarr checksum, comparing it against the checksum provided in step 7 and updating the status of the Zarr once it's finished (step 9). Meanwhile, `dandi-cli` sits in a loop
-checking for the Zarr archive to reach either the `COMPLETE` state, or if there was an error, the `MISMATCH` state (steps 10 and 11).
+(Step 1): **`dandi-cli` computes the Zarr checksum locally**. (Note that this step can actually be taken any time before step 7; it is listed here arbitrarily.)
+
+(Steps 2 and 3): `dandi-cli` asks the server to create a new Zarr archive, which is put into the `PENDING` state.
+
+(Steps 4 and 5): **`dandi-cli` will request a presigned upload URL from the server for each Zarr chunk file**. (Note: For an existing zarr archive, this is where the upload process begins, as requesting a signed url for upload will always place the zarr archive into a `PENDING` state).
+
+(Step 6): `dandi-cli` uses these URLs to upload the files **using S3's `Content-MD5` header to verify the uploaded file's integrity**. **Instead of finalizing a batch (since there is no longer a batch concept), `dandi-cli` repeats these steps until all files are uploaded (repeating steps 4, 5, and 6).** (Note that `dandi-cli`'s actual strategy here may be more nuanced than a simple loop as depicted above; instead, it might maintain a queue of files and a set of files "in flight", replenishing them according to some dynamic batching strategy, etc. In any such strategy, some combination of steps 4, 5, and 6 will repeat until all files are uploaded.)
+
+(Steps 7 and 8): **`dandi-cli` asks the server to finalize the Zarr, providing the locally computed zarr checksum to compare against**.
+
+(Step 9): The server kicks off an asynchronous task to compute the treewise Zarr checksum, comparing it against the checksum provided in step 7 and updating the status of the Zarr once it's finished.
+
+(Steps 10 and 11): Meanwhile, `dandi-cli` sits in a loop checking for the Zarr archive to reach either the `COMPLETE` state, or if there was an error, the `MISMATCH` state.
 
 ### Benefits
 
