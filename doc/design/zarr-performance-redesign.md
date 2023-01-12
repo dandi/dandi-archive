@@ -100,8 +100,8 @@ sequenceDiagram
     Server-->>-Client: PENDING Zarr Archive
 
     loop for each file
-        Client->>+Server: Request signed URL
-        Server-->>-Client: A signed URL
+        Client->>+Server: Request signed URLs
+        Server-->>-Client: A list of signed URLs
         Client->>+S3: Upload individual file using signed URL
     end
 
@@ -122,7 +122,10 @@ sequenceDiagram
 
 (Steps 2 and 3): `dandi-cli` asks the server to create a new Zarr archive, which is put into the `PENDING` state.
 
-(Steps 4 and 5): **`dandi-cli` will request a presigned upload URL from the server for each Zarr chunk file**. (Note: For an existing zarr archive, this is where the upload process begins, as requesting a signed url for upload will always place the zarr archive into a `PENDING` state).
+(Steps 4 and 5): **`dandi-cli` will request a presigned upload URL from the server for each Zarr chunk file**.
+Important notes:
+* For an existing zarr archive, this is where the upload process begins, as requesting a signed url for upload will always place the zarr archive into a `PENDING` state.
+* While there is no longer an explicit concept of an "upload batch", there is still a maximum number of presigned upload URLs that can be returned from a single request. This number is currently 255.
 
 (Step 6): `dandi-cli` uses these URLs to upload the files **using S3's `Content-MD5` header to verify the uploaded file's integrity**. **Instead of finalizing a batch (since there is no longer a batch concept), `dandi-cli` repeats these steps until all files are uploaded (repeating steps 4, 5, and 6).** (Note that `dandi-cli`'s actual strategy here may be more nuanced than a simple loop as depicted above; instead, it might maintain a queue of files and a set of files "in flight", replenishing them according to some dynamic batching strategy, etc. In any such strategy, some combination of steps 4, 5, and 6 will repeat until all files are uploaded.)
 
