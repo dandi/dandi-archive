@@ -121,8 +121,8 @@ sequenceDiagram
 step can actually be taken any time before step 7; it is listed here
 arbitrarily.) `dandi-cli` asks the server to create a new Zarr archive, which is
 put into the `PENDING` state (steps 2 and 3). **`dandi-cli` will request a
-presigned upload URL from the server for each Zarr chunk file.** (steps 4 and
-5). `dandi-cli` uses these URLs to upload the files **using S3's `Content-MD5`
+presigned upload URL from the server for each Zarr chunk file** (steps 4 and
+5). Note: For an existing zarr archive, this is where the upload process begins, as requesting a signed url for upload will always place the zarr archive into a `PENDING` state. `dandi-cli` uses these URLs to upload the files **using S3's `Content-MD5`
 header to verify the uploaded file's integrity** (step 6). **Instead of
 finalizing a batch (since there is no longer a batch concept), `dandi-cli`
 repeats these steps until all files are uploaded (repeating steps 4, 5, and
