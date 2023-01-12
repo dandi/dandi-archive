@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, Version
+from dandiapi.api.services.publish import _build_publishable_version_from_draft
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
@@ -279,7 +280,7 @@ def test_version_publish_version(draft_version, asset):
     draft_version.assets.add(asset)
     draft_version.save()
 
-    publish_version = draft_version.publish_version
+    publish_version = _build_publishable_version_from_draft(draft_version)
     publish_version.doi = fake_doi
     publish_version.save()
 
@@ -320,6 +321,7 @@ def test_version_publish_version(draft_version, asset):
         # The published_version cannot have a properly defined assetsSummary yet, since that would
         # require having created rows the Asset-to-Version join table, which is a side affect.
         'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
             'numberOfBytes': 0,
             'numberOfFiles': 0,
         },

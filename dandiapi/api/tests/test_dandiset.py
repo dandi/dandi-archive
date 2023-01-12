@@ -388,6 +388,7 @@ def test_dandiset_rest_create(api_client, user):
             }
         ],
         'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
             'numberOfBytes': 0,
             'numberOfFiles': 0,
         },
@@ -480,6 +481,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             }
         ],
         'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
             'numberOfBytes': 0,
             'numberOfFiles': 0,
         },
@@ -585,6 +587,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
             }
         ],
         'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
             'numberOfBytes': 0,
             'numberOfFiles': 0,
         },
@@ -675,6 +678,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
             }
         ],
         'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
             'numberOfBytes': 0,
             'numberOfFiles': 0,
         },

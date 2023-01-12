@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING
 
-from dandischema.metadata import aggregate_assets_summary
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
@@ -15,9 +13,6 @@ from django_extensions.db.models import TimeStampedModel
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
-
-if TYPE_CHECKING:
-    from .asset import Asset
 
 logger = logging.getLogger(__name__)
 
@@ -145,32 +140,6 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
         return version
 
-    @property
-    def publish_version(self):
-        """
-        Generate a published version + metadata without saving it.
-
-        This is useful to validate version metadata without saving it.
-        """
-        # Create the published model
-        published_version = Version(
-            dandiset=self.dandiset,
-            name=self.name,
-            metadata=self.metadata,
-            status=Version.Status.VALID,
-            version=Version.next_published_version(self.dandiset),
-        )
-
-        now = datetime.datetime.now(datetime.timezone.utc)
-        # Recompute the metadata and inject the publishedBy and datePublished fields
-        published_version.metadata = {
-            **published_version._populate_metadata(version_with_assets=self),
-            'publishedBy': self.published_by(now),
-            'datePublished': now.isoformat(),
-        }
-
-        return published_version
-
     @classmethod
     def citation(cls, metadata):
         year = datetime.datetime.now().year
@@ -215,41 +184,15 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         ]
         return {key: metadata[key] for key in metadata if key not in computed_fields}
 
-    def _populate_metadata(self, version_with_assets: Version | None = None):
-
-        # When validating a draft version, we create a published version without saving it,
-        # calculate it's metadata, and validate that metadata. However, assetsSummary is computed
-        # based on the assets that belong to the dummy published version, which has not had assets
-        # copied to it yet. To get around this, version_with_assets is the draft version that
-        # should be used to look up the assets for the assetsSummary.
-        if version_with_assets is None:
-            version_with_assets = self
-
-        # When running _populate_metadata on an unsaved Version, self.assets is not available.
-        # Only compute the asset-based properties if this Version has an id, which means it's saved.
-        summary = {
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-        }
-        if version_with_assets.id:
-            try:
-                assets: models.QuerySet[Asset] = version_with_assets.assets
-                summary = aggregate_assets_summary(
-                    # There is no limit to how many assets a dandiset can have, so use
-                    # `values_list` and `iterator` here to keep the memory footprint
-                    # of this list low.
-                    assets.values_list('metadata', flat=True).iterator()
-                )
-            except Exception:
-                # The assets summary aggregation may fail if any asset metadata is invalid.
-                # If so, just use the placeholder summary.
-                logger.info('Error calculating assetsSummary', exc_info=True)
-
-        # Import here to avoid dependency cycle
+    def _populate_metadata(self):
         from dandiapi.api.manifests import manifest_location
 
         metadata = {
             **self.metadata,
+            '@context': (
+                'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+                f'{self.metadata["schemaVersion"]}/context.json'
+            ),
             'manifestLocation': manifest_location(self),
             'name': self.name,
             'identifier': f'DANDI:{self.dandiset.identifier}',
@@ -257,16 +200,20 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'repository': settings.DANDI_WEB_APP_URL,
             'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',  # noqa
-            'assetsSummary': summary,
             'dateCreated': self.dandiset.created.isoformat(),
         }
+
+        if 'assetsSummary' not in metadata:
+            metadata['assetsSummary'] = {
+                'schemaKey': 'AssetsSummary',
+                'numberOfBytes': 0,
+                'numberOfFiles': 0,
+            }
+
         if self.doi:
             metadata['doi'] = self.doi
         metadata['citation'] = self.citation(metadata)
-        metadata['@context'] = (
-            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
-            f'{metadata["schemaVersion"]}/context.json'
-        )
+
         return metadata
 
     def save(self, *args, **kwargs):
