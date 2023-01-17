@@ -47,12 +47,10 @@ def create_dandiset(
 
 
 def delete_dandiset(*, user, dandiset: Dandiset) -> None:
-    if (
-        not user.has_perm('owner', dandiset)
-        or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
-    ):
-        raise NotAllowed()
-
+    if not user.has_perm('owner', dandiset):
+        raise NotAllowed('Cannot delete dandisets which you do not own.')
+    if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+        raise NotAllowed('Cannot delete dandisets which are embargoed.')
     if dandiset.versions.exclude(version='draft').exists():
         raise NotAllowed('Cannot delete dandisets with published versions.')
     if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
