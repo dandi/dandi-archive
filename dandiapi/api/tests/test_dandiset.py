@@ -713,8 +713,14 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
     assert response.data == f'Invalid Identifier {identifier}'
 
 
+@pytest.mark.parametrize(
+    ('embargo_status'),
+    [choice[0] for choice in Dandiset.EmbargoStatus.choices],
+    ids=[choice[1] for choice in Dandiset.EmbargoStatus.choices],
+)
 @pytest.mark.django_db
-def test_dandiset_rest_delete(api_client, draft_version, user):
+def test_dandiset_rest_delete(api_client, draft_version_factory, user, embargo_status):
+    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, draft_version.dandiset)
 
