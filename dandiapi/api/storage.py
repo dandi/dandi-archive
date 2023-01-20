@@ -288,33 +288,6 @@ def get_boto_client(storage: Storage | None = None):
     return storage.connection.meta.client
 
 
-def yield_files(bucket: str, prefix: str | None = None):
-    """Get all objects in the bucket, through repeated object listing."""
-    client = get_boto_client()
-    common_options = {'Bucket': bucket}
-    if prefix is not None:
-        common_options['Prefix'] = prefix
-
-    continuation_token = None
-    while True:
-        options = {**common_options}
-        if continuation_token is not None:
-            options['ContinuationToken'] = continuation_token
-
-        # Fetch
-        res = client.list_objects_v2(**options)
-
-        # Yield this batch of files
-        yield res.get('Contents', [])
-
-        # If all files fetched, end
-        if res['IsTruncated'] is False:
-            break
-
-        # Get next continuation token
-        continuation_token = res['NextContinuationToken']
-
-
 def get_storage() -> Storage:
     return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 

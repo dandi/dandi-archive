@@ -11,10 +11,10 @@ from django.db import models
 from django.db.models import QuerySet
 from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
+from zarr_checksum.checksum import ZarrChecksum
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import get_embargo_storage, get_storage
-from dandiapi.zarr.checksums import ZarrChecksum
 
 logger = logging.Logger(name=__name__)
 

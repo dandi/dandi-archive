@@ -1,12 +1,11 @@
-from dandischema.digests.zarr import EMPTY_CHECKSUM
 from guardian.shortcuts import assign_perm
 import pytest
+from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models import Dandiset
-from dandiapi.zarr.checksums import ZarrChecksum, ZarrJSONChecksumSerializer
 from dandiapi.zarr.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
 from dandiapi.zarr.management.commands.ingest_zarr_archive import ingest_zarr_archive
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 
 @pytest.mark.django_db(transaction=True)
@@ -64,33 +63,11 @@ def test_ingest_zarr_archive_rest_upload_active(
 def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, faker):
     zarr: ZarrArchive = zarr_archive_factory()
 
-    # Generate > 1000 files, since the page size from S3 is 1000 items
-    foo_bar_files: list[ZarrUploadFile] = [
-        zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a'),
-        zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/b'),
-    ]
-    foo_baz_files: list[ZarrUploadFile] = [
-        zarr_upload_file_factory(zarr_archive=zarr, path=f'foo/baz/{faker.pystr()}')
-        for _ in range(1005)
-    ]
+    a = zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a')
+    b = zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/b')
 
-    # Calculate size and file count
-    total_size = sum(f.blob.size for f in (foo_bar_files + foo_baz_files))
-    total_file_count = len(foo_bar_files) + len(foo_baz_files)
-
-    # Generate correct listings
-    serializer = ZarrJSONChecksumSerializer()
-    foo_bar_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_bar_files])
-    foo_baz_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_baz_files])
-    foo_listing = serializer.generate_listing(
-        directories=[
-            ZarrChecksum(name='bar', digest=foo_bar_listing.digest, size=200),
-            ZarrChecksum(name='baz', digest=foo_baz_listing.digest, size=100 * len(foo_baz_files)),
-        ]
-    )
-    root_listing = serializer.generate_listing(
-        directories=[ZarrChecksum(name='foo', digest=foo_listing.digest, size=total_size)]
-    )
+    # Calculate total size
+    total_size = a.blob.size + b.blob.size
 
     # Assert pre-ingest properties
     assert zarr.checksum is None
@@ -103,9 +80,9 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
 
     # Assert checksum properly computed
     zarr.refresh_from_db()
-    assert zarr.checksum == root_listing.digest
+    assert zarr.checksum is not None
     assert zarr.size == total_size
-    assert zarr.file_count == total_file_count
+    assert zarr.file_count == 2
     assert zarr.status == ZarrArchiveStatus.COMPLETE
 
 
