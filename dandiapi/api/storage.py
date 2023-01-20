@@ -288,6 +288,21 @@ def get_boto_client(storage: Storage | None = None):
     return storage.connection.meta.client
 
 
+def get_storage_params(storage: Storage):
+    if isinstance(storage, MinioStorage):
+        return {
+            'endpoint_url': storage.client._endpoint_url,
+            'access_key': storage.client._access_key,
+            'secret_key': storage.client._secret_key,
+        }
+
+    return {
+        'endpoint_url': storage.endpoint_url,
+        'access_key': storage.access_key,
+        'secret_key': storage.secret_key,
+    }
+
+
 def get_storage() -> Storage:
     return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 

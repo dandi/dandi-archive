@@ -5,9 +5,10 @@ from celery.utils.log import get_task_logger
 from django.db import transaction
 from django.db.transaction import atomic
 from zarr_checksum import compute_zarr_checksum
-from zarr_checksum.generators import yield_files_s3
+from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
+from dandiapi.api.storage import get_storage_params
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -36,8 +37,18 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
 
         # Instantiate updater and add files as they come in
         logger.info(f'Computing checksum for zarr {zarr.zarr_id}...')
+        storage_params = get_storage_params(zarr.storage)
         checksum = compute_zarr_checksum(
-            yield_files_s3(bucket=zarr.storage.bucket_name, prefix=zarr.s3_path(''))
+            yield_files_s3(
+                bucket=zarr.storage.bucket_name,
+                prefix=zarr.s3_path(''),
+                client_options=S3ClientOptions(
+                    endpoint_url=storage_params['endpoint_url'],
+                    aws_access_key_id=storage_params['access_key'],
+                    aws_secret_access_key=storage_params['secret_key'],
+                    region_name='us-east-1',
+                ),
+            )
         )
 
         # Set zarr fields
