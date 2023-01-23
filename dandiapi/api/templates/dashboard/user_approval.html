@@ -81,15 +81,15 @@
           {% csrf_token %}
           <input type="hidden" name="status" value="REJECTED">
           <button
-            {% if user.metadata.status == 'REJECTED' %}
-              disabled
-            {% endif %}
+            disabled
+            id="rejection_btn"
             class="waves-effect waves-light btn-large red accent-5 mb-5" type="submit">
             <span>REJECT</span>
           </button>
           <br /><br /><br />
           <label for="rejection_reason">Rejection reason (optional)</label>
           <input
+            id="rejection_reason"
             type="text"
             name="rejection_reason"
             value="{% if user.metadata.rejection_reason != None %}{{ user.metadata.rejection_reason }}{% endif %}"
@@ -100,4 +100,18 @@
     </div>
   </div>
 </div>
+
+<script>
+// Event listener that disables the Reject button when no rejection reason is provided
+var rejectionReason = document.getElementById('rejection_reason');
+rejectionReason.addEventListener('keyup', function (event) {
+  var rejection_btn = document.getElementById('rejection_btn');
+  if (event.target.value) {
+    rejection_btn.removeAttribute('disabled');
+  }
+  else {
+    rejection_btn.setAttribute('disabled', true);
+  }
+});
+</script>
 {% endblock %}
