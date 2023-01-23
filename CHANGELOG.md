@@ -1,3 +1,17 @@
+# v0.3.12 (Mon Jan 23 2023)
+
+#### 🐛 Bug Fix
+
+- Require rejection reason when rejecting a new user [#1443](https://github.com/dandi/dandi-archive/pull/1443) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix dependabot ignore types [#1445](https://github.com/dandi/dandi-archive/pull/1445) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.11 (Mon Jan 23 2023)
 
 #### 🐛 Bug Fix
