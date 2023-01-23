@@ -1,7 +1,7 @@
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
@@ -84,7 +84,12 @@ def user_approval_view(request, username: str):
 
     if request.method == 'POST':
         req_body = request.POST.dict()
-        user.metadata.status = req_body.get('status')
+        status = req_body.get('status')
+
+        if status == UserMetadata.Status.REJECTED and not req_body.get('rejection_reason'):
+            raise ValidationError('A rejection reason must be provided to reject a user.')
+
+        user.metadata.status = status
         if req_body.get('rejection_reason') is not None:
             user.metadata.rejection_reason = req_body.get('rejection_reason')
         user.metadata.save()
