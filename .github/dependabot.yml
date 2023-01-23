@@ -10,7 +10,8 @@ updates:
     labels:
       - internal
     ignore:
-      - update-types: ["version-update:semver-patch"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
   - package-ecosystem: pip
     directory: /
     schedule:
@@ -18,4 +19,5 @@ updates:
     labels:
       - internal
     ignore:
-      - update-types: ["version-update:semver-patch"]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
