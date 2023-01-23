@@ -11,7 +11,6 @@ import { draftVersion } from '@/utils/constants';
 interface State {
   dandiset: Version | null;
   versions: Version[] | null,
-  loading: boolean,
   owners: User[] | null,
   schema: any,
 }
@@ -20,7 +19,6 @@ export const useDandisetStore = defineStore('dandiset', {
   state: (): State => ({
     dandiset: null,
     versions: null,
-    loading: false,
     owners: null,
     schema: null,
   }),
@@ -47,7 +45,6 @@ export const useDandisetStore = defineStore('dandiset', {
       this.dandiset = null;
       this.versions = null;
       this.owners = null;
-      this.loading = false;
     },
     async initializeDandisets({ identifier, version }: Record<string, string>) {
       this.uninitializeDandisets();
@@ -58,7 +55,6 @@ export const useDandisetStore = defineStore('dandiset', {
       await this.fetchOwners(identifier);
     },
     async fetchDandisetVersions({ identifier }: Record<string, string>) {
-      this.loading = true;
       let res;
       try {
         res = await dandiRest.versions(identifier);
@@ -75,16 +71,12 @@ export const useDandisetStore = defineStore('dandiset', {
         const { results } = res;
         this.versions = results || [];
       }
-
-      this.loading = false;
     },
     async fetchDandiset({ identifier, version }: Record<string, string>) {
-      this.loading = true;
       const sanitizedVersion = version || (await dandiRest.mostRecentVersion(identifier))?.version;
 
       if (!sanitizedVersion) {
         this.dandiset = null;
-        this.loading = false;
         return;
       }
 
@@ -98,8 +90,6 @@ export const useDandisetStore = defineStore('dandiset', {
           throw err;
         }
       }
-
-      this.loading = false;
     },
     async fetchSchema() {
       const { schema_url: schemaUrl } = await dandiRest.info();
@@ -114,12 +104,8 @@ export const useDandisetStore = defineStore('dandiset', {
       this.schema = schema;
     },
     async fetchOwners(identifier: string) {
-      this.loading = true;
-
       const { data } = await dandiRest.owners(identifier);
       this.owners = data;
-
-      this.loading = false;
     },
   },
 });

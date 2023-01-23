@@ -116,7 +116,7 @@ const router = useRouter();
 const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
-const loading = computed(() => store.loading);
+const loading = ref(false);
 const schema = computed(() => store.schema);
 const userCanModifyDandiset = computed(() => store.userCanModifyDandiset);
 
@@ -140,12 +140,15 @@ function navigateToVersion(versionToNavigateTo: string) {
 watch(() => props.identifier, async () => {
   const { identifier, version } = props;
   if (identifier) {
+    loading.value = true;
     await store.initializeDandisets({ identifier, version });
+    loading.value = false;
   }
 }, { immediate: true });
 
 watch([() => props.identifier, () => props.version], async () => {
   const { identifier, version } = props;
+  loading.value = true;
   if (version) {
     // On version change, fetch the new dandiset (not initial)
     await store.fetchDandiset({ identifier, version });
@@ -164,6 +167,7 @@ watch([() => props.identifier, () => props.version], async () => {
       navigateToVersion(draftVersion);
     }
   }
+  loading.value = false;
 });
 
 const page = ref(Number(route.query.pos) || 1);
