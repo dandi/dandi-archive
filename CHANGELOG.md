@@ -1,3 +1,29 @@
+# v0.3.11 (Mon Jan 23 2023)
+
+#### 🐛 Bug Fix
+
+- Fix publishing UI bug [#1442](https://github.com/dandi/dandi-archive/pull/1442) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Allow deleting embargoed dandisets [#1438](https://github.com/dandi/dandi-archive/pull/1438) ([@danlamanna](https://github.com/danlamanna))
+- ENH: explicitly describe both cases of not allowed dandiset deletion [#1433](https://github.com/dandi/dandi-archive/pull/1433) ([@yarikoptic](https://github.com/yarikoptic))
+- Fix dependabot ignore type [#1437](https://github.com/dandi/dandi-archive/pull/1437) ([@danlamanna](https://github.com/danlamanna))
+- Add design doc for Zarr upload process simplification [#1415](https://github.com/dandi/dandi-archive/pull/1415) ([@waxlamp](https://github.com/waxlamp) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🏠 Internal
+
+- Bump types-setuptools from 65.6.0.3 to 65.7.0.1 [#1434](https://github.com/dandi/dandi-archive/pull/1434) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump boto3-stubs[s3] from 1.26.46 to 1.26.50 [#1435](https://github.com/dandi/dandi-archive/pull/1435) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 6
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.10 (Wed Jan 11 2023)
 
 #### 🐛 Bug Fix
