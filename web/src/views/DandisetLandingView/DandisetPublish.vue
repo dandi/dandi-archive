@@ -632,6 +632,7 @@ async function publish() {
     }
 
     showPublishChecklistDialog.value = false;
+    showPublishWarningDialog.value = false;
 
     publishing.value = true;
     try {
