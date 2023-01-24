@@ -238,13 +238,20 @@ def test_zarr_rest_delete_file(
         f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
     )
     assert resp.status_code == 204
-
     assert not upload.blob.field.storage.exists(upload.blob.name)
+
+    # Assert zarr is back in pending state
+    zarr_archive.refresh_from_db()
+    assert zarr_archive.status == ZarrArchiveStatus.PENDING
+    assert zarr_archive.checksum is None
+    assert zarr_archive.file_count == 0
+    assert zarr_archive.size == 0
 
     # Re-ingest
     ingest_zarr_archive(zarr_archive.zarr_id)
 
     zarr_archive.refresh_from_db()
+    assert zarr_archive.checksum == EMPTY_CHECKSUM
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db import transaction
-from django.db.transaction import atomic
 from zarr_checksum import compute_zarr_checksum
 from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
@@ -69,10 +68,3 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
     for zarr in ZarrArchive.objects.filter(dandiset__id=dandiset_id):
         ingest_zarr_archive.delay(str(zarr.zarr_id), **kwargs)
-
-
-@shared_task(soft_time_limit=60)
-@atomic
-def cancel_zarr_upload(zarr_id: str):
-    zarr_archive: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-    zarr_archive.cancel_upload()

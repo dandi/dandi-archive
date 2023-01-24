@@ -152,6 +152,17 @@ class BaseZarrArchive(TimeStampedModel):
         s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
         return s3_url
 
+    def generate_upload_urls(self, paths: list[str]):
+        return [
+            self.storage.generate_presigned_put_object_url(self.s3_path(path)) for path in paths
+        ]
+
+    def mark_pending(self):
+        self.checksum = None
+        self.status = ZarrArchiveStatus.PENDING
+        self.file_count = 0
+        self.size = 0
+
     def begin_upload(self, files):
         if self.upload_in_progress:
             raise ValidationError('Simultaneous uploads are not allowed.')
@@ -212,9 +223,8 @@ class BaseZarrArchive(TimeStampedModel):
         for path in paths:
             self.storage.delete(self.s3_path(path))
 
-        # Files deleted, ingest must be run again
-        self.checksum = None
-        self.status = ZarrArchiveStatus.PENDING
+        # Files deleted, mark pending
+        self.mark_pending()
         self.save()
 
 

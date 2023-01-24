@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 
 from django.db import IntegrityError, transaction
-from django.db.models import Exists, OuterRef
 from django.db.models.query import QuerySet
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -19,43 +18,14 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.common import DandiPagination
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
-from dandiapi.zarr.tasks import cancel_zarr_upload, ingest_zarr_archive
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 logger = logging.getLogger(__name__)
 
 
-class ZarrUploadFileSerializer(serializers.Serializer):
-    class Meta:
-        model = ZarrUploadFile
-        fields = [
-            'blob',
-            'etag',
-        ]
-
-
-class ZarrUploadFileRequestSerializer(serializers.Serializer):
-    class Meta:
-        model = ZarrUploadFile
-        fields = [
-            'path',
-            'etag',
-        ]
-
-    path = serializers.CharField()
-    etag = serializers.CharField()
-
-
-class ZarrUploadBatchSerializer(serializers.Serializer):
-    class Meta:
-        model = ZarrUploadFile
-        fields = [
-            'path',
-            'upload_url',
-        ]
-
-    path = serializers.CharField()
-    upload_url = serializers.URLField()
+class ZarrUploadRequestSerializer(serializers.ListSerializer):
+    child = serializers.CharField()
 
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
@@ -69,7 +39,6 @@ class ZarrSerializer(serializers.ModelSerializer):
             'zarr_id',
             'status',
             'checksum',
-            'upload_in_progress',
             'file_count',
             'size',
         ]
@@ -85,14 +54,12 @@ class ZarrListSerializer(serializers.ModelSerializer):
             'zarr_id',
             'status',
             'checksum',
-            'upload_in_progress',
             'file_count',
             'size',
         ]
         fields = ['name', 'dandiset', *read_only_fields]
 
     dandiset = serializers.RegexField(f'^{Dandiset.IDENTIFIER_REGEX}$')
-    upload_in_progress = serializers.BooleanField(source='uploads_exist')
 
 
 class ZarrExploreInputSerializer(serializers.Serializer):
@@ -143,11 +110,6 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         if 'name' in data:
             queryset = queryset.filter(name=data['name'])
 
-        # Add active uploads annotation
-        queryset = queryset.annotate(
-            uploads_exist=Exists(ZarrUploadFile.objects.filter(zarr_archive_id=OuterRef('id')))
-        )
-
         # Final response
         queryset = self.paginate_queryset(queryset)
         serializer = ZarrListSerializer(queryset, many=True)
@@ -183,12 +145,12 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         method='POST',
-        request_body=ZarrUploadFileRequestSerializer(many=True),
+        request_body=ZarrUploadRequestSerializer(),
         responses={
-            200: ZarrUploadBatchSerializer(many=True),
+            200: ZarrUploadRequestSerializer(),
             400: ZarrArchive.INGEST_ERROR_MSG,
         },
-        operation_summary='Start an upload of files to a zarr archive.',
+        operation_summary='Request to upload files to a zarr archive.',
         operation_description='',
     )
     @action(methods=['POST'], detail=True)
@@ -200,62 +162,24 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if zarr_archive.status == ZarrArchiveStatus.INGESTING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
+            # Deny if the user doesn't have ownership permission
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                # The user does not have ownership permission
                 raise PermissionDenied()
-            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
-            serializer = ZarrUploadFileRequestSerializer(data=request.data, many=True)
+
+            serializer = ZarrUploadRequestSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            uploads = zarr_archive.begin_upload(serializer.validated_data)
 
-        serializer = ZarrUploadBatchSerializer(instance=uploads, many=True)
-        logger.info(
-            f'Presigned {len(uploads)} URLs to upload to zarr archive {zarr_archive.zarr_id}'
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            # Generate presigned urls
+            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
+            urls = zarr_archive.generate_upload_urls(serializer.validated_data)
 
-    @swagger_auto_schema(
-        method='POST',
-        request_body=no_body,
-        responses={200: ZarrSerializer(many=True), 400: 'Incomplete or incorrect upload.'},
-        operation_summary='Finish an upload of files to a zarr archive.',
-        operation_description='',
-    )
-    @action(methods=['POST'], url_path='upload/complete', detail=True)
-    def upload_complete(self, request, zarr_id):
-        """Finish an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update(of=['self'])
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied()
-            logger.info(f'Beginning upload completion for zarr archive {zarr_archive.zarr_id}')
-            zarr_archive.complete_upload()
-            # Save any zarr assets to trigger metadata updates
-            for asset in zarr_archive.assets.all():
-                asset.save()
+            # Set status back to pending, since with these URLs the zarr could have been changed
+            zarr_archive.mark_pending()
+            zarr_archive.save()
 
-        return Response(None, status=status.HTTP_201_CREATED)
-
-    @swagger_auto_schema(
-        responses={200: ZarrSerializer(many=True)},
-        operation_summary='Cancel an upload of files to a zarr archive.',
-        operation_description='',
-    )
-    @upload.mapping.delete
-    def upload_cancel(self, request, zarr_id):
-        """Cancel an upload of files to a zarr archive."""
-        queryset = self.get_queryset()
-        zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-        if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-            raise PermissionDenied()
-        if not zarr_archive.upload_in_progress:
-            raise ValidationError('No upload to cancel.')
-        # Cancelling involves deleting any data uploaded to S3, which involves a batch of S3 API
-        # requests. These are done in a task to avoid Heroku request timeouts.
-        cancel_zarr_upload.delay(zarr_id)
-        return Response(None, status=status.HTTP_204_NO_CONTENT)
+        # Return presigned urls
+        logger.info(f'Presigned {len(urls)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
+        return Response(urls, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         method='POST',
@@ -265,28 +189,26 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             204: 'None - expected normal return without any content',
             400: ZarrArchive.INGEST_ERROR_MSG,
         },
-        operation_summary='Ingest a zarr archive, calculating checksums, size and file count.',
+        operation_summary='Finalize a zarr archive, dispatching async checksum computation.',
         operation_description='',
     )
-    @action(methods=['POST'], detail=True)
-    def ingest(self, request, zarr_id):
-        """Ingest a zarr archive."""
-        zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
-        if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-            # The user does not have ownership permission
-            raise PermissionDenied()
+    @action(methods=['POST'], url_path='finalize', detail=True)
+    def finalize(self, request, zarr_id):
+        """Finalize a zarr archive."""
+        # TODO: Remove locking?
+        queryset = self.get_queryset().select_for_update(of=['self'])
+        with transaction.atomic():
+            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                # The user does not have ownership permission
+                raise PermissionDenied()
 
-        if zarr_archive.status != ZarrArchiveStatus.PENDING:
-            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
-        if zarr_archive.upload_in_progress:
-            return Response(
-                'Upload in progress. Please cancel or complete this existing upload.',
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # Don't ingest if already ingested/ingesting
+            if zarr_archive.status != ZarrArchiveStatus.PENDING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
-        # Dispatch ingestion
+        # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
-
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
@@ -321,16 +243,13 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         if request.method == 'HEAD':
             # We cannot use storage.url because that presigns a GET request.
             # Instead, we need to presign the HEAD request using the storage-appropriate client.
-            storage = ZarrUploadFile.blob.field.storage
-            url = storage.generate_presigned_head_object_url(full_prefix)
+            url = zarr_archive.storage.generate_presigned_head_object_url(full_prefix)
             return HttpResponseRedirect(url)
 
         # Return a redirect to the file, if requested
         # S3 will 404 if the file does not exist.
         if download:
-            return HttpResponseRedirect(
-                ZarrUploadFile.blob.field.storage.url(zarr_archive.s3_path(raw_prefix))
-            )
+            return HttpResponseRedirect(zarr_archive.storage.url(zarr_archive.s3_path(raw_prefix)))
 
         # Retrieve file listing
         client = get_boto_client()
