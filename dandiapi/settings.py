@@ -51,6 +51,14 @@ class DandiMixin(ConfigMixin):
             'rest_framework.authentication.TokenAuthentication',
         ]
 
+        # Caching
+        configuration.CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+                'LOCATION': 'dandi_cache_table',
+            }
+        }
+
         # Permission
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += [
             'dandiapi.api.permissions.IsApprovedOrReadOnly'
