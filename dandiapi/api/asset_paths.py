@@ -24,6 +24,24 @@ def extract_paths(path: str) -> list[str]:
     return nodepaths
 
 
+def get_root_paths_many(versions: QuerySet[Version]) -> QuerySet[AssetPath]:
+    """Return all root paths for all provided versions."""
+    # Use prefetch_related here instead of select_related,
+    # as otherwise the resulting join is very large
+    qs = AssetPath.objects.prefetch_related(
+        'asset',
+        'asset__blob',
+        'asset__embargoed_blob',
+        'asset__zarr',
+    )
+    return (
+        qs.filter(version__in=versions)
+        .alias(num_parents=Count('parent_links'))
+        .filter(num_parents=1)
+        .order_by('path')
+    )
+
+
 def get_root_paths(version: Version) -> QuerySet[AssetPath]:
     """Return all root paths for a version."""
     # Use prefetch_related here instead of select_related,

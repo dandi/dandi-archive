@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
@@ -163,22 +164,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         qs = self.get_queryset()
         dandisets = self.paginate_queryset(self.filter_queryset(qs))
-
-        # Query versions, to supply size/count of assets.
-        base_query = (
+        relevant_versions = (
             Version.objects.select_related('dandiset')
-            .annotate(
-                num_assets=Count('assets'),
-                total_size=(
-                    Coalesce(Sum('assets__blob__size'), 0)
-                    + Coalesce(Sum('assets__embargoed_blob__size'), 0)
-                    + Coalesce(Sum('assets__zarr__size'), 0)
-                ),
-            )
             .filter(dandiset__in=dandisets)
             .order_by('-version', '-modified')
         )
 
+        # Get all published versions
         latest_dandiset_version = (
             Version.objects.exclude(version='draft')
             .order_by('-version')
@@ -186,24 +178,45 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             .values('version')[:1]
         )
         published = (
-            base_query.exclude(version='draft')
+            relevant_versions.exclude(version='draft')
             .alias(latest=Subquery(latest_dandiset_version))
             .filter(version=F('latest'))
         )
-        drafts = base_query.filter(version='draft')
 
-        # Union with drafts
+        # Get all draft versions
+        drafts = relevant_versions.filter(version='draft')
+
+        # Union published with drafts
         versions = published.union(drafts).order_by('dandiset_id', '-version')
 
-        # Organize draft and most recently published for each dandiset.
+        # Map version IDs to their stats
+        version_stats = {}
+        root_paths = get_root_paths_many(versions=relevant_versions)
+        for path in root_paths:
+            if path.version_id not in version_stats:
+                version_stats[path.version_id] = {'total_size': 0, 'num_assets': 0}
+            version_stats[path.version_id]['total_size'] += path.aggregate_size
+            version_stats[path.version_id]['num_assets'] += path.aggregate_files
+
+        # Create a map from dandiset IDs to their draft and published versions
         # Because of above query, a max of 1 of each (per dandiset) will be present.
         dandisets_to_versions = {}
         for version in versions.iterator():
             version: Version
 
-            if version.dandiset_id not in dandisets_to_versions:
-                dandisets_to_versions[version.dandiset_id] = {'draft': None, 'published': None}
+            # Annnotate with total size and asset count (with default)
+            stats = version_stats.get(version.id, {'total_size': 0, 'num_assets': 0})
+            version.total_size = stats['total_size']
+            version.num_assets = stats['num_assets']
 
+            # Ensure entry in map exists
+            if version.dandiset_id not in dandisets_to_versions:
+                dandisets_to_versions[version.dandiset_id] = {
+                    'draft': None,
+                    'published': None,
+                }
+
+            # Add draft or latest version
             entry = dandisets_to_versions[version.dandiset_id]
             if version.version == 'draft' and entry['draft'] is None:
                 entry['draft'] = version
