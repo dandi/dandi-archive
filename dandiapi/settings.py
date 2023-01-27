@@ -142,6 +142,13 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     CELERY_TASK_EAGER_PROPAGATES = True
     CELERY_TASK_ALWAYS_EAGER = True
 
+    # Use a dummy cache for testing
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
     pass
