@@ -1,3 +1,20 @@
+# v0.3.13 (Fri Jan 27 2023)
+
+#### 🐛 Bug Fix
+
+- Add 12 hour cache to stats endpoint [#1416](https://github.com/dandi/dandi-archive/pull/1416) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🏠 Internal
+
+- Bump flake8-bugbear from 22.12.6 to 23.1.20 [#1446](https://github.com/dandi/dandi-archive/pull/1446) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 2
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.3.12 (Mon Jan 23 2023)
 
 #### 🐛 Bug Fix
