@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count, F, QuerySet, Sum
+from django.db.models import F, QuerySet, Sum
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
 
@@ -34,12 +34,7 @@ def get_root_paths_many(versions: QuerySet[Version]) -> QuerySet[AssetPath]:
         'asset__embargoed_blob',
         'asset__zarr',
     )
-    return (
-        qs.filter(version__in=versions)
-        .alias(num_parents=Count('parent_links'))
-        .filter(num_parents=1)
-        .order_by('path')
-    )
+    return qs.filter(version__in=versions).exclude(path__contains='/').order_by('path')
 
 
 def get_root_paths(version: Version) -> QuerySet[AssetPath]:
@@ -52,12 +47,7 @@ def get_root_paths(version: Version) -> QuerySet[AssetPath]:
         'asset__embargoed_blob',
         'asset__zarr',
     )
-    return (
-        qs.filter(version=version)
-        .alias(num_parents=Count('parent_links'))
-        .filter(num_parents=1)
-        .order_by('path')
-    )
+    return qs.filter(version=version).exclude(path__contains='/').order_by('path')
 
 
 def get_path_children(path: AssetPath, depth: int | None = 1) -> QuerySet[AssetPath]:

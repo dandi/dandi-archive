@@ -6,6 +6,8 @@ from dandiapi.api.asset_paths import (
     add_version_asset_paths,
     delete_asset_paths,
     extract_paths,
+    get_root_paths,
+    get_root_paths_many,
     search_asset_paths,
     update_asset_paths,
 )
@@ -319,3 +321,37 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory):
     # Assert all paths copied
     for path in paths:
         AssetPath.objects.get(path=path, version=published_version)
+
+
+@pytest.mark.django_db
+def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
+    version = draft_version_factory()
+    version.assets.add(asset_factory(path='a'))
+    version.assets.add(asset_factory(path='b/c'))
+    version.assets.add(asset_factory(path='d'))
+    version.assets.add(asset_factory(path='e/f/g'))
+    add_version_asset_paths(version)
+
+    assert get_root_paths(version).count() == 4
+
+
+@pytest.mark.django_db
+def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
+    version = draft_version_factory()
+    version.assets.add(asset_factory(path='a'))
+    version.assets.add(asset_factory(path='b/c'))
+    version.assets.add(asset_factory(path='d'))
+    version.assets.add(asset_factory(path='e/f/g'))
+    add_version_asset_paths(version)
+
+    version2 = draft_version_factory()
+    version2.assets.add(asset_factory(path='a'))
+    version2.assets.add(asset_factory(path='b/c'))
+    version2.assets.add(asset_factory(path='d'))
+    version2.assets.add(asset_factory(path='e/f/g'))
+    add_version_asset_paths(version2)
+
+    # assert that the 4 root paths from each version are found
+    assert (
+        get_root_paths_many(Version.objects.filter(id__in=[version.id, version2.id])).count() == 8
+    )

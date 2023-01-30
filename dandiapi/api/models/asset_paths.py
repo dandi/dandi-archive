@@ -24,8 +24,11 @@ class AssetPath(models.Model):
 
     class Meta:
         constraints = [
-            # Disallow slashses in path
-            models.CheckConstraint(check=~models.Q(path__endswith='/'), name='consistent-slash'),
+            # Disallow slashses at the beginning or end of path
+            models.CheckConstraint(
+                check=~(models.Q(path__endswith='/') | models.Q(path__startswith='/')),
+                name='consistent-slash',
+            ),
             models.UniqueConstraint(fields=['asset', 'version'], name='unique-asset-version'),
             models.UniqueConstraint(fields=['version', 'path'], name='unique-version-path'),
             # Ensure all leaf paths have at most 1 associated file
