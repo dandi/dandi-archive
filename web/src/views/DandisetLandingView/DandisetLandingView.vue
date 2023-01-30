@@ -135,7 +135,10 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
-const dandisetDoesNotExist = ref(false);
+
+// If loading is finished and currentDandiset is still null, the dandiset doesn't exist.
+const dandisetDoesNotExist = computed(() => !loading.value && !currentDandiset.value);
+
 const schema = computed(() => store.schema);
 const userCanModifyDandiset = computed(() => store.userCanModifyDandiset);
 
@@ -162,11 +165,6 @@ watch(() => props.identifier, async () => {
     loading.value = true;
     await store.initializeDandisets({ identifier, version });
     loading.value = false;
-
-    // Render an error message if currentDandiset is still null after fetching
-    if (!currentDandiset.value) {
-      dandisetDoesNotExist.value = true;
-    }
   }
 }, { immediate: true });
 
