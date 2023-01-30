@@ -223,12 +223,14 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
 import {
   computed,
   ComputedRef,
-  defineComponent, getCurrentInstance, onMounted, PropType,
+  getCurrentInstance,
+  onMounted,
+  PropType,
 } from 'vue';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
@@ -255,97 +257,81 @@ function isURL(str: string): boolean {
   return url.protocol === 'http:' || url.protocol === 'https:';
 }
 
-export default defineComponent({
-  name: 'OverviewTab',
-  components: { MetadataCard },
-  props: {
-    schema: {
-      type: Object,
-      required: true,
-    },
-    meta: {
-      type: Object as PropType<DandisetMetadata>,
-      required: true,
-    },
+const props = defineProps({
+  schema: {
+    type: Object,
+    required: true,
   },
-  setup(props) {
-    const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
-
-    const store = useDandisetStore();
-    const currentDandiset = computed(() => store.dandiset);
-
-    const contributors = computed(
-      () => props.meta.contributor?.filter(
-        (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
-      ),
-    );
-    const fundingInformation = computed(
-      () => props.meta.contributor?.filter(
-        (contributor) => !!(contributor.schemaKey === 'Organization')
-        // Only include organizations with "Sponsor" or "Funder" roles in Funding Information
-        && (contributor.roleName?.includes('dcite:Funder') || contributor.roleName?.includes('dcite:Sponsor')),
-      ) || [],
-    );
-
-    const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
-      () => props.meta.relatedResource,
-    );
-
-    const associatedProjects: ComputedRef<AssociatedProjects|undefined> = computed(
-      () => props.meta.wasGeneratedBy,
-    );
-
-    const assetSummary = computed<Record<string, any>>(
-      () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
-        // filter out assetSummary fields we don't want to display
-        ([key, value]) => !!value && !ASSET_SUMMARY_BLACKLIST.has(key),
-      ).map(
-        // convert from camelCase to space-delimited string (i.e. "dataStandard" to "data Standard")
-        ([key, value]) => [key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`), value],
-      ).map(
-        // capitalize the first letter in the string
-        ([key, value]: any) => [key.charAt(0).toUpperCase() + key.slice(1), value],
-      )
-        // convert primitive types to single-element arrays so they can be more easily rendered
-        .map(([key, value]: any) => (typeof value === 'object' ? [key, value] : [key, [value]]))),
-    );
-
-    // Approximate a good column count for asset summary card
-    const assetSummaryColumnCount = computed(
-      () => ($vuetify.value?.breakpoint.mdAndDown ? 1
-        : Math.min(Object.keys(assetSummary.value).length, 3)),
-    );
-
-    const assetSummaryBeingComputed = computed<boolean>(() => currentDandiset.value?.status === 'Pending');
-
-    const contactPeople = computed(
-      () => new Set(contributors.value
-        .filter((contributor) => contributor.roleName?.includes('dcite:ContactPerson'))
-        .map((contributor) => contributor.name)),
-    );
-
-    onMounted(() => {
-      setInterval(async () => {
-        if (!currentDandiset.value || !assetSummaryBeingComputed.value) {
-          return;
-        }
-        const { identifier } = currentDandiset.value.dandiset;
-        const { version } = currentDandiset.value;
-        await store.fetchDandiset({ identifier, version });
-      }, 5000);
-    });
-
-    return {
-      contributors,
-      fundingInformation,
-      relatedResources,
-      associatedProjects,
-      assetSummary,
-      assetSummaryColumnCount,
-      assetSummaryBeingComputed,
-      contactPeople,
-      isURL,
-    };
+  meta: {
+    type: Object as PropType<DandisetMetadata>,
+    required: true,
   },
 });
+
+const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
+
+const store = useDandisetStore();
+const currentDandiset = computed(() => store.dandiset);
+
+const contributors = computed(
+  () => props.meta.contributor?.filter(
+    (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
+  ),
+);
+const fundingInformation = computed(
+  () => props.meta.contributor?.filter(
+    (contributor) => !!(contributor.schemaKey === 'Organization')
+        // Only include organizations with "Sponsor" or "Funder" roles in Funding Information
+        && (contributor.roleName?.includes('dcite:Funder') || contributor.roleName?.includes('dcite:Sponsor')),
+  ) || [],
+);
+
+const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
+  () => props.meta.relatedResource,
+);
+
+const associatedProjects: ComputedRef<AssociatedProjects|undefined> = computed(
+  () => props.meta.wasGeneratedBy,
+);
+
+const assetSummary = computed<Record<string, any>>(
+  () => Object.fromEntries(Object.entries(props.meta.assetsSummary).filter(
+    // filter out assetSummary fields we don't want to display
+    ([key, value]) => !!value && !ASSET_SUMMARY_BLACKLIST.has(key),
+  ).map(
+    // convert from camelCase to space-delimited string (i.e. "dataStandard" to "data Standard")
+    ([key, value]) => [key.replace(/[A-Z]/g, (letter) => ` ${letter.toUpperCase()}`), value],
+  ).map(
+    // capitalize the first letter in the string
+    ([key, value]: any) => [key.charAt(0).toUpperCase() + key.slice(1), value],
+  )
+  // convert primitive types to single-element arrays so they can be more easily rendered
+    .map(([key, value]: any) => (typeof value === 'object' ? [key, value] : [key, [value]]))),
+);
+
+// Approximate a good column count for asset summary card
+const assetSummaryColumnCount = computed(
+  () => ($vuetify.value?.breakpoint.mdAndDown ? 1
+    : Math.min(Object.keys(assetSummary.value).length, 3)),
+);
+
+const assetSummaryBeingComputed = computed<boolean>(() => currentDandiset.value?.status === 'Pending');
+
+const contactPeople = computed(
+  () => new Set(contributors.value
+    .filter((contributor) => contributor.roleName?.includes('dcite:ContactPerson'))
+    .map((contributor) => contributor.name)),
+);
+
+onMounted(() => {
+  setInterval(async () => {
+    if (!currentDandiset.value || !assetSummaryBeingComputed.value) {
+      return;
+    }
+    const { identifier } = currentDandiset.value.dandiset;
+    const { version } = currentDandiset.value;
+    await store.fetchDandiset({ identifier, version });
+  }, 5000);
+});
+
 </script>
