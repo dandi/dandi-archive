@@ -36,6 +36,8 @@ hide dandisets that have no published versions (as above, these dandisets would
 still appear for the owners). As the public may *want* to see draft-only
 dandisets, everyone would be able to toggle this mode with a setting.
 
+**NOTE: this feature has already been implemented.**
+
 ### Hide dandisets with no assets
 
 Another variation on the previous proposal: hide dandisets that contain no
@@ -47,6 +49,8 @@ scientific intentions by creating a draft dandiset with no assets, then collect
 and add data only after months or years of real scientific work. That is to say,
 an assetless dandiset that nonetheless has a description, funding agent,
 contact person, owners, etc. may indeed be fully valid.
+
+**NOTE: this feature has already been implemented.**
 
 ### Add questions to dandiset creation page
 
