@@ -224,17 +224,12 @@
 </template>
 
 <script setup lang="ts">
-import { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
-import {
-  computed,
-  ComputedRef,
-  getCurrentInstance,
-  onMounted,
-  PropType,
-} from 'vue';
-
+import { computed, getCurrentInstance, onMounted } from 'vue';
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+
+import type { ComputedRef, PropType } from 'vue';
+import type { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
 
 // Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
