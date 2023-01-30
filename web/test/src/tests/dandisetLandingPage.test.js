@@ -65,6 +65,6 @@ describe('dandiset landing page', () => {
   it('navigate to an invalid dandiset URL', async () => {
     await page.goto(new URL('/dandiset/1', CLIENT_URL).href);
     await waitForRequestsToFinish();
-    await expect(page).toMatch('Error: Dandiset does not exist.');
+    await expect(page).toMatch('Error: Dandiset does not exist');
   });
 });
