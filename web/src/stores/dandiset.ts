@@ -52,7 +52,10 @@ export const useDandisetStore = defineStore('dandiset', {
       // this can be done concurrently, don't await
       this.fetchDandisetVersions({ identifier });
       await this.fetchDandiset({ identifier, version });
-      await this.fetchOwners(identifier);
+
+      if (this.dandiset) {
+        await this.fetchOwners(identifier);
+      }
     },
     async fetchDandisetVersions({ identifier }: Record<string, string>) {
       let res;
