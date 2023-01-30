@@ -73,7 +73,9 @@ Part of the problem may be that people simply cannot delete their own abanonded
 dandisets. Offering a delete button with the proper semantics could help here.
 
 The archive does not allow for deletion of *published* dandisets, by design. But
-dandisets that are draft-only should be deleteable.
+dandisets that are draft-only should be deleteable. (Note that, in principle,
+admins *can* delete published versions, but this is intended only for extreme
+circumstances.)
 
 And, as an extension to that idea, a published dandiset should be able to be
 "sealed" by having its draft dandiset deleted, thus closing it off to further
