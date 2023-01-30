@@ -11,17 +11,22 @@ from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.transaction import atomic
 
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
+from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.tasks import validate_version_metadata_task, write_manifest_files
 
 logger = get_task_logger(__name__)
 
 
+@shared_task(soft_time_limit=10)
+def aggregate_assets_summary_task(version_id: int):
+    version = Version.objects.get(id=version_id)
+    version_aggregate_assets_summary(version)
+
+
 @shared_task(soft_time_limit=20)
-@atomic
 def validate_draft_version_metadata():
     # Select only the id of draft versions that have status PENDING
     pending_draft_versions = (
@@ -34,6 +39,7 @@ def validate_draft_version_metadata():
         logger.info('Found %s versions to validate', pending_draft_versions_count)
         for draft_version_id in pending_draft_versions.iterator():
             validate_version_metadata_task.delay(draft_version_id)
+            aggregate_assets_summary_task.delay(draft_version_id)
 
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.

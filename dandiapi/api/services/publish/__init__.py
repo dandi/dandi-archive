@@ -1,3 +1,6 @@
+import datetime
+
+from dandischema.metadata import aggregate_assets_summary, validate
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
@@ -76,6 +79,27 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
         draft_version.save()
 
 
+def _build_publishable_version_from_draft(draft_version: Version) -> Version:
+    publishable_version = Version(
+        dandiset=draft_version.dandiset,
+        name=draft_version.name,
+        metadata=draft_version.metadata,
+        status=Version.Status.VALID,
+        version=Version.next_published_version(draft_version.dandiset),
+    )
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    # inject the publishedBy and datePublished fields
+    publishable_version.metadata.update(
+        {
+            'publishedBy': draft_version.published_by(now),
+            'datePublished': now.isoformat(),
+        }
+    )
+
+    return publishable_version
+
+
 def _publish_dandiset(dandiset_id: int) -> None:
     """
     Publish a dandiset.
@@ -93,7 +117,7 @@ def _publish_dandiset(dandiset_id: int) -> None:
                 'before this function.'
             )
 
-        new_version: Version = old_version.publish_version
+        new_version: Version = _build_publishable_version_from_draft(old_version)
         new_version.save()
 
         # Bulk create the join table rows to optimize linking assets to new_version
@@ -130,7 +154,9 @@ def _publish_dandiset(dandiset_id: int) -> None:
         for draft_asset in draft_assets.iterator():
             publish_asset(asset=draft_asset)
 
-        # Save again to recompute metadata, specifically assetsSummary
+        new_version.metadata['assetsSummary'] = aggregate_assets_summary(
+            new_version.assets.values_list('metadata', flat=True).iterator()
+        )
         new_version.save()
 
         # Add asset paths with new version
@@ -140,6 +166,11 @@ def _publish_dandiset(dandiset_id: int) -> None:
         # being modified and revalidated
         old_version.status = Version.Status.PUBLISHED
         old_version.save()
+
+        # Inject a dummy DOI so the metadata is valid
+        new_version.metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
+
+        validate(new_version.metadata, schema_key='PublishedDandiset', json_validation=True)
 
         # Write updated manifest files and create DOI after
         # published version has been committed to DB.

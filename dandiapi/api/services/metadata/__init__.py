@@ -1,6 +1,6 @@
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
-from dandischema.metadata import validate
+from dandischema.metadata import aggregate_assets_summary, validate
 from django.db import transaction
 from django.utils import timezone
 import jsonschema.exceptions
@@ -67,6 +67,21 @@ def validate_asset_metadata(*, asset: Asset) -> None:
         asset.versions.filter(version='draft').update(modified=timezone.now())
 
 
+def version_aggregate_assets_summary(version: Version):
+    if version.version != 'draft':
+        raise VersionHasBeenPublished()
+
+    version.metadata['assetsSummary'] = aggregate_assets_summary(
+        version.assets.values_list('metadata', flat=True).iterator()
+    )
+
+    Version.objects.filter(id=version.id, version='draft').update(
+        modified=timezone.now(), metadata=version.metadata
+    )
+    version.refresh_from_db()
+    return version
+
+
 def validate_version_metadata(*, version: Version) -> None:
     logger.info('Validating dandiset metadata for version %s', version.id)
 
@@ -75,17 +90,18 @@ def validate_version_metadata(*, version: Version) -> None:
         raise VersionHasBeenPublished()
 
     with transaction.atomic():
+        # validating version metadata needs to lock the version to avoid racing with
+        # other modifications e.g. aggregate_assets_summary.
+        version = (
+            Version.objects.filter(id=version.id, status=Version.Status.PENDING)
+            .select_for_update()
+            .first()
+        )
         version.status = Version.Status.VALIDATING
         version.save()
 
         try:
-            publish_version = version.publish_version
-            metadata = publish_version.metadata
-
-            # Inject a dummy DOI so the metadata is valid
-            metadata['doi'] = '10.80507/dandi.123456/0.123456.1234'
-
-            validate(metadata, schema_key='PublishedDandiset', json_validation=True)
+            validate(version.metadata, schema_key='Dandiset', json_validation=True)
         except dandischema.exceptions.ValidationError as e:
             logger.info('Error while validating version %s', version.id)
             version.status = Version.Status.INVALID
