@@ -109,11 +109,20 @@
     </MetadataCard>
 
     <v-card
-      v-if="assetSummary && Object.keys(assetSummary) && Object.keys(assetSummary).length"
+      v-if="assetSummary"
       outlined
     >
       <v-card-title class="font-weight-regular">
-        <v-icon class="mr-3 grey--text text--lighten-1">
+        <v-progress-circular
+          v-if="assetSummaryBeingComputed"
+          class="mr-3"
+          size="20"
+          indeterminate
+        />
+        <v-icon
+          v-else
+          class="mr-3 grey--text text--lighten-1"
+        >
           mdi-clipboard-list
         </v-icon>
         Assets Summary
@@ -123,7 +132,20 @@
         class="px-3 ml-2"
       >
         <div
+          v-if="assetSummaryBeingComputed"
+          class="text-subtitle-2"
+        >
+          The assets summary is being computed, please wait.
+        </div>
+        <div
+          v-else-if="!assetSummary || !Object.keys(assetSummary).length"
+          class="font-italic font-weight-bold"
+        >
+          This Dandiset does not contain any assets.
+        </div>
+        <div
           v-for="([type, items], i) in Object.entries(assetSummary)"
+          v-else
           :key="i"
         >
           <div
@@ -206,10 +228,11 @@ import { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
 import {
   computed,
   ComputedRef,
-  defineComponent, getCurrentInstance, PropType,
+  defineComponent, getCurrentInstance, onMounted, PropType,
 } from 'vue';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
+import { useDandisetStore } from '@/stores/dandiset';
 
 // Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
@@ -247,6 +270,9 @@ export default defineComponent({
   },
   setup(props) {
     const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
+
+    const store = useDandisetStore();
+    const currentDandiset = computed(() => store.dandiset);
 
     const contributors = computed(
       () => props.meta.contributor?.filter(
@@ -290,11 +316,24 @@ export default defineComponent({
         : Math.min(Object.keys(assetSummary.value).length, 3)),
     );
 
+    const assetSummaryBeingComputed = computed<boolean>(() => currentDandiset.value?.status === 'Pending');
+
     const contactPeople = computed(
       () => new Set(contributors.value
         .filter((contributor) => contributor.roleName?.includes('dcite:ContactPerson'))
         .map((contributor) => contributor.name)),
     );
+
+    onMounted(() => {
+      setInterval(async () => {
+        if (!currentDandiset.value || !assetSummaryBeingComputed.value) {
+          return;
+        }
+        const { identifier } = currentDandiset.value.dandiset;
+        const { version } = currentDandiset.value;
+        await store.fetchDandiset({ identifier, version });
+      }, 5000);
+    });
 
     return {
       contributors,
@@ -303,6 +342,7 @@ export default defineComponent({
       associatedProjects,
       assetSummary,
       assetSummaryColumnCount,
+      assetSummaryBeingComputed,
       contactPeople,
       isURL,
     };
