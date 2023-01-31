@@ -265,6 +265,22 @@ def test_validate_version_metadata_malformed_license(draft_version: Version, ass
 
 
 @pytest.mark.django_db
+def test_validate_version_metadata_no_assets(
+    draft_version: Version,
+):
+    # Validate the metadata to mark version as `VALID`
+    tasks.validate_version_metadata_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.INVALID
+    assert draft_version.validation_errors == [
+        {
+            'field': 'assetsSummary',
+            'message': 'A Dandiset containing no files or zero bytes is not publishable',
+        }
+    ]
+
+
+@pytest.mark.django_db
 def test_publish_task(
     api_client: APIClient,
     user: User,
