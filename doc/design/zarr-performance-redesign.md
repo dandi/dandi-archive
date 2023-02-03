@@ -202,3 +202,10 @@ with this proposal. Some of the work in `dandi-archive` has already been done,
 and the rest is on par with the changes needed for `dandi-cli`. If all concerns
 with the plan are allayed, then it should not be difficult to execute the plan
 and gain significant performance for Zarr upload.
+
+---
+## Previous Design
+
+We previously included extra functionality, which involved *including* the locally computed checksum when finalizing the zarr archive (step 7), and adding a `MISMATCH` state to the zarr `status` field, which would be set if the checksum produced by the asynchronous zarr checksum task didn't match the checksum provided in step 7.
+
+This addition was later reverted in the interest of simplicity, as well as the fact that it is funtionally equivalent to the current design.
