@@ -24,7 +24,7 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 logger = logging.getLogger(__name__)
 
 
-class ZarrUploadRequestSerializer(serializers.ListSerializer):
+class ZarrFileCreationSerializer(serializers.ListSerializer):
     child = serializers.CharField()
 
 
@@ -145,44 +145,6 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         method='POST',
-        request_body=ZarrUploadRequestSerializer(),
-        responses={
-            200: ZarrUploadRequestSerializer(),
-            400: ZarrArchive.INGEST_ERROR_MSG,
-        },
-        operation_summary='Request to upload files to a zarr archive.',
-        operation_description='',
-    )
-    @action(methods=['POST'], detail=True)
-    def upload(self, request, zarr_id):
-        """Start an upload of files to a zarr archive."""
-        queryset = self.get_queryset().select_for_update(of=['self'])
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
-                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
-
-            # Deny if the user doesn't have ownership permission
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                raise PermissionDenied()
-
-            serializer = ZarrUploadRequestSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-
-            # Generate presigned urls
-            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
-            urls = zarr_archive.generate_upload_urls(serializer.validated_data)
-
-            # Set status back to pending, since with these URLs the zarr could have been changed
-            zarr_archive.mark_pending()
-            zarr_archive.save()
-
-        # Return presigned urls
-        logger.info(f'Presigned {len(urls)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
-        return Response(urls, status=status.HTTP_200_OK)
-
-    @swagger_auto_schema(
-        method='POST',
         request_body=no_body,
         responses={
             # Note: Having proper None results in no documentation in /swagger
@@ -286,6 +248,43 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 }
             ).data
         )
+
+    @swagger_auto_schema(
+        request_body=ZarrFileCreationSerializer(),
+        responses={
+            200: ZarrFileCreationSerializer(),
+            400: ZarrArchive.INGEST_ERROR_MSG,
+        },
+        operation_summary='Request to upload files to a zarr archive.',
+        operation_description='',
+    )
+    @files.mapping.post
+    def create_files(self, request, zarr_id):
+        """Start an upload of files to a zarr archive."""
+        queryset = self.get_queryset().select_for_update(of=['self'])
+        with transaction.atomic():
+            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
+            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
+                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            # Deny if the user doesn't have ownership permission
+            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+                raise PermissionDenied()
+
+            serializer = ZarrFileCreationSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+
+            # Generate presigned urls
+            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
+            urls = zarr_archive.generate_upload_urls(serializer.validated_data)
+
+            # Set status back to pending, since with these URLs the zarr could have been changed
+            zarr_archive.mark_pending()
+            zarr_archive.save()
+
+        # Return presigned urls
+        logger.info(f'Presigned {len(urls)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
+        return Response(urls, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         request_body=ZarrDeleteFileRequestSerializer(many=True),

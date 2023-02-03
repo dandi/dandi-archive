@@ -24,7 +24,7 @@ def test_zarr_rest_upload_start(
 
     # Request upload files
     resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/upload/',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
         ['foo/bar.txt'],
         format='json',
     )
@@ -40,7 +40,7 @@ def test_zarr_rest_upload_start(
 
     # Request more
     resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/upload/',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
         ['foo/bar2.txt'],
         format='json',
     )
@@ -51,7 +51,7 @@ def test_zarr_rest_upload_start(
 @pytest.mark.django_db
 def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
     resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/upload/',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
         ['foo/bar.txt'],
         format='json',
     )
