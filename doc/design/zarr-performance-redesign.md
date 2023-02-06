@@ -105,20 +105,22 @@ sequenceDiagram
         Client->>+S3: Upload individual file using signed URL
     end
 
-    Client->>+Server: Finalize Zarr Archive (w/ local checksum) ⚡⚡⚡
+    Client->>+Server: Finalize Zarr Archive ⚡⚡⚡
     Server-->>-Client: PENDING Zarr Archive
 
     rect rgb(179, 209, 95)
-        Server->>+Worker: Compute tree checksum for Zarr Archive, <br/> compare against provided checksum.
+        Server->>+Worker: Compute tree checksum for Zarr Archive
     end
 
     loop
         Client->>+Server: Check for COMPLETE Zarr Archive
-        Server-->>-Client: PENDING/INGESTING/COMPLETE/MISMATCH Zarr Archive
+        Server-->>-Client: PENDING/INGESTING/COMPLETE Zarr Archive
     end
+
+    Client->>+Client: Verify zarr checksum with local
 ```
 
-(Step 1): **`dandi-cli` computes the Zarr checksum locally**. (Note that this step can actually be taken any time before step 7; it is listed here arbitrarily.)
+(Step 1): **`dandi-cli` computes the Zarr checksum locally**. (Note that this step can actually be taken any time before step 12; it is listed here arbitrarily.)
 
 (Steps 2 and 3): `dandi-cli` asks the server to create a new Zarr archive, which is put into the `PENDING` state.
 
@@ -129,11 +131,11 @@ Important notes:
 
 (Step 6): `dandi-cli` uses these URLs to upload the files **using S3's `Content-MD5` header to verify the uploaded file's integrity**. **Instead of finalizing a batch (since there is no longer a batch concept), `dandi-cli` repeats these steps until all files are uploaded (repeating steps 4, 5, and 6).** (Note that `dandi-cli`'s actual strategy here may be more nuanced than a simple loop as depicted above; instead, it might maintain a queue of files and a set of files "in flight", replenishing them according to some dynamic batching strategy, etc. In any such strategy, some combination of steps 4, 5, and 6 will repeat until all files are uploaded.)
 
-(Steps 7 and 8): **`dandi-cli` asks the server to finalize the Zarr, providing the locally computed zarr checksum to compare against**.
+(Steps 7 and 8): **`dandi-cli` asks the server to finalize the Zarr**.
 
-(Step 9): The server kicks off an asynchronous task to compute the treewise Zarr checksum, comparing it against the checksum provided in step 7 and updating the status of the Zarr once it's finished.
+(Step 9): The server kicks off an asynchronous task to compute the treewise Zarr checksum, updating the status of the Zarr once it's finished.
 
-(Steps 10 and 11): Meanwhile, `dandi-cli` sits in a loop checking for the Zarr archive to reach either the `COMPLETE` state, or if there was an error, the `MISMATCH` state.
+(Steps 10 and 11): Meanwhile, `dandi-cli` sits in a loop checking for the Zarr archive to reach the `COMPLETE` state.
 
 ### Benefits
 
@@ -200,3 +202,10 @@ with this proposal. Some of the work in `dandi-archive` has already been done,
 and the rest is on par with the changes needed for `dandi-cli`. If all concerns
 with the plan are allayed, then it should not be difficult to execute the plan
 and gain significant performance for Zarr upload.
+
+---
+## Previous Design
+
+We previously included extra functionality, which involved *including* the locally computed checksum when finalizing the zarr archive (step 7), and adding a `MISMATCH` state to the zarr `status` field, which would be set if the checksum produced by the asynchronous zarr checksum task didn't match the checksum provided in step 7.
+
+This addition was later reverted in the interest of simplicity, as well as the fact that it is funtionally equivalent to the current design.
