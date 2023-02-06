@@ -53,11 +53,11 @@ The process is as follows.
 
 (Steps 1 and 2): `dandi-cli` asks the server to create a new Zarr archive, which is put into the `PENDING` state.
 
-(Steps 3 and 4): For each batch of (maxiumum) 255 Zarr chunk files the client wants to upload, `dandi-cli` asks the server to create an `Upload`, supplying the list of file paths and associated etags, and receiving a list of signed upload URLs.
+(Steps 3 and 4): For each batch of (maximum) 255 Zarr chunk files the client wants to upload, `dandi-cli` asks the server to create an `Upload`, supplying the list of file paths and associated etags, and receiving a list of signed upload URLs.
 
 (Step 5): `dandi-cli` uses these URLs to upload the files in that batch.
 
-(Steps 6 and 7): Then, `dandi-cli` asks the server to finalize the batch, and the server does so, matching etags and verifiying that all files were uploaded. *This step is very costly, due to the server's need to contact S3 to verify these conditions.*
+(Steps 6 and 7): Then, `dandi-cli` asks the server to finalize the batch, and the server does so, matching etags and verifying that all files were uploaded. *This step is very costly, due to the server's need to contact S3 to verify these conditions.*
 
 (Step 8): When all batches are uploaded, `dandi-cli` signals the server to ingest the Zarr archive.
 
@@ -208,4 +208,4 @@ and gain significant performance for Zarr upload.
 
 We previously included extra functionality, which involved *including* the locally computed checksum when finalizing the zarr archive (step 7), and adding a `MISMATCH` state to the zarr `status` field, which would be set if the checksum produced by the asynchronous zarr checksum task didn't match the checksum provided in step 7.
 
-This addition was later reverted in the interest of simplicity, as well as the fact that it is funtionally equivalent to the current design.
+This addition was later reverted in the interest of simplicity, as well as the fact that it is functionally equivalent to the current design.

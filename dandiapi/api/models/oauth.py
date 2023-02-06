@@ -26,7 +26,7 @@ class StagingApplication(AbstractApplication):
         try:
             super().clean()
         except ValidationError as e:
-            # don't validate URLs so we can use wilcards too
+            # don't validate URLs so we can use wildcards too
             if 'Enter a valid URL.' not in str(e):
                 raise e
 

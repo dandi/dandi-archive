@@ -50,7 +50,7 @@ A link to the dandiset with this secret URL parameter is included somewhere on t
 ### TODO how to download anonymously with the CLI?
 
 ## Embargo period enforcement
-NIH embargoes (and embargos in general) will have an end date to ensure that the data is not secret forever.
+NIH embargoes (and embargoes in general) will have an end date to ensure that the data is not secret forever.
 We will enforce that an end date be specified for every new embargoed dandiset, and forcibly release embargoed dandisets that expire.
 
 The MVP collects the NIH award number and stores it in the metadata.
@@ -76,7 +76,7 @@ If this becomes an issue, we could:
   This could be as simple as adding a new django app and a new Heroku dyno, or as complex as a Lambda@Edge+CloudFront service.
 * Dynamically provision IAM users with permission to access prefixes in the embargo bucket and distribute access keys to users.
   This would require the API server to manage IAM directly, which is a lot of complexity to manage.
-* Make the embargo bucket publically readable, but not listable.
+* Make the embargo bucket publicly readable, but not listable.
   If anyone knows the full S3 object key they have the ability to download the data, but they will not have the ability to search for or scan the bucket for new content.
   We would then distribute the zarr_id to anyone who needs to access an embargoed zarr archive, giving them permanent read access to it.
   The downside is that access is not revocable, since we cannot take back the zarr ID from the user or efficiently change the location of the zarr archive.

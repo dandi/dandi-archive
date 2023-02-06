@@ -91,7 +91,7 @@ class VersionSerializer(serializers.ModelSerializer):
 
 
 class DandisetVersionSerializer(serializers.ModelSerializer):
-    """The verison serializer nested within the Dandiset Serializer."""
+    """The version serializer nested within the Dandiset Serializer."""
 
     class Meta:
         model = Version
