@@ -6,7 +6,6 @@ import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0029_alter_usermetadata_user'),
     ]

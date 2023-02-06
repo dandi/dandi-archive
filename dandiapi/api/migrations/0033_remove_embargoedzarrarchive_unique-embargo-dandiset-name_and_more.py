@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0032_embargoedzarrarchive_checksum_zarrarchive_checksum_and_more'),
     ]

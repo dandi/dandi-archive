@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0026_alter_asset_id_alter_assetblob_id_alter_dandiset_id_and_more'),
     ]

@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0027_embargoedzarrarchive_status_zarrarchive_status'),
     ]

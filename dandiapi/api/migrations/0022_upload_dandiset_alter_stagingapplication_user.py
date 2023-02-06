@@ -24,7 +24,6 @@ def reverse_set_default_upload_dandiset(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0021_embargo_models'),
     ]
