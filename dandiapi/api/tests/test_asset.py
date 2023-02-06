@@ -951,7 +951,12 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
 
 @pytest.mark.django_db
 def test_asset_rest_update_zarr(
-    api_client, user, draft_version, draft_asset_factory, zarr_archive, zarr_upload_file_factory
+    api_client,
+    user,
+    draft_version,
+    draft_asset_factory,
+    zarr_archive,
+    zarr_file_factory,
 ):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -961,7 +966,7 @@ def test_asset_rest_update_zarr(
     add_asset_paths(asset=asset, version=draft_version)
 
     # Upload file and perform ingest
-    zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
 
@@ -1118,7 +1123,12 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
 @pytest.mark.django_db
 def test_asset_rest_delete_zarr(
-    api_client, user, draft_version, draft_asset_factory, zarr_archive, zarr_upload_file_factory
+    api_client,
+    user,
+    draft_version,
+    draft_asset_factory,
+    zarr_archive,
+    zarr_file_factory,
 ):
     asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
     assign_perm('owner', user, draft_version.dandiset)
@@ -1128,7 +1138,7 @@ def test_asset_rest_delete_zarr(
     add_asset_paths(asset=asset, version=draft_version)
 
     # Upload zarr file and perform ingest
-    zarr_upload_file_factory(zarr_archive=zarr_archive)
+    zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
 

@@ -1,36 +1,9 @@
-import hashlib
-import os
-from pathlib import Path
-
 from guardian.shortcuts import assign_perm
 import pytest
-from zarr_checksum import compute_zarr_checksum
-from zarr_checksum.checksum import EMPTY_CHECKSUM, ZarrDirectoryDigest
-from zarr_checksum.generators import ZarrArchiveFile
+from zarr_checksum.checksum import EMPTY_CHECKSUM
 
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
-
-
-def uploaded_zarr_files(
-    zarr: ZarrArchive, paths: list[str]
-) -> tuple[ZarrDirectoryDigest, list[ZarrArchiveFile]]:
-    """Upload zarr files and return checksum info."""
-    client = get_boto_client(zarr.storage)
-    files: list[ZarrArchiveFile] = []
-    for path in paths:
-        data = os.urandom(100)
-        client.put_object(Bucket=zarr.storage.bucket_name, Key=zarr.s3_path(path), Body=data)
-
-        # Create ZarrArchiveFile
-        h = hashlib.md5()
-        h.update(data)
-        files.append(ZarrArchiveFile(path=Path(path), size=100, digest=h.hexdigest()))
-
-    # Compute zarr checksum
-    checksum = compute_zarr_checksum(files)
-    return [checksum, files]
 
 
 @pytest.mark.django_db
@@ -87,63 +60,29 @@ def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_arch
 
 @pytest.mark.django_db
 def test_zarr_rest_finalize(
-    authenticated_api_client, user, storage, zarr_archive: ZarrArchive, monkeypatch
+    authenticated_api_client,
+    user,
+    storage,
+    zarr_archive: ZarrArchive,
+    zarr_file_factory,
+    monkeypatch,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
 
     # Pretend like our zarr was defined with the given storage
     monkeypatch.setattr(ZarrArchive, 'storage', storage)
 
-    # Upload zarr files
-    checksum, files = uploaded_zarr_files(zarr_archive, ['foo/bar'])
+    # Upload zarr file
+    zarr_file_factory(zarr_archive)
 
-    resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/finalize/', {'digest': checksum.digest}
-    )
+    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 204
 
     # Check that zarr ingestion occured
     zarr_archive.refresh_from_db()
     assert zarr_archive.checksum is not None
+    assert zarr_archive.checksum != EMPTY_CHECKSUM
     assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
-
-
-@pytest.mark.django_db
-def test_zarr_rest_finalize_mismatch(
-    authenticated_api_client, user, storage, zarr_archive: ZarrArchive, monkeypatch
-):
-    assign_perm('owner', user, zarr_archive.dandiset)
-
-    # Pretend like our zarr was defined with the given storage
-    monkeypatch.setattr(ZarrArchive, 'storage', storage)
-
-    # Upload zarr files
-    checksum, files = uploaded_zarr_files(zarr_archive, ['foo/bar'])
-
-    # Intentionally provide incorrect digest
-    resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/finalize/', {'digest': EMPTY_CHECKSUM}
-    )
-    assert resp.status_code == 204
-
-    # Check that zarr ingestion occured
-    zarr_archive.refresh_from_db()
-    assert zarr_archive.checksum is not None
-    assert zarr_archive.status == ZarrArchiveStatus.MISMATCH
-    assert zarr_archive.file_count == 1
-
-
-@pytest.mark.django_db
-def test_zarr_rest_finalize_invalid_digest(
-    authenticated_api_client, user, zarr_archive: ZarrArchive, monkeypatch
-):
-    assign_perm('owner', user, zarr_archive.dandiset)
-
-    # Intentionally provide incorrect digest
-    resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/finalize/', {'digest': 'asd'}
-    )
-    assert resp.status_code == 400
 
 
 @pytest.mark.django_db

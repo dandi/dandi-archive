@@ -5,7 +5,7 @@ import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
@@ -28,7 +28,6 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'dandiset': dandiset.identifier,
         'status': ZarrArchiveStatus.PENDING,
         'checksum': None,
-        'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
     }
@@ -104,12 +103,11 @@ def test_zarr_rest_create_embargoed_dandiset(
 
 @pytest.mark.django_db
 def test_zarr_rest_get(
-    authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_upload_file_factory
+    authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    zarr_archive.complete_upload()
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
+    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     # Ingest
     ingest_zarr_archive(zarr_archive.zarr_id)
@@ -123,9 +121,8 @@ def test_zarr_rest_get(
         'dandiset': zarr_archive.dandiset.identifier,
         'status': ZarrArchiveStatus.COMPLETE,
         'checksum': zarr_archive.checksum,
-        'upload_in_progress': False,
         'file_count': 1,
-        'size': upload.size(),
+        'size': zarr_file.size,
     }
 
 
@@ -189,7 +186,6 @@ def test_zarr_rest_get_very_big(authenticated_api_client, zarr_archive_factory):
         'dandiset': zarr_archive.dandiset.identifier,
         'status': ZarrArchiveStatus.PENDING,
         'checksum': zarr_archive.checksum,
-        'upload_in_progress': False,
         'file_count': ten_quadrillion,
         'size': ten_petabytes,
     }
@@ -205,7 +201,6 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
         'dandiset': zarr_archive.dandiset.identifier,
         'status': ZarrArchiveStatus.PENDING,
         'checksum': zarr_archive.checksum,
-        'upload_in_progress': False,
         'file_count': 0,
         'size': 0,
     }
@@ -217,13 +212,13 @@ def test_zarr_rest_delete_file(
     user,
     storage,
     zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
+    zarr_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    zarr_archive.complete_upload()
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
+
+    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     # Ingest
     ingest_zarr_archive(zarr_archive.zarr_id)
@@ -231,14 +226,14 @@ def test_zarr_rest_delete_file(
     # Assert file count and size
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 1
-    assert zarr_archive.size == 100
+    assert zarr_archive.size == zarr_file.size
 
     # Make delete call
     resp = authenticated_api_client.delete(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': str(zarr_file.path)}]
     )
     assert resp.status_code == 204
-    assert not upload.blob.field.storage.exists(upload.blob.name)
+    assert not zarr_archive.storage.exists(zarr_archive.s3_path(zarr_file.path))
 
     # Assert zarr is back in pending state
     zarr_archive.refresh_from_db()
@@ -262,15 +257,16 @@ def test_zarr_rest_delete_file_asset_metadata(
     user,
     storage,
     zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
+    zarr_file_factory,
     asset_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    zarr_archive.complete_upload()
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
+
     asset = asset_factory(zarr=zarr_archive, blob=None)
+
+    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
 
     asset.refresh_from_db()
@@ -279,7 +275,7 @@ def test_zarr_rest_delete_file_asset_metadata(
     assert asset.metadata['contentSize'] == 100
 
     resp = authenticated_api_client.delete(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': str(zarr_file.path)}]
     )
     assert resp.status_code == 204
 
@@ -291,18 +287,14 @@ def test_zarr_rest_delete_file_asset_metadata(
 
 @pytest.mark.django_db
 def test_zarr_rest_delete_file_not_an_owner(
-    authenticated_api_client,
-    storage,
-    zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
+    authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory
 ):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    zarr_archive.complete_upload()
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
+    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     resp = authenticated_api_client.delete(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path}]
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': str(zarr_file.path)}]
     )
     assert resp.status_code == 403
 
@@ -313,21 +305,24 @@ def test_zarr_rest_delete_multiple_files(
     user,
     storage,
     zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
+    zarr_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    uploads = [zarr_upload_file_factory(zarr_archive=zarr_archive) for i in range(0, 10)]
-    zarr_archive.complete_upload()
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
+
+    # Create 10 files
+    zarr_files = [zarr_file_factory(zarr_archive=zarr_archive) for _ in range(10)]
 
     resp = authenticated_api_client.delete(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': upload.path} for upload in uploads]
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': str(file.path)} for file in zarr_files],
     )
     assert resp.status_code == 204
 
-    for upload in uploads:
-        assert not upload.blob.field.storage.exists(upload.blob.name)
+    # Assert not found
+    for file in zarr_files:
+        assert not zarr_archive.storage.exists(zarr_archive.s3_path(file))
 
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
@@ -341,18 +336,18 @@ def test_zarr_rest_delete_missing_file(
     user,
     storage,
     zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
+    zarr_file_factory,
 ):
     assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-    zarr_archive.complete_upload()
 
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
+
+    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
     resp = authenticated_api_client.delete(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         [
-            {'path': upload.path},
+            {'path': str(zarr_file.path)},
             {'path': 'does/not/exist'},
         ],
     )
@@ -360,39 +355,18 @@ def test_zarr_rest_delete_missing_file(
     assert resp.json() == [
         f'File test-prefix/test-zarr/{zarr_archive.zarr_id}/does/not/exist does not exist.'
     ]
-    assert upload.blob.field.storage.exists(upload.blob.name)
+    assert zarr_archive.storage.exists(zarr_archive.s3_path(zarr_file.path))
 
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 1
-    assert zarr_archive.size == upload.size()
+    assert zarr_archive.size == zarr_file.size
 
 
 @pytest.mark.django_db
-def test_zarr_rest_delete_upload_in_progress(
-    authenticated_api_client,
-    user,
-    storage,
-    zarr_archive: ZarrArchive,
-    zarr_upload_file_factory,
-):
-    assign_perm('owner', user, zarr_archive.dandiset)
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
-    upload = zarr_upload_file_factory(zarr_archive=zarr_archive)
-
-    resp = authenticated_api_client.delete(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/',
-        [{'path': upload.path}],
-    )
-    assert resp.status_code == 400
-    assert resp.json() == ['Cannot delete files while an upload is in progress.']
-
-
-@pytest.mark.django_db
-def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_upload_file_factory):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory):
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
 
     files = [
         'foo/bar/a.txt',
@@ -403,7 +377,7 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_upl
         'bar/b.txt',
     ]
     for file in files:
-        zarr_upload_file_factory(zarr_archive=zarr_archive, path=file)
+        zarr_file_factory(zarr_archive=zarr_archive, path=file)
 
     # Check base listing
     resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/files/')
@@ -447,8 +421,8 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_upl
 
 @pytest.mark.django_db
 def test_zarr_explore_head(api_client, storage, zarr_archive: ZarrArchive):
-    # Pretend like ZarrUploadFile was defined with the given storage
-    ZarrUploadFile.blob.field.storage = storage
+    # Pretend like ZarrArchive was defined with the given storage
+    ZarrArchive.storage = storage
 
     filepath = 'foo/bar.txt'
     resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})

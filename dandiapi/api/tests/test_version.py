@@ -629,12 +629,14 @@ def test_version_rest_publish_zarr(
     draft_version: Version,
     draft_asset_factory,
     zarr_archive_factory,
+    zarr_file_factory,
 ):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
     # create and ingest zarr archive
     zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
 
     zarr_asset: Asset = draft_asset_factory(zarr=zarr_archive, blob=None)

@@ -20,7 +20,8 @@ from dandiapi.api.tests.factories import (
     UploadFactory,
     UserFactory,
 )
-from dandiapi.zarr.tests.factories import ZarrArchiveFactory, ZarrUploadFileFactory
+from dandiapi.zarr.tests.factories import ZarrArchiveFactory
+from dandiapi.zarr.tests.utils import upload_zarr_file
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
@@ -39,7 +40,12 @@ register(UploadFactory)
 
 # zarr app
 register(ZarrArchiveFactory)
-register(ZarrUploadFileFactory)
+
+
+# Register zarr file/directory factories
+@pytest.fixture
+def zarr_file_factory():
+    return upload_zarr_file
 
 
 @pytest.fixture
