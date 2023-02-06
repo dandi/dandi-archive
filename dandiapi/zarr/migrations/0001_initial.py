@@ -11,7 +11,6 @@ import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [

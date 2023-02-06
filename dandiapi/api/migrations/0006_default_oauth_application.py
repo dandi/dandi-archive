@@ -31,7 +31,6 @@ def reverse_create_application(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0005_version_doi'),
         ('oauth2_provider', '0003_auto_20201211_1314'),

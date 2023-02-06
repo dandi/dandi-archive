@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0038_assetpath_assetpathrelation_alter_asset_path_and_more'),
     ]

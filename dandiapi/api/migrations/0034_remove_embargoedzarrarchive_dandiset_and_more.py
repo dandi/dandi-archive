@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0033_remove_embargoedzarrarchive_unique-embargo-dandiset-name_and_more'),
     ]

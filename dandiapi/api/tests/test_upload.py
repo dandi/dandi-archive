@@ -17,7 +17,6 @@ def mb(bytes_size: int) -> int:
 
 @pytest.mark.django_db
 def test_blob_read(api_client, asset_blob):
-
     assert api_client.post(
         '/api/blobs/digest/',
         {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
@@ -32,7 +31,6 @@ def test_blob_read(api_client, asset_blob):
 
 @pytest.mark.django_db
 def test_blob_read_sha256(api_client, asset_blob):
-
     assert api_client.post(
         '/api/blobs/digest/',
         {'algorithm': 'dandi:sha2-256', 'value': asset_blob.sha256},
@@ -47,7 +45,6 @@ def test_blob_read_sha256(api_client, asset_blob):
 
 @pytest.mark.django_db
 def test_blob_read_bad_algorithm(api_client, asset_blob):
-
     resp = api_client.post(
         '/api/blobs/digest/',
         {'algorithm': 'sha256', 'value': asset_blob.sha256},
@@ -59,7 +56,6 @@ def test_blob_read_bad_algorithm(api_client, asset_blob):
 
 @pytest.mark.django_db
 def test_blob_read_does_not_exist(api_client):
-
     resp = api_client.post(
         '/api/blobs/digest/',
         {'algorithm': 'dandi:dandi-etag', 'value': 'not etag'},
