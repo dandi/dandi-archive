@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0002_unique_asset_blob_etag_size'),
     ]

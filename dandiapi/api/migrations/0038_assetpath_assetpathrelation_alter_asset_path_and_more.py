@@ -7,7 +7,6 @@ import dandiapi.api.models.asset
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0037_alter_version_status'),
     ]

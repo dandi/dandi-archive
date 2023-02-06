@@ -14,7 +14,6 @@ def populate_empty_asset_schema_versions(apps, _):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0030_alter_embargoedzarruploadfile_blob_and_more'),
     ]

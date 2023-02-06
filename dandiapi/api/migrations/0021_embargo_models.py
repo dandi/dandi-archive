@@ -12,7 +12,6 @@ import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0020_zarr'),
     ]

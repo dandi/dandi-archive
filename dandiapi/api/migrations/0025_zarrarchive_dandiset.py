@@ -19,7 +19,6 @@ def set_default_zarrarchive_dandiset(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('auth', '0012_alter_user_first_name_max_length'),
         ('api', '0024_biginteger_zarrarchives'),

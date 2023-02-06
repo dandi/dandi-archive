@@ -26,7 +26,6 @@ def reverse_update_existing_users(app, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('api', '0018_alter_validation_errors'),

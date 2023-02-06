@@ -27,7 +27,6 @@ def migrate_metadata(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0015_validation_fields'),
     ]

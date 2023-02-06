@@ -11,7 +11,6 @@ import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('api', '0022_upload_dandiset_alter_stagingapplication_user'),
     ]
