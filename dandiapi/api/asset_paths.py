@@ -169,9 +169,13 @@ def _delete_asset_paths(asset: Asset, version: Version):
     )
     parent_paths = AssetPath.objects.filter(id__in=parent_ids)
 
+    # Get the previously computed size of the leaf node, not the current asset size,
+    # in case the size of the AssetBlob/ZarrArchive that it points to has changed
+    leaf_size = leaf.aggregate_size
+
     # Update parents
     parent_paths.update(
-        aggregate_size=F('aggregate_size') - asset.size,
+        aggregate_size=F('aggregate_size') - leaf_size,
         aggregate_files=F('aggregate_files') - 1,
     )
 

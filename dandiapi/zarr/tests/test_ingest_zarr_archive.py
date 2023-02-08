@@ -1,6 +1,10 @@
+from django.conf import settings
+from guardian.shortcuts import assign_perm
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
+from dandiapi.api.models import AssetPath
+from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
@@ -95,6 +99,41 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, ass
     assert asset.size == zarr_file.size
     assert asset.metadata['contentSize'] == zarr_file.size
     assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == zarr.checksum
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive, zarr_file_factory):
+    """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
+    assign_perm('owner', user, draft_version.dandiset)
+
+    # Ensure zarr is ingested with non-zero size
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+
+    # Create asset pointing to zarr
+    asset = add_asset_to_version(
+        user=user,
+        version=draft_version,
+        zarr_archive=zarr_archive,
+        metadata={
+            'path': 'sample.zarr',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+    assert asset.size == 100
+    ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
+    assert ap.aggregate_files == 1
+    assert ap.aggregate_size == 100
+
+    # Simulate more data uploaded to the zarr
+    zarr_archive.mark_pending()
+    zarr_archive.save()
+    zarr_archive.refresh_from_db()
+
+    # Ingest zarr
+    asset.refresh_from_db()
+    ingest_zarr_archive(zarr_archive.zarr_id)
 
 
 @pytest.mark.django_db(transaction=True)
