@@ -1,3 +1,30 @@
+# v0.3.14 (Fri Feb 10 2023)
+
+#### 🐛 Bug Fix
+
+- Implement new zarr upload process [#1448](https://github.com/dandi/dandi-archive/pull/1448) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Simplify zarr upload process design [#1464](https://github.com/dandi/dandi-archive/pull/1464) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Upgrade black to 23.1.0 [#1465](https://github.com/dandi/dandi-archive/pull/1465) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Restore published version emulation for validation purposes [#1459](https://github.com/dandi/dandi-archive/pull/1459) ([@danlamanna](https://github.com/danlamanna))
+- Update DLP UI for asynchronous assets summary [#1452](https://github.com/dandi/dandi-archive/pull/1452) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Compute asset summary asynchronously for draft versions [#1431](https://github.com/dandi/dandi-archive/pull/1431) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- Bump types-setuptools from 65.7.0.1 to 67.1.0.0 [#1467](https://github.com/dandi/dandi-archive/pull/1467) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump mypy from 0.991 to 1.0.0 [#1468](https://github.com/dandi/dandi-archive/pull/1468) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump flake8-docstrings from 1.6.0 to 1.7.0 [#1458](https://github.com/dandi/dandi-archive/pull/1458) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump django-stubs from 1.13.1 to 1.14.0 [#1457](https://github.com/dandi/dandi-archive/pull/1457) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.13 (Fri Jan 27 2023)
 
 #### 🐛 Bug Fix
