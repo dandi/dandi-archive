@@ -1,12 +1,7 @@
 from django.contrib import admin, messages
 from django.utils.translation import ngettext
 
-from dandiapi.zarr.models import (
-    EmbargoedZarrArchive,
-    EmbargoedZarrUploadFile,
-    ZarrArchive,
-    ZarrUploadFile,
-)
+from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
@@ -40,17 +35,3 @@ class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
     search_fields = ['zarr_id', 'name']
     list_display = ['id', 'zarr_id', 'name', 'dandiset']
     list_display_links = ['id', 'zarr_id', 'name']
-
-
-@admin.register(ZarrUploadFile)
-class ZarrUploadFileAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['zarr_archive']
-    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
-    list_display_links = ['id']
-
-
-@admin.register(EmbargoedZarrUploadFile)
-class EmbargoedZarrUploadFileAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['zarr_archive']
-    list_display = ['id', 'zarr_archive', 'path', 'blob', 'etag']
-    list_display_links = ['id']

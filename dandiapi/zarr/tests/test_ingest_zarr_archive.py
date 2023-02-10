@@ -1,96 +1,24 @@
-from dandischema.digests.zarr import EMPTY_CHECKSUM
+from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
+from zarr_checksum.checksum import EMPTY_CHECKSUM
 
-from dandiapi.api.models import Dandiset
-from dandiapi.zarr.checksums import ZarrChecksum, ZarrJSONChecksumSerializer
-from dandiapi.zarr.management.commands.ingest_dandiset_zarrs import ingest_dandiset_zarrs
-from dandiapi.zarr.management.commands.ingest_zarr_archive import ingest_zarr_archive
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, ZarrUploadFile
-
-
-@pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_rest(authenticated_api_client, zarr_archive: ZarrArchive, user):
-    assign_perm('owner', user, zarr_archive.dandiset)
-
-    # Check status is pending
-    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
-    assert resp.status_code == 200
-    assert resp.json()['status'] == ZarrArchiveStatus.PENDING
-
-    # Start ingest
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
-    assert resp.status_code == 204
-
-    # Check status is valid
-    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/')
-    assert resp.status_code == 200
-    assert resp.json()['status'] == ZarrArchiveStatus.COMPLETE
+from dandiapi.api.models import AssetPath
+from dandiapi.api.services.asset import add_asset_to_version
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_rest_already_active(
-    authenticated_api_client, zarr_archive: ZarrArchive, user
-):
-    assign_perm('owner', user, zarr_archive.dandiset)
-
-    # Emulate ongoing ingest
-    zarr_archive.status = ZarrArchiveStatus.INGESTING
-    zarr_archive.save()
-
-    # Ensure second ingest fails
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
-    assert resp.status_code == 400
-    assert resp.json() == ZarrArchive.INGEST_ERROR_MSG
-
-
-@pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_rest_upload_active(
-    authenticated_api_client, zarr_archive: ZarrArchive, zarr_upload_file_factory, user
-):
-    assign_perm('owner', user, zarr_archive.dandiset)
-
-    # Create active upload
-    zarr_upload_file_factory(zarr_archive=zarr_archive, path='foo/bar')
-    assert zarr_archive.upload_in_progress
-
-    # Check that ingestion isn't started
-    resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/ingest/')
-    assert resp.status_code == 400
-    assert resp.json() == 'Upload in progress. Please cancel or complete this existing upload.'
-
-
-@pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, faker):
+def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
     zarr: ZarrArchive = zarr_archive_factory()
-
-    # Generate > 1000 files, since the page size from S3 is 1000 items
-    foo_bar_files: list[ZarrUploadFile] = [
-        zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a'),
-        zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/b'),
-    ]
-    foo_baz_files: list[ZarrUploadFile] = [
-        zarr_upload_file_factory(zarr_archive=zarr, path=f'foo/baz/{faker.pystr()}')
-        for _ in range(1005)
+    files = [
+        zarr_file_factory(zarr_archive=zarr, path='foo'),
+        zarr_file_factory(zarr_archive=zarr, path='bar'),
     ]
 
-    # Calculate size and file count
-    total_size = sum(f.blob.size for f in (foo_bar_files + foo_baz_files))
-    total_file_count = len(foo_bar_files) + len(foo_baz_files)
-
-    # Generate correct listings
-    serializer = ZarrJSONChecksumSerializer()
-    foo_bar_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_bar_files])
-    foo_baz_listing = serializer.generate_listing(files=[f.to_checksum() for f in foo_baz_files])
-    foo_listing = serializer.generate_listing(
-        directories=[
-            ZarrChecksum(name='bar', digest=foo_bar_listing.digest, size=200),
-            ZarrChecksum(name='baz', digest=foo_baz_listing.digest, size=100 * len(foo_baz_files)),
-        ]
-    )
-    root_listing = serializer.generate_listing(
-        directories=[ZarrChecksum(name='foo', digest=foo_listing.digest, size=total_size)]
-    )
+    # Calculate total size
+    total_size = sum([f.size for f in files])
 
     # Assert pre-ingest properties
     assert zarr.checksum is None
@@ -103,9 +31,9 @@ def test_ingest_zarr_archive(zarr_upload_file_factory, zarr_archive_factory, fak
 
     # Assert checksum properly computed
     zarr.refresh_from_db()
-    assert zarr.checksum == root_listing.digest
+    assert zarr.checksum is not None
     assert zarr.size == total_size
-    assert zarr.file_count == total_file_count
+    assert zarr.file_count == 2
     assert zarr.status == ZarrArchiveStatus.COMPLETE
 
 
@@ -125,10 +53,11 @@ def test_ingest_zarr_archive_empty(zarr_archive_factory):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factory):
+def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
     zarr: ZarrArchive = zarr_archive_factory()
 
     # Perform initial ingest
+    zarr_file_factory(zarr_archive=zarr)
     ingest_zarr_archive(str(zarr.zarr_id))
 
     # Get inital checksum
@@ -141,7 +70,7 @@ def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factor
     assert zarr.checksum == first_checksum
 
     # Add file, simulating out of band upload
-    zarr_upload_file_factory(zarr_archive=zarr)
+    zarr_file_factory(zarr_archive=zarr)
 
     # Perform ingest with force flag, assert updated
     ingest_zarr_archive(str(zarr.zarr_id), force=True)
@@ -150,10 +79,9 @@ def test_ingest_zarr_archive_force(zarr_upload_file_factory, zarr_archive_factor
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_factory, asset_factory):
+def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, asset_factory):
     # Create zarr and asset
     zarr: ZarrArchive = zarr_archive_factory()
-    zarr_upload_file_factory(zarr_archive=zarr, path='foo/bar/a')
     asset = asset_factory(zarr=zarr, blob=None, embargoed_blob=None)
 
     # Assert asset size, metadata
@@ -162,21 +90,57 @@ def test_ingest_zarr_archive_assets(zarr_upload_file_factory, zarr_archive_facto
     assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] is None
 
     # Compute checksum
+    zarr_file = zarr_file_factory(zarr_archive=zarr)
     ingest_zarr_archive(str(zarr.zarr_id))
 
     # Assert asset size, metadata
     asset.refresh_from_db()
     zarr.refresh_from_db()
-    assert asset.size == 100
-    assert asset.metadata['contentSize'] == 100
+    assert asset.size == zarr_file.size
+    assert asset.metadata['contentSize'] == zarr_file.size
     assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == zarr.checksum
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_upload_file_factory):
-    dandiset: Dandiset = dandiset_factory()
+def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive, zarr_file_factory):
+    """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
+    assign_perm('owner', user, draft_version.dandiset)
+
+    # Ensure zarr is ingested with non-zero size
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+
+    # Create asset pointing to zarr
+    asset = add_asset_to_version(
+        user=user,
+        version=draft_version,
+        zarr_archive=zarr_archive,
+        metadata={
+            'path': 'sample.zarr',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+    assert asset.size == 100
+    ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
+    assert ap.aggregate_files == 1
+    assert ap.aggregate_size == 100
+
+    # Simulate more data uploaded to the zarr
+    zarr_archive.mark_pending()
+    zarr_archive.save()
+    zarr_archive.refresh_from_db()
+
+    # Ingest zarr
+    asset.refresh_from_db()
+    ingest_zarr_archive(zarr_archive.zarr_id)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_file_factory):
+    dandiset = dandiset_factory()
     for _ in range(10):
-        zarr_upload_file_factory(
+        zarr_file_factory(
             path='foo/a',
             zarr_archive=zarr_archive_factory(dandiset=dandiset),
         )

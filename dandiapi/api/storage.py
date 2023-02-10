@@ -288,31 +288,19 @@ def get_boto_client(storage: Storage | None = None):
     return storage.connection.meta.client
 
 
-def yield_files(bucket: str, prefix: str | None = None):
-    """Get all objects in the bucket, through repeated object listing."""
-    client = get_boto_client()
-    common_options = {'Bucket': bucket}
-    if prefix is not None:
-        common_options['Prefix'] = prefix
+def get_storage_params(storage: Storage):
+    if isinstance(storage, MinioStorage):
+        return {
+            'endpoint_url': storage.client._endpoint_url,
+            'access_key': storage.client._access_key,
+            'secret_key': storage.client._secret_key,
+        }
 
-    continuation_token = None
-    while True:
-        options = {**common_options}
-        if continuation_token is not None:
-            options['ContinuationToken'] = continuation_token
-
-        # Fetch
-        res = client.list_objects_v2(**options)
-
-        # Yield this batch of files
-        yield res.get('Contents', [])
-
-        # If all files fetched, end
-        if res['IsTruncated'] is False:
-            break
-
-        # Get next continuation token
-        continuation_token = res['NextContinuationToken']
+    return {
+        'endpoint_url': storage.endpoint_url,
+        'access_key': storage.access_key,
+        'secret_key': storage.secret_key,
+    }
 
 
 def get_storage() -> Storage:

@@ -58,6 +58,7 @@ setup(
         'boto3[s3]',
         'more_itertools',
         'requests',
+        'zarr-checksum>=0.2.8',
         # Production-only
         'django-composed-configuration[prod]>=0.22.0',
         # pin directly to a version since we're extending the private multipart interface

@@ -62,9 +62,7 @@ from rest_framework.permissions import SAFE_METHODS
         ('post', '/api/zarr/', True),
         ('get', '/api/zarr/{zarr.zarr_id}/', False),
         ('delete', '/api/zarr/{zarr.zarr_id}/files/', True),
-        ('post', '/api/zarr/{zarr.zarr_id}/upload/', True),
-        ('delete', '/api/zarr/{zarr.zarr_id}/upload/', True),
-        ('post', '/api/zarr/{zarr.zarr_id}/upload/complete/', True),
+        ('post', '/api/zarr/{zarr.zarr_id}/files/', True),
     ],
 )
 @pytest.mark.django_db
