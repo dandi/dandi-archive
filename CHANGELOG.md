@@ -1,3 +1,15 @@
+# v0.3.15 (Mon Feb 13 2023)
+
+#### 🐛 Bug Fix
+
+- Skip computing assets summary for invalid assets [#1489](https://github.com/dandi/dandi-archive/pull/1489) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.14 (Fri Feb 10 2023)
 
 #### 🐛 Bug Fix
