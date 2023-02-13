@@ -73,9 +73,14 @@ def version_aggregate_assets_summary(version: Version):
     if version.version != 'draft':
         raise VersionHasBeenPublished()
 
-    version.metadata['assetsSummary'] = aggregate_assets_summary(
-        version.assets.values_list('metadata', flat=True).iterator()
-    )
+    try:
+        version.metadata['assetsSummary'] = aggregate_assets_summary(
+            version.assets.values_list('metadata', flat=True).iterator()
+        )
+    except Exception:
+        # The assets summary aggregation may fail if any asset metadata is invalid, skip
+        # updating it if it fails.
+        logger.info('Error calculating assetsSummary', exc_info=True)
 
     Version.objects.filter(id=version.id, version='draft').update(
         modified=timezone.now(), metadata=version.metadata
