@@ -11,7 +11,7 @@ from dandiapi.zarr.models import ZarrArchive
 
 def upload_zarr_file(zarr_archive: ZarrArchive, path: str | None = None, size: int = 100):
     if path is None:
-        path = faker.Faker().file_path(absolute=False, extension='nwb')[1:]
+        path = faker.Faker().file_path(absolute=False, extension='nwb')
 
     client = get_boto_client(zarr_archive.storage)
     data = os.urandom(size)
