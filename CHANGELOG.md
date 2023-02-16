@@ -1,3 +1,25 @@
+# v0.3.16 (Thu Feb 16 2023)
+
+#### 🐛 Bug Fix
+
+- Add locking to asset update/delete at API level [#1485](https://github.com/dandi/dandi-archive/pull/1485) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Convert `OverviewTab` component to `<script setup>` [#1453](https://github.com/dandi/dandi-archive/pull/1453) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Stop trimming characters off of test zarr paths [#1493](https://github.com/dandi/dandi-archive/pull/1493) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- Bump flake8-bugbear from 23.1.20 to 23.2.13 [#1492](https://github.com/dandi/dandi-archive/pull/1492) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump types-setuptools from 67.1.0.0 to 67.2.0.1 [#1491](https://github.com/dandi/dandi-archive/pull/1491) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.15 (Mon Feb 13 2023)
 
 #### 🐛 Bug Fix
