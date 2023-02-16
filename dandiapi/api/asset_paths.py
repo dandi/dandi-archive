@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, F, QuerySet, Sum
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
@@ -101,8 +101,23 @@ def search_asset_paths(query: str, version: Version) -> QuerySet[AssetPath] | No
 
 def insert_asset_paths(asset: Asset, version: Version):
     """Add all intermediate paths from an asset and link them together."""
-    # Get or create leaf path
-    leaf, created = AssetPath.objects.get_or_create(path=asset.path, asset=asset, version=version)
+    try:
+        # Get or create leaf path
+        leaf, created = AssetPath.objects.get_or_create(
+            path=asset.path, asset=asset, version=version
+        )
+    except IntegrityError as e:
+        from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
+
+        # If there are simultaneous requests to create the same asset, this check constraint can
+        # fail, and should be handled directly, rather than be allowed to bubble up
+        if 'unique-version-path' in str(e):
+            raise AssetAlreadyExists()
+
+        # Re-raise original exception otherwise
+        raise
+
+    # If the asset was not created, return early, as the work is already done
     if not created:
         return leaf
 
