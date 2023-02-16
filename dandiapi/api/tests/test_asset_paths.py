@@ -11,6 +11,7 @@ from dandiapi.api.asset_paths import (
 )
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
+from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
 from dandiapi.api.tasks import publish_dandiset_task
 
 
@@ -94,6 +95,27 @@ def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
     path: AssetPath = AssetPath.objects.get(asset=asset, version=version)
     assert path.aggregate_files == 1
     assert path.aggregate_size == asset.size
+
+
+@pytest.mark.django_db
+def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_factory):
+    # Create asset with version
+    asset1: Asset = asset_factory()
+    asset2: Asset = asset_factory(path=asset1.path)
+    version: Version = draft_version_factory()
+    version.assets.add(asset1)
+    version.assets.add(asset2)
+
+    # Add asset1 paths
+    add_asset_paths(asset1, version)
+    assert version.asset_paths.filter(asset__isnull=False).count() == 1
+
+    # Ensure that adding asset2 raises the correct exception
+    with pytest.raises(AssetAlreadyExists):
+        add_asset_paths(asset2, version)
+
+    # Ensure that there no new asset paths created
+    assert version.asset_paths.filter(asset__isnull=False).count() == 1
 
 
 @pytest.mark.django_db
