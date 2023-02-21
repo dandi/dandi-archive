@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-node@v3
+        with:
+          node-version: 16 # TODO: use latest version when we update to Vue 3
 
       - name: Install Vue app
         run: yarn install
