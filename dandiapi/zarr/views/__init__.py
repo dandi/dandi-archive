@@ -24,8 +24,9 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 logger = logging.getLogger(__name__)
 
 
-class ZarrFileCreationSerializer(serializers.ListSerializer):
-    child = serializers.CharField()
+class ZarrFileCreationSerializer(serializers.Serializer):
+    path = serializers.CharField()
+    md5 = serializers.CharField()
 
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
@@ -271,7 +272,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 raise PermissionDenied()
 
-            serializer = ZarrFileCreationSerializer(data=request.data)
+            serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
 
             # Generate presigned urls
