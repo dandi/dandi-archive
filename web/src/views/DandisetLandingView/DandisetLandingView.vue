@@ -10,6 +10,24 @@
       />
     </v-toolbar>
     <v-container
+      v-if="dandisetDoesNotExist"
+      class="d-flex justify-center align-center"
+      style="height: 50vh;"
+    >
+      <div class="d-block">
+        <span class="text-h5">
+          <v-icon>mdi-alert</v-icon>
+          Error: Dandiset does not exist
+        </span>
+        <br><br>
+        <span class="text-body-2">
+          Proceed to the <a href="/dandiset">Public Dandisets page</a>
+          or use the search bar to find a valid Dandiset.
+        </span>
+      </div>
+    </v-container>
+    <v-container
+      v-else
       fluid
       class="grey lighten-4 pa-0"
     >
@@ -117,6 +135,10 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
+
+// If loading is finished and currentDandiset is still null, the dandiset doesn't exist.
+const dandisetDoesNotExist = computed(() => !loading.value && !currentDandiset.value);
+
 const schema = computed(() => store.schema);
 const userCanModifyDandiset = computed(() => store.userCanModifyDandiset);
 

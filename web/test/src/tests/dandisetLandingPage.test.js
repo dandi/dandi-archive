@@ -6,6 +6,7 @@ import {
   logout,
   waitForRequestsToFinish,
   clearCookiesAndCache,
+  CLIENT_URL,
 } from '../util';
 
 describe('dandiset landing page', () => {
@@ -59,5 +60,11 @@ describe('dandiset landing page', () => {
     // otherUser should be an owner now, too
     await expect(page).toContainXPath(vChip(otherUserName));
     await expect(page).toContainXPath(vChip(ownerName));
+  });
+
+  it('navigate to an invalid dandiset URL', async () => {
+    await page.goto(new URL('/dandiset/1', CLIENT_URL).href);
+    await waitForRequestsToFinish();
+    await expect(page).toMatch('Error: Dandiset does not exist');
   });
 });
