@@ -1,3 +1,15 @@
+# v0.3.17 (Tue Feb 21 2023)
+
+#### 🐛 Bug Fix
+
+- Display error message for invalid dandiset URL [#1454](https://github.com/dandi/dandi-archive/pull/1454) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.16 (Thu Feb 16 2023)
 
 #### 🐛 Bug Fix
