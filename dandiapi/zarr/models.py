@@ -68,9 +68,10 @@ class BaseZarrArchive(TimeStampedModel):
         s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
         return s3_url
 
-    def generate_upload_urls(self, paths: list[str]):
+    def generate_upload_urls(self, path_md5s: list[dict]):
         return [
-            self.storage.generate_presigned_put_object_url(self.s3_path(path)) for path in paths
+            self.storage.generate_presigned_put_object_url(self.s3_path(o['path']), o['md5'])
+            for o in path_md5s
         ]
 
     def mark_pending(self):

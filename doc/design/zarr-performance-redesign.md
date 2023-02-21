@@ -100,7 +100,7 @@ sequenceDiagram
     Server-->>-Client: PENDING Zarr Archive
 
     loop for each file
-        Client->>+Server: Request signed URLs
+        Client->>+Server: Request signed URLs (w/ path and md5)
         Server-->>-Client: A list of signed URLs
         Client->>+S3: Upload individual file using signed URL
     end
@@ -120,7 +120,7 @@ sequenceDiagram
     Client->>+Client: Verify zarr checksum with local
 ```
 
-(Step 1): **`dandi-cli` computes the Zarr checksum locally**. (Note that this step can actually be taken any time before step 12; it is listed here arbitrarily.)
+(Step 1): **`dandi-cli` computes the Zarr checksum locally**.
 
 (Steps 2 and 3): `dandi-cli` asks the server to create a new Zarr archive, which is put into the `PENDING` state.
 

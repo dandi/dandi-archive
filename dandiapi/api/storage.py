@@ -143,13 +143,14 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Boto3Storage):
                 return etag[1:-1]
             return etag
 
-    def generate_presigned_put_object_url(self, blob_name: str) -> str:
+    def generate_presigned_put_object_url(self, blob_name: str, md5: str) -> str:
         return self.connection.meta.client.generate_presigned_url(
             ClientMethod='put_object',
             Params={
                 'Bucket': self.bucket_name,
                 'Key': blob_name,
                 'ACL': 'bucket-owner-full-control',
+                'ContentMD5': md5,
             },
             ExpiresIn=600,  # TODO proper expiration
         )
@@ -190,7 +191,9 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         else:
             return response.etag
 
-    def generate_presigned_put_object_url(self, blob_name: str) -> str:
+    def generate_presigned_put_object_url(self, blob_name: str, _: str) -> str:
+        # Note: minio-py doesn't support using Content-MD5 headers
+
         # storage.client will generate URLs like `http://minio:9000/...` when running in
         # docker. To avoid this, use the secondary base_url_client which is configured to
         # generate URLs like `http://localhost:9000/...`.
