@@ -143,14 +143,14 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Boto3Storage):
                 return etag[1:-1]
             return etag
 
-    def generate_presigned_put_object_url(self, blob_name: str, md5: str) -> str:
+    def generate_presigned_put_object_url(self, blob_name: str, base64md5: str) -> str:
         return self.connection.meta.client.generate_presigned_url(
             ClientMethod='put_object',
             Params={
                 'Bucket': self.bucket_name,
                 'Key': blob_name,
                 'ACL': 'bucket-owner-full-control',
-                'ContentMD5': md5,
+                'ContentMD5': base64md5,
             },
             ExpiresIn=600,  # TODO proper expiration
         )
