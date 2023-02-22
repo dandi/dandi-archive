@@ -20,7 +20,7 @@
         >
           {{ contributor.name }}
           <a
-            v-if="contributor.identifier"
+            v-if="contributor.identifier && contributor.schemaKey === 'Person'"
             :href="`https://orcid.org/${contributor.identifier}`"
             target="_blank"
             class="mx-1 d-flex align-center"
@@ -270,7 +270,7 @@ const currentDandiset = computed(() => store.dandiset);
 
 const contributors = computed(
   () => props.meta.contributor?.filter(
-    (contributor) => !!(contributor.includeInCitation) && !!(contributor.schemaKey === 'Person'),
+    (contributor) => !!(contributor.includeInCitation),
   ),
 );
 const fundingInformation = computed(
