@@ -1,3 +1,26 @@
+# v0.3.18 (Wed Feb 22 2023)
+
+#### 🐛 Bug Fix
+
+- Release with auto [#1500](https://github.com/dandi/dandi-archive/pull/1500) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Rename field in zarr file request to `base64md5` for clarity [#1498](https://github.com/dandi/dandi-archive/pull/1498) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add back md5 to zarr object url signing [#1497](https://github.com/dandi/dandi-archive/pull/1497) ([@danlamanna](https://github.com/danlamanna) [@AlmightyYakob](https://github.com/AlmightyYakob))
+- Remove overly aggressive exception handling [#1490](https://github.com/dandi/dandi-archive/pull/1490) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- Bump types-setuptools from 67.2.0.1 to 67.3.0.1 [#1495](https://github.com/dandi/dandi-archive/pull/1495) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Pin to Node 16 in CI [#1496](https://github.com/dandi/dandi-archive/pull/1496) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.17 (Tue Feb 21 2023)
 
 #### 🐛 Bug Fix
