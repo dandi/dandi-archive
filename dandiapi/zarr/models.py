@@ -70,7 +70,7 @@ class BaseZarrArchive(TimeStampedModel):
 
     def generate_upload_urls(self, path_md5s: list[dict]):
         return [
-            self.storage.generate_presigned_put_object_url(self.s3_path(o['path']), o['md5'])
+            self.storage.generate_presigned_put_object_url(self.s3_path(o['path']), o['base64md5'])
             for o in path_md5s
         ]
 
