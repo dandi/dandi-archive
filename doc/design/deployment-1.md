@@ -15,12 +15,12 @@ This proposed solution is to use a second `release` branch which tracks the rele
 There are two central git branches:
 
 - **`master`**: the active development branch. PRs should always use `master` as their merge target.
-- **`release`**: the *current* release branch. This will be reset to point to the top of master whenever a release ocurrs.
+- **`release`**: the *current* release branch. This will be reset to point to the top of master whenever a release occurs.
 
 Staging is deployed from `master`, while production is deployed from `release`.
 
 ## The `release` branch
-The `release` branch is kept up to date using a GitHub CI workflow. Whenever a release ocurrs, the `release` branch is reset to point to `master` (to avoid merge conflicts). The `release` branch should therefore always be pointed at the latest release tag.
+The `release` branch is kept up to date using a GitHub CI workflow. Whenever a release occurs, the `release` branch is reset to point to `master` (to avoid merge conflicts). The `release` branch should therefore always be pointed at the latest release tag.
 
 ## Netlify deployment
 The staging and production Netlify sites are now both managed using a single `netlify.toml`. [Deploy contexts](https://docs.netlify.com/configure-builds/file-based-configuration/#deploy-contexts) allow us to differentiate between the production and staging sites. Production uses the default configuration, while staging uses a `branch-deploy` configuration.

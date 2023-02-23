@@ -152,4 +152,4 @@ This ensures that published dandisets are truly immutable.
 
 Immutability is enforced by disabled the upload and delete endpoints for the zarr archive.
 
-The client needs to agressively inform users that publishing a dandiset with a zarr archive will render that zarr archive immutable.
+The client needs to aggressively inform users that publishing a dandiset with a zarr archive will render that zarr archive immutable.

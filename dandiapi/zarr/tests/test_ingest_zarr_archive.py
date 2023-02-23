@@ -60,7 +60,7 @@ def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
     zarr_file_factory(zarr_archive=zarr)
     ingest_zarr_archive(str(zarr.zarr_id))
 
-    # Get inital checksum
+    # Get initial checksum
     zarr.refresh_from_db()
     first_checksum = zarr.checksum
 

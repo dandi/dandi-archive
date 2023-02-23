@@ -127,7 +127,7 @@ def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory
     version.assets.add(asset_factory(path='foo/baz/file.txt'))
     version.assets.add(asset_factory(path='top.txt'))
 
-    # Add verison asset paths
+    # Add version asset paths
     add_version_asset_paths(version)
 
     # Check paths have expected file count and size
@@ -161,7 +161,7 @@ def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, as
     version.assets.add(asset_factory(path='foo/baz/file.txt'))
     version.assets.add(asset_factory(path='top.txt'))
 
-    # Add verison asset paths
+    # Add version asset paths
     add_version_asset_paths(version)
     add_version_asset_paths(version)
 

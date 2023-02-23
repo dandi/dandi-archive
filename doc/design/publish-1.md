@@ -108,7 +108,7 @@ If a Version is not `VALID` or any of the Assets in the Version is not `VALID`, 
 1. The dandiset is locked so that no other publishes can happen simultaneously.
 
 2. A new published Version is created with the required publish metadata information.
-It is initialy empty.
+It is initially empty.
 
 3. A new DOI is created that points to the new Version.
 This is an API call to an external service, https://datacite.org/.

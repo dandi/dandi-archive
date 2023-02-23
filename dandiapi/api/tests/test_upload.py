@@ -212,7 +212,7 @@ def test_upload_initialize_embargo_existing_asset_blob(
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     assign_perm('owner', user, dandiset)
 
-    # Embargoed assets that are already uploaded publically don't need to be private
+    # Embargoed assets that are already uploaded publicly don't need to be private
     resp = api_client.post(
         '/api/uploads/initialize/',
         {

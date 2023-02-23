@@ -162,7 +162,7 @@ def test_asset_total_size(
 
     assert Asset.total_size() == asset_blob.size + zarr_archive.size
 
-    # TODO: add testing for embargoed zar added, whenever embargoed zarrs
+    # TODO: add testing for embargoed zarr added, whenever embargoed zarrs
     # supported, ATM they are not and tested by test_zarr_rest_create_embargoed_dandiset
 
 

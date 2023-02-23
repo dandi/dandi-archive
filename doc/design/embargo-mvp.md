@@ -26,7 +26,7 @@ Uploads to an embargoed dandiset will function exactly the same from an API pers
 
 # Data storage
 Embargoed assets will be stored in a separate S3 bucket.
-This bucket is private and not browseable by the general public.
+This bucket is private and not browsable by the general public.
 
 Each dandiset stored in the embargoed bucket will be prefixed with a dandiset identifier.
 This will make it easier to manage embargo permissions for a specific embargoed dandiset.
@@ -40,7 +40,7 @@ Assuming dandiset `123456` was embargoed:
 
 When unembargoing an embargoed dandiset, all asset data for that dandiset is copied to the public bucket.
 
-When uploading a new asset to an embargoed dandiset, the server will first check if that blob has already been uploaded publically.
+When uploading a new asset to an embargoed dandiset, the server will first check if that blob has already been uploaded publicly.
 If so, the public blob will be used instead of uploading the data again to the embargo bucket.
 
 # Data download
@@ -62,7 +62,7 @@ A test implementation can be found [here](https://github.com/dandi/dandi-api/com
 
 ## Models
 The `Dandiset` model will have an `embargo_status` field that is one of `EMBARGOED`, `UNEMBARGOING`, or `OPEN`.
-* `OPEN` means that the Dandiset is publically accessible and publishable.
+* `OPEN` means that the Dandiset is publicly accessible and publishable.
   This is the state all Dandisets currently have.
 * `EMBARGOED` means that the Dandiset is embargoed.
   It is searchable and viewable to owners.

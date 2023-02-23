@@ -1,0 +1,6 @@
+[codespell]
+skip = .git,node_modules,venvs,.tox,yarn.lock
+# Disabled until https://github.com/codespell-project/codespell/issues/2727
+# got answer/re-solution
+# dictionary = .codespell_dict
+# ignore-words-list = 

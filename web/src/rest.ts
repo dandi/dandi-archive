@@ -57,7 +57,7 @@ const dandiRest = new Vue({
         // Fetch user
         this.user = await this.me();
       } catch (e) {
-        // A status of 401 indicates login failed, so the exception should be supressed.
+        // A status of 401 indicates login failed, so the exception should be suppressed.
         if (axios.isAxiosError(e) && e.response?.status === 401) {
           await oauthClient.logout();
         } else {
