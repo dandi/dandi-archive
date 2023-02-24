@@ -10,7 +10,7 @@
           label="Name*"
           hint="Provide a title for this dataset"
           persistent-hint
-          :counter="120"
+          :counter="nameMaxLength"
           required
           outlined
         />
@@ -18,7 +18,7 @@
           v-model="description"
           label="Description*"
           hint="Provide a description for this dataset"
-          :counter="3000"
+          :counter="descriptionMaxLength"
           persistent-hint
           required
           outlined
@@ -145,6 +145,10 @@ const awardNumberRules = computed(
   () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
 );
 
+const nameMaxLength: ComputedRef<number> = computed(() => store.schema.properties.name.maxLength);
+const descriptionMaxLength: ComputedRef<number> = computed(
+  () => store.schema.properties.description.maxLength,
+);
 const dandiLicenses: ComputedRef<LicenseType[]> = computed(
   () => store.schema.definitions.LicenseType.enum,
 );
