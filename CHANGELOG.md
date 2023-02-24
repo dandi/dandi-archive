@@ -1,3 +1,22 @@
+# v0.3.19 (Fri Feb 24 2023)
+
+#### 🐛 Bug Fix
+
+- Use `import type` syntax in CreateDandisetView [#1502](https://github.com/dandi/dandi-archive/pull/1502) ([@mvandenburgh](https://github.com/mvandenburgh))
+- CreateDandisetView: Fix max length for name/description [#1501](https://github.com/dandi/dandi-archive/pull/1501) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add script to download papertrail logs [#1421](https://github.com/dandi/dandi-archive/pull/1421) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add codespell config and fix typos to `tox -e lint`, fix typos, add custom dictionary (not enabling for now) [#1466](https://github.com/dandi/dandi-archive/pull/1466) ([@yarikoptic](https://github.com/yarikoptic))
+- fix: allow for listing organizations as contributors [#1499](https://github.com/dandi/dandi-archive/pull/1499) ([@satra](https://github.com/satra))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.18 (Wed Feb 22 2023)
 
 #### 🐛 Bug Fix
