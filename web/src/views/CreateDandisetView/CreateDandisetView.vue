@@ -108,12 +108,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
-import { IdentifierForAnAward, LicenseType, License } from '@/types';
-
 import { useDandisetStore } from '@/stores/dandiset';
 import { useRouter } from 'vue-router/composables';
+
+import type { ComputedRef } from 'vue';
+import type { IdentifierForAnAward, LicenseType, License } from '@/types';
 
 // Regular expression to validate an NIH award number.
 // Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
