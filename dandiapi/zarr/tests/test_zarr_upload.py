@@ -78,7 +78,7 @@ def test_zarr_rest_finalize(
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 204
 
-    # Check that zarr ingestion occured
+    # Check that zarr ingestion occurred
     zarr_archive.refresh_from_db()
     assert zarr_archive.checksum is not None
     assert zarr_archive.checksum != EMPTY_CHECKSUM
