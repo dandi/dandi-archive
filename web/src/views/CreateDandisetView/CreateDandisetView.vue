@@ -113,7 +113,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { useRouter } from 'vue-router/composables';
 
 import type { ComputedRef } from 'vue';
-import type { IdentifierForAnAward, LicenseType } from '@/types';
+import type { IdentifierForAnAward, LicenseType, License } from '@/types';
 
 // Regular expression to validate an NIH award number.
 // Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
@@ -158,13 +158,13 @@ if (!loggedIn()) {
 }
 
 async function registerDandiset() {
-  const metadata: Record<string, any> = {
+  const metadata: {name: string, description: string, license?: License} = {
     name: name.value,
     description: description.value,
   };
 
   if (license.value) {
-    metadata.license = license.value;
+    metadata.license = [license.value];
   }
 
   const { data } = embargoed.value
