@@ -201,7 +201,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Create a map from dandiset IDs to their draft and published versions
         # Because of above query, a max of 1 of each (per dandiset) will be present.
         dandisets_to_versions = {}
-        for version in versions.iterator():
+        for version in versions:
             version: Version
 
             # Annnotate with total size and asset count (with default)
