@@ -1,3 +1,15 @@
+# v0.3.21 (Tue Feb 28 2023)
+
+#### 🐛 Bug Fix
+
+- Fix license type, improve type annotation [#1510](https://github.com/dandi/dandi-archive/pull/1510) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.20 (Mon Feb 27 2023)
 
 #### 🐛 Bug Fix
