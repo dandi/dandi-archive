@@ -1,3 +1,29 @@
+# v0.3.21 (Tue Feb 28 2023)
+
+#### 🐛 Bug Fix
+
+- Fix license type, improve type annotation [#1510](https://github.com/dandi/dandi-archive/pull/1510) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.20 (Mon Feb 27 2023)
+
+#### 🐛 Bug Fix
+
+- Only allow selecting one license on create dandiset page [#1505](https://github.com/dandi/dandi-archive/pull/1505) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix mispelling of "occurred" [#1506](https://github.com/dandi/dandi-archive/pull/1506) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.19 (Fri Feb 24 2023)
 
 #### 🐛 Bug Fix

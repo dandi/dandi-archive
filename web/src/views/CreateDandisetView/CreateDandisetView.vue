@@ -81,7 +81,6 @@
             :items="dandiLicenses"
             label="License*"
             class="my-4"
-            multiple
             outlined
             dense
           />
@@ -132,7 +131,7 @@ const store = useDandisetStore();
 
 const name = ref('');
 const description = ref('');
-const license = ref<License>();
+const license = ref<LicenseType>();
 const embargoed = ref(false);
 const awardNumber = ref('');
 const saveDisabled = computed(
@@ -159,7 +158,14 @@ if (!loggedIn()) {
 }
 
 async function registerDandiset() {
-  const metadata = { name: name.value, description: description.value, license: license.value };
+  const metadata: {name: string, description: string, license?: License} = {
+    name: name.value,
+    description: description.value,
+  };
+
+  if (license.value) {
+    metadata.license = [license.value];
+  }
 
   const { data } = embargoed.value
     ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
