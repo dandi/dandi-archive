@@ -24,7 +24,7 @@ class AssetPath(models.Model):
 
     class Meta:
         constraints = [
-            # Disallow slashses at the beginning or end of path
+            # Disallow slashes at the beginning or end of path
             models.CheckConstraint(
                 check=~(models.Q(path__endswith='/') | models.Q(path__startswith='/')),
                 name='consistent-slash',
