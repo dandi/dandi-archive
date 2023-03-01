@@ -5,7 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from guardian.shortcuts import assign_perm
 import pytest
 
-from dandiapi.api.asset_paths import add_asset_paths
+from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
 
 from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE, UTC_ISO_TIMESTAMP_RE
@@ -124,19 +124,24 @@ def test_dandiset_versions(
     draft_dandiset = dandiset_factory()
     draft_version = draft_version_factory(dandiset=draft_dandiset)
     draft_version.assets.add(asset_factory())
+    add_version_asset_paths(draft_version)
 
     # Dandiset with published version
     published_dandiset = dandiset_factory()
     draft_version = draft_version_factory(dandiset=published_dandiset)
     draft_version.assets.add(asset_factory())
+    add_version_asset_paths(draft_version)
+
     published_version = published_version_factory(dandiset=published_dandiset)
     published_version.assets.add(asset_factory())
+    add_version_asset_paths(published_version)
 
     # Dandiset with published version and empty draft
     erased_dandiset = dandiset_factory()
     draft_version_factory(dandiset=erased_dandiset)
     published_version = published_version_factory(dandiset=erased_dandiset)
     published_version.assets.add(asset_factory())
+    add_version_asset_paths(published_version)
 
     def expected_serialization(dandiset: Dandiset):
         draft_version = dandiset.draft_version
