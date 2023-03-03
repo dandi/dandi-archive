@@ -3,7 +3,7 @@ import Vue from 'vue';
 import { mapState } from 'pinia';
 import OAuthClient from '@girder/oauth-client';
 import {
-  Asset, Dandiset, Paginated, User, Version, Info, AssetPath,
+  Asset, Dandiset, Paginated, User, Version, Info, AssetPath, Zarr,
 } from '@/types';
 import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 // eslint-disable-next-line import/no-cycle
@@ -114,6 +114,18 @@ const dandiRest = new Vue({
         }
         throw error;
       }
+    },
+    async zarr({ dandiset }: { dandiset?: string }) : Promise<Paginated<Zarr>> {
+      const data: { dandiset?: string } = {};
+      if (dandiset !== undefined) {
+        data.dandiset = dandiset;
+      }
+
+      const resp = await client.get('zarr/', {
+        data,
+      });
+
+      return resp.data;
     },
     async assetPaths(
       identifier: string,

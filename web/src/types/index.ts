@@ -54,6 +54,16 @@ export interface Asset {
   version: Version,
 }
 
+export interface Zarr {
+  name: string;
+  dandiset: string;
+  zarr_id: string;
+  status: 'Pending' | 'Ingesting' | 'Complete';
+  checksum: string;
+  file_count: number;
+  size: number;
+}
+
 export interface Paginated<T> {
   count: number,
   next: string,
