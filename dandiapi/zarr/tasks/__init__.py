@@ -8,6 +8,7 @@ from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
 from dandiapi.api.storage import get_storage_params
+from dandiapi.api.tasks import validate_asset_metadata_task
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
@@ -63,6 +64,17 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
 
         # Add asset paths after ingest is finished
         add_zarr_paths(zarr)
+
+        # Use function instead of lambda for correct closure
+        def dispatch_validation():
+            for asset_id in zarr.assets.values_list('id', flat=True).iterator():
+                # Note: while asset metadata is fairly lightweight compute-wise, memory-wise it can
+                # become an issue during serialization/deserialization of the JSON blob by pydantic.
+                # Therefore, we delay each validation to its own task.
+                validate_asset_metadata_task.delay(asset_id)
+
+        # Kickoff metadata validation for all zarr assets after the transaction completes
+        transaction.on_commit(dispatch_validation)
 
 
 def ingest_dandiset_zarrs(dandiset_id: int, **kwargs):
