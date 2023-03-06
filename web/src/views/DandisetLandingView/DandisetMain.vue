@@ -20,9 +20,29 @@
             style="text-align: center;"
             outlined
           >
+            <v-tooltip
+              top
+            >
+              <template #activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  v-bind="attrs"
+                  v-on="on"
+                  @click="copy(currentDandiset.dandiset.identifier)"
+                >
+                  <v-icon
+                    color="white"
+                  >
+                    mdi-content-copy
+                  </v-icon>
+                </v-btn>
+              </template>
+              <span>Copy ID to clipboard</span>
+            </v-tooltip>
             <span>
               ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
             </span>
+
             <v-divider
               vertical
               class="mx-2"
@@ -323,6 +343,10 @@ export default defineComponent({
       return moment(date).format('LL');
     }
 
+    function copy(text: string) {
+      navigator.clipboard.writeText(text);
+    }
+
     return {
       currentDandiset,
       formatDate,
@@ -334,6 +358,7 @@ export default defineComponent({
 
       accessInformation,
       subjectMatter,
+      copy,
 
       currentTab,
       tabs,
