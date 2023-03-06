@@ -1,11 +1,12 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 import Vue from 'vue';
 import { mapState } from 'pinia';
 import OAuthClient from '@girder/oauth-client';
-import {
+import type {
   Asset, Dandiset, Paginated, User, Version, Info, AssetPath, Zarr,
 } from '@/types';
-import { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
+import type { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 // eslint-disable-next-line import/no-cycle
 import { useDandisetStore } from '@/stores/dandiset';
 

@@ -140,8 +140,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef } from 'vue';
-import { Location } from 'vue-router';
+import type { ComputedRef } from 'vue';
+import { computed } from 'vue';
+import type { Location } from 'vue-router';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';

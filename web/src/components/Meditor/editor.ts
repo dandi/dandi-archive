@@ -1,13 +1,14 @@
 import type { JSONSchema7 } from 'json-schema';
 
+import type { ComputedRef, Ref } from 'vue';
 import Vue, {
-  computed, reactive, ref, ComputedRef, Ref, watch,
+  computed, reactive, ref, watch,
 } from 'vue';
 import { cloneDeep } from 'lodash';
 
 // eslint-disable-next-line import/no-cycle
 import { setModelLocalStorage } from './localStorage';
-import { DandiModel, DandiModelUnion } from './types';
+import type { DandiModel, DandiModelUnion } from './types';
 import {
   computeBasicSchema,
   computeComplexSchema,

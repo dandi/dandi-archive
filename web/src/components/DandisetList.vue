@@ -79,12 +79,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, PropType } from 'vue';
+import type { PropType } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { useRoute } from 'vue-router/composables';
 import moment from 'moment';
 import filesize from 'filesize';
 
-import { Version } from '@/types';
+import type { Version } from '@/types';
 import { DANDISETS_PER_PAGE } from '@/utils/constants';
 
 export default defineComponent({

@@ -25,7 +25,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
-import { RawLocation } from 'vue-router';
+import type { RawLocation } from 'vue-router';
 import { useRoute } from 'vue-router/composables';
 import router from '@/router';
 

@@ -216,10 +216,11 @@ import { debounce } from 'lodash';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
+import type { Ref } from 'vue';
 import {
-  computed, defineComponent, Ref, ref, watch,
+  computed, defineComponent, ref, watch,
 } from 'vue';
-import { User } from '@/types';
+import type { User } from '@/types';
 
 export default defineComponent({
   name: 'DandisetOwnersDialog',

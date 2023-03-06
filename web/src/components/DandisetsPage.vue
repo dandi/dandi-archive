@@ -93,8 +93,9 @@
 </template>
 
 <script lang="ts">
+import type { Ref, ComputedRef } from 'vue';
 import {
-  defineComponent, ref, computed, watch, Ref, watchEffect, ComputedRef,
+  defineComponent, ref, computed, watch, watchEffect,
 } from 'vue';
 
 import omit from 'lodash/omit';
@@ -102,7 +103,7 @@ import { useRoute } from 'vue-router/composables';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
-import { Dandiset, Paginated, Version } from '@/types';
+import type { Dandiset, Paginated, Version } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
 import router from '@/router';
 
