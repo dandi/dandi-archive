@@ -438,7 +438,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef, ref } from 'vue';
+import {
+  computed, ComputedRef, ref, watchEffect,
+} from 'vue';
 
 import axios from 'axios';
 import moment from 'moment';
@@ -518,6 +520,17 @@ const publishedVersion = ref('');
 
 const alreadyBeingPublishedError = ref(false);
 
+const containsZarr = ref(false);
+watchEffect(async () => {
+  if (currentDandiset.value) {
+    const zarr = await dandiRest.zarr({
+      dandiset: currentDandiset.value.dandiset.identifier,
+    });
+
+    containsZarr.value = zarr.count > 0;
+  }
+});
+
 const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if (!loggedIn.value) {
     return 'You must be logged in to edit.';
@@ -542,6 +555,9 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   }
   if (publishing.value) {
     return 'This dandiset is being published, please wait.';
+  }
+  if (containsZarr.value) {
+    return 'Dandisets containing Zarr archives cannot currently be published.';
   }
   return '';
 });
