@@ -31,9 +31,7 @@
                   v-on="on"
                   @click="currentDandiset ? copy(currentDandiset.dandiset.identifier) : ''"
                 >
-                  <v-icon
-                    color="white"
-                  >
+                  <v-icon>
                     mdi-content-copy
                   </v-icon>
                 </v-btn>
