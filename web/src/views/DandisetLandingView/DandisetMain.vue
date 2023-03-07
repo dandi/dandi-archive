@@ -25,10 +25,11 @@
             >
               <template #activator="{ on, attrs }">
                 <v-btn
+                  v-if="currentDandiset !== null"
                   icon
                   v-bind="attrs"
                   v-on="on"
-                  @click="copy(currentDandiset.dandiset.identifier)"
+                  @click="currentDandiset ? copy(currentDandiset.dandiset.identifier) : ''"
                 >
                   <v-icon
                     color="white"
