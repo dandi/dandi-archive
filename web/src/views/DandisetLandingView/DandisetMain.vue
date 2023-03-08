@@ -27,11 +27,14 @@
                 <v-btn
                   v-if="currentDandiset !== null"
                   icon
+                  small
                   v-bind="attrs"
                   v-on="on"
                   @click="currentDandiset ? copy(currentDandiset.dandiset.identifier) : ''"
                 >
-                  <v-icon>
+                  <v-icon
+                    small
+                  >
                     mdi-content-copy
                   </v-icon>
                 </v-btn>
