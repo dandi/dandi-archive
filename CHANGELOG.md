@@ -1,3 +1,30 @@
+# v0.3.22 (Fri Mar 10 2023)
+
+#### 🐛 Bug Fix
+
+- Empty PR to cut a release [#1527](https://github.com/dandi/dandi-archive/pull/1527) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Boost dandischema to 0.8.0 to get newer DANDI_SCHEMA_VERSION 0.6.4 supported [#1524](https://github.com/dandi/dandi-archive/pull/1524) ([@yarikoptic](https://github.com/yarikoptic))
+- Disable the publish button when Zarrs are contained in the Dandiset [#1517](https://github.com/dandi/dandi-archive/pull/1517) ([@waxlamp](https://github.com/waxlamp))
+- Improve codespell configuration [#1518](https://github.com/dandi/dandi-archive/pull/1518) ([@danlamanna](https://github.com/danlamanna))
+- Optimize Dandiset List Endpoint [#1503](https://github.com/dandi/dandi-archive/pull/1503) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- codespell: ignore `CHANGELOG.md` [#1512](https://github.com/dandi/dandi-archive/pull/1512) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Bump types-setuptools from 67.3.0.1 to 67.5.0.0 [#1522](https://github.com/dandi/dandi-archive/pull/1522) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump django-stubs from 1.14.0 to 1.15.0 [#1509](https://github.com/dandi/dandi-archive/pull/1509) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 6
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.21 (Tue Feb 28 2023)
 
 #### 🐛 Bug Fix
