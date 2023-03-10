@@ -116,13 +116,13 @@ const dandiRest = new Vue({
       }
     },
     async zarr({ dandiset }: { dandiset?: string }) : Promise<Paginated<Zarr>> {
-      const data: { dandiset?: string } = {};
+      const params: { dandiset?: string } = {};
       if (dandiset !== undefined) {
-        data.dandiset = dandiset;
+        params.dandiset = dandiset;
       }
 
       const resp = await client.get('zarr/', {
-        data,
+        params,
       });
 
       return resp.data;
