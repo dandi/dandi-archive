@@ -1,3 +1,15 @@
+# v0.3.23 (Fri Mar 10 2023)
+
+#### 🐛 Bug Fix
+
+- Fix zarr publish error bug [#1529](https://github.com/dandi/dandi-archive/pull/1529) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.22 (Fri Mar 10 2023)
 
 #### 🐛 Bug Fix
