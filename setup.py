@@ -97,7 +97,7 @@ setup(
             'pep8-naming==0.13.3',
         ],
         'type': [
-            'mypy==1.0.0',
+            'mypy==1.1.1',
             'boto3-stubs[s3]==1.26.50',
             'django-stubs==1.15.0',
             'djangorestframework-stubs==1.8.0',
