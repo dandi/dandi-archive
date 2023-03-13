@@ -5,10 +5,11 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
-2. Run `docker-compose run --rm django ./manage.py createsuperuser`
+2. Run `docker-compose run --rm django ./manage.py createcachetable`
+3. Run `docker-compose run --rm django ./manage.py createsuperuser`
    and follow the prompts to create your own user.
    Set your username to your email to ensure parity with how GitHub logins work.
-3. Run `docker-compose run --rm django ./manage.py create_dev_dandiset --owner your.email@email.com`
+4. Run `docker-compose run --rm django ./manage.py create_dev_dandiset --owner your.email@email.com`
    to create a dummy dandiset to start working with.
 
 ### Run Application
@@ -43,8 +44,9 @@ but allows developers to run Python code on their native system.
 6. Run `pip install -e .[dev]`
 7. Run `source ./dev/export-env.sh`
 8. Run `./manage.py migrate`
-9. Run `./manage.py createsuperuser` and follow the prompts to create your own user
-10. Run `./manage.py create_dev_dandiset --owner your.email@email.com`
+9. Run `./manage.py createcachetable`
+10. Run `./manage.py createsuperuser` and follow the prompts to create your own user
+11. Run `./manage.py create_dev_dandiset --owner your.email@email.com`
    to create a dummy dandiset to start working with.
 
 ### Run Application
