@@ -30,7 +30,7 @@
                   small
                   v-bind="attrs"
                   v-on="on"
-                  @click="currentDandiset ? copy(currentDandiset.dandiset.identifier) : ''"
+                  @click="copy('dandiID')"
                 >
                   <v-icon
                     small
@@ -345,8 +345,10 @@ export default defineComponent({
       return moment(date).format('LL');
     }
 
-    function copy(text: string) {
-      navigator.clipboard.writeText(text);
+    function copy(value:string) {
+      if (value === 'dandiID') {
+        navigator.clipboard.writeText(`DANDI:${currentDandiset.value?.dandiset.identifier}`);
+      }
     }
 
     return {
