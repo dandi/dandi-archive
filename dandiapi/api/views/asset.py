@@ -159,8 +159,8 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             if asset_basename.endswith('.mkv'):
                 return HttpResponse(
                     f"""
-                    <video>
-                        <source src="{url}" type="video/mp4"
+                    <video autoplay muted controls>
+                        <source src="{url}" type="video/mp4">
                     </video>
                 """,
                     content_type='text/html',
