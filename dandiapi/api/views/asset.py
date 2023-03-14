@@ -150,7 +150,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
             )
         elif content_disposition == 'inline':
-            url = storage.generate_presigned_inline_url(asset_blob.blob.name)
+            url = storage.generate_presigned_inline_url(
+                asset_blob.blob.name,
+                asset_basename,
+                asset.metadata.get('encodingFormat', 'application/octet-stream'),
+            )
 
             if asset_basename.endswith('.mkv'):
                 return HttpResponse(

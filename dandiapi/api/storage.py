@@ -171,13 +171,14 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Boto3Storage):
             },
         )
 
-    def generate_presigned_inline_url(self, key: str) -> str:
+    def generate_presigned_inline_url(self, key: str, path: str, content_type: str) -> str:
         return self.connection.meta.client.generate_presigned_url(
             'get_object',
             Params={
                 'Bucket': self.bucket_name,
                 'Key': key,
-                'ResponseContentDisposition': 'inline',
+                'ResponseContentDisposition': f'inline; filename="{path}"',
+                'ResponseContentType': content_type,
             },
         )
 
@@ -223,11 +224,14 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
             response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
         )
 
-    def generate_presigned_inline_url(self, key: str) -> str:
+    def generate_presigned_inline_url(self, key: str, path: str, content_type: str) -> str:
         return self.base_url_client.presigned_get_object(
             self.bucket_name,
             key,
-            response_headers={'response-content-disposition': 'inline'},
+            response_headers={
+                'response-content-disposition': f'inline; filename="{path}"',
+                'response-content-type': content_type,
+            },
         )
 
     def sha256_checksum(self, key: str) -> str:
