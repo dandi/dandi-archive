@@ -35,6 +35,7 @@ class DandiMixin(ConfigMixin):
         configuration.INSTALLED_APPS = [
             'dandiapi.analytics.apps.AnalyticsConfig',
             'dandiapi.api.apps.PublishConfig',
+            'dandiapi.search.apps.SearchConfig',
             'dandiapi.zarr.apps.ZarrConfig',
         ] + configuration.INSTALLED_APPS
 
