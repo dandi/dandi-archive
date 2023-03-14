@@ -44,12 +44,14 @@ from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import EmbargoedAssetBlob, validate_asset_path
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
+    CONTENT_DISPOSITION_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
     DandiPagination,
 )
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
+    AssetDownloadQueryParameterSerializer,
     AssetListSerializer,
     AssetPathsQueryParameterSerializer,
     AssetPathsSerializer,
@@ -111,14 +113,14 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         method='GET',
         operation_summary='Get the download link for an asset.',
         operation_description='',
-        manual_parameters=[ASSET_ID_PARAM],
+        manual_parameters=[ASSET_ID_PARAM, CONTENT_DISPOSITION_PARAM],
         responses={
             200: None,  # This disables the auto-generated 200 response
             301: 'Redirect to object store',
         },
     )
     @action(methods=['GET', 'HEAD'], detail=True)
-    def download(self, *args, **kwargs):
+    def download(self, request, *args, **kwargs):
         asset = self.get_object()
 
         # Raise error if zarr
@@ -137,9 +139,17 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
         # Redirect to correct presigned URL
         storage = asset_blob.blob.storage
+
+        serializer = AssetDownloadQueryParameterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        content_disposition = serializer.validated_data['content_disposition']
+
         return HttpResponseRedirect(
             storage.generate_presigned_download_url(
                 asset_blob.blob.name, os.path.basename(asset.path)
+            ) if content_disposition == 'attachment' else
+            storage.generate_presigned_inline_url(
+                asset_blob.blob.name
             )
         )
 
