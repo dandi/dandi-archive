@@ -143,6 +143,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         serializer = AssetDownloadQueryParameterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         content_disposition = serializer.validated_data['content_disposition']
+        content_type = asset.metadata.get('encodingFormat', 'application/octet-stream')
         asset_basename = os.path.basename(asset.path)
 
         if content_disposition == 'attachment':
@@ -153,10 +154,10 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             url = storage.generate_presigned_inline_url(
                 asset_blob.blob.name,
                 asset_basename,
-                asset.metadata.get('encodingFormat', 'application/octet-stream'),
+                content_type,
             )
 
-            if asset_basename.endswith('.mkv'):
+            if content_type == 'video/x-matroska':
                 return HttpResponse(
                     f"""
                     <video autoplay muted controls>
