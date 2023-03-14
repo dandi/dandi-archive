@@ -147,22 +147,20 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
         if content_disposition == 'attachment':
             return HttpResponseRedirect(
-                storage.generate_presigned_download_url(
-                    asset_blob.blob.name, asset_basename
-                )
+                storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
             )
         elif content_disposition == 'inline':
-            url = storage.generate_presigned_inline_url(
-                asset_blob.blob.name
-            )
-
+            url = storage.generate_presigned_inline_url(asset_blob.blob.name)
 
             if asset_basename.endswith('.mkv'):
-                return HttpResponse(f'''
+                return HttpResponse(
+                    f"""
                     <video>
                         <source src="{url}" type="video/mp4"
                     </video>
-                ''', content_type="text/html")
+                """,
+                    content_type='text/html',
+                )
 
             return HttpResponseRedirect(url)
 

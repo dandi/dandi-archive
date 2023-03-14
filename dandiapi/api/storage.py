@@ -181,7 +181,6 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Boto3Storage):
             },
         )
 
-
     def sha256_checksum(self, key: str) -> str:
         calculator = ChecksumCalculatorFile()
         obj = self.bucket.Object(key)

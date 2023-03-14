@@ -207,7 +207,9 @@ class AssetDownloadQueryParameterSerializer(serializers.Serializer):
         value = data['content_disposition']
 
         if value not in ['attachment', 'inline']:
-            raise ValidationError(f'Illegal value {value} for parameter "content_disposition"', code=400)
+            raise ValidationError(
+                f'Illegal value {value} for parameter "content_disposition"', code=400
+            )
 
         return super().validate(data)
 
