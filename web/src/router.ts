@@ -9,6 +9,7 @@ import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView
 import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
 import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
 import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
+import SearchView from '@/views/SearchView/SearchView.vue';
 
 Vue.use(Router);
 
@@ -49,6 +50,11 @@ const routes: RouteConfig[] = [
     name: 'dandisetLanding',
     props: true,
     component: DandisetLandingView,
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: SearchView,
   },
 ];
 
