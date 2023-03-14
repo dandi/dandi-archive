@@ -242,6 +242,9 @@ const dandiRest = new Vue({
     assetDownloadURI(identifier: string, version: string, uuid: string) {
       return `${dandiApiRoot}assets/${uuid}/download/`;
     },
+    assetInlineURI(identifier: string, version: string, uuid: string) {
+      return `${dandiApiRoot}assets/${uuid}/download?content_disposition=inline`;
+    },
     assetMetadataURI(identifier: string, version: string, uuid: string) {
       return `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}`;
     },

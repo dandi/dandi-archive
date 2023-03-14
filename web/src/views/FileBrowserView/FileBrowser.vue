@@ -147,6 +147,18 @@
                 <v-list-item-action v-if="item.asset">
                   <v-btn
                     icon
+                    :href="inlineURI(item.asset.asset_id)"
+                    target="_blank"
+                  >
+                    <v-icon color="primary">
+                      mdi-eye
+                    </v-icon>
+                  </v-btn>
+                </v-list-item-action>
+
+                <v-list-item-action v-if="item.asset">
+                  <v-btn
+                    icon
                     :href="downloadURI(item.asset.asset_id)"
                   >
                     <v-icon color="primary">
@@ -390,6 +402,10 @@ function navigateToParent() {
 
 function downloadURI(asset_id: string) {
   return dandiRest.assetDownloadURI(props.identifier, props.version, asset_id);
+}
+
+function inlineURI(asset_id: string) {
+  return dandiRest.assetInlineURI(props.identifier, props.version, asset_id);
 }
 
 function assetMetadataURI(asset_id: string) {
