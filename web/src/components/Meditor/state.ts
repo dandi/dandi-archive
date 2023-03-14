@@ -1,5 +1,5 @@
 import Vue, { computed, ref } from 'vue';
-import { EditorInterface } from './editor';
+import type { EditorInterface } from './editor';
 
 // NOTE: it would be better to use a single ref here instead of separate state/computed
 // variables, but doing so introduces a strange bug where editorInterface.basicModel is

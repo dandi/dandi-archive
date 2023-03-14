@@ -1,5 +1,6 @@
 import Vue from 'vue';
-import Router, { RouteConfig } from 'vue-router';
+import type { RouteConfig } from 'vue-router';
+import Router from 'vue-router';
 
 import HomeView from '@/views/HomeView/HomeView.vue';
 import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';

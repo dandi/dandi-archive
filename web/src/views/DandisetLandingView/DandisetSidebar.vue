@@ -22,7 +22,7 @@ import {
 } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
-import { Version } from '@/types';
+import type { Version } from '@/types';
 
 import DandisetActions from './DandisetActions.vue';
 import DandisetOwners from './DandisetOwners.vue';

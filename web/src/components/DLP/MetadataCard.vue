@@ -74,8 +74,9 @@
 </template>
 
 <script lang="ts">
+import type { PropType } from 'vue';
 import {
-  computed, defineComponent, getCurrentInstance, PropType,
+  computed, defineComponent, getCurrentInstance,
 } from 'vue';
 
 // The maximum amount of columns to show on a metadata card,

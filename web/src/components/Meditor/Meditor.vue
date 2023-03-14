@@ -226,8 +226,9 @@
 <script setup lang="ts">
 import type { JSONSchema7 } from 'json-schema';
 
+import type { ComputedRef } from 'vue';
 import {
-  ref, computed, ComputedRef, onMounted,
+  ref, computed, onMounted,
 } from 'vue';
 
 import jsYaml from 'js-yaml';
@@ -239,7 +240,8 @@ import '@koumoul/vjsf/lib/VJsf.css';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import { DandiModel, isJSONSchema } from './types';
+import type { DandiModel } from './types';
+import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
 
 import {

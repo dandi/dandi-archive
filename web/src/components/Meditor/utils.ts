@@ -2,14 +2,16 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import { cloneDeep, pickBy } from 'lodash';
-import {
-  isArraySchema,
-  isBasicEditorSchema,
-  isComplexEditorSchema,
+import type {
   DandiModel,
   BasicSchema,
   BasicArraySchema,
   ComplexSchema,
+} from './types';
+import {
+  isArraySchema,
+  isBasicEditorSchema,
+  isComplexEditorSchema,
 } from './types';
 
 export function computeBasicSchema(schema: JSONSchema7): JSONSchema7 {

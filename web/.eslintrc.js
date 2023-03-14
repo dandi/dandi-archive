@@ -35,6 +35,7 @@ module.exports = {
       },
     ],
     'import/prefer-default-export': 'off',
+    '@typescript-eslint/consistent-type-imports': 'error',
   },
   parserOptions: {
     parser: '@typescript-eslint/parser',

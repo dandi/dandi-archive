@@ -1,8 +1,10 @@
 import Vue from 'vue';
 
+import type { DirectiveBinding } from 'vue/types/options';
+
 const TITLE = 'DANDI Archive';
 
-const setPageTitle = (el: HTMLElement, binding: import('vue/types/options').DirectiveBinding) => {
+const setPageTitle = (el: HTMLElement, binding: DirectiveBinding) => {
   if (binding?.value) {
     document.title = `${binding.value} - ${TITLE}`;
   } else {

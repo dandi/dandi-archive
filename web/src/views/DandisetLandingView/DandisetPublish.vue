@@ -438,22 +438,23 @@
 </template>
 
 <script setup lang="ts">
+import type { ComputedRef } from 'vue';
 import {
-  computed, ComputedRef, ref, watchEffect,
+  computed, ref, watchEffect,
 } from 'vue';
 
 import axios from 'axios';
 import moment from 'moment';
 
+import type { RawLocation } from 'vue-router';
+import { useRoute } from 'vue-router/composables';
 import { dandiRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
-import { User, Version } from '@/types';
+import type { User, Version } from '@/types';
 
 import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
-import { RawLocation } from 'vue-router';
 import { open as openMeditor } from '@/components/Meditor/state';
-import { useRoute } from 'vue-router/composables';
 
 const PUBLISH_CHECKLIST = [
   'A descriptive title (e.g., <span class="font-italic">Data related to foraging behavior in bees</span> rather than <span class="font-italic">Smith et al 2022</span>)',

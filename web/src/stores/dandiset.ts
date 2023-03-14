@@ -5,7 +5,7 @@ import RefParser from '@apidevtools/json-schema-ref-parser';
 
 // eslint-disable-next-line import/no-cycle
 import { dandiRest } from '@/rest';
-import { User, Version } from '@/types';
+import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 
 interface State {

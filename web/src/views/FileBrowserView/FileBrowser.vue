@@ -241,10 +241,11 @@
 </template>
 
 <script setup lang="ts">
+import type { Ref } from 'vue';
 import {
-  computed, onMounted, Ref, ref, watch,
+  computed, onMounted, ref, watch,
 } from 'vue';
-import { RawLocation } from 'vue-router';
+import type { RawLocation } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router/composables';
 import filesize from 'filesize';
 import { trimEnd } from 'lodash';
@@ -252,7 +253,7 @@ import axios from 'axios';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import { AssetFile, AssetPath } from '@/types';
+import type { AssetFile, AssetPath } from '@/types';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
 
