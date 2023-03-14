@@ -27,7 +27,7 @@ import os.path
 from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -143,15 +143,28 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         serializer = AssetDownloadQueryParameterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         content_disposition = serializer.validated_data['content_disposition']
+        asset_basename = os.path.basename(asset.path)
 
-        return HttpResponseRedirect(
-            storage.generate_presigned_download_url(
-                asset_blob.blob.name, os.path.basename(asset.path)
-            ) if content_disposition == 'attachment' else
-            storage.generate_presigned_inline_url(
+        if content_disposition == 'attachment':
+            return HttpResponseRedirect(
+                storage.generate_presigned_download_url(
+                    asset_blob.blob.name, asset_basename
+                )
+            )
+        elif content_disposition == 'inline':
+            url = storage.generate_presigned_inline_url(
                 asset_blob.blob.name
             )
-        )
+
+
+            if asset_basename.endswith('.mkv'):
+                return HttpResponse(f'''
+                    <video>
+                        <source src="{url}" type="video/mp4"
+                    </video>
+                ''', content_type="text/html")
+
+            return HttpResponseRedirect(url)
 
     @swagger_auto_schema(
         method='GET',
