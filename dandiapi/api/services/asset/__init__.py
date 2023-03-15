@@ -1,6 +1,11 @@
 from django.db import transaction
 
-from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
+from dandiapi.api.asset_paths import (
+    add_asset_paths,
+    delete_asset_paths,
+    get_conflicting_paths,
+    update_asset_paths,
+)
 from dandiapi.api.models.asset import Asset, AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
@@ -71,25 +76,52 @@ def change_asset(
     ):
         return asset, False
 
+    # Check if there are any assets that conflict with this path
+    conflicts = get_conflicting_paths(path, version)
+    if conflicts:
+        raise AssetPathConflict(new_path=path, existing_paths=conflicts)
+
     # Verify we aren't changing path to the same value as an existing asset
     if version.assets.filter(path=path).exclude(asset_id=asset.asset_id).exists():
         raise AssetAlreadyExists()
 
+    # Ensure zarr archive doesn't already belong to a dandiset
+    if new_zarr_archive and new_zarr_archive.dandiset != version.dandiset:
+        raise ZarrArchiveBelongsToDifferentDandiset()
+
     with transaction.atomic():
-        remove_asset_from_version(user=user, asset=asset, version=version)
+        # remove_asset_from_version(user=user, asset=asset, version=version)
 
-        new_asset = add_asset_to_version(
-            user=user,
-            version=version,
-            asset_blob=new_asset_blob,
-            zarr_archive=new_zarr_archive,
-            metadata=new_metadata,
-        )
+        # new_asset = add_asset_to_version(
+        #     user=user,
+        #     version=version,
+        #     asset_blob=new_asset_blob,
+        #     zarr_archive=new_zarr_archive,
+        #     metadata=new_metadata,
+        # )
         # Set previous asset and save
-        new_asset.previous = asset
-        new_asset.save()
+        # new_asset.previous = asset
+        # new_asset.save()
 
-    return new_asset, True
+        # Delete asset path
+        delete_asset_paths(asset=asset, version=version)
+
+        # Assign new values, clean and save
+        asset.zarr = new_zarr_archive
+        asset.blob = new_asset_blob
+        asset.metadata = new_metadata_stripped
+        asset.full_clean(validate_constraints=False)
+        asset.save()
+
+        # Add asset path back
+        add_asset_paths(asset=asset, version=version)
+
+        # Trigger a version metadata validation, as saving the version might change the metadata
+        version.status = Version.Status.PENDING
+        # Save the version so that the modified field is updated
+        version.save()
+
+    return asset, True
 
 
 def add_asset_to_version(
