@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.db.models.query_utils import Q
 from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
@@ -147,6 +148,16 @@ class DandisetListSerializer(DandisetSerializer):
     draft_version = serializers.SerializerMethodField()
 
 
+class DandisetSearchResultListSerializer(DandisetListSerializer):
+    asset_counts = serializers.SerializerMethodField(method_name='get_asset_counts')
+
+    class Meta(DandisetListSerializer.Meta):
+        fields = DandisetListSerializer.Meta.fields + ['asset_counts']
+
+    def get_asset_counts(self, dandiset):
+        return self.context['asset_counts'].get(dandiset.id, {})
+
+
 class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
         fields = DandisetSerializer.Meta.fields + ['most_recent_published_version', 'draft_version']
@@ -160,6 +171,95 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
     empty = serializers.BooleanField(default=True)
     embargoed = serializers.BooleanField(default=True)
     user = serializers.CharField(required=False)
+
+
+class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
+    file_type = serializers.MultipleChoiceField(
+        choices=[
+            ('application/x-nwb', 'nwb'),
+            ('image/', 'image'),
+            ('text/', 'text'),
+            ('video/', 'video'),
+        ],
+        required=False,
+    )
+    # TODO: assert that file_size_max > file_size_min
+    file_size_min = serializers.IntegerField(min_value=0, required=False)
+    file_size_max = serializers.IntegerField(min_value=0, required=False)
+    measurement_technique = serializers.MultipleChoiceField(
+        choices=[
+            ('signal filtering technique', 'signal filtering technique'),
+            ('spike sorting technique', 'spike sorting technique'),
+            (
+                'multi electrode extracellular electrophysiology recording technique',
+                'multi electrode extracellular electrophysiology recording technique',
+            ),
+            ('voltage clamp technique', 'voltage clamp technique'),
+            ('surgical technique', 'surgical technique'),
+            ('behavioral technique', 'behavioral technique'),
+            ('current clamp technique', 'current clamp technique'),
+            ('fourier analysis technique', 'fourier analysis technique'),
+            ('two-photon microscopy technique', 'two-photon microscopy technique'),
+            ('patch clamp technique', 'patch clamp technique'),
+            ('analytical technique', 'analytical technique'),
+        ],
+        required=False,
+    )
+    genotype = serializers.ListField(child=serializers.CharField(), required=False)
+    species = serializers.MultipleChoiceField(
+        choices=[
+            ('Rattus norvegicus - Norway rat', 'Rattus norvegicus - Norway rat'),
+            ('Danio rerio - Zebra fish', 'Danio rerio - Zebra fish'),
+            ('Macaca nemestrina - Pig-tailed macaque', 'Macaca nemestrina - Pig-tailed macaque'),
+            ('Danio rerio - Leopard danio', 'Danio rerio - Leopard danio'),
+            ('Mus musculus - House mouse', 'Mus musculus - House mouse'),
+            ('Cricetulus griseus - Cricetulus aureus', 'Cricetulus griseus - Cricetulus aureus'),
+            ('Drosophila melanogaster - Fruit fly', 'Drosophila melanogaster - Fruit fly'),
+            ('Human', 'Human'),
+            ('Common fruit fly', 'Common fruit fly'),
+            ('Rhesus monkey', 'Rhesus monkey'),
+            ('Drosophila suzukii', 'Drosophila suzukii'),
+            ('Rat; norway rat; rats; brown rat', 'Rat; norway rat; rats; brown rat'),
+            ('Homo sapiens - Human', 'Homo sapiens - Human'),
+            ('House mouse', 'House mouse'),
+            ('Brown rat', 'Brown rat'),
+            ('Macaca mulatta - Rhesus monkey', 'Macaca mulatta - Rhesus monkey'),
+        ],
+        required=False,
+    )
+
+    def to_query_filters(self):
+        # create a set of Q object filters for the AssetSearch model
+        query_filters = {
+            'file_type': Q(),
+            'file_size': Q(),
+            'genotype': Q(),
+            'species': Q(),
+            'measurement_technique': Q(),
+        }
+
+        for file_type in self.validated_data.get('file_type', []):
+            query_filters['file_type'] |= Q(asset_metadata__encodingFormat__istartswith=file_type)
+
+        if self.validated_data.get('file_size_max'):
+            query_filters['file_size'] &= Q(asset_size__lte=self.validated_data['file_size_max'])
+        if self.validated_data.get('file_size_min'):
+            query_filters['file_size'] &= Q(asset_size__gte=self.validated_data['file_size_min'])
+
+        for genotype in self.validated_data.get('genotype', []):
+            query_filters['genotype'] |= Q(
+                asset_metadata__wasAttributedTo__0__genotype=genotype
+            )
+
+        for species in self.validated_data.get('species', []):
+            query_filters['species'] |= Q(asset_metadata__wasAttributedTo__0__species__name=species)
+
+        for measurement_technique in self.validated_data.get('measurement_technique', []):
+            query_filters['measurement_technique'] |= Q(
+                asset_metadata__measurementTechnique__contains=[{'name': measurement_technique}]
+            )
+
+        return query_filters
 
 
 class VersionDetailSerializer(VersionSerializer):
