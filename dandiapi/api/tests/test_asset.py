@@ -658,8 +658,60 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     end_time = draft_version.modified
     assert start_time < end_time
 
+    # Asset should be pending, since checksum isn't calculated
+    assert new_asset.status == Asset.Status.PENDING
+
     # Adding an Asset should trigger a revalidation
     assert draft_version.status == Version.Status.PENDING
+
+
+# Must use transaction=True to ensure `on_commit` funcs are called
+@pytest.mark.django_db(transaction=True)
+def test_asset_create_zarr_validated(
+    api_client, user, draft_version, zarr_archive, zarr_file_factory
+):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'encodingFormat': 'application/x-zarr',
+        'schemaKey': 'Asset',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    # Create asset
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    ).json()
+    asset1 = Asset.objects.get(asset_id=resp['asset_id'])
+
+    # Create second asset that points to the same zarr
+    metadata['1'] = 3
+    metadata['path'] = 'test/create/asset2.txt'
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        format='json',
+    ).json()
+    asset2 = Asset.objects.get(asset_id=resp['asset_id'])
+
+    # Add zarr file and finalize
+    zarr_file_factory(zarr_archive=zarr_archive)
+    api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
+
+    # Since tasks run synchronously in tests, the assets should be validated now
+    asset1.refresh_from_db()
+    asset2.refresh_from_db()
+    assert asset1.status == Asset.Status.VALID
+    assert asset2.status == Asset.Status.VALID
 
 
 @pytest.mark.django_db
