@@ -1,3 +1,26 @@
+# v0.3.24 (Wed Mar 15 2023)
+
+#### 🐛 Bug Fix
+
+- Handle zarrs properly in asset metadata validation [#1515](https://github.com/dandi/dandi-archive/pull/1515) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Add eslint rule enforcing the use of `import type` [#1519](https://github.com/dandi/dandi-archive/pull/1519) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update development instructions [#1528](https://github.com/dandi/dandi-archive/pull/1528) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Bump djangorestframework-stubs from 1.8.0 to 1.9.1 [#1507](https://github.com/dandi/dandi-archive/pull/1507) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump mypy from 1.0.0 to 1.1.1 [#1531](https://github.com/dandi/dandi-archive/pull/1531) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump types-setuptools from 67.5.0.0 to 67.6.0.0 [#1532](https://github.com/dandi/dandi-archive/pull/1532) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump flake8-bugbear from 23.2.13 to 23.3.12 [#1533](https://github.com/dandi/dandi-archive/pull/1533) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.23 (Fri Mar 10 2023)
 
 #### 🐛 Bug Fix
