@@ -5,26 +5,34 @@ from django.contrib.postgres.operations import TrigramExtension
 from django.db import migrations
 
 from dandiapi.api.models.asset import Asset, AssetBlob
+from dandiapi.api.models.version import Version
 
 ASSET_TABLE = Asset._meta.db_table
 ASSET_BLOB_TABLE = AssetBlob._meta.db_table
+VERSION_TABLE = Version._meta.db_table
+VERSION_ASSET_TABLE = Asset.versions.through._meta.db_table
 
 raw_sql = f'''
 CREATE MATERIALIZED VIEW asset_search AS
-    SELECT
-        {ASSET_TABLE}.id AS asset_id,
+    SELECT DISTINCT
+        {VERSION_TABLE}.dandiset_id AS dandiset_id,
+        {ASSET_TABLE}.asset_id AS asset_id,
         {ASSET_TABLE}.metadata AS asset_metadata,
         {ASSET_BLOB_TABLE}.size AS asset_size
     FROM {ASSET_TABLE}
     JOIN {ASSET_BLOB_TABLE} ON {ASSET_BLOB_TABLE}.id = {ASSET_TABLE}.blob_id
-    WHERE {ASSET_TABLE}.id IN (SELECT asset_id from {Asset.versions.through._meta.db_table});
+    JOIN {VERSION_ASSET_TABLE} ON {ASSET_TABLE}.id = {VERSION_ASSET_TABLE}.asset_id
+    JOIN {VERSION_TABLE} ON {VERSION_ASSET_TABLE}.version_id = {VERSION_TABLE}.id;
+
+CREATE UNIQUE INDEX idx_asset_search_dandiset_id_asset_id ON asset_search (dandiset_id, asset_id);
+
 
 CREATE INDEX idx_asset_search_asset_size ON asset_search (asset_size);
 CREATE INDEX idx_asset_search_measurement_technique ON asset_search USING gin ((asset_metadata->'measurementTechnique'));
-CREATE INDEX idx_asset_search_species ON asset_search USING gin ((asset_metadata->'wasAttributedTo'));
+CREATE INDEX asset_search_metadata_species_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,species,name}}'));
+CREATE INDEX asset_search_metadata_genotype_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,genotype,name}}'));
 
-CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin ((asset_metadata->>'encodingFormat') gin_trgm_ops);
-CREATE INDEX idx_asset_search_genotype ON asset_search USING gin ((asset_metadata->'wasAttributedTo'->0->>'genotype') gin_trgm_ops);
+CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin (UPPER(asset_metadata->>'encodingFormat') gin_trgm_ops);
 '''
 
 
