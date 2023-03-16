@@ -1,3 +1,15 @@
+# v0.3.25 (Thu Mar 16 2023)
+
+#### 🐛 Bug Fix
+
+- update dandischema to recover validation version 0.6.3 [#1537](https://github.com/dandi/dandi-archive/pull/1537) ([@satra](https://github.com/satra))
+
+#### Authors: 1
+
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
 # v0.3.24 (Wed Mar 15 2023)
 
 #### 🐛 Bug Fix
