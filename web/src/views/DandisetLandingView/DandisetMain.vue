@@ -383,6 +383,9 @@ export default defineComponent({
     }
 
     function copy(value:string) {
+      if (!meta.value) {
+        throw new Error('metadata is undefined!');
+      }
       const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
       navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/:${meta.value?.doi}`);
     }
