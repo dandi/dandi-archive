@@ -22,28 +22,41 @@
     </template>
 
     <v-card>
-      <v-card-title>
+      <v-toolbar
+        flat
+      >
+        <v-toolbar-title>
+          <span> Share "{{ meta.name }}"</span>
+        </v-toolbar-title>
+        <v-spacer />
         <v-btn
           icon
-          x-small
-          :right="true"
-          :absolute="true"
+          x-smal
           @click="dialog = false"
         >
           <v-icon>mdi-close</v-icon>
         </v-btn>
-      </v-card-title>
-      <v-card-title class="text-h6">
-        {{ meta.name }}
-      </v-card-title>
+      </v-toolbar>
       <v-card-text>
         <span class="font-weight-black">
-          Share this dandiset with this link:
+          Dandiset link:
         </span>
         <CopyText
           class="pa-2"
           :text="permalink"
-          icon-hover-text="Copy permalink to clipboard"
+          icon-hover-text="Copy Dandiset link to clipboard"
+        />
+      </v-card-text>
+      <v-card-text
+        v-if="doiLink"
+      >
+        <span class="font-weight-black">
+          DOI link:
+        </span>
+        <CopyText
+          class="pa-2"
+          :text="doiLink"
+          icon-hover-text="Copy DOI link to clipboard"
         />
       </v-card-text>
       <v-divider class="mx-4" />
@@ -54,6 +67,7 @@
           >
             <ShareNetwork
               network="twitter"
+              style="text-decoration: none;"
               :url="permalink"
               :title="meta.name"
               :twitter-user="twitterUser"
@@ -104,11 +118,12 @@ export default defineComponent({
       }
       return '';
     });
+    const doiLink = computed(() => (meta.value?.doi ? `https://doi.org/:${meta.value?.doi}` : ''));
 
     const dialog = ref(false);
 
     return {
-      dialog, twitterUser, meta, permalink,
+      dialog, twitterUser, meta, permalink, doiLink,
     };
   },
 });
