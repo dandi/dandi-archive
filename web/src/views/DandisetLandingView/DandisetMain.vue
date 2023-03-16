@@ -383,7 +383,8 @@ export default defineComponent({
     }
 
     function copy(value:string) {
-      navigator.clipboard.writeText(value === 'dandiID' ? meta.value?.identifier as string : `https://doi.org/:${meta.value?.doi}`);
+      const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
+      navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/:${meta.value?.doi}`);
     }
 
     return {
