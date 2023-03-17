@@ -1,3 +1,22 @@
+# v0.3.26 (Fri Mar 17 2023)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Mary Salvi ([@marySalvi](https://github.com/marySalvi)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Log response body if DOI request fails [#1540](https://github.com/dandi/dandi-archive/pull/1540) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add button to copy id to clipboard [#1523](https://github.com/dandi/dandi-archive/pull/1523) ([@marySalvi](https://github.com/marySalvi))
+- Update runtime.txt version [#1538](https://github.com/dandi/dandi-archive/pull/1538) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.25 (Thu Mar 16 2023)
 
 #### 🐛 Bug Fix
