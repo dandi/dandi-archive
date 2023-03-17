@@ -48,6 +48,7 @@ def create_doi(version: Version) -> str:
         except requests.exceptions.HTTPError as e:
             logging.error('Failed to create DOI %s', doi)
             logging.error(request_body)
+            logging.error(e.response.text)
             raise e
     return doi
 
