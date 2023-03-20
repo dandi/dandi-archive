@@ -99,7 +99,7 @@ setup(
         'type': [
             'mypy==1.1.1',
             'boto3-stubs[s3]==1.26.50',
-            'django-stubs==1.15.0',
+            'django-stubs==1.16.0',
             'djangorestframework-stubs==1.9.1',
             'types-setuptools==67.6.0.0',
         ],
