@@ -15,7 +15,7 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
     @admin.action(description='Ingest selected zarr archives')
     def ingest_zarr_archive(self, request, queryset):
         for zarr in queryset:
-            ingest_zarr_archive.delay(zarr_id=(str(zarr.zarr_id)))
+            ingest_zarr_archive.delay(zarr_id=(str(zarr.zarr_id)), force=True)
 
         # Return message
         self.message_user(
