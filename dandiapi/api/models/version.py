@@ -81,20 +81,6 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
     @property
-    def publish_status(self) -> Version.Status:
-        if self.status != Version.Status.VALID:
-            return self.status
-
-        # Import here to avoid dependency cycle
-        from .asset import Asset
-
-        invalid_asset = self.assets.exclude(status=Asset.Status.VALID).first()
-        if invalid_asset:
-            return Version.Status.INVALID
-
-        return Version.Status.VALID
-
-    @property
     def asset_validation_errors(self) -> list[str]:
         # Import here to avoid dependency cycle
         from .asset import Asset

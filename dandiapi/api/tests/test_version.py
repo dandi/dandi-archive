@@ -465,7 +465,7 @@ def test_version_rest_info_with_asset(
         'asset_count': 1,
         'metadata': version.metadata,
         'size': version.size,
-        'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
+        'status': Asset.Status.VALID,
         'asset_validation_errors': expected_validation_error,
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],

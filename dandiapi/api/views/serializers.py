@@ -173,8 +173,6 @@ class VersionDetailSerializer(VersionSerializer):
             'contact_person',
         ]
 
-    status = serializers.CharField(source='publish_status')
-
     # rename this field in the serializer to differentiate from asset_validation_errors
     version_validation_errors = serializers.JSONField(source='validation_errors')
 
