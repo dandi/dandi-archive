@@ -1,3 +1,15 @@
+# v0.3.28 (Tue Mar 21 2023)
+
+#### 🐛 Bug Fix
+
+- Add doi share link and update styles [#1539](https://github.com/dandi/dandi-archive/pull/1539) ([@marySalvi](https://github.com/marySalvi))
+
+#### Authors: 1
+
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+
+---
+
 # v0.3.27 (Tue Mar 21 2023)
 
 #### 🐛 Bug Fix
