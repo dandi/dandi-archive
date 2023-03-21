@@ -118,7 +118,7 @@ export default defineComponent({
       }
       return '';
     });
-    const doiLink = computed(() => (meta.value?.doi ? `https://doi.org/:${meta.value?.doi}` : ''));
+    const doiLink = computed(() => (currentDandiset.value?.version !== 'draft' ? `https://doi.org/${meta.value?.doi}` : ''));
 
     const dialog = ref(false);
 
