@@ -1,3 +1,23 @@
+# v0.3.27 (Tue Mar 21 2023)
+
+#### 🐛 Bug Fix
+
+- Improve the admin interface for versions [#1547](https://github.com/dandi/dandi-archive/pull/1547) ([@danlamanna](https://github.com/danlamanna))
+- Always force ingestion from zarr admin action [#1541](https://github.com/dandi/dandi-archive/pull/1541) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### 🏠 Internal
+
+- Bump djangorestframework-stubs from 1.9.1 to 1.10.0 [#1544](https://github.com/dandi/dandi-archive/pull/1544) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump django-stubs from 1.15.0 to 1.16.0 [#1543](https://github.com/dandi/dandi-archive/pull/1543) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.3.26 (Fri Mar 17 2023)
 
 :tada: This release contains work from a new contributor! :tada:
