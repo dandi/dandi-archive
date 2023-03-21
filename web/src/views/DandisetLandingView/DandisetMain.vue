@@ -14,7 +14,7 @@
             {{ meta.name }}
           </h1>
           <v-chip
-            v-if="meta.doi"
+            v-if="currentDandiset.version != 'draft'"
             outlined
             class="mx-2 pl-1"
           >
@@ -382,13 +382,12 @@ export default defineComponent({
     function formatDate(date: string): string {
       return moment(date).format('LL');
     }
-
     function copy(value:string) {
       if (!meta.value) {
         throw new Error('metadata is undefined!');
       }
       const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
-      navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/:${meta.value?.doi}`);
+      navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
     }
 
     return {
