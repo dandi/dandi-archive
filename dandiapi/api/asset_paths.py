@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
 from django.db.models import F, QuerySet, Sum
 from django.db.models.functions import Coalesce
 from tqdm import tqdm
 
-from dandiapi.api.models import Asset, AssetPath, AssetPathRelation, Version
-from dandiapi.zarr.models import ZarrArchive
+# Import only the asset paths models
+from dandiapi.api.models.asset_paths import AssetPath, AssetPathRelation
+
+# Import models for type checking only (prevent cyclic imports)
+if TYPE_CHECKING:
+    from dandiapi.api.models import Asset, Version
+    from dandiapi.zarr.models import ZarrArchive
+
 
 ####################################################################
 # Dandiset and version deletion will cascade to asset path deletion.
