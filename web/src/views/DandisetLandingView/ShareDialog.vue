@@ -31,7 +31,7 @@
         <v-spacer />
         <v-btn
           icon
-          x-smal
+          x-small
           @click="dialog = false"
         >
           <v-icon>mdi-close</v-icon>
