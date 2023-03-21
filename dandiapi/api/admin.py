@@ -125,19 +125,39 @@ class DandisetAdmin(GuardedModelAdmin):
         self.actions += ('ingest_dandiset_zarrs',)
 
 
+class VersionStatusFilter(admin.SimpleListFilter):
+    title = 'status'
+    parameter_name = 'status'
+
+    def lookups(self, request, model_admin):
+        qs = model_admin.get_queryset(request)
+        for status in qs.values_list('status', flat=True).distinct():
+            count = qs.filter(status=status).count()
+            if count:
+                yield (status, f'{status} ({count})')
+
+    def queryset(self, request, queryset):
+        status = self.value()
+        if status:
+            return queryset.filter(status=status)
+
+
 @admin.register(Version)
 class VersionAdmin(admin.ModelAdmin):
-    search_fields = ['name']
+    search_fields = ['name', 'doi', 'dandiset__id', 'version']
+    search_help_text = 'Search by name, DOI, Dandiset ID, or version.'
     list_display = [
-        'id',
+        'created',
+        'modified',
         'dandiset',
+        'name',
+        'doi',
         'version',
         'status',
         'number_of_assets',
-        'modified',
-        'created',
     ]
-    list_display_links = ['id', 'version']
+    list_display_links = ['name']
+    list_filter = [VersionStatusFilter]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         qs = super().get_queryset(request).select_related('dandiset')
