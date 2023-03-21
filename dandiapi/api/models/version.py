@@ -85,27 +85,23 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         # Import here to avoid dependency cycle
         from .asset import Asset
 
-        # Assets that are not VALID (could be pending, validating, or invalid)
-        invalid_assets = self.assets.filter(status=Asset.Status.INVALID).values('validation_errors')
+        # Get assets that are not VALID (could be pending, validating, or invalid)
+        invalid_assets: models.QuerySet[Asset] = self.assets.exclude(
+            status=Asset.Status.VALID
+        ).values('status', 'path', 'validation_errors')
 
-        errors = [
-            error
-            for invalid_asset in invalid_assets
-            for error in invalid_asset['validation_errors']
-        ]
-
-        # Assets that have not yet been validated (could be pending or validating)
-        unvalidated_assets = self.assets.filter(
-            ~(models.Q(status=Asset.Status.VALID) | models.Q(status=Asset.Status.INVALID))
-        ).values('path')
-
-        errors += [
-            {
-                'field': unvalidated_asset['path'],
-                'message': 'asset is currently being validated, please wait.',
-            }
-            for unvalidated_asset in unvalidated_assets
-        ]
+        # Aggregate errors
+        errors = []
+        for asset in invalid_assets:
+            if asset['status'] == Asset.Status.INVALID:
+                errors.extend(asset['validation_errors'])
+            else:
+                errors.append(
+                    {
+                        'field': asset['path'],
+                        'message': 'asset is currently being validated, please wait.',
+                    }
+                )
 
         return errors
 
