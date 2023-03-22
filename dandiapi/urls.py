@@ -26,6 +26,7 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
 )
+from dandiapi.search.views import search_assets
 from dandiapi.zarr.views import ZarrViewSet
 
 router = ExtendedSimpleRouter()
@@ -97,6 +98,7 @@ urlpatterns = [
     re_path(
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
     ),
+    path('api/search/assets', search_assets),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
