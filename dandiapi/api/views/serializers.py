@@ -203,15 +203,12 @@ class AssetValidationSerializer(serializers.ModelSerializer):
 class AssetDownloadQueryParameterSerializer(serializers.Serializer):
     content_disposition = serializers.CharField(default='attachment')
 
-    def validate(self, data):
-        value = data['content_disposition']
-
+    def validate_content_disposition(self, value):
         if value not in ['attachment', 'inline']:
             raise ValidationError(
                 f'Illegal value {value} for parameter "content_disposition"', code=400
             )
-
-        return super().validate(data)
+        return value
 
 
 class EmbargoedSlugRelatedField(serializers.SlugRelatedField):
