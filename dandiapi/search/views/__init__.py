@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
 from dandiapi.api.models.asset import Asset
+from dandiapi.api.views.serializers import AssetSerializer
 from dandiapi.search.models import AssetSearch
 
 
@@ -109,4 +110,10 @@ def search_assets(request):
     serializer.is_valid(raise_exception=True)
 
     # TODO: filter by permissions (embargo/dandiset owner)
-    return JsonResponse(Asset.objects.filter(id__in=serializer.to_queryset()))
+    return JsonResponse(
+        AssetSerializer(
+            Asset.objects.select_related('blob').filter(id__in=serializer.to_queryset())[:100],
+            many=True,
+        ).data,
+        safe=False,
+    )
