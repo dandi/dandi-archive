@@ -1,5 +1,6 @@
 import { reactive, ref, watch } from 'vue';
 import { dandiRest } from '@/rest';
+import qs from 'querystring';
 
 const searchParameters = reactive<{
   file_type?: string;
@@ -12,7 +13,7 @@ const searchParameters = reactive<{
 const searchResults = ref([]);
 
 watch(searchParameters, async (newParameters) => {
-  const { data } = await dandiRest.client.get('/search/assets', { params: { ...newParameters } });
+  const { data } = await dandiRest.client.get('/search/assets', { params: { ...newParameters }, paramsSerializer: (params) => qs.stringify(params) });
   searchResults.value = data;
 }, { deep: true });
 
