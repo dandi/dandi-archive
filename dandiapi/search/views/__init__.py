@@ -78,12 +78,12 @@ class SearchQuerySerializer(serializers.Serializer):
 
         genotype_filter = Q()
         for genotype in self.validated_data.get('genotype', []):
-            genotype_filter |= Q(asset_metadata__wasAttributedTo__0__genotype=genotype)
+            genotype_filter |= Q(asset_metadata__wasAttributedTo__0__genotype__name=genotype)
         qs = qs.filter(genotype_filter)
 
         species_filter = Q()
         for species in self.validated_data.get('species', []):
-            species_filter |= Q(asset_metadata__wasAttributedTo__0__species=species)
+            species_filter |= Q(asset_metadata__wasAttributedTo__0__species__name=species)
         qs = qs.filter(species_filter)
 
         measurement_technique_filter = Q()

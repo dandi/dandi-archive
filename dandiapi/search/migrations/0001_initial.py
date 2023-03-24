@@ -21,10 +21,10 @@ CREATE MATERIALIZED VIEW asset_search AS
 
 CREATE INDEX idx_asset_search_asset_size ON asset_search (asset_size);
 CREATE INDEX idx_asset_search_measurement_technique ON asset_search USING gin ((asset_metadata->'measurementTechnique'));
-CREATE INDEX idx_asset_search_species ON asset_search USING gin ((asset_metadata->'wasAttributedTo'));
+CREATE INDEX asset_search_metadata_species_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,species,name}}'));
+CREATE INDEX asset_search_metadata_genotype_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,genotype,name}}'));
 
-CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin ((asset_metadata->>'encodingFormat') gin_trgm_ops);
-CREATE INDEX idx_asset_search_genotype ON asset_search USING gin ((asset_metadata->'wasAttributedTo'->0->>'genotype') gin_trgm_ops);
+CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin (UPPER(asset_metadata->>'encodingFormat') gin_trgm_ops);
 '''
 
 
