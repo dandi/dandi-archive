@@ -4,7 +4,7 @@ import {
   vTextField,
   vTextarea,
 } from 'jest-puppeteer-vuetify';
-import { uniqueId, registerNewUser } from '../util';
+import { uniqueId, registerNewUser, waitForRequestsToFinish } from '../util';
 
 describe('dandiset registration page', () => {
   it('registers a new dandiset', async () => {
@@ -24,5 +24,8 @@ describe('dandiset registration page', () => {
     await page.waitForTimeout(500); // Form validation can *sometimes* take too long
 
     await expect(page).toClickXPath(vBtn('Register dataset'));
+    await waitForRequestsToFinish();
+
+    await expect(page).toMatch('Licenses: spdx:CC0-1.0');
   });
 });
