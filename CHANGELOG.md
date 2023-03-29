@@ -1,3 +1,18 @@
+# v0.3.29 (Wed Mar 29 2023)
+
+#### 🐛 Bug Fix
+
+- Boost minimal client version to be 0.51.0 since needed for fresh dandischema [#1542](https://github.com/dandi/dandi-archive/pull/1542) ([@yarikoptic](https://github.com/yarikoptic))
+- Test for "Licenses" DLP element in E2E test [#1511](https://github.com/dandi/dandi-archive/pull/1511) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update Vue to 2.7.14 [#1549](https://github.com/dandi/dandi-archive/pull/1549) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.28 (Tue Mar 21 2023)
 
 #### 🐛 Bug Fix
