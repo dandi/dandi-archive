@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 
@@ -201,14 +200,7 @@ class AssetValidationSerializer(serializers.ModelSerializer):
 
 
 class AssetDownloadQueryParameterSerializer(serializers.Serializer):
-    content_disposition = serializers.CharField(default='attachment')
-
-    def validate_content_disposition(self, value):
-        if value not in ['attachment', 'inline']:
-            raise ValidationError(
-                f'Illegal value {value} for parameter "content_disposition"', code=400
-            )
-        return value
+    content_disposition = serializers.ChoiceField(['attachment', 'inline'], default='attachment')
 
 
 class EmbargoedSlugRelatedField(serializers.SlugRelatedField):
