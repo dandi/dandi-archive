@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { searchResults } from './store';
+import { searchResults, loading } from './store';
 </script>
 
 <template>
   <v-container>
+    <v-skeleton-loader
+      v-if="loading"
+      class="mx-auto"
+      type="image"
+    />
     <v-card
       v-for="(asset, i) in searchResults"
+      v-else
       :key="`search-result-${i}`"
       class="my-4"
       outlined
