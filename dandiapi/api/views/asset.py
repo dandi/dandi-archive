@@ -113,7 +113,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         method='GET',
         operation_summary='Get the download link for an asset.',
         operation_description='',
-        manual_parameters=[ASSET_ID_PARAM, CONTENT_DISPOSITION_PARAM],
+        query_serializer=AssetDownloadQueryParameterSerializer,
         responses={
             200: None,  # This disables the auto-generated 200 response
             301: 'Redirect to object store',
