@@ -199,6 +199,10 @@ class AssetValidationSerializer(serializers.ModelSerializer):
         fields = ['status', 'validation_errors']
 
 
+class AssetDownloadQueryParameterSerializer(serializers.Serializer):
+    content_disposition = serializers.ChoiceField(['attachment', 'inline'], default='attachment')
+
+
 class EmbargoedSlugRelatedField(serializers.SlugRelatedField):
     """
     A Field for cleanly serializing embargoed model fields.

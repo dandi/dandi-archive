@@ -27,7 +27,7 @@ import os.path
 from django.conf import settings
 from django.db import transaction
 from django.db.models import QuerySet
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -50,6 +50,7 @@ from dandiapi.api.views.common import (
 )
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
+    AssetDownloadQueryParameterSerializer,
     AssetListSerializer,
     AssetPathsQueryParameterSerializer,
     AssetPathsSerializer,
@@ -111,14 +112,14 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         method='GET',
         operation_summary='Get the download link for an asset.',
         operation_description='',
-        manual_parameters=[ASSET_ID_PARAM],
+        query_serializer=AssetDownloadQueryParameterSerializer,
         responses={
             200: None,  # This disables the auto-generated 200 response
             301: 'Redirect to object store',
         },
     )
     @action(methods=['GET', 'HEAD'], detail=True)
-    def download(self, *args, **kwargs):
+    def download(self, request, *args, **kwargs):
         asset = self.get_object()
 
         # Raise error if zarr
@@ -137,11 +138,35 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
         # Redirect to correct presigned URL
         storage = asset_blob.blob.storage
-        return HttpResponseRedirect(
-            storage.generate_presigned_download_url(
-                asset_blob.blob.name, os.path.basename(asset.path)
+
+        serializer = AssetDownloadQueryParameterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        content_disposition = serializer.validated_data['content_disposition']
+        content_type = asset.metadata.get('encodingFormat', 'application/octet-stream')
+        asset_basename = os.path.basename(asset.path)
+
+        if content_disposition == 'attachment':
+            return HttpResponseRedirect(
+                storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
             )
-        )
+        elif content_disposition == 'inline':
+            url = storage.generate_presigned_inline_url(
+                asset_blob.blob.name,
+                asset_basename,
+                content_type,
+            )
+
+            if content_type == 'video/x-matroska':
+                return HttpResponse(
+                    f"""
+                    <video autoplay muted controls>
+                        <source src="{url}" type="video/mp4">
+                    </video>
+                """,
+                    content_type='text/html',
+                )
+
+            return HttpResponseRedirect(url)
 
     @swagger_auto_schema(
         method='GET',
