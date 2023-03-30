@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { debounce } from 'lodash';
+import { dandiRest } from '@/rest';
 import { searchParameters } from '../store';
-import GENOTYPES from './genotypes.json';
 
 const searchTerm = ref<string | null>(null);
 const options = ref<string[]>([]);
@@ -11,14 +12,14 @@ async function populateGenotypeList(newSearchTerm: string) {
   // TODO: make async call to server to get genotypes.
   // For now, fake the async call and do filtering on client side
   loading.value = true;
-  const genotypes: string[] = await new Promise((resolve) => resolve(GENOTYPES));
+  const genotypes: string[] = (await dandiRest.client.get('/search/genotypes', { params: { genotype: newSearchTerm } })).data;
   options.value = genotypes.filter((g) => g.includes(newSearchTerm));
   loading.value = false;
 }
 
 watch(searchTerm, (newSearchTerm) => {
   if (newSearchTerm) {
-    populateGenotypeList(newSearchTerm);
+    debounce(populateGenotypeList, 500)(newSearchTerm);
   }
 });
 </script>
