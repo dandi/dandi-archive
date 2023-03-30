@@ -117,3 +117,33 @@ def search_assets(request):
         ).data,
         safe=False,
     )
+
+
+class GenotypeSearch(serializers.Serializer):
+    genotype = serializers.CharField(required=False)
+
+    def to_queryset(self, qs: QuerySet[AssetSearch] | None = None) -> QuerySet[AssetSearch]:
+        qs = qs if qs is not None else AssetSearch._default_manager.all()
+
+        genotype: str | None = self.validated_data.get('genotype')
+        if genotype:
+            # TODO: take advantage of trigram index?
+            qs = qs.filter(asset_metadata__wasAttributedTo__0__genotype__icontains=genotype)
+
+        # Filter out empty string genotype
+        qs = qs.exclude(asset_metadata__wasAttributedTo__0__genotype__exact='')
+
+        return qs.values_list('asset_metadata__wasAttributedTo__0__genotype', flat=True).distinct()[
+            :10
+        ]
+
+
+@swagger_auto_schema(methods=['GET'], auto_schema=None)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def search_genotypes(request):
+    serializer = GenotypeSearch(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+
+    # TODO: filter by permissions (embargo/dandiset owner)
+    return JsonResponse(list(serializer.to_queryset()), safe=False)
