@@ -23,15 +23,6 @@ ASSET_ID_PARAM = openapi.Parameter(
     pattern=r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
 )
 
-CONTENT_DISPOSITION_PARAM = openapi.Parameter(
-    'content_disposition',
-    openapi.IN_QUERY,
-    'Content Disposition',
-    type=openapi.TYPE_STRING,
-    required=False,
-    pattern='inline|attachment',
-)
-
 DANDISET_PK_PARAM = openapi.Parameter(
     'dandiset__pk',
     openapi.IN_PATH,
