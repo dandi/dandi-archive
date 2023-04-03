@@ -19,6 +19,18 @@
       id="user-menu"
       dense
     >
+      <v-list-item>
+        <v-list-item-content>
+          <span v-if="dandiRest.user">
+            You are logged in as <a
+              :href="`https://github.com/${dandiRest.user.username}`"
+              target="_blank"
+              rel="noopener"
+              v-text="dandiRest.user.username"
+            />.
+          </span>
+        </v-list-item-content>
+      </v-list-item>
       <ApiKeyItem v-if="dandiRest.user?.approved" />
       <v-list-item @click="logout">
         <v-list-item-content>
