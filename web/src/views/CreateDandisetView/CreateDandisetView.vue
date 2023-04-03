@@ -76,6 +76,14 @@
           />
         </div>
         <div v-if="!embargoed">
+          <h1>License</h1>
+          <div>
+            Select a license under which to share the contents of this Dandiset.
+            You can learn more about <a
+              href="https://www.dandiarchive.org/handbook/35_data_licenses/"
+              target="_blank" rel="noopener">licenses
+            for Dandisets</a>.
+          </div>
           <v-select
             v-model="license"
             :items="dandiLicenses"
