@@ -1,7 +1,7 @@
 <template>
   <v-card v-page-title="'Create Dandiset'">
     <v-card-title>
-      <span class="text-h5">Register a new dataset</span>
+      <span class="text-h3">Register a new Dandiset</span>
     </v-card-title>
     <v-card-text class="my-3">
       <v-form>
@@ -39,7 +39,7 @@
             class="shrink mr-2 mt-0"
           >
             <template #label>
-              Embargo this dataset
+              Embargo this Dandiset
               <v-tooltip
                 right
                 max-width="25%"
@@ -59,7 +59,7 @@
                   </div>
                 </template>
                 <span>
-                  Embargoed datasets are hidden from public access until a specific time period has
+                  Embargoed Dandisets are hidden from public access until a specific time period has
                   elapsed. Uploading data to the DANDI archive under embargo requires a relevant
                   NIH award number, and the data will be automatically published when the embargo
                   period expires.
@@ -113,7 +113,7 @@
         depressed
         @click="registerDandiset"
       >
-        Register dataset
+        Register Dandiset
         <template #loader>
           <span>Registering...</span>
         </template>
