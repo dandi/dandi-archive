@@ -87,7 +87,6 @@
             dense
           />
         </div>
-        <small class="float-right font-weight-bold">*indicates required field</small>
         <div v-else>
           <h1>NIH Award Number</h1>
           <div>
@@ -106,6 +105,7 @@
             :rules="awardNumberRules"
           />
         </div>
+        <small class="float-right font-weight-bold">All fields are required</small>
       </v-form>
     </v-card-text>
     <v-card-actions>
