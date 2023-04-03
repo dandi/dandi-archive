@@ -5,38 +5,9 @@
     </v-card-title>
     <v-card-text class="my-3">
       <v-form>
-        <h1>Dandiset Title</h1>
-        <div>
-          Provide a title for this Dandiset. The title will appear in search
-          results and at the top of the home page for this Dandiset, so make it
-          concise and descriptive.
-        </div>
-        <v-text-field
-          v-model="name"
-          label="Title"
-          :counter="nameMaxLength"
-          required
-          outlined
-        />
-
-        <h1>Description</h1>
-        <div>
-          Provide a description for this Dandiset. This will appear prominently
-          under the title in the home page for this Dandiset.
-        </div>
-        <v-textarea
-          v-model="description"
-          label="Description"
-          :counter="descriptionMaxLength"
-          required
-          outlined
-          class="my-4"
-        />
         <div>
           <v-checkbox
             v-model="embargoed"
-            hide-details
-            class="shrink mr-2 mt-0"
           >
             <template #label>
               Embargo this Dandiset
@@ -67,21 +38,6 @@
               </v-tooltip>
             </template>
           </v-checkbox>
-          <v-text-field
-            v-if="embargoed"
-            v-model="awardNumber"
-            label="Award number*"
-            hint="Provide an NIH award number for this embargoed dataset.
-                Note: this can be changed at any time and additional award
-                numbers can be added later."
-            persistent-hint
-            :counter="120"
-            :required="embargoed"
-            outlined
-            class="mt-4 shrink"
-            style="width: 20vw;"
-            :rules="awardNumberRules"
-          />
         </div>
         <h1>Title</h1>
         <div>
@@ -132,6 +88,24 @@
           />
         </div>
         <small class="float-right font-weight-bold">*indicates required field</small>
+        <div v-else>
+          <h1>NIH Award Number</h1>
+          <div>
+            Provide an NIH award number for this embargoed Dandiset. Note: this
+            can be changed at any time and additional award numbers can be added
+            later.
+          </div>
+          <v-text-field
+            v-model="awardNumber"
+            label="Award number"
+            :counter="120"
+            :required="embargoed"
+            outlined
+            dense
+            class="my-4"
+            :rules="awardNumberRules"
+          />
+        </div>
       </v-form>
     </v-card-text>
     <v-card-actions>
