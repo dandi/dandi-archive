@@ -6,7 +6,7 @@
     <v-card-text class="my-3">
       <v-form>
         <div>
-          <v-checkbox
+          <v-switch
             v-model="embargoed"
           >
             <template #label>
@@ -37,7 +37,7 @@
                 </span>
               </v-tooltip>
             </template>
-          </v-checkbox>
+          </v-switch>
         </div>
         <h1>Title</h1>
         <div>
