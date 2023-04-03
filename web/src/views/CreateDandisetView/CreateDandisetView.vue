@@ -83,6 +83,36 @@
             :rules="awardNumberRules"
           />
         </div>
+        <h1>Title</h1>
+        <div>
+          Provide a title for this Dandiset. The title will appear in search
+          results and at the top of the home page for this Dandiset, so make it
+          concise and descriptive.
+        </div>
+        <v-text-field
+          v-model="name"
+          label="Title"
+          :counter="nameMaxLength"
+          required
+          outlined
+          dense
+          class="my-4"
+        />
+
+        <h1>Description</h1>
+        <div>
+          Provide a description for this Dandiset. This will appear prominently
+          under the title in the home page for this Dandiset.
+        </div>
+        <v-textarea
+          v-model="description"
+          label="Description"
+          :counter="descriptionMaxLength"
+          required
+          outlined
+          dense
+          class="my-4"
+        />
         <div v-if="!embargoed">
           <h1>License</h1>
           <div>
