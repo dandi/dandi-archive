@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.services.metadata import version_aggregate_assets_summary
+
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
@@ -327,6 +329,20 @@ def test_version_publish_version(draft_version, asset):
             'numberOfFiles': 0,
         },
     }
+
+
+@pytest.mark.django_db
+def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_factory):
+    version = draft_version_factory(status=Version.Status.VALID)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+
+    assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
+    assert version.metadata['assetsSummary']['numberOfFiles'] == 1
+    assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
 
 
 @pytest.mark.django_db

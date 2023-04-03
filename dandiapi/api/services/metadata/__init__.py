@@ -73,15 +73,17 @@ def version_aggregate_assets_summary(version: Version):
     if version.version != 'draft':
         raise VersionHasBeenPublished()
 
-    version.metadata['assetsSummary'] = aggregate_assets_summary(
+    assets_summary = aggregate_assets_summary(
         version.assets.values_list('metadata', flat=True).iterator()
     )
 
-    Version.objects.filter(id=version.id, version='draft').update(
-        modified=timezone.now(), metadata=version.metadata
+    updated_metadata = {**version.metadata, **{'assetsSummary': assets_summary}}
+
+    updated_count = Version.objects.filter(id=version.id, metadata=version.metadata).update(
+        modified=timezone.now(), metadata=updated_metadata
     )
-    version.refresh_from_db()
-    return version
+    if updated_count == 0:
+        logger.info(f'Skipped updating assetsSummary for version {version.id}')
 
 
 def validate_version_metadata(*, version: Version) -> None:
