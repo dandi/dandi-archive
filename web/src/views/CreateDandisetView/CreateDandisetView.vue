@@ -5,21 +5,29 @@
     </v-card-title>
     <v-card-text class="my-3">
       <v-form>
+        <h1>Dandiset Title</h1>
+        <div>
+          Provide a title for this Dandiset. The title will appear in search
+          results and at the top of the home page for this Dandiset, so make it
+          concise and descriptive.
+        </div>
         <v-text-field
           v-model="name"
-          label="Name*"
-          hint="Provide a title for this dataset"
-          persistent-hint
+          label="Title"
           :counter="nameMaxLength"
           required
           outlined
         />
+
+        <h1>Description</h1>
+        <div>
+          Provide a description for this Dandiset. This will appear prominently
+          under the title in the home page for this Dandiset.
+        </div>
         <v-textarea
           v-model="description"
-          label="Description*"
-          hint="Provide a description for this dataset"
+          label="Description"
           :counter="descriptionMaxLength"
-          persistent-hint
           required
           outlined
           class="my-4"
@@ -87,7 +95,7 @@
           <v-select
             v-model="license"
             :items="dandiLicenses"
-            label="License*"
+            label="License"
             class="my-4"
             outlined
             dense
