@@ -95,6 +95,17 @@ export async function registerNewUser() {
  * @returns {string} identifier of the new dandiset
  */
 export async function registerDandiset(name, description) {
+  // Dismiss the cookie banner, as it interferes with this test (the License
+  // menu gets hidden right behind it, so the attempted click to open it does
+  // not succeed).
+  //
+  // This is conditional on the banner's existence because some tests run this
+  // function twice and the click will fail on the second run in those cases.
+  const cookieBanner = await page.$('button.Cookie__button');
+  if (cookieBanner) {
+    await cookieBanner.click();
+  }
+
   await expect(page).toClickXPath(vBtn('New Dandiset'));
   await expect(page).toFillXPath(vTextField('Title'), name);
   await expect(page).toFillXPath(vTextarea('Description'), description);

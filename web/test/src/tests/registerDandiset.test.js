@@ -14,6 +14,11 @@ describe('dandiset registration page', () => {
 
     await registerNewUser();
 
+    // Dismiss the cookie banner, as it interferes with this test (the License
+    // menu gets hidden right behind it, so the attempted click to open it does
+    // not succeed).
+    await page.click('button.Cookie__button');
+
     await expect(page).toClickXPath(vBtn('New Dandiset'));
 
     await expect(page).toFillXPath(vTextField('Title'), name);
