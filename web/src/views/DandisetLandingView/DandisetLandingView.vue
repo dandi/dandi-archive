@@ -122,7 +122,7 @@ onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
   // Prompt user if they try to leave the DLP with unsaved changes in the meditor
   if (!editorInterface.value?.transactionTracker?.isModified()
   // eslint-disable-next-line no-alert
-    || window.confirm('You have unsaved changes, are you suryhe you want to leave?')) {
+    || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
     next();
     return true;
   }
