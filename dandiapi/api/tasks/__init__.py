@@ -239,8 +239,7 @@ def publish_task(version_id: int):
     transaction.on_commit(lambda: _create_doi(new_version.id))
 
 
-def _log_version_action(msg: str, version_id: int, version: Version) -> None:
+def _log_version_action(msg: str, version: Version) -> None:
     """Centralize/harmonize logging of operations over a Version."""
-    logger.info(
-        '%s for version %d %s:%s', msg, version_id, version.dandiset.identifier, version.version
-    )
+
+    logger.info(f'{msg} for version {version.id}, {version}')
