@@ -170,7 +170,7 @@
       <v-divider />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
-        <div v-html=htmlDescription></div>
+        <div v-html="htmlDescription" />
 
         <!-- Truncate text if necessary -->
         <a
@@ -365,7 +365,9 @@ export default defineComponent({
       shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
       return shortenedDescription;
     });
-    const htmlDescription: ComputedRef<string> = computed(() => sanitize(marked.parse(description.value)));
+    const htmlDescription: ComputedRef<string> = computed(
+      () => sanitize(marked.parse(description.value)),
+    );
     const meta = computed(() => currentDandiset.value?.metadata);
 
     const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
