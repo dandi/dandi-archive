@@ -170,19 +170,13 @@
       <v-divider />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
+        <div v-html=htmlDescription></div>
+
         <!-- Truncate text if necessary -->
-        <div v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)">
-          <div v-html=htmlDescription></div>
-          <a
-            v-if="showFullDescription"
-            @click="showFullDescription = false"
-          > [ - see less ]</a>
-          <a
-            v-else
-            @click="showFullDescription = true"
-          > [ + see more ]</a>
-        </div>
-        <div v-else v-html=htmlDescription></div>
+        <a
+          v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
+          @click="showFullDescription = !showFullDescription"
+        > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
       </v-row>
 
       <v-row class="justify-center">
