@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
+from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
 from dandiapi.zarr.tasks import ingest_zarr_archive
@@ -341,6 +342,8 @@ def test_version_size(
         asset_factory(blob=None, embargoed_blob=embargoed_asset_blob_factory(size=200))
     )
     version.assets.add(asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
+    add_version_asset_paths(version=version)
+
     assert version.size == 700
 
 
@@ -439,6 +442,7 @@ def test_version_rest_info_with_asset(
     version = draft_version_factory(status=Version.Status.VALID)
     asset = draft_asset_factory(status=asset_status)
     version.assets.add(asset)
+    add_version_asset_paths(version=version)
 
     # These validation error types should have the asset path prepended to them:
     if asset_status == Asset.Status.PENDING or asset_status == Asset.Status.VALIDATING:
@@ -461,7 +465,7 @@ def test_version_rest_info_with_asset(
         'asset_count': 1,
         'metadata': version.metadata,
         'size': version.size,
-        'status': 'Valid' if asset_status == Asset.Status.VALID else 'Invalid',
+        'status': Asset.Status.VALID,
         'asset_validation_errors': expected_validation_error,
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],

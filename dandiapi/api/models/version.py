@@ -10,6 +10,7 @@ from django.db import models
 from django.db.models.query_utils import Q
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.asset_paths import get_root_paths
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
@@ -59,14 +60,13 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def asset_count(self):
-        return self.assets.count()
+        return get_root_paths(self).aggregate(nfiles=models.Sum('aggregate_files'))['nfiles'] or 0
 
     @property
     def size(self):
         return (
-            (self.assets.aggregate(size=models.Sum('blob__size'))['size'] or 0)
-            + (self.assets.aggregate(size=models.Sum('embargoed_blob__size'))['size'] or 0)
-            + (self.assets.aggregate(size=models.Sum('zarr__size'))['size'] or 0)
+            get_root_paths(self).aggregate(total_size=models.Sum('aggregate_size'))['total_size']
+            or 0
         )
 
     @property
@@ -81,45 +81,27 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
     @property
-    def publish_status(self) -> Version.Status:
-        if self.status != Version.Status.VALID:
-            return self.status
-
-        # Import here to avoid dependency cycle
-        from .asset import Asset
-
-        invalid_asset = self.assets.exclude(status=Asset.Status.VALID).first()
-        if invalid_asset:
-            return Version.Status.INVALID
-
-        return Version.Status.VALID
-
-    @property
     def asset_validation_errors(self) -> list[str]:
         # Import here to avoid dependency cycle
         from .asset import Asset
 
-        # Assets that are not VALID (could be pending, validating, or invalid)
-        invalid_assets = self.assets.filter(status=Asset.Status.INVALID).values('validation_errors')
+        # Get assets that are not VALID (could be pending, validating, or invalid)
+        invalid_assets: models.QuerySet[Asset] = self.assets.exclude(
+            status=Asset.Status.VALID
+        ).values('status', 'path', 'validation_errors')
 
-        errors = [
-            error
-            for invalid_asset in invalid_assets
-            for error in invalid_asset['validation_errors']
-        ]
-
-        # Assets that have not yet been validated (could be pending or validating)
-        unvalidated_assets = self.assets.filter(
-            ~(models.Q(status=Asset.Status.VALID) | models.Q(status=Asset.Status.INVALID))
-        ).values('path')
-
-        errors += [
-            {
-                'field': unvalidated_asset['path'],
-                'message': 'asset is currently being validated, please wait.',
-            }
-            for unvalidated_asset in unvalidated_assets
-        ]
+        # Aggregate errors
+        errors = []
+        for asset in invalid_assets:
+            if asset['status'] == Asset.Status.INVALID:
+                errors.extend(asset['validation_errors'])
+            else:
+                errors.append(
+                    {
+                        'field': asset['path'],
+                        'message': 'asset is currently being validated, please wait.',
+                    }
+                )
 
         return errors
 

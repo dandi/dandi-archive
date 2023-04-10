@@ -2,21 +2,18 @@ from __future__ import annotations
 
 from django.db import models
 
-from dandiapi.api.models.asset import Asset
-from dandiapi.api.models.version import Version
-
 
 class AssetPath(models.Model):
     path = models.CharField(max_length=512)
 
     # Protect deletion, since otherwise aggregate fields would become out of sync
     asset = models.ForeignKey(
-        Asset, null=True, blank=True, related_name='leaf_paths', on_delete=models.PROTECT
+        'Asset', null=True, blank=True, related_name='leaf_paths', on_delete=models.PROTECT
     )
 
     # Cascade deletion, as if the entire version is deleted,
     # all paths associated to that version are no longer relevant
-    version = models.ForeignKey(Version, related_name='asset_paths', on_delete=models.CASCADE)
+    version = models.ForeignKey('Version', related_name='asset_paths', on_delete=models.CASCADE)
 
     # Aggregate fields
     aggregate_files = models.PositiveBigIntegerField(default=0)
