@@ -58,6 +58,7 @@ setup(
         'boto3[s3]',
         'more_itertools',
         'requests',
+        's3-log-parse',
         'zarr-checksum>=0.2.8',
         # Production-only
         'django-composed-configuration[prod]>=0.22.0',
