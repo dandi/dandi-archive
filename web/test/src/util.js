@@ -95,14 +95,25 @@ export async function registerNewUser() {
  * @returns {string} identifier of the new dandiset
  */
 export async function registerDandiset(name, description) {
+  // Dismiss the cookie banner, as it interferes with this test (the License
+  // menu gets hidden right behind it, so the attempted click to open it does
+  // not succeed).
+  //
+  // This is conditional on the banner's existence because some tests run this
+  // function twice and the click will fail on the second run in those cases.
+  const cookieBanner = await page.$('button.Cookie__button');
+  if (cookieBanner) {
+    await cookieBanner.click();
+  }
+
   await expect(page).toClickXPath(vBtn('New Dandiset'));
-  await expect(page).toFillXPath(vTextField('Name*'), name);
-  await expect(page).toFillXPath(vTextarea('Description*'), description);
-  await expect(page).toClickXPath('//label[contains(.,"License*")]/following::input[1]');
+  await expect(page).toFillXPath(vTextField('Title'), name);
+  await expect(page).toFillXPath(vTextarea('Description'), description);
+  await expect(page).toClickXPath('//label[contains(.,"License")]/following::input[1]');
   await page.waitForTimeout(500); // Give dropdown time to render
   await expect(page).toClickXPath(vListItem('spdx:CC0-1.0'));
   await page.waitForTimeout(500); // Form validation can *sometimes* take too long
-  await expect(page).toClickXPath(vBtn('Register dataset'));
+  await expect(page).toClickXPath(vBtn('Register Dandiset'));
   await waitForRequestsToFinish();
   return page.url().split('/').pop();
 }

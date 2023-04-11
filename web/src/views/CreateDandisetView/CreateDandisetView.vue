@@ -1,37 +1,16 @@
 <template>
   <v-card v-page-title="'Create Dandiset'">
     <v-card-title>
-      <span class="text-h5">Register a new dataset</span>
+      <span class="text-h3">Register a new Dandiset</span>
     </v-card-title>
     <v-card-text class="my-3">
       <v-form>
-        <v-text-field
-          v-model="name"
-          label="Name*"
-          hint="Provide a title for this dataset"
-          persistent-hint
-          :counter="nameMaxLength"
-          required
-          outlined
-        />
-        <v-textarea
-          v-model="description"
-          label="Description*"
-          hint="Provide a description for this dataset"
-          :counter="descriptionMaxLength"
-          persistent-hint
-          required
-          outlined
-          class="my-4"
-        />
         <div>
-          <v-checkbox
+          <v-switch
             v-model="embargoed"
-            hide-details
-            class="shrink mr-2 mt-0"
           >
             <template #label>
-              Embargo this dataset
+              Embargo this Dandiset
               <v-tooltip
                 right
                 max-width="25%"
@@ -51,41 +30,82 @@
                   </div>
                 </template>
                 <span>
-                  Embargoed datasets are hidden from public access until a specific time period has
+                  Embargoed Dandisets are hidden from public access until a specific time period has
                   elapsed. Uploading data to the DANDI archive under embargo requires a relevant
                   NIH award number, and the data will be automatically published when the embargo
                   period expires.
                 </span>
               </v-tooltip>
             </template>
-          </v-checkbox>
-          <v-text-field
-            v-if="embargoed"
-            v-model="awardNumber"
-            label="Award number*"
-            hint="Provide an NIH award number for this embargoed dataset.
-                Note: this can be changed at any time and additional award
-                numbers can be added later."
-            persistent-hint
-            :counter="120"
-            :required="embargoed"
-            outlined
-            class="mt-4 shrink"
-            style="width: 20vw;"
-            :rules="awardNumberRules"
-          />
+          </v-switch>
         </div>
+        <div class="text-h4">Title</div>
+        <div>
+          Provide a title for this Dandiset. The title will appear in search
+          results and at the top of the home page for this Dandiset, so make it
+          concise and descriptive.
+        </div>
+        <v-text-field
+          v-model="name"
+          label="Title"
+          :counter="nameMaxLength"
+          required
+          outlined
+          dense
+          class="my-4"
+        />
+
+        <div class="text-h4">Description</div>
+        <div>
+          Provide a description for this Dandiset. This will appear prominently
+          under the title in the home page for this Dandiset.
+        </div>
+        <v-textarea
+          v-model="description"
+          label="Description"
+          :counter="descriptionMaxLength"
+          required
+          outlined
+          dense
+          class="my-4"
+        />
         <div v-if="!embargoed">
+          <div class="text-h4">License</div>
+          <div>
+            Select a license under which to share the contents of this Dandiset.
+            You can learn more about <a
+              href="https://www.dandiarchive.org/handbook/35_data_licenses/"
+              target="_blank" rel="noopener">licenses
+            for Dandisets</a>.
+          </div>
           <v-select
             v-model="license"
             :items="dandiLicenses"
-            label="License*"
+            label="License"
             class="my-4"
             outlined
             dense
           />
         </div>
-        <small class="float-right font-weight-bold">*indicates required field</small>
+        <div v-else>
+          <div class="text-h4">NIH Award Number</div>
+          <div>
+            Provide an NIH award number for this embargoed Dandiset. Note: this
+            can be changed at any time and additional award numbers can be added
+            later.
+          </div>
+          <v-text-field
+            v-model="awardNumber"
+            label="Award number"
+            :counter="120"
+            :required="embargoed"
+            outlined
+            dense
+            class="my-4"
+            :rules="awardNumberRules"
+          />
+        </div>
+        <small class="float-right font-weight-bold">All fields are required</small>
       </v-form>
     </v-card-text>
     <v-card-actions>
@@ -97,7 +117,7 @@
         depressed
         @click="registerDandiset"
       >
-        Register dataset
+        Register Dandiset
         <template #loader>
           <span>Registering...</span>
         </template>
