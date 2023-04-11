@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -48,8 +49,11 @@ def test_version_next_published_version_simultaneous_save(
 ):
     dandiset_1 = dandiset_factory()
     dandiset_2 = dandiset_factory()
-    version_1 = published_version_factory(dandiset=dandiset_1)
-    version_2 = published_version_factory(dandiset=dandiset_2)
+    with freeze_time():
+        # version strings have a time component. mock all functions that retrieve the
+        # current time so the test isn't flaky at time boundaries.
+        version_1 = published_version_factory(dandiset=dandiset_1)
+        version_2 = published_version_factory(dandiset=dandiset_2)
     # Different dandisets published at the same time should have the same version string
     assert version_1.version == version_2.version
 

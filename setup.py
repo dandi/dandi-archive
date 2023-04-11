@@ -80,6 +80,7 @@ setup(
         ],
         'test': [
             'factory-boy',
+            'freezegun',
             'pytest',
             'pytest-cov',
             'pytest-django',
