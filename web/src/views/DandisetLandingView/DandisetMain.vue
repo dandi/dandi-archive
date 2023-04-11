@@ -170,18 +170,13 @@
       <v-divider />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
+        <div v-html="htmlDescription" />
+
         <!-- Truncate text if necessary -->
-        <span v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)">
-          {{ description }}
-          <a
-            v-if="showFullDescription"
-            @click="showFullDescription = false"
-          > [ - see less ]</a>
-          <a
-            v-else
-            @click="showFullDescription = true"
-          > [ + see more ]</a></span>
-        <span v-else>{{ description }}</span>
+        <a
+          v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
+          @click="showFullDescription = !showFullDescription"
+        > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
       </v-row>
 
       <v-row class="justify-center">
@@ -267,7 +262,9 @@ import {
 } from 'vue';
 
 import filesize from 'filesize';
+import { marked } from 'marked';
 import moment from 'moment';
+import { sanitize } from 'dompurify';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
@@ -368,6 +365,9 @@ export default defineComponent({
       shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
       return shortenedDescription;
     });
+    const htmlDescription: ComputedRef<string> = computed(
+      () => sanitize(marked.parse(description.value)),
+    );
     const meta = computed(() => currentDandiset.value?.metadata);
 
     const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
@@ -396,6 +396,7 @@ export default defineComponent({
       stats,
       transformFilesize,
       description,
+      htmlDescription,
       showFullDescription,
       MAX_DESCRIPTION_LENGTH,
 
