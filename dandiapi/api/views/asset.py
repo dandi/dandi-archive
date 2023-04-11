@@ -405,7 +405,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             # since we are using postgres' regex search. A malicious user who knows this could
             # include a regex as part of the glob expression, which postgres would happily parse
             # and use if it's not escaped.
-            glob_pattern = re.escape(glob_pattern)
+            glob_pattern = f'^{re.escape(glob_pattern)}$'
             queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
         # Paginate and return
