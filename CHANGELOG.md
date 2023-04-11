@@ -1,3 +1,28 @@
+# v0.3.30 (Tue Apr 11 2023)
+
+#### 🐛 Bug Fix
+
+- Add github username + profile link to UI [#1504](https://github.com/dandi/dandi-archive/pull/1504) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Embed glob-derived regex inside a ^/$ pair [#1566](https://github.com/dandi/dandi-archive/pull/1566) ([@waxlamp](https://github.com/waxlamp))
+- Render description field as markdown [#1568](https://github.com/dandi/dandi-archive/pull/1568) ([@waxlamp](https://github.com/waxlamp))
+- Add license info to dandiset creation page + do a style overhaul [#1554](https://github.com/dandi/dandi-archive/pull/1554) ([@waxlamp](https://github.com/waxlamp))
+- Optimize dandiset/versions and dandiset/versions/info endpoints [#1548](https://github.com/dandi/dandi-archive/pull/1548) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Fix typo [#1564](https://github.com/dandi/dandi-archive/pull/1564) ([@waxlamp](https://github.com/waxlamp))
+- Enable inline view of assets [#1534](https://github.com/dandi/dandi-archive/pull/1534) ([@waxlamp](https://github.com/waxlamp))
+
+#### 🏠 Internal
+
+- Bump mypy from 1.1.1 to 1.2.0 [#1569](https://github.com/dandi/dandi-archive/pull/1569) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.29 (Wed Mar 29 2023)
 
 #### 🐛 Bug Fix
