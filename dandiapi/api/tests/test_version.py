@@ -574,6 +574,25 @@ def test_version_rest_update(api_client, user, draft_version):
 
 
 @pytest.mark.django_db
+def test_version_rest_update_publishing_version(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    draft_version.status = Version.Status.PUBLISHING
+    draft_version.save()
+
+    new_name = 'A unique and special name!'
+    new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
+
+    api_client.force_authenticate(user=user)
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': new_name},
+        format='json',
+    )
+    assert resp.status_code == 409
+    assert resp.data == 'This version is currently being published.'
+
+
+@pytest.mark.django_db
 def test_version_rest_update_published_version(api_client, user, published_version):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)

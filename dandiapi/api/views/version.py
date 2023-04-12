@@ -103,10 +103,16 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         # Only save version if metadata has actually changed
         if (name, new_metadata) != (version.name, old_metadata):
-            version.name = name
-            version.metadata = new_metadata
-            version.status = Version.Status.PENDING
-            version.save()
+            updated_count = (
+                Version.objects.filter(id=version.id)
+                .exclude(status=Version.Status.PUBLISHING)
+                .update(name=name, metadata=new_metadata, status=Version.Status.PENDING)
+            )
+            if updated_count == 0:
+                return Response(
+                    'This version is currently being published.',
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         serializer = VersionDetailSerializer(instance=version)
         return Response(serializer.data, status=status.HTTP_200_OK)
