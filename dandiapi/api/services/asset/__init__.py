@@ -1,3 +1,5 @@
+import logging
+
 from django.db import transaction
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
@@ -12,6 +14,8 @@ from dandiapi.api.services.asset.exceptions import (
 )
 from dandiapi.api.services.asset.metadata import _maybe_validate_asset_metadata
 from dandiapi.zarr.models import ZarrArchive
+
+logger = logging.Logger(name=__name__)
 
 
 def _create_asset(
@@ -144,9 +148,15 @@ def add_asset_to_version(
         add_asset_paths(asset, version)
 
         # Trigger a version metadata validation, as saving the version might change the metadata
-        version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
-        version.save()
+        updated_count = (
+            Version.objects.filter(version_id=version.version_id)
+            .exclude(status=Version.Status.PUBLISHING)
+            .update(status=Version.Status.PENDING)
+        )
+        if updated_count != 1:
+            logger.info(f'Failed to add asset to {version.version_id} (status: publishing)')
+            transaction.rollback()
 
     # The sha256 may have been newly calculated in the time since the asset was created. If so, we
     # need to fetch the latest record from the DB so that _maybe_validate_asset_metadata sees the
