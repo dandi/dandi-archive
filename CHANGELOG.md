@@ -1,3 +1,22 @@
+# v0.3.31 (Mon Apr 17 2023)
+
+#### 🐛 Bug Fix
+
+- Temporarily disable meditor local storage restore [#1575](https://github.com/dandi/dandi-archive/pull/1575) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix flaky version string test [#1572](https://github.com/dandi/dandi-archive/pull/1572) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/add-to-project from 0.4.0 to 0.5.0 [#1558](https://github.com/dandi/dandi-archive/pull/1558) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.30 (Tue Apr 11 2023)
 
 #### 🐛 Bug Fix
