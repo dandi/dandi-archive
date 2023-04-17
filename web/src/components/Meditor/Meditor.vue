@@ -9,7 +9,8 @@
       v-page-title="model.name"
       class="overflow-hidden"
     >
-      <v-dialog
+      <!-- TODO: fix and re-enable this -->
+      <!-- <v-dialog
         v-model="loadFromLocalStoragePrompt"
         persistent
         max-width="60vh"
@@ -46,7 +47,7 @@
             </v-btn>
           </v-card-actions>
         </v-card>
-      </v-dialog>
+      </v-dialog> -->
       <v-row>
         <v-col>
           <v-card
@@ -227,9 +228,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
-import {
-  ref, computed, onMounted,
-} from 'vue';
+import { ref, computed } from 'vue';
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
@@ -246,10 +245,10 @@ import { EditorInterface } from './editor';
 
 import {
   clearLocalStorage,
-  dataInLocalStorage,
-  getModelLocalStorage,
-  getTransactionPointerLocalStorage,
-  getTransactionsLocalStorage,
+  // dataInLocalStorage,
+  // getModelLocalStorage,
+  // getTransactionPointerLocalStorage,
+  // getTransactionsLocalStorage,
 } from './localStorage';
 import VJsfWrapper from './VJsfWrapper.vue';
 import { editorInterface, open } from './state';
@@ -276,13 +275,13 @@ const id = computed(() => currentDandiset.value?.dandiset.identifier);
 const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
 const model = computed(() => currentDandiset.value?.metadata);
 const readonly = computed(() => !store.userCanModifyDandiset);
-const isDataInLocalStorage = computed(
-  () => (model.value ? dataInLocalStorage(model.value.id) : false),
-);
+// const isDataInLocalStorage = computed(
+//   () => (model.value ? dataInLocalStorage(model.value.id) : false),
+// );
 
 const invalidPermissionSnackbar = ref(false);
 const tab = ref(null);
-const loadFromLocalStoragePrompt = ref(false);
+// const loadFromLocalStoragePrompt = ref(false);
 
 editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
 const {
@@ -388,33 +387,34 @@ const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
   (p) => renderField((complexSchema as any).properties[p]),
 );
 
-function loadDataFromLocalStorage() {
-  if (!model.value) {
-    return;
-  }
-  // load previous meditor data from localStorage
-  editorInterface.value?.setModel(getModelLocalStorage(model.value.id));
-  editorInterface.value?.transactionTracker.setTransactions(
-    getTransactionsLocalStorage(model.value.id),
-  );
-  editorInterface.value?.transactionTracker.setTransactionPointer(
-    getTransactionPointerLocalStorage(model.value.id),
-  );
-  loadFromLocalStoragePrompt.value = false;
-}
-function discardDataFromLocalStorage() {
-  if (!model.value) {
-    return;
-  }
-  clearLocalStorage(model.value.id);
-  loadFromLocalStoragePrompt.value = false;
-}
-onMounted(() => {
-  // On mount, detect if there is unsaved data stored in local storage and ask the user
-  // if they would like to restore it
-  if (isDataInLocalStorage.value) {
-    loadFromLocalStoragePrompt.value = true;
-  }
-});
+// TODO: fix and re-enable this
+// function loadDataFromLocalStorage() {
+//   if (!model.value) {
+//     return;
+//   }
+//   // load previous meditor data from localStorage
+//   editorInterface.value?.setModel(getModelLocalStorage(model.value.id));
+//   editorInterface.value?.transactionTracker.setTransactions(
+//     getTransactionsLocalStorage(model.value.id),
+//   );
+//   editorInterface.value?.transactionTracker.setTransactionPointer(
+//     getTransactionPointerLocalStorage(model.value.id),
+//   );
+//   loadFromLocalStoragePrompt.value = false;
+// }
+// function discardDataFromLocalStorage() {
+//   if (!model.value) {
+//     return;
+//   }
+//   clearLocalStorage(model.value.id);
+//   loadFromLocalStoragePrompt.value = false;
+// }
+// onMounted(() => {
+//   // On mount, detect if there is unsaved data stored in local storage and ask the user
+//   // if they would like to restore it
+//   if (isDataInLocalStorage.value) {
+//     loadFromLocalStoragePrompt.value = true;
+//   }
+// });
 
 </script>
