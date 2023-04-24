@@ -81,7 +81,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
     @property
-    def asset_validation_errors(self) -> list[str]:
+    def asset_validation_errors(self) -> dict[str, list[dict[str, str]]]:
         # Import here to avoid dependency cycle
         from .asset import Asset
 
@@ -90,20 +90,24 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             status=Asset.Status.VALID
         ).values('status', 'path', 'validation_errors')
 
-        # Aggregate errors
-        errors = []
-        for asset in invalid_assets:
-            if asset['status'] == Asset.Status.INVALID:
-                errors.extend(asset['validation_errors'])
-            else:
-                errors.append(
-                    {
-                        'field': asset['path'],
-                        'message': 'asset is currently being validated, please wait.',
-                    }
-                )
+        asset_validating_error = {
+            'field': '',
+            'message': 'asset is currently being validated, please wait.',
+        }
 
-        return errors
+        # Aggregate errors, ensuring the path of the asset is included
+        asset_error_map = {}
+        for asset in invalid_assets:
+            # Must be pending or validating
+            if asset['status'] != Asset.Status.INVALID:
+                asset_error_map[asset['path']] = [asset_validating_error]
+                continue
+
+            # Must be invalid, only add entry in map if it has any errors
+            if asset['validation_errors']:
+                asset_error_map[asset['path']] = asset['validation_errors']
+
+        return asset_error_map
 
     @staticmethod
     def datetime_to_version(time: datetime.datetime) -> str:

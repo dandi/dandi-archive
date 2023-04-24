@@ -414,7 +414,7 @@ def test_version_rest_info(api_client, version):
         'metadata': version.metadata,
         'size': version.size,
         'status': 'Pending',
-        'asset_validation_errors': [],
+        'asset_validation_errors': {},
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
     }
@@ -422,35 +422,27 @@ def test_version_rest_info(api_client, version):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'asset_status,expected_validation_error',
-    [
-        (
-            Asset.Status.PENDING,
-            [{'field': '', 'message': 'asset is currently being validated, please wait.'}],
-        ),
-        (
-            Asset.Status.VALIDATING,
-            [{'field': '', 'message': 'asset is currently being validated, please wait.'}],
-        ),
-        (Asset.Status.VALID, []),
-        (Asset.Status.INVALID, []),
-    ],
+    'asset_status',
+    [Asset.Status.PENDING, Asset.Status.VALIDATING, Asset.Status.VALID, Asset.Status.INVALID],
 )
 def test_version_rest_info_with_asset(
-    api_client,
-    draft_version_factory,
-    draft_asset_factory,
-    asset_status: Asset.Status,
-    expected_validation_error: str,
+    api_client, draft_version_factory, draft_asset_factory, asset_status: Asset.Status
 ):
     version = draft_version_factory(status=Version.Status.VALID)
     asset = draft_asset_factory(status=asset_status)
     version.assets.add(asset)
     add_version_asset_paths(version=version)
 
-    # These validation error types should have the asset path prepended to them:
-    if asset_status == Asset.Status.PENDING or asset_status == Asset.Status.VALIDATING:
-        expected_validation_error[0]['field'] = asset.path
+    # Create expected validation errors for pending/validating assets
+    asset_validating_error = {
+        'field': '',
+        'message': 'asset is currently being validated, please wait.',
+    }
+    expected_validation_error = (
+        {asset.path: [asset_validating_error]}
+        if asset_status in [Asset.Status.PENDING, Asset.Status.VALIDATING]
+        else {}
+    )
 
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
@@ -545,7 +537,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'metadata': saved_metadata,
         'size': draft_version.size,
         'status': 'Pending',
-        'asset_validation_errors': [],
+        'asset_validation_errors': {},
         'version_validation_errors': [],
         'contact_person': 'Vargas, Getúlio',
     }
