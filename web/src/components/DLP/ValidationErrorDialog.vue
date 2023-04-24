@@ -72,32 +72,62 @@
           class="overflow-y-auto"
         >
           <v-expansion-panels multiple>
-            <v-expansion-panel
-              v-for="(errors, path) in assetValidationErrors"
-              :key="path"
-            >
-              <v-expansion-panel-header>
-                {{ path }}
-              </v-expansion-panel-header>
-              <v-expansion-panel-content>
-                <v-list-item
-                  v-for="error in errors"
-                  :key="`${error.field}-${error.message}`"
-                >
-                  <v-list-item-icon>
-                    <v-icon>
-                      {{ getValidationErrorIcon(error.field) }}
-                    </v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-content>
-                    <template v-if="error.field">
-                      {{ error.field }}:
+            <template v-for="(errors, path) in assetValidationErrors">
+              <v-list-item
+                :key="path"
+              >
+                <v-list-item-icon>
+                  <v-icon>
+                    <template v-if="errors.length > 1">
+                      mdi-alert-plus
                     </template>
-                    {{ error.message }}
+                    <template v-else>
+                      {{ getValidationErrorIcon(errors[0].field) }}
+                    </template>
+                  </v-icon>
+                </v-list-item-icon>
+
+                <!-- Inline single errors -->
+                <template v-if="errors.length === 1">
+                  <v-list-item-content>
+                    <strong>{{ path }}</strong>
+                    <template v-if="errors[0].field">
+                      {{ errors[0].field }} -
+                    </template>
+                    {{ errors[0].message }}
                   </v-list-item-content>
-                </v-list-item>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
+                </template>
+
+                <!-- Group multiple asset errors -->
+                <template v-else>
+                  <v-list-group class="multi-error-list-group">
+                    <template #activator>
+                      <v-list-item-content>
+                        <strong>{{ path }}</strong>
+                        <v-list-item-subtitle>Click to expand</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </template>
+
+                    <v-list-item
+                      v-for="error in errors"
+                      :key="`${error.field}-${error.message}`"
+                    >
+                      <v-list-item-icon>
+                        <v-icon>
+                          {{ getValidationErrorIcon(error.field) }}
+                        </v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        <template v-if="error.field">
+                          {{ error.field }}:
+                        </template>
+                        {{ error.message }}
+                      </v-list-item-content>
+                    </v-list-item>
+                  </v-list-group>
+                </template>
+              </v-list-item>
+            </template>
           </v-expansion-panels>
         </v-list>
       </v-tab-item>
@@ -150,3 +180,9 @@ function getValidationErrorIcon(errorField: string): string {
 }
 
 </script>
+<style>
+.multi-error-list-group .v-list-group__header {
+  padding-left: 0;
+  padding-right: 0;
+}
+</style>
