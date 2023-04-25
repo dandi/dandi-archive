@@ -440,7 +440,11 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
 import {
-  computed, ref, watchEffect,
+  onUnmounted,
+  onMounted,
+  computed,
+  ref,
+  watchEffect,
 } from 'vue';
 
 import axios from 'axios';
@@ -563,24 +567,33 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   return '';
 });
 
-setInterval(async () => {
+const timer = ref<number | null>(null);
+onMounted(() => {
+  timer.value = window.setInterval(async () => {
   // When a dandiset is being published, poll the server to check if it's finished
-  if (publishing.value && currentDandiset.value) {
-    const { identifier } = currentDandiset.value.dandiset!;
-    const { version } = currentDandiset.value;
-    const dandiset = await dandiRest.specificVersion(identifier, version);
+    if (publishing.value && currentDandiset.value) {
+      const { identifier } = currentDandiset.value.dandiset!;
+      const { version } = currentDandiset.value;
+      const dandiset = await dandiRest.specificVersion(identifier, version);
 
-    if (dandiset?.status === 'Published') {
+      if (dandiset?.status === 'Published') {
       // re-fetch current dandiset so it includes the newly published version
-      await store.fetchDandiset({ identifier, version });
-      await store.fetchDandisetVersions({ identifier });
+        await store.fetchDandiset({ identifier, version });
+        await store.fetchDandisetVersions({ identifier });
 
-      publishedVersion.value = otherVersions.value![0].version;
+        publishedVersion.value = otherVersions.value![0].version;
 
-      publishing.value = false;
+        publishing.value = false;
+      }
     }
+  }, 2000);
+});
+onUnmounted(() => {
+  if (timer.value === null) {
+    throw Error('Invalid timer value');
   }
-}, 2000);
+  window.clearInterval(timer.value);
+});
 
 const publishButtonDisabled = computed(() => !!(
   currentDandiset.value?.version_validation_errors.length
