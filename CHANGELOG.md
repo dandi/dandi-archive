@@ -1,3 +1,15 @@
+# v0.3.32 (Tue Apr 25 2023)
+
+#### 🐛 Bug Fix
+
+- Temporarily disable metadata editing [#1582](https://github.com/dandi/dandi-archive/pull/1582) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.31 (Mon Apr 17 2023)
 
 #### 🐛 Bug Fix
