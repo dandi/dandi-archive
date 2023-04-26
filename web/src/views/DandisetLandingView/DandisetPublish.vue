@@ -567,9 +567,9 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   return '';
 });
 
-const timer = ref<number | null>(null);
+let timer: number | undefined;
 onMounted(() => {
-  timer.value = window.setInterval(async () => {
+  timer = window.setInterval(async () => {
   // When a dandiset is being published, poll the server to check if it's finished
     if (publishing.value && currentDandiset.value) {
       const { identifier } = currentDandiset.value.dandiset!;
@@ -589,10 +589,10 @@ onMounted(() => {
   }, 2000);
 });
 onUnmounted(() => {
-  if (timer.value === null) {
+  if (timer === undefined) {
     throw Error('Invalid timer value');
   }
-  window.clearInterval(timer.value);
+  window.clearInterval(timer);
 });
 
 const publishButtonDisabled = computed(() => !!(

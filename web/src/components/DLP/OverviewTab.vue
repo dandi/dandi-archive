@@ -225,7 +225,7 @@
 
 <script setup lang="ts">
 import {
-  computed, getCurrentInstance, onMounted, ref, onUnmounted,
+  computed, getCurrentInstance, onMounted, onUnmounted,
 } from 'vue';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
@@ -321,9 +321,9 @@ const contactPeople = computed(
     .map((contributor) => contributor.name)),
 );
 
-const timer = ref<number| null>(null);
+let timer: number | undefined;
 onMounted(() => {
-  timer.value = window.setInterval(async () => {
+  timer = window.setInterval(async () => {
     if (!currentDandiset.value || !assetSummaryBeingComputed.value) {
       return;
     }
@@ -333,10 +333,10 @@ onMounted(() => {
   }, 5000);
 });
 onUnmounted(() => {
-  if (timer.value === null) {
+  if (timer === undefined) {
     throw Error('Invalid timer value');
   }
-  window.clearInterval(timer.value);
+  window.clearInterval(timer);
 });
 
 </script>
