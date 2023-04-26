@@ -143,13 +143,6 @@
         </v-col>
       </v-row>
       <v-row class="px-2 justify-center">
-        <v-banner>
-          <span class="font-weight-bold">
-            <v-icon slot="icon">mdi-timer-sand-empty</v-icon>
-            The metadata editor is currently undergoing maintenance.
-            Metadata editing is temporarily disabled.
-          </span>
-        </v-banner>
         <v-tabs
           v-model="tab"
           background-color="grey darken-2"
@@ -281,11 +274,7 @@ const currentDandiset = computed(() => store.dandiset);
 const id = computed(() => currentDandiset.value?.dandiset.identifier);
 const schema: ComputedRef<JSONSchema7> = computed(() => store.schema);
 const model = computed(() => currentDandiset.value?.metadata);
-
-// TODO: re-enable editing once maintenance is finished
-// const readonly = computed(() => !store.userCanModifyDandiset);
-const readonly = computed(() => true);
-
+const readonly = computed(() => !store.userCanModifyDandiset);
 // const isDataInLocalStorage = computed(
 //   () => (model.value ? dataInLocalStorage(model.value.id) : false),
 // );
