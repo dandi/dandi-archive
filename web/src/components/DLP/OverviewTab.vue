@@ -224,7 +224,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted } from 'vue';
+import {
+  computed, getCurrentInstance, onMounted, onUnmounted,
+} from 'vue';
+
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
@@ -318,8 +321,9 @@ const contactPeople = computed(
     .map((contributor) => contributor.name)),
 );
 
+let timer: number | undefined;
 onMounted(() => {
-  setInterval(async () => {
+  timer = window.setInterval(async () => {
     if (!currentDandiset.value || !assetSummaryBeingComputed.value) {
       return;
     }
@@ -327,6 +331,12 @@ onMounted(() => {
     const { version } = currentDandiset.value;
     await store.fetchDandiset({ identifier, version });
   }, 5000);
+});
+onUnmounted(() => {
+  if (timer === undefined) {
+    throw Error('Invalid timer value');
+  }
+  window.clearInterval(timer);
 });
 
 </script>
