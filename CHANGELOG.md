@@ -1,3 +1,18 @@
+# v0.3.33 (Thu Apr 27 2023)
+
+#### 🐛 Bug Fix
+
+- Bump types-setuptools from 67.6.0.0 to 67.7.0.0 [#1580](https://github.com/dandi/dandi-archive/pull/1580) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Restore metadata editing [#1584](https://github.com/dandi/dandi-archive/pull/1584) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Call `clearInterval` after `setInterval` when needed [#1583](https://github.com/dandi/dandi-archive/pull/1583) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.32 (Tue Apr 25 2023)
 
 #### 🐛 Bug Fix
