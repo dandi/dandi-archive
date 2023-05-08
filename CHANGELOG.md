@@ -1,3 +1,21 @@
+# v0.3.34 (Mon May 08 2023)
+
+#### 🐛 Bug Fix
+
+- Add celery argument logging [#1588](https://github.com/dandi/dandi-archive/pull/1588) ([@danlamanna](https://github.com/danlamanna))
+
+#### 🏠 Internal
+
+- Bump django-stubs from 1.16.0 to 4.2.0 [#1587](https://github.com/dandi/dandi-archive/pull/1587) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump djangorestframework-stubs from 1.10.0 to 3.14.0 [#1586](https://github.com/dandi/dandi-archive/pull/1586) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 2
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.33 (Thu Apr 27 2023)
 
 #### 🐛 Bug Fix
