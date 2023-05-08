@@ -20,16 +20,14 @@ watch(range, ([newMin, newMax]) => {
   <div>
     <v-range-slider
       v-model="range"
-      label="Min/max file size"
-      :hint="`Min: ${min}\tMax:${max}`"
       strict
       min="0"
       max="1000000"
       step="100"
     />
-    <!-- <span class="d-flex justify-space-around">
+    <span class="d-flex justify-space-around">
       <v-chip>Min: {{ min }}</v-chip>
       <v-chip>Max: {{ max }}</v-chip>
-    </span> -->
+    </span>
   </div>
 </template>

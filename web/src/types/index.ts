@@ -23,6 +23,10 @@ export interface Dandiset {
   embargo_status: 'EMBARGOED' | 'UNEMBARGOING' | 'OPEN',
 }
 
+export interface DandisetSearchResult extends Dandiset {
+  asset_counts: any; // TODO
+}
+
 export interface ValidationError {
   field: string,
   message: string,

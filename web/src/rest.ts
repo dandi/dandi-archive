@@ -2,9 +2,10 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 import Vue from 'vue';
 import { mapState } from 'pinia';
+import qs from 'querystring';
 import OAuthClient from '@girder/oauth-client';
 import type {
-  Asset, Dandiset, Paginated, User, Version, Info, AssetPath, Zarr,
+  Asset, Dandiset, Paginated, User, Version, Info, AssetPath, Zarr, DandisetSearchResult,
 } from '@/types';
 import type { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 // eslint-disable-next-line import/no-cycle
@@ -251,6 +252,15 @@ const dandiRest = new Vue({
     },
     async deleteAsset(identifier: string, version: string, uuid: string): Promise<AxiosResponse> {
       return client.delete(`${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`);
+    },
+    async searchDandisets(
+      parameters: Record<string, any>,
+    ): Promise<Paginated<DandisetSearchResult>> {
+      const { data } = await client.get('/dandisets/search', {
+        params: { ...parameters },
+        paramsSerializer: (params) => qs.stringify(params),
+      });
+      return data;
     },
   },
 });

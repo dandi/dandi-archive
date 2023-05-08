@@ -1,27 +1,40 @@
 import { reactive, ref, watch } from 'vue';
-import qs from 'querystring';
+import type { Paginated, DandisetSearchResult } from '@/types';
+import { DANDISETS_PER_PAGE } from '@/utils/constants';
 import { dandiRest } from '@/rest';
 
 const searchParameters = reactive<{
   file_type?: string;
-  file_type_min?: number;
-  file_type_max?: number;
+  file_type_min: number | null;
+  file_type_max: number | null;
   measurement_technique?: string[];
   genotype?: string[];
   species?: string[];
-}>({});
-const searchResults = ref([]);
+}>({
+  file_type_max: null, file_type_min: null,
+});
+const searchResults = ref<Paginated<DandisetSearchResult>>();
+const page = ref<number>(1);
 const loading = ref<boolean>(false);
 
-watch(searchParameters, async (newParameters) => {
+async function updateSearchQuery() {
   loading.value = true;
-  const { data } = await dandiRest.client.get('/search/assets', { params: { ...newParameters }, paramsSerializer: (params) => qs.stringify(params) });
+  const results = await dandiRest.searchDandisets(
+    { ...searchParameters, page_size: DANDISETS_PER_PAGE, page: page.value },
+  );
+  searchResults.value = results;
   loading.value = false;
-  searchResults.value = data;
+}
+
+watch(searchParameters, () => {
+  page.value = 1;
+  updateSearchQuery();
 }, { deep: true });
 
 export {
   loading,
+  page,
   searchParameters,
   searchResults,
+  updateSearchQuery,
 };

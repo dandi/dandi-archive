@@ -7,16 +7,10 @@ import SearchResults from '@/components/Search/SearchResults.vue';
   <v-container fluid>
     <v-row no-gutters>
       <v-col cols="3">
-        <span class="text-h4">Search Assets</span>
-        <v-sheet class="ma-2 pa-2">
-          <SearchParameters />
-        </v-sheet>
+        <SearchParameters />
       </v-col>
       <v-col cols="9">
-        <span class="text-h4">Results</span>
-        <v-sheet class="ma-2 pa-2">
-          <SearchResults />
-        </v-sheet>
+        <SearchResults />
       </v-col>
     </v-row>
   </v-container>
