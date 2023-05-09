@@ -31,7 +31,7 @@
     "vue-gtag": "^1.16.1",
     "vue-router": "^3.6.4",
     "vue-social-sharing": "^3.0.8",
-    "vuetify": "~2.3.6"
+    "vuetify": "~2.6.15"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.1",
