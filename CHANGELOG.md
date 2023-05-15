@@ -1,3 +1,15 @@
+# v0.3.35 (Mon May 15 2023)
+
+#### 🐛 Bug Fix
+
+- Add download count tracking to asset blobs [#1570](https://github.com/dandi/dandi-archive/pull/1570) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.34 (Mon May 08 2023)
 
 #### 🐛 Bug Fix
