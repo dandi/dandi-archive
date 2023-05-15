@@ -359,7 +359,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
 import type { User, Version } from '@/types';
 
-import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
+import { draftVersion } from '@/utils/constants';
 import { open as meditorOpen } from '@/components/Meditor/state';
 
 import ValidationErrorDialog from '@/components/DLP/ValidationErrorDialog.vue';
@@ -372,14 +372,6 @@ const PUBLISH_CHECKLIST = [
   'Funding information (DANDI treats funding agencies as contributors, so you can add multiple contributing institutions as needed. If you are the funder, you can add a new contributor of type "organization", uncheck "include contributor in citation", set the role as "dcite:Funder", and include the relevant award information)',
   'References to code in GitHub, related publications, etc.',
 ];
-
-function getValidationErrorIcon(errorField: string): string {
-  const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
-  if (icons.length > 0) {
-    return (VALIDATION_ICONS as any)[icons[0]];
-  }
-  return VALIDATION_ICONS.DEFAULT;
-}
 
 // Sort versions from most recently modified to least recently modified.
 // The DRAFT version is always the first element when present.
