@@ -170,6 +170,8 @@
       <v-divider />
 
       <v-row class="mx-1 my-4 px-4 font-weight-light">
+        <!-- We use DOMPurify to sanitize against XSS -->
+        <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-html="htmlDescription" />
 
         <!-- Truncate text if necessary -->

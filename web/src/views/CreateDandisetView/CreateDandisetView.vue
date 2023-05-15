@@ -39,7 +39,9 @@
             </template>
           </v-switch>
         </div>
-        <div class="text-h4">Title</div>
+        <div class="text-h4">
+          Title
+        </div>
         <div>
           Provide a title for this Dandiset. The title will appear in search
           results and at the top of the home page for this Dandiset, so make it
@@ -55,7 +57,9 @@
           class="my-4"
         />
 
-        <div class="text-h4">Description</div>
+        <div class="text-h4">
+          Description
+        </div>
         <div>
           Provide a description for this Dandiset. This will appear prominently
           under the title in the home page for this Dandiset.
@@ -70,13 +74,18 @@
           class="my-4"
         />
         <div v-if="!embargoed">
-          <div class="text-h4">License</div>
+          <div class="text-h4">
+            License
+          </div>
           <div>
             Select a license under which to share the contents of this Dandiset.
             You can learn more about <a
               href="https://www.dandiarchive.org/handbook/35_data_licenses/"
-              target="_blank" rel="noopener">licenses
-            for Dandisets</a>.
+              target="_blank"
+              rel="noopener"
+            >
+              licenses for Dandisets
+            </a>.
           </div>
           <v-select
             v-model="license"
@@ -88,7 +97,9 @@
           />
         </div>
         <div v-else>
-          <div class="text-h4">NIH Award Number</div>
+          <div class="text-h4">
+            NIH Award Number
+          </div>
           <div>
             Provide an NIH award number for this embargoed Dandiset. Note: this
             can be changed at any time and additional award numbers can be added
@@ -128,11 +139,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router/composables';
+import type { ComputedRef } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import { useRouter } from 'vue-router/composables';
 
-import type { ComputedRef } from 'vue';
 import type { IdentifierForAnAward, LicenseType, License } from '@/types';
 
 // Regular expression to validate an NIH award number.
