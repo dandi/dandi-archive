@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { dandiRest } from '@/rest';
 import { searchParameters } from '../store';
-import SPECIES from './species.json';
 
 const searchTerm = ref<string | null>(null);
 const options = ref<string[]>([]);
 const loading = ref<boolean>(false);
 
-async function populateSpeciesList() {
+async function populateSpeciesList(newSearchTerm: string = '') {
   loading.value = true;
-  // TODO: get species list from server instead
-  options.value = await new Promise((resolve) => resolve(SPECIES));
+  const species: string[] = (await dandiRest.client.get('/search/species', { params: { species: newSearchTerm } })).data;
+  options.value = species;
   loading.value = false;
 }
 

@@ -26,7 +26,7 @@ from dandiapi.api.views import (
     users_me_view,
     users_search_view,
 )
-from dandiapi.search.views import search_assets, search_genotypes
+from dandiapi.search.views import search_assets, search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
 
 router = ExtendedSimpleRouter()
@@ -100,6 +100,7 @@ urlpatterns = [
     ),
     path('api/search/assets', search_assets),
     path('api/search/genotypes', search_genotypes),
+    path('api/search/species', search_species),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
