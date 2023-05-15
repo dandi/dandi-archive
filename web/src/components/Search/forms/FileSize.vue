@@ -10,8 +10,8 @@ const min = computed<number>(() => range.value[0]);
 const max = computed<number>(() => range.value[1]);
 
 watch(range, ([newMin, newMax]) => {
-  searchParameters.file_type_min = newMin;
-  searchParameters.file_type_max = newMax;
+  searchParameters.file_size_min = newMin;
+  searchParameters.file_size_max = newMax;
 });
 
 </script>

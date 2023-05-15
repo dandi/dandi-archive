@@ -5,13 +5,13 @@ import { dandiRest } from '@/rest';
 
 const searchParameters = reactive<{
   file_type?: string;
-  file_type_min: number | null;
-  file_type_max: number | null;
+  file_size_min: number | null;
+  file_size_max: number | null;
   measurement_technique?: string[];
   genotype?: string[];
   species?: string[];
 }>({
-  file_type_max: null, file_type_min: null,
+  file_size_max: null, file_size_min: null,
 });
 const searchResults = ref<Paginated<DandisetSearchResult>>();
 const page = ref<number>(1);
