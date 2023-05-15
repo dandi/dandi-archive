@@ -33,6 +33,7 @@ class DandiMixin(ConfigMixin):
     def mutate_configuration(configuration: type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
+            'dandiapi.analytics.apps.AnalyticsConfig',
             'dandiapi.api.apps.PublishConfig',
             'dandiapi.zarr.apps.ZarrConfig',
         ] + configuration.INSTALLED_APPS
@@ -81,8 +82,10 @@ class DandiMixin(ConfigMixin):
 
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
+    DANDI_DANDISETS_LOG_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_EMBARGO_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = values.Value(default='', environ=True)
+    DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_ZARR_PREFIX_NAME = values.Value(default='zarr', environ=True)
 
     # Mainly applies to unembargo
@@ -138,8 +141,10 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
+    DANDI_DANDISETS_LOG_BUCKET_NAME = 'test-dandiapi-dandisets-logs'
     DANDI_DANDISETS_EMBARGO_BUCKET_NAME = 'test--embargo-dandiapi-dandisets'
     DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = 'test-embargo-prefix/'
+    DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME = 'test-embargo-dandiapi-dandisets-logs'
     DANDI_ZARR_PREFIX_NAME = 'test-zarr'
     DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
 
