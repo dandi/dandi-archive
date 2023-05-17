@@ -74,6 +74,7 @@
           </template>
         </v-list-item-subtitle>
       </v-list-item-content>
+      <slot :name="item.dandiset.identifier" />
     </v-list-item>
   </v-list>
 </template>
