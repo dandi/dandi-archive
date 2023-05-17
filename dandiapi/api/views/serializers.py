@@ -248,7 +248,7 @@ class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
 
         for genotype in self.validated_data.get('genotype', []):
             query_filters['genotype'] |= Q(
-                asset_metadata__wasAttributedTo__0__genotype__name=genotype
+                asset_metadata__wasAttributedTo__0__genotype=genotype
             )
 
         for species in self.validated_data.get('species', []):
