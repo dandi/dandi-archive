@@ -258,9 +258,7 @@ class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
             query_filters['file_size'] &= Q(asset_size__gte=self.validated_data['file_size_min'])
 
         for genotype in self.validated_data.get('genotype', []):
-            query_filters['genotype'] |= Q(
-                asset_metadata__wasAttributedTo__0__genotype=genotype
-            )
+            query_filters['genotype'] |= Q(asset_metadata__wasAttributedTo__0__genotype=genotype)
 
         for species in self.validated_data.get('species', []):
             query_filters['species'] |= Q(asset_metadata__wasAttributedTo__0__species__name=species)
