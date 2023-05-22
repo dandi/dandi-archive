@@ -1,3 +1,6 @@
+from collections import OrderedDict
+from typing import Any
+
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models.query_utils import Q
@@ -183,7 +186,6 @@ class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
         ],
         required=False,
     )
-    # TODO: assert that file_size_max > file_size_min
     file_size_min = serializers.IntegerField(min_value=0, required=False)
     file_size_max = serializers.IntegerField(min_value=0, required=False)
     measurement_technique = serializers.MultipleChoiceField(
@@ -227,6 +229,15 @@ class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
         ],
         required=False,
     )
+
+    def validate(self, data: OrderedDict[str, Any]) -> OrderedDict[str, Any]:
+        if (
+            'file_size_max' in data
+            and 'file_size_min' in data
+            and data['file_size_max'] < data['file_size_min']
+        ):
+            raise serializers.ValidationError('file_size_max must be greater than file_size_min')
+        return data
 
     def to_query_filters(self):
         # create a set of Q object filters for the AssetSearch model
