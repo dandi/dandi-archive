@@ -67,7 +67,12 @@ setup(
         'django-storages[boto3]',
         'gunicorn',
         # Development-only, but required
-        'django-minio-storage',
+        # TODO: starting with v0.5.0, django-minio-storage requires v7
+        # of the minio-py library. minio-py 7 introduces several
+        # breaking changes to the API, and django-s3-file-field is also
+        # incompatible with it since it has minio<7 as a dependency.
+        # Until these issues are resolved, we pin it to an older version.
+        'django-minio-storage<0.5.0',
         'tqdm',
     ],
     extras_require={
