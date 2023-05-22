@@ -147,9 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed, defineComponent, ref, watch,
-} from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import VJsf from '@koumoul/vjsf/lib/VJsf';
 import '@koumoul/vjsf/lib/deps/third-party';
@@ -175,7 +173,6 @@ const props = defineProps({
 });
 const index = ref(-1); // index of item currently being edited
 const currentItem = ref({}); // the item currently being edited
-const isNewItem = ref(true); // determines whether to save existing item or add new one on save
 const formValid = ref(false); // whether or not the current item being edited is valid
 
 // extracts the subschema for the given propKey
@@ -253,11 +250,6 @@ function selectExistingItem(new_index: number) {
   currentItem.value = JSON.parse(JSON.stringify(
     currentModel.value,
   ))[new_index];
-}
-
-function editItem(event: DandiModel) {
-  // select an item from the model to be edited
-  currentItem.value = JSON.parse(JSON.stringify(event));
 }
 
 function reorderItem(event: any) {
