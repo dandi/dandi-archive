@@ -108,7 +108,7 @@ setup(
             'boto3-stubs[s3]==1.26.50',
             'django-stubs==4.2.0',
             'djangorestframework-stubs==3.14.0',
-            'types-setuptools==67.7.0.0',
+            'types-setuptools==67.8.0.0',
         ],
     },
 )
