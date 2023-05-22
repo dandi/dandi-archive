@@ -75,6 +75,7 @@ describe('dandisets page', () => {
       await page.keyboard.press('KeyA');
       await page.keyboard.press('Backspace');
       await page.keyboard.up('ControlLeft');
+      await page.keyboard.press('Tab');
     }
   });
 });

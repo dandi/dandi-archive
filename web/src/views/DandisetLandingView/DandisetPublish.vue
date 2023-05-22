@@ -183,10 +183,7 @@
                     </v-icon>
                   </v-col>
                   <v-spacer />
-                  <v-col
-                    cols="9"
-                    class="py-0"
-                  >
+                  <v-col cols="9">
                     <div
                       v-if="currentDandiset"
                       class="text-caption"
@@ -235,10 +232,7 @@
                     </v-icon>
                   </v-col>
                   <v-spacer />
-                  <v-col
-                    cols="9"
-                    class="py-0"
-                  >
+                  <v-col cols="9">
                     <div
                       v-if="currentDandiset"
                       class="text-caption"
@@ -323,10 +317,7 @@
                     </v-icon>
                   </v-col>
                   <v-spacer />
-                  <v-col
-                    cols="9"
-                    class="py-0"
-                  >
+                  <v-col cols="9">
                     <div
                       v-if="currentDandiset"
                       class="text-caption"
