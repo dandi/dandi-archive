@@ -146,7 +146,7 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import {
   computed, defineComponent, ref, watch,
 } from 'vue';
@@ -159,157 +159,131 @@ import { isEqual } from 'lodash';
 import type { DandiModel } from './types';
 import { editorInterface } from './state';
 
-export default defineComponent({
-  name: 'VjsfWrapper',
-  components: { VJsf },
-  props: {
-    propKey: {
-      type: String,
-      required: true,
-    },
-    options: {
-      type: Object,
-      required: true,
-    },
-    readonly: {
-      type: Boolean,
-      required: true,
-    },
+const props = defineProps({
+  propKey: {
+    type: String,
+    required: true,
   },
-  setup(props) {
-    const index = ref(-1); // index of item currently being edited
-    const currentItem = ref({}); // the item currently being edited
-    const isNewItem = ref(true); // determines whether to save existing item or add new one on save
-    const formValid = ref(false); // whether or not the current item being edited is valid
-
-    // extracts the subschema for the given propKey
-    const schema = computed(
-      // @ts-ignore
-      () => editorInterface.value.complexSchema.properties[props.propKey].items,
-    );
-
-    const currentModel = computed({
-      get: () => editorInterface.value?.complexModel[props.propKey] as DandiModel[],
-      set: (newModel: any) => {
-        editorInterface.value?.setComplexModelProp(props.propKey, newModel);
-        editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
-      },
-    });
-
-    // Update current item if model changed
-    watch(currentModel, (val) => {
-      if (index.value >= 0) {
-        currentItem.value = val[index.value];
-      }
-    });
-
-    // whether the current form has been edited and requires saving
-    const isModified = computed(() => !isEqual(
-      currentItem.value,
-      currentModel.value[index.value],
-    ));
-
-    function setComplexModelProp(event: DandiModel): void {
-      const currentValue = [...currentModel.value];
-      if (index.value >= 0) {
-        currentValue[index.value] = { ...(currentValue[index.value] as DandiModel), ...event };
-      } else {
-        index.value = currentValue.push(event);
-      }
-
-      editorInterface.value?.setComplexModelProp(props.propKey, currentValue);
-    }
-
-    function clearForm() {
-      index.value = -1;
-      currentItem.value = {};
-    }
-
-    function createNewItem() {
-      currentModel.value = [...currentModel.value, currentItem.value];
-      index.value = currentModel.value.length - 1;
-    }
-
-    function saveItem() {
-      // write the item currently being edited into the schema model
-      const newModel = [...currentModel.value];
-      newModel[index.value] = currentItem.value;
-      currentModel.value = newModel;
-      clearForm();
-    }
-
-    function removeItem(index_to_remove: number) {
-      // remove an item from the schema model
-      if (index.value === index_to_remove) {
-        index.value = -1;
-        currentItem.value = {};
-      }
-
-      // Create new value and set
-      const currentValue = [...currentModel.value];
-      currentValue.splice(index_to_remove, 1);
-      currentModel.value = currentValue;
-    }
-
-    function selectExistingItem(new_index: number) {
-      index.value = new_index;
-      // make a deep copy so the schema model isn't modified until this is saved
-      currentItem.value = JSON.parse(JSON.stringify(
-        currentModel.value,
-      ))[new_index];
-    }
-
-    function editItem(event: DandiModel) {
-      // select an item from the model to be edited
-      currentItem.value = JSON.parse(JSON.stringify(event));
-    }
-
-    function reorderItem(event: any) {
-      const { oldIndex, newIndex } = event;
-      if (index.value === oldIndex) {
-        index.value = newIndex;
-      } else if (index.value === newIndex) {
-        index.value = oldIndex;
-      }
-
-      // make a deep clone of the model
-      const newModel = JSON.parse(
-        JSON.stringify(currentModel.value),
-      );
-
-      // Switch items
-      const b = newModel[newIndex];
-      newModel[newIndex] = newModel[oldIndex];
-      newModel[oldIndex] = b;
-
-      // Update
-      currentModel.value = newModel;
-    }
-
-    function formListener() {
-      // record a new transaction whenever the current item is modified
-      editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
-    }
-
-    return {
-      index,
-      setComplexModelProp,
-      removeItem,
-      currentItem,
-      createNewItem,
-      saveItem,
-      schema,
-      currentModel,
-      isNewItem,
-      formValid,
-      selectExistingItem,
-      clearForm,
-      editItem,
-      reorderItem,
-      formListener,
-      isModified,
-      editorInterface,
-    };
+  options: {
+    type: Object,
+    required: true,
+  },
+  readonly: {
+    type: Boolean,
+    required: true,
   },
 });
+const index = ref(-1); // index of item currently being edited
+const currentItem = ref({}); // the item currently being edited
+const isNewItem = ref(true); // determines whether to save existing item or add new one on save
+const formValid = ref(false); // whether or not the current item being edited is valid
+
+// extracts the subschema for the given propKey
+const schema = computed(
+  // @ts-ignore
+  () => editorInterface.value.complexSchema.properties[props.propKey].items,
+);
+
+const currentModel = computed({
+  get: () => editorInterface.value?.complexModel[props.propKey] as DandiModel[],
+  set: (newModel: any) => {
+    editorInterface.value?.setComplexModelProp(props.propKey, newModel);
+    editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
+  },
+});
+
+// Update current item if model changed
+watch(currentModel, (val) => {
+  if (index.value >= 0) {
+    currentItem.value = val[index.value];
+  }
+});
+
+// whether the current form has been edited and requires saving
+const isModified = computed(() => !isEqual(
+  currentItem.value,
+  currentModel.value[index.value],
+));
+
+function setComplexModelProp(event: DandiModel): void {
+  const currentValue = [...currentModel.value];
+  if (index.value >= 0) {
+    currentValue[index.value] = { ...(currentValue[index.value] as DandiModel), ...event };
+  } else {
+    index.value = currentValue.push(event);
+  }
+
+  editorInterface.value?.setComplexModelProp(props.propKey, currentValue);
+}
+
+function clearForm() {
+  index.value = -1;
+  currentItem.value = {};
+}
+
+function createNewItem() {
+  currentModel.value = [...currentModel.value, currentItem.value];
+  index.value = currentModel.value.length - 1;
+}
+
+function saveItem() {
+  // write the item currently being edited into the schema model
+  const newModel = [...currentModel.value];
+  newModel[index.value] = currentItem.value;
+  currentModel.value = newModel;
+  clearForm();
+}
+
+function removeItem(index_to_remove: number) {
+  // remove an item from the schema model
+  if (index.value === index_to_remove) {
+    index.value = -1;
+    currentItem.value = {};
+  }
+
+  // Create new value and set
+  const currentValue = [...currentModel.value];
+  currentValue.splice(index_to_remove, 1);
+  currentModel.value = currentValue;
+}
+
+function selectExistingItem(new_index: number) {
+  index.value = new_index;
+  // make a deep copy so the schema model isn't modified until this is saved
+  currentItem.value = JSON.parse(JSON.stringify(
+    currentModel.value,
+  ))[new_index];
+}
+
+function editItem(event: DandiModel) {
+  // select an item from the model to be edited
+  currentItem.value = JSON.parse(JSON.stringify(event));
+}
+
+function reorderItem(event: any) {
+  const { oldIndex, newIndex } = event;
+  if (index.value === oldIndex) {
+    index.value = newIndex;
+  } else if (index.value === newIndex) {
+    index.value = oldIndex;
+  }
+
+  // make a deep clone of the model
+  const newModel = JSON.parse(
+    JSON.stringify(currentModel.value),
+  );
+
+  // Switch items
+  const b = newModel[newIndex];
+  newModel[newIndex] = newModel[oldIndex];
+  newModel[oldIndex] = b;
+
+  // Update
+  currentModel.value = newModel;
+}
+
+function formListener() {
+  // record a new transaction whenever the current item is modified
+  editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
+}
 </script>
