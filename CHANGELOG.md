@@ -1,3 +1,27 @@
+# v0.3.36 (Tue May 23 2023)
+
+#### 🐛 Bug Fix
+
+- Temporarily disable s3 log file processing [#1604](https://github.com/dandi/dandi-archive/pull/1604) ([@danlamanna](https://github.com/danlamanna))
+- Update caniuse browserslist DB [#1600](https://github.com/dandi/dandi-archive/pull/1600) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Pin `django-minio-storage` [#1597](https://github.com/dandi/dandi-archive/pull/1597) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Make deploy workflow names more consistent [#1596](https://github.com/dandi/dandi-archive/pull/1596) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update vuetify + heroku runtime [#1589](https://github.com/dandi/dandi-archive/pull/1589) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Bump types-setuptools from 67.7.0.0 to 67.8.0.0 [#1602](https://github.com/dandi/dandi-archive/pull/1602) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump flake8-bugbear from 23.3.12 to 23.5.9 [#1591](https://github.com/dandi/dandi-archive/pull/1591) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump mypy from 1.2.0 to 1.3.0 [#1592](https://github.com/dandi/dandi-archive/pull/1592) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.35 (Mon May 15 2023)
 
 #### 🐛 Bug Fix
