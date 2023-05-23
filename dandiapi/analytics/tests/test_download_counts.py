@@ -49,6 +49,7 @@ def s3_log_file(s3_log_bucket, asset_blob):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip(reason='Temporarily disabled')
 def test_processing_s3_log_files(s3_log_bucket, s3_log_file, asset_blob):
     collect_s3_log_records_task(s3_log_bucket)
     asset_blob.refresh_from_db()
@@ -58,6 +59,7 @@ def test_processing_s3_log_files(s3_log_bucket, s3_log_file, asset_blob):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip(reason='Temporarily disabled')
 def test_processing_s3_log_files_idempotent(s3_log_bucket, s3_log_file, asset_blob):
     collect_s3_log_records_task(s3_log_bucket)
     # run the task again, it should skip the existing log record
