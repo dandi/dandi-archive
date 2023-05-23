@@ -226,7 +226,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
     @swagger_auto_schema(
         auto_schema=None,
-        query_serializer=DandisetSearchQueryParameterSerializer(),
+        query_serializer=DandisetSearchQueryParameterSerializer,
         responses={200: DandisetSearchResultListSerializer(many=True)},
     )
     @action(methods=['GET'], detail=False)

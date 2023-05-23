@@ -7,6 +7,7 @@ from django.db.models.query_utils import Q
 from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
+from dandiapi.search.models import AssetSearch
 
 
 def extract_contact_person(version):
@@ -208,27 +209,17 @@ class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
         required=False,
     )
     genotype = serializers.ListField(child=serializers.CharField(), required=False)
-    species = serializers.MultipleChoiceField(
-        choices=[
-            ('Rattus norvegicus - Norway rat', 'Rattus norvegicus - Norway rat'),
-            ('Danio rerio - Zebra fish', 'Danio rerio - Zebra fish'),
-            ('Macaca nemestrina - Pig-tailed macaque', 'Macaca nemestrina - Pig-tailed macaque'),
-            ('Danio rerio - Leopard danio', 'Danio rerio - Leopard danio'),
-            ('Mus musculus - House mouse', 'Mus musculus - House mouse'),
-            ('Cricetulus griseus - Cricetulus aureus', 'Cricetulus griseus - Cricetulus aureus'),
-            ('Drosophila melanogaster - Fruit fly', 'Drosophila melanogaster - Fruit fly'),
-            ('Human', 'Human'),
-            ('Common fruit fly', 'Common fruit fly'),
-            ('Rhesus monkey', 'Rhesus monkey'),
-            ('Drosophila suzukii', 'Drosophila suzukii'),
-            ('Rat; norway rat; rats; brown rat', 'Rat; norway rat; rats; brown rat'),
-            ('Homo sapiens - Human', 'Homo sapiens - Human'),
-            ('House mouse', 'House mouse'),
-            ('Brown rat', 'Brown rat'),
-            ('Macaca mulatta - Rhesus monkey', 'Macaca mulatta - Rhesus monkey'),
-        ],
-        required=False,
-    )
+    species = serializers.MultipleChoiceField(choices=[], required=False)
+
+    def __init__(self, instance=None, data=..., **kwargs) -> None:
+        super().__init__(instance, data, **kwargs)
+        # The queryset can't be evaluated at compile time, so we evaluate it here
+        # in the __init__ method
+        self.fields['species'].choices = list(
+            AssetSearch.objects.values_list(
+                'asset_metadata__wasAttributedTo__0__species__name', flat=True
+            ).distinct()
+        )
 
     def validate(self, data: OrderedDict[str, Any]) -> OrderedDict[str, Any]:
         if (
