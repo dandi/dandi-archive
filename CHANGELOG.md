@@ -1,3 +1,17 @@
+# v0.3.37 (Tue May 23 2023)
+
+#### 🐛 Bug Fix
+
+- Fix URL to the dandi archive repo [#1594](https://github.com/dandi/dandi-archive/pull/1594) ([@yarikoptic](https://github.com/yarikoptic))
+- Fix GUI linting warnings [#1590](https://github.com/dandi/dandi-archive/pull/1590) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.36 (Tue May 23 2023)
 
 #### 🐛 Bug Fix
