@@ -414,7 +414,7 @@ def test_version_rest_info(api_client, version):
         'metadata': version.metadata,
         'size': version.size,
         'status': 'Pending',
-        'asset_validation_errors': {},
+        'asset_validation_errors': [],
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
     }
@@ -434,14 +434,16 @@ def test_version_rest_info_with_asset(
     add_version_asset_paths(version=version)
 
     # Create expected validation errors for pending/validating assets
-    asset_validating_error = {
-        'field': '',
-        'message': 'asset is currently being validated, please wait.',
-    }
-    expected_validation_error = (
-        {asset.path: [asset_validating_error]}
+    expected_validation_errors = (
+        [
+            {
+                'field': '',
+                'message': 'asset is currently being validated, please wait.',
+                'path': asset.path,
+            }
+        ]
         if asset_status in [Asset.Status.PENDING, Asset.Status.VALIDATING]
-        else {}
+        else []
     )
 
     assert api_client.get(
@@ -462,7 +464,7 @@ def test_version_rest_info_with_asset(
         'metadata': version.metadata,
         'size': version.size,
         'status': Asset.Status.VALID,
-        'asset_validation_errors': expected_validation_error,
+        'asset_validation_errors': expected_validation_errors,
         'version_validation_errors': [],
         'contact_person': version.metadata['contributor'][0]['name'],
     }
@@ -537,7 +539,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'metadata': saved_metadata,
         'size': draft_version.size,
         'status': 'Pending',
-        'asset_validation_errors': {},
+        'asset_validation_errors': [],
         'version_validation_errors': [],
         'contact_person': 'Vargas, Getúlio',
     }

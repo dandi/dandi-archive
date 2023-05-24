@@ -72,7 +72,7 @@
           class="overflow-y-auto"
         >
           <v-expansion-panels multiple>
-            <template v-for="(errors, path) in assetValidationErrors">
+            <template v-for="(errors, path) in groupedAssetValidationErrors">
               <v-list-item
                 :key="path"
               >
@@ -144,7 +144,7 @@ import { VALIDATION_ICONS } from '@/utils/constants';
 
 const props = defineProps({
   assetValidationErrors: {
-    type: Object as PropType<Record<string, ValidationError[]>>,
+    type: Array as PropType<ValidationError[]>,
     required: true,
   },
   versionValidationErrors: {
@@ -170,6 +170,17 @@ watch(() => props.selectedTab, (val) => {
 
 const showMetadataTab = computed(() => !!props.versionValidationErrors.length);
 const showAssetsTab = computed(() => !!Object.keys(props.assetValidationErrors));
+const groupedAssetValidationErrors = computed(() => {
+  const path_asset_map: Record<string, ValidationError[]> = {};
+  props.assetValidationErrors.forEach((err) => {
+    if (!(err.path in path_asset_map)) {
+      path_asset_map[err.path] = [];
+    }
+    path_asset_map[err.path].push(err);
+  });
+
+  return path_asset_map;
+});
 
 function getValidationErrorIcon(errorField: string): string {
   const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));

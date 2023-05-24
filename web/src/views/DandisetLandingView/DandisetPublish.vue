@@ -510,9 +510,7 @@ const numAssetValidationErrors = computed(() => {
     return 0;
   }
 
-  return Object.values(
-    currentDandiset.value.asset_validation_errors,
-  ).reduce((sum, errs) => sum + errs.length, 0);
+  return currentDandiset.value.asset_validation_errors.length;
 });
 const publishButtonDisabled = computed(() => !!(
   currentDandiset.value?.version_validation_errors.length

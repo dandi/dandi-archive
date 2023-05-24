@@ -30,6 +30,7 @@ export interface DandisetSearchResult extends Dandiset {
 export interface ValidationError {
   field: string,
   message: string,
+  path: string,
 }
 
 export interface Version {
@@ -43,7 +44,7 @@ export interface Version {
   modified: string,
   dandiset: Dandiset,
   metadata?: DandisetMetadata,
-  asset_validation_errors: Record<string, ValidationError[]>,
+  asset_validation_errors: ValidationError[],
   version_validation_errors: ValidationError[],
   contact_person?: string,
 }
