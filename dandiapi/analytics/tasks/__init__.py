@@ -79,7 +79,11 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
         log.full_clean()
         log.save()
 
-        for blob, download_count in download_counts.items():
-            BlobModel.objects.filter(blob=blob).update(
-                download_count=F('download_count') + download_count
+        # since this is updating a potentially large number of blobs and running in parallel,
+        # it's very susceptible to deadlocking. lock the asset blobs for the duration of this
+        # transaction. this is a quick-ish loop and updates to blobs otherwise are rare.
+        blobs = BlobModel.objects.select_for_update().filter(blob__in=download_counts.keys())
+        for blob in blobs:
+            BlobModel.objects.filter(blob=blob.blob).update(
+                download_count=F('download_count') + download_counts[blob.blob]
             )
