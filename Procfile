@@ -6,6 +6,6 @@ web: gunicorn --bind 0.0.0.0:$PORT dandiapi.wsgi --timeout 25
 # This is OK for now because of how lightweight all high priority tasks currently are,
 # but we may need to switch back to a dedicated worker in the future.
 # The queue `celery` is the default queue.
-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery -B
+worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery,s3-log-processing -B
 # The checksum-worker calculates blob checksums and updates zarr checksum files
 checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q calculate_sha256,ingest_zarr_archive

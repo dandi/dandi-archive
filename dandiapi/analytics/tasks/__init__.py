@@ -33,7 +33,7 @@ def _bucket_objects_after(bucket: str, after: str | None) -> Generator[dict, Non
         yield from page.get('Contents', [])
 
 
-@shared_task(soft_time_limit=60, time_limit=80)
+@shared_task(queue='s3-log-processing', soft_time_limit=60, time_limit=80)
 def collect_s3_log_records_task(bucket: LogBucket) -> None:
     """Dispatch a task per S3 log file to process for download counts."""
     assert bucket in [
@@ -49,7 +49,7 @@ def collect_s3_log_records_task(bucket: LogBucket) -> None:
         process_s3_log_file_task.delay(bucket, s3_log_object['Key'])
 
 
-@shared_task(soft_time_limit=120, time_limit=140)
+@shared_task(queue='s3-log-processing', soft_time_limit=120, time_limit=140)
 def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
     """
     Process a single S3 log file for download counts.
