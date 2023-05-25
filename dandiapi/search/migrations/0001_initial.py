@@ -2,7 +2,7 @@
 # flake8: noqa
 
 from django.contrib.postgres.operations import TrigramExtension
-from django.db import migrations
+from django.db import migrations, models
 
 from dandiapi.api.models.asset import Asset, AssetBlob
 from dandiapi.api.models.version import Version
@@ -41,4 +41,20 @@ class Migration(migrations.Migration):
         ('api', '0041_assetblob_download_count_and_more'),
     ]
 
-    operations = [TrigramExtension(), migrations.RunSQL(raw_sql)]
+    operations = [
+        TrigramExtension(),
+        migrations.RunSQL(raw_sql),
+        migrations.CreateModel(
+            name='AssetSearch',
+            fields=[
+                ('dandiset_id', models.PositiveBigIntegerField()),
+                ('asset_id', models.PositiveBigIntegerField(primary_key=True, serialize=False)),
+                ('asset_metadata', models.JSONField()),
+                ('asset_size', models.PositiveBigIntegerField()),
+            ],
+            options={
+                'db_table': 'asset_search',
+                'managed': False,
+            },
+        ),
+    ]
