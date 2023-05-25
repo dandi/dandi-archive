@@ -4,7 +4,12 @@ from django.db import models
 
 class ProcessedS3Log(models.Model):
     class Meta:
-        unique_together = ['name', 'embargoed']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'embargoed'],
+                name='%(app_label)s_%(class)s_unique_name_embargoed',
+            )
+        ]
 
     name = models.CharField(
         max_length=36,

@@ -3,15 +3,19 @@ from pathlib import Path
 from typing import Generator
 
 from celery.app import shared_task
+from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
 from django.db.models.aggregates import Max
 from django.db.models.expressions import F
+from django.db.utils import IntegrityError
 from s3logparse import s3logparse
 
 from dandiapi.analytics.models import ProcessedS3Log
 from dandiapi.api.models.asset import AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.storage import get_boto_client, get_embargo_storage, get_storage
+
+logger = get_task_logger(__name__)
 
 # should be one of the DANDI_DANDISETS_*_LOG_BUCKET_NAME settings
 LogBucket = str
@@ -75,9 +79,16 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
             download_counts.update({log_entry.s3_key: 1})
 
     with transaction.atomic():
-        log = ProcessedS3Log(name=Path(s3_log_key).name, embargoed=embargoed)
-        log.full_clean()
-        log.save()
+        try:
+            log = ProcessedS3Log(name=Path(s3_log_key).name, embargoed=embargoed)
+            # disable constraint validation checking so duplicate errors can be detected and
+            # ignored. the rest of the full_clean errors should still be raised.
+            log.full_clean(validate_constraints=False)
+            log.save()
+        except IntegrityError as e:
+            if 'unique_name_embargoed' in str(e):
+                logger.info(f'Already processed log file {s3_log_key}, embargo: {embargoed}')
+            return
 
         # since this is updating a potentially large number of blobs and running in parallel,
         # it's very susceptible to deadlocking. lock the asset blobs for the duration of this

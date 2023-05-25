@@ -2,7 +2,7 @@ from django.conf import settings
 import pytest
 
 from dandiapi.analytics.models import ProcessedS3Log
-from dandiapi.analytics.tasks import collect_s3_log_records_task
+from dandiapi.analytics.tasks import collect_s3_log_records_task, process_s3_log_file_task
 from dandiapi.api.storage import (
     create_s3_storage,
     get_boto_client,
@@ -43,7 +43,7 @@ def s3_log_file(s3_log_bucket, asset_blob):
         ),
     )
 
-    yield
+    yield log_file_name
 
     s3.delete_object(Bucket=s3_log_bucket, Key=log_file_name)
 
@@ -59,9 +59,24 @@ def test_processing_s3_log_files(s3_log_bucket, s3_log_file, asset_blob):
 
 @pytest.mark.django_db
 def test_processing_s3_log_files_idempotent(s3_log_bucket, s3_log_file, asset_blob):
+    # this tests that the outer task which collects the log files to process is
+    # idempotent, in other words, it uses StartAfter correctly.
     collect_s3_log_records_task(s3_log_bucket)
     # run the task again, it should skip the existing log record
     collect_s3_log_records_task(s3_log_bucket)
+    asset_blob.refresh_from_db()
+
+    assert ProcessedS3Log.objects.count() == 1
+    assert asset_blob.download_count == 1
+
+
+@pytest.mark.django_db
+def test_processing_s3_log_file_task_idempotent(s3_log_bucket, s3_log_file, asset_blob):
+    # this tests that the inner task which processes a single log file is
+    # idempotent, utilizing the unique constraint on ProcessedS3Log correctly.
+    process_s3_log_file_task(s3_log_bucket, s3_log_file)
+    # run the task again, it should ignore the new log
+    process_s3_log_file_task(s3_log_bucket, s3_log_file)
     asset_blob.refresh_from_db()
 
     assert ProcessedS3Log.objects.count() == 1
