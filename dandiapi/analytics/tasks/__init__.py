@@ -58,7 +58,6 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
     asset blobs. Prevents duplicate processing with a unique constraint on the ProcessedS3Log name
     and embargoed fields.
     """
-    return
     assert bucket in [
         settings.DANDI_DANDISETS_LOG_BUCKET_NAME,
         settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME,
