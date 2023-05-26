@@ -1,3 +1,15 @@
+# v0.3.38 (Fri May 26 2023)
+
+#### 🐛 Bug Fix
+
+- Fix S3 log file processing [#1605](https://github.com/dandi/dandi-archive/pull/1605) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.37 (Tue May 23 2023)
 
 #### 🐛 Bug Fix
