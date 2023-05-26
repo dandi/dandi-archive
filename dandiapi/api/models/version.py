@@ -46,12 +46,15 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     validation_errors = models.JSONField(default=list, blank=True, null=True)
 
     class Meta:
-        unique_together = ['dandiset', 'version']
         constraints = [
+            models.UniqueConstraint(
+                fields=['dandiset', 'version'],
+                name='%(app_label)s_%(class)s_unique_dandiset_version',
+            ),
             models.CheckConstraint(
                 name='version_metadata_has_schema_version',
                 check=Q(metadata__schemaVersion__isnull=False),
-            )
+            ),
         ]
         indexes = [
             HashIndex(fields=['metadata']),
