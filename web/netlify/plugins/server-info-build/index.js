@@ -10,7 +10,7 @@ module.exports = {
     apiUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
     netlifyConfig.redirects.unshift({
       from: '/server-info',
-      to: `${apiUrl}/info/`,
+      to: `${apiUrl}/info/?format=json`,
       status: 200,
     });
   },
