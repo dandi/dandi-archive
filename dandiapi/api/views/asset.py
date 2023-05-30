@@ -172,7 +172,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         method='GET',
         operation_summary='Django serialization of an asset',
         manual_parameters=[ASSET_ID_PARAM],
-        responses={200: AssetDetailSerializer()},
+        responses={200: AssetDetailSerializer},
     )
     @action(methods=['GET', 'HEAD'], detail=True)
     def info(self, *args, **kwargs):
@@ -247,7 +247,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         method='GET',
         operation_summary='Django serialization of an asset',
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        responses={200: AssetDetailSerializer()},
+        responses={200: AssetDetailSerializer},
     )
     @action(detail=True, methods=['GET'])
     def info(self, *args, **kwargs):
@@ -271,7 +271,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     # Remaining actions
 
     @swagger_auto_schema(
-        responses={200: AssetValidationSerializer()},
+        responses={200: AssetValidationSerializer},
         manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         operation_summary='Get any validation errors associated with an asset',
         operation_description='',
@@ -283,9 +283,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=AssetRequestSerializer(),
+        request_body=AssetRequestSerializer,
         responses={
-            200: AssetDetailSerializer(),
+            200: AssetDetailSerializer,
             404: 'If a blob with the given checksum has not been validated',
         },
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
@@ -319,8 +319,8 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=AssetRequestSerializer(),
-        responses={200: AssetDetailSerializer()},
+        request_body=AssetRequestSerializer,
+        responses={200: AssetDetailSerializer},
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         operation_summary='Update the metadata of an asset.',
         operation_description='User must be an owner of the associated dandiset.\
@@ -384,7 +384,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
-    @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer()})
+    @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
         serializer = AssetListSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -418,7 +418,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         return Response(serializer.data)
 
     @swagger_auto_schema(
-        query_serializer=AssetPathsQueryParameterSerializer(),
+        query_serializer=AssetPathsQueryParameterSerializer,
         responses={200: AssetPathsSerializer(many=True)},
     )
     @action(detail=False, methods=['GET'], filter_backends=[])

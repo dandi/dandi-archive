@@ -95,7 +95,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     lookup_value_regex = ZarrArchive.UUID_REGEX
 
     @swagger_auto_schema(
-        query_serializer=ZarrListQuerySerializer(),
+        query_serializer=ZarrListQuerySerializer,
         responses={200: ZarrListSerializer(many=True)},
         operation_summary='List zarr archives.',
     )
@@ -117,8 +117,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
-        request_body=ZarrSerializer(),
-        responses={200: ZarrSerializer()},
+        request_body=ZarrSerializer,
+        responses={200: ZarrSerializer},
         operation_summary='Create a new zarr archive.',
         operation_description='',
     )
@@ -180,7 +180,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             200: 'Listing of s3 objects',
             302: 'Redirect to an object in S3',
         },
-        query_serializer=ZarrExploreInputSerializer(),
+        query_serializer=ZarrExploreInputSerializer,
     )
     @action(methods=['HEAD', 'GET'], detail=True)
     def files(self, request, zarr_id: str):
@@ -253,7 +253,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         request_body=ZarrFileCreationSerializer(),
         responses={
-            200: ZarrFileCreationSerializer(),
+            200: ZarrFileCreationSerializer,
             400: ZarrArchive.INGEST_ERROR_MSG,
         },
         operation_summary='Request to upload files to a zarr archive.',
