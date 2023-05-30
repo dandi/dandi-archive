@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from django.http.response import JsonResponse
 from drf_yasg.utils import swagger_auto_schema
@@ -8,11 +9,16 @@ from rest_framework.permissions import AllowAny
 from dandiapi.search.models import AssetSearch
 
 
-class GenotypeSearchSerializer(serializers.Serializer):
+class SearchSerializer(serializers.Serializer):
+    def to_queryset(self, user: User) -> QuerySet[AssetSearch]:
+        return AssetSearch.objects.visible_to(user)
+
+
+class GenotypeSearchSerializer(SearchSerializer):
     genotype = serializers.CharField(required=False)
 
-    def to_queryset(self, qs: QuerySet[AssetSearch] | None = None) -> QuerySet[AssetSearch]:
-        qs = qs if qs is not None else AssetSearch._default_manager.all()
+    def to_queryset(self, user: User) -> QuerySet[AssetSearch]:
+        qs = super().to_queryset(user)
 
         genotype: str | None = self.validated_data.get('genotype')
         if genotype:
@@ -34,15 +40,14 @@ def search_genotypes(request):
     serializer = GenotypeSearchSerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
 
-    # TODO: filter by permissions (embargo/dandiset owner)
-    return JsonResponse(list(serializer.to_queryset()), safe=False)
+    return JsonResponse(list(serializer.to_queryset(user=request.user)), safe=False)
 
 
-class SpeciesSearchSerializer(serializers.Serializer):
+class SpeciesSearchSerializer(SearchSerializer):
     species = serializers.CharField(required=False)
 
-    def to_queryset(self, qs: QuerySet[AssetSearch] | None = None) -> QuerySet[AssetSearch]:
-        qs = qs if qs is not None else AssetSearch._default_manager.all()
+    def to_queryset(self, user: User) -> QuerySet[AssetSearch]:
+        qs = super().to_queryset(user)
 
         species: str | None = self.validated_data.get('species')
         if species:
@@ -64,5 +69,4 @@ def search_species(request):
     serializer = SpeciesSearchSerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
 
-    # TODO: filter by permissions (embargo/dandiset owner)
-    return JsonResponse(list(serializer.to_queryset()), safe=False)
+    return JsonResponse(list(serializer.to_queryset(user=request.user)), safe=False)
