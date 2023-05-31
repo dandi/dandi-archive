@@ -4,11 +4,12 @@ import Vue from 'vue';
 import { mapState } from 'pinia';
 import OAuthClient from '@girder/oauth-client';
 import type {
-  Asset, Dandiset, Paginated, User, Version, Info, AssetPath, Zarr,
+  Asset, Dandiset, Paginated, User, Version, Info, AssetPath, Zarr, DandisetSearchResult,
 } from '@/types';
 import type { Dandiset as DandisetMetadata, DandisetContributors, Organization } from '@/types/schema';
 // eslint-disable-next-line import/no-cycle
 import { useDandisetStore } from '@/stores/dandiset';
+import qs from 'querystring';
 
 if (!process.env.VUE_APP_DANDI_API_ROOT) {
   throw new Error('Environment variable "VUE_APP_DANDI_API_ROOT" must be set.');
@@ -211,6 +212,15 @@ const dandiRest = new Vue({
         name: metadata.name,
         metadata,
       });
+    },
+    async searchDandisets(
+      parameters: Record<string, any>,
+    ): Promise<Paginated<DandisetSearchResult>> {
+      const { data } = await client.get('/dandisets/search', {
+        params: { ...parameters },
+        paramsSerializer: (params) => qs.stringify(params),
+      });
+      return data;
     },
     async owners(identifier: string): Promise<AxiosResponse<User[]>> {
       return client.get(`dandisets/${identifier}/users/`);

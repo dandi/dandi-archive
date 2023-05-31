@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, F, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
+from django.db.models.query_utils import Q
 from django.http import Http404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -29,9 +30,12 @@ from dandiapi.api.views.serializers import (
     DandisetDetailSerializer,
     DandisetListSerializer,
     DandisetQueryParameterSerializer,
+    DandisetSearchQueryParameterSerializer,
+    DandisetSearchResultListSerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
+from dandiapi.search.models import AssetSearch
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
@@ -97,7 +101,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         # Only include embargoed dandisets which belong to the current user
         queryset = Dandiset.objects
-        if self.action == 'list':
+        if self.action in ['list', 'search']:
             queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
 
             query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
@@ -157,13 +161,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 raise PermissionDenied()
         return dandiset
 
-    @swagger_auto_schema(
-        query_serializer=DandisetQueryParameterSerializer,
-        responses={200: DandisetListSerializer(many=True)},
-    )
-    def list(self, request, *args, **kwargs):
-        qs = self.get_queryset()
-        dandisets = self.paginate_queryset(self.filter_queryset(qs))
+    @staticmethod
+    def _get_dandiset_to_version_map(dandisets):
         relevant_versions = (
             Version.objects.select_related('dandiset')
             .filter(dandiset__in=dandisets)
@@ -223,6 +222,57 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             elif entry['published'] is None:
                 entry['published'] = version
 
+        return dandisets_to_versions
+
+    @swagger_auto_schema(
+        auto_schema=None,
+        query_serializer=DandisetSearchQueryParameterSerializer,
+        responses={200: DandisetSearchResultListSerializer(many=True)},
+    )
+    @action(methods=['GET'], detail=False)
+    def search(self, request, *args, **kwargs):
+        query_serializer = DandisetSearchQueryParameterSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        query_filters = query_serializer.to_query_filters()
+        relevant_assets = AssetSearch.objects.all()
+        for _, query_filter in query_filters.items():
+            relevant_assets = relevant_assets.filter(query_filter)
+        qs = self.get_queryset()
+        dandisets = self.filter_queryset(qs).filter(id__in=relevant_assets.values('dandiset_id'))
+        dandisets = self.paginate_queryset(dandisets)
+        dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
+        dandisets_to_asset_counts = (
+            AssetSearch.objects.values('dandiset_id')
+            .filter(dandiset_id__in=[dandiset.id for dandiset in dandisets])
+            .annotate(
+                **{
+                    filter_name: Count('asset_id', filter=filter)
+                    for filter_name, filter in query_filters.items()
+                    if filter != Q()
+                }
+            )
+        )
+        dandisets_to_asset_counts = {
+            item['dandiset_id']: {
+                field_name: item[field_name] for field_name in item if field_name != 'dandiset_id'
+            }
+            for item in dandisets_to_asset_counts
+        }
+        serializer = DandisetSearchResultListSerializer(
+            dandisets,
+            many=True,
+            context={'dandisets': dandisets_to_versions, 'asset_counts': dandisets_to_asset_counts},
+        )
+        return self.get_paginated_response(serializer.data)
+
+    @swagger_auto_schema(
+        query_serializer=DandisetQueryParameterSerializer,
+        responses={200: DandisetListSerializer(many=True)},
+    )
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        dandisets = self.paginate_queryset(self.filter_queryset(qs))
+        dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
         serializer = DandisetListSerializer(
             dandisets, many=True, context={'dandisets': dandisets_to_versions}
         )

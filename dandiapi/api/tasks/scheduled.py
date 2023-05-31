@@ -11,6 +11,7 @@ from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import connection
 
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
@@ -54,6 +55,13 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
+@shared_task(soft_time_limit=60)
+def refresh_materialized_view_search() -> None:
+    """Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search."""
+    with connection.cursor() as cursor:
+        cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
+
+
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     # Check for any draft versions that need validation every minute
@@ -64,3 +72,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Send daily email to admins containing a list of users awaiting approval
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
+
+    # Refresh the materialized view used by asset search every 10 mins.
+    sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
