@@ -74,8 +74,8 @@ class UploadCompletionResponseSerializer(serializers.Serializer):
     method='POST',
     operation_summary='Fetch an existing asset blob by digest, if it exists.',
     operation_description=f'Supported digest algorithms: {", ".join(supported_digests)}',
-    request_body=DigestSerializer(),
-    responses={200: AssetBlobSerializer()},
+    request_body=DigestSerializer,
+    responses={200: AssetBlobSerializer},
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])
@@ -98,9 +98,9 @@ def blob_read_view(request: Request) -> HttpResponseBase:
 
 @swagger_auto_schema(
     method='POST',
-    request_body=UploadInitializationRequestSerializer(),
+    request_body=UploadInitializationRequestSerializer,
     responses={
-        200: UploadInitializationResponseSerializer(),
+        200: UploadInitializationResponseSerializer,
         409: 'Blob already exists. '
         'The Location header will be set to the UUID of the existing asset blob.',
     },
@@ -174,8 +174,8 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 
 @swagger_auto_schema(
     method='POST',
-    request_body=UploadCompletionRequestSerializer(),
-    responses={200: UploadCompletionResponseSerializer()},
+    request_body=UploadCompletionRequestSerializer,
+    responses={200: UploadCompletionResponseSerializer},
 )
 @api_view(['POST'])
 @parser_classes([JSONParser])

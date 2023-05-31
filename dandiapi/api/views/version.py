@@ -67,7 +67,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
-        responses={200: VersionDetailSerializer()},
+        responses={200: VersionDetailSerializer},
     )
     @action(detail=True, methods=['GET'])
     def info(self, request, **kwargs):
@@ -77,8 +77,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        request_body=VersionMetadataSerializer(),
-        responses={200: VersionDetailSerializer()},
+        request_body=VersionMetadataSerializer,
+        responses={200: VersionDetailSerializer},
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
@@ -114,7 +114,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     @swagger_auto_schema(
         request_body=no_body,
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
-        responses={200: VersionSerializer()},
+        responses={200: VersionSerializer},
     )
     @action(detail=True, methods=['POST'])
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))

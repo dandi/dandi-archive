@@ -158,7 +158,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         return dandiset
 
     @swagger_auto_schema(
-        query_serializer=DandisetQueryParameterSerializer(),
+        query_serializer=DandisetQueryParameterSerializer,
         responses={200: DandisetListSerializer(many=True)},
     )
     def list(self, request, *args, **kwargs):
@@ -229,9 +229,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         return self.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
-        request_body=VersionMetadataSerializer(),
-        query_serializer=CreateDandisetQueryParameterSerializer(),
-        responses={200: DandisetDetailSerializer()},
+        request_body=VersionMetadataSerializer,
+        query_serializer=CreateDandisetQueryParameterSerializer,
+        responses={200: DandisetDetailSerializer},
         operation_summary='Create a new dandiset.',
         operation_description='',
     )
