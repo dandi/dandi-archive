@@ -6,10 +6,16 @@ import SearchResults from '@/components/Search/SearchResults.vue';
 <template>
   <v-container fluid>
     <v-row no-gutters>
-      <v-col cols="3">
+      <v-col
+        md="3"
+        sm="12"
+      >
         <SearchParameters />
       </v-col>
-      <v-col cols="9">
+      <v-col
+        md="9"
+        sm="12"
+      >
         <SearchResults />
       </v-col>
     </v-row>
