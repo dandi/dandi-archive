@@ -15,7 +15,7 @@ const SEARCH_PARAMS = [
 <template>
   <v-container class="pa-3">
     <span class="text-h4">Search Assets</span>
-    <v-sheet class="ma-2 pa-2">
+    <v-sheet class="ma-2">
       <v-card
         v-for="(param, i) in SEARCH_PARAMS"
         :key="i"
