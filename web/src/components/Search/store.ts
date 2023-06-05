@@ -27,7 +27,7 @@ async function updateSearchQuery() {
 watch(searchParameters, () => {
   page.value = 1;
   updateSearchQuery();
-}, { deep: true });
+}, { deep: true, immediate: true });
 
 export {
   loading,
