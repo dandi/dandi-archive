@@ -57,9 +57,14 @@ def send_pending_users_email() -> None:
 
 @shared_task(soft_time_limit=60)
 def refresh_materialized_view_search() -> None:
-    """Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search."""
+    """
+    Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search.
+
+    Note that this is a "concurrent" refresh, which means that the view will be
+    updated without locking the table.
+    """
     with connection.cursor() as cursor:
-        cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
+        cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY asset_search;')
 
 
 def register_scheduled_tasks(sender: Celery, **kwargs):
