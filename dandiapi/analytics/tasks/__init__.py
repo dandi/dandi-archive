@@ -90,11 +90,10 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
                 logger.info(f'Already processed log file {s3_log_key}, embargo: {embargoed}')
             return
 
-        # since this is updating a potentially large number of blobs and running in parallel,
-        # it's very susceptible to deadlocking. lock the asset blobs for the duration of this
-        # transaction. this is a quick-ish loop and updates to blobs otherwise are rare.
-        blobs = BlobModel.objects.select_for_update().filter(blob__in=download_counts.keys())
-        for blob in blobs:
-            BlobModel.objects.filter(blob=blob.blob).update(
-                download_count=F('download_count') + download_counts[blob.blob]
+        # note this task is run serially per log file. this is to avoid the contention between
+        # multiple log files trying to update the same blobs. this serialization is enforced through
+        # the task queue configuration.
+        for blob, download_count in download_counts.items():
+            BlobModel.objects.filter(blob=blob).update(
+                download_count=F('download_count') + download_count
             )
