@@ -1,3 +1,15 @@
+# v0.3.40 (Tue Jun 06 2023)
+
+#### 🐛 Bug Fix
+
+- Serve pure JSON from /server-info frontend endpoint [#1607](https://github.com/dandi/dandi-archive/pull/1607) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.39 (Tue Jun 06 2023)
 
 #### 🐛 Bug Fix
