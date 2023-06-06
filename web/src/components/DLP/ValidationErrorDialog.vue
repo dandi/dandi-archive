@@ -169,7 +169,7 @@ watch(() => props.selectedTab, (val) => {
 });
 
 const showMetadataTab = computed(() => !!props.versionValidationErrors.length);
-const showAssetsTab = computed(() => !!Object.keys(props.assetValidationErrors));
+const showAssetsTab = computed(() => !!Object.keys(props.assetValidationErrors).length);
 const groupedAssetValidationErrors = computed(() => {
   const path_asset_map: Record<string, ValidationError[]> = {};
   props.assetValidationErrors.forEach((err) => {
