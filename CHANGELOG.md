@@ -1,3 +1,23 @@
+# v0.3.39 (Tue Jun 06 2023)
+
+#### 🐛 Bug Fix
+
+- Bump flake8-bugbear from 23.5.9 to 23.6.5 [#1615](https://github.com/dandi/dandi-archive/pull/1615) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Add concurrency=1 worker dyno for processing S3 logs [#1614](https://github.com/dandi/dandi-archive/pull/1614) ([@danlamanna](https://github.com/danlamanna))
+- Load search results on page load [#1613](https://github.com/dandi/dandi-archive/pull/1613) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Refresh search view concurrently [#1612](https://github.com/dandi/dandi-archive/pull/1612) ([@danlamanna](https://github.com/danlamanna))
+- Fix search UI for smaller screens [#1610](https://github.com/dandi/dandi-archive/pull/1610) ([@mvandenburgh](https://github.com/mvandenburgh))
+- New Dandiset Search Interface [#1598](https://github.com/dandi/dandi-archive/pull/1598) ([@danlamanna](https://github.com/danlamanna) [@mvandenburgh](https://github.com/mvandenburgh))
+- Avoid instantiating classes in `swagger_auto_schema` when possible [#1608](https://github.com/dandi/dandi-archive/pull/1608) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.38 (Fri May 26 2023)
 
 #### 🐛 Bug Fix
