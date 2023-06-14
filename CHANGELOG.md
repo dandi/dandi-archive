@@ -1,3 +1,15 @@
+# v0.3.41 (Wed Jun 14 2023)
+
+#### 🐛 Bug Fix
+
+- Add schedule for processing new S3 log files [#1620](https://github.com/dandi/dandi-archive/pull/1620) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.40 (Tue Jun 06 2023)
 
 #### 🐛 Bug Fix
