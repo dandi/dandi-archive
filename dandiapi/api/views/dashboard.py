@@ -97,11 +97,11 @@ def user_approval_view(request, username: str):
         if user.metadata.status == UserMetadata.Status.APPROVED:
             send_approved_user_message(user, social_account)
             user.is_active = True
-            user.save()
         elif user.metadata.status == UserMetadata.Status.REJECTED:
             send_rejected_user_message(user, social_account)
             user.is_active = False
-            user.save()
+
+        user.save()
 
     return render(
         request,
