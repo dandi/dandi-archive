@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import connection
 
+from dandiapi.analytics.tasks import collect_s3_log_records_task
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
@@ -80,3 +81,13 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Refresh the materialized view used by asset search every 10 mins.
     sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
+
+    # Process new S3 logs every hour
+    for log_bucket in [
+        settings.DANDI_DANDISETS_LOG_BUCKET_NAME,
+        settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME,
+    ]:
+        sender.add_periodic_task(
+            timedelta(hours=1),
+            collect_s3_log_records_task.s(log_bucket),
+        )
