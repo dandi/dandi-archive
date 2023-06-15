@@ -1,3 +1,17 @@
+# v0.3.42 (Thu Jun 15 2023)
+
+#### 🐛 Bug Fix
+
+- Improve validation error display [#1579](https://github.com/dandi/dandi-archive/pull/1579) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Rename e2e test package [#1624](https://github.com/dandi/dandi-archive/pull/1624) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.41 (Wed Jun 14 2023)
 
 #### 🐛 Bug Fix
