@@ -21,7 +21,7 @@ beforeEach(async () => {
   await jestPuppeteer.resetBrowser();
   // Widen the viewport to make sure puppeteer can see the full page. If we don't do this then part
   // of the navbar will be collapsed into a hamburger menu, which will break some tests
-  await page.setViewport({ width: 1366, height: 768 });
+  await page.setViewport({ width: 1920, height: 1080 });
   await page.goto(CLIENT_URL, { timeout: 0 });
   await waitForRequestsToFinish();
 });
