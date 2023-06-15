@@ -30,6 +30,7 @@ export interface DandisetSearchResult extends Dandiset {
 export interface ValidationError {
   field: string,
   message: string,
+  path: string,
 }
 
 export interface Version {

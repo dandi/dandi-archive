@@ -200,167 +200,78 @@
       </v-menu>
     </v-row>
 
-    <v-row
-      v-else-if="currentDandiset.version_validation_errors.length "
-      class="my-2 px-1"
-      no-gutters
+    <!-- Dialog where version and asset errors are shown -->
+    <v-dialog v-model="errorDialogOpen">
+      <ValidationErrorDialog
+        :selected-tab="selectedTab"
+        :asset-validation-errors="currentDandiset.asset_validation_errors"
+        :version-validation-errors="currentDandiset.version_validation_errors"
+        :owner="isOwner"
+        @openMeditor="openMeditor"
+      />
+    </v-dialog>
+
+    <!-- Version Validation Errors Button -->
+    <v-card
+      v-if="currentDandiset.version_validation_errors.length"
+      class="my-2 px-1 amber lighten-5 no-text-transform"
+      outlined
+      @click="openErrorDialog('metadata')"
     >
-      <v-menu
-        :nudge-width="200"
-        offset-y
-        open-on-hover
-      >
-        <template #activator="{ on: menu, attrs }">
-          <v-tooltip bottom>
-            <template #activator="{ on: tooltip }">
-              <v-card
-                class="amber lighten-5 no-text-transform"
-                outlined
-                v-bind="attrs"
-                v-on="{ ...tooltip, ...menu }"
-              >
-                <v-row class="align-center px-4">
-                  <v-col
-                    cols="1"
-                    class="justify-center py-0"
-                  >
-                    <v-icon
-                      color="warning"
-                      class="mr-1"
-                    >
-                      mdi-playlist-remove
-                    </v-icon>
-                  </v-col>
-                  <v-spacer />
-                  <v-col cols="9">
-                    <div
-                      v-if="currentDandiset"
-                      class="text-caption"
-                    >
-                      This Dandiset has {{ currentDandiset.version_validation_errors.length }}
-                      metadata validation error(s).
-                    </div>
-                  </v-col>
-                </v-row>
-              </v-card>
-            </template>
-            <span>Fix issues with metadata</span>
-          </v-tooltip>
-        </template>
-        <v-card class="pa-1">
-          <v-list
-            style="max-height: 200px"
-            class="overflow-y-auto"
+      <v-row class="align-center px-4">
+        <v-col
+          cols="1"
+          class="justify-center py-0"
+        >
+          <v-icon
+            color="warning"
+            class="mr-1"
           >
-            <div
-              v-for="(error, index) in currentDandiset.version_validation_errors"
-              :key="index"
-            >
-              <v-list-item>
-                <v-list-item-icon>
-                  <v-icon>
-                    {{ getValidationErrorIcon(error.field) }}
-                  </v-icon>
-                </v-list-item-icon>
-
-                <v-list-item-content>
-                  <template v-if="error.field">
-                    {{ error.field }}:
-                  </template>
-                  {{ error.message }}
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider />
-            </div>
-          </v-list>
-          <v-btn
-            v-if="isOwner"
-            color="primary"
-            @click="openMeditor = true"
+            mdi-playlist-remove
+          </v-icon>
+        </v-col>
+        <v-spacer />
+        <v-col cols="9">
+          <div
+            v-if="currentDandiset"
+            class="text-caption"
           >
-            Fix issues
-          </v-btn>
-        </v-card>
-      </v-menu>
-    </v-row>
+            This Dandiset has {{ currentDandiset.version_validation_errors.length }}
+            metadata validation error(s).
+          </div>
+        </v-col>
+      </v-row>
+    </v-card>
 
-    <v-row
-      v-if="currentDandiset.asset_validation_errors.length"
-      class="my-2 px-1"
-      no-gutters
+    <!-- Asset Validation Errors Button -->
+    <v-card
+      v-if="numAssetValidationErrors"
+      class="my-2 px-1 amber lighten-5 no-text-transform"
+      outlined
+      @click="openErrorDialog('assets')"
     >
-      <v-menu
-
-        :nudge-width="200"
-        offset-y
-        open-on-hover
-      >
-        <template #activator="{ on: menu, attrs }">
-          <v-tooltip bottom>
-            <template #activator="{ on: tooltip }">
-              <v-card
-                class="amber lighten-5 no-text-transform"
-                outlined
-                v-bind="attrs"
-                v-on="{ ...tooltip, ...menu }"
-              >
-                <v-row class="align-center px-4">
-                  <v-col
-                    cols="1"
-                    class="justify-center py-0"
-                  >
-                    <v-icon
-                      color="warning"
-                      class="mr-1"
-                    >
-                      mdi-database-remove
-                    </v-icon>
-                  </v-col>
-                  <v-spacer />
-                  <v-col cols="9">
-                    <div
-                      v-if="currentDandiset"
-                      class="text-caption"
-                    >
-                      This Dandiset has {{ currentDandiset.asset_validation_errors.length }}
-                      asset validation error(s).
-                    </div>
-                  </v-col>
-                </v-row>
-              </v-card>
-            </template>
-            <span>Fix issues with assets</span>
-          </v-tooltip>
-        </template>
-        <v-card class="pa-1">
-          <v-list
-            style="max-height: 200px"
-            class="overflow-y-auto"
+      <v-row class="align-center px-4">
+        <v-col
+          cols="1"
+          class="justify-center py-0"
+        >
+          <v-icon
+            color="warning"
+            class="mr-1"
           >
-            <div
-              v-for="(error, index) in currentDandiset.asset_validation_errors"
-              :key="index"
-            >
-              <v-list-item>
-                <v-list-item-icon>
-                  <v-icon>
-                    {{ getValidationErrorIcon(error.field) }}
-                  </v-icon>
-                </v-list-item-icon>
+            mdi-database-remove
+          </v-icon>
+        </v-col>
+        <v-spacer />
+        <v-col cols="9">
+          <div class="text-caption">
+            This Dandiset has {{ numAssetValidationErrors }}
+            asset validation error(s).
+          </div>
+        </v-col>
+      </v-row>
+    </v-card>
 
-                <v-list-item-content>
-                  <template v-if="error.field">
-                    {{ error.field }}:
-                  </template>
-                  {{ error.message }}
-                </v-list-item-content>
-              </v-list-item>
-              <v-divider />
-            </div>
-          </v-list>
-        </v-card>
-      </v-menu>
-    </v-row>
     <v-row>
       <v-subheader class="mb-2 black--text text-h5">
         This Version
@@ -448,8 +359,10 @@ import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
 import type { User, Version } from '@/types';
 
-import { draftVersion, VALIDATION_ICONS } from '@/utils/constants';
-import { open as openMeditor } from '@/components/Meditor/state';
+import { draftVersion } from '@/utils/constants';
+import { open as meditorOpen } from '@/components/Meditor/state';
+
+import ValidationErrorDialog from '@/components/DLP/ValidationErrorDialog.vue';
 
 const PUBLISH_CHECKLIST = [
   'A descriptive title (e.g., <span class="font-italic">Data related to foraging behavior in bees</span> rather than <span class="font-italic">Smith et al 2022</span>)',
@@ -459,14 +372,6 @@ const PUBLISH_CHECKLIST = [
   'Funding information (DANDI treats funding agencies as contributors, so you can add multiple contributing institutions as needed. If you are the funder, you can add a new contributor of type "organization", uncheck "include contributor in citation", set the role as "dcite:Funder", and include the relevant award information)',
   'References to code in GitHub, related publications, etc.',
 ];
-
-function getValidationErrorIcon(errorField: string): string {
-  const icons = Object.keys(VALIDATION_ICONS).filter((field) => errorField.includes(field));
-  if (icons.length > 0) {
-    return (VALIDATION_ICONS as any)[icons[0]];
-  }
-  return VALIDATION_ICONS.DEFAULT;
-}
 
 // Sort versions from most recently modified to least recently modified.
 // The DRAFT version is always the first element when present.
@@ -586,9 +491,30 @@ onUnmounted(() => {
   window.clearInterval(timer);
 });
 
+// Error dialog
+const errorDialogOpen = ref(false);
+type ErrorCategory = 'metadata' | 'assets';
+const selectedTab = ref<ErrorCategory>('metadata');
+function openErrorDialog(tab: ErrorCategory) {
+  errorDialogOpen.value = true;
+  selectedTab.value = tab;
+}
+
+function openMeditor() {
+  errorDialogOpen.value = false;
+  meditorOpen.value = true;
+}
+
+const numAssetValidationErrors = computed(() => {
+  if (currentDandiset.value === null) {
+    return 0;
+  }
+
+  return currentDandiset.value.asset_validation_errors.length;
+});
 const publishButtonDisabled = computed(() => !!(
   currentDandiset.value?.version_validation_errors.length
-      || currentDandiset.value?.asset_validation_errors.length
+      || numAssetValidationErrors.value
       || currentDandiset.value?.dandiset.embargo_status !== 'OPEN'
       || publishDisabledMessage.value
 ));

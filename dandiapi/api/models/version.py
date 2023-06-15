@@ -81,7 +81,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         return not self.assets.exclude(status=Asset.Status.VALID).exists()
 
     @property
-    def asset_validation_errors(self) -> list[str]:
+    def asset_validation_errors(self) -> list[dict[str, str]]:
         # Import here to avoid dependency cycle
         from .asset import Asset
 
@@ -90,18 +90,25 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             status=Asset.Status.VALID
         ).values('status', 'path', 'validation_errors')
 
-        # Aggregate errors
+        asset_validating_error = {
+            'field': '',
+            'message': 'asset is currently being validated, please wait.',
+        }
+
+        def inject_path(asset: dict, err: dict):
+            return {**err, 'path': asset['path']}
+
+        # Aggregate errors, ensuring the path of the asset is included
         errors = []
         for asset in invalid_assets:
-            if asset['status'] == Asset.Status.INVALID:
-                errors.extend(asset['validation_errors'])
-            else:
-                errors.append(
-                    {
-                        'field': asset['path'],
-                        'message': 'asset is currently being validated, please wait.',
-                    }
-                )
+            # Must be pending or validating
+            if asset['status'] != Asset.Status.INVALID:
+                errors.append(inject_path(asset, asset_validating_error))
+                continue
+
+            # Must be invalid, only add entry in map if it has any errors
+            if asset['validation_errors']:
+                errors.extend([inject_path(asset, err) for err in asset['validation_errors']])
 
         return errors
 
