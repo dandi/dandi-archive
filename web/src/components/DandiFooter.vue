@@ -1,5 +1,8 @@
 <template>
-  <v-footer class="text-body-2">
+  <v-footer
+    class="text-body-2"
+    app
+  >
     <v-container>
       <cookie-law theme="blood-orange">
         <div slot="message">
