@@ -69,7 +69,7 @@ def validate_asset_metadata(*, asset: Asset) -> None:
         asset.versions.filter(version='draft').update(modified=timezone.now())
 
 
-def version_aggregate_assets_summary(version: Version):
+def version_aggregate_assets_summary(version: Version) -> None:
     if version.version != 'draft':
         raise VersionHasBeenPublished()
 
@@ -82,8 +82,6 @@ def version_aggregate_assets_summary(version: Version):
     Version.objects.filter(id=version.id, version='draft').update(
         modified=timezone.now(), metadata=version.metadata
     )
-    version.refresh_from_db()
-    return version
 
 
 def validate_version_metadata(*, version: Version) -> None:
