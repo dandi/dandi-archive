@@ -12,12 +12,19 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import connection
+from django.db.models.query_utils import Q
 
 from dandiapi.analytics.tasks import collect_s3_log_records_task
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
+from dandiapi.api.models.asset import Asset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
-from dandiapi.api.tasks import validate_version_metadata_task, write_manifest_files
+from dandiapi.api.tasks import (
+    validate_asset_metadata_task,
+    validate_version_metadata_task,
+    write_manifest_files,
+)
+from dandiapi.zarr.models import ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
 
@@ -26,6 +33,29 @@ logger = get_task_logger(__name__)
 def aggregate_assets_summary_task(version_id: int):
     version = Version.objects.get(id=version_id)
     version_aggregate_assets_summary(version)
+
+
+@shared_task(soft_time_limit=30)
+def validate_pending_asset_metadata():
+    validatable_assets = (
+        Asset.objects.filter(status=Asset.Status.PENDING)
+        .filter(
+            (Q(blob__isnull=False) & Q(blob__sha256__isnull=False))
+            | (Q(embargoed_blob__isnull=False) & Q(embargoed_blob__sha256__isnull=False))
+            | (
+                Q(zarr__isnull=False)
+                & Q(zarr__checksum__isnull=False)
+                & Q(zarr__status=ZarrArchiveStatus.COMPLETE)
+            )
+        )
+        .values_list('id', flat=True)
+    )
+    validatable_assets_count = validatable_assets.count()
+    if validatable_assets_count > 0:
+        logger.info('Found %s assets to validate', validatable_assets_count)
+        for asset_id in validatable_assets.iterator():
+            # TODO: throttle?
+            validate_asset_metadata_task.delay(asset_id)
 
 
 @shared_task(soft_time_limit=20)
@@ -74,6 +104,11 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_draft_version_metadata.s(),
+    )
+    # Check for any assets that need validation every minute
+    sender.add_periodic_task(
+        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
+        validate_pending_asset_metadata.s(),
     )
 
     # Send daily email to admins containing a list of users awaiting approval

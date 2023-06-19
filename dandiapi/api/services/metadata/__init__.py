@@ -59,11 +59,17 @@ def validate_asset_metadata(*, asset: Asset) -> None:
             asset.status = Asset.Status.INVALID
             asset.validation_errors = [{'field': '', 'message': str(e)}]
 
-        # Save asset
-        asset.save()
-
-        # Update modified timestamps on all draft versions this asset belongs to
-        asset.versions.filter(version='draft').update(modified=timezone.now())
+        updated_asset = Asset.objects.filter(
+            id=asset.id, status=Asset.Status.PENDING, metadata=asset.metadata, published=False
+        ).update(
+            status=asset.status,
+            validation_errors=asset.validation_errors,
+            # include metadata in update since we're bypassing .save()
+            metadata=asset._populate_metadata(),
+        )
+        if updated_asset:
+            # Update modified timestamps on all draft versions this asset belongs to
+            asset.versions.filter(version='draft').update(modified=timezone.now())
 
 
 def version_aggregate_assets_summary(version: Version) -> None:
