@@ -17,8 +17,7 @@ logger = get_task_logger(__name__)
 
 
 @shared_task(queue='calculate_sha256', soft_time_limit=86_400)
-@atomic
-def calculate_sha256(blob_id: int) -> None:
+def calculate_sha256(blob_id: str) -> None:
     try:
         asset_blob = AssetBlob.objects.get(blob_id=blob_id)
         logger.info(f'Found AssetBlob {blob_id}')
