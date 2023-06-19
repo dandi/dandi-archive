@@ -1,3 +1,15 @@
+# v0.3.44 (Mon Jun 19 2023)
+
+#### 🐛 Bug Fix
+
+- Prevent race condition during zarr ingestion [#1630](https://github.com/dandi/dandi-archive/pull/1630) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.43 (Mon Jun 19 2023)
 
 #### 🐛 Bug Fix
