@@ -1,6 +1,5 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db import transaction
 from django.db.transaction import atomic
 
 from dandiapi.api.doi import delete_doi
@@ -31,19 +30,6 @@ def calculate_sha256(blob_id: str) -> None:
 
     asset_blob.sha256 = sha256
     asset_blob.save()
-
-    # The newly calculated sha256 digest will be included in the metadata, so we need to revalidate
-    # Note, we use `.iterator` here and delay each validation as a new task in order to keep memory
-    # usage down.
-    def dispatch_validation():
-        for asset_id in asset_blob.assets.values_list('id', flat=True).iterator():
-            # Note: while asset metadata is fairly lightweight compute-wise, memory-wise it can
-            # become an issue during serialization/deserialization of the JSON blob by pydantic.
-            # Therefore, we delay each validation to its own task.
-            validate_asset_metadata_task.delay(asset_id)
-
-    # Run on transaction commit
-    transaction.on_commit(dispatch_validation)
 
 
 @shared_task(soft_time_limit=60)

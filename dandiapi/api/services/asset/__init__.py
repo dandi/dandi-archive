@@ -10,7 +10,6 @@ from dandiapi.api.services.asset.exceptions import (
     DraftDandisetNotModifiable,
     ZarrArchiveBelongsToDifferentDandiset,
 )
-from dandiapi.api.services.asset.metadata import _maybe_validate_asset_metadata
 from dandiapi.zarr.models import ZarrArchive
 
 
@@ -147,13 +146,6 @@ def add_asset_to_version(
         version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
-
-    # The sha256 may have been newly calculated in the time since the asset was created. If so, we
-    # need to fetch the latest record from the DB so that _maybe_validate_asset_metadata sees the
-    # new sha256 value and includes it in the asset metadata properly.
-    asset.refresh_from_db()
-
-    _maybe_validate_asset_metadata(asset)
 
     return asset
 
