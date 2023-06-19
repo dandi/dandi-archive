@@ -74,7 +74,9 @@ def version_aggregate_assets_summary(version: Version):
         raise VersionHasBeenPublished()
 
     version.metadata['assetsSummary'] = aggregate_assets_summary(
-        version.assets.values_list('metadata', flat=True).iterator()
+        version.assets.filter(status=Asset.Status.VALID)
+        .values_list('metadata', flat=True)
+        .iterator()
     )
 
     Version.objects.filter(id=version.id, version='draft').update(
