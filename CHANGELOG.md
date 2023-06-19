@@ -1,3 +1,19 @@
+# v0.3.43 (Mon Jun 19 2023)
+
+#### 🐛 Bug Fix
+
+- Add app prop to footer [#1622](https://github.com/dandi/dandi-archive/pull/1622) ([@marySalvi](https://github.com/marySalvi))
+- Limit aggregate asset summaries to valid assets [#1629](https://github.com/dandi/dandi-archive/pull/1629) ([@danlamanna](https://github.com/danlamanna))
+- Fix user approval workflow [#1621](https://github.com/dandi/dandi-archive/pull/1621) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 3
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.42 (Thu Jun 15 2023)
 
 #### 🐛 Bug Fix
