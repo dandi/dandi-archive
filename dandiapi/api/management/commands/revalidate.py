@@ -22,7 +22,8 @@ def revalidate(assets: bool, versions: bool, revalidate_all: bool, dry_run: bool
         click.echo(f'Revalidating {asset_qs.count()} assets')
         if not dry_run:
             for asset in asset_qs.iterator():
-                validate_asset_metadata(asset=asset)
+                if not validate_asset_metadata(asset=asset):
+                    click.echo(f'Unable to validate asset {asset.id}', err=True, fg='yellow')
 
     if versions:
         # Only revalidate draft versions

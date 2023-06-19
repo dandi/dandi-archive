@@ -33,12 +33,15 @@ def _collect_validation_errors(
     return [encoder(error) for error in error.errors]
 
 
-def validate_asset_metadata(*, asset: Asset) -> None:
+def validate_asset_metadata(*, asset: Asset) -> bool:
     logger.info('Validating asset metadata for asset %s', asset.id)
 
     # Published assets are immutable
     if asset.published:
         raise AssetHasBeenPublished()
+
+    # track the state of the asset before to use optimistic locking
+    asset_state = asset.status
 
     with transaction.atomic():
         try:
@@ -59,11 +62,21 @@ def validate_asset_metadata(*, asset: Asset) -> None:
             asset.status = Asset.Status.INVALID
             asset.validation_errors = [{'field': '', 'message': str(e)}]
 
-        # Save asset
-        asset.save()
+        updated_asset = Asset.objects.filter(
+            id=asset.id, status=asset_state, metadata=asset.metadata, published=False
+        ).update(
+            status=asset.status,
+            validation_errors=asset.validation_errors,
+            # include metadata in update since we're bypassing .save()
+            metadata=asset._populate_metadata(),
+        )
+        if updated_asset:
+            # Update modified timestamps on all draft versions this asset belongs to
+            asset.versions.filter(version='draft').update(modified=timezone.now())
+        else:
+            logger.info('Asset %s was modified while validating', asset.id)
 
-        # Update modified timestamps on all draft versions this asset belongs to
-        asset.versions.filter(version='draft').update(modified=timezone.now())
+        return updated_asset
 
 
 def version_aggregate_assets_summary(version: Version) -> None:
