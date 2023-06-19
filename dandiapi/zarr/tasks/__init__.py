@@ -30,7 +30,9 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
 
     # Zarr is in correct state, lock until ingestion finishes
     with transaction.atomic():
-        zarr = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
+        zarr = ZarrArchive.objects.select_for_update().get(
+            zarr_id=zarr_id, status=ZarrArchiveStatus.INGESTING
+        )
 
         # Remove all asset paths associated with this zarr before ingest
         delete_zarr_paths(zarr)
