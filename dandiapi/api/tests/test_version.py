@@ -10,6 +10,8 @@ from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.services.metadata import version_aggregate_assets_summary
+
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
@@ -226,6 +228,15 @@ def test_version_metadata_assets_summary_missing(version, asset):
 
     # Verify that an Asset with no aggregatable metadata doesn't break anything
     version.save()
+
+
+@pytest.mark.django_db
+def test_version_aggregate_assets_summary_valid_assets(draft_version, draft_asset_factory):
+    valid_asset = draft_asset_factory(status=Asset.Status.VALID)
+    invalid_asset = draft_asset_factory(status=Asset.Status.INVALID)
+    draft_version.assets.add(valid_asset, invalid_asset)
+    version_aggregate_assets_summary(draft_version)
+    assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 1
 
 
 @pytest.mark.django_db
