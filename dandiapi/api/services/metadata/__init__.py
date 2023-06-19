@@ -41,9 +41,6 @@ def validate_asset_metadata(*, asset: Asset) -> None:
         raise AssetHasBeenPublished()
 
     with transaction.atomic():
-        asset.status = Asset.Status.VALIDATING
-        asset.save()
-
         try:
             metadata = asset.published_metadata()
             validate(metadata, schema_key='PublishedAsset', json_validation=True)
