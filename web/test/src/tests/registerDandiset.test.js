@@ -23,6 +23,7 @@ describe('dandiset registration page', () => {
 
     await expect(page).toFillXPath(vTextField('Title'), name);
     await expect(page).toFillXPath(vTextarea('Description'), description);
+    // eslint-disable-next-line no-undef
     await page.evaluate(() => document.querySelector('button[type="submit"]').scrollIntoView());
     await expect(page).toClickXPath('//label[contains(.,"License")]/following::input[1]');
     await page.waitForTimeout(500); // Give dropdown time to render
