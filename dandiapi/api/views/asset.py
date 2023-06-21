@@ -160,7 +160,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 return HttpResponse(
                     f"""
                     <video autoplay muted controls>
-                        <source src="{url}" type="video/mp4">
+                        <source src="{url}">
                     </video>
                 """,
                     content_type='text/html',
