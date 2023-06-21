@@ -3,7 +3,7 @@
     class="grey darken-3 pa-0"
     fluid
   >
-    <v-row class="py-6">
+    <v-row class="py-6 mt-2">
       <template v-for="stat in stats">
         <v-col
           :key="stat.name"
@@ -19,13 +19,6 @@
             :href="stat.href"
           />
         </v-col>
-        <!-- TODO dividers destroy the grid system breakpoints
-        <v-divider
-          :key="stat.name + '-divider'"
-          vertical
-          class="grey"
-        />
-        -->
       </template>
     </v-row>
   </v-container>

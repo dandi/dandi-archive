@@ -1,11 +1,9 @@
 <template>
-  <v-container
-    fluid
-    class="py-0 px-8"
-    data-id="stat"
-    :data-name="name"
-  >
-    <v-row class="text-h3 font-weight-thin text-center white--text">
+  <div>
+    <v-row
+      class="text-h3 font-weight-thin text-center white--text"
+      no-gutters
+    >
       <v-col
         class="pa-0"
         data-id="value"
@@ -13,7 +11,10 @@
         {{ value }}
       </v-col>
     </v-row>
-    <v-row class="text-h6 font-weight-light text-center light-blue--text text--lighten-1">
+    <v-row
+      class="text-h6 font-weight-light text-center light-blue--text text--lighten-1"
+      no-gutters
+    >
       <v-col
         class="pa-0"
         data-id="name"
@@ -43,7 +44,7 @@
         </v-tooltip>
       </v-col>
     </v-row>
-  </v-container>
+  </div>
 </template>
 
 <script lang="ts">
