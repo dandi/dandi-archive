@@ -41,9 +41,7 @@
         <DandisetSearchField :dense="false" />
       </v-col>
     </v-row>
-    <v-row class="flex-grow-0">
-      <StatsBar />
-    </v-row>
+    <StatsBar />
   </v-container>
 </template>
 
