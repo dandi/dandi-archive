@@ -109,6 +109,7 @@ export async function registerDandiset(name, description) {
   await expect(page).toClickXPath(vBtn('New Dandiset'));
   await expect(page).toFillXPath(vTextField('Title'), name);
   await expect(page).toFillXPath(vTextarea('Description'), description);
+  await page.evaluate(() => document.querySelector('button[type="submit"]').scrollIntoView());
   await expect(page).toClickXPath('//label[contains(.,"License")]/following::input[1]');
   await page.waitForTimeout(500); // Give dropdown time to render
   await expect(page).toClickXPath(vListItem('spdx:CC0-1.0'));
