@@ -16,6 +16,7 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetPathConflict
 from dandiapi.api.services.publish import publish_asset
+from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
 from dandiapi.zarr.models import ZarrArchive
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -101,6 +102,7 @@ def test_publish_asset(draft_asset: Asset):
 
     # draft_asset has been published, so it is now published_asset
     published_asset = draft_asset
+    published_asset.refresh_from_db()
 
     assert published_asset.blob == draft_blob
     assert published_asset.metadata == {
@@ -707,7 +709,8 @@ def test_asset_create_zarr_validated(
     zarr_file_factory(zarr_archive=zarr_archive)
     api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
 
-    # Since tasks run synchronously in tests, the assets should be validated now
+    validate_pending_asset_metadata()
+
     asset1.refresh_from_db()
     asset2.refresh_from_db()
     assert asset1.status == Asset.Status.VALID
