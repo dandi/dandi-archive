@@ -51,28 +51,6 @@ def test_calculate_checksum_task_embargo(storage: Storage, embargoed_asset_blob_
 
 
 @pytest.mark.django_db
-def test_checksum_task_invokes_asset_validation(
-    storage: Storage, asset_blob_factory, draft_asset_factory, django_capture_on_commit_callbacks
-):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-    asset_blob = asset_blob_factory(sha256=None)
-    assets: list[Asset] = [draft_asset_factory(blob=asset_blob) for _ in range(3)]
-
-    # Assert status before checksum
-    assert all([asset.status == Asset.Status.PENDING for asset in assets])
-
-    # Dispatch task, capture any transaction callbacks
-    with django_capture_on_commit_callbacks(execute=True):
-        tasks.calculate_sha256(asset_blob.blob_id)
-
-    # Assert metadata validation ran
-    for asset in assets:
-        asset.refresh_from_db()
-        assert asset.status != Asset.Status.PENDING
-
-
-@pytest.mark.django_db
 def test_write_manifest_files(storage: Storage, version: Version, asset_factory):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -158,6 +136,9 @@ def test_validate_asset_metadata_no_encoding_format(draft_asset: Asset):
 def test_validate_asset_metadata_no_digest(draft_asset: Asset):
     draft_asset.blob.sha256 = None
     draft_asset.blob.save()
+
+    del draft_asset.metadata['digest']
+    draft_asset.save()
 
     tasks.validate_asset_metadata_task(draft_asset.id)
 

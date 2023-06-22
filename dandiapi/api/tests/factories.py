@@ -208,6 +208,7 @@ class PublishedAssetFactory(DraftAssetFactory):
         asset.status = Asset.Status.VALID  # published assets are always valid
         asset.save()
         publish_asset(asset=asset)
+        asset.refresh_from_db()
         return asset
 
 
