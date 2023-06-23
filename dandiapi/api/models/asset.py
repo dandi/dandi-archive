@@ -12,6 +12,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -254,19 +256,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
-        if self.is_blob:
-            s3_url = self.blob.s3_url
-        elif self.is_embargoed_blob:
-            s3_url = self.embargoed_blob.s3_url
-        else:
-            s3_url = self.zarr.s3_url
-
         metadata = {
             **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),
-            'contentUrl': [download_url, s3_url],
+            'contentUrl': [download_url, self.s3_url],
             'contentSize': self.size,
             'digest': self.digest,
         }
@@ -288,10 +283,6 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'publishedBy': self.published_by(now),
             'datePublished': now.isoformat(),
         }
-
-    def save(self, *args, **kwargs):
-        self.metadata = self._populate_metadata()
-        super().save(*args, **kwargs)
 
     @classmethod
     def strip_metadata(cls, metadata):
@@ -325,3 +316,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             # so no point of adding EmbargoedZarr here since would also result in error
             # TODO: add EmbagoedZarr whenever supported
         )
+
+
+# Populate the metadata of an asset once at creation
+@receiver(pre_save, sender=Asset)
+def populate_asset_metadata(instance: Asset, **kwargs):
+    if instance.pk is None:
+        instance.metadata = instance._populate_metadata()

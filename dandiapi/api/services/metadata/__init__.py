@@ -61,12 +61,7 @@ def validate_asset_metadata(*, asset: Asset) -> None:
 
         updated_asset = Asset.objects.filter(
             id=asset.id, status=Asset.Status.PENDING, metadata=asset.metadata, published=False
-        ).update(
-            status=asset.status,
-            validation_errors=asset.validation_errors,
-            # include metadata in update since we're bypassing .save()
-            metadata=asset._populate_metadata(),
-        )
+        ).update(status=asset.status, validation_errors=asset.validation_errors)
         if updated_asset:
             # Update modified timestamps on all draft versions this asset belongs to
             asset.versions.filter(version='draft').update(modified=timezone.now())

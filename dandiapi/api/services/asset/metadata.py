@@ -7,5 +7,5 @@ from dandiapi.api.models.asset import Asset
 def bulk_recalculate_asset_metadata(*, assets: QuerySet[Asset]):
     with transaction.atomic():
         for asset in assets.iterator():
-            # populates metadata
+            asset.metadata = asset._populate_metadata()
             asset.save()

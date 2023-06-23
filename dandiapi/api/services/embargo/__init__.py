@@ -46,7 +46,9 @@ def _unembargo_asset(asset: Asset):
         asset.blob.save()
 
     # Save updated blob field
+    # TODO: Use select_for_update?
     asset.embargoed_blob = None
+    asset.metadata = asset._populate_metadata()
     asset.save()
 
 

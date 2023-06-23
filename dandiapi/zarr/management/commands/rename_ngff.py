@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.db import transaction
 import djclick as click
 
+from dandiapi.api.models.asset import Asset
 from dandiapi.zarr.models import ZarrArchive
 
 
@@ -40,5 +41,7 @@ def rename_ngff(dandiset_id: int | None):
                         click.echo(
                             f'  Renaming Asset ({asset.id}) path from {asset.path} to {new_path}.'
                         )
-                        asset.path = new_path
-                        asset.save(update_fields=['path'])
+                        # TODO: Optimize to use F objects
+                        Asset.objects.filter(id=asset.id).update(
+                            path=new_path, metadata__path=new_path
+                        )
