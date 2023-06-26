@@ -254,19 +254,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
         )
-        if self.is_blob:
-            s3_url = self.blob.s3_url
-        elif self.is_embargoed_blob:
-            s3_url = self.embargoed_blob.s3_url
-        else:
-            s3_url = self.zarr.s3_url
-
         metadata = {
             **self.metadata,
             'id': f'dandiasset:{self.asset_id}',
             'path': self.path,
             'identifier': str(self.asset_id),
-            'contentUrl': [download_url, s3_url],
+            'contentUrl': [download_url, self.s3_url],
             'contentSize': self.size,
             'digest': self.digest,
         }
