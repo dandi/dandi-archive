@@ -42,6 +42,4 @@ def rename_ngff(dandiset_id: int | None):
                             f'  Renaming Asset ({asset.id}) path from {asset.path} to {new_path}.'
                         )
                         # TODO: Optimize to use F objects
-                        Asset.objects.filter(id=asset.id).update(
-                            path=new_path, metadata__path=new_path
-                        )
+                        Asset.objects.filter(id=asset.id).update_with_metadata(path=new_path)

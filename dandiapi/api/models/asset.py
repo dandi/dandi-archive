@@ -116,7 +116,30 @@ class EmbargoedAssetBlob(BaseAssetBlob):
         ]
 
 
+class AssetQuerySet(models.QuerySet):
+    def update_with_metadata(
+        self,
+        path: str | None = None,
+        s3_url: str | None = None,
+        size: int | None = None,
+        digest: str | None = None,
+    ) -> int:
+        kwargs = {}
+        if path is not None:
+            kwargs['path'] = path
+            kwargs['metadata__path'] = path
+        if s3_url is not None:
+            kwargs['contentUrl__1'] = s3_url
+        if size is not None:
+            kwargs['contentSize'] = size
+        if digest is not None:
+            kwargs['digest'] = digest
+
+        return self.update(**kwargs)
+
+
 class Asset(PublishableMetadataMixin, TimeStampedModel):
+    objects = AssetQuerySet.as_manager()
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
     class Status(models.TextChoices):

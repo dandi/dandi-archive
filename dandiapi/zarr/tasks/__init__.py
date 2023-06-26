@@ -7,7 +7,6 @@ from zarr_checksum import compute_zarr_checksum
 from zarr_checksum.generators import S3ClientOptions, yield_files_s3
 
 from dandiapi.api.asset_paths import add_zarr_paths, delete_zarr_paths
-from dandiapi.api.models.asset import Asset
 from dandiapi.api.storage import get_storage_params
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
@@ -61,7 +60,7 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         zarr.save()
 
         # Update size and digest of any assets that point to this zarr
-        zarr.assets.update(metadata__contentSize=zarr.size, metadata__digest=zarr.digest)
+        zarr.assets.update_with_metadata(size=zarr.size, digest=zarr.digest)
 
         # Add asset paths after ingest is finished
         add_zarr_paths(zarr)

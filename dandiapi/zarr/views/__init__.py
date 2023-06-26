@@ -313,13 +313,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive.delete_files(paths)
 
             # Update metadata for any assets associated with this zarr
-            # for asset in zarr_archive.assets.select_for_update():
-            #     asset.metadata = asset._populate_metadata()
-            #     asset.save()
-            zarr_archive.assets.update(
-                metadata__contentSize=zarr_archive.size,
-                metadata__contentUrl__1=zarr_archive.s3_url,
-                metadata__digest=zarr_archive.digest,
+            zarr_archive.assets.update_with_metadata(
+                size=zarr_archive.size, s3_url=zarr_archive.s3_url, digest=zarr_archive.digest
             )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
