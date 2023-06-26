@@ -1,3 +1,18 @@
+# v0.3.45 (Mon Jun 26 2023)
+
+#### 🐛 Bug Fix
+
+- Update VJSF/ajv dependencies, refactor VJSF component to use `<script setup>` [#1599](https://github.com/dandi/dandi-archive/pull/1599) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove excess rows to fix responsive view of stats bar [#1633](https://github.com/dandi/dandi-archive/pull/1633) ([@marySalvi](https://github.com/marySalvi))
+- add scrollIntoView for UI tests [#1632](https://github.com/dandi/dandi-archive/pull/1632) ([@marySalvi](https://github.com/marySalvi))
+
+#### Authors: 2
+
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.44 (Mon Jun 19 2023)
 
 #### 🐛 Bug Fix
