@@ -12,11 +12,11 @@
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
     "@girder/oauth-client": "^0.8.0",
-    "@koumoul/vjsf": "^2.5.2",
+    "@koumoul/vjsf": "^2.21.4",
     "@sentry/integrations": "^7.13.0",
     "@sentry/tracing": "^7.13.0",
     "@sentry/vue": "^7.13.0",
-    "ajv": "^8.3.0",
+    "ajv": "^8.12.0",
     "axios": "^0.21.2",
     "core-js": "^3.12.1",
     "dompurify": "^3.0.1",
