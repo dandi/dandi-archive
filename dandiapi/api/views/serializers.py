@@ -338,6 +338,7 @@ class AssetSerializer(serializers.ModelSerializer):
 
     blob = EmbargoedSlugRelatedField(slug_field='blob_id', read_only=True)
     zarr = serializers.SlugRelatedField(slug_field='zarr_id', read_only=True)
+    metadata = serializers.SerializerMethodField()
 
     def __init__(self, *args, metadata=True, **kwargs):
         # Instantiate the superclass normally
@@ -346,6 +347,9 @@ class AssetSerializer(serializers.ModelSerializer):
         # Don't include metadata unless specified
         if not metadata:
             self.fields.pop('metadata')
+
+    def get_metadata(self, obj: Asset):
+        return obj._populate_metadata()
 
 
 class AssetDetailSerializer(AssetSerializer):

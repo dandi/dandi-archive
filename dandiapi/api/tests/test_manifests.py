@@ -42,7 +42,7 @@ def test_write_assets_jsonld(storage: Storage, version: Version, asset_factory):
     version.assets.add(asset_factory())
 
     write_assets_jsonld(version)
-    expected = JSONRenderer().render([asset.metadata for asset in version.assets.all()])
+    expected = JSONRenderer().render([asset._populate_metadata() for asset in version.assets.all()])
 
     assets_jsonld_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -59,6 +59,7 @@ def test_write_collection_jsonld(storage: Storage, version: Version, asset):
     AssetBlob.blob.field.storage = storage
 
     version.assets.add(asset)
+    asset_metadata = asset._populate_metadata()
 
     write_collection_jsonld(version)
     expected = JSONRenderer().render(
@@ -66,7 +67,7 @@ def test_write_collection_jsonld(storage: Storage, version: Version, asset):
             '@context': version.metadata['@context'],
             'id': version.metadata['id'],
             '@type': 'prov:Collection',
-            'hasMember': [asset.metadata['id']],
+            'hasMember': [asset_metadata['id']],
         }
     )
 
@@ -105,7 +106,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     version.assets.add(asset_factory())
 
     write_assets_yaml(version)
-    expected = YAMLRenderer().render([asset.metadata for asset in version.assets.all()])
+    expected = YAMLRenderer().render([asset._populate_metadata() for asset in version.assets.all()])
 
     assets_yaml_path = (
         f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -152,7 +153,7 @@ def test_write_assets_yaml_already_exists(storage: Storage, version: Version, as
     storage.save(assets_yaml_path, ContentFile(b'wrong contents'))
 
     write_assets_yaml(version)
-    expected = YAMLRenderer().render([asset.metadata for asset in version.assets.all()])
+    expected = YAMLRenderer().render([asset._populate_metadata() for asset in version.assets.all()])
 
     with storage.open(assets_yaml_path) as f:
         assert f.read() == expected

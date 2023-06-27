@@ -106,7 +106,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
-        return Response(asset.metadata)
+        return Response(asset._populate_metadata())
 
     @swagger_auto_schema(
         method='GET',

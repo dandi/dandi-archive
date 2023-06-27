@@ -249,6 +249,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
         return False
 
+    @staticmethod
+    def dandi_asset_id(asset_id: str | uuid.UUID):
+        return f'dandiasset:{asset_id}'
+
     def _populate_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
             'asset-download',
@@ -256,7 +260,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         )
         metadata = {
             **self.metadata,
-            'id': f'dandiasset:{self.asset_id}',
+            'id': self.dandi_asset_id(self.asset_id),
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, self.s3_url],
@@ -277,14 +281,10 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         now = datetime.datetime.now(datetime.timezone.utc)
         # Inject the publishedBy and datePublished fields
         return {
-            **self.metadata,
+            **self._populate_metadata(),
             'publishedBy': self.published_by(now),
             'datePublished': now.isoformat(),
         }
-
-    def save(self, *args, **kwargs):
-        self.metadata = self._populate_metadata()
-        super().save(*args, **kwargs)
 
     @classmethod
     def strip_metadata(cls, metadata):

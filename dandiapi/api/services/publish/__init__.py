@@ -152,6 +152,8 @@ def _publish_dandiset(dandiset_id: int) -> None:
         for draft_asset in draft_assets.iterator():
             publish_asset(asset=draft_asset)
 
+        # Since all assets in new_version are published, their metadata is already compliant,
+        # and there is no need to use `._populate_metadata`
         new_version.metadata['assetsSummary'] = aggregate_assets_summary(
             new_version.assets.values_list('metadata', flat=True).iterator()
         )
