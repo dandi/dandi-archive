@@ -100,7 +100,7 @@ def test_asset_s3_url(asset_blob):
 def test_publish_asset(draft_asset: Asset):
     draft_asset_id = draft_asset.asset_id
     draft_blob = draft_asset.blob
-    draft_metadata = draft_asset._populate_metadata()
+    draft_metadata = draft_asset.full_metadata
 
     draft_asset.status = Asset.Status.VALID
     draft_asset.save()
@@ -112,7 +112,7 @@ def test_publish_asset(draft_asset: Asset):
     published_asset.refresh_from_db()
 
     assert published_asset.blob == draft_blob
-    assert published_asset._populate_metadata() == {
+    assert published_asset.full_metadata == {
         **draft_metadata,
         'id': f'dandiasset:{draft_asset_id}',
         'publishedBy': {
@@ -176,20 +176,20 @@ def test_asset_total_size(
 
 
 @pytest.mark.django_db
-def test_asset_populate_metadata(draft_asset_factory):
+def test_asset_full_metadata(draft_asset_factory):
     raw_metadata = {
         'foo': 'bar',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
     }
     asset: Asset = draft_asset_factory(metadata=raw_metadata)
 
-    # Test that _populate_metadata includes the correct values
+    # Test that full_metadata includes the correct values
     download_url = settings.DANDI_API_URL + reverse(
         'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     blob_url = asset.blob.s3_url
-    assert asset._populate_metadata() == {
+    assert asset.full_metadata == {
         **raw_metadata,
         'id': f'dandiasset:{asset.asset_id}',
         'path': asset.path,
@@ -202,20 +202,20 @@ def test_asset_populate_metadata(draft_asset_factory):
 
 
 @pytest.mark.django_db
-def test_asset_populate_metadata_zarr(draft_asset_factory, zarr_archive):
+def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
     raw_metadata = {
         'foo': 'bar',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
     }
     asset: Asset = draft_asset_factory(metadata=raw_metadata, blob=None, zarr=zarr_archive)
 
-    # Test that _populate_metadata includes the correct values
+    # Test that full_metadata includes the correct values
     download_url = settings.DANDI_API_URL + reverse(
         'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
     s3_url = asset.zarr.s3_url
-    assert asset._populate_metadata() == {
+    assert asset.full_metadata == {
         **raw_metadata,
         'id': f'dandiasset:{asset.asset_id}',
         'path': asset.path,
@@ -278,7 +278,7 @@ def test_asset_rest_list_include_metadata(api_client, version, asset, asset_fact
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
         {'metadata': True},
     )
-    assert r.json()['results'][0]['metadata'] == asset._populate_metadata()
+    assert r.json()['results'][0]['metadata'] == asset.full_metadata
 
 
 @pytest.mark.parametrize(
@@ -380,7 +380,7 @@ def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
         ).json()
-        == asset._populate_metadata()
+        == asset.full_metadata
     )
 
 
@@ -396,7 +396,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
             f'/api/dandisets/{version.dandiset.identifier}/'
             f'versions/{version.version}/assets/{asset.asset_id}/'
         ).json()
-        == asset._populate_metadata()
+        == asset.full_metadata
     )
 
 
@@ -413,7 +413,7 @@ def test_asset_rest_info(api_client, version, asset):
         'zarr': None,
         'path': asset.path,
         'size': asset.size,
-        'metadata': asset._populate_metadata(),
+        'metadata': asset.full_metadata,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }
@@ -474,7 +474,7 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
         'zarr': None,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset._populate_metadata(),
+        'metadata': new_asset.full_metadata,
     }
 
     # Assert all provided metadata exists
@@ -610,7 +610,7 @@ def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_b
         'zarr': None,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset._populate_metadata(),
+        'metadata': new_asset.full_metadata,
     }
     for key in metadata:
         assert resp['metadata'][key] == metadata[key]
@@ -654,7 +654,7 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
         'zarr': zarr_archive.zarr_id,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset._populate_metadata(),
+        'metadata': new_asset.full_metadata,
     }
     for key in metadata:
         assert resp['metadata'][key] == metadata[key]
@@ -927,7 +927,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         'zarr': None,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset._populate_metadata(),
+        'metadata': new_asset.full_metadata,
     }
     for key in new_metadata:
         assert resp['metadata'][key] == new_metadata[key]
@@ -987,7 +987,7 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
         'zarr': None,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset._populate_metadata(),
+        'metadata': new_asset.full_metadata,
     }
     for key in new_metadata:
         assert resp['metadata'][key] == new_metadata[key]
@@ -1056,7 +1056,7 @@ def test_asset_rest_update_zarr(
         'zarr': str(zarr_archive.zarr_id),
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
-        'metadata': new_asset._populate_metadata(),
+        'metadata': new_asset.full_metadata,
     }
     for key in new_metadata:
         assert resp['metadata'][key] == new_metadata[key]
@@ -1438,8 +1438,7 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 @pytest.mark.django_db
 def test_asset_direct_metadata(api_client, asset):
     assert (
-        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content)
-        == asset._populate_metadata()
+        json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.full_metadata
     )
 
 
@@ -1451,7 +1450,7 @@ def test_asset_direct_info(api_client, asset):
         'zarr': None,
         'path': asset.path,
         'size': asset.size,
-        'metadata': asset._populate_metadata(),
+        'metadata': asset.full_metadata,
         'created': TIMESTAMP_RE,
         'modified': TIMESTAMP_RE,
     }

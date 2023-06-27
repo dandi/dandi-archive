@@ -137,7 +137,7 @@ def test_validate_asset_metadata_no_digest(draft_asset: Asset):
     draft_asset.blob.sha256 = None
     draft_asset.blob.save()
 
-    del draft_asset._populate_metadata()['digest']
+    del draft_asset.full_metadata['digest']
     draft_asset.save()
 
     tasks.validate_asset_metadata_task(draft_asset.id)
@@ -357,7 +357,7 @@ def test_publish_task(
     assert new_draft_asset.path == old_draft_asset.path
     assert new_draft_asset.blob == old_draft_asset.blob
     assert new_draft_asset.metadata == {
-        **old_draft_asset._populate_metadata(),
+        **old_draft_asset.full_metadata,
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'publishedBy': {
             'id': URN_RE,

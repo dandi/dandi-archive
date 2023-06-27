@@ -253,7 +253,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def dandi_asset_id(asset_id: str | uuid.UUID):
         return f'dandiasset:{asset_id}'
 
-    def _populate_metadata(self):
+    @property
+    def full_metadata(self):
         download_url = settings.DANDI_API_URL + reverse(
             'asset-download',
             kwargs={'asset_id': str(self.asset_id)},
@@ -281,7 +282,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         now = datetime.datetime.now(datetime.timezone.utc)
         # Inject the publishedBy and datePublished fields
         return {
-            **self._populate_metadata(),
+            **self.full_metadata,
             'publishedBy': self.published_by(now),
             'datePublished': now.isoformat(),
         }

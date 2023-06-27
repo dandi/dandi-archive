@@ -80,7 +80,7 @@ def version_aggregate_assets_summary(version: Version) -> None:
 
     version.metadata['assetsSummary'] = aggregate_assets_summary(
         (
-            asset._populate_metadata()
+            asset.full_metadata
             for asset in version.assets.filter(status=Asset.Status.VALID).iterator()
         )
     )

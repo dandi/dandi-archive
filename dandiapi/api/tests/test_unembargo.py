@@ -31,7 +31,7 @@ def test_asset_unembargo(
     assert embargoed_asset.blob is None
     assert embargoed_asset.embargoed_blob is not None
     assert embargoed_asset.sha256 is not None
-    assert 'embargo' in embargoed_asset._populate_metadata()['contentUrl'][1]
+    assert 'embargo' in embargoed_asset.full_metadata['contentUrl'][1]
 
     # Unembargo
     _unembargo_asset(embargoed_asset)
@@ -43,7 +43,7 @@ def test_asset_unembargo(
     assert asset.embargoed_blob is None
     assert asset.sha256 == embargoed_sha256
     assert asset.blob.etag == embargoed_etag
-    assert 'embargo' not in asset._populate_metadata()['contentUrl'][1]
+    assert 'embargo' not in asset.full_metadata['contentUrl'][1]
 
 
 @pytest.mark.parametrize(

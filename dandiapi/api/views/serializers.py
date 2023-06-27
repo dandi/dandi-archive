@@ -349,7 +349,7 @@ class AssetSerializer(serializers.ModelSerializer):
             self.fields.pop('metadata')
 
     def get_metadata(self, obj: Asset):
-        return obj._populate_metadata()
+        return obj.full_metadata
 
 
 class AssetDetailSerializer(AssetSerializer):
