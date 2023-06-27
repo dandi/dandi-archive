@@ -28,6 +28,16 @@ from .version import Version
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = fr'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
+ASSET_COMPUTED_FIELDS = [
+    'id',
+    'path',
+    'identifier',
+    'contentUrl',
+    'contentSize',
+    'digest',
+    'datePublished',
+    'publishedBy',
+]
 
 
 def validate_asset_path(path: str):
@@ -167,6 +177,15 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             models.CheckConstraint(
                 name='asset_path_no_leading_slash', check=~Q(path__startswith='/')
             ),
+            # Ensure that if the asset is published, its metadata must contain the computed fields
+            # Otherwise, ensure its metadata contains none of the computed fields
+            models.CheckConstraint(
+                name='asset_metadata_no_computed_keys_or_published',
+                check=(
+                    (Q(published=False) & ~Q(metadata__has_any_keys=ASSET_COMPUTED_FIELDS))
+                    | (Q(published=True) & Q(metadata__has_keys=ASSET_COMPUTED_FIELDS))
+                ),
+            ),
         ]
 
     @property
@@ -290,17 +309,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     @classmethod
     def strip_metadata(cls, metadata):
         """Strip away computed fields from a metadata dict."""
-        computed_fields = [
-            'id',
-            'path',
-            'identifier',
-            'contentUrl',
-            'contentSize',
-            'digest',
-            'datePublished',
-            'publishedBy',
-        ]
-        return {key: metadata[key] for key in metadata if key not in computed_fields}
+        return {key: metadata[key] for key in metadata if key not in ASSET_COMPUTED_FIELDS}
 
     def __str__(self) -> str:
         return self.path
