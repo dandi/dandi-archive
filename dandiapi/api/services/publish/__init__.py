@@ -106,8 +106,9 @@ def _publish_dandiset(dandiset_id: int) -> None:
 
     Calling `_lock_dandiset_for_publishing()` is a precondition for calling this function.
     """
-    old_version: Version = (
-        Dandiset.objects.get(id=dandiset_id).versions.select_for_update().get(version='draft')
+    old_version: Version = Version.objects.select_for_update().get(
+        dandiset_id=dandiset_id,
+        version='draft',
     )
 
     with transaction.atomic():
