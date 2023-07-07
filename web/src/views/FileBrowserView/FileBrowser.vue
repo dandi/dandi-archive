@@ -337,7 +337,7 @@ const EXTERNAL_SERVICES = [
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://scratchrealm.github.io/neurosift/#/nwb?url=',
+    endpoint: 'https://flatironinstitute.github.io/neurosift/#/nwb?url=',
   },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
