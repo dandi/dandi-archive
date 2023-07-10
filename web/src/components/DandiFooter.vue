@@ -28,7 +28,7 @@
           >{{ version }}</a>
         </v-col>
         <v-col>
-          Funding:<br>
+          Funding / In-Kind:<br>
           - <a
             target="_blank"
             rel="noopener"
@@ -36,13 +36,20 @@
           >BRAIN Initiative</a>
           <v-icon x-small>
             mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://www.nimh.nih.gov/index.shtml"
+          >NIMH</a>
+          <v-icon x-small>
+            mdi-open-in-new
           </v-icon>
           <br>
           - <a
             target="_blank"
             rel="noopener"
-            href="https://www.nimh.nih.gov/index.shtml"
-          >NIMH</a>
+            href="https://registry.opendata.aws/dandiarchive/"
+          >AWS Open Dataaset</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
