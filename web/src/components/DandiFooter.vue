@@ -54,7 +54,7 @@
             target="_blank"
             rel="noopener"
             :href="dandiAboutUrl"
-          >Dandi Project Homepage</a>
+          >DANDI Project Homepage</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -63,7 +63,7 @@
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandi-archive"
-          >Project Github</a>
+          >Project GitHub</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon> / <a
