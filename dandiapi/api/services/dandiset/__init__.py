@@ -56,5 +56,6 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
 
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
-    dandiset.versions.all().delete()
-    dandiset.delete()
+    with transaction.atomic():
+        dandiset.versions.all().delete()
+        dandiset.delete()
