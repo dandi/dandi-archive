@@ -18,7 +18,7 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2022 The DANDI Team<br>
+          &copy; 2019 - 2023 The DANDI Team<br>
           version
           <a
             class="version-link"
@@ -28,7 +28,7 @@
           >{{ version }}</a>
         </v-col>
         <v-col>
-          Funding:<br>
+          Funding / In-Kind Support:<br>
           - <a
             target="_blank"
             rel="noopener"
@@ -36,13 +36,20 @@
           >BRAIN Initiative</a>
           <v-icon x-small>
             mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://www.nimh.nih.gov/index.shtml"
+          >NIMH</a>
+          <v-icon x-small>
+            mdi-open-in-new
           </v-icon>
           <br>
           - <a
             target="_blank"
             rel="noopener"
-            href="https://www.nimh.nih.gov/index.shtml"
-          >NIMH</a>
+            href="https://registry.opendata.aws/dandiarchive/"
+          >AWS Open Dataaset</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -54,7 +61,7 @@
             target="_blank"
             rel="noopener"
             :href="dandiAboutUrl"
-          >Dandi Project Homepage</a>
+          >DANDI Project Homepage</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -63,7 +70,7 @@
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandi-archive"
-          >Project Github</a>
+          >Project GitHub</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon> / <a
