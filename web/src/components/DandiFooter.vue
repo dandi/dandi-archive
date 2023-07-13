@@ -28,7 +28,7 @@
           >{{ version }}</a>
         </v-col>
         <v-col>
-          Funding / In-Kind:<br>
+          Funding / In-Kind Support:<br>
           - <a
             target="_blank"
             rel="noopener"
