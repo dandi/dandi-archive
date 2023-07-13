@@ -332,6 +332,13 @@ const EXTERNAL_SERVICES = [
     maxsize: Infinity,
     endpoint: 'https://ome.github.io/ome-ngff-validator/?source=',
   },
+
+  {
+    name: 'Neurosift',
+    regex: /\.nwb$/,
+    maxsize: Infinity,
+    endpoint: 'https://flatironinstitute.github.io/neurosift/#/nwb?url=',
+  },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
 
