@@ -156,11 +156,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 content_type,
             )
 
-            if content_type == 'video/x-matroska':
+            if content_type.startswith('video/'):
                 return HttpResponse(
                     f"""
                     <video autoplay muted controls>
-                        <source src="{url}" type="video/mp4">
+                        <source src="{url}">
                     </video>
                 """,
                     content_type='text/html',
