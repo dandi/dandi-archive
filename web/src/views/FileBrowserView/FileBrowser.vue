@@ -377,6 +377,10 @@ const isOwner = computed(() => !!(
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
 
+function assetMetadataURI(asset_id: string) {
+  return dandiRest.assetMetadataURI(props.identifier, props.version, asset_id);
+}
+
 function getExternalServices(path: AssetPath) {
   const servicePredicate = (service: Service, _path: AssetPath) => (
     new RegExp(service.regex).test(path.path)
@@ -414,10 +418,6 @@ function downloadURI(asset_id: string) {
 
 function inlineURI(asset_id: string) {
   return dandiRest.assetInlineURI(props.identifier, props.version, asset_id);
-}
-
-function assetMetadataURI(asset_id: string) {
-  return dandiRest.assetMetadataURI(props.identifier, props.version, asset_id);
 }
 
 function fileSize(item: AssetPath) {
