@@ -388,7 +388,7 @@ function getExternalServices(path: AssetPath) {
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
       name: service.name,
-      url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}`,
+      url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}&dandi-asset=${assetMetadataURI((path.asset as AssetFile).asset_id)}`,
     }));
 }
 
