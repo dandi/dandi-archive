@@ -16,11 +16,11 @@ Overall, we need an issue tracking system, while avoiding creating one from scra
 
 Largely not formalized:
 
-- DLP does not have any pointer to report an issue for dandiset
+- DLP does not have any pointer to report an issue for Dandisets
   - footer has overall link to report issues for the archive (and incorrect: [PR to fix](https://github.com/dandi/dandi-archive/pull/1594))
 - We generally refer people to [helpdesk discussions](https://github.com/dandi/helpdesk/discussions) as common place to report issues
-- While preapring DataLad versions of the dandisets and posting them on GitHub we do not disable `Issues` feature:
-  - for some dandisets, e.g. https://github.com/dandisets/000108/issues we already used GitHub issues
+- While preparing DataLad versions of the Dandisets and posting them on GitHub we do not disable `Issues` feature:
+  - for some Dandisets, e.g. https://github.com/dandisets/000108/issues we already used GitHub issues
   - we do not anyhow automatically add/invite original uploaders to those dandisets.
     - note: ATM we do not collect audit information on who specifically uploaded any asset to reliably deduce github users to assign.
 - The issue discussing this: https://github.com/dandi/dandi-archive/issues/863
@@ -30,9 +30,9 @@ Largely not formalized:
 
 **Overall**: Reuse existing Dandisets on GitHub (https://github.com/dandisets), and available for them GitHub's issue tracker.
 
-- [x] Enable Issue tracking per dandiset.
-  - In the process of creating DataLad dandisets on GitHub we already enable `Issues` functionality for all dandisets.
-- [ ] Upon creation of a DataLad dandiset on GitHub, email dandiset owner inviting to subscribe to the issue tracker on GitHub
+- [x] Enable Issue tracking per Dandiset.
+  - In the process of creating DataLad Dandisets on GitHub we already enable `Issues` functionality for all dandisets.
+- [ ] Upon creation of a DataLad Dandiset on GitHub, email the Dandiset owner inviting them to subscribe to the issue tracker on GitHub
 - [ ] Setup https://github.com/dandisets [organization-wide](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file) [`.github/ISSUE_TEMPLATE`](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#creating-issue-forms) with different templates/types of issues to report
 - [ ] DLP: add a button "View/Report Issues" or "Issues" leading to issue Tracker (e.g. [Issues](https://github.com/dandisets/000108/issues) for 000108)
   - Complimentary/alternative: Could be "File an issue" button which would prefeed some issue body with `@dandiset-owner` handles etc.  But we might then need to introduce our own UI to choose among different types of issues
