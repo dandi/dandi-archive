@@ -1,3 +1,15 @@
+# v0.3.47 (Mon Jul 17 2023)
+
+#### 🐛 Bug Fix
+
+- Fix typo in footer [#1662](https://github.com/dandi/dandi-archive/pull/1662) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.46 (Mon Jul 17 2023)
 
 :tada: This release contains work from a new contributor! :tada:
