@@ -12,12 +12,3 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
-  - package-ecosystem: pip
-    directory: /
-    schedule:
-      interval: "weekly"
-    labels:
-      - internal
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch"]
