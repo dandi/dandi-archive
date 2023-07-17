@@ -46,7 +46,7 @@
             target="_blank"
             rel="noopener"
             href="https://registry.opendata.aws/dandiarchive/"
-          >AWS Open Dataaset</a>
+          >AWS Open Dataset</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
