@@ -83,6 +83,10 @@ setup(
             'ipython',
             'tox',
             'memray',
+            'boto3-stubs[s3]',
+            'django-stubs',
+            'djangorestframework-stubs',
+            'types-setuptools',
         ],
         'test': [
             'factory-boy',
@@ -93,22 +97,6 @@ setup(
             'pytest-factoryboy',
             'pytest-memray',
             'pytest-mock',
-        ],
-        'lint': [
-            'flake8==6.0.0',
-            'flake8-black==0.3.6',
-            'flake8-bugbear==23.6.5',
-            'flake8-docstrings==1.7.0',
-            'flake8-isort==6.0.0',
-            'flake8-quotes==3.3.2',
-            'pep8-naming==0.13.3',
-        ],
-        'type': [
-            'mypy==1.4.1',
-            'boto3-stubs[s3]==1.26.50',
-            'django-stubs==4.2.0',
-            'djangorestframework-stubs==3.14.0',
-            'types-setuptools==68.0.0.0',
         ],
     },
 )
