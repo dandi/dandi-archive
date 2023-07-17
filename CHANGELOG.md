@@ -1,3 +1,38 @@
+# v0.3.46 (Mon Jul 17 2023)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Jeremy Magland ([@magland](https://github.com/magland)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Unpin dev-only dependencies + disable dependabot [#1661](https://github.com/dandi/dandi-archive/pull/1661) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove "app" prop from footer [#1652](https://github.com/dandi/dandi-archive/pull/1652) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- adjust neurosift endpoint [#1654](https://github.com/dandi/dandi-archive/pull/1654) ([@magland](https://github.com/magland))
+- Assume that browser can play any "video/" content type. [#1627](https://github.com/dandi/dandi-archive/pull/1627) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+- Adding neurosift to external services [#1647](https://github.com/dandi/dandi-archive/pull/1647) ([@satra](https://github.com/satra))
+- Minor tuneups to footer [#1651](https://github.com/dandi/dandi-archive/pull/1651) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+- Atomically delete dandiset and its versions [#1642](https://github.com/dandi/dandi-archive/pull/1642) ([@danlamanna](https://github.com/danlamanna))
+- Consolidate two DB queries into one [#1635](https://github.com/dandi/dandi-archive/pull/1635) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Bump types-setuptools from 67.8.0.0 to 68.0.0.0 [#1636](https://github.com/dandi/dandi-archive/pull/1636) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- Bump mypy from 1.3.0 to 1.4.1 [#1637](https://github.com/dandi/dandi-archive/pull/1637) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 8
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.45 (Mon Jun 26 2023)
 
 #### 🐛 Bug Fix
