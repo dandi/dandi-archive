@@ -1,3 +1,15 @@
+# v0.3.49 (Tue Jul 18 2023)
+
+#### 🐛 Bug Fix
+
+- Set up throttling for validating asset metadata [#1663](https://github.com/dandi/dandi-archive/pull/1663) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.48 (Tue Jul 18 2023)
 
 #### 🐛 Bug Fix
