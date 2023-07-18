@@ -34,9 +34,6 @@ def publish_asset(*, asset: Asset) -> None:
         locked_asset.published = True
         locked_asset.save()
 
-    # Original asset is now stale, so we need to refresh from DB
-    asset.refresh_from_db()
-
 
 def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
     """
