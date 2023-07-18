@@ -1,3 +1,15 @@
+# v0.3.48 (Tue Jul 18 2023)
+
+#### 🐛 Bug Fix
+
+- Move asset validation to a scheduled task [#1634](https://github.com/dandi/dandi-archive/pull/1634) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.47 (Mon Jul 17 2023)
 
 #### 🐛 Bug Fix
