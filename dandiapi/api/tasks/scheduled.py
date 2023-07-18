@@ -4,6 +4,8 @@ Define and register any scheduled celery tasks.
 This module is imported from celery.py in a post-app-load hook.
 """
 from datetime import timedelta
+import time
+from typing import Iterable
 
 from celery import shared_task
 from celery.app.base import Celery
@@ -27,6 +29,18 @@ from dandiapi.api.tasks import (
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
+
+
+def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterable:
+    """
+    Yield items from iterable, throttling to max_per_second.
+
+    This is useful for putting messages on a queue, where you don't want to
+    overwhelm the queue with too many messages at once.
+    """
+    for item in iterable:
+        yield item
+        time.sleep(1 / max_per_second)
 
 
 @shared_task(soft_time_limit=10)
@@ -53,8 +67,7 @@ def validate_pending_asset_metadata():
     validatable_assets_count = validatable_assets.count()
     if validatable_assets_count > 0:
         logger.info('Found %s assets to validate', validatable_assets_count)
-        for asset_id in validatable_assets.iterator():
-            # TODO: throttle?
+        for asset_id in throttled_iterator(validatable_assets.iterator()):
             validate_asset_metadata_task.delay(asset_id)
 
 
