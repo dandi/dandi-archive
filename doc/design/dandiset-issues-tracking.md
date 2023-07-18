@@ -40,7 +40,10 @@ Largely not formalized:
   - Complimentary:  asset-level issues filing in UI context menu per file, would pre-fill in the asset path
 - [ ] Optional: provide consistent collection of labels to outline typical problems which might occur
   - e.g., `validation-error`, `unable-to-load`, `io-error`, `missing-file`, `permission`, etc.
+### Changes on dandi-archive Web UI
 
+- Add a section to the web UI for each DANDI set for buttons, such as "See issues", "File an issue", "Ask a question" which routes to the corresponding Issues page on the GitHub repo for that DANDI set
+- Buttons or side component could also report the number of questions asked about that DANDI set
 ### Benefits
 
 - Users already must have a GitHub account to
