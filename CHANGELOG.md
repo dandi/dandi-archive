@@ -1,3 +1,15 @@
+# v0.3.50 (Wed Jul 19 2023)
+
+#### 🐛 Bug Fix
+
+- Don't store dynamic fields in Asset.metadata [#1638](https://github.com/dandi/dandi-archive/pull/1638) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.3.49 (Tue Jul 18 2023)
 
 #### 🐛 Bug Fix
