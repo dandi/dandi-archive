@@ -271,8 +271,8 @@ def test_zarr_rest_delete_file_asset_metadata(
 
     asset.refresh_from_db()
     zarr_archive.refresh_from_db()
-    assert asset.metadata['digest'] == zarr_archive.digest
-    assert asset.metadata['contentSize'] == 100
+    assert asset.full_metadata['digest'] == zarr_archive.digest
+    assert asset.full_metadata['contentSize'] == 100
 
     resp = authenticated_api_client.delete(
         f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': str(zarr_file.path)}]
@@ -281,8 +281,8 @@ def test_zarr_rest_delete_file_asset_metadata(
 
     ingest_zarr_archive(zarr_archive.zarr_id)
     asset.refresh_from_db()
-    assert asset.metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
-    assert asset.metadata['contentSize'] == 0
+    assert asset.full_metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
+    assert asset.full_metadata['contentSize'] == 0
 
 
 @pytest.mark.django_db

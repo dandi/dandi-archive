@@ -8,7 +8,7 @@ from django.core.files.base import File
 from rest_framework.renderers import JSONRenderer
 import yaml
 
-from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.storage import create_s3_storage
 
 
@@ -85,9 +85,11 @@ def write_dandiset_jsonld(version: Version):
 
 
 def write_assets_jsonld(version: Version):
+    # Use full metadata when writing externally
+    assets_metadata = (asset.full_metadata for asset in version.assets.iterator())
     with streaming_file_upload(assets_jsonld_path(version)) as stream:
         stream.write('[')
-        for i, obj in enumerate(version.assets.values_list('metadata', flat=True).iterator()):
+        for i, obj in enumerate(assets_metadata):
             if i > 0:
                 stream.write(',')
             stream.write(JSONRenderer().render(obj).decode())
@@ -116,11 +118,17 @@ def _yaml_dump_sequence_from_generator(stream, generator):
 def write_assets_yaml(version: Version):
     with streaming_file_upload(assets_yaml_path(version)) as stream:
         _yaml_dump_sequence_from_generator(
-            stream, version.assets.values_list('metadata', flat=True).order_by('created').iterator()
+            stream,
+            # Use full metadata when writing externally
+            (asset.full_metadata for asset in version.assets.order_by('created').iterator()),
         )
 
 
 def write_collection_jsonld(version: Version):
+    asset_ids = [
+        Asset.dandi_asset_id(asset_id)
+        for asset_id in version.assets.values_list('asset_id', flat=True)
+    ]
     with streaming_file_upload(collection_jsonld_path(version)) as stream:
         stream.write(
             JSONRenderer()
@@ -129,7 +137,7 @@ def write_collection_jsonld(version: Version):
                     '@context': version.metadata['@context'],
                     'id': version.metadata['id'],
                     '@type': 'prov:Collection',
-                    'hasMember': list(version.assets.values_list('metadata__id', flat=True)),
+                    'hasMember': asset_ids,
                 },
             )
             .decode()

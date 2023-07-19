@@ -312,7 +312,4 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
 
-            # Save any zarr assets to trigger metadata updates
-            for asset in zarr_archive.assets.all():
-                asset.save()
         return Response(None, status=status.HTTP_204_NO_CONTENT)

@@ -64,12 +64,7 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 
         updated_asset = Asset.objects.filter(
             id=asset.id, status=asset_state, metadata=asset.metadata, published=False
-        ).update(
-            status=asset.status,
-            validation_errors=asset.validation_errors,
-            # include metadata in update since we're bypassing .save()
-            metadata=asset._populate_metadata(),
-        )
+        ).update(status=asset.status, validation_errors=asset.validation_errors)
         if updated_asset:
             # Update modified timestamps on all draft versions this asset belongs to
             asset.versions.filter(version='draft').update(modified=timezone.now())
@@ -84,9 +79,10 @@ def version_aggregate_assets_summary(version: Version) -> None:
         raise VersionHasBeenPublished()
 
     version.metadata['assetsSummary'] = aggregate_assets_summary(
-        version.assets.filter(status=Asset.Status.VALID)
-        .values_list('metadata', flat=True)
-        .iterator()
+        (
+            asset.full_metadata
+            for asset in version.assets.filter(status=Asset.Status.VALID).iterator()
+        )
     )
 
     Version.objects.filter(id=version.id, version='draft').update(

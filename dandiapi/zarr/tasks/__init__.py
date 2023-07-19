@@ -59,10 +59,6 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         zarr.status = ZarrArchiveStatus.COMPLETE
         zarr.save()
 
-        # Save all assets that reference this zarr, so their metadata is updated
-        for asset in zarr.assets.iterator():
-            asset.save()
-
         # Add asset paths after ingest is finished
         add_zarr_paths(zarr)
 
