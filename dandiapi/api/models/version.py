@@ -70,7 +70,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         )
 
     @property
-    def valid(self) -> bool:
+    def publishable(self) -> bool:
         if self.status != Version.Status.VALID:
             return False
 

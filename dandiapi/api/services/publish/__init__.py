@@ -52,7 +52,7 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
 
     with transaction.atomic():
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
-        if not draft_version.valid:
+        if not draft_version.publishable:
             match draft_version.status:
                 case Version.Status.PUBLISHED:
                     raise DandisetAlreadyPublished()
