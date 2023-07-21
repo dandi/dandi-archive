@@ -339,6 +339,13 @@ const EXTERNAL_SERVICES = [
     maxsize: Infinity,
     endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=',
   },
+
+  {
+    name: 'Neurosift',
+    regex: /\.avi$/,
+    maxsize: Infinity,
+    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/avi&url=',
+  },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
 
