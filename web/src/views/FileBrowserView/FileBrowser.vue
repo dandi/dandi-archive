@@ -137,6 +137,7 @@
                     v-if="showDelete(item)"
                     icon
                     @click="setItemToDelete(item)"
+                    @click.stop
                   >
                     <v-icon color="error">
                       mdi-delete
@@ -144,11 +145,13 @@
                   </v-btn>
                 </v-list-item-action>
 
-                <v-list-item-action v-if="item.asset">
+                <v-list-item-action v-if="itemIsViewable(item) && item.asset">
                   <v-btn
                     icon
                     :href="inlineURI(item.asset.asset_id)"
                     target="_blank"
+                    title="View asset"
+                    @click.stop
                   >
                     <v-icon color="primary">
                       mdi-eye
@@ -160,6 +163,8 @@
                   <v-btn
                     icon
                     :href="downloadURI(item.asset.asset_id)"
+                    title="Download asset"
+                    @click.stop
                   >
                     <v-icon color="primary">
                       mdi-download
@@ -173,6 +178,8 @@
                     :href="assetMetadataURI(item.asset.asset_id)"
                     target="_blank"
                     rel="noopener"
+                    title="View asset metadata"
+                    @click.stop
                   >
                     <v-icon color="primary">
                       mdi-information
@@ -190,6 +197,7 @@
                         v-if="item.services && item.services.length"
                         color="primary"
                         icon
+                        title="Open in external service"
                         v-bind="attrs"
                         v-on="on"
                       >
@@ -396,12 +404,11 @@ function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
 }
 
-function selectPath(item: AssetPath) {
-  const { asset, path } = item;
-
-  // Return early if path is a file
-  if (asset) { return; }
-  location.value = path;
+function itemIsViewable(item: AssetPath) {
+  const nonViewableExtensions = ['nwb', 'zip', 'gz', 'nii', 'tif', 'tiff', 'avi'];
+  const { path } = item;
+  const extension = path.split('.').pop() || '';
+  return !nonViewableExtensions.includes(extension);
 }
 
 function navigateToParent() {
@@ -426,6 +433,19 @@ function fileSize(item: AssetPath) {
 
 function showDelete(item: AssetPath) {
   return props.version === 'draft' && item.asset && (isAdmin.value || isOwner.value);
+}
+
+function selectPath(item: AssetPath) {
+  const { asset, path } = item;
+
+  if (asset) {
+    // path is a file
+    if (itemIsViewable(item)) {
+      window.open(inlineURI(asset.asset_id), '_blank');
+    }
+    return;
+  }
+  location.value = path;
 }
 
 async function getItems() {
