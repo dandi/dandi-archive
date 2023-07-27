@@ -3,6 +3,7 @@ from pathlib import Path
 from dandi.dandiapi import RemoteReadableAsset
 from dandi.metadata import nwb2asset
 from django.contrib.auth.models import User
+from django.db.models import Q
 import djclick as click
 from tqdm import tqdm
 
@@ -16,9 +17,19 @@ def group():
 
 
 def extract_asset_metadata(asset: Asset, draft_version: Version):
-    readable_asset = RemoteReadableAsset(
-        asset.s3_url, size=asset.size, mtime=asset.modified, name=Path(asset.path).name
+    # Test
+    s3_url = asset.s3_url.replace(
+        'http://localhost:9000/dandi-dandisets', 'https://dandiarchive.s3.amazonaws.com'
     )
+
+    readable_asset = RemoteReadableAsset(
+        s3_url, size=asset.size, mtime=asset.modified, name=Path(asset.path).name
+    )
+
+    if not (asset.path.endswith('.nwb') or asset.path.endswith('.NWB')):
+        print(f'Asset {asset.path}: Not an NWB file, skipping...')
+        return
+
     new_metadata = nwb2asset(readable_asset).json_dict()
 
     # Use dandiset owner, default to some admin user
@@ -39,12 +50,17 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
 
 def extract_dandiset_assets(dandiset: Dandiset):
     # Only update assets which do not belong to a published version
-    assets = dandiset.draft_version.assets.filter(published=False).select_related(
-        'blob', 'embargoed_blob', 'zarr'
-    )
+    # TODO: Filter for assets that end in either nwb or NWB
+    assets = dandiset.draft_version.assets.filter(
+        Q(published=False) & (Q(path__endswith='.nwb') | Q(path__endswith='.NWB'))
+    ).select_related('blob', 'embargoed_blob', 'zarr')
+    if not assets:
+        print(f'No draft NWB assets found in dandiset {dandiset}. Skipping...')
+        return
 
     for asset in tqdm(assets):
         extract_asset_metadata(asset=asset, draft_version=dandiset.draft_version)
+        # input()
 
 
 @group.command(help='Re-extracts the metadata of this asset')
