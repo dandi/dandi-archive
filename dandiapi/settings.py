@@ -39,11 +39,14 @@ class DandiMixin(ConfigMixin):
             'dandiapi.zarr.apps.ZarrConfig',
         ] + configuration.INSTALLED_APPS
 
-        # Install additional apps
-        configuration.INSTALLED_APPS += [
-            'guardian',
-            'allauth.socialaccount.providers.github',
-        ]
+        # Install guardian
+        configuration.INSTALLED_APPS += ['guardian']
+
+        # Install github provider only if github oauth is enabled
+        if configuration.ENABLE_GITHUB_OAUTH:
+            configuration.INSTALLED_APPS += [
+                'allauth.socialaccount.providers.github',
+            ]
 
         # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']

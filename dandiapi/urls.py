@@ -113,10 +113,14 @@ urlpatterns = [
 
 if settings.ENABLE_GITHUB_OAUTH:
     # Include github oauth endpoints only
-    urlpatterns += [path('accounts/', include('allauth.socialaccount.providers.github.urls'))]
+    urlpatterns.append(
+        path('accounts/', include('allauth.socialaccount.providers.github.urls')),
+    )
 else:
     # Include "account" endpoints only (i.e. endpoints needed for username/password login flow)
-    urlpatterns += [path('accounts/', include('allauth.account.urls'))]
+    urlpatterns.append(
+        path('accounts/', include('allauth.account.urls')),
+    )
 
 if settings.DEBUG:
     import debug_toolbar
