@@ -129,6 +129,9 @@ class DandiMixin(ConfigMixin):
     # Automatically approve new users by default
     AUTO_APPROVE_USERS = True
 
+    # Disable github oauth by default
+    ENABLE_GITHUB_OAUTH = False
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
@@ -173,6 +176,8 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     def mutate_configuration(configuration: type[ComposedConfiguration]):
         # We're configuring sentry by hand since we need to pass custom options (traces_sampler).
         configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
+
+    ENABLE_GITHUB_OAUTH = True
 
     # All login attempts in production should go straight to GitHub
     LOGIN_URL = '/accounts/github/login/'
