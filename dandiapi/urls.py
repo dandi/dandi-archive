@@ -100,7 +100,6 @@ urlpatterns = [
     ),
     path('api/search/genotypes/', search_genotypes),
     path('api/search/species/', search_species),
-    path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
@@ -111,6 +110,17 @@ urlpatterns = [
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
+
+if settings.ENABLE_GITHUB_OAUTH:
+    # Include github oauth endpoints only
+    urlpatterns.append(
+        path('accounts/', include('allauth.socialaccount.providers.github.urls')),
+    )
+else:
+    # Include "account" endpoints only (i.e. endpoints needed for username/password login flow)
+    urlpatterns.append(
+        path('accounts/', include('allauth.account.urls')),
+    )
 
 if settings.DEBUG:
     import debug_toolbar
