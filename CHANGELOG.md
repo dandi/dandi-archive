@@ -1,3 +1,17 @@
+# v0.3.51 (Mon Jul 31 2023)
+
+#### 🐛 Bug Fix
+
+- Add new Django setting to restrict allauth endpoints that are exposed [#1670](https://github.com/dandi/dandi-archive/pull/1670) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Rename Version.valid to Version.publishable [#1664](https://github.com/dandi/dandi-archive/pull/1664) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.50 (Wed Jul 19 2023)
 
 #### 🐛 Bug Fix

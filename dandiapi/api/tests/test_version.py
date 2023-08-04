@@ -248,7 +248,7 @@ def test_version_valid_with_valid_asset(version, asset):
     asset.status = Asset.Status.VALID
     asset.save()
 
-    assert version.valid
+    assert version.publishable
 
 
 @pytest.mark.django_db
@@ -264,7 +264,7 @@ def test_version_invalid(version, status):
     version.status = status
     version.save()
 
-    assert not version.valid
+    assert not version.publishable
 
 
 @pytest.mark.django_db
@@ -285,7 +285,7 @@ def test_version_valid_with_invalid_asset(version, asset, status):
     asset.status = status
     asset.save()
 
-    assert not version.valid
+    assert not version.publishable
 
 
 @pytest.mark.django_db
@@ -623,7 +623,7 @@ def test_version_rest_publish(
     tasks.validate_asset_metadata_task(old_draft_asset.id)
     tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()
-    assert draft_version.valid
+    assert draft_version.publishable
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
@@ -663,7 +663,7 @@ def test_version_rest_publish_zarr(
     tasks.validate_asset_metadata_task(normal_asset.id)
     tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()
-    assert draft_version.valid
+    assert draft_version.publishable
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
