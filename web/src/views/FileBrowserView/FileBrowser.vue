@@ -405,7 +405,7 @@ function locationSlice(index: number) {
 }
 
 function itemIsViewable(item: AssetPath) {
-  const nonViewableExtensions = ['nwb', 'zip', 'gz', 'nii', 'tif', 'tiff', 'avi'];
+  const nonViewableExtensions = ['nwb', 'zip', 'gz', 'nii', 'avi'];
   const { path } = item;
   const extension = path.split('.').pop() || '';
   return !nonViewableExtensions.includes(extension);
