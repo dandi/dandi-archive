@@ -6,7 +6,7 @@ The core value of the DANDI Archive comes from the data we host. The process for
 
 Our ultimate goal is to prevent data loss from application programming errors. With protection such as an undelete capability, we will be safer in implementing application features that involve intentional deletion of data. Any bugs we introduce while doing so are far less likely to destroy data that was not supposed to be deleted.
 
-The original GitHub issue around this feature request can be found at [https://github.com/dandi/dandi-archive/issues/524](https://github.com/dandi/dandi-archive/issues/524). Although the issue asks for a Deep Glacier storage tier, the design in this document solves the underlying problem differently (and in a more robust way). Below we address the possible usage of a Deep Glacier tiered bucket as a solution to the orthogonal problem of data ******backup******, which addresses a different problem than the undelete capability described in this document.
+The original GitHub issue around this feature request can be found at [https://github.com/dandi/dandi-archive/issues/524](https://github.com/dandi/dandi-archive/issues/524). Although the issue asks for a Deep Glacier storage tier, the design in this document solves the underlying problem differently (and in a more robust way). Below we address the possible usage of a Deep Glacier tiered bucket as a solution to the orthogonal problem of data **backup** which addresses a different problem than the undelete capability described in this document.
 
 ## **Requirements**
 
@@ -60,7 +60,7 @@ This may raise an additional question - since one of the main reasons for this â
 }
 ```
 
-In sum: deletion of an asset at the application level will trigger placing a delete marker on the appropriate S3 object; an S3 lifecycle rule will schedule that object for actual deletion 30 days later; an appropriate bucket policy will ensure that nobody can manually destroy data, even by accident. (There is a way to manually destroy data, but it cannot be done by accident: someone with the power to change the bucket policies would first need to remove the protective policy above, and ****then**** perform a manual delete of the appropriate objects. This affords the right level of security for our purposes: application-level errors will not be able to destroy data irrevocably.)
+In sum: deletion of an asset at the application level will trigger placing a delete marker on the appropriate S3 object; an S3 lifecycle rule will schedule that object for actual deletion 30 days later; an appropriate bucket policy will ensure that nobody can manually destroy data, even by accident. (There is a way to manually destroy data, but it cannot be done by accident: someone with the power to change the bucket policies would first need to remove the protective policy above, and **then** perform a manual delete of the appropriate objects. This affords the right level of security for our purposes: application-level errors will not be able to destroy data irrevocably.)
 
 # Distinction from Data Backup
 
