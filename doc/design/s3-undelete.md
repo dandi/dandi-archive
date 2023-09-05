@@ -1,4 +1,4 @@
-# **S3 Undelete**
+# **S3 Trailing Delete**
 
 ## **Why is “undelete” necessary?**
 
