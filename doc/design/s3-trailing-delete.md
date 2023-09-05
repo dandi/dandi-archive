@@ -1,12 +1,12 @@
 # **S3 Trailing Delete**
 
-## **Why is “undelete” necessary?**
+## **Why is "trailing delete" necessary?**
 
-The core value of the DANDI Archive comes from the data we host. The process for getting this data into DANDI often involves coordination between several people to get an extremely large volume of data annotated with useful metadata and uploaded to our system. Because of the amount of time and work involved in this process, we need to minimize the risk of accidental data loss to the greatest extent that is possible and reasonable. Additionally, we would like to implement “garbage collection” in the future, which involves programmatically clearing out stale asset blobs from S3. All of this leads to a desire to be able to “undelete” an s3 object that has been deleted.
+The core value of the DANDI Archive comes from the data we host. The process for getting this data into DANDI often involves coordination between several people to get an extremely large volume of data annotated with useful metadata and uploaded to our system. Because of the amount of time and work involved in this process, we need to minimize the risk of accidental data loss to the greatest extent that is possible and reasonable. Additionally, we would like to implement “garbage collection” in the future, which involves programmatically clearing out stale asset blobs from S3. All of this leads to a desire to be able to recover an s3 object that has been deleted.
 
-Our ultimate goal is to prevent data loss from application programming errors. With protection such as an undelete capability, we will be safer in implementing application features that involve intentional deletion of data. Any bugs we introduce while doing so are far less likely to destroy data that was not supposed to be deleted.
+Our ultimate goal is to prevent data loss from application programming errors. With protection such as a trailing delete capability, we will be safer in implementing application features that involve intentional deletion of data. Any bugs we introduce while doing so are far less likely to destroy data that was not supposed to be deleted.
 
-The original GitHub issue around this feature request can be found at [https://github.com/dandi/dandi-archive/issues/524](https://github.com/dandi/dandi-archive/issues/524). Although the issue asks for a Deep Glacier storage tier, the design in this document solves the underlying problem differently (and in a more robust way). Below we address the possible usage of a Deep Glacier tiered bucket as a solution to the orthogonal problem of data **backup** which addresses a different problem than the undelete capability described in this document.
+The original GitHub issue around this feature request can be found at [https://github.com/dandi/dandi-archive/issues/524](https://github.com/dandi/dandi-archive/issues/524). Although the issue asks for a Deep Glacier storage tier, the design in this document solves the underlying problem differently (and in a more robust way). Below we address the possible usage of a Deep Glacier tiered bucket as a solution to the orthogonal problem of data **backup** which addresses a different problem than the trailing delete capability described in this document.
 
 ## **Requirements**
 
@@ -43,7 +43,7 @@ In addition, we can place an S3 Lifecycle policy on the bucket that automaticall
   }
 ```
 
-This may raise an additional question - since one of the main reasons for this “undelete” functionality is to recover from accidental deletion of data, what happens if a delete marker is accidentally deleted? We can solve this by introducing a bucket policy that prevents deletion of delete markers.
+This may raise an additional question - since one of the main reasons for this "trailing delete" functionality is to recover from accidental deletion of data, what happens if a delete marker is accidentally deleted? We can solve this by introducing a bucket policy that prevents deletion of delete markers.
 
 ```json
 {
@@ -64,6 +64,6 @@ In sum: deletion of an asset at the application level will trigger placing a del
 
 # Distinction from Data Backup
 
-It’s important to note that the “undelete” implementation proposed above does not cover backup of the data in the bucket. While backup is out of scope for this design document, nothing proposed here *prevents* backup from being implemented, and features such as [S3 Replication](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html) may be useful for that.
+It’s important to note that the "trailing delete" implementation proposed above does not cover backup of the data in the bucket. While backup is out of scope for this design document, nothing proposed here *prevents* backup from being implemented, and features such as [S3 Replication](https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html) may be useful for that.
 
 A possible backup implementation would simply allocate a new bucket in a separate S3 region set to use the Deep Glacier storage tier (to control costs), then use S3 Replication as mentioned above to maintain an object-for-object copy of the production bucket as a pure backup. This backup solution would ***not*** defend against application-level bugs deleting data, but would instead protect the production bucket against larger-scale threats such as destruction of Amazon data centers, etc.
