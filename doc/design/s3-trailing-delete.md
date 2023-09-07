@@ -1,6 +1,6 @@
-# **S3 Trailing Delete**
+# S3 Trailing Delete
 
-## **Why is "trailing delete" necessary?**
+## Why is "trailing delete" necessary?
 
 The core value of the DANDI Archive comes from the data we host. The process for getting this data into DANDI often involves coordination between several people to get an extremely large volume of data annotated with useful metadata and uploaded to our system. Because of the amount of time and work involved in this process, we need to minimize the risk of accidental data loss to the greatest extent that is possible and reasonable. Additionally, we would like to implement “garbage collection” in the future, which involves programmatically clearing out stale asset blobs from S3. All of this leads to a desire to be able to recover an s3 object that has been deleted.
 
@@ -8,15 +8,15 @@ Our ultimate goal is to prevent data loss from application programming errors. W
 
 The original GitHub issue around this feature request can be found at [https://github.com/dandi/dandi-archive/issues/524](https://github.com/dandi/dandi-archive/issues/524). Although the issue asks for a Deep Glacier storage tier, the design in this document solves the underlying problem differently (and in a more robust way). Below we address the possible usage of a Deep Glacier tiered bucket as a solution to the orthogonal problem of data **backup** which addresses a different problem than the trailing delete capability described in this document.
 
-## **Requirements**
+## Requirements
 
 - After deletion of an asset blob, there needs to be a period of 30 days during which that blob can be restored.
 
-## **Proposed Solution**
+## Proposed Solution
 
 What we want can be described as a “trailing delete” mechanism. Upon deletion of an asset from the bucket, we would like the object to remain recoverable for some amount of time. S3 already supports this in the form of Bucket Versioning.
 
-### **S3 Bucket Versioning**
+### S3 Bucket Versioning
 
 Enabling bucket versioning will change what happens when an object in S3 is deleted. Instead of permanently deleting the object, S3 will simply place a delete marker on it. At that point, the object is hidden from view and appears to be deleted, but still exists and is recoverable.
 
