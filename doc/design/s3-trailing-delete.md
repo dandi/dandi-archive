@@ -29,9 +29,9 @@ In addition, we can place an S3 Lifecycle policy on the bucket that automaticall
     id = "ExpireOldDeleteMarkers"
     filter {}
 
-    # Expire objects with delete markers after 1 day
+    # Expire objects with delete markers after 30 days
     noncurrent_version_expiration {
-      noncurrent_days = 1
+      noncurrent_days = 30
     }
 
     # Also delete any delete markers associated with the expired object
