@@ -42,7 +42,9 @@ setup(
         'dandischema~=0.8.2',
         'django~=4.1.0',
         'django-admin-display',
-        'django-allauth',
+        # TODO: unpin allauth when https://github.com/girder/django-composed-configuration/pull/189
+        # is merged and released
+        'django-allauth>=0.56.1',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
