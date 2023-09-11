@@ -41,9 +41,10 @@ class DandiMixin(ConfigMixin):
 
         # TODO: remove this when the upstream fix is merged
         # (https://github.com/girder/django-composed-configuration/pull/189)
-        configuration.MIDDLEWARE += [
-            'allauth.account.middleware.AccountMiddleware',
-        ]
+        if 'allauth.account.middleware.AccountMiddleware' not in configuration.MIDDLEWARE:
+            configuration.MIDDLEWARE += [
+                'allauth.account.middleware.AccountMiddleware',
+            ]
 
         # Install guardian
         configuration.INSTALLED_APPS += ['guardian']
