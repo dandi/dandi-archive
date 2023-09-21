@@ -37,20 +37,19 @@ def main():
     data = []
     
     for filename in args.files:
-        if "-" in filename and filename.endswith(".md"):
-            date = git_first_commit_date(filename)
-            commit_hash = git_first_commit_hash(filename)
-            version = git_describe_contains(commit_hash)
-            
-            col_widths[0] = max(col_widths[0], len(filename))
-            col_widths[1] = max(col_widths[1], len(date))
-            col_widths[2] = max(col_widths[2], len(version))
+        date = git_first_commit_date(filename)
+        commit_hash = git_first_commit_hash(filename)
+        version = git_describe_contains(commit_hash)
+        
+        col_widths[0] = max(col_widths[0], len(filename))
+        col_widths[1] = max(col_widths[1], len(date))
+        col_widths[2] = max(col_widths[2], len(version))
 
-            data.append({
-                "filename": filename,
-                "date": date,
-                "version": version
-            })
+        data.append({
+            "filename": filename,
+            "date": date,
+            "version": version
+        })
 
     col_widths[-3] = col_widths[1]
     col_widths[-2] = col_widths[2]
