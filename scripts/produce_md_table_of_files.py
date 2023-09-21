@@ -2,11 +2,11 @@
 
 import argparse
 import subprocess
-import os
 from operator import itemgetter
 
 def git_first_commit_date(filename):
-    return subprocess.getoutput(f"git log --follow --format=%ai -- {filename} | tail -n 1")
+    date_str = subprocess.getoutput(f"git log --follow --format=%ai -- {filename} | tail -n 1")
+    return date_str.split()[0]  # Return only the date portion, ignoring time and timezone
 
 def git_describe_contains(commit_hash):
     result = subprocess.run(
@@ -28,7 +28,8 @@ def main():
     args = parser.parse_args()
 
     output_lines = []
-    output_lines.extend(args.header.split(r'\n'))
+    if args.header:
+        output_lines.extend(args.header.split(r'\n'))
     
     headers = ["File", "Originating Date", "Version", "Implementation State", "Date", "Version", "Superseded by"]
     col_widths = [len(h) for h in headers]
