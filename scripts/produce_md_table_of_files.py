@@ -22,15 +22,15 @@ def git_first_commit_hash(filename):
 
 def main():
     parser = argparse.ArgumentParser(description="Generate a Markdown table for files in a Git repo.")
-    parser.add_argument("--header", type=str, required=True, help="Header for the Markdown file.")
+    parser.add_argument("--header", type=str, help="Header for the Markdown file.")
     parser.add_argument("-o", "--output", type=str, help="Output Markdown file name.")
     parser.add_argument("files", nargs="+", help="Files to include in the table.")
     args = parser.parse_args()
 
     output_lines = []
-    output_lines.append(args.header)
+    output_lines.extend(args.header.split(r'\n'))
     
-    headers = ["File", "Date", "Version", "Implemented State", "Date", "Version", "Superseded by"]
+    headers = ["File", "Originating Date", "Version", "Implementation State", "Date", "Version", "Superseded by"]
     col_widths = [len(h) for h in headers]
 
     data = []
