@@ -9,7 +9,13 @@ def git_first_commit_date(filename):
     return subprocess.getoutput(f"git log --follow --format=%ai -- {filename} | tail -n 1")
 
 def git_describe_contains(commit_hash):
-    return subprocess.getoutput(f"git describe --contains {commit_hash}")
+    result = subprocess.run(
+        ["git", "describe", "--contains", commit_hash],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    return result.stdout.strip() if result.returncode == 0 else ""
 
 def git_first_commit_hash(filename):
     return subprocess.getoutput(f"git log --pretty=format:%H -- {filename} | tail -n 1")
@@ -22,9 +28,10 @@ def main():
     args = parser.parse_args()
 
     output_lines = []
-    output_lines.append(args.header + "\n")
-    output_lines.append("| File | Date | Version | Implemented State | Date | Version |")
-    output_lines.append("| ---- | ---- | ------- | ----------------- | ---- | ------- |")
+    output_lines.append(args.header)
+    
+    headers = ["File", "Date", "Version", "Implemented State", "Date", "Version", "Superseded by"]
+    col_widths = [len(h) for h in headers]
 
     data = []
     
@@ -33,19 +40,35 @@ def main():
             date = git_first_commit_date(filename)
             commit_hash = git_first_commit_hash(filename)
             version = git_describe_contains(commit_hash)
+            
+            col_widths[0] = max(col_widths[0], len(filename))
+            col_widths[1] = max(col_widths[1], len(date))
+            col_widths[2] = max(col_widths[2], len(version))
+
             data.append({
                 "filename": filename,
                 "date": date,
                 "version": version
             })
+
+    col_widths[-3] = col_widths[1]
+    col_widths[-2] = col_widths[2]
     
     sorted_data = sorted(data, key=itemgetter('date'))
 
+    header_line = "| " + " | ".join([h.ljust(w) for h, w in zip(headers, col_widths)]) + " |"
+    separator_line = "| " + " | ".join(["-" * w for w in col_widths]) + " |"
+
+    output_lines.append(header_line)
+    output_lines.append(separator_line)
+
     for entry in sorted_data:
-        filename = entry["filename"]
-        date = entry["date"]
-        version = entry["version"]
-        output_lines.append(f"| [{filename}](./{filename}) | {date} | {version} |  |  |  |")
+        filename = entry["filename"].ljust(col_widths[0])
+        date = entry["date"].ljust(col_widths[1])
+        version = entry["version"].ljust(col_widths[2])
+        empty_cols = [" " * w for w in col_widths[3:]]
+        row_line = "| " + " | ".join([filename, date, version] + empty_cols) + " |"
+        output_lines.append(row_line)
 
     if args.output:
         with open(args.output, "w") as f:
