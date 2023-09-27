@@ -265,7 +265,7 @@ import axios from 'axios';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { AssetFile, AssetPath } from '@/types';
+import type { AssetPath } from '@/types';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
 
@@ -410,7 +410,7 @@ function getExternalServices(path: AssetPath) {
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
       name: service.name,
-      url: replaceStringsInEndpoint(service.endpoint, substitutions)
+      url: replaceStringsInEndpoint(service.endpoint, substitutions),
     }));
 }
 
