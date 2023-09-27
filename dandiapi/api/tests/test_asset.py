@@ -896,6 +896,32 @@ def test_asset_create_existing_path(api_client, user, draft_version, asset_blob,
 
 
 @pytest.mark.django_db
+def test_asset_rest_rename(api_client, user, draft_version, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    # Create asset
+    metadata = {'path': 'foo/bar', 'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    asset = add_asset_to_version(
+        user=user, version=draft_version, asset_blob=asset_blob, metadata=metadata
+    )
+
+    # Change path and make update request
+    metadata['path'] = 'foo/bar2'
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
+        f'assets/{asset.asset_id}/',
+        {'metadata': metadata, 'blob_id': asset.blob.blob_id},
+        format='json',
+    )
+
+    # Ensure new asset with new path was created
+    assert resp.status_code == 200
+    assert resp.json()['path'] == metadata['path']
+    assert resp.json()['asset_id'] != str(asset.asset_id)
+
+
+@pytest.mark.django_db
 def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
