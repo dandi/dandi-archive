@@ -309,35 +309,35 @@ const EXTERNAL_SERVICES = [
     name: 'Bioimagesuite/Viewer',
     regex: /\.nii(\.gz)?$/,
     maxsize: 1e9,
-    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
+    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=$s3_url$',
   },
 
   {
     name: 'MetaCell/NWBExplorer',
     regex: /\.nwb$/,
     maxsize: 1e9,
-    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
+    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=$s3_url$',
   },
 
   {
     name: 'VTK/ITK Viewer',
     regex: /\.ome\.zarr$/,
     maxsize: Infinity,
-    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=',
+    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=$s3_url$',
   },
 
   {
     name: 'OME Zarr validator',
     regex: /\.ome\.zarr$/,
     maxsize: Infinity,
-    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=',
+    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=$s3_url$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=',
+    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$api_download_url$',
   },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -377,6 +377,20 @@ const isOwner = computed(() => !!(
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
 
+function replaceStringsInEndpoint(
+  endpoint: string,
+  substitutions: {[key: string]: string} | undefined,
+) {
+  if (!substitutions) return endpoint;
+  let result = endpoint;
+  Object.entries(substitutions).forEach(([key, value]) => {
+    result = result.replace(key, value);
+  });
+  return result;
+}
+
+const isStaging = process.env.VUE_APP_SENTRY_ENVIRONMENT === 'staging';
+
 function getExternalServices(path: AssetPath) {
   const servicePredicate = (service: Service, _path: AssetPath) => (
     new RegExp(service.regex).test(path.path)
@@ -384,11 +398,19 @@ function getExternalServices(path: AssetPath) {
           && _path.aggregate_size <= service.maxsize
   );
 
+  const baseApiUrl = isStaging
+    ? 'https://api-staging.dandiarchive.org'
+    : 'https://api.dandiarchive.org';
+  const substitutions = path.asset ? {
+    $s3_url$: trimEnd(path.asset.url, '/'),
+    $api_download_url$: `${baseApiUrl}/api/assets/${path.asset.asset_id}/download/`,
+  } : undefined;
+
   return EXTERNAL_SERVICES
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
       name: service.name,
-      url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}`,
+      url: replaceStringsInEndpoint(service.endpoint, substitutions)
     }));
 }
 
