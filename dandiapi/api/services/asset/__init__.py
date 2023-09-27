@@ -66,7 +66,10 @@ def change_asset(
     new_metadata_stripped = Asset.strip_metadata(new_metadata)
 
     if not asset.is_different_from(
-        asset_blob=new_asset_blob, zarr_archive=new_zarr_archive, metadata=new_metadata_stripped, path=path
+        asset_blob=new_asset_blob,
+        zarr_archive=new_zarr_archive,
+        metadata=new_metadata_stripped,
+        path=path,
     ):
         return asset, False
 
