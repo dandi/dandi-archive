@@ -66,7 +66,8 @@ setup(
         'django-composed-configuration[prod]>=0.22.0',
         # pin directly to a version since we're extending the private multipart interface
         'django-s3-file-field[boto3]==0.3.2',
-        'django-storages[boto3]',
+        # TODO: unpin this when dandi is updating for breaking changes
+        'django-storages[boto3]<=1.13.2',
         'gunicorn',
         # Development-only, but required
         # TODO: starting with v0.5.0, django-minio-storage requires v7
