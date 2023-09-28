@@ -309,35 +309,35 @@ const EXTERNAL_SERVICES = [
     name: 'Bioimagesuite/Viewer',
     regex: /\.nii(\.gz)?$/,
     maxsize: 1e9,
-    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=$s3_url$',
+    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=$asset_s3_download_url$',
   },
 
   {
     name: 'MetaCell/NWBExplorer',
     regex: /\.nwb$/,
     maxsize: 1e9,
-    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=$s3_url$',
+    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=$asset_s3_download_url$',
   },
 
   {
     name: 'VTK/ITK Viewer',
     regex: /\.ome\.zarr$/,
     maxsize: Infinity,
-    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=$s3_url$',
+    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=$asset_s3_download_url$',
   },
 
   {
     name: 'OME Zarr validator',
     regex: /\.ome\.zarr$/,
     maxsize: Infinity,
-    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=$s3_url$',
+    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=$asset_s3_download_url$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$api_download_url$',
+    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$asset_api_download_url$',
   },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -402,8 +402,9 @@ function getExternalServices(path: AssetPath) {
     ? 'https://api-staging.dandiarchive.org'
     : 'https://api.dandiarchive.org';
   const substitutions = path.asset ? {
-    $s3_url$: trimEnd(path.asset.url, '/'),
-    $api_download_url$: `${baseApiUrl}/api/assets/${path.asset.asset_id}/download/`,
+    $asset_s3_download_url$: trimEnd(path.asset.url, '/'),
+    $asset_api_download_url$: `${baseApiUrl}/api/assets/${path.asset.asset_id}/download/`,
+    $asset_id$: path.asset.asset_id,
   } : undefined;
 
   return EXTERNAL_SERVICES
