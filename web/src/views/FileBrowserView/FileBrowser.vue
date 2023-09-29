@@ -389,8 +389,6 @@ function replaceStringsInEndpoint(
   return result;
 }
 
-const isStaging = process.env.VUE_APP_SENTRY_ENVIRONMENT === 'staging';
-
 function getExternalServices(path: AssetPath) {
   const servicePredicate = (service: Service, _path: AssetPath) => (
     new RegExp(service.regex).test(path.path)
@@ -398,12 +396,11 @@ function getExternalServices(path: AssetPath) {
           && _path.aggregate_size <= service.maxsize
   );
 
-  const baseApiUrl = isStaging
-    ? 'https://api-staging.dandiarchive.org'
-    : 'https://api.dandiarchive.org';
+  const baseApiUrl = process.env.VUE_APP_DANDI_API_ROOT;
+
   const substitutions = path.asset ? {
     $asset_s3_download_url$: trimEnd(path.asset.url, '/'),
-    $asset_api_download_url$: `${baseApiUrl}/api/assets/${path.asset.asset_id}/download/`,
+    $asset_api_download_url$: `${baseApiUrl}assets/${path.asset.asset_id}/download/`,
     $asset_id$: path.asset.asset_id,
   } : undefined;
 
