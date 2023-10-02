@@ -203,7 +203,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         for version in versions:
             version: Version
 
-            # Annnotate with total size and asset count (with default)
+            # Annotate with total size and asset count (with default)
             stats = version_stats.get(version.id, {'total_size': 0, 'num_assets': 0})
             version.total_size = stats['total_size']
             version.num_assets = stats['num_assets']
