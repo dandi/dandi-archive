@@ -1,3 +1,27 @@
+# v0.3.52 (Mon Oct 02 2023)
+
+#### 🐛 Bug Fix
+
+- Remove n+1 queries when using full_metadata [#1693](https://github.com/dandi/dandi-archive/pull/1693) ([@danlamanna](https://github.com/danlamanna))
+- Fix codespell errors [#1694](https://github.com/dandi/dandi-archive/pull/1694) ([@danlamanna](https://github.com/danlamanna))
+- Pin django-storages temporarily [#1691](https://github.com/dandi/dandi-archive/pull/1691) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Pin django-allauth to minimum version [#1680](https://github.com/dandi/dandi-archive/pull/1680) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporary fix for breaking change in `django-allauth` [#1678](https://github.com/dandi/dandi-archive/pull/1678) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Design doc for "undelete" feature [#1674](https://github.com/dandi/dandi-archive/pull/1674) ([@mvandenburgh](https://github.com/mvandenburgh) [@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/checkout from 3 to 4 [#1676](https://github.com/dandi/dandi-archive/pull/1676) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.51 (Mon Jul 31 2023)
 
 #### 🐛 Bug Fix
