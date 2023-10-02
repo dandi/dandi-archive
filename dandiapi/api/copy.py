@@ -48,7 +48,7 @@ class CopyObjectPart:
     dest_key: str
 
     # Whether or not to include the byte range in the request
-    # (exlcuded for single part copies)
+    # (excluded for single part copies)
     include_range: bool = True
 
     @property
