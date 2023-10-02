@@ -370,6 +370,7 @@ const updating = ref(false);
 // Computed
 const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
+const embargoed = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'EMBARGOED');
 const splitLocation = computed(() => location.value.split('/'));
 const isAdmin = computed(() => dandiRest.user?.admin || false);
 const isOwner = computed(() => !!(
@@ -384,11 +385,16 @@ function getExternalServices(path: AssetPath) {
           && _path.aggregate_size <= service.maxsize
   );
 
+  const baseApiUrl = process.env.VUE_APP_DANDI_API_ROOT;
+  const assetURL = () => (embargoed.value
+    ? `${baseApiUrl}assets/${path.asset?.asset_id}/download/`
+    : trimEnd((path.asset as AssetFile).url, '/'));
+
   return EXTERNAL_SERVICES
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
       name: service.name,
-      url: `${service.endpoint}${trimEnd((path.asset as AssetFile).url, '/')}`,
+      url: `${service.endpoint}${assetURL()}`,
     }));
 }
 
