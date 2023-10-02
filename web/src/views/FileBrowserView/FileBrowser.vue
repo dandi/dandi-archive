@@ -396,11 +396,11 @@ function getExternalServices(path: AssetPath) {
           && _path.aggregate_size <= service.maxsize
   );
 
-  const baseApiUrl = process.env.VUE_APP_DANDI_API_ROOT;
+  const baseApiUrl = trimEnd(process.env.VUE_APP_DANDI_API_ROOT, '/');
 
   const substitutions = path.asset ? {
     $asset_s3_download_url$: trimEnd(path.asset.url, '/'),
-    $asset_api_download_url$: `${baseApiUrl}assets/${path.asset.asset_id}/download/`,
+    $asset_api_download_url$: `${baseApiUrl}/assets/${path.asset.asset_id}/download/`,
     $asset_id$: path.asset.asset_id,
   } : undefined;
 
