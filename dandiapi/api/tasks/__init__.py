@@ -32,7 +32,7 @@ def calculate_sha256(blob_id: str) -> None:
     asset_blob.save()
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(soft_time_limit=180)
 @atomic
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
