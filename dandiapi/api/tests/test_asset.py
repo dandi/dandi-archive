@@ -17,7 +17,7 @@ from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetPathConflict
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
-from dandiapi.zarr.models import ZarrArchive
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -1244,25 +1244,32 @@ def test_asset_rest_delete_zarr(
 
 @pytest.mark.django_db
 def test_asset_rest_delete_zarr_modified(
-    api_client, user, draft_version, zarr_archive, zarr_file_factory, storage, monkeypatch
+    api_client,
+    user,
+    draft_version,
+    zarr_archive_factory,
+    zarr_file_factory,
+    storage,
+    monkeypatch,
 ):
     """Ensure that a zarr can be associated to an asset, modified, then the asset deleted."""
     # Pretend like our zarr was defined with the given storage
     monkeypatch.setattr(ZarrArchive, 'storage', storage)
 
     # Assign perms and authenticate user
-    assign_perm('owner', user, draft_version.dandiset)
+    dandiset = draft_version.dandiset
+    assign_perm('owner', user, dandiset)
     api_client.force_authenticate(user=user)
 
     # Ensure zarr is ingested
+    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED, dandiset=dandiset)
     zarr_file_factory(zarr_archive=zarr_archive, size=100)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
 
     # Create first asset, pointing to zarr
     resp = api_client.post(
-        f'/api/dandisets/{draft_version.dandiset.identifier}'
-        f'/versions/{draft_version.version}/assets/',
+        f'/api/dandisets/{dandiset.identifier}' f'/versions/{draft_version.version}/assets/',
         {
             'metadata': {
                 'path': 'sample.zarr',
@@ -1288,7 +1295,7 @@ def test_asset_rest_delete_zarr_modified(
 
     # Delete the asset
     resp = api_client.delete(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'/api/dandisets/{dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/'
     )
     assert resp.status_code == 204

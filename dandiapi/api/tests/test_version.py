@@ -648,7 +648,7 @@ def test_version_rest_publish_zarr(
     api_client.force_authenticate(user=user)
 
     # create and ingest zarr archive
-    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset, status='Uploaded')
     zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
