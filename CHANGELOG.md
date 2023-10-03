@@ -1,3 +1,15 @@
+# v0.3.53 (Tue Oct 03 2023)
+
+#### 🐛 Bug Fix
+
+- Increase task timeouts for manifests/asset summaries [#1695](https://github.com/dandi/dandi-archive/pull/1695) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.52 (Mon Oct 02 2023)
 
 #### 🐛 Bug Fix
