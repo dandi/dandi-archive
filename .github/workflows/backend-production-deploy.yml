@@ -4,6 +4,13 @@ on:
   release:
     types: [released]
 
+concurrency:
+  # If this workflow is already running, cancel it to avoid a scenario
+  # where the older run finishes *after* the newer run and overwrites
+  # the deployment with an older version of the app.
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   reset-release-branch:
     name: Update release branch
