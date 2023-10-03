@@ -102,11 +102,11 @@ def test_zarr_rest_create_embargoed_dandiset(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get(
-    authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory
-):
+def test_zarr_rest_get(authenticated_api_client, storage, zarr_archive_factory, zarr_file_factory):
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
+
+    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     # Ingest
@@ -211,16 +211,18 @@ def test_zarr_rest_delete_file(
     authenticated_api_client,
     user,
     storage,
-    zarr_archive: ZarrArchive,
+    zarr_archive_factory,
     zarr_file_factory,
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
 
-    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
+    # Create zarr and assign user perms
+    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+    assign_perm('owner', user, zarr_archive.dandiset)
 
-    # Ingest
+    # Upload file and ingest
+    zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
 
     # Assert file count and size
@@ -243,6 +245,8 @@ def test_zarr_rest_delete_file(
     assert zarr_archive.size == 0
 
     # Re-ingest
+    zarr_archive.status = ZarrArchiveStatus.UPLOADED
+    zarr_archive.save()
     ingest_zarr_archive(zarr_archive.zarr_id)
 
     zarr_archive.refresh_from_db()
@@ -256,13 +260,15 @@ def test_zarr_rest_delete_file_asset_metadata(
     authenticated_api_client,
     user,
     storage,
-    zarr_archive: ZarrArchive,
+    zarr_archive_factory,
     zarr_file_factory,
     asset_factory,
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
+
+    zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+    assign_perm('owner', user, zarr_archive.dandiset)
 
     asset = asset_factory(zarr=zarr_archive, blob=None)
 
@@ -279,7 +285,13 @@ def test_zarr_rest_delete_file_asset_metadata(
     )
     assert resp.status_code == 204
 
+    # Re-ingest
+    zarr_archive.refresh_from_db()
+    zarr_archive.status = ZarrArchiveStatus.UPLOADED
+    zarr_archive.save()
     ingest_zarr_archive(zarr_archive.zarr_id)
+
+    # Assert now empty
     asset.refresh_from_db()
     assert asset.full_metadata['digest']['dandi:dandi-zarr-checksum'] == EMPTY_CHECKSUM
     assert asset.full_metadata['contentSize'] == 0
@@ -357,7 +369,12 @@ def test_zarr_rest_delete_missing_file(
     ]
     assert zarr_archive.storage.exists(zarr_archive.s3_path(zarr_file.path))
 
+    # Ingest
+    zarr_archive.status = ZarrArchiveStatus.UPLOADED
+    zarr_archive.save()
     ingest_zarr_archive(zarr_archive.zarr_id)
+
+    # Check
     zarr_archive.refresh_from_db()
     assert zarr_archive.file_count == 1
     assert zarr_archive.size == zarr_file.size

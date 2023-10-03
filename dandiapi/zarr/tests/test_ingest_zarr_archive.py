@@ -11,7 +11,8 @@ from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
 @pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
-    zarr: ZarrArchive = zarr_archive_factory()
+    # Create zarr with uploaded status so it can be ingested
+    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
     files = [
         zarr_file_factory(zarr_archive=zarr, path='foo'),
         zarr_file_factory(zarr_archive=zarr, path='bar'),
@@ -24,7 +25,7 @@ def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
     assert zarr.checksum is None
     assert zarr.size == 0
     assert zarr.file_count == 0
-    assert zarr.status == ZarrArchiveStatus.PENDING
+    assert zarr.status == ZarrArchiveStatus.UPLOADED
 
     # Compute checksum
     ingest_zarr_archive(str(zarr.zarr_id))
@@ -39,7 +40,7 @@ def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
 
 @pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_empty(zarr_archive_factory):
-    zarr: ZarrArchive = zarr_archive_factory()
+    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
 
     # Compute checksum
     ingest_zarr_archive(str(zarr.zarr_id))
@@ -81,7 +82,7 @@ def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
 @pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, draft_asset_factory):
     # Create zarr and asset
-    zarr: ZarrArchive = zarr_archive_factory()
+    zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
     asset = draft_asset_factory(zarr=zarr, blob=None, embargoed_blob=None)
 
     # Assert asset size, metadata
@@ -102,11 +103,14 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, dra
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive, zarr_file_factory):
+def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory, zarr_file_factory):
     """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
     assign_perm('owner', user, draft_version.dandiset)
 
     # Ensure zarr is ingested with non-zero size
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
+    )
     zarr_file_factory(zarr_archive=zarr_archive, size=100)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
@@ -128,6 +132,7 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive, zarr_fi
 
     # Simulate more data uploaded to the zarr
     zarr_archive.mark_pending()
+    zarr_archive.status = ZarrArchiveStatus.UPLOADED
     zarr_archive.save()
     zarr_archive.refresh_from_db()
 
@@ -142,7 +147,7 @@ def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_file
     for _ in range(10):
         zarr_file_factory(
             path='foo/a',
-            zarr_archive=zarr_archive_factory(dandiset=dandiset),
+            zarr_archive=zarr_archive_factory(dandiset=dandiset, status=ZarrArchiveStatus.UPLOADED),
         )
 
     # Run ingest

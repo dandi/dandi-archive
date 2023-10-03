@@ -170,6 +170,11 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
+            # Indicate that the user is done uploading to this zarr
+            # TODO: If locking above is removed, use an update query
+            zarr_archive.status = ZarrArchiveStatus.UPLOADED
+            zarr_archive.save()
+
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
         return Response(None, status=status.HTTP_204_NO_CONTENT)
@@ -265,7 +270,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
@@ -301,7 +306,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):

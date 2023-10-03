@@ -19,13 +19,14 @@ logger = logging.Logger(name=__name__)
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'
+    UPLOADED = 'Uploaded'
     INGESTING = 'Ingesting'
     COMPLETE = 'Complete'
 
 
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
-    INGEST_ERROR_MSG = 'Zarr archive already ingested'
+    INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
 
     class Meta:
         get_latest_by = 'modified'
@@ -39,7 +40,11 @@ class BaseZarrArchive(TimeStampedModel):
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
                 check=models.Q(
                     checksum__isnull=True,
-                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
+                    status__in=[
+                        ZarrArchiveStatus.PENDING,
+                        ZarrArchiveStatus.UPLOADED,
+                        ZarrArchiveStatus.INGESTING,
+                    ],
                 )
                 | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
             ),
