@@ -370,7 +370,7 @@ const updating = ref(false);
 // Computed
 const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
-const embargoed = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'EMBARGOED');
+const embargoed = computed(() => currentDandiset.value?.dandiset.embargo_status === 'EMBARGOED');
 const splitLocation = computed(() => location.value.split('/'));
 const isAdmin = computed(() => dandiRest.user?.admin || false);
 const isOwner = computed(() => !!(
