@@ -93,9 +93,6 @@ class BaseZarrArchive(TimeStampedModel):
 
 
 class ZarrArchive(BaseZarrArchive):
-    class Meta(BaseZarrArchive.Meta):
-        db_table = 'api_zarrarchive'
-
     storage = get_storage()
     dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
 
@@ -105,9 +102,6 @@ class ZarrArchive(BaseZarrArchive):
 
 
 class EmbargoedZarrArchive(BaseZarrArchive):
-    class Meta(BaseZarrArchive.Meta):
-        db_table = 'api_embargoedzarrarchive'
-
     storage = get_embargo_storage()
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
