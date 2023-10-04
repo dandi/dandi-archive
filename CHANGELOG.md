@@ -1,3 +1,17 @@
+# v0.3.54 (Wed Oct 04 2023)
+
+#### 🐛 Bug Fix
+
+- Use correct asset download URL for external services [#1692](https://github.com/dandi/dandi-archive/pull/1692) ([@waxlamp](https://github.com/waxlamp))
+- Fix possible race condition in deployment actions [#1679](https://github.com/dandi/dandi-archive/pull/1679) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.53 (Tue Oct 03 2023)
 
 #### 🐛 Bug Fix
