@@ -240,6 +240,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
         zarr_archive: ZarrArchive | EmbargoedZarrArchive | None = None,
         metadata: dict,
+        path: str,
     ) -> bool:
         from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
@@ -262,6 +263,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
         if isinstance(zarr_archive, EmbargoedZarrArchive):
             raise NotImplementedError
+
+        if self.path != path:
+            return True
 
         if self.metadata != metadata:
             return True
