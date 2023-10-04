@@ -1,3 +1,16 @@
+# v0.3.55 (Wed Oct 04 2023)
+
+#### 🐛 Bug Fix
+
+- Enable path-only changes to metadata to trigger asset change [#1689](https://github.com/dandi/dandi-archive/pull/1689) ([@waxlamp](https://github.com/waxlamp) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.54 (Wed Oct 04 2023)
 
 #### 🐛 Bug Fix
