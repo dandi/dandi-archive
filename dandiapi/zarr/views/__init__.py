@@ -158,22 +158,17 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @action(methods=['POST'], url_path='finalize', detail=True)
     def finalize(self, request, zarr_id):
         """Finalize a zarr archive."""
-        # TODO: Remove locking?
-        queryset = self.get_queryset().select_for_update(of=['self'])
-        with transaction.atomic():
-            zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied()
+        zarr_archive: ZarrArchive = get_object_or_404(self.get_queryset(), zarr_id=zarr_id)
+        if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            # The user does not have ownership permission
+            raise PermissionDenied()
 
-            # Don't ingest if already ingested/ingesting
-            if zarr_archive.status != ZarrArchiveStatus.PENDING:
-                return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+        # Don't ingest if already ingested/ingesting
+        if zarr_archive.status != ZarrArchiveStatus.PENDING:
+            return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
-            # Indicate that the user is done uploading to this zarr
-            # TODO: If locking above is removed, use an update query
-            zarr_archive.status = ZarrArchiveStatus.UPLOADED
-            zarr_archive.save()
+        # Update status
+        ZarrArchive.objects.filter(zarr_id=zarr_id).update(status=ZarrArchiveStatus.UPLOADED)
 
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
