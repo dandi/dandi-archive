@@ -498,6 +498,29 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     assert draft_version.status == Version.Status.PENDING
 
 
+@pytest.mark.django_db
+def test_asset_create_incorrect_path_spec(api_client, user, draft_version, asset_blob):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'foo/bar'
+    metadata = {
+        'path': path,
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'encodingFormat': 'application/x-nwb',
+    }
+
+    # Intentionally specify path in both metadata and at top level
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'path': path, 'metadata': metadata, 'blob_id': asset_blob.blob_id},
+        format='json',
+    )
+    assert resp.status_code == 400
+    assert resp.json() == {'metadata': ['Path must only be specified at top level.']}
+
+
 @pytest.mark.parametrize(
     'path,expected_status_code',
     [
