@@ -44,6 +44,7 @@ def change_asset(
     version: Version,
     new_asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
     new_zarr_archive: ZarrArchive | None = None,
+    new_path: str,
     new_metadata: dict,
 ) -> tuple[Asset, bool]:
     """
@@ -55,26 +56,24 @@ def change_asset(
     assert (
         new_asset_blob or new_zarr_archive
     ), 'One of new_zarr_archive or new_asset_blob must be given to change_asset_metadata'
-    assert 'path' in new_metadata, 'Path must be present in new_metadata'
 
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequired()
     elif version.version != 'draft':
         raise DraftDandisetNotModifiable()
 
-    path = new_metadata['path']
     new_metadata_stripped = Asset.strip_metadata(new_metadata)
 
     if not asset.is_different_from(
         asset_blob=new_asset_blob,
         zarr_archive=new_zarr_archive,
         metadata=new_metadata_stripped,
-        path=path,
+        path=new_path,
     ):
         return asset, False
 
     # Verify we aren't changing path to the same value as an existing asset
-    if version.assets.filter(path=path).exclude(asset_id=asset.asset_id).exists():
+    if version.assets.filter(path=new_path).exclude(asset_id=asset.asset_id).exists():
         raise AssetAlreadyExists()
 
     with transaction.atomic():
@@ -85,6 +84,7 @@ def change_asset(
             version=version,
             asset_blob=new_asset_blob,
             zarr_archive=new_zarr_archive,
+            path=new_path,
             metadata=new_metadata,
         )
         # Set previous asset and save
@@ -100,13 +100,13 @@ def add_asset_to_version(
     version: Version,
     asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
     zarr_archive: ZarrArchive | None = None,
+    path: str,
     metadata: dict,
 ) -> Asset:
     """Create an asset, adding it to a version."""
     assert (
         asset_blob or zarr_archive
     ), 'One of zarr_archive or asset_blob must be given to add_asset_to_version'
-    assert 'path' in metadata, 'Path must be present in metadata'
 
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequired()
@@ -114,7 +114,6 @@ def add_asset_to_version(
         raise DraftDandisetNotModifiable()
 
     # Check if there are already any assets with the same path
-    path = metadata['path']
     if version.assets.filter(path=path).exists():
         raise AssetAlreadyExists()
 

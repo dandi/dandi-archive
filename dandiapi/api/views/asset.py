@@ -182,6 +182,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
 
 class AssetRequestSerializer(serializers.Serializer):
+    path = serializers.CharField()
     metadata = serializers.JSONField()
     blob_id = serializers.UUIDField(required=False)
     zarr_id = serializers.UUIDField(required=False)
@@ -213,12 +214,14 @@ class AssetRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'blob_id': 'Exactly one of blob_id or zarr_id must be specified.'}
             )
-        if 'path' not in data['metadata'] or not data['metadata']['path']:
-            raise serializers.ValidationError({'metadata': 'No path specified in metadata.'})
+        if 'path' in data['metadata']:
+            raise serializers.ValidationError(
+                {'metadata': 'Path must only be specified at top level.'}
+            )
 
         # Validate the asset path. If this fails, it will raise a django ValidationError, which
         # will be caught further up the stack and be converted to a DRF ValidationError
-        validate_asset_path(data['metadata']['path'])
+        validate_asset_path(data['path'])
 
         data['metadata'].setdefault('schemaVersion', settings.DANDI_SCHEMA_VERSION)
         return data
@@ -312,6 +315,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=version,
             asset_blob=serializer.get_blob(),
             zarr_archive=serializer.get_zarr_archive(),
+            path=serializer.validated_data['path'],
             metadata=serializer.validated_data['metadata'],
         )
 
@@ -353,6 +357,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                 version=version,
                 new_asset_blob=serializer.get_blob(),
                 new_zarr_archive=serializer.get_zarr_archive(),
+                new_path=serializer.validated_data['path'],
                 new_metadata=serializer.validated_data['metadata'],
             )
 

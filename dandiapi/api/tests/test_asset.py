@@ -453,7 +453,6 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     path = 'test/create/asset.txt'
     metadata = {
         'encodingFormat': 'application/x-nwb',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -462,7 +461,7 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
+        {'path': path, 'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -527,13 +526,12 @@ def test_asset_create_path_validation(
     metadata = {
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'application/x-nwb',
-        'path': path,
     }
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
+        {'path': path, 'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     )
 
@@ -550,10 +548,8 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
         user=user,
         version=draft_version,
         asset_blob=asset_blob,
-        metadata={
-            'path': 'foo/bar.txt',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        },
+        path='foo/bar.txt',
+        metadata={'schemaVersion': settings.DANDI_SCHEMA_VERSION},
     )
 
     # Add an asset that has a path which fully contains that of the first asset
@@ -562,10 +558,8 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
             user=user,
             version=draft_version,
             asset_blob=asset_blob,
-            metadata={
-                'path': 'foo/bar.txt/baz.txt',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-            },
+            path='foo/bar.txt/baz.txt',
+            metadata={'schemaVersion': settings.DANDI_SCHEMA_VERSION},
         )
 
     # Add an asset that's path is fully contained by the first asset
@@ -574,10 +568,8 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
             user=user,
             version=draft_version,
             asset_blob=asset_blob,
-            metadata={
-                'path': 'foo',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-            },
+            path='foo',
+            metadata={'schemaVersion': settings.DANDI_SCHEMA_VERSION},
         )
 
 
@@ -589,7 +581,6 @@ def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_b
     path = 'test/create/asset.txt'
     metadata = {
         'encodingFormat': 'application/x-nwb',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -598,7 +589,7 @@ def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_b
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        {'path': path, 'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -633,7 +624,6 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     path = 'test/create/asset.txt'
     metadata = {
         'encodingFormat': 'application/x-zarr',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -642,7 +632,7 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        {'path': path, 'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -684,7 +674,6 @@ def test_asset_create_zarr_validated(
     metadata = {
         'encodingFormat': 'application/x-zarr',
         'schemaKey': 'Asset',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -694,18 +683,18 @@ def test_asset_create_zarr_validated(
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        {'path': path, 'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
         format='json',
     ).json()
     asset1 = Asset.objects.get(asset_id=resp['asset_id'])
 
     # Create second asset that points to the same zarr
     metadata['1'] = 3
-    metadata['path'] = 'test/create/asset2.txt'
+    path = 'test/create/asset2.txt'
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        {'path': path, 'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
         format='json',
     ).json()
     asset2 = Asset.objects.get(asset_id=resp['asset_id'])
@@ -735,7 +724,6 @@ def test_asset_create_zarr_wrong_dandiset(
     path = 'test/create/asset.txt'
     metadata = {
         'encodingFormat': 'application/x-zarr',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -744,7 +732,7 @@ def test_asset_create_zarr_wrong_dandiset(
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
+        {'path': path, 'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
         format='json',
     )
     assert resp.status_code == 400
@@ -759,7 +747,6 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     path = 'test/create/asset.txt'
     metadata = {
         'encodingFormat': 'application/x-zarr',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -768,7 +755,7 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata},
+        {'path': path, 'metadata': metadata},
         format='json',
     )
     assert resp.status_code == 400
@@ -783,7 +770,6 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
     path = 'test/create/asset.txt'
     metadata = {
         'encodingFormat': 'application/x-zarr',
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -792,7 +778,12 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'blob_id': asset_blob.blob_id, 'zarr_id': zarr_archive.zarr_id},
+        {
+            'path': path,
+            'metadata': metadata,
+            'blob_id': asset_blob.blob_id,
+            'zarr_id': zarr_archive.zarr_id,
+        },
         format='json',
     )
     assert resp.status_code == 400
@@ -805,13 +796,13 @@ def test_asset_create_no_valid_blob(api_client, user, draft_version):
     api_client.force_authenticate(user=user)
 
     path = 'test/create/asset.txt'
-    metadata = {'path': path, 'foo': ['bar', 'baz'], '1': 2}
+    metadata = {'foo': ['bar', 'baz'], '1': 2}
     uuid = uuid4()
 
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'blob_id': uuid},
+        {'path': path, 'metadata': metadata, 'blob_id': uuid},
         format='json',
     )
     assert resp.status_code == 404
@@ -831,7 +822,7 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
         format='json',
     )
     assert resp.status_code == 400
-    assert resp.data == {'metadata': ['No path specified in metadata.']}, resp.data
+    assert resp.data == {'path': ['This field is required.']}
 
 
 @pytest.mark.django_db
@@ -854,13 +845,16 @@ def test_asset_create_published_version(api_client, user, published_version, ass
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
 
+    # Ensure no conflicting fields present
+    metadata = Asset.strip_metadata(asset.metadata)
+
     # Set path so API request succeeds
-    asset.metadata['path'] = asset.path
     resp = api_client.post(
         f'/api/dandisets/{published_version.dandiset.identifier}'
         f'/versions/{published_version.version}/assets/',
         {
-            'metadata': asset.metadata,
+            'path': asset.path,
+            'metadata': metadata,
             'blob_id': asset.blob.blob_id,
         },
         format='json',
@@ -876,7 +870,6 @@ def test_asset_create_existing_path(api_client, user, draft_version, asset_blob,
 
     path = 'test/create/asset.txt'
     metadata = {
-        'path': path,
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
@@ -889,7 +882,7 @@ def test_asset_create_existing_path(api_client, user, draft_version, asset_blob,
     resp = api_client.post(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
-        {'metadata': metadata, 'blob_id': asset_blob.blob_id},
+        {'path': path, 'metadata': metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     )
     assert resp.status_code == 409
@@ -901,23 +894,23 @@ def test_asset_rest_rename(api_client, user, draft_version, asset_blob):
     api_client.force_authenticate(user=user)
 
     # Create asset
-    metadata = {'path': 'foo/bar', 'schemaVersion': settings.DANDI_SCHEMA_VERSION}
+    metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     asset = add_asset_to_version(
-        user=user, version=draft_version, asset_blob=asset_blob, metadata=metadata
+        user=user, version=draft_version, asset_blob=asset_blob, metadata=metadata, path='foo/bar'
     )
 
     # Change path and make update request
-    metadata['path'] = 'foo/bar2'
+    path = 'foo/bar2'
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
         f'assets/{asset.asset_id}/',
-        {'metadata': metadata, 'blob_id': asset.blob.blob_id},
+        {'path': path, 'metadata': metadata, 'blob_id': asset.blob.blob_id},
         format='json',
     )
 
     # Ensure new asset with new path was created
     assert resp.status_code == 200
-    assert resp.json()['path'] == metadata['path']
+    assert resp.json()['path'] == path
     assert resp.json()['asset_id'] != str(asset.asset_id)
 
 
@@ -932,7 +925,6 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
         'encodingFormat': 'application/x-nwb',
-        'path': new_path,
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
@@ -941,7 +933,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
-        {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
+        {'path': new_path, 'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -992,7 +984,6 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
         'encodingFormat': 'application/x-nwb',
-        'path': new_path,
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
@@ -1001,7 +992,7 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
-        {'metadata': new_metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        {'path': new_path, 'metadata': new_metadata, 'blob_id': embargoed_asset_blob.blob_id},
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -1062,7 +1053,6 @@ def test_asset_rest_update_zarr(
     new_path = 'test/asset/rest/update.txt'
     new_metadata = {
         'encodingFormat': 'application/x-zarr',
-        'path': new_path,
         'foo': 'bar',
         'num': 123,
         'list': ['a', 'b', 'c'],
@@ -1070,7 +1060,7 @@ def test_asset_rest_update_zarr(
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
-        {'metadata': new_metadata, 'zarr_id': zarr_archive.zarr_id},
+        {'path': new_path, 'metadata': new_metadata, 'zarr_id': zarr_archive.zarr_id},
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -1169,12 +1159,18 @@ def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_fa
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
+    # Ensure no conflicting fields present
+    metadata = Asset.strip_metadata(existing_asset.metadata)
+
     # Set path so API request succeeds
-    existing_asset.metadata['path'] = existing_asset.path
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{old_asset.asset_id}/',
-        {'metadata': existing_asset.metadata, 'blob_id': existing_asset.blob.blob_id},
+        {
+            'path': existing_asset.path,
+            'metadata': metadata,
+            'blob_id': existing_asset.blob.blob_id,
+        },
         format='json',
     )
     assert resp.status_code == 409
@@ -1264,10 +1260,8 @@ def test_asset_rest_delete_zarr_modified(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {
-            'metadata': {
-                'path': 'sample.zarr',
-                'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-            },
+            'path': 'sample.zarr',
+            'metadata': {'schemaVersion': settings.DANDI_SCHEMA_VERSION},
             'zarr_id': zarr_archive.zarr_id,
         },
         format='json',
