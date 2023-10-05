@@ -121,10 +121,8 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory,
         user=user,
         version=draft_version,
         zarr_archive=zarr_archive,
-        metadata={
-            'path': 'sample.zarr',
-            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        },
+        path='sample.zarr',
+        metadata={'schemaVersion': settings.DANDI_SCHEMA_VERSION},
     )
     assert asset.size == 100
     ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()

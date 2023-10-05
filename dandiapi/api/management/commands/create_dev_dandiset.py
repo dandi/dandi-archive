@@ -42,10 +42,14 @@ def create_dev_dandiset(name: str, email: str):
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'encodingFormat': 'text/plain',
         'schemaKey': 'Asset',
-        'path': 'foo/bar.txt',
     }
+    asset_path = 'foo/bar.txt'
     asset = add_asset_to_version(
-        user=owner, version=draft_version, asset_blob=asset_blob, metadata=asset_metadata
+        user=owner,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata=asset_metadata,
+        path=asset_path,
     )
 
     calculate_sha256(blob_id=asset_blob.blob_id)
