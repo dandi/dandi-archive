@@ -40,22 +40,22 @@ class Migration(migrations.Migration):
         # dandiset_id index
         migrations.RunSQL(
             'ALTER INDEX "api_zarrarchive_dandiset_id_68510762" RENAME TO '
-            '"zarr_zarrarchive_dandiset_id_68510762";'
+            '"zarr_zarrarchive_dandiset_id_2fdb93be";'
         ),
         migrations.RunSQL(
             'ALTER INDEX "api_embargoedzarrarchive_dandiset_id_b61f0a08" RENAME TO '
-            '"zarr_embargoedzarrarchive_dandiset_id_b61f0a08";'
+            '"zarr_embargoedzarrarchive_dandiset_id_9a6f3365";'
         ),
         # dandiset_id foreign key constraint
         migrations.RunSQL(
             'ALTER TABLE zarr_zarrarchive RENAME CONSTRAINT '
             '"api_zarrarchive_dandiset_id_68510762_fk" TO '
-            '"zarr_zarrarchive_dandiset_id_68510762_fk";'
+            '"zarr_zarrarchive_dandiset_id_2fdb93be_fk";'
         ),
         migrations.RunSQL(
             'ALTER TABLE zarr_embargoedzarrarchive RENAME CONSTRAINT '
             '"api_embargoedzarrarchive_dandiset_id_b61f0a08_fk" TO '
-            '"zarr_embargoedzarrarchive_dandiset_id_b61f0a08_fk";'
+            '"zarr_embargoedzarrarchive_dandiset_id_9a6f3365_fk";'
         ),
         # Constraints defined in Django
         migrations.RunSQL(
