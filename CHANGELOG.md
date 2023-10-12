@@ -1,3 +1,17 @@
+# v0.3.56 (Thu Oct 12 2023)
+
+#### 🐛 Bug Fix
+
+- Align Postgres tables/indexes/constraints with Django [#1697](https://github.com/dandi/dandi-archive/pull/1697) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Prevent CHANGELOG.md from triggering staging deploy [#1699](https://github.com/dandi/dandi-archive/pull/1699) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.55 (Wed Oct 04 2023)
 
 #### 🐛 Bug Fix
