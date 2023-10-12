@@ -437,9 +437,10 @@ function showDelete(item: AssetPath) {
 async function getItems() {
   updating.value = true;
   let resp;
+  const currentPage = Number(route.query.page) || page.value;
   try {
     resp = await dandiRest.assetPaths(
-      props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
+      props.identifier, props.version, location.value, currentPage, FILES_PER_PAGE,
     );
   } catch (e) {
     if (axios.isAxiosError(e) && e.response?.status === 404) {
