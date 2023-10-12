@@ -246,7 +246,7 @@
         v-if="currentDandiset.asset_count"
         :page="page"
         :page-count="pages"
-        @changePage="page = $event;"
+        @changePage="changePage($event)"
       />
     </v-container>
   </div>
@@ -502,7 +502,7 @@ watch(location, () => {
   if (existingLocation === location.value) { return; }
   router.push({
     ...route,
-    query: { location: location.value },
+    query: { location: location.value, page: String(page.value) },
   } as RawLocation);
 });
 
@@ -517,9 +517,13 @@ watch(() => route.query, (newRouteQuery) => {
   // Retrieve with new location
   getItems();
 }, { immediate: true });
-
-// fetch new page of items when a new one is selected
-watch(page, getItems);
+const changePage = (newPage: number) => {
+  page.value = newPage;
+  router.push({
+    ...route,
+    query: { location: location.value, page: String(page.value) },
+  } as RawLocation);
+};
 
 // Fetch dandiset if necessary
 onMounted(() => {

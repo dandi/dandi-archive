@@ -31,6 +31,7 @@
       :max="pageCount"
       :maxlength="pageCount"
       :rules="[pageIsValid]"
+      @change="emit('changePage', pageInput)"
     />
     <span>of {{ pageCount }}</span>
     <v-btn
@@ -53,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { toRefs } from 'vue';
 
 const props = defineProps({
   page: {
@@ -72,15 +73,6 @@ function pageIsValid(page: number): boolean {
 
 const emit = defineEmits(['changePage']);
 
-// Note: the v-textfield `v-model` returns a string value despite its type being 'number', so
-// we have to handle converting back and forth below.
-const pageInput = ref(props.page.toString());
+const { page: pageInput } = toRefs(props);
 
-watch(() => props.page, (newPage) => { pageInput.value = newPage.toString(); });
-watch(pageInput, (newPage) => {
-  const page = Number(newPage);
-  if (page > 0 && page <= props.pageCount) {
-    emit('changePage', page);
-  }
-});
 </script>
