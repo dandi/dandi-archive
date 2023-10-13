@@ -32,26 +32,45 @@ Largely not formalized:
 
 - [x] Enable Issue tracking per Dandiset.
   - In the process of creating DataLad Dandisets on GitHub we already enable `Issues` functionality for all dandisets.
-- [ ] Upon creation of a DataLad Dandiset on GitHub, email the Dandiset owner inviting them to subscribe to the issue tracker on GitHub
+- [ ] Initiate documentation in handbook on managing issues of the dandisets
+- [ ] Upon creation of a DataLad Dandiset on GitHub:
+  - Invite all Dandiset owners in Triage role to the dandiset. In Triage scope they can close, label, assign issues. The other actions (e.g. user management) would need to be implemented using [bot].
+  - Email them pointing to documentation (item above)
 - [ ] Setup https://github.com/dandisets [organization-wide](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file) [`.github/ISSUE_TEMPLATE`](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#creating-issue-forms) with different templates/types of issues to report
 - [ ] DLP: add a button "View/Report Issues" or "Issues" leading to issue Tracker (e.g. [Issues](https://github.com/dandisets/000108/issues) for 000108)
-  - Complimentary/alternative: Could be "File an issue" button which would prefeed some issue body with `@dandiset-owner` handles etc.  But we might then need to introduce our own UI to choose among different types of issues
-  - Optionally: dandi-archive could query/cache number of known open issues and include within that button, e.g. have it [(1) Issues](https://github.com/dandisets/000108/issues)
+  - Complimentary: dandi-archive could query/cache number of known open issues and include within that button, e.g. have it [(1) Issues](https://github.com/dandisets/000108/issues)
   - Complimentary:  asset-level issues filing in UI context menu per file, would pre-fill in the asset path
 - [ ] Optional: provide consistent collection of labels to outline typical problems which might occur
   - e.g., `validation-error`, `unable-to-load`, `io-error`, `missing-file`, `permission`, etc.
+  - ref: https://github.com/dandi/dandisets/issues/361
+
+### Alternatives considered
+
+#### GitHub, but not inviting users and operating using `@handles`
+
+Although sounded like a good idea at first, cumbersome to implement with consistent and/or desired behavior:
+
+- Dandiset owners would really have no power to do anything, like close the issue etc, unless we implement all such actions (assignment, labeling, etc) via a [bot].
+- To ensure that clicking on "New issue" would add needed `@handles` we would need to either
+  - add action to monitor new issues to enhance description with the `@handles`, or
+  - generate/update issue template per each dandiset with its own list of owners.
+
 ### Changes on dandi-archive Web UI
 
 - Add a section to the web UI for each DANDI set for buttons, such as "See issues", "File an issue", "Ask a question" which routes to the corresponding Issues page on the GitHub repo for that DANDI set
 - Buttons or side component could also report the number of questions asked about that DANDI set
+
 ### Benefits
 
 - Users already must have a GitHub account to
   - register/login to dandiarchive: we will reuse that same mechanism
   - submit support requests in helpdesk
 - GitHub provides a versatile and customizable issue tracking system many of the users might already be familiar with
+- In Triage mode dandisets owners would have powers to assign/close issues.
 
 ### Disadvantages
 
-- not "integrated" within dandiarchive.org
+- not "integrated" within dandiarchive.org as issues (meta)data would not be contained within DANDI.
   - A possible mitigation: I guess we could collect mirror issues/comments etc from GitHub internally in the archive. There are tools which could even be used to help. E.g. @yarikoptic has experience with using https://github.com/MichaelMure/git-bug to sync all issues from GitHub locally to collect all contributors to the project. E.g. [this script](https://github.com/nipy/heudiconv-joss-paper/blob/main/authors/tools/make-summaries#L92) processes a JSON dump of all issues from `git bug`  mirror.
+
+[bot]: https://github.com/dandi/dandisets/issues/360
