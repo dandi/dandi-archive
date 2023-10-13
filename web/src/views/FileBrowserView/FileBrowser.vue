@@ -309,35 +309,35 @@ const EXTERNAL_SERVICES = [
     name: 'Bioimagesuite/Viewer',
     regex: /\.nii(\.gz)?$/,
     maxsize: 1e9,
-    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=',
+    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=$asset_url$',
   },
 
   {
     name: 'MetaCell/NWBExplorer',
     regex: /\.nwb$/,
     maxsize: 1e9,
-    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
+    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=$asset_url$',
   },
 
   {
     name: 'VTK/ITK Viewer',
     regex: /\.ome\.zarr$/,
     maxsize: Infinity,
-    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=',
+    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=$asset_url$',
   },
 
   {
     name: 'OME Zarr validator',
     regex: /\.ome\.zarr$/,
     maxsize: Infinity,
-    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=',
+    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=$asset_url$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=',
+    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$base_api_url$assets/$asset_id$/download/&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -378,7 +378,22 @@ const isOwner = computed(() => !!(
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
 
-function getExternalServices(path: AssetPath) {
+function filterServiceEndpoint(endpoint: string, o: {
+  dandisetId: string,
+  dandisetVersion: string,
+  assetUrl: string,
+  assetId: string,
+  baseApiUrl: string
+}) {
+  return endpoint
+    .replace(/\$dandiset_id\$/g, o.dandisetId)
+    .replace(/\$dandiset_version\$/g, o.dandisetVersion)
+    .replace(/\$asset_url\$/g, o.assetUrl)
+    .replace(/\$asset_id\$/g, o.assetId)
+    .replace(/\$base_api_url\$/g, o.baseApiUrl);
+}
+
+function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
   const servicePredicate = (service: Service, _path: AssetPath) => (
     new RegExp(service.regex).test(path.path)
           && _path.asset !== null
@@ -394,7 +409,13 @@ function getExternalServices(path: AssetPath) {
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
       name: service.name,
-      url: `${service.endpoint}${assetURL()}`,
+      url: filterServiceEndpoint(service.endpoint, {
+        dandisetId: info.dandisetId,
+        dandisetVersion: info.dandisetVersion,
+        assetUrl: assetURL(),
+        assetId: path.asset?.asset_id || '',
+        baseApiUrl: baseApiUrl || '',
+      }),
     }));
 }
 
@@ -461,7 +482,10 @@ async function getItems() {
       // Inject relative path
       name: path.path.split('/').pop()!,
       // Inject services
-      services: getExternalServices(path) || undefined,
+      services: getExternalServices(path, {
+        dandisetId: props.identifier,
+        dandisetVersion: props.version,
+      }) || undefined,
     }))
     .sort(sortByFolderThenName);
 
