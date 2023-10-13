@@ -17,4 +17,4 @@
 | deployment-1.md              | 2022-04-13       | v0.2.9~2^2~4   |                      |                  |                |               |
 | asset-paths-1.md             | 2022-09-06       | v0.3.0~11^2~27 |                      |                  |                |               |
 | zarr-performance-redesign.md | 2022-12-19       | v0.3.11~7^2~5  |                      |                  |                |               |
-| s3-trailing-delete.md        | 2023-08-28       |                |                      |                  |                |               |
+| s3-trailing-delete.md        | 2023-08-28       | v0.3.52~6^2~3  |                      |                  |                |               |
