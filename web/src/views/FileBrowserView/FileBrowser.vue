@@ -518,13 +518,14 @@ watch(() => route.query, (newRouteQuery) => {
   // Retrieve with new location
   getItems();
 }, { immediate: true });
-const changePage = (newPage: number) => {
+
+function changePage(newPage: number) {
   page.value = newPage;
   router.push({
     ...route,
     query: { location: location.value, page: String(page.value) },
   } as RawLocation);
-};
+}
 
 // Fetch dandiset if necessary
 onMounted(() => {
