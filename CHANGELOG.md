@@ -1,3 +1,15 @@
+# v0.3.57 (Mon Oct 16 2023)
+
+#### 🐛 Bug Fix
+
+- Upgrade `dandischema` dependency [#1703](https://github.com/dandi/dandi-archive/pull/1703) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.56 (Thu Oct 12 2023)
 
 #### 🐛 Bug Fix
