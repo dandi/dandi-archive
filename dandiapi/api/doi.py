@@ -48,7 +48,8 @@ def create_doi(version: Version) -> str:
         except requests.exceptions.HTTPError as e:
             logging.error('Failed to create DOI %s', doi)
             logging.error(request_body)
-            logging.error(e.response.text)
+            if e.response:
+                logging.error(e.response.text)
             raise e
     return doi
 
@@ -63,7 +64,7 @@ def delete_doi(doi: str) -> None:
                 r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 404:
+                if e.response and e.response.status_code == 404:
                     logging.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
                 else:
