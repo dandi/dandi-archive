@@ -19,10 +19,9 @@
       <v-icon>mdi-chevron-left</v-icon>
     </v-btn>
     <v-text-field
-      v-model="pageInput"
+      v-model.number="pageInput"
       hide-details
       single-line
-      type="number"
       dense
       style="max-width: 5%;"
       class="pa-0 mx-2 my-0"
@@ -33,6 +32,7 @@
       :rules="[pageIsValid]"
       @change="emit('changePage', pageInput)"
     />
+
     <span>of {{ pageCount }}</span>
     <v-btn
       class="mx-2"
@@ -54,7 +54,8 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs } from 'vue';
+import { toRef } from 'vue';
+import { useRoute } from 'vue-router/composables';
 
 const props = defineProps({
   page: {
@@ -67,12 +68,14 @@ const props = defineProps({
   },
 });
 
+const route = useRoute();
+
 function pageIsValid(page: number): boolean {
   return page > 0 && page <= props.pageCount;
 }
 
 const emit = defineEmits(['changePage']);
 
-const { page: pageInput } = toRefs(props);
+const pageInput = Number(route.query.page) || toRef(props, 'page');
 
 </script>
