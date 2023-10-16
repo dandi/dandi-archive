@@ -39,7 +39,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema~=0.8.2',
+        'dandischema~=0.8.4',
         'django~=4.1.0',
         'django-admin-display',
         # TODO: unpin allauth when https://github.com/girder/django-composed-configuration/pull/189
