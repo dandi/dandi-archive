@@ -246,7 +246,7 @@
         v-if="currentDandiset.asset_count"
         :page="page"
         :page-count="pages"
-        @changePage="page = $event;"
+        @changePage="changePage($event)"
       />
     </v-container>
   </div>
@@ -437,9 +437,10 @@ function showDelete(item: AssetPath) {
 async function getItems() {
   updating.value = true;
   let resp;
+  const currentPage = Number(route.query.page) || page.value;
   try {
     resp = await dandiRest.assetPaths(
-      props.identifier, props.version, location.value, page.value, FILES_PER_PAGE,
+      props.identifier, props.version, location.value, currentPage, FILES_PER_PAGE,
     );
   } catch (e) {
     if (axios.isAxiosError(e) && e.response?.status === 404) {
@@ -502,7 +503,7 @@ watch(location, () => {
   if (existingLocation === location.value) { return; }
   router.push({
     ...route,
-    query: { location: location.value },
+    query: { location: location.value, page: String(page.value) },
   } as RawLocation);
 });
 
@@ -518,8 +519,13 @@ watch(() => route.query, (newRouteQuery) => {
   getItems();
 }, { immediate: true });
 
-// fetch new page of items when a new one is selected
-watch(page, getItems);
+function changePage(newPage: number) {
+  page.value = newPage;
+  router.push({
+    ...route,
+    query: { location: location.value, page: String(page.value) },
+  } as RawLocation);
+}
 
 // Fetch dandiset if necessary
 onMounted(() => {
