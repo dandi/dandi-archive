@@ -31,10 +31,10 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.12',
         'Programming Language :: Python',
     ],
-    python_requires='>=3.10',
+    python_requires='>=3.12',
     packages=find_namespace_packages(include=['dandiapi*']),
     include_package_data=True,
     install_requires=[
