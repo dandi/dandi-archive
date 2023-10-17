@@ -1,6 +1,6 @@
 from django.conf import settings
 import djclick as click
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
 
 from dandiapi.api.models.upload import AssetBlob
 
@@ -8,7 +8,7 @@ BUCKET = settings.DANDI_DANDISETS_BUCKET_NAME
 
 
 def s3_client():
-    storage = S3Boto3Storage(bucket_name=BUCKET)
+    storage = S3Storage(bucket_name=BUCKET)
     return storage.connection.meta.client
 
 

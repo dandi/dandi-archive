@@ -4,7 +4,7 @@ from minio_storage.storage import MinioStorage
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
 
 from dandiapi.api.storage import create_s3_storage
 from dandiapi.api.tests.factories import (
@@ -84,7 +84,7 @@ def authenticated_api_client(user) -> APIClient:
 # storage fixtures are copied from django-s3-file-field test fixtures
 
 
-def base_s3boto3_storage_factory(bucket_name: str) -> 'S3Boto3Storage':
+def base_s3boto3_storage_factory(bucket_name: str) -> 'S3Storage':
     return create_s3_storage(bucket_name)
 
 
@@ -109,12 +109,12 @@ def embargoed_minio_storage_factory() -> MinioStorage:
 
 
 @pytest.fixture
-def s3boto3_storage() -> 'S3Boto3Storage':
+def s3boto3_storage() -> 'S3Storage':
     return s3boto3_storage_factory()
 
 
 @pytest.fixture
-def embargoed_s3boto3_storage() -> 'S3Boto3Storage':
+def embargoed_s3boto3_storage() -> 'S3Storage':
     return s3boto3_storage_factory()
 
 
@@ -132,7 +132,7 @@ def embargoed_minio_storage() -> MinioStorage:
 def storage(request, settings) -> Storage:
     storage_factory = request.param
     if storage_factory == s3boto3_storage_factory:
-        settings.DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+        settings.DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
         settings.AWS_S3_ACCESS_KEY_ID = settings.MINIO_STORAGE_ACCESS_KEY
         settings.AWS_S3_SECRET_ACCESS_KEY = settings.MINIO_STORAGE_SECRET_KEY
         settings.AWS_S3_REGION_NAME = 'test-region'
