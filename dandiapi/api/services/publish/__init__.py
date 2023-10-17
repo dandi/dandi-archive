@@ -85,7 +85,7 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         version=Version.next_published_version(draft_version.dandiset),
     )
 
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     # inject the publishedBy and datePublished fields
     publishable_version.metadata.update(
         {

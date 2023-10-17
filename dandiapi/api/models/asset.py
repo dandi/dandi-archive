@@ -302,7 +302,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     def published_metadata(self):
         """Generate the metadata of this asset as if it were being published."""
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         # Inject the publishedBy and datePublished fields
         return {
             **self.full_metadata,
