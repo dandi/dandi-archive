@@ -6,7 +6,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
-from django_extensions.db.models import TimeStampedModel
+from django_extensions.db.models import CreationDateTimeField
 
 from dandiapi.api.storage import (
     get_embargo_storage,
@@ -19,12 +19,14 @@ from .asset import AssetBlob, EmbargoedAssetBlob
 from .dandiset import Dandiset
 
 
-class BaseUpload(TimeStampedModel):
+class BaseUpload(models.Model):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
     class Meta:
         indexes = [models.Index(fields=['etag'])]
         abstract = True
+
+    created = CreationDateTimeField()
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
     upload_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
