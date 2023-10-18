@@ -17,7 +17,7 @@ from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
 from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
 
 
 class ChecksumCalculatorFile:
@@ -95,7 +95,7 @@ class DeconstructableMinioStorage(MinioStorage):
 class VerbatimNameStorageMixin:
     """A Storage mixin, storing files without transforming their original filename."""
 
-    # The basic S3Boto3Storage does not implement generate_filename or get_valid_name,
+    # The basic S3Storage does not implement generate_filename or get_valid_name,
     # so upon FileField save, the following call stack normally occurs:
     #   FieldFile.save
     #   FileField.generate_filename
@@ -110,7 +110,7 @@ class VerbatimNameStorageMixin:
         return filename
 
 
-class TimeoutS3Boto3Storage(S3Boto3Storage):
+class TimeoutS3Storage(S3Storage):
     """Override boto3 default timeout values."""
 
     def __init__(self, **settings):
@@ -121,7 +121,7 @@ class TimeoutS3Boto3Storage(S3Boto3Storage):
         )
 
 
-class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Boto3Storage):
+class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
     @property
     def multipart_manager(self):
         return DandiBoto3MultipartManager(self)
@@ -246,14 +246,14 @@ def create_s3_storage(bucket_name: str) -> Storage:
     """
     Return a new Storage instance, compatible with the default Storage class.
 
-    This abstracts over differences between S3Boto3Storage and MinioStorage,
+    This abstracts over differences between S3Storage and MinioStorage,
     allowing either to be used as an additional non-default Storage.
     """
     # For production, calling django.core.files.storage.get_storage_class is fine
-    # to return the storage class of S3Boto3Storage.
+    # to return the storage class of S3Storage.
     default_storage_class = get_storage_class()
 
-    if issubclass(default_storage_class, S3Boto3Storage):
+    if issubclass(default_storage_class, S3Storage):
         storage = VerbatimNameS3Storage(bucket_name=bucket_name)
         # Required to upload to the sponsored bucket
         storage.default_acl = 'bucket-owner-full-control'
@@ -280,7 +280,7 @@ def create_s3_storage(bucket_name: str) -> Storage:
         storage = VerbatimNameMinioStorage(
             bucket_name=bucket_name,
             base_url=base_url,
-            # All S3Boto3Storage URLs are presigned, and the bucket typically is not public
+            # All S3Storage URLs are presigned, and the bucket typically is not public
             presign_urls=True,
             auto_create_bucket=True,
             auto_create_policy=True,
