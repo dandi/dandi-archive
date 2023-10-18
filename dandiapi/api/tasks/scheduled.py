@@ -23,6 +23,7 @@ from dandiapi.analytics.tasks import collect_s3_log_records_task
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
+from dandiapi.api.services.garbage_collection import garbage_collect
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.tasks import (
@@ -127,6 +128,11 @@ def refresh_materialized_view_search() -> None:
         cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY asset_search;')
 
 
+@shared_task(soft_time_limit=60)
+def garbage_collection() -> None:
+    garbage_collect()
+
+
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     logger.info(
@@ -153,3 +159,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Process new S3 logs every hour
     sender.add_periodic_task(timedelta(hours=1), collect_s3_log_records_task.s())
+
+    # Run garbage collection once a day
+    sender.add_periodic_task(timedelta(days=1), garbage_collection.s())
