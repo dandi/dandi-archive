@@ -110,7 +110,7 @@ class DandiMixin(ConfigMixin):
     DANDI_DOI_API_URL = values.URLValue(environ=True)
     DANDI_DOI_API_USER = values.Value(environ=True)
     DANDI_DOI_API_PASSWORD = values.Value(environ=True)
-    DANDI_DOI_API_PREFIX = values.Value(environ=True)
+    DANDI_DOI_API_PREFIX = values.Value(environ_required=True)
     DANDI_DOI_PUBLISH = values.BooleanValue(environ=True, default=False)
     DANDI_WEB_APP_URL = values.URLValue(environ_required=True)
     DANDI_API_URL = values.URLValue(environ_required=True)
@@ -151,6 +151,9 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
         'from dandiapi.api.mail import *',
     ]
 
+    # Use the DANDI test datacite instance as a placeholder
+    DANDI_DOI_API_PREFIX = '10.80507'
+
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
@@ -161,6 +164,8 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME = 'test-embargo-dandiapi-dandisets-logs'
     DANDI_ZARR_PREFIX_NAME = 'test-zarr'
     DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'
+    # Use the DANDI test datacite instance as a placeholder
+    DANDI_DOI_API_PREFIX = '10.80507'
 
     # This makes the dandischema pydantic model allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
