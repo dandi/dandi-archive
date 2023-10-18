@@ -13,13 +13,17 @@ from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models.query_utils import Q
 
 from dandiapi.analytics.tasks import collect_s3_log_records_task
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
+from dandiapi.api.services.garbage_collection import (
+    garbage_collect_asset_blobs,
+    garbage_collect_uploads,
+)
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.tasks import (
     validate_asset_metadata_task,
@@ -111,6 +115,16 @@ def refresh_materialized_view_search() -> None:
         cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY asset_search;')
 
 
+@shared_task
+def garbage_collection() -> None:
+    with transaction.atomic():
+        garbage_collected_uploads = garbage_collect_uploads()
+        garbage_collected_asset_blobs = garbage_collect_asset_blobs()
+
+    logger.info(f'Garbage collected {garbage_collected_uploads} Uploads.')
+    logger.info(f'Garbage collected {garbage_collected_asset_blobs} AssetBlobs.')
+
+
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     # Check for any draft versions that need validation every minute
@@ -139,3 +153,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
             timedelta(hours=1),
             collect_s3_log_records_task.s(log_bucket),
         )
+
+    # Run garbage collection once a day
+    sender.add_periodic_task(timedelta(days=1), garbage_collection.s())
