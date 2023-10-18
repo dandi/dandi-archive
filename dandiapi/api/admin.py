@@ -21,6 +21,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AuditRecord,
     Dandiset,
+    GarbageCollectionEvent,
     Upload,
     UserMetadata,
     Version,
@@ -265,3 +266,8 @@ class AuditRecordAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(GarbageCollectionEvent)
+class GarbageCollectionEventAdmin(admin.ModelAdmin):
+    pass
