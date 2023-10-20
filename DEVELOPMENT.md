@@ -93,7 +93,7 @@ When running the "Develop with Docker" configuration, all tox commands must be r
 Run `tox` to launch the full test suite.
 
 Individual test environments may be selectively run.
-This also allows additional options to be be added.
+This also allows additional options to be added.
 Useful sub-commands include:
 * `tox -e lint`: Run only the style checks
 * `tox -e type`: Run only the type checks
@@ -122,7 +122,7 @@ to call.
 
 ### Creating a Token
 Visit the URL `/admin` with a web browser, logging
-in with the credentials entered during the `createsuperuser` setup step..
+in with the credentials entered during the `createsuperuser` setup step.
 Then go to `/swagger` and use `GET /auth/token` end-point.
 
 ### Supplying the Token

@@ -1,5 +1,4 @@
 import hashlib
-
 from uuid import uuid4
 
 from django.conf import settings
@@ -20,7 +19,6 @@ from dandiapi.api.tasks import calculate_sha256
 @click.option('--first_name', default='Randi')
 @click.option('--last_name', default='Dandi')
 def create_dev_dandiset(name: str, email: str, first_name: str, last_name: str):
-
     owner = User.objects.get(email=email)
     owner.first_name = first_name
     owner.last_name = last_name
@@ -45,11 +43,7 @@ def create_dev_dandiset(name: str, email: str, first_name: str, last_name: str):
         # Since the SimpleUploadedFile is non-zarr asset, validation fails without a sha2_256 initially provided.
         sha256_hash = hashlib.sha256(file_content).hexdigest()
         asset_blob = AssetBlob(
-            blob_id=uuid4(),
-            blob=uploaded_file,
-            etag=etag,
-            size=file_size,
-            sha256=sha256_hash
+            blob_id=uuid4(), blob=uploaded_file, etag=etag, size=file_size, sha256=sha256_hash
         )
         asset_blob.save()
     asset_metadata = {
