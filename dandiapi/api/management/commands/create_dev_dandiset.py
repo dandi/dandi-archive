@@ -40,7 +40,8 @@ def create_dev_dandiset(name: str, email: str, first_name: str, last_name: str):
     try:
         asset_blob = AssetBlob.objects.get(etag=etag)
     except AssetBlob.DoesNotExist:
-        # Since the SimpleUploadedFile is non-zarr asset, validation fails without a sha2_256 initially provided.
+        # Since the SimpleUploadedFile is non-zarr asset, validation fails
+        # without a sha2_256 initially provided.
         sha256_hash = hashlib.sha256(file_content).hexdigest()
         asset_blob = AssetBlob(
             blob_id=uuid4(), blob=uploaded_file, etag=etag, size=file_size, sha256=sha256_hash
