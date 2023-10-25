@@ -64,4 +64,5 @@ class PublishConfig(AppConfig):
                 # Submit request User info from Django
                 send_default_pii=True,
                 traces_sampler=self._get_sentry_performance_sample_rate,
+                profiles_sampler=self._get_sentry_performance_sample_rate,
             )
