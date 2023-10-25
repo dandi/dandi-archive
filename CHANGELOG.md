@@ -1,3 +1,23 @@
+# v0.3.58 (Wed Oct 25 2023)
+
+#### 🐛 Bug Fix
+
+- Add sentry profiling [#1728](https://github.com/dandi/dandi-archive/pull/1728) ([@danlamanna](https://github.com/danlamanna))
+- Remove unnecessary atomic decorators from tasks [#1720](https://github.com/dandi/dandi-archive/pull/1720) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove pinning on django-storages[boto3] [#1717](https://github.com/dandi/dandi-archive/pull/1717) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporarily skip broken dandi-cli tests [#1718](https://github.com/dandi/dandi-archive/pull/1718) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove unused `modified` field on `Upload` model [#1713](https://github.com/dandi/dandi-archive/pull/1713) ([@mvandenburgh](https://github.com/mvandenburgh))
+- File page index fix [#1704](https://github.com/dandi/dandi-archive/pull/1704) ([@marySalvi](https://github.com/marySalvi))
+- Fix `requests` type errors [#1714](https://github.com/dandi/dandi-archive/pull/1714) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.57 (Mon Oct 16 2023)
 
 #### 🐛 Bug Fix
