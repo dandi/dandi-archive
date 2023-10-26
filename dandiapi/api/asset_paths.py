@@ -31,16 +31,20 @@ def extract_paths(path: str) -> list[str]:
     return nodepaths
 
 
-def get_root_paths_many(versions: QuerySet[Version]) -> QuerySet[AssetPath]:
+def get_root_paths_many(versions: QuerySet[Version], join_assets=False) -> QuerySet[AssetPath]:
     """Return all root paths for all provided versions."""
+    qs = AssetPath.objects.get_queryset()
+
     # Use prefetch_related here instead of select_related,
     # as otherwise the resulting join is very large
-    qs = AssetPath.objects.prefetch_related(
-        'asset',
-        'asset__blob',
-        'asset__embargoed_blob',
-        'asset__zarr',
-    )
+    if join_assets:
+        qs = qs.prefetch_related(
+            'asset',
+            'asset__blob',
+            'asset__embargoed_blob',
+            'asset__zarr',
+        )
+
     return qs.filter(version__in=versions).exclude(path__contains='/').order_by('path')
 
 
