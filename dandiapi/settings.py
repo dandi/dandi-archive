@@ -39,13 +39,6 @@ class DandiMixin(ConfigMixin):
             'dandiapi.zarr.apps.ZarrConfig',
         ] + configuration.INSTALLED_APPS
 
-        # TODO: remove this when the upstream fix is merged
-        # (https://github.com/girder/django-composed-configuration/pull/189)
-        if 'allauth.account.middleware.AccountMiddleware' not in configuration.MIDDLEWARE:
-            configuration.MIDDLEWARE += [
-                'allauth.account.middleware.AccountMiddleware',
-            ]
-
         # Install guardian
         configuration.INSTALLED_APPS += ['guardian']
 
