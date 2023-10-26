@@ -1,7 +1,7 @@
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, F, OuterRef, Subquery, Sum
+from django.db.models import Count, Max, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
@@ -163,64 +163,55 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
     @staticmethod
     def _get_dandiset_to_version_map(dandisets):
+        """Map Dandiset IDs to that dandiset's draft and most recently published version."""
         relevant_versions = (
             Version.objects.select_related('dandiset')
             .filter(dandiset__in=dandisets)
             .order_by('-version', '-modified')
         )
 
-        # Get all published versions
-        latest_dandiset_version = (
-            Version.objects.exclude(version='draft')
-            .order_by('-version')
-            .filter(dandiset_id=OuterRef('dandiset_id'))
-            .values('version')[:1]
-        )
-        published = (
-            relevant_versions.exclude(version='draft')
-            .alias(latest=Subquery(latest_dandiset_version))
-            .filter(version=F('latest'))
-        )
+        # This query sums the size and file count for root paths, and groups by the version_id,
+        # ensuring that the queryset is unique w.r.t the version_id. For some reason, the
+        # `order_by` clause is necessary to ensure this grouping
+        version_stats = {
+            entry['version_id']: entry
+            for entry in get_root_paths_many(versions=relevant_versions)
+            .values('version_id')
+            .annotate(total_size=Sum('aggregate_size'), num_assets=Sum('aggregate_files'))
+            .order_by('version_id')
+        }
 
-        # Get all draft versions
-        drafts = relevant_versions.filter(version='draft')
-
-        # Union published with drafts
-        versions = published.union(drafts).order_by('dandiset_id', '-version')
-
-        # Map version IDs to their stats
-        version_stats = {}
-        root_paths = get_root_paths_many(versions=relevant_versions)
-        for path in root_paths:
-            if path.version_id not in version_stats:
-                version_stats[path.version_id] = {'total_size': 0, 'num_assets': 0}
-            version_stats[path.version_id]['total_size'] += path.aggregate_size
-            version_stats[path.version_id]['num_assets'] += path.aggregate_files
-
-        # Create a map from dandiset IDs to their draft and published versions
-        # Because of above query, a max of 1 of each (per dandiset) will be present.
-        dandisets_to_versions = {}
-        for version in versions:
-            version: Version
-
-            # Annotate with total size and asset count (with default)
+        def annotate_version(version: Version):
+            """Annotate a version with its aggregate stats."""
             stats = version_stats.get(version.id, {'total_size': 0, 'num_assets': 0})
             version.total_size = stats['total_size']
             version.num_assets = stats['num_assets']
 
-            # Ensure entry in map exists
-            if version.dandiset_id not in dandisets_to_versions:
-                dandisets_to_versions[version.dandiset_id] = {
-                    'draft': None,
-                    'published': None,
-                }
+        # Create a map from dandiset IDs to their draft and published versions
+        dandisets_to_versions = {}
 
-            # Add draft or latest version
-            entry = dandisets_to_versions[version.dandiset_id]
-            if version.version == 'draft' and entry['draft'] is None:
-                entry['draft'] = version
-            elif entry['published'] is None:
-                entry['published'] = version
+        # Annotate and store all draft versions
+        drafts = relevant_versions.filter(version='draft')
+        for version in drafts:
+            annotate_version(version)
+            dandisets_to_versions[version.dandiset_id] = {
+                'published': None,
+                'draft': version,
+            }
+
+        # This query retrieves the versions with the max id for every dandiset_id. Since version id
+        # is a autoincrementing field, it maps directly to the most recently published version.
+        latest_published = Version.objects.filter(
+            id__in=(
+                relevant_versions.values('dandiset_id')
+                .exclude(version='draft')
+                .annotate(id=Max('id'))
+                .values_list('id', flat=True)
+            )
+        )
+        for version in latest_published:
+            annotate_version(version)
+            dandisets_to_versions[version.dandiset_id]['published'] = version
 
         return dandisets_to_versions
 
