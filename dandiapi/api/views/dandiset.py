@@ -178,7 +178,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             for entry in get_root_paths_many(versions=relevant_versions)
             .values('version_id')
             .annotate(total_size=Sum('aggregate_size'), num_assets=Sum('aggregate_files'))
-            .order_by('version_id')
+            .order_by()
         }
 
         def annotate_version(version: Version):
