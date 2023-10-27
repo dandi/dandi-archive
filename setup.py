@@ -42,9 +42,7 @@ setup(
         'dandischema~=0.8.4',
         'django~=4.1.0',
         'django-admin-display',
-        # TODO: unpin allauth when https://github.com/girder/django-composed-configuration/pull/189
-        # is merged and released
-        'django-allauth>=0.56.1',
+        'django-allauth',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
@@ -63,7 +61,7 @@ setup(
         's3-log-parse',
         'zarr-checksum>=0.2.8',
         # Production-only
-        'django-composed-configuration[prod]>=0.22.0',
+        'django-composed-configuration[prod]>=0.23.0',
         # pin directly to a version since we're extending the private multipart interface
         'django-s3-file-field[boto3]==0.3.2',
         'django-storages[s3]>=1.14.2',
@@ -79,7 +77,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.22.0',
+            'django-composed-configuration[dev]>=0.23.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',
