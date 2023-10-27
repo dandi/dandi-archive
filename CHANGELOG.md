@@ -1,3 +1,22 @@
+# v0.3.59 (Fri Oct 27 2023)
+
+#### 🐛 Bug Fix
+
+- Optimize dandiset listing endpoint [#1730](https://github.com/dandi/dandi-archive/pull/1730) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Update `django-composed-configuration` [#1731](https://github.com/dandi/dandi-archive/pull/1731) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/setup-node from 3 to 4 [#1726](https://github.com/dandi/dandi-archive/pull/1726) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.58 (Wed Oct 25 2023)
 
 #### 🐛 Bug Fix
