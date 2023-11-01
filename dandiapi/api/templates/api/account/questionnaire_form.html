@@ -2,6 +2,7 @@
 
 {% block body %}
   <h5>Welcome to DANDI! Please take a moment to fill out this form.</h5>
+  <h6><b>Note:</b> No account is necessary to access public data!</h6>
   <form method="POST" class="col s12">
     {% csrf_token %}
     {{ form }}
