@@ -76,7 +76,7 @@ jobs:
 
       - name: Run dandi-api tests in dandi-cli
         run: |
-          python -m pytest --dandi-api -k "not test_update_dandiset_from_doi" \
+          python -m pytest --dandi-api \
             "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
