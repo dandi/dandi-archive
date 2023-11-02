@@ -337,7 +337,7 @@ const EXTERNAL_SERVICES = [
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$base_api_url$assets/$asset_id$/download/&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   },
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -381,16 +381,18 @@ const itemsNotFound = computed(() => items.value && !items.value.length);
 function filterServiceEndpoint(endpoint: string, o: {
   dandisetId: string,
   dandisetVersion: string,
-  assetUrl: string,
   assetId: string,
-  baseApiUrl: string
+  assetUrl: string,
+  assetDandiUrl: string,
+  assetS3Url: string,
 }) {
   return endpoint
     .replace(/\$dandiset_id\$/g, o.dandisetId)
     .replace(/\$dandiset_version\$/g, o.dandisetVersion)
-    .replace(/\$asset_url\$/g, o.assetUrl)
     .replace(/\$asset_id\$/g, o.assetId)
-    .replace(/\$base_api_url\$/g, o.baseApiUrl);
+    .replace(/\$asset_url\$/g, o.assetUrl)
+    .replace(/\$asset_dandi_url\$/g, o.assetUrl)
+    .replace(/\$asset_s3_url\$/g, o.assetUrl);
 }
 
 function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
@@ -400,10 +402,16 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
           && _path.aggregate_size <= service.maxsize
   );
 
+  // Formulate the two possible asset URLs -- the direct S3 link to the relevant
+  // object, and the DANDI URL that redirects to the S3 one.
   const baseApiUrl = process.env.VUE_APP_DANDI_API_ROOT;
-  const assetURL = () => (embargoed.value
-    ? `${baseApiUrl}assets/${path.asset?.asset_id}/download/`
-    : trimEnd((path.asset as AssetFile).url, '/'));
+  const assetDandiUrl = `${baseApiUrl}assets/${path.asset?.asset_id}/download/`;
+  const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
+
+  // Select the best "default" URL: the direct S3 link is better when it can be
+  // used, but we're forced to supply the internal DANDI URL for embargoed
+  // dandisets (since the ready-made S3 URL will prevent access in that case).
+  const assetUrl = embargoed.value ? assetDandiUrl : assetS3Url;
 
   return EXTERNAL_SERVICES
     .filter((service) => servicePredicate(service, path))
@@ -412,9 +420,10 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
       url: filterServiceEndpoint(service.endpoint, {
         dandisetId: info.dandisetId,
         dandisetVersion: info.dandisetVersion,
-        assetUrl: assetURL(),
         assetId: path.asset?.asset_id || '',
-        baseApiUrl: baseApiUrl || '',
+        assetUrl,
+        assetDandiUrl,
+        assetS3Url,
       }),
     }));
 }
