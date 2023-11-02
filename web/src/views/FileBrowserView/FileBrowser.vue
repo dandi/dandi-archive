@@ -387,12 +387,12 @@ function serviceURL(endpoint: string, data: {
   assetS3Url: string,
 }) {
   return endpoint
-    .replace(/\$dandiset_id\$/g, data.dandisetId)
-    .replace(/\$dandiset_version\$/g, data.dandisetVersion)
-    .replace(/\$asset_id\$/g, data.assetId)
-    .replace(/\$asset_url\$/g, data.assetUrl)
-    .replace(/\$asset_dandi_url\$/g, data.assetUrl)
-    .replace(/\$asset_s3_url\$/g, data.assetUrl);
+    .replaceAll('$dandiset_id$', data.dandisetId)
+    .replaceAll('$dandiset_version$', data.dandisetVersion)
+    .replaceAll('$asset_id$', data.assetId)
+    .replaceAll('$asset_url$', data.assetUrl)
+    .replaceAll('$asset_dandi_url$', data.assetUrl)
+    .replaceAll('$asset_s3_url$', data.assetUrl);
 }
 
 function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
