@@ -378,7 +378,7 @@ const isOwner = computed(() => !!(
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
 
-function filterServiceEndpoint(endpoint: string, o: {
+function serviceURL(endpoint: string, data: {
   dandisetId: string,
   dandisetVersion: string,
   assetId: string,
@@ -387,12 +387,12 @@ function filterServiceEndpoint(endpoint: string, o: {
   assetS3Url: string,
 }) {
   return endpoint
-    .replace(/\$dandiset_id\$/g, o.dandisetId)
-    .replace(/\$dandiset_version\$/g, o.dandisetVersion)
-    .replace(/\$asset_id\$/g, o.assetId)
-    .replace(/\$asset_url\$/g, o.assetUrl)
-    .replace(/\$asset_dandi_url\$/g, o.assetUrl)
-    .replace(/\$asset_s3_url\$/g, o.assetUrl);
+    .replace(/\$dandiset_id\$/g, data.dandisetId)
+    .replace(/\$dandiset_version\$/g, data.dandisetVersion)
+    .replace(/\$asset_id\$/g, data.assetId)
+    .replace(/\$asset_url\$/g, data.assetUrl)
+    .replace(/\$asset_dandi_url\$/g, data.assetUrl)
+    .replace(/\$asset_s3_url\$/g, data.assetUrl);
 }
 
 function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
@@ -417,7 +417,7 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
       name: service.name,
-      url: filterServiceEndpoint(service.endpoint, {
+      url: serviceURL(service.endpoint, {
         dandisetId: info.dandisetId,
         dandisetVersion: info.dandisetVersion,
         assetId: path.asset?.asset_id || '',
