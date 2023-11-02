@@ -381,7 +381,6 @@ const itemsNotFound = computed(() => items.value && !items.value.length);
 function serviceURL(endpoint: string, data: {
   dandisetId: string,
   dandisetVersion: string,
-  assetId: string,
   assetUrl: string,
   assetDandiUrl: string,
   assetS3Url: string,
@@ -389,7 +388,6 @@ function serviceURL(endpoint: string, data: {
   return endpoint
     .replaceAll('$dandiset_id$', data.dandisetId)
     .replaceAll('$dandiset_version$', data.dandisetVersion)
-    .replaceAll('$asset_id$', data.assetId)
     .replaceAll('$asset_url$', data.assetUrl)
     .replaceAll('$asset_dandi_url$', data.assetUrl)
     .replaceAll('$asset_s3_url$', data.assetUrl);
@@ -420,7 +418,6 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
       url: serviceURL(service.endpoint, {
         dandisetId: info.dandisetId,
         dandisetVersion: info.dandisetVersion,
-        assetId: path.asset?.asset_id || '',
         assetUrl,
         assetDandiUrl,
         assetS3Url,
