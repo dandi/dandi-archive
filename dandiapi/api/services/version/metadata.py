@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 

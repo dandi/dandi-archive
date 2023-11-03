@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from django.conf import settings
 from django.core.files.storage import Storage
 from minio_storage.storage import MinioStorage

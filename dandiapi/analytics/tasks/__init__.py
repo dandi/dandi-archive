@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from collections import Counter
 from collections.abc import Generator
 from pathlib import Path

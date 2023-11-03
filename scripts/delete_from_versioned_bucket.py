@@ -12,6 +12,7 @@ You will need an AWS CLI profile set up with permission to delete objects from t
 See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
 """
 from __future__ import annotations
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3

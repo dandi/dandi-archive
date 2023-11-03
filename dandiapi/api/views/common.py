@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from drf_yasg import openapi
 from rest_framework.pagination import PageNumberPagination
 

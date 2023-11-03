@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from .asset import Asset, AssetBlob, EmbargoedAssetBlob
 from .asset_paths import AssetPath, AssetPathRelation
 from .dandiset import Dandiset

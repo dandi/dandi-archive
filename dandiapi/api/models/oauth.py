@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from fnmatch import fnmatch
 
 from django.core.exceptions import ValidationError

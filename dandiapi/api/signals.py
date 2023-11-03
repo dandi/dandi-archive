@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from allauth.account.signals import user_signed_up
 from corsheaders.signals import check_request_enabled
 from django.conf import settings

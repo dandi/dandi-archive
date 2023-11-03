@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Script that will export all desired papertrail log files."""
 from __future__ import annotations
+
 from datetime import datetime
 import os
 from pathlib import Path

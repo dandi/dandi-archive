@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from difflib import ndiff
 from pprint import pformat
 

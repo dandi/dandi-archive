@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from django.contrib.auth.models import User
 from django.views.decorators.cache import cache_page
 from rest_framework.decorators import api_view

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import djclick as click
 
 from dandiapi.api.asset_paths import add_version_asset_paths

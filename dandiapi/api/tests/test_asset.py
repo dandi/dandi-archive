@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 import os.path
 from uuid import uuid4

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dandischema import migrate
 import djclick as click
 
