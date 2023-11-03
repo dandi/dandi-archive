@@ -38,7 +38,7 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 
     # Published assets are immutable
     if asset.published:
-        raise AssetHasBeenPublished()
+        raise AssetHasBeenPublished
 
     # track the state of the asset before to use optimistic locking
     asset_state = asset.status
@@ -76,7 +76,7 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 
 def version_aggregate_assets_summary(version: Version) -> None:
     if version.version != 'draft':
-        raise VersionHasBeenPublished()
+        raise VersionHasBeenPublished
 
     version.metadata['assetsSummary'] = aggregate_assets_summary(
         asset.full_metadata
@@ -117,7 +117,7 @@ def validate_version_metadata(*, version: Version) -> None:
 
     # Published versions are immutable
     if version.version != 'draft':
-        raise VersionHasBeenPublished()
+        raise VersionHasBeenPublished
 
     with transaction.atomic():
         # validating version metadata needs to lock the version to avoid racing with

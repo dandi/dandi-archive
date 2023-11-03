@@ -155,10 +155,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
-                raise NotAuthenticated()
+                raise NotAuthenticated
             if not self.request.user.has_perm('owner', dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
         return dandiset
 
     @staticmethod

@@ -131,7 +131,7 @@ def insert_asset_paths(asset: Asset, version: Version):
         # If there are simultaneous requests to create the same asset, this check constraint can
         # fail, and should be handled directly, rather than be allowed to bubble up
         if 'unique-version-path' in str(e):
-            raise AssetAlreadyExists()
+            raise AssetAlreadyExists
 
         # Re-raise original exception otherwise
         raise

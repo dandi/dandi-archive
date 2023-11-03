@@ -45,7 +45,7 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
         not user.has_perm('owner', dandiset)
         or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
     ):
-        raise NotAllowed()
+        raise NotAllowed
     if dandiset.zarr_archives.exists() or dandiset.embargoed_zarr_archives.exists():
         # TODO: return a string instead of a list here
         raise NotAllowed(['Cannot publish dandisets which contain zarrs'], 400)  # type: ignore
@@ -55,17 +55,17 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
         if not draft_version.publishable:
             match draft_version.status:
                 case Version.Status.PUBLISHED:
-                    raise DandisetAlreadyPublished()
+                    raise DandisetAlreadyPublished
                 case Version.Status.PUBLISHING:
-                    raise DandisetAlreadyPublishing()
+                    raise DandisetAlreadyPublishing
                 case Version.Status.VALIDATING:
-                    raise DandisetBeingValidated()
+                    raise DandisetBeingValidated
                 case Version.Status.INVALID:
-                    raise DandisetInvalidMetadata()
+                    raise DandisetInvalidMetadata
                 case Version.Status.PENDING:
-                    raise DandisetValidationPending()
+                    raise DandisetValidationPending
                 case Version.Status.VALID:
-                    raise DandisetInvalidMetadata()
+                    raise DandisetInvalidMetadata
                 case other:
                     raise NotImplementedError(
                         f'Draft version of dandiset {dandiset.identifier} '
