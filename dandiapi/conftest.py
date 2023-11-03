@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
-from django.core.files.storage import Storage
-from minio_storage.storage import MinioStorage
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
-from storages.backends.s3 import S3Storage
 
 from dandiapi.api.storage import create_s3_storage
 from dandiapi.api.tests.factories import (
@@ -24,6 +23,11 @@ from dandiapi.api.tests.factories import (
 )
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 from dandiapi.zarr.tests.utils import upload_zarr_file
+
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
+    from minio_storage.storage import MinioStorage
+    from storages.backends.s3 import S3Storage
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')

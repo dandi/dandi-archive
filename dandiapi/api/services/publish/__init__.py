@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import datetime
+from typing import TYPE_CHECKING
 
 from dandischema.metadata import aggregate_assets_summary, validate
-from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import QuerySet
 from more_itertools import ichunked
 
 from dandiapi.api import doi
@@ -21,6 +20,10 @@ from dandiapi.api.services.publish.exceptions import (
     DandisetValidationPendingError,
 )
 from dandiapi.api.tasks import write_manifest_files
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.db.models import QuerySet
 
 
 def publish_asset(*, asset: Asset) -> None:

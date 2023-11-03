@@ -8,9 +8,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import timedelta
 import time
+from typing import TYPE_CHECKING
 
 from celery import shared_task
-from celery.app.base import Celery
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -30,6 +30,9 @@ from dandiapi.api.tasks import (
     write_manifest_files,
 )
 from dandiapi.zarr.models import ZarrArchiveStatus
+
+if TYPE_CHECKING:
+    from celery.app.base import Celery
 
 logger = get_task_logger(__name__)
 

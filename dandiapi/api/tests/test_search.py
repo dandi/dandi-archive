@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
-from rest_framework.test import APIClient
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import Count, Max, OuterRef, Subquery, Sum
@@ -15,7 +17,6 @@ from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -38,6 +39,9 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
 )
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
 
 
 class DandisetFilterBackend(filters.OrderingFilter):

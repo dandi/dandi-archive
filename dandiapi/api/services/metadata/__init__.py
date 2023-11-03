@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-import jsonschema.exceptions
 
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.metadata.exceptions import (
@@ -15,6 +16,9 @@ from dandiapi.api.services.metadata.exceptions import (
     VersionMetadataConcurrentlyModified,
 )
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
+
+if TYPE_CHECKING:
+    import jsonschema.exceptions
 
 logger = get_task_logger(__name__)
 

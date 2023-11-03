@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from allauth.socialaccount.models import SocialAccount
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
@@ -14,6 +15,9 @@ from django.views.generic.base import TemplateView
 from dandiapi.api.mail import send_approved_user_message, send_rejected_user_message
 from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
+
+if TYPE_CHECKING:
+    from allauth.socialaccount.models import SocialAccount
 
 
 class DashboardMixin(LoginRequiredMixin, UserPassesTestMixin):

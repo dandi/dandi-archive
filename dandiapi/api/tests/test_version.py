@@ -5,7 +5,6 @@ from time import sleep
 from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
 import pytest
@@ -14,6 +13,7 @@ from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModified
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import User
     from rest_framework.test import APIClient
 
 from dandiapi.api import tasks

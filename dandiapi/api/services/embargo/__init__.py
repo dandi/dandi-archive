@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.db.models import QuerySet
 
 from dandiapi.api.copy import copy_object_multipart
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
@@ -10,6 +10,10 @@ from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.tasks import unembargo_dandiset_task
 
 from .exceptions import AssetNotEmbargoedError, DandisetNotEmbargoedError
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.db.models import QuerySet
 
 
 def _unembargo_asset(asset: Asset):

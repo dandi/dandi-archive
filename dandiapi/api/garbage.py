@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from django.db.models import Exists, OuterRef
-from django.db.models.query import QuerySet
 from django.utils import timezone
 
 from dandiapi.api.models import Asset, Version
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 # How long after the last modification things are eligible for deletion
 STALE_TIME_INTERVAL = timedelta(days=7)
