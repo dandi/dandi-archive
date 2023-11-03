@@ -108,6 +108,8 @@ jobs:
       - name: Install dandi-api dependencies
         run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
+      - run: pip install setuptools
+
       - name: Apply migrations to API server
         run: python manage.py migrate
 
