@@ -5,7 +5,7 @@ on:
       - "web/**"
   push:
     branches:
-      - master
+      - test
     paths-ignore:
       - "web/**"
   schedule:
