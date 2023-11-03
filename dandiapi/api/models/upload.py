@@ -51,7 +51,11 @@ class BaseUpload(models.Model):
         upload_id = uuid4()
         object_key = cls.object_key(upload_id, dandiset=dandiset)
         multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
-            object_key, size
+            object_key,
+            size,
+            # The upload HTTP API does not pass the file name or content type, and it would be a
+            # breaking change to start requiring this.
+            'application/octet-stream',
         )
 
         upload = cls(
