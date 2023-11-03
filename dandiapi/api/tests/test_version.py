@@ -313,7 +313,7 @@ def test_version_publish_version(draft_version, asset):
                     'id': URN_RE,
                     'identifier': 'RRID:SCR_017571',
                     'name': 'DANDI API',
-                    # TODO version the API
+                    # TODO: version the API
                     'version': '0.1.0',
                     'schemaKey': 'Software',
                 }

@@ -359,7 +359,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_description='Set the owners of a dandiset. The user performing this action must\
                                be an owner of the dandiset themself.',
     )
-    # TODO move these into a viewset
+    # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
         dandiset = self.get_object()

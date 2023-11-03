@@ -308,7 +308,7 @@ def test_publish_task(
                     'id': URN_RE,
                     'identifier': 'RRID:SCR_017571',
                     'name': 'DANDI API',
-                    # TODO version the API
+                    # TODO: version the API
                     'version': '0.1.0',
                     'schemaKey': 'Software',
                 }
@@ -363,7 +363,7 @@ def test_publish_task(
             'id': URN_RE,
             'name': 'DANDI publish',
             'startDate': UTC_ISO_TIMESTAMP_RE,
-            # TODO endDate needs to be defined before publish is complete
+            # TODO: endDate needs to be defined before publish is complete
             'endDate': UTC_ISO_TIMESTAMP_RE,
             'wasAssociatedWith': [
                 {

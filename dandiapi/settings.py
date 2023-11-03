@@ -51,7 +51,7 @@ class DandiMixin(ConfigMixin):
         # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # TODO remove TokenAuthentication, it is only here to support
+            # TODO: remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]
