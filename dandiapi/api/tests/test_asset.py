@@ -25,7 +25,7 @@ from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID
 # Model tests
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_no_blob_zarr(draft_asset_factory):
     asset = draft_asset_factory()
 
@@ -37,7 +37,7 @@ def test_asset_no_blob_zarr(draft_asset_factory):
     assert 'exactly-one-blob' in str(excinfo.value)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_blob_and_zarr(draft_asset, zarr_archive):
     # An integrity error is thrown by the constraint that both blob and zarr cannot both be defined
     with pytest.raises(IntegrityError) as excinfo:
@@ -47,7 +47,7 @@ def test_asset_blob_and_zarr(draft_asset, zarr_archive):
     assert 'exactly-one-blob' in str(excinfo.value)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
     # Initialize version and contained assets
     version: Version = draft_version_factory()
@@ -68,7 +68,7 @@ def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
     assert val['aggregate_files'] == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_factory):
     # Initialize version and contained assets
     version: Version = draft_version_factory()
@@ -88,7 +88,7 @@ def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_fact
     assert resp.json() == {'detail': 'Specified path not found.'}
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_s3_url(asset_blob):
     signed_url = asset_blob.blob.url
     s3_url = asset_blob.s3_url
@@ -96,7 +96,7 @@ def test_asset_s3_url(asset_blob):
     assert signed_url.split('?')[0] == s3_url
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_publish_asset(draft_asset: Asset):
     draft_asset_id = draft_asset.asset_id
     draft_blob = draft_asset.blob
@@ -138,7 +138,7 @@ def test_publish_asset(draft_asset: Asset):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_total_size(
     draft_version_factory, asset_factory, asset_blob_factory, zarr_archive_factory
 ):
@@ -175,7 +175,7 @@ def test_asset_total_size(
     # supported, ATM they are not and tested by test_zarr_rest_create_embargoed_dandiset
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_full_metadata(draft_asset_factory):
     raw_metadata = {
         'foo': 'bar',
@@ -201,7 +201,7 @@ def test_asset_full_metadata(draft_asset_factory):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
     raw_metadata = {
         'foo': 'bar',
@@ -232,7 +232,7 @@ def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
 # API Tests
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_list(api_client, version, asset, asset_factory):
     version.assets.add(asset)
 
@@ -259,7 +259,7 @@ def test_asset_rest_list(api_client, version, asset, asset_factory):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_list_include_metadata(api_client, version, asset, asset_factory):
     version.assets.add(asset)
 
@@ -300,7 +300,7 @@ def test_asset_rest_list_include_metadata(api_client, version, asset, asset_fact
         'no-match',
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, result_indices):
     assets = [
         asset_factory(path='foo.txt'),
@@ -347,7 +347,7 @@ def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, r
     ],
     ids=['created', '-created', 'modified', '-modified', 'path', '-path'],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_list_ordering(api_client, version, asset_factory, order_param, ordering):
     # Create asset B first so that the path ordering is different from the created ordering.
     b = asset_factory(path='b')
@@ -368,7 +368,7 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
     assert result_paths == ordering
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
     version.assets.add(asset)
 
@@ -384,7 +384,7 @@ def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
     version.assets.add(asset)
     # Remove the sha256 from the factory asset
@@ -400,7 +400,7 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_info(api_client, version, asset):
     version.assets.add(asset)
 
@@ -419,7 +419,7 @@ def test_asset_rest_info(api_client, version, asset):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
     'status,validation_error',
     [
@@ -445,7 +445,7 @@ def test_asset_rest_validation(api_client, version, asset, status, validation_er
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create(api_client, user, draft_version, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -517,7 +517,7 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
         ('foo/.bar', 200),
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_path_validation(
     api_client, user, draft_version, asset_blob, path, expected_status_code
 ):
@@ -540,7 +540,7 @@ def test_asset_create_path_validation(
     assert resp.status_code == expected_status_code, resp.data
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_conflicting_path(api_client, user, draft_version, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -581,7 +581,7 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
         )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -625,7 +625,7 @@ def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_b
     assert draft_version.status == Version.Status.PENDING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -722,7 +722,7 @@ def test_asset_create_zarr_validated(
     assert asset2.status == Asset.Status.VALID
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_zarr_wrong_dandiset(
     api_client, user, draft_version, zarr_archive_factory, dandiset_factory
 ):
@@ -751,7 +751,7 @@ def test_asset_create_zarr_wrong_dandiset(
     assert resp.json() == 'The zarr archive belongs to a different dandiset'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -775,7 +775,7 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
     assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob, zarr_archive):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -799,7 +799,7 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
     assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_no_valid_blob(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -817,7 +817,7 @@ def test_asset_create_no_valid_blob(api_client, user, draft_version):
     assert resp.status_code == 404
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -834,7 +834,7 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
     assert resp.data == {'metadata': ['No path specified in metadata.']}, resp.data
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_not_an_owner(api_client, user, version):
     api_client.force_authenticate(user=user)
 
@@ -848,7 +848,7 @@ def test_asset_create_not_an_owner(api_client, user, version):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_published_version(api_client, user, published_version, asset):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -869,7 +869,7 @@ def test_asset_create_published_version(api_client, user, published_version, ass
     assert resp.data == 'Only draft versions can be modified.'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_create_existing_path(api_client, user, draft_version, asset_blob, asset_factory):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -895,7 +895,7 @@ def test_asset_create_existing_path(api_client, user, draft_version, asset_blob,
     assert resp.status_code == 409
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_rename(api_client, user, draft_version, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -921,7 +921,7 @@ def test_asset_rest_rename(api_client, user, draft_version, asset_blob):
     assert resp.json()['asset_id'] != str(asset.asset_id)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -982,7 +982,7 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     assert draft_version.status == Version.Status.PENDING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embargoed_asset_blob):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -1038,7 +1038,7 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
     assert draft_version.status == Version.Status.PENDING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update_zarr(
     api_client,
     user,
@@ -1107,7 +1107,7 @@ def test_asset_rest_update_zarr(
     assert draft_version.status == Version.Status.PENDING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
     draft_version.assets.add(asset)
     new_metadata = asset.metadata
@@ -1123,7 +1123,7 @@ def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update_not_an_owner(api_client, user, draft_version, asset):
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
@@ -1141,7 +1141,7 @@ def test_asset_rest_update_not_an_owner(api_client, user, draft_version, asset):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update_published_version(api_client, user, published_version, asset):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -1159,7 +1159,7 @@ def test_asset_rest_update_published_version(api_client, user, published_version
     assert resp.data == 'Only draft versions can be modified.'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_factory):
     old_asset = asset_factory()
     existing_asset = asset_factory()
@@ -1180,7 +1180,7 @@ def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_fa
     assert resp.status_code == 409
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_delete(api_client, user, draft_version, asset):
     assign_perm('owner', user, draft_version.dandiset)
     draft_version.assets.add(asset)
@@ -1212,7 +1212,7 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
     assert draft_version.status == Version.Status.PENDING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_delete_zarr(
     api_client,
     user,
@@ -1242,7 +1242,7 @@ def test_asset_rest_delete_zarr(
     assert resp.status_code == 204
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_delete_zarr_modified(
     api_client,
     user,
@@ -1301,7 +1301,7 @@ def test_asset_rest_delete_zarr_modified(
     assert resp.status_code == 204
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
     api_client.force_authenticate(user=user)
     version.assets.add(asset)
@@ -1315,7 +1315,7 @@ def test_asset_rest_delete_not_an_owner(api_client, user, version, asset):
     assert asset in Asset.objects.all()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_rest_delete_published_version(api_client, user, published_version, asset):
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, published_version.dandiset)
@@ -1329,7 +1329,7 @@ def test_asset_rest_delete_published_version(api_client, user, published_version
     assert response.data == 'Only draft versions can be modified.'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_download(api_client, storage, version, asset):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -1355,7 +1355,7 @@ def test_asset_download(api_client, storage, version, asset):
         assert download.content == reader.read()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_download_embargo(
     authenticated_api_client,
     user,
@@ -1401,7 +1401,7 @@ def test_asset_download_embargo(
         assert download.content == reader.read()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
     asset = asset_factory(blob=None, zarr=zarr_archive)
     version.assets.add(asset)
@@ -1413,7 +1413,7 @@ def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
     assert response.status_code == 400
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_direct_download(api_client, storage, version, asset):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -1436,7 +1436,7 @@ def test_asset_direct_download(api_client, storage, version, asset):
         assert download.content == reader.read()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_archive):
     asset = asset_factory(blob=None, zarr=zarr_archive)
     version.assets.add(asset)
@@ -1445,7 +1445,7 @@ def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_arc
     assert response.status_code == 400
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_direct_download_head(api_client, storage, version, asset):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -1468,14 +1468,14 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
         assert download.content == reader.read()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_direct_metadata(api_client, asset):
     assert (
         json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.full_metadata
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_direct_info(api_client, asset):
     assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
         'asset_id': str(asset.asset_id),
@@ -1489,7 +1489,7 @@ def test_asset_direct_info(api_client, asset):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
     'glob_pattern,expected_paths',
     [

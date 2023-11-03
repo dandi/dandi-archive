@@ -41,7 +41,7 @@ def test_extract_paths(path, expected):
     assert extract_paths(path) == expected
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset(draft_version_factory, asset_factory):
     # Create asset with version
     asset: Asset = asset_factory()
@@ -82,7 +82,7 @@ def test_asset_path_add_asset(draft_version_factory, asset_factory):
         )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
     # Create asset with version
     asset: Asset = asset_factory()
@@ -99,7 +99,7 @@ def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
     assert path.aggregate_size == asset.size
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_factory):
     # Create asset with version
     asset1: Asset = asset_factory()
@@ -120,7 +120,7 @@ def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_fact
     assert version.asset_paths.filter(asset__isnull=False).count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -154,7 +154,7 @@ def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -176,7 +176,7 @@ def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, as
         assert path.aggregate_size == path.asset.size
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -195,7 +195,7 @@ def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory)
     assert path.aggregate_files == 2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_delete_asset(ingested_asset):
     asset = ingested_asset
     version = ingested_asset.versions.first()
@@ -208,7 +208,7 @@ def test_asset_path_delete_asset(ingested_asset):
     assert not AssetPath.objects.filter(path=asset.path, version=version).exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_delete_asset_idempotent(ingested_asset):
     asset = ingested_asset
     version = ingested_asset.versions.first()
@@ -218,7 +218,7 @@ def test_asset_path_delete_asset_idempotent(ingested_asset):
     delete_asset_paths(asset, version)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_update_asset(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -246,7 +246,7 @@ def test_asset_path_update_asset(draft_version_factory, asset_factory):
         assert AssetPath.objects.filter(path=path, version=version).exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_delete_asset_shared_paths(
     draft_version_factory, asset_factory, asset_blob_factory
 ):
@@ -270,7 +270,7 @@ def test_asset_path_delete_asset_shared_paths(
     assert path.aggregate_files == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]
@@ -292,7 +292,7 @@ def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     assert all([x.asset is not None for x in qs])
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_publish_version(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     asset = asset_factory(path='foo/bar.txt', status=Asset.Status.VALID)
@@ -323,7 +323,7 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory):
         AssetPath.objects.get(path=path, version=published_version)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
     version = draft_version_factory()
     version.assets.add(asset_factory(path='a'))
@@ -335,7 +335,7 @@ def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
     assert get_root_paths(version).count() == 4
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
     version = draft_version_factory()
     version.assets.add(asset_factory(path='a'))
