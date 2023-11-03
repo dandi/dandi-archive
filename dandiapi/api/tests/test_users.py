@@ -59,7 +59,7 @@ def test_user_registration_email_content(
 
 
 @pytest.mark.parametrize(
-    'status,email_count',
+    ('status', 'email_count'),
     [
         # INCOMPLETE users POSTing to the questionnaire endpoint should result in 2 emails
         # being sent (new user welcome email, admin "needs approval" email), while no email should
@@ -231,7 +231,7 @@ def test_user_search_extra_data(api_client, user, social_account, social_account
 
 
 @pytest.mark.parametrize(
-    'status,expected_status_code,expected_search_results_value',
+    ('status', 'expected_status_code', 'expected_search_results_value'),
     [
         (
             UserMetadata.Status.APPROVED,
@@ -312,7 +312,7 @@ def test_user_status(
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    'questions,querystring,expected_status_code',
+    ('questions', 'querystring', 'expected_status_code'),
     [
         (NEW_USER_QUESTIONS, f'QUESTIONS={json.dumps(NEW_USER_QUESTIONS)}', 200),
         (COLLECT_USER_NAME_QUESTIONS, f'QUESTIONS={json.dumps(NEW_USER_QUESTIONS)}', 200),
@@ -334,7 +334,7 @@ def test_user_questionnaire_view(
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    'email,expected_status',
+    ('email', 'expected_status'),
     [
         ('test@test.com', UserMetadata.Status.PENDING),
         ('test@test.edu', UserMetadata.Status.APPROVED),

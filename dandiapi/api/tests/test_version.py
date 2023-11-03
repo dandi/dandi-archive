@@ -699,7 +699,7 @@ def test_version_rest_publish_not_a_draft(api_client, user, published_version, a
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    'status,expected_data,expected_status_code',
+    ('status', 'expected_data', 'expected_status_code'),
     [
         (
             Version.Status.PENDING,

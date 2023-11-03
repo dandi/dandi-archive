@@ -282,7 +282,7 @@ def test_asset_rest_list_include_metadata(api_client, version, asset, asset_fact
 
 
 @pytest.mark.parametrize(
-    'path,result_indices',
+    ('path', 'result_indices'),
     [
         ('foo.txt', [0]),
         ('bar.txt', [1]),
@@ -335,7 +335,7 @@ def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, r
 
 
 @pytest.mark.parametrize(
-    'order_param,ordering',
+    ('order_param', 'ordering'),
     [
         ('created', ['b', 'a', 'c']),
         ('-created', ['c', 'a', 'b']),
@@ -421,7 +421,7 @@ def test_asset_rest_info(api_client, version, asset):
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    'status,validation_error',
+    ('status', 'validation_error'),
     [
         (Asset.Status.PENDING, ''),
         (Asset.Status.VALIDATING, ''),
@@ -500,7 +500,7 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
 
 
 @pytest.mark.parametrize(
-    'path,expected_status_code',
+    ('path', 'expected_status_code'),
     [
         ('foo.txt', 200),
         ('/foo', 400),
@@ -1491,7 +1491,7 @@ def test_asset_direct_info(api_client, asset):
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
-    'glob_pattern,expected_paths',
+    ('glob_pattern', 'expected_paths'),
     [
         (
             '*.txt',

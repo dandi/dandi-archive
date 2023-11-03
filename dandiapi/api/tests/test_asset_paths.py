@@ -30,7 +30,7 @@ def ingested_asset(draft_version_factory, asset_factory) -> Asset:
 
 
 @pytest.mark.parametrize(
-    'path,expected',
+    ('path', 'expected'),
     [
         ('foo.txt', ['foo.txt']),
         ('foo/bar.txt', ['foo', 'foo/bar.txt']),
