@@ -2,13 +2,13 @@
 
 ## Background
 
-Now that the [design for S3 trailing delete](https://github.com/dandi/dandi-archive/blob/master/doc/design/s3-trailing-delete.md) is deployed to staging, we are ready to implement garbage collection. [This older design document](https://github.com/dandi/dandi-archive/blob/master/doc/design/garbage-collection-1.md#uploads) is still relevant, and summarizes the various types of garbage collection we want to implement. This document will present a design for garbage collection of uploads and asset blobs, i.e. garbage that accumulates due to improper uploads done by users. A design for garbage collection of orphaned “Assets” (i.e. files that have been properly uploaded, have metadata, etc. but are no longer associated with any version of a dandiset) is more complex and is left for a future design document.
+Now that the [design for S3 trailing delete](https://github.com/dandi/dandi-archive/blob/master/doc/design/s3-trailing-delete.md) is deployed to staging, we are ready to implement garbage collection. [This older design document](https://github.com/dandi/dandi-archive/blob/master/doc/design/garbage-collection-1.md#uploads) is still relevant, and summarizes the various types of garbage collection we want to implement. This document will present a design for garbage collection of uploads and asset blobs, i.e. garbage that accumulates due to improper uploads done by users. A design for garbage collection of orphaned “Assets” (i.e. files that have been properly uploaded, have metadata, etc. but are no longer associated with any version of a dandiset) is more complex and is left for a future design document. Additionally, the garbage collection process in this design document only applies to regular assets; garbage collection of Zarrs is not covered.
 
 ## Why do we need garbage collection?
 
 When a user creates an asset, they send a request to the API and the API returns a series of presigned URLs for the user to perform a multipart upload to. Then, an `Upload` database row is created to track the status of the upload. When the user is done uploading their data to the presigned URLs, they must “finalize” the upload by sending a request to the API to create an `AssetBlob` out of that `Upload`. Finally, they must make one more request to actually associate this new `AssetBlob` with an `Asset`.
 
-### Orphaned Uploads
+### Orphaned Asset Uploads
 
 If the user cancels a multipart upload partway through, or completes the multipart upload to S3 but does not “finalize” the upload, then the upload becomes “orphaned”, i.e. the associated `Upload` record and S3 object remain in the database/bucket indefinitely.
 
