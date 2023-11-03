@@ -2,7 +2,7 @@ import pytest
 from rest_framework.authtoken.models import Token
 
 
-@pytest.fixture
+@pytest.fixture()
 def token(user) -> Token:
     return Token.objects.get(user=user)
 

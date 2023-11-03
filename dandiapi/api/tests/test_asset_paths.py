@@ -17,7 +17,7 @@ from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
 from dandiapi.api.tasks import publish_dandiset_task
 
 
-@pytest.fixture
+@pytest.fixture()
 def ingested_asset(draft_version_factory, asset_factory) -> Asset:
     asset: Asset = asset_factory()
     version: Version = draft_version_factory()

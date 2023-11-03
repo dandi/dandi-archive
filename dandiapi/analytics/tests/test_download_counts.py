@@ -11,12 +11,12 @@ from dandiapi.api.storage import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3_log_bucket():
     return create_s3_storage(settings.DANDI_DANDISETS_LOG_BUCKET_NAME).bucket_name
 
 
-@pytest.fixture
+@pytest.fixture()
 def s3_log_file(s3_log_bucket, asset_blob):
     embargoed = s3_log_bucket == settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME
     s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
