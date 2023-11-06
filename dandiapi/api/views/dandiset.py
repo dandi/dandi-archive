@@ -226,7 +226,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         query_serializer.is_valid(raise_exception=True)
         query_filters = query_serializer.to_query_filters()
         relevant_assets = AssetSearch.objects.all()
-        for _, query_filter in query_filters.items():
+        for query_filter in query_filters.values():
             relevant_assets = relevant_assets.filter(query_filter)
         qs = self.get_queryset()
         dandisets = self.filter_queryset(qs).filter(id__in=relevant_assets.values('dandiset_id'))
