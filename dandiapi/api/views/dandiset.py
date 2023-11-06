@@ -374,13 +374,11 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             def get_user_or_400(username):
                 try:
-                    return User.objects.alias(
-                        social_account_username=Subquery(
-                            SocialAccount.objects.filter(user_id=OuterRef('id')).values(
-                                'extra_data__login'
-                            )[:1]
-                        )
-                    ).get(social_account_username=username)
+                    return (
+                        SocialAccount.objects.select_related('user')
+                        .get(extra_data__login=username)
+                        .user
+                    )
                 except ObjectDoesNotExist:
                     try:
                         return User.objects.get(username=username)
