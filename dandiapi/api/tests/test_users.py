@@ -202,7 +202,7 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
 def test_user_search_limit_enforced(api_client, user, user_factory, social_account_factory):
     api_client.force_authenticate(user=user)
 
-    usernames = [f'odysseus_{i:02}' for i in range(0, 20)]
+    usernames = [f'odysseus_{i:02}' for i in range(20)]
     users = [user_factory(username=username) for username in usernames]
     social_accounts = [social_account_factory(user=user) for user in users]
 
