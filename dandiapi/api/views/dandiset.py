@@ -372,7 +372,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
 
-            def get_user_or_400(username):
+            def get_user_or_400(username: str) -> User:
                 try:
                     return (
                         SocialAccount.objects.select_related('user')
