@@ -108,10 +108,7 @@ def _yaml_dump_sequence_from_generator(stream, generator):
         for i, line in enumerate(
             yaml.dump(obj, Dumper=yaml.CSafeDumper, allow_unicode=True).splitlines()
         ):
-            if i == 0:
-                prefix = '- '
-            else:
-                prefix = '  '
+            prefix = '- ' if i == 0 else '  '
 
             stream.write(f'{prefix}{line}\n')
 

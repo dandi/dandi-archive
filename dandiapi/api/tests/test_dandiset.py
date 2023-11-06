@@ -55,10 +55,7 @@ def test_dandiset_manager_visible_to(
     dandiset_factory, user_factory, embargo_status, user_status, visible
 ):
     dandiset = dandiset_factory(embargo_status=embargo_status)
-    if user_status == 'anonymous':
-        user = AnonymousUser
-    else:
-        user = user_factory()
+    user = AnonymousUser if user_status == 'anonymous' else user_factory()
     if user_status == 'owner':
         assign_perm('owner', user, dandiset)
 

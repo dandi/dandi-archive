@@ -14,10 +14,7 @@ def test_stale_assets(version: Version, draft_asset_factory, published_asset_fac
     for is_stale in (False, True):
         for is_orphaned in (False, True):
             for is_draft in (False, True):
-                if is_draft:
-                    asset = draft_asset_factory()
-                else:
-                    asset = published_asset_factory()
+                asset = draft_asset_factory() if is_draft else published_asset_factory()
                 if is_stale:
                     asset.modified = stale_date
                     asset.update_modified = False
