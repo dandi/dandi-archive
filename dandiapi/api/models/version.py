@@ -131,7 +131,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def citation(cls, metadata):
-        year = datetime.datetime.now().year
+        year = datetime.datetime.now(datetime.UTC).year
         name = metadata['name'].rstrip('.')
         url = f'https://doi.org/{metadata["doi"]}' if 'doi' in metadata else metadata['url']
         version = metadata['version']
