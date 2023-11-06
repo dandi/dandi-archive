@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from datetime import timedelta
 import hashlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
@@ -18,6 +17,9 @@ from minio_storage.storage import MinioStorage, create_minio_client_from_setting
 from s3_file_field._multipart_minio import MinioMultipartManager
 from s3_file_field._multipart_s3 import S3MultipartManager
 from storages.backends.s3 import S3Storage
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class ChecksumCalculatorFile:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
@@ -12,6 +12,9 @@ from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import get_embargo_storage, get_storage
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger = logging.Logger(name=__name__)
 

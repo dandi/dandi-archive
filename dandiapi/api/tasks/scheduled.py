@@ -5,7 +5,6 @@ This module is imported from celery.py in a post-app-load hook.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable
 from datetime import timedelta
 import time
 from typing import TYPE_CHECKING
@@ -32,6 +31,8 @@ from dandiapi.api.tasks import (
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from celery.app.base import Celery
 
 logger = get_task_logger(__name__)

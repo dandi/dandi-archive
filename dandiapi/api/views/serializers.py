@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections import OrderedDict
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -11,6 +10,9 @@ from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from collections import OrderedDict
 
 
 def extract_contact_person(version: Version) -> str:

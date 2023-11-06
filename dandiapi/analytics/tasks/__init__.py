@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from celery.app import shared_task
 from celery.utils.log import get_task_logger
@@ -16,6 +16,9 @@ from s3logparse import s3logparse
 from dandiapi.analytics.models import ProcessedS3Log
 from dandiapi.api.models.asset import AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.storage import get_boto_client, get_embargo_storage, get_storage
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 logger = get_task_logger(__name__)
 

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    import datetime
 
 
 class PublishableMetadataMixin:
