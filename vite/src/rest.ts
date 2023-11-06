@@ -11,23 +11,23 @@ import type { Dandiset as DandisetMetadata, DandisetContributors, Organization }
 import { useDandisetStore } from '@/stores/dandiset';
 import qs from 'querystring';
 
-if (!process.env.VUE_APP_DANDI_API_ROOT) {
-  throw new Error('Environment variable "VUE_APP_DANDI_API_ROOT" must be set.');
+if (!import.meta.env.VITE_APP_DANDI_API_ROOT) {
+  throw new Error('Environment variable "VITE_APP_DANDI_API_ROOT" must be set.');
 }
 
 // Ensure contains trailing slash
-const dandiApiRoot = process.env.VUE_APP_DANDI_API_ROOT.endsWith('/')
-  ? process.env.VUE_APP_DANDI_API_ROOT
-  : `${process.env.VUE_APP_DANDI_API_ROOT}/`;
+const dandiApiRoot = import.meta.env.VITE_APP_DANDI_API_ROOT.endsWith('/')
+  ? import.meta.env.VITE_APP_DANDI_API_ROOT
+  : `${import.meta.env.VITE_APP_DANDI_API_ROOT}/`;
 
 const client = axios.create({ baseURL: dandiApiRoot });
 
 let oauthClient: OAuthClient | null = null;
 try {
-  if (process.env.VUE_APP_OAUTH_API_ROOT && process.env.VUE_APP_OAUTH_CLIENT_ID) {
+  if (import.meta.env.VITE_APP_OAUTH_API_ROOT && import.meta.env.VITE_APP_OAUTH_CLIENT_ID) {
     oauthClient = new OAuthClient(
-      new URL(process.env.VUE_APP_OAUTH_API_ROOT),
-      process.env.VUE_APP_OAUTH_CLIENT_ID,
+      new URL(import.meta.env.VITE_APP_OAUTH_API_ROOT),
+      import.meta.env.VITE_APP_OAUTH_CLIENT_ID,
       { redirectUrl: new URL(window.location.origin) },
     );
   }

@@ -385,7 +385,7 @@ function getExternalServices(path: AssetPath) {
           && _path.aggregate_size <= service.maxsize
   );
 
-  const baseApiUrl = process.env.VUE_APP_DANDI_API_ROOT;
+  const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
   const assetURL = () => (embargoed.value
     ? `${baseApiUrl}assets/${path.asset?.asset_id}/download/`
     : trimEnd((path.asset as AssetFile).url, '/'));

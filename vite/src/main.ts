@@ -20,11 +20,11 @@ import App from '@/App.vue';
 import router from '@/router';
 
 Sentry.init({
-  dsn: process.env.VUE_APP_SENTRY_DSN,
-  environment: process.env.VUE_APP_SENTRY_ENVIRONMENT,
+  dsn: import.meta.env.VITE_APP_SENTRY_DSN,
+  environment: import.meta.env.VITE_APP_SENTRY_ENVIRONMENT,
   integrations: [
     new BrowserTracing({
-      tracingOrigins: [process.env.VUE_APP_DANDI_API_ROOT || ''],
+      tracingOrigins: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
     }),
     new CaptureConsole({
       levels: ['error'],
