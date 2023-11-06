@@ -27,7 +27,7 @@ class DandiMixin(ConfigMixin):
     DANDI_ALLOW_LOCALHOST_URLS = False
 
     # Needed for Sentry Performance to work in frontend
-    CORS_ALLOW_HEADERS = default_headers + ('baggage', 'sentry-trace')
+    CORS_ALLOW_HEADERS = (*default_headers, 'baggage', 'sentry-trace')
 
     @staticmethod
     def mutate_configuration(configuration: type[ComposedConfiguration]):
@@ -37,7 +37,8 @@ class DandiMixin(ConfigMixin):
             'dandiapi.api.apps.PublishConfig',
             'dandiapi.search.apps.SearchConfig',
             'dandiapi.zarr.apps.ZarrConfig',
-        ] + configuration.INSTALLED_APPS
+            *configuration.INSTALLED_APPS,
+        ]
 
         # Install guardian
         configuration.INSTALLED_APPS += ['guardian']
