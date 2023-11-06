@@ -30,8 +30,8 @@ def test_asset_no_blob_zarr(draft_asset_factory):
     asset = draft_asset_factory()
 
     # An integrity error is thrown when the blob/zarr check constraint fails
+    asset.blob = None
     with pytest.raises(IntegrityError) as excinfo:
-        asset.blob = None
         asset.save()
 
     assert 'exactly-one-blob' in str(excinfo.value)
@@ -40,8 +40,8 @@ def test_asset_no_blob_zarr(draft_asset_factory):
 @pytest.mark.django_db()
 def test_asset_blob_and_zarr(draft_asset, zarr_archive):
     # An integrity error is thrown by the constraint that both blob and zarr cannot both be defined
+    draft_asset.zarr = zarr_archive
     with pytest.raises(IntegrityError) as excinfo:
-        draft_asset.zarr = zarr_archive
         draft_asset.save()
 
     assert 'exactly-one-blob' in str(excinfo.value)
