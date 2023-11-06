@@ -146,8 +146,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         lookup_url = self.kwargs[self.lookup_url_kwarg]
         try:
             lookup_value = int(lookup_url)
-        except ValueError:
-            raise Http404('Not a valid identifier.')
+        except ValueError as e:
+            raise Http404('Not a valid identifier.') from e
         self.kwargs[self.lookup_url_kwarg] = lookup_value
 
         dandiset = super().get_object()
