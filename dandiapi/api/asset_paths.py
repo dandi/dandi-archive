@@ -240,7 +240,7 @@ def update_asset_paths(old_asset: Asset, new_asset: Asset, version: Version):
 @transaction.atomic
 def add_version_asset_paths(version: Version):
     """Add every asset from a version."""
-    print('\t Leaves...')
+    # Leaves
     for asset in tqdm(version.assets.all()):
         insert_asset_paths(asset, version)
 
@@ -249,7 +249,6 @@ def add_version_asset_paths(version: Version):
     # https://stackoverflow.com/a/60221875
 
     # Get all nodes which haven't been computed yet
-    print('\t Nodes...')
     nodes = AssetPath.objects.filter(version=version, aggregate_files=0)
     for node in tqdm(nodes):
         child_link_ids = node.child_links.distinct('child_id').values_list('child_id', flat=True)
