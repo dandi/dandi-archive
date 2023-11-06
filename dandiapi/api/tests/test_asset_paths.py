@@ -284,12 +284,12 @@ def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     # Assert that there are two folders
     assert qs.count() == 2
     assert sorted([x.path for x in qs]) == ['bar', 'foo']
-    assert all([x.asset is None for x in qs])
+    assert all(x.asset is None for x in qs)
 
     # Search foo, assert there are two files
     qs = search_asset_paths('foo', version)
     assert qs.count() == 2
-    assert all([x.asset is not None for x in qs])
+    assert all(x.asset is not None for x in qs)
 
 
 @pytest.mark.django_db()

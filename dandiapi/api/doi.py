@@ -15,7 +15,7 @@ DANDI_DOI_SETTINGS = [
 
 
 def doi_configured() -> bool:
-    return any([setting is not None for setting, _ in DANDI_DOI_SETTINGS])
+    return any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
 
 
 def _generate_doi_data(version: Version):
