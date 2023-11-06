@@ -46,10 +46,10 @@ def create_doi(version: Version) -> str:
                 ),
             ).raise_for_status()
         except requests.exceptions.HTTPError as e:
-            logging.error('Failed to create DOI %s', doi)
-            logging.error(request_body)
+            logging.exception('Failed to create DOI %s', doi)
+            logging.exception(request_body)
             if e.response:
-                logging.error(e.response.text)
+                logging.exception(e.response.text)
             raise
     return doi
 
@@ -68,11 +68,11 @@ def delete_doi(doi: str) -> None:
                     logging.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
                 else:
-                    logging.error('Failed to fetch data for DOI %s', doi)
+                    logging.exception('Failed to fetch data for DOI %s', doi)
                     raise
             if r.json()['data']['attributes']['state'] == 'draft':
                 try:
                     s.delete(doi_url).raise_for_status()
                 except requests.exceptions.HTTPError:
-                    logging.error('Failed to delete DOI %s', doi)
+                    logging.exception('Failed to delete DOI %s', doi)
                     raise
