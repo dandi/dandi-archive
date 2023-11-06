@@ -1,86 +1,86 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div id="app">
-    <header>
-      <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <v-app
+    v-if="verifiedServerConnection"
+    class="dandi-app"
+  >
+    <AppBar />
+    <v-main v-if="connectedToServer">
+      <UserStatusBanner />
+      <router-view />
+      <DandiFooter />
+    </v-main>
 
-      <div class="wrapper">
-        <HelloWorld msg="You did it!" />
-
-        <nav>
-          <router-link to="/">Home</router-link>
-          <router-link to="/about">About</router-link>
-        </nav>
-      </div>
-    </header>
-
-    <router-view />
-  </div>
+    <v-main
+      v-else
+      class="d-flex align-center text-center"
+    >
+      {{ SERVER_DOWNTIME_MESSAGE }}
+    </v-main>
+    <v-snackbar
+      :value="showError"
+      :timeout="-1"
+      top
+      right
+      color="error"
+    >
+      <span>
+        Sorry, something went wrong on our side (the developers have been notified).
+        Please try that operation again later.
+      </span>
+      <template #action="{ attrs }">
+        <v-btn
+          color="white"
+          text
+          v-bind="attrs"
+          @click="showError = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
+  </v-app>
 </template>
 
+<script setup lang="ts">
+import Vue, { onMounted, ref } from 'vue';
+
+import { dandiRest } from '@/rest';
+import { useDandisetStore } from '@/stores/dandiset';
+import AppBar from '@/components/AppBar/AppBar.vue';
+import DandiFooter from '@/components/DandiFooter.vue';
+import UserStatusBanner from '@/components/UserStatusBanner.vue';
+
+const store = useDandisetStore();
+
+const SERVER_DOWNTIME_MESSAGE = process.env.VUE_APP_SERVER_DOWNTIME_MESSAGE || 'Connection to server failed.';
+
+const verifiedServerConnection = ref(false);
+const connectedToServer = ref(true);
+
+// Catch any unhandled errors and display a snackbar prompt notifying the user.
+const showError = ref(false);
+Vue.config.errorHandler = (err: Error) => {
+  showError.value = true;
+  throw err;
+};
+
+onMounted(() => {
+  Promise.all([
+    store.fetchSchema(),
+    dandiRest.restoreLogin(),
+  ]).then(() => {
+    connectedToServer.value = true;
+  }).catch(() => {
+    connectedToServer.value = false;
+  }).finally(() => {
+    verifiedServerConnection.value = true;
+  });
+});
+</script>
+
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.dandi-app {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 </style>
