@@ -16,6 +16,8 @@ If the user cancels a multipart upload partway through, or completes the multipa
 
 In this case, assume that the user properly completes the multipart upload flow and “finalizes” the `Upload` record such that it is now an `AssetBlob`, but they do not send a request to associate the new blob with an `Asset`. That `AssetBlob` record and associated S3 object will remain in the database/bucket indefinitely.
 
+Another potential cause of orphaned `AssetBlobs` could be `Asset` garbage collection itself. `Asset` garbage collection will be designed independently of the logic to clean up `AssetBlobs`, and running it might also result in orphaned `AssetBlobs`.
+
 ## Implementation
 
 We will introduce a new celery-beat task that runs daily. This task will
