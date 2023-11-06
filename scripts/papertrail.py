@@ -92,7 +92,7 @@ def cli(start, end, force, amend, output_file):
     def download_archive(archive: dict):
         link = archive['_links']['download']['href']
         resp = requests.get(link, headers=headers, stream=True)
-        with open(output_file, 'ab') as outfile:
+        with output_file.open('ab') as outfile:
             outfile.write(resp.raw.read())
 
     # Iterate over every entry within range
