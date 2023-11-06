@@ -32,7 +32,4 @@ class StagingApplication(AbstractApplication):
 
     def redirect_uri_allowed(self, uri):
         """Check whether or not `uri` is a valid redirect_uri using wildcard matching."""
-        for allowed_uri in self.redirect_uris.split():
-            if fnmatch(uri, allowed_uri):
-                return True
-        return False
+        return any(fnmatch(uri, allowed_uri) for allowed_uri in self.redirect_uris.split())
