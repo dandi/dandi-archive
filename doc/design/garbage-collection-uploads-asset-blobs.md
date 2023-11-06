@@ -23,4 +23,6 @@ We will introduce a new celery-beat task that runs daily. This task will
 - Query for and delete any uploads that are older than the multipart upload presigned URL expiration time (this is currently 7 days).
 - Query for and delete any AssetBlobs that are (1) not associated with any Assets, and (2) older than 7 days.
 
+In both cases, we need to delete both the blob from S3 and the row from the DB in order to avoid getting into an inconsistent state.
+
 Due to the trailing delete lifecycle rule, the actual uploaded data will remain recoverable for up to 30 days after this deletion, after which the lifecycle rule will clear it out of the bucket permanently.
