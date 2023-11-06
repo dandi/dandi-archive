@@ -362,7 +362,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
-        dandiset = self.get_object()
+        dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
@@ -373,14 +373,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             def get_user_or_400(username):
-                # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
-                # so it is not empowered to do a more powerful query like:
-                # SocialAccount.objects.get(extra_data__login=username)
-                # We resort to doing this awkward search instead.
-                for social_account in SocialAccount.objects.filter(extra_data__icontains=username):
-                    if social_account.extra_data['login'] == username:
-                        return social_account.user
-                else:
+                try:
+                    return User.objects.alias(
+                        social_account_username=Subquery(
+                            SocialAccount.objects.filter(user_id=OuterRef('id')).values(
+                                'extra_data__login'
+                            )[:1]
+                        )
+                    ).get(social_account_username=username)
+                except ObjectDoesNotExist:
                     try:
                         return User.objects.get(username=username)
                     except ObjectDoesNotExist:
