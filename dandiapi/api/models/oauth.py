@@ -28,7 +28,7 @@ class StagingApplication(AbstractApplication):
         except ValidationError as e:
             # don't validate URLs so we can use wildcards too
             if 'Enter a valid URL.' not in str(e):
-                raise e
+                raise
 
     def redirect_uri_allowed(self, uri):
         """Check whether or not `uri` is a valid redirect_uri using wildcard matching."""
