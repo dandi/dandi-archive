@@ -70,8 +70,7 @@ class BaseZarrArchive(TimeStampedModel):
         signed_url = self.storage.url(self.s3_path(''))
         # Strip off the query parameters from the presigning, as they are different every time
         parsed = urlparse(signed_url)
-        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
-        return s3_url
+        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
 
     def generate_upload_urls(self, path_md5s: list[dict]):
         return [
