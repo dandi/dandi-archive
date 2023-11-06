@@ -34,13 +34,9 @@ PAPERTRAIL_TOKEN = os.getenv('PAPERTRAIL_APIKEY', None)
 def cli(start, end, force, amend, output_file):
     if PAPERTRAIL_TOKEN is None:
         raise ClickException(
-            ' '.join(
-                [
-                    'Must set the PAPERTRAIL_APIKEY environment variable.',
-                    'You can find this at https://papertrailapp.com/account/profile',
-                    '(must be logged in with heroku).',
-                ]
-            )
+            'Must set the PAPERTRAIL_APIKEY environment variable. '
+            'You can find this at https://papertrailapp.com/account/profile '
+            '(must be logged in with heroku).'
         )
 
     if force and amend:
