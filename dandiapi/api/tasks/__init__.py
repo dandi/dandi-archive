@@ -18,10 +18,10 @@ logger = get_task_logger(__name__)
 def calculate_sha256(blob_id: str) -> None:
     try:
         asset_blob = AssetBlob.objects.get(blob_id=blob_id)
-        logger.info(f'Found AssetBlob {blob_id}')
+        logger.info('Found AssetBlob %s', blob_id)
     except AssetBlob.DoesNotExist:
         asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
-        logger.info(f'Found EmbargoedAssetBlob {blob_id}')
+        logger.info('Found EmbargoedAssetBlob %s', blob_id)
 
     sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
 

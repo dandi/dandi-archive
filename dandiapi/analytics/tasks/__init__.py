@@ -93,7 +93,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
             log.save()
         except IntegrityError as e:
             if 'unique_name_embargoed' in str(e):
-                logger.info(f'Already processed log file {s3_log_key}, embargo: {embargoed}')
+                logger.info('Already processed log file %s, embargo: %s', s3_log_key, embargoed)
             return
 
         # note this task is run serially per log file. this is to avoid the contention between
