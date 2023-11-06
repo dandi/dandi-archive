@@ -26,3 +26,13 @@ We will introduce a new celery-beat task that runs daily. This task will
 In both cases, we need to delete both the blob from S3 and the row from the DB in order to avoid getting into an inconsistent state.
 
 Due to the trailing delete lifecycle rule, the actual uploaded data will remain recoverable for up to 30 days after this deletion, after which the lifecycle rule will clear it out of the bucket permanently.
+
+## Data
+
+The current amount of orphaned data in the system as of 11/6/2023 is as follows:
+
+Orphaned `Uploads`: 740
+
+Orphaned `AssetBlobs`: 5
+
+Orphaned `Assets`: 175,545
