@@ -118,7 +118,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def next_published_version(cls, dandiset: Dandiset) -> str:
-        time = datetime.datetime.now(datetime.timezone.utc)
+        time = datetime.datetime.now(datetime.UTC)
         # increment time until there are no collisions
         while True:
             version = cls.datetime_to_version(time)

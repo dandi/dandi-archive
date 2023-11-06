@@ -170,7 +170,7 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
     draft_version.assets.add(draft_asset)
 
     # Update version with queryset so modified isn't auto incremented
-    old_datetime = datetime.datetime.fromtimestamp(1573782390).astimezone(datetime.timezone.utc)
+    old_datetime = datetime.datetime.fromtimestamp(1573782390).astimezone(datetime.UTC)
     Version.objects.filter(id=draft_version.id).update(modified=old_datetime)
 
     # Run task

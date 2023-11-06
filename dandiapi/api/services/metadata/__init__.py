@@ -79,12 +79,10 @@ def version_aggregate_assets_summary(version: Version) -> None:
         raise VersionHasBeenPublished()
 
     version.metadata['assetsSummary'] = aggregate_assets_summary(
-        (
-            asset.full_metadata
-            for asset in version.assets.filter(status=Asset.Status.VALID)
-            .select_related('blob', 'zarr')
-            .iterator()
-        )
+        asset.full_metadata
+        for asset in version.assets.filter(status=Asset.Status.VALID)
+        .select_related('blob', 'zarr')
+        .iterator()
     )
 
     Version.objects.filter(id=version.id, version='draft').update(
