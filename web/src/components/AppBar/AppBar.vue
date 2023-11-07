@@ -55,7 +55,7 @@
         alt="DANDI logo"
         contain
         width="100px"
-        src="@/assets/logo.svg"
+        :src="logo"
         class="mr-3"
       />
     </router-link>
@@ -144,6 +144,7 @@ import {
   dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
+import logo from '@/assets/logo.svg';
 
 interface NavigationItem {
   text: string,
