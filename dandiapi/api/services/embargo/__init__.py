@@ -32,8 +32,8 @@ def _unembargo_asset(asset: Asset):
             ),
         )
 
-        # Assert files are equal
-        assert resp.etag == asset.embargoed_blob.etag
+        if resp.etag != asset.embargoed_blob.etag:
+            raise RuntimeError('ETag mismatch between copied object and original embargoed object')
 
         # Assign blob (changing only blob)
         asset.blob = AssetBlob(
