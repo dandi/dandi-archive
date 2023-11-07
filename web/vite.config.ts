@@ -10,6 +10,9 @@ import Components from 'unplugin-vue-components/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  server: {
+    port: 8085,
+  },
   plugins: [
     vue2(),
     legacy({
