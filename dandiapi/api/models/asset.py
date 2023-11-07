@@ -59,7 +59,6 @@ class BaseAssetBlob(TimeStampedModel):
 
     blob_id = models.UUIDField(unique=True)
     sha256 = models.CharField(
-        null=True,
         blank=True,
         max_length=64,
         validators=[RegexValidator(f'^{SHA256_REGEX}$')],

@@ -31,7 +31,6 @@ class BaseUpload(models.Model):
     # This is the key used to generate the object key, and the primary identifier for the upload.
     upload_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
     etag = models.CharField(
-        null=True,
         blank=True,
         max_length=40,
         validators=[RegexValidator(f'^{ETAG_REGEX}$')],
