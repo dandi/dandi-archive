@@ -4,6 +4,9 @@ import { defineConfig } from 'vite'
 import legacy from '@vitejs/plugin-legacy'
 import vue2 from '@vitejs/plugin-vue2'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
+import Components from 'unplugin-vue-components/vite';
+
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -14,6 +17,12 @@ export default defineConfig({
       additionalLegacyPolyfills: ['regenerator-runtime/runtime']
     }),
     nodePolyfills(),
+    Components({
+      resolvers: [
+        // Vuetify
+        VuetifyResolver(),
+      ],
+    }),
   ],
   resolve: {
     alias: {
