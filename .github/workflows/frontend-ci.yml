@@ -26,7 +26,7 @@ jobs:
         run: yarn run lint --no-fix
 
       - name: Type-check Vue app
-        run: yarn run type
+        run: yarn run type-check
 
       - name: Build Vue app
         run: yarn run build
@@ -70,9 +70,9 @@ jobs:
       DANDI_ALLOW_LOCALHOST_URLS: 1
 
       # Web client env vars
-      VUE_APP_DANDI_API_ROOT: http://localhost:8000/api/
-      VUE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
-      VUE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
+      VITE_APP_DANDI_API_ROOT: http://localhost:8000/api/
+      VITE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
+      VITE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
 
       # E2E tests env vars
       CLIENT_URL: http://localhost:8085
@@ -82,7 +82,6 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '16'
           cache: 'yarn'
           cache-dependency-path: web/yarn.lock
 
@@ -125,7 +124,7 @@ jobs:
       - name: Run E2E tests
         run: |
           # start vue dev server and wait for it to start
-          yarn --cwd .. run serve 2> /dev/null &
+          yarn --cwd .. run dev 2> /dev/null &
           while ! nc -z localhost 8085; do
             sleep 3
           done
