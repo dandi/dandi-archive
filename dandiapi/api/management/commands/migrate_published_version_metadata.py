@@ -25,7 +25,7 @@ def migrate_published_version_metadata(*, dandiset: str, published_version: str,
 
     try:
         metanew = migrate(metadata, to_version=to_version, skip_validation=False)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         click.echo(f'Failed to migrate {dandiset}/{published_version}')
         click.echo(e)
         raise click.Abort from e
