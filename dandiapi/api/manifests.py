@@ -73,7 +73,7 @@ def _streaming_file_upload(path: str) -> Generator[IO[bytes], None, None]:
 
         # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
         storage = AssetBlob.blob.field.storage
-        storage._save(path, File(outfile))
+        storage._save(path, File(outfile))  # noqa: SLF001
 
 
 def _yaml_dump_sequence_from_generator(stream: IO[bytes], generator: Iterable[Any]) -> None:

@@ -63,7 +63,7 @@ class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
     """A custom multipart manager for passing ACL information."""
 
     def _create_upload_id(self, object_key: str, content_type: str) -> str:
-        return self._client._create_multipart_upload(
+        return self._client._create_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
             headers={
@@ -314,9 +314,9 @@ def get_boto_client(storage: Storage | None = None):
 def get_storage_params(storage: Storage):
     if isinstance(storage, MinioStorage):
         return {
-            'endpoint_url': storage.client._base_url._url.geturl(),
-            'access_key': storage.client._provider.retrieve().access_key,
-            'secret_key': storage.client._provider.retrieve().secret_key,
+            'endpoint_url': storage.client._base_url._url.geturl(),  # noqa: SLF001
+            'access_key': storage.client._provider.retrieve().access_key,  # noqa: SLF001
+            'secret_key': storage.client._provider.retrieve().secret_key,  # noqa: SLF001
         }
 
     return {
