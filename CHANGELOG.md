@@ -1,3 +1,25 @@
+# v0.3.60 (Tue Nov 07 2023)
+
+#### 🐛 Bug Fix
+
+- Add UPLOADED state to Zarr models [#1698](https://github.com/dandi/dandi-archive/pull/1698) ([@AlmightyYakob](https://github.com/AlmightyYakob) [@danlamanna](https://github.com/danlamanna))
+- Require Python 3.11 [#1736](https://github.com/dandi/dandi-archive/pull/1736) ([@brianhelba](https://github.com/brianhelba))
+- Add a note to registration page that no account is necessary to access public data [#1696](https://github.com/dandi/dandi-archive/pull/1696) ([@yarikoptic](https://github.com/yarikoptic) [@satra](https://github.com/satra))
+
+#### 🧪 Tests
+
+- Revert "Skip broken dandi-cli tests" - fixed up in dandi-cli 0.57.0 [#1732](https://github.com/dandi/dandi-archive/pull/1732) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 5
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.59 (Fri Oct 27 2023)
 
 #### 🐛 Bug Fix
