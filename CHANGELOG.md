@@ -1,3 +1,17 @@
+# v0.3.61 (Thu Nov 09 2023)
+
+#### 🐛 Bug Fix
+
+- Fix S308 Use of `mark_safe` may expose cross-site scripting vulnerabilities [#1742](https://github.com/dandi/dandi-archive/pull/1742) ([@brianhelba](https://github.com/brianhelba))
+- Clean up and improve the performance of manifest file creation [#1738](https://github.com/dandi/dandi-archive/pull/1738) ([@brianhelba](https://github.com/brianhelba))
+- Fix PTH118 `os.path.join()` should be replaced by `Path` with `/` operator [#1743](https://github.com/dandi/dandi-archive/pull/1743) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 1
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+
+---
+
 # v0.3.60 (Tue Nov 07 2023)
 
 #### 🐛 Bug Fix
