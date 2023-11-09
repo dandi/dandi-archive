@@ -18,8 +18,8 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
     # Ensure zarr is in pending state before proceeding
     with transaction.atomic():
         zarr: ZarrArchive = ZarrArchive.objects.select_for_update().get(zarr_id=zarr_id)
-        if not force and zarr.status != ZarrArchiveStatus.PENDING:
-            logger.info(f'{ZarrArchive.INGEST_ERROR_MSG}. Exiting...')
+        if not force and zarr.status != ZarrArchiveStatus.UPLOADED:
+            logger.info('Zarrs must be in an UPLOADED state to begin ingestion. Exiting...')
             return
 
         # Set as ingesting

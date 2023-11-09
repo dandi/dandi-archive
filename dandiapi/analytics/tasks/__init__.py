@@ -1,6 +1,6 @@
 from collections import Counter
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 from celery.app import shared_task
 from celery.utils.log import get_task_logger
@@ -79,7 +79,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
     download_counts = Counter()
 
     for log_entry in s3logparse.parse_log_lines(
-        (line.decode('utf8') for line in data['Body'].iter_lines())
+        line.decode('utf8') for line in data['Body'].iter_lines()
     ):
         if log_entry.operation == 'REST.GET.OBJECT' and log_entry.status_code == 200:
             download_counts.update({log_entry.s3_key: 1})

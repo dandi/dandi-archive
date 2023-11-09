@@ -5,7 +5,7 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.search.models import AssetSearch
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_assetsearch_visible_to_permissions(draft_asset_factory, draft_version, user_factory):
     asset = draft_asset_factory()
     draft_version.dandiset.embargo_status = Dandiset.EmbargoStatus.EMBARGOED

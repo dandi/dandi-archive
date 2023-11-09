@@ -7,17 +7,14 @@ from dandiapi.api.garbage import stale_assets
 from dandiapi.api.models import Asset, Version
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_stale_assets(version: Version, draft_asset_factory, published_asset_factory):
     stale_date = timezone.now() - timedelta(days=8)
 
     for is_stale in (False, True):
         for is_orphaned in (False, True):
             for is_draft in (False, True):
-                if is_draft:
-                    asset = draft_asset_factory()
-                else:
-                    asset = published_asset_factory()
+                asset = draft_asset_factory() if is_draft else published_asset_factory()
                 if is_stale:
                     asset.modified = stale_date
                     asset.update_modified = False
