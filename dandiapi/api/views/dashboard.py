@@ -77,7 +77,7 @@ class DashboardView(DashboardMixin, TemplateView):
 @require_http_methods(['GET', 'POST'])
 def user_approval_view(request, username: str):
     if not request.user.is_superuser:
-        raise PermissionDenied()
+        raise PermissionDenied
 
     user: User = get_object_or_404(User.objects.select_related('metadata'), username=username)
     social_account: SocialAccount = user.socialaccount_set.first()

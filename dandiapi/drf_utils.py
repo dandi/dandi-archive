@@ -39,6 +39,4 @@ def rewrap_django_core_exceptions(exc: Exception, ctx: dict) -> Response | None:
             return Response(exc.args[0], status=status.HTTP_403_FORBIDDEN)
         exc = drf_exceptions.PermissionDenied()
 
-    response = exception_handler(exc, ctx)
-
-    return response
+    return exception_handler(exc, ctx)

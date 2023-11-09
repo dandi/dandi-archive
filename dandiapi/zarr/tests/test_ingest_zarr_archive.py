@@ -76,7 +76,8 @@ def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
     # Perform ingest with force flag, assert updated
     ingest_zarr_archive(str(zarr.zarr_id), force=True)
     zarr.refresh_from_db()
-    assert zarr.checksum is not None and zarr.checksum != first_checksum
+    assert zarr.checksum is not None
+    assert zarr.checksum != first_checksum
 
 
 @pytest.mark.django_db(transaction=True)

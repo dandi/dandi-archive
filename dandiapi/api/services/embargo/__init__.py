@@ -13,7 +13,7 @@ from .exceptions import AssetNotEmbargoed, DandisetNotEmbargoed
 def _unembargo_asset(asset: Asset):
     """Unembargo an asset by copying its blob to the public bucket."""
     if asset.embargoed_blob is None:
-        raise AssetNotEmbargoed()
+        raise AssetNotEmbargoed
 
     # Use existing AssetBlob if possible
     etag = asset.embargoed_blob.etag
@@ -75,6 +75,6 @@ def unembargo_dandiset(*, user: User, dandiset: Dandiset):
         raise DandisetNotEmbargoed
 
     if not user.has_perm('owner', dandiset):
-        raise DandisetOwnerRequired()
+        raise DandisetOwnerRequired
 
     unembargo_dandiset_task.delay(dandiset.id)

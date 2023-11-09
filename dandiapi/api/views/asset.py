@@ -89,10 +89,10 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             if asset.embargoed_blob is not None:
                 if not self.request.user.is_authenticated:
                     # Clients must be authenticated to access it
-                    raise NotAuthenticated()
+                    raise NotAuthenticated
                 if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
                     # The user does not have ownership permission
-                    raise PermissionDenied()
+                    raise PermissionDenied
 
     def get_queryset(self):
         self.raise_if_unauthorized()
@@ -236,10 +236,10 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         if version.dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
-                raise NotAuthenticated()
+                raise NotAuthenticated
             if not self.request.user.has_perm('owner', version.dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
 
     # Redefine info and download actions to update swagger manual_parameters
 
@@ -337,7 +337,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=versions__version,
         )
         if version.version != 'draft':
-            raise DraftDandisetNotModifiable()
+            raise DraftDandisetNotModifiable
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)

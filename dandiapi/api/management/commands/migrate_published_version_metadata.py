@@ -26,7 +26,7 @@ def migrate_published_version_metadata(dandiset: str, published_version: str, to
     except Exception as e:
         click.echo(f'Failed to migrate {dandiset}/{published_version}')
         click.echo(e)
-        raise click.Abort()
+        raise click.Abort
 
     if metadata == metanew:
         click.echo('No changes detected')

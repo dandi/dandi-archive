@@ -65,7 +65,7 @@ from rest_framework.permissions import SAFE_METHODS
         ('post', '/api/zarr/{zarr.zarr_id}/files/', True),
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_approved_or_readonly(
     api_client,
     user,

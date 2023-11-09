@@ -15,7 +15,7 @@ DANDI_DOI_SETTINGS = [
 
 
 def doi_configured() -> bool:
-    return any([setting is not None for setting, _ in DANDI_DOI_SETTINGS])
+    return any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
 
 
 def _generate_doi_data(version: Version):
@@ -50,7 +50,7 @@ def create_doi(version: Version) -> str:
             logging.error(request_body)
             if e.response:
                 logging.error(e.response.text)
-            raise e
+            raise
     return doi
 
 
@@ -69,10 +69,10 @@ def delete_doi(doi: str) -> None:
                     return
                 else:
                     logging.error('Failed to fetch data for DOI %s', doi)
-                    raise e
+                    raise
             if r.json()['data']['attributes']['state'] == 'draft':
                 try:
                     s.delete(doi_url).raise_for_status()
-                except requests.exceptions.HTTPError as e:
+                except requests.exceptions.HTTPError:
                     logging.error('Failed to delete DOI %s', doi)
-                    raise e
+                    raise

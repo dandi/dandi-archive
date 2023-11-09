@@ -166,9 +166,7 @@ class VersionAdmin(admin.ModelAdmin):
 
         # Using the `asset_count` property here results in N queries being made
         # for N versions. Instead, use annotation to make one query for N versions.
-        qs = qs.annotate(number_of_assets=Count('assets'))
-
-        return qs
+        return qs.annotate(number_of_assets=Count('assets'))
 
     def number_of_assets(self, obj):
         return obj.number_of_assets

@@ -132,7 +132,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
         )
         if not self.request.user.has_perm('owner', dandiset):
-            raise PermissionDenied()
+            raise PermissionDenied
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
@@ -164,7 +164,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
 
             # Don't ingest if already ingested/ingesting
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
@@ -273,7 +273,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             # Deny if the user doesn't have ownership permission
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                raise PermissionDenied()
+                raise PermissionDenied
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -309,7 +309,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
