@@ -24,7 +24,7 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
 
         # Set as ingesting
         zarr.status = ZarrArchiveStatus.INGESTING
-        zarr.checksum = None
+        zarr.checksum = ''
         zarr.save(update_fields=['status', 'checksum'])
 
     # Zarr is in correct state, lock until ingestion finishes

@@ -39,14 +39,14 @@ class BaseZarrArchive(TimeStampedModel):
             models.CheckConstraint(
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
                 check=models.Q(
-                    checksum__isnull=True,
+                    checksum='',
                     status__in=[
                         ZarrArchiveStatus.PENDING,
                         ZarrArchiveStatus.UPLOADED,
                         ZarrArchiveStatus.INGESTING,
                     ],
                 )
-                | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
+                | (~models.Q(checksum='') & models.Q(status=ZarrArchiveStatus.COMPLETE)),
             ),
         ]
 
@@ -54,7 +54,7 @@ class BaseZarrArchive(TimeStampedModel):
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
-    checksum = models.CharField(max_length=512, null=True, default=None)
+    checksum = models.CharField(max_length=512)
     status = models.CharField(
         max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
         choices=ZarrArchiveStatus.choices,
@@ -80,7 +80,7 @@ class BaseZarrArchive(TimeStampedModel):
         ]
 
     def mark_pending(self):
-        self.checksum = None
+        self.checksum = ''
         self.status = ZarrArchiveStatus.PENDING
         self.file_count = 0
         self.size = 0

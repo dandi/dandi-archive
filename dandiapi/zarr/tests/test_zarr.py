@@ -27,7 +27,7 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
         'zarr_id': UUID_RE,
         'dandiset': dandiset.identifier,
         'status': ZarrArchiveStatus.PENDING,
-        'checksum': None,
+        'checksum': '',
         'file_count': 0,
         'size': 0,
     }
@@ -240,7 +240,7 @@ def test_zarr_rest_delete_file(
     # Assert zarr is back in pending state
     zarr_archive.refresh_from_db()
     assert zarr_archive.status == ZarrArchiveStatus.PENDING
-    assert zarr_archive.checksum is None
+    assert zarr_archive.checksum == ''
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
 

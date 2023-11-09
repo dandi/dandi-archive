@@ -34,7 +34,7 @@ def test_zarr_rest_upload_start(
     # Assert fields updated
     zarr_archive.refresh_from_db()
     assert zarr_archive.status == ZarrArchiveStatus.PENDING
-    assert zarr_archive.checksum is None
+    assert zarr_archive.checksum == ''
     assert zarr_archive.file_count == 0
     assert zarr_archive.size == 0
 
@@ -80,7 +80,7 @@ def test_zarr_rest_finalize(
 
     # Check that zarr ingestion occurred
     zarr_archive.refresh_from_db()
-    assert zarr_archive.checksum is not None
+    assert zarr_archive.checksum != ''
     assert zarr_archive.checksum != EMPTY_CHECKSUM
     assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
 

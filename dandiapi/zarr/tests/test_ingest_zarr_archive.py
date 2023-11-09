@@ -22,7 +22,7 @@ def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
     total_size = sum([f.size for f in files])
 
     # Assert pre-ingest properties
-    assert zarr.checksum is None
+    assert zarr.checksum == ''
     assert zarr.size == 0
     assert zarr.file_count == 0
     assert zarr.status == ZarrArchiveStatus.UPLOADED
@@ -32,7 +32,7 @@ def test_ingest_zarr_archive(zarr_archive_factory, zarr_file_factory):
 
     # Assert checksum properly computed
     zarr.refresh_from_db()
-    assert zarr.checksum is not None
+    assert zarr.checksum != ''
     assert zarr.size == total_size
     assert zarr.file_count == 2
     assert zarr.status == ZarrArchiveStatus.COMPLETE
@@ -76,7 +76,7 @@ def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
     # Perform ingest with force flag, assert updated
     ingest_zarr_archive(str(zarr.zarr_id), force=True)
     zarr.refresh_from_db()
-    assert zarr.checksum is not None and zarr.checksum != first_checksum
+    assert zarr.checksum != '' and zarr.checksum != first_checksum
 
 
 @pytest.mark.django_db(transaction=True)
@@ -88,7 +88,7 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, dra
     # Assert asset size, metadata
     assert asset.size == 0
     assert asset.full_metadata['contentSize'] == 0
-    assert asset.full_metadata['digest']['dandi:dandi-zarr-checksum'] is None
+    assert asset.full_metadata['digest']['dandi:dandi-zarr-checksum'] == ''
 
     # Compute checksum
     zarr_file = zarr_file_factory(zarr_archive=zarr)
@@ -158,4 +158,4 @@ def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_file
     for zarr in dandiset.zarr_archives.all():
         assert zarr.size != 0
         assert zarr.file_count != 0
-        assert zarr.checksum is not None
+        assert zarr.checksum != ''
