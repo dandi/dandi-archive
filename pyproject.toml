@@ -30,4 +30,4 @@ exclude = [
 # django_settings_module = "dandiapi.settings"
 
 [tool.setuptools_scm]
-
+include_package_data = true
