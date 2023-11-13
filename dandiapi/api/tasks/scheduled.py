@@ -3,9 +3,9 @@ Define and register any scheduled celery tasks.
 
 This module is imported from celery.py in a post-app-load hook.
 """
+from collections.abc import Iterable
 from datetime import timedelta
 import time
-from typing import Iterable
 
 from celery import shared_task
 from celery.app.base import Celery

@@ -6,7 +6,7 @@ from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_zarr_rest_upload_start(
     authenticated_api_client, user, zarr_archive: ZarrArchive, storage, monkeypatch
 ):
@@ -48,7 +48,7 @@ def test_zarr_rest_upload_start(
     assert resp.json() == [HTTP_URL_RE]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
     resp = authenticated_api_client.post(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
@@ -58,7 +58,7 @@ def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_arch
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_zarr_rest_finalize(
     authenticated_api_client,
     user,
@@ -85,13 +85,13 @@ def test_zarr_rest_finalize(
     assert zarr_archive.status == ZarrArchiveStatus.COMPLETE
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_zarr_rest_finalize_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_zarr_rest_finalize_already_ingested(
     authenticated_api_client, user, zarr_archive: ZarrArchive
 ):

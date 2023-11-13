@@ -31,7 +31,7 @@ but allows developers to run Python code on their native system.
 ### Initial Setup
 1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
 2. Run `docker-compose -f ./docker-compose.yml up -d`
-3. Install Python 3.10
+3. Install Python 3.11
 4. Install
   [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites).
   Example `psycopg2` installation on Ubuntu 20.04:

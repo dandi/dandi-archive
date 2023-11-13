@@ -14,10 +14,7 @@ from dandiapi.api.models import UserMetadata
 def update_existing_users(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
     """Automatically approve any existing users."""
     for user in User.objects.all():
-        if user.is_active:
-            status = UserMetadata.Status.APPROVED
-        else:
-            status = UserMetadata.Status.REJECTED
+        status = UserMetadata.Status.APPROVED if user.is_active else UserMetadata.Status.REJECTED
         UserMetadata.objects.create(user=user, status=status)
 
 

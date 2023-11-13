@@ -14,7 +14,7 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.embargo import _unembargo_asset, unembargo_dandiset
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_unembargo(
     embargoed_storage, asset_factory, embargoed_asset_blob_factory, draft_version
 ):
@@ -60,7 +60,7 @@ def test_asset_unembargo(
         (Dandiset.EmbargoStatus.UNEMBARGOING, 'not-owner', 403),
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_dandiset_rest_unembargo(
     api_client,
     dandiset_factory,
@@ -93,7 +93,7 @@ def test_dandiset_rest_unembargo(
         (mb(100), mb(6)),  # Many parts (tests concurrency)
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_unembargo_dandiset(
     user,
     dandiset_factory,
@@ -162,7 +162,7 @@ def test_unembargo_dandiset(
     assert asset.blob.blob.name == f'test-prefix/blobs/{blob_id[:3]}/{blob_id[3:6]}/{blob_id}'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_unembargo_dandiset_existing_blobs(
     user,
     dandiset_factory,
@@ -225,7 +225,7 @@ def test_unembargo_dandiset_existing_blobs(
     assert asset.blob == existing_asset_blob
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_unembargo_dandiset_normal_asset_blob(
     user,
     dandiset_factory,

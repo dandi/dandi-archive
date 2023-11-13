@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
@@ -26,7 +25,7 @@ if TYPE_CHECKING:
 def extract_paths(path: str) -> list[str]:
     nodepaths: list[str] = path.split('/')
     for i in range(len(nodepaths))[1:]:
-        nodepaths[i] = os.path.join(nodepaths[i - 1], nodepaths[i])
+        nodepaths[i] = f'{nodepaths[i - 1]}/{nodepaths[i]}'
 
     return nodepaths
 
@@ -131,7 +130,7 @@ def insert_asset_paths(asset: Asset, version: Version):
         # If there are simultaneous requests to create the same asset, this check constraint can
         # fail, and should be handled directly, rather than be allowed to bubble up
         if 'unique-version-path' in str(e):
-            raise AssetAlreadyExists()
+            raise AssetAlreadyExists
 
         # Re-raise original exception otherwise
         raise

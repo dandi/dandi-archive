@@ -155,10 +155,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
-                raise NotAuthenticated()
+                raise NotAuthenticated
             if not self.request.user.has_perm('owner', dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
         return dandiset
 
     @staticmethod
@@ -226,7 +226,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         query_serializer.is_valid(raise_exception=True)
         query_filters = query_serializer.to_query_filters()
         relevant_assets = AssetSearch.objects.all()
-        for _, query_filter in query_filters.items():
+        for query_filter in query_filters.values():
             relevant_assets = relevant_assets.filter(query_filter)
         qs = self.get_queryset()
         dandisets = self.filter_queryset(qs).filter(id__in=relevant_assets.values('dandiset_id'))
@@ -359,7 +359,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_description='Set the owners of a dandiset. The user performing this action must\
                                be an owner of the dandiset themself.',
     )
-    # TODO move these into a viewset
+    # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
         dandiset = self.get_object()

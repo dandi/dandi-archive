@@ -118,7 +118,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def next_published_version(cls, dandiset: Dandiset) -> str:
-        time = datetime.datetime.now(datetime.timezone.utc)
+        time = datetime.datetime.now(datetime.UTC)
         # increment time until there are no collisions
         while True:
             version = cls.datetime_to_version(time)
@@ -133,10 +133,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     def citation(cls, metadata):
         year = datetime.datetime.now().year
         name = metadata['name'].rstrip('.')
-        if 'doi' in metadata:
-            url = f'https://doi.org/{metadata["doi"]}'
-        else:
-            url = metadata['url']
+        url = f'https://doi.org/{metadata["doi"]}' if 'doi' in metadata else metadata['url']
         version = metadata['version']
         # If we can't find any contributors, use this citation format
         citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI archive. {url}'

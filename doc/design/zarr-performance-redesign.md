@@ -106,7 +106,7 @@ sequenceDiagram
     end
 
     Client->>+Server: Finalize Zarr Archive ⚡⚡⚡
-    Server-->>-Client: PENDING Zarr Archive
+    Server-->>-Client: UPLOADED Zarr Archive
 
     rect rgb(179, 209, 95)
         Server->>+Worker: Compute tree checksum for Zarr Archive
@@ -114,7 +114,7 @@ sequenceDiagram
 
     loop
         Client->>+Server: Check for COMPLETE Zarr Archive
-        Server-->>-Client: PENDING/INGESTING/COMPLETE Zarr Archive
+        Server-->>-Client: UPLOADED/INGESTING/COMPLETE Zarr Archive
     end
 
     Client->>+Client: Verify zarr checksum with local

@@ -197,7 +197,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     except Upload.DoesNotExist:
         upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
         if not request.user.has_perm('owner', upload.dandiset):
-            raise Http404()
+            raise Http404
 
     completion = TransferredParts(
         object_key=upload.blob.name,
@@ -237,7 +237,7 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
     except Upload.DoesNotExist:
         upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
         if not request.user.has_perm('owner', upload.dandiset):
-            raise Http404()
+            raise Http404
 
     # Verify that the upload was successful
     if not upload.object_key_exists():
