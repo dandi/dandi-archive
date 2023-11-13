@@ -16,7 +16,7 @@ BASE_RENDER_CONTEXT = {
     'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
 }
 
-# TODO: turn this into a Django setting
+# TODO: turn this into a Django setting  
 ADMIN_EMAIL = 'info@dandiarchive.org'
 
 
