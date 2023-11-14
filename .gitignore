@@ -12,6 +12,7 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
+.idea/
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
@@ -123,4 +124,4 @@ dmypy.json
 # End of https://www.gitignore.io/api/django
 
 # Editor settings
-.vscode 
+.vscode

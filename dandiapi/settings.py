@@ -199,7 +199,7 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
         ALLOWED_HOSTS = []
 
     ALLOWED_HOSTS += [
-        "linc-infrastructure-api-d80a3cd7895d.herokuapp.com"
+        "linc-staging-dab4c7f86331.herokuapp.com"
     ]
 
 
