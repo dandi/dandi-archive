@@ -194,6 +194,7 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     # manually approved by an admin.
     AUTO_APPROVE_USERS = False
 
+    # TODO: Aaron -- this wasn't set up initially...
     if 'ALLOWED_HOSTS' not in globals():
         ALLOWED_HOSTS = []
 
