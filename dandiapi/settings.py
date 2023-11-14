@@ -194,6 +194,9 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     # manually approved by an admin.
     AUTO_APPROVE_USERS = False
 
+    if 'ALLOWED_HOSTS' not in globals():
+        ALLOWED_HOSTS = []
+
     ALLOWED_HOSTS += [
         "linc-infrastructure-api-d80a3cd7895d.herokuapp.com"
     ]
