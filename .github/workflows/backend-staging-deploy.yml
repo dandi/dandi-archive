@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # fetch history for all branches and tags
+          fetch-depth: 0 # fetch history for all branches and tags 
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
