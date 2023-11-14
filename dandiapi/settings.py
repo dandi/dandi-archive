@@ -93,10 +93,6 @@ class DandiMixin(ConfigMixin):
     DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_ZARR_PREFIX_NAME = values.Value(default='zarr', environ=True)
 
-    ALLOWED_HOSTS += [
-        "linc-infrastructure-api-d80a3cd7895d.herokuapp.com"
-    ]
-
     # Mainly applies to unembargo
     DANDI_MULTIPART_COPY_MAX_WORKERS = values.IntegerValue(environ=True, default=50)
 
@@ -197,6 +193,10 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     # Don't automatically approve users in production. Instead they must be
     # manually approved by an admin.
     AUTO_APPROVE_USERS = False
+
+    ALLOWED_HOSTS += [
+        "linc-infrastructure-api-d80a3cd7895d.herokuapp.com"
+    ]
 
 
 # NOTE: The staging configuration uses a custom OAuth toolkit `Application` model
