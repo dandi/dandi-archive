@@ -199,7 +199,9 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
         ALLOWED_HOSTS = []
 
     ALLOWED_HOSTS += [
-        "linc-staging-terraform-83d11b79c499.herokuapp.com"
+        "linc-staging-terraform-83d11b79c499.herokuapp.com",
+        "api.lincbrain.com",
+        "api.lincbrain.org",
     ]
 
 
