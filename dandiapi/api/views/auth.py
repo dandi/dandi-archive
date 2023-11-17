@@ -91,27 +91,27 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     user: User = request.user
     if request.method == 'POST':
-        user_metadata: UserMetadata = user.metadata
-        questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
-
-        # we can't use Django forms here because we're using a JSONField, so we have
-        # to extract the request data manually
-        req_body = request.POST.dict()
-        user_metadata.questionnaire_form = {
-            question['question']: req_body.get(question['question'])[: question['max_length']]
-            if req_body.get(question['question']) is not None
-            else None
-            for question in QUESTIONS
-        }
-        user_metadata.save(update_fields=['questionnaire_form'])
-
-        # Save first and last name if applicable
-        if 'First Name' in req_body and req_body['First Name']:
-            user.first_name = req_body['First Name']
-            user.save(update_fields=['first_name'])
-        if 'Last Name' in req_body and req_body['Last Name']:
-            user.last_name = req_body['Last Name']
-            user.save(update_fields=['last_name'])
+#         user_metadata: UserMetadata = user.metadata
+#         questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
+#
+#         # we can't use Django forms here because we're using a JSONField, so we have
+#         # to extract the request data manually
+#         req_body = request.POST.dict()
+#         user_metadata.questionnaire_form = {
+#             question['question']: req_body.get(question['question'])[: question['max_length']]
+#             if req_body.get(question['question']) is not None
+#             else None
+#             for question in QUESTIONS
+#         }
+#         user_metadata.save(update_fields=['questionnaire_form'])
+#
+#         # Save first and last name if applicable
+#         if 'First Name' in req_body and req_body['First Name']:
+#             user.first_name = req_body['First Name']
+#             user.save(update_fields=['first_name'])
+#         if 'Last Name' in req_body and req_body['Last Name']:
+#             user.last_name = req_body['Last Name']
+#             user.save(update_fields=['last_name'])
 
         # Only send emails when the user fills out the questionnaire for the first time.
         # If they go back later and update it for whatever reason, they should not receive
