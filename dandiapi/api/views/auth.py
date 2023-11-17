@@ -117,27 +117,27 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         # If they go back later and update it for whatever reason, they should not receive
         # another email confirming their registration. Additionally, users who have already
         # been approved that go back and update the form later should also not receive an email.
-        if (
-            not questionnaire_already_filled_out
-            and user_metadata.status == UserMetadata.Status.INCOMPLETE
-        ):
-            is_edu_email: bool = user.email.endswith('.edu')
-
-            # auto-approve users with edu emails, otherwise require manual approval
-            user_metadata.status = (
-                UserMetadata.Status.APPROVED if is_edu_email else UserMetadata.Status.PENDING
-            )
-            user_metadata.save(update_fields=['status'])
-
-            # send email indicating the user has signed up
-            for socialaccount in user.socialaccount_set.all():
-                # Send approved email if they have been auto-approved
-                if user_metadata.status == UserMetadata.Status.APPROVED:
-                    send_approved_user_message(user, socialaccount)
-                # otherwise, send "awaiting approval" email
-                else:
-                    send_registered_notice_email(user, socialaccount)
-                    send_new_user_message_email(user, socialaccount)
+#         if (
+#             not questionnaire_already_filled_out
+#             and user_metadata.status == UserMetadata.Status.INCOMPLETE
+#         ):
+#             is_edu_email: bool = user.email.endswith('.edu')
+#
+#             # auto-approve users with edu emails, otherwise require manual approval
+#             user_metadata.status = (
+#                 UserMetadata.Status.APPROVED if is_edu_email else UserMetadata.Status.PENDING
+#             )
+#             user_metadata.save(update_fields=['status'])
+#
+#             # send email indicating the user has signed up
+#             for socialaccount in user.socialaccount_set.all():
+#                 # Send approved email if they have been auto-approved
+#                 if user_metadata.status == UserMetadata.Status.APPROVED:
+#                     send_approved_user_message(user, socialaccount)
+#                 # otherwise, send "awaiting approval" email
+#                 else:
+#                     send_registered_notice_email(user, socialaccount)
+#                     send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
