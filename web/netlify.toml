@@ -4,7 +4,7 @@ command = "yarn run build"
 
 # Staging
 [context.master.environment]
-NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
+NODE_VERSION = "20"
 VITE_APP_OAUTH_API_ROOT = "https://api-staging.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api-staging.dandiarchive.org/api/"
@@ -13,7 +13,7 @@ VITE_APP_SENTRY_ENVIRONMENT = "staging"
 
 # Deploy previews
 [context.deploy-preview.environment]
-NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
+NODE_VERSION = "20"
 VITE_APP_OAUTH_API_ROOT = "https://api-staging.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api-staging.dandiarchive.org/api/"
@@ -22,7 +22,7 @@ VITE_APP_SENTRY_ENVIRONMENT = "staging"
 
 # Production
 [context.release.environment]
-NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
+NODE_VERSION = "20"
 VITE_APP_OAUTH_API_ROOT = "https://api.dandiarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = "Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl"
 VITE_APP_DANDI_API_ROOT = "https://api.dandiarchive.org/api/"
