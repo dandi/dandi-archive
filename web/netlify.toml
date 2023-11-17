@@ -6,7 +6,7 @@ command = "yarn run build"
 [context.master.environment]
 NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
 VUE_APP_OAUTH_API_ROOT = "https://api.lincbrain.org/oauth/"
-VUE_APP_OAUTH_CLIENT_ID = "29651e4821c59cba741b"
+VUE_APP_OAUTH_CLIENT_ID = "56bdbd486e3fd2df8b4c482079a5f8489134347b"
 VUE_APP_DANDI_API_ROOT = "https://api.lincbrain.org/api/"
 VUE_APP_SENTRY_DSN = "https://833c159dc622528b21b4ce4adef6dbf8@o4506237212033024.ingest.sentry.io/4506237213212672"
 VUE_APP_SENTRY_ENVIRONMENT = "staging"
@@ -15,7 +15,7 @@ VUE_APP_SENTRY_ENVIRONMENT = "staging"
 [context.deploy-preview.environment]
 NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
 VUE_APP_OAUTH_API_ROOT = "https://api.lincbrain.org/oauth/"
-VUE_APP_OAUTH_CLIENT_ID = "29651e4821c59cba741b"
+VUE_APP_OAUTH_CLIENT_ID = "56bdbd486e3fd2df8b4c482079a5f8489134347b"
 VUE_APP_DANDI_API_ROOT = "https://api.lincbrain.org/api/"
 VUE_APP_SENTRY_DSN = "https://833c159dc622528b21b4ce4adef6dbf8@o4506237212033024.ingest.sentry.io/4506237213212672"
 VUE_APP_SENTRY_ENVIRONMENT = "staging"
@@ -24,7 +24,7 @@ VUE_APP_SENTRY_ENVIRONMENT = "staging"
 [context.release.environment]
 NODE_VERSION = "16" # Netlify defaults to node.js 10, but @types/node requires a more recent version
 VUE_APP_OAUTH_API_ROOT = "https://api.lincbrain.org/oauth/"
-VUE_APP_OAUTH_CLIENT_ID = "29651e4821c59cba741b"
+VUE_APP_OAUTH_CLIENT_ID = "56bdbd486e3fd2df8b4c482079a5f8489134347b"
 VUE_APP_DANDI_API_ROOT = "https://api.lincbrain.org/api/"
 VUE_APP_SENTRY_DSN = "https://833c159dc622528b21b4ce4adef6dbf8@o4506237212033024.ingest.sentry.io/4506237213212672"
 VUE_APP_SENTRY_ENVIRONMENT = "production"
