@@ -140,6 +140,9 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
 #                     send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
+        import logging
+        x = f'{reverse("authorize").rstrip("/")}/?{request.META["QUERY_STRING"]}'
+        logging.info('Blob with ETag %s does not yet exist', x)
         return HttpResponseRedirect(
             f'{reverse("authorize").rstrip("/")}/?{request.META["QUERY_STRING"]}'
         )
