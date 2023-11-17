@@ -1,3 +1,17 @@
+# v0.3.62 (Fri Nov 17 2023)
+
+#### 🐛 Bug Fix
+
+- [DATALAD RUNCMD] Replace youtube URL with the one with @dandiarchive [#1754](https://github.com/dandi/dandi-archive/pull/1754) ([@yarikoptic](https://github.com/yarikoptic))
+- Fix style issues found by Ruff [#1741](https://github.com/dandi/dandi-archive/pull/1741) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.61 (Thu Nov 09 2023)
 
 #### 🐛 Bug Fix
