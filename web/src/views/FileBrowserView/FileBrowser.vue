@@ -316,7 +316,7 @@ const EXTERNAL_SERVICES = [
     name: 'MetaCell/NWBExplorer',
     regex: /\.nwb$/,
     maxsize: 1e9,
-    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=',
+    endpoint: 'http://nwbexplorer.opensourcebrain.org?nwbfile=',
   },
 
   {
