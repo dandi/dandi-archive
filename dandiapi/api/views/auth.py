@@ -91,8 +91,10 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     user: User = request.user
     if request.method == 'POST':
-#         user_metadata: UserMetadata = user.metadata
-#         questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
+        user_metadata: UserMetadata = user.metadata
+        logging.info(user.metadata)
+        questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
+        logging.info(questionnaire_already_filled_out)
 #
 #         # we can't use Django forms here because we're using a JSONField, so we have
 #         # to extract the request data manually
@@ -153,6 +155,9 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     except (JSONDecodeError, TypeError):
         raise Http404
 
+    import logging
+    x = "Hello there"
+    logging.info('Blob with ETag %s does not yet exist', x)
     return render(
         request,
         'api/account/questionnaire_form.html',
