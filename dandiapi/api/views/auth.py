@@ -91,18 +91,12 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
 @permission_classes([IsAuthenticated])
 @transaction.atomic
 def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
-    print("User:", request.user)
-    print("Method:", request.method)
-
     user: User = request.user
     if request.method == 'POST':
         user_metadata: UserMetadata = user.metadata
-# #         logging.info(user.metadata)
         questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
-# #         logging.info(questionnaire_already_filled_out)
-#
-#         # we can't use Django forms here because we're using a JSONField, so we have
-#         # to extract the request data manually
+        # we can't use Django forms here because we're using a JSONField, so we have
+        # to extract the request data manually
         req_body = request.POST.dict()
         user_metadata.questionnaire_form = {
             question['question']: req_body.get(question['question'])[: question['max_length']]
@@ -137,14 +131,14 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             user_metadata.save(update_fields=['status'])
 
             # send email indicating the user has signed up
-            for socialaccount in user.socialaccount_set.all():
-                # Send approved email if they have been auto-approved
-                if user_metadata.status == UserMetadata.Status.APPROVED:
-                    send_approved_user_message(user, socialaccount)
-                # otherwise, send "awaiting approval" email
-                else:
-                    send_registered_notice_email(user, socialaccount)
-                    send_new_user_message_email(user, socialaccount)
+#             for socialaccount in user.socialaccount_set.all():
+#                 # Send approved email if they have been auto-approved
+#                 if user_metadata.status == UserMetadata.Status.APPROVED:
+#                     send_approved_user_message(user, socialaccount)
+#                 # otherwise, send "awaiting approval" email
+#                 else:
+#                     send_registered_notice_email(user, socialaccount)
+#                     send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
 #         import logging
@@ -160,9 +154,6 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     except (JSONDecodeError, TypeError):
         raise Http404
 
-#     import logging
-    x = "Hello there"
-#     logging.info('Blob with ETag %s does not yet exist', x)
     return render(
         request,
         'api/account/questionnaire_form.html',
