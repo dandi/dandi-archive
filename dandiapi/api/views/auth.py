@@ -59,6 +59,8 @@ COLLECT_USER_NAME_QUESTIONS = QUESTIONS[:2]
 
 @require_http_methods(['GET'])
 def authorize_view(request: HttpRequest) -> HttpResponse:
+    from django.contrib.sites.models import Site
+#     raise Exception(Site.objects.get_current())
     """Override authorization endpoint to handle user questionnaire."""
     user: User = request.user
     if (
@@ -94,21 +96,21 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
 
     user: User = request.user
     if request.method == 'POST':
-#         user_metadata: UserMetadata = user.metadata
+        user_metadata: UserMetadata = user.metadata
 # #         logging.info(user.metadata)
-#         questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
+        questionnaire_already_filled_out = user_metadata.questionnaire_form is not None
 # #         logging.info(questionnaire_already_filled_out)
 #
 #         # we can't use Django forms here because we're using a JSONField, so we have
 #         # to extract the request data manually
         req_body = request.POST.dict()
-#         user_metadata.questionnaire_form = {
-#             question['question']: req_body.get(question['question'])[: question['max_length']]
-#             if req_body.get(question['question']) is not None
-#             else None
-#             for question in QUESTIONS
-#         }
-#         user_metadata.save(update_fields=['questionnaire_form'])
+        user_metadata.questionnaire_form = {
+            question['question']: req_body.get(question['question'])[: question['max_length']]
+            if req_body.get(question['question']) is not None
+            else None
+            for question in QUESTIONS
+        }
+        user_metadata.save(update_fields=['questionnaire_form'])
 
         # Save first and last name if applicable
         if 'First Name' in req_body and req_body['First Name']:
@@ -122,27 +124,27 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
 #         If they go back later and update it for whatever reason, they should not receive
 #         another email confirming their registration. Additionally, users who have already
 #         been approved that go back and update the form later should also not receive an email.
-#         if (
-#             not questionnaire_already_filled_out
-#             and user_metadata.status == UserMetadata.Status.INCOMPLETE
-#         ):
-#             is_edu_email: bool = user.email.endswith('.edu')
-#
-#             # auto-approve users with edu emails, otherwise require manual approval
-#             user_metadata.status = (
-#                 UserMetadata.Status.APPROVED if is_edu_email else UserMetadata.Status.PENDING
-#             )
-#             user_metadata.save(update_fields=['status'])
-#
-#             # send email indicating the user has signed up
-#             for socialaccount in user.socialaccount_set.all():
-#                 # Send approved email if they have been auto-approved
-#                 if user_metadata.status == UserMetadata.Status.APPROVED:
-#                     send_approved_user_message(user, socialaccount)
-#                 # otherwise, send "awaiting approval" email
-#                 else:
-#                     send_registered_notice_email(user, socialaccount)
-#                     send_new_user_message_email(user, socialaccount)
+        if (
+            not questionnaire_already_filled_out
+            and user_metadata.status == UserMetadata.Status.INCOMPLETE
+        ):
+            is_edu_email: bool = user.email.endswith('.edu')
+
+            # auto-approve users with edu emails, otherwise require manual approval
+            user_metadata.status = (
+                UserMetadata.Status.APPROVED if is_edu_email else UserMetadata.Status.PENDING
+            )
+            user_metadata.save(update_fields=['status'])
+
+            # send email indicating the user has signed up
+            for socialaccount in user.socialaccount_set.all():
+                # Send approved email if they have been auto-approved
+                if user_metadata.status == UserMetadata.Status.APPROVED:
+                    send_approved_user_message(user, socialaccount)
+                # otherwise, send "awaiting approval" email
+                else:
+                    send_registered_notice_email(user, socialaccount)
+                    send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
 #         import logging
