@@ -134,7 +134,7 @@ class DandiMixin(ConfigMixin):
     AUTO_APPROVE_USERS = True
 
     # Disable github oauth by default
-    ENABLE_GITHUB_OAUTH = False
+    ENABLE_GITHUB_OAUTH = True
 
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
