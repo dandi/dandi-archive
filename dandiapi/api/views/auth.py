@@ -101,7 +101,7 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
 #
 #         # we can't use Django forms here because we're using a JSONField, so we have
 #         # to extract the request data manually
-#         req_body = request.POST.dict()
+        req_body = request.POST.dict()
 #         user_metadata.questionnaire_form = {
 #             question['question']: req_body.get(question['question'])[: question['max_length']]
 #             if req_body.get(question['question']) is not None
