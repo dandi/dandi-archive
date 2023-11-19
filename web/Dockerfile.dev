@@ -1,0 +1,14 @@
+FROM node:16
+
+# Arbitrary directory inside the container
+WORKDIR /usr/src/app
+
+COPY package.json ./
+
+RUN yarn install
+
+COPY . .
+
+EXPOSE 8085
+
+CMD [ "yarn", "run", "serve" ]
