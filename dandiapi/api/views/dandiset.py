@@ -1,6 +1,5 @@
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Max, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
@@ -362,7 +361,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
-        dandiset = self.get_object()
+        dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
@@ -372,26 +371,31 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
 
-            def get_user_or_400(username):
-                # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
-                # so it is not empowered to do a more powerful query like:
-                # SocialAccount.objects.get(extra_data__login=username)
-                # We resort to doing this awkward search instead.
-                for social_account in SocialAccount.objects.filter(extra_data__icontains=username):
-                    if social_account.extra_data['login'] == username:
-                        return social_account.user
-                else:
-                    try:
-                        return User.objects.get(username=username)
-                    except ObjectDoesNotExist:
-                        raise ValidationError(f'User {username} not found')
-
-            owners = [
-                get_user_or_400(username=owner['username']) for owner in serializer.validated_data
-            ]
-            if len(owners) < 1:
+            # Ensure not all owners removed
+            if not serializer.validated_data:
                 raise ValidationError('Cannot remove all draft owners')
 
+            # Get all owners that have the provided username in one of the two possible locations
+            usernames = [owner['username'] for owner in serializer.validated_data]
+            user_owners = list(User.objects.filter(username__in=usernames))
+            socialaccount_owners = list(
+                SocialAccount.objects.select_related('user').filter(extra_data__login__in=usernames)
+            )
+
+            # Check that all owners were found
+            if len(user_owners) + len(socialaccount_owners) < len(usernames):
+                username_set = {
+                    *(user.username for user in user_owners),
+                    *(owner.extra_data['login'] for owner in socialaccount_owners),
+                }
+
+                # Raise exception on first username in list that's not found
+                for username in usernames:
+                    if username not in username_set:
+                        raise ValidationError(f'User {username} not found')
+
+            # All owners found
+            owners = user_owners + [acc.user for acc in socialaccount_owners]
             removed_owners, added_owners = dandiset.set_owners(owners)
             dandiset.save()
 
