@@ -22,7 +22,7 @@
             width="60%"
             class="white--text pl-2 py-1 text-left"
           >
-            <div>> dandi download https://dandiarchive.org/dandiset/{{ dandisetIdentifier }}/draft</div>
+            <div>> lincbrain download https://lincbrain.org/dandiset/{{ dandisetIdentifier }}/draft</div>
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
             <div>> dandi organize &lt;source_folder&gt;</div>

@@ -39,7 +39,7 @@
       </v-card-title>
       <v-list class="pa-0">
         <v-list-item dense>
-          Use this command in your DANDI CLI
+          Use this command in your Lincbrain CLI
         </v-list-item>
         <v-list-item dense>
           <CopyText
@@ -122,12 +122,12 @@ import CopyText from '@/components/CopyText.vue';
 
 function formatDownloadCommand(identifier: string, version: string): string {
   if (version === 'draft') {
-    return `dandi download https://dandiarchive.org/dandiset/${identifier}/draft`;
+    return `lincbrain download https://lincbrain.org/dandiset/${identifier}/draft`;
   }
   if (!version) {
-    return `dandi download DANDI:${identifier}`;
+    return `lincbrain download DANDI:${identifier}`;
   }
-  return `dandi download DANDI:${identifier}/${version}`;
+  return `lincbrain download DANDI:${identifier}/${version}`;
 }
 
 const store = useDandisetStore();
