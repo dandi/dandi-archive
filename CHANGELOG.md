@@ -1,3 +1,15 @@
+# v0.3.63 (Tue Nov 21 2023)
+
+#### 🐛 Bug Fix
+
+- Fix race condition in version PUT endpoint [#1757](https://github.com/dandi/dandi-archive/pull/1757) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.62 (Fri Nov 17 2023)
 
 #### 🐛 Bug Fix
