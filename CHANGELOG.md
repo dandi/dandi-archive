@@ -1,3 +1,19 @@
+# v0.3.64 (Wed Nov 22 2023)
+
+#### 🐛 Bug Fix
+
+- adjust neurosift service endpoint URL, passing additional info [#1706](https://github.com/dandi/dandi-archive/pull/1706) ([@magland](https://github.com/magland) [@waxlamp](https://github.com/waxlamp))
+- Optimize dandiset owner PUT endpoint [#1737](https://github.com/dandi/dandi-archive/pull/1737) ([@mvandenburgh](https://github.com/mvandenburgh) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.63 (Tue Nov 21 2023)
 
 #### 🐛 Bug Fix
