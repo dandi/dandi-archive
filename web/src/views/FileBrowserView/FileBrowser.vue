@@ -394,6 +394,10 @@ function serviceURL(endpoint: string, data: {
 }
 
 function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
+  if (path.asset === null) {
+    return [];
+  }
+
   const servicePredicate = (service: Service, _path: AssetPath) => (
     new RegExp(service.regex).test(path.path)
           && _path.asset !== null
