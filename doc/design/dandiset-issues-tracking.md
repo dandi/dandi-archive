@@ -55,10 +55,18 @@ Although sounded like a good idea at first, cumbersome to implement with consist
   - add action to monitor new issues to enhance description with the `@handles`, or
   - generate/update issue template per each dandiset with its own list of owners.
 
+### Changes on dandi-archive Backend
+
+- Provision configuration settings for
+  - GitHub organization where to create repository for a new dandiset
+  - GitHub token with sufficient permissions to create repository in that organization
+- If there is provisioned GitHub organization: Job creating a new dandiset entry would trigger a job to create a new repository.
+
 ### Changes on dandi-archive Web UI
 
-- Add a section to the web UI for each DANDI set for buttons, such as "See issues", "File an issue", "Ask a question" which routes to the corresponding Issues page on the GitHub repo for that DANDI set
-- Buttons or side component could also report the number of questions asked about that DANDI set
+- If there is provisioned GitHub organization:
+    - Add a section to the web UI for each DANDI set for buttons, such as "See issues", "File an issue", "Ask a question" which routes to the corresponding Issues page on the GitHub repo for that DANDI set
+    - Buttons or side component could also report the number of questions asked about that DANDI set
 
 ### Benefits
 
@@ -66,7 +74,8 @@ Although sounded like a good idea at first, cumbersome to implement with consist
   - register/login to dandiarchive: we will reuse that same mechanism
   - submit support requests in helpdesk
 - GitHub provides a versatile and customizable issue tracking system many of the users might already be familiar with
-- In Triage mode dandisets owners would have powers to assign/close issues.
+- In Triage mode dandisets owners would have powers to assign/close issues
+- We will make it optional, so if no GitHub organization provisioned, no backend/UI actions/elements.
 
 ### Disadvantages
 
