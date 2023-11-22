@@ -1,3 +1,15 @@
+# v0.3.65 (Wed Nov 22 2023)
+
+#### 🐛 Bug Fix
+
+- Check that path is an asset before proceeding [#1759](https://github.com/dandi/dandi-archive/pull/1759) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
 # v0.3.64 (Wed Nov 22 2023)
 
 #### 🐛 Bug Fix
