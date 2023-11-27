@@ -14,7 +14,7 @@ from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
-from dandiapi.api.services.asset.exceptions import AssetPathConflict
+from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -557,7 +557,7 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
     )
 
     # Add an asset that has a path which fully contains that of the first asset
-    with pytest.raises(AssetPathConflict):
+    with pytest.raises(AssetPathConflictError):
         add_asset_to_version(
             user=user,
             version=draft_version,
@@ -569,7 +569,7 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
         )
 
     # Add an asset that's path is fully contained by the first asset
-    with pytest.raises(AssetPathConflict):
+    with pytest.raises(AssetPathConflictError):
         add_asset_to_version(
             user=user,
             version=draft_version,

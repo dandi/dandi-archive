@@ -4,11 +4,11 @@ from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_co
 from dandiapi.api.models.asset import Asset, AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
-    AssetAlreadyExists,
-    AssetPathConflict,
-    DandisetOwnerRequired,
-    DraftDandisetNotModifiable,
-    ZarrArchiveBelongsToDifferentDandiset,
+    AssetAlreadyExistsError,
+    AssetPathConflictError,
+    DandisetOwnerRequiredError,
+    DraftDandisetNotModifiableError,
+    ZarrArchiveBelongsToDifferentDandisetError,
 )
 from dandiapi.zarr.models import ZarrArchive
 
@@ -58,9 +58,9 @@ def change_asset(
     assert 'path' in new_metadata, 'Path must be present in new_metadata'
 
     if not user.has_perm('owner', version.dandiset):
-        raise DandisetOwnerRequired
+        raise DandisetOwnerRequiredError
     elif version.version != 'draft':
-        raise DraftDandisetNotModifiable
+        raise DraftDandisetNotModifiableError
 
     path = new_metadata['path']
     new_metadata_stripped = Asset.strip_metadata(new_metadata)
@@ -75,7 +75,7 @@ def change_asset(
 
     # Verify we aren't changing path to the same value as an existing asset
     if version.assets.filter(path=path).exclude(asset_id=asset.asset_id).exists():
-        raise AssetAlreadyExists
+        raise AssetAlreadyExistsError
 
     with transaction.atomic():
         remove_asset_from_version(user=user, asset=asset, version=version)
@@ -109,23 +109,23 @@ def add_asset_to_version(
     assert 'path' in metadata, 'Path must be present in metadata'
 
     if not user.has_perm('owner', version.dandiset):
-        raise DandisetOwnerRequired
+        raise DandisetOwnerRequiredError
     elif version.version != 'draft':
-        raise DraftDandisetNotModifiable
+        raise DraftDandisetNotModifiableError
 
     # Check if there are already any assets with the same path
     path = metadata['path']
     if version.assets.filter(path=path).exists():
-        raise AssetAlreadyExists
+        raise AssetAlreadyExistsError
 
     # Check if there are any assets that conflict with this path
     conflicts = get_conflicting_paths(path, version)
     if conflicts:
-        raise AssetPathConflict(new_path=path, existing_paths=conflicts)
+        raise AssetPathConflictError(new_path=path, existing_paths=conflicts)
 
     # Ensure zarr archive doesn't already belong to a dandiset
     if zarr_archive and zarr_archive.dandiset != version.dandiset:
-        raise ZarrArchiveBelongsToDifferentDandiset
+        raise ZarrArchiveBelongsToDifferentDandisetError
 
     if isinstance(asset_blob, EmbargoedAssetBlob):
         embargoed_asset_blob = asset_blob
@@ -155,9 +155,9 @@ def add_asset_to_version(
 
 def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Version:
     if not user.has_perm('owner', version.dandiset):
-        raise DandisetOwnerRequired
+        raise DandisetOwnerRequiredError
     elif version.version != 'draft':
-        raise DraftDandisetNotModifiable
+        raise DraftDandisetNotModifiableError
 
     with transaction.atomic():
         # Remove asset paths and asset itself from version

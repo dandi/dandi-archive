@@ -125,12 +125,12 @@ def insert_asset_paths(asset: Asset, version: Version):
             path=asset.path, asset=asset, version=version
         )
     except IntegrityError as e:
-        from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
+        from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
 
         # If there are simultaneous requests to create the same asset, this check constraint can
         # fail, and should be handled directly, rather than be allowed to bubble up
         if 'unique-version-path' in str(e):
-            raise AssetAlreadyExists
+            raise AssetAlreadyExistsError
 
         # Re-raise original exception otherwise
         raise

@@ -8,7 +8,7 @@ from dandiapi.api.services.asset import (
     change_asset,
     remove_asset_from_version,
 )
-from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiable
+from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -337,7 +337,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=versions__version,
         )
         if version.version != 'draft':
-            raise DraftDandisetNotModifiable
+            raise DraftDandisetNotModifiableError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
