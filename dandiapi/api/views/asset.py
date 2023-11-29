@@ -167,6 +167,8 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 )
 
             return HttpResponseRedirect(url)
+        else:
+            raise TypeError('Invalid content_disposition: %s', content_disposition)
 
     @swagger_auto_schema(
         method='GET',

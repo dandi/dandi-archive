@@ -142,6 +142,7 @@ class VersionStatusFilter(admin.SimpleListFilter):
         status = self.value()
         if status:
             return queryset.filter(status=status)
+        return None
 
 
 @admin.register(Version)
