@@ -194,8 +194,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         except S3Error as e:
             if e.code == 'NoSuchKey':
                 return None
-            else:
-                raise
+            raise
         else:
             return response.etag
 

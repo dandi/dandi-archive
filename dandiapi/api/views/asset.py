@@ -149,7 +149,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             return HttpResponseRedirect(
                 storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
             )
-        elif content_disposition == 'inline':
+        if content_disposition == 'inline':
             url = storage.generate_presigned_inline_url(
                 asset_blob.blob.name,
                 asset_basename,
@@ -167,8 +167,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 )
 
             return HttpResponseRedirect(url)
-        else:
-            raise TypeError('Invalid content_disposition: %s', content_disposition)
+        raise TypeError('Invalid content_disposition: %s', content_disposition)
 
     @swagger_auto_schema(
         method='GET',

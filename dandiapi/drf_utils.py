@@ -23,8 +23,7 @@ def rewrap_django_core_exceptions(exc: Exception, ctx: dict) -> Response | None:
             # Dandi returns validation errors with 1 problem as a raw
             # message. Support this for now, consider using the DRF enveloped format in the future.
             return Response(exc.error_list[0].message, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            exc = drf_exceptions.ValidationError(as_serializer_error(exc))
+        exc = drf_exceptions.ValidationError(as_serializer_error(exc))
     elif isinstance(exc, DandiError):
         return Response(exc.message, status=exc.http_status_code or status.HTTP_400_BAD_REQUEST)
 

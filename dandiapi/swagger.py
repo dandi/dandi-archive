@@ -15,5 +15,4 @@ class DANDISwaggerAutoSchema(SwaggerAutoSchema):
         summary, description = super().split_summary_from_description(description)
         if summary is None:
             return description, None
-        else:
-            return summary, description
+        return summary, description
