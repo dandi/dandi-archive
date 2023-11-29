@@ -60,7 +60,7 @@
           </v-icon>
         </v-chip>
       </v-chip-group>
-      <DandisetSearchField class="flex-grow-1" />
+<!--      <DandisetSearchField class="flex-grow-1" />-->
     </v-toolbar>
     <DandisetList
       v-if="dandisets && dandisets.length"
