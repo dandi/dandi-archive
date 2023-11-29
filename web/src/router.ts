@@ -19,11 +19,11 @@ const routes: RouteConfig[] = [
     name: 'home',
     component: HomeView,
   },
-  // {
-  //   path: '/dandiset',
-  //   name: 'publicDandisets',
-  //   component: PublicDandisetsView,
-  // },
+  {
+    path: '/dandiset',
+    name: 'publicDandisets',
+    component: PublicDandisetsView,
+  },
   {
     path: '/dandiset/my',
     name: 'myDandisets',
