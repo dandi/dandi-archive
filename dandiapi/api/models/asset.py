@@ -214,6 +214,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             return self.blob.sha256
         elif self.is_embargoed_blob:
             return self.embargoed_blob.sha256
+        else:
+            raise RuntimeError('Zarr does not support SHA256')
 
     @property
     def digest(self) -> dict[str, str]:
