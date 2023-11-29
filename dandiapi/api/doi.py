@@ -65,7 +65,7 @@ def delete_doi(doi: str) -> None:
                 r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code == 404:
+                if e.response and e.response.status_code == requests.codes.not_found:
                     logging.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
                 logging.exception('Failed to fetch data for DOI %s', doi)
