@@ -57,7 +57,9 @@ def cli(start, end, force, amend, output_file):
 
     # Get archive list
     headers = {'X-Papertrail-Token': PAPERTRAIL_TOKEN}
-    resp = requests.get('https://papertrailapp.com/api/v1/archives.json', headers=headers)
+    resp = requests.get(
+        'https://papertrailapp.com/api/v1/archives.json', headers=headers, timeout=30
+    )
     if not resp.ok:
         raise ClickException('Could not retrieve archive list')
     archives: list[dict] = resp.json()
@@ -91,7 +93,7 @@ def cli(start, end, force, amend, output_file):
     # Function to download an archive
     def download_archive(archive: dict):
         link = archive['_links']['download']['href']
-        resp = requests.get(link, headers=headers, stream=True)
+        resp = requests.get(link, headers=headers, timeout=30, stream=True)
         with output_file.open('ab') as outfile:
             outfile.write(resp.raw.read())
 

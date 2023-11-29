@@ -44,6 +44,7 @@ def create_doi(version: Version) -> str:
                     settings.DANDI_DOI_API_USER,
                     settings.DANDI_DOI_API_PASSWORD,
                 ),
+                timeout=30,
             ).raise_for_status()
         except requests.exceptions.HTTPError as e:
             logging.error('Failed to create DOI %s', doi)

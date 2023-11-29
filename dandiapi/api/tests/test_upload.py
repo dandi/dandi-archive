@@ -388,7 +388,7 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
     transferred_parts = []
     part_number = 1
     for part in parts:
-        part_transfer = requests.put(part['upload_url'], data=b'X' * part['size'])
+        part_transfer = requests.put(part['upload_url'], data=b'X' * part['size'], timeout=5)
         etag = part_transfer.headers['etag']
         transferred_parts.append({'part_number': part_number, 'size': part['size'], 'etag': etag})
         part_number += 1
@@ -403,7 +403,9 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
     ).data
 
     # Complete the upload to the object store
-    completion_response = requests.post(completion['complete_url'], data=completion['body'])
+    completion_response = requests.post(
+        completion['complete_url'], data=completion['body'], timeout=5
+    )
     assert completion_response.status_code == 200
 
     # Verify object was uploaded
@@ -442,7 +444,7 @@ def test_upload_initialize_and_complete_embargo(
     transferred_parts = []
     part_number = 1
     for part in parts:
-        part_transfer = requests.put(part['upload_url'], data=b'X' * part['size'])
+        part_transfer = requests.put(part['upload_url'], data=b'X' * part['size'], timeout=5)
         etag = part_transfer.headers['etag']
         transferred_parts.append({'part_number': part_number, 'size': part['size'], 'etag': etag})
         part_number += 1
@@ -457,7 +459,9 @@ def test_upload_initialize_and_complete_embargo(
     ).data
 
     # Complete the upload to the object store
-    completion_response = requests.post(completion['complete_url'], data=completion['body'])
+    completion_response = requests.post(
+        completion['complete_url'], data=completion['body'], timeout=5
+    )
     assert completion_response.status_code == 200
 
     # Verify object was uploaded

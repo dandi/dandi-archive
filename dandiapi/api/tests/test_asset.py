@@ -1346,7 +1346,7 @@ def test_asset_download(api_client, storage, version, asset):
     download_url = response.get('Location')
     assert download_url == HTTP_URL_RE
 
-    download = requests.get(download_url)
+    download = requests.get(download_url, timeout=5)
     cd_header = download.headers.get('Content-Disposition')
 
     assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
@@ -1392,7 +1392,7 @@ def test_asset_download_embargo(
     download_url = response.get('Location')
     assert download_url == HTTP_URL_RE
 
-    download = requests.get(download_url)
+    download = requests.get(download_url, timeout=5)
     cd_header = download.headers.get('Content-Disposition')
 
     assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
@@ -1427,7 +1427,7 @@ def test_asset_direct_download(api_client, storage, version, asset):
     download_url = response.get('Location')
     assert download_url == HTTP_URL_RE
 
-    download = requests.get(download_url)
+    download = requests.get(download_url, timeout=5)
     cd_header = download.headers.get('Content-Disposition')
 
     assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
@@ -1459,7 +1459,7 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
     download_url = response.get('Location')
     assert download_url == HTTP_URL_RE
 
-    download = requests.get(download_url)
+    download = requests.get(download_url, timeout=5)
     cd_header = download.headers.get('Content-Disposition')
 
     assert cd_header == f'attachment; filename="{os.path.basename(asset.path)}"'
