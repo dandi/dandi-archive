@@ -56,7 +56,7 @@ EMPTY_PAGINATION = {
         ),
         (
             'get',
-            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',  # noqa: E501
+            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',
         ),
     ],
 )

@@ -179,7 +179,7 @@ def test_upload_initialize_embargo(api_client, user, dandiset_factory):
     upload_id = str(upload.upload_id)
     assert (
         upload.blob.name
-        == f'test-embargo-prefix/{dandiset.identifier}/blobs/{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'  # noqa: E501
+        == f'test-embargo-prefix/{dandiset.identifier}/blobs/{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'
     )
 
 

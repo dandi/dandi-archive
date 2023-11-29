@@ -44,7 +44,7 @@ class BaseUpload(models.Model):
 
     @staticmethod
     @abstractmethod
-    def object_key(upload_id, *, dandiset: Dandiset):  # noqa: N805
+    def object_key(upload_id, *, dandiset: Dandiset):
         pass
 
     @classmethod

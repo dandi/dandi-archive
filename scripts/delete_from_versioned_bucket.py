@@ -33,7 +33,7 @@ def delete_version(bucket, thing):
 @click.option(
     '--profile',
     prompt='AWS profile name',
-    help='The AWS profile to use. See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html',  # noqa: E501
+    help='The AWS profile to use. See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html',
 )
 @click.option('--bucket', prompt='Bucket', help='The bucket to delete from')
 @click.option('--prefix', prompt='Path to delete', help='The prefix to delete all files under')

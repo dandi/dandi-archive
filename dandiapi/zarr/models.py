@@ -105,7 +105,7 @@ class ZarrArchive(BaseZarrArchive):
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{zarr_path}'  # noqa: E501
+        return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{zarr_path}'
 
 
 class EmbargoedZarrArchive(BaseZarrArchive):
@@ -116,4 +116,4 @@ class EmbargoedZarrArchive(BaseZarrArchive):
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'  # noqa: E501
+        return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'
