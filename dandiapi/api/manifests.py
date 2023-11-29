@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 import tempfile
-from typing import IO, Any, Generator, Iterable
+from typing import IO, TYPE_CHECKING, Any
 from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
@@ -12,6 +12,9 @@ import yaml
 
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.storage import create_s3_storage
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
 
 
 def _s3_url(path: str) -> str:
