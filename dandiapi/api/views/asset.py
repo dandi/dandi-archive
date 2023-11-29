@@ -102,7 +102,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         responses={
             200: 'The asset metadata.',
         },
-        operation_summary="Get an asset\'s metadata",
+        operation_summary="Get an asset's metadata",
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()

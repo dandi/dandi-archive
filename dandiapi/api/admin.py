@@ -59,7 +59,7 @@ class UserAdmin(BaseUserAdmin):
             )
         )
 
-    @admin.action(description="Export selected users\' emails")
+    @admin.action(description="Export selected users' emails")
     def export_emails_to_plaintext(self, request, queryset):
         response = HttpResponse(content_type='text/plain')
         writer = csv.writer(response)
