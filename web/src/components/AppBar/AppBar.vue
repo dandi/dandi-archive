@@ -157,11 +157,11 @@ const loggedIn = computed(loggedInFunc);
 const insideIFrame = computed(insideIFrameFunc);
 
 const navItems: NavigationItem[] = [
-  {
-    text: 'Public Dandisets',
-    to: 'publicDandisets',
-    external: false,
-  },
+  // {
+  //   text: 'Public Dandisets',
+  //   to: 'publicDandisets',
+  //   external: false,
+  // },
   {
     text: 'My Dandisets',
     to: 'myDandisets',

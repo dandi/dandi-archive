@@ -23,7 +23,7 @@
           >
             <v-col class="splash-text my-12">
               <div class="text-h2 font-weight-thin text-center light-blue--text text--darken-1">
-                The DANDI Archive
+                LINC BRAIN Intiative
               </div>
               <div class="text-h6 font-weight-light text-center">
                 The BRAIN Initiative archive for publishing and sharing
@@ -38,7 +38,7 @@
     </v-row>
     <v-row no-gutters>
       <v-col class="grey darken-2 pa-12">
-        <DandisetSearchField :dense="false" />
+<!--        <DandisetSearchField :dense="false" />-->
       </v-col>
     </v-row>
     <StatsBar />

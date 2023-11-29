@@ -2,7 +2,7 @@
   <div>
     <Meditor v-if="currentDandiset" />
     <v-toolbar class="grey darken-2 white--text">
-      <DandisetSearchField />
+<!--      <DandisetSearchField />-->
       <v-pagination
         v-model="page"
         :length="pages"
