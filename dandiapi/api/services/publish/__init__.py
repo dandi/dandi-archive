@@ -47,8 +47,7 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
     ):
         raise NotAllowedError
     if dandiset.zarr_archives.exists() or dandiset.embargoed_zarr_archives.exists():
-        # TODO: return a string instead of a list here
-        raise NotAllowedError(['Cannot publish dandisets which contain zarrs'], 400)  # type: ignore
+        raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
 
     with transaction.atomic():
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
