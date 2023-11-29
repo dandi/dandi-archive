@@ -1,5 +1,5 @@
 <template>
-<!--  <DandisetsPage title="Public Dandisets" />-->
+  <DandisetsPage title="Public Dandisets" />
 </template>
 
 <script setup lang="ts">
