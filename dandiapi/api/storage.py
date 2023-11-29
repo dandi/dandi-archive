@@ -289,7 +289,7 @@ def create_s3_storage(bucket_name: str) -> Storage:
         # TODO: filename transforming?
         # TODO: content_type
     else:
-        raise Exception(f'Unknown storage: {default_storage_class}')
+        raise TypeError(f'Unknown storage: {default_storage_class}')
 
     return storage
 
