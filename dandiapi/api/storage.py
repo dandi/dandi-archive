@@ -26,8 +26,8 @@ class ChecksumCalculatorFile:
     def __init__(self):
         self.h = hashlib.sha256()
 
-    def write(self, bytes):
-        self.h.update(bytes)
+    def write(self, data: bytes) -> None:
+        self.h.update(data)
 
     @property
     def checksum(self):

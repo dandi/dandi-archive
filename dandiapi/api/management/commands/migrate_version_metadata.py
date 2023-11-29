@@ -7,17 +7,17 @@ from dandiapi.api.models import Version
 @click.command()
 @click.argument('to_version')
 def migrate_version_metadata(to_version: str):
-    print(f'Migrating all version metadata to version {to_version}')
+    click.echo(f'Migrating all version metadata to version {to_version}')
     for version in Version.objects.filter(version='draft'):
-        print(f'Migrating {version.dandiset.identifier}/{version.version}')
+        click.echo(f'Migrating {version.dandiset.identifier}/{version.version}')
 
         metadata = version.metadata
 
         try:
             metanew = migrate(metadata, to_version=to_version, skip_validation=True)
         except Exception as e:
-            print(f'Failed to migrate {version.dandiset.identifier}/{version.version}')
-            print(e)
+            click.echo(f'Failed to migrate {version.dandiset.identifier}/{version.version}')
+            click.echo(e)
             continue
 
         if version.metadata != metanew:

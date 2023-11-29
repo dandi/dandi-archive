@@ -22,12 +22,12 @@ class AssetSearchManager(models.Manager):
 
 
 class AssetSearch(models.Model):
-    objects = AssetSearchManager()
-
     dandiset_id = models.PositiveBigIntegerField()
     asset_id = models.PositiveBigIntegerField(primary_key=True)
     asset_metadata = models.JSONField()
     asset_size = models.PositiveBigIntegerField()
+
+    objects = AssetSearchManager()
 
     class Meta:
         managed = False

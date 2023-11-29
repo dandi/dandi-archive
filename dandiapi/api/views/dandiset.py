@@ -146,8 +146,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         lookup_url = self.kwargs[self.lookup_url_kwarg]
         try:
             lookup_value = int(lookup_url)
-        except ValueError:
-            raise Http404('Not a valid identifier.')
+        except ValueError as e:
+            raise Http404('Not a valid identifier.') from e
         self.kwargs[self.lookup_url_kwarg] = lookup_value
 
         dandiset = super().get_object()
@@ -402,16 +402,19 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-        for owner in dandiset.owners:
+        for owner_user in dandiset.owners:
             try:
-                owner = SocialAccount.objects.get(user=owner)
-                owner_dict = {'username': owner.extra_data['login']}
-                if 'name' in owner.extra_data:
-                    owner_dict['name'] = owner.extra_data['name']
+                owner_account = SocialAccount.objects.get(user=owner_user)
+                owner_dict = {'username': owner_account.extra_data['login']}
+                if 'name' in owner_account.extra_data:
+                    owner_dict['name'] = owner_account.extra_data['name']
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
                 owners.append(
-                    {'username': owner.username, 'name': f'{owner.first_name} {owner.last_name}'}
+                    {
+                        'username': owner_user.username,
+                        'name': f'{owner_user.first_name} {owner_user.last_name}',
+                    }
                 )
         return Response(owners, status=status.HTTP_200_OK)

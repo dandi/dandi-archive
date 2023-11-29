@@ -22,10 +22,6 @@ from .dandiset import Dandiset
 class BaseUpload(models.Model):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
-    class Meta:
-        indexes = [models.Index(fields=['etag'])]
-        abstract = True
-
     created = CreationDateTimeField()
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
@@ -40,6 +36,10 @@ class BaseUpload(models.Model):
     # This is the identifier the object store assigns to the multipart upload
     multipart_upload_id = models.CharField(max_length=128, unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
+
+    class Meta:
+        indexes = [models.Index(fields=['etag'])]
+        abstract = True
 
     @staticmethod
     @abstractmethod
