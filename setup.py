@@ -64,17 +64,12 @@ setup(
         'zarr-checksum>=0.2.8',
         # Production-only
         'django-composed-configuration[prod]>=0.23.0',
-        # pin directly to a version since we're extending the private multipart interface
-        'django-s3-file-field[boto3]==0.3.2',
+        'django-s3-file-field[s3]>=1.0.0',
         'django-storages[s3]>=1.14.2',
         'gunicorn',
         # Development-only, but required
-        # TODO: starting with v0.5.0, django-minio-storage requires v7
-        # of the minio-py library. minio-py 7 introduces several
-        # breaking changes to the API, and django-s3-file-field is also
-        # incompatible with it since it has minio<7 as a dependency.
-        # Until these issues are resolved, we pin it to an older version.
-        'django-minio-storage<0.5.0',
+        'django-minio-storage',
+        'minio>7',
         'tqdm',
     ],
     extras_require={

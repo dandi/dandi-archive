@@ -84,16 +84,16 @@ def authenticated_api_client(user) -> APIClient:
 # storage fixtures are copied from django-s3-file-field test fixtures
 
 
-def base_s3boto3_storage_factory(bucket_name: str) -> 'S3Storage':
+def base_s3_storage_factory(bucket_name: str) -> 'S3Storage':
     return create_s3_storage(bucket_name)
 
 
-def s3boto3_storage_factory():
-    return base_s3boto3_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
+def s3_storage_factory():
+    return base_s3_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
-def embargoed_s3boto3_storage_factory():
-    return base_s3boto3_storage_factory(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
+def embargoed_s3_storage_factory():
+    return base_s3_storage_factory(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
 
 
 def base_minio_storage_factory(bucket_name: str) -> MinioStorage:
@@ -109,13 +109,13 @@ def embargoed_minio_storage_factory() -> MinioStorage:
 
 
 @pytest.fixture()
-def s3boto3_storage() -> 'S3Storage':
-    return s3boto3_storage_factory()
+def s3_storage() -> 'S3Storage':
+    return s3_storage_factory()
 
 
 @pytest.fixture()
-def embargoed_s3boto3_storage() -> 'S3Storage':
-    return s3boto3_storage_factory()
+def embargoed_s3_storage() -> 'S3Storage':
+    return s3_storage_factory()
 
 
 @pytest.fixture()
@@ -128,10 +128,10 @@ def embargoed_minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
-@pytest.fixture(params=[s3boto3_storage_factory, minio_storage_factory], ids=['s3boto3', 'minio'])
+@pytest.fixture(params=[s3_storage_factory, minio_storage_factory], ids=['s3', 'minio'])
 def storage(request, settings) -> Storage:
     storage_factory = request.param
-    if storage_factory == s3boto3_storage_factory:
+    if storage_factory == s3_storage_factory:
         settings.DEFAULT_FILE_STORAGE = 'storages.backends.s3.S3Storage'
         settings.AWS_S3_ACCESS_KEY_ID = settings.MINIO_STORAGE_ACCESS_KEY
         settings.AWS_S3_SECRET_ACCESS_KEY = settings.MINIO_STORAGE_SECRET_KEY
@@ -153,8 +153,8 @@ def storage(request, settings) -> Storage:
 
 
 @pytest.fixture(
-    params=[embargoed_s3boto3_storage_factory, embargoed_minio_storage_factory],
-    ids=['s3boto3', 'minio'],
+    params=[embargoed_s3_storage_factory, embargoed_minio_storage_factory],
+    ids=['s3', 'minio'],
 )
 def embargoed_storage(request) -> Storage:
     storage_factory = request.param
@@ -163,10 +163,10 @@ def embargoed_storage(request) -> Storage:
 
 @pytest.fixture(
     params=[
-        (s3boto3_storage_factory, embargoed_s3boto3_storage_factory),
+        (s3_storage_factory, embargoed_s3_storage_factory),
         (minio_storage_factory, embargoed_minio_storage_factory),
     ],
-    ids=['s3boto3', 'minio'],
+    ids=['s3', 'minio'],
 )
 def storage_tuple(request) -> tuple[Storage, Storage]:
     storage_factory, embargoed_storage_factory = request.param
