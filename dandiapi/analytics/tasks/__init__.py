@@ -82,7 +82,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
         return
 
     s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
-    BlobModel = AssetBlob if not embargoed else EmbargoedAssetBlob
+    BlobModel = AssetBlob if not embargoed else EmbargoedAssetBlob  # noqa: N806
     data = s3.get_object(Bucket=bucket, Key=s3_log_key)
     download_counts = Counter()
 

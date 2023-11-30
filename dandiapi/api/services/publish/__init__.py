@@ -125,7 +125,7 @@ def _publish_dandiset(dandiset_id: int) -> None:
         new_version.save()
 
         # Bulk create the join table rows to optimize linking assets to new_version
-        AssetVersions = Version.assets.through
+        AssetVersions = Version.assets.through  # noqa: N806
 
         # Add a new many-to-many association directly to any already published assets
         already_published_assets: QuerySet[Asset] = old_version.assets.filter(published=True)
