@@ -94,6 +94,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
     search_fields = ['versions__metadata']
     permission_classes = [IsApproved]
+    
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
