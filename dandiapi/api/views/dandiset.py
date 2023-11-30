@@ -36,6 +36,7 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
 )
 from dandiapi.search.models import AssetSearch
+from dandiapi.api.permissions import IsApproved
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
@@ -87,12 +88,12 @@ class DandisetFilterBackend(filters.OrderingFilter):
                 return queryset.order_by(ordering)
         return queryset
 
-
 class DandisetViewSet(ReadOnlyModelViewSet):
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
     filter_backends = [filters.SearchFilter, DandisetFilterBackend]
     search_fields = ['versions__metadata']
+    permission_classes = [IsApproved]
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
