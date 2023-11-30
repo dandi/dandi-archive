@@ -37,3 +37,6 @@ class AssetSearch(models.Model):
                 fields=['dandiset_id', 'asset_id'], name='unique_dandiset_asset'
             )
         ]
+
+    def __str__(self) -> str:
+        return f'{self.dandiset_id}:{self.asset_id}'
