@@ -670,7 +670,7 @@ def test_version_rest_publish_zarr(
         f'/versions/{draft_version.version}/publish/'
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Cannot publish dandisets which contain zarrs']
+    assert resp.json() == 'Cannot publish dandisets which contain zarrs'
 
 
 @pytest.mark.django_db()
