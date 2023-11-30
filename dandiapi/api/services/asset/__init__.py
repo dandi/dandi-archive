@@ -140,7 +140,7 @@ def add_asset_to_version(
         asset_blob = None
     else:
         embargoed_asset_blob = None
-        asset_blob = asset_blob
+        asset_blob = asset_blob  # noqa: PLW0127
 
     with transaction.atomic():
         asset = _create_asset(
