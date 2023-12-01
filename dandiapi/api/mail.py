@@ -17,7 +17,8 @@ BASE_RENDER_CONTEXT = {
 }
 
 # TODO: turn this into a Django setting
-ADMIN_EMAIL = 'info@dandiarchive.org'
+# TODO: Aaron update
+ADMIN_EMAIL = 'admin@api.lincbrain.org'
 
 
 def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
