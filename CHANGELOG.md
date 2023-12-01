@@ -1,3 +1,25 @@
+# v0.3.66 (Fri Dec 01 2023)
+
+#### 🐛 Bug Fix
+
+- Fix invalid contributors causing crash [#1771](https://github.com/dandi/dandi-archive/pull/1771) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove unnecessary quote escaping [#1766](https://github.com/dandi/dandi-archive/pull/1766) ([@brianhelba](https://github.com/brianhelba))
+- Fix a test failure [#1768](https://github.com/dandi/dandi-archive/pull/1768) ([@brianhelba](https://github.com/brianhelba))
+- Fix issues found by Ruff [#1763](https://github.com/dandi/dandi-archive/pull/1763) ([@brianhelba](https://github.com/brianhelba))
+- WIP: Fix RET503 Missing explicit `return` at the end of function able to return non-`None` value [#1762](https://github.com/dandi/dandi-archive/pull/1762) ([@brianhelba](https://github.com/brianhelba))
+- Fix issues found by Ruff [#1748](https://github.com/dandi/dandi-archive/pull/1748) ([@brianhelba](https://github.com/brianhelba))
+- Fix G004 Logging statement uses f-string [#1750](https://github.com/dandi/dandi-archive/pull/1750) ([@brianhelba](https://github.com/brianhelba))
+- Fix S113 Probable use of requests call without timeout [#1751](https://github.com/dandi/dandi-archive/pull/1751) ([@brianhelba](https://github.com/brianhelba))
+- Upgrade django-s3-file-field [#1735](https://github.com/dandi/dandi-archive/pull/1735) ([@brianhelba](https://github.com/brianhelba))
+- Fix N818 Exception name should be named with an Error suffix [#1749](https://github.com/dandi/dandi-archive/pull/1749) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.65 (Wed Nov 22 2023)
 
 #### 🐛 Bug Fix
