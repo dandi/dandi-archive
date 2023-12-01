@@ -1010,3 +1010,19 @@ def test_dandiset_rest_search_identifier(api_client, draft_version):
 
     assert results[0]['draft_version']['version'] == draft_version.version
     assert results[0]['draft_version']['name'] == draft_version.name
+
+
+@pytest.mark.django_db()
+@pytest.mark.parametrize(
+    'contributors',
+    [None, 'string', 1, [], {}],
+)
+def test_dandiset_contact_person_malformed_contributors(api_client, draft_version, contributors):
+    draft_version.metadata['contributor'] = contributors
+    draft_version.save()
+
+    results = api_client.get(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/',
+    )
+
+    assert results.data['draft_version']['dandiset']['contact_person'] == ''
