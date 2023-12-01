@@ -389,8 +389,8 @@ function serviceURL(endpoint: string, data: {
     .replaceAll('$dandiset_id$', data.dandisetId)
     .replaceAll('$dandiset_version$', data.dandisetVersion)
     .replaceAll('$asset_url$', data.assetUrl)
-    .replaceAll('$asset_dandi_url$', data.assetUrl)
-    .replaceAll('$asset_s3_url$', data.assetUrl);
+    .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
+    .replaceAll('$asset_s3_url$', data.assetS3Url);
 }
 
 function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
