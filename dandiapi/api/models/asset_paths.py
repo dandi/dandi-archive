@@ -38,6 +38,9 @@ class AssetPath(models.Model):
             ),
         ]
 
+    def __str__(self) -> str:
+        return self.path
+
 
 class AssetPathRelation(models.Model):
     # Give related name of child_links, because for any entry with parent=node,
@@ -55,3 +58,6 @@ class AssetPathRelation(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['parent', 'child'], name='unique-relationship'),
         ]
+
+    def __str__(self) -> str:
+        return f'{self.parent} -> {self.child}'

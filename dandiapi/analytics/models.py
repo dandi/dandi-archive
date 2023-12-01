@@ -20,3 +20,6 @@ class ProcessedS3Log(models.Model):
                 name='%(app_label)s_%(class)s_unique_name_embargoed',
             )
         ]
+
+    def __str__(self) -> str:
+        return self.name
