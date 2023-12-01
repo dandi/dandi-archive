@@ -30,7 +30,7 @@ def extract_paths(path: str) -> list[str]:
     return nodepaths
 
 
-def get_root_paths_many(versions: QuerySet[Version], join_assets=False) -> QuerySet[AssetPath]:
+def get_root_paths_many(versions: QuerySet[Version], *, join_assets=False) -> QuerySet[AssetPath]:
     """Return all root paths for all provided versions."""
     qs = AssetPath.objects.get_queryset()
 

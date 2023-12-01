@@ -39,6 +39,6 @@ def depose_placeholder(user):
 
 
 @receiver(user_logged_in)
-def user_log_in_listener(sender, user, **kwargs):
+def user_log_in_listener(*, sender, user, **kwargs):
     """Attempt replace a placeholder user every time a real user logs in."""
     depose_placeholder(user)

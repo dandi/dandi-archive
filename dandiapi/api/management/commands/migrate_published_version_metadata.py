@@ -12,7 +12,7 @@ from dandiapi.api.tasks import write_manifest_files
 @click.argument('dandiset')
 @click.argument('published_version')
 @click.argument('to_version')
-def migrate_published_version_metadata(dandiset: str, published_version: str, to_version: str):
+def migrate_published_version_metadata(*, dandiset: str, published_version: str, to_version: str):
     click.echo(
         f'Migrating published version {dandiset}/{published_version} metadata to version {to_version}'  # noqa: E501
     )

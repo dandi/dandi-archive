@@ -26,7 +26,7 @@ def create_dandiset(
 
     embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargo else Dandiset.EmbargoStatus.OPEN
     version_metadata = _normalize_version_metadata(
-        version_metadata, embargo, f'{user.last_name}, {user.first_name}', user.email
+        version_metadata, f'{user.last_name}, {user.first_name}', user.email, embargo=embargo
     )
 
     with transaction.atomic():

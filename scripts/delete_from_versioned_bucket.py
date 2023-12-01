@@ -35,7 +35,7 @@ def delete_version(bucket, thing):
 @click.option('--prefix', prompt='Path to delete', help='The prefix to delete all files under')
 @click.option('--force', is_flag=True, help='Skip confirmation prompts')
 @click.option('--threads', prompt='Threads', default=30, help='How many threads to use')
-def delete_objects(profile: str, bucket: str, prefix: str, force: bool, threads: int):
+def delete_objects(*, profile: str, bucket: str, prefix: str, force: bool, threads: int):
     session = boto3.Session(profile_name=profile)
     s3 = session.resource('s3')
     bucket = s3.Bucket(bucket)

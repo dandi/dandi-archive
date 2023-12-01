@@ -15,7 +15,7 @@ def echo_report():
 @click.option('--assetblobs', is_flag=True, default=False, help='Delete AssetBlobs')
 @click.option('--uploads', is_flag=True, default=False, help='Delete Uploads')
 @click.option('--s3blobs', is_flag=True, default=False, help='Delete S3 Blobs')
-def collect_garbage(assets: bool, assetblobs: bool, uploads: bool, s3blobs: bool):
+def collect_garbage(*, assets: bool, assetblobs: bool, uploads: bool, s3blobs: bool):
     """Manually run garbage collection on the database."""
     # Log how many things there are before deleting them
     doing_deletes = assets or assetblobs or uploads or s3blobs
