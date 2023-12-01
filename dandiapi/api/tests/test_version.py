@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -138,7 +138,7 @@ def test_published_version_metadata_computed(published_version: Version):
 @pytest.mark.django_db()
 def test_version_metadata_citation_draft(draft_version):
     name = draft_version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
     assert (
         draft_version.metadata['citation']
@@ -149,7 +149,7 @@ def test_version_metadata_citation_draft(draft_version):
 @pytest.mark.django_db()
 def test_version_metadata_citation_published(published_version):
     name = published_version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'https://doi.org/{published_version.doi}'
     assert (
         published_version.metadata['citation']
@@ -163,7 +163,7 @@ def test_version_metadata_citation_no_contributors(version):
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
@@ -178,7 +178,7 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
@@ -190,7 +190,7 @@ def test_version_metadata_citation_contributor(version):
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. '
     )
@@ -205,7 +205,7 @@ def test_version_metadata_citation_multiple_contributors(version):
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
         f'DANDI archive. '
@@ -507,7 +507,7 @@ def test_version_rest_update(api_client, user, draft_version):
         # This should be stripped out
         'dateCreated': 'foobar',
     }
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
@@ -670,7 +670,7 @@ def test_version_rest_publish_zarr(
         f'/versions/{draft_version.version}/publish/'
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Cannot publish dandisets which contain zarrs']
+    assert resp.json() == 'Cannot publish dandisets which contain zarrs'
 
 
 @pytest.mark.django_db()

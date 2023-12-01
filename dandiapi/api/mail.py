@@ -92,7 +92,7 @@ def build_registered_message(user: User, socialaccount: SocialAccount):
 
 
 def send_registered_notice_email(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending registration message to {user}')
+    logger.info('Sending registration message to %s', user)
     messages = [build_registered_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -112,7 +112,7 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
 
 
 def send_new_user_message_email(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending new user message for {user} to admins')
+    logger.info('Sending new user message for %s to admins', user)
     messages = [build_new_user_messsage(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -133,7 +133,7 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
 
 
 def send_approved_user_message(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending approved user message to {user}')
+    logger.info('Sending approved user message to %s', user)
     messages = [build_approved_user_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -154,7 +154,7 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
 
 
 def send_rejected_user_message(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending rejected user message to {user}')
+    logger.info('Sending rejected user message to %s', user)
     messages = [build_rejected_user_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -170,7 +170,7 @@ def build_pending_users_message(users: Iterable[User]):
 
 
 def send_pending_users_message(users: Iterable[User]):
-    logger.info(f'Sending pending users message to admins at {ADMIN_EMAIL}')
+    logger.info('Sending pending users message to admins at %s', ADMIN_EMAIL)
     messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)

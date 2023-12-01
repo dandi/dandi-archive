@@ -1,7 +1,7 @@
 from rest_framework import status
 
 
-class DandiException(Exception):
+class DandiError(Exception):
     message: str | None
     http_status_code: int | None
 
@@ -14,10 +14,10 @@ class DandiException(Exception):
         super().__init__(*args)
 
 
-class NotAllowed(DandiException):
+class NotAllowedError(DandiError):
     message = 'Action not allowed'
     http_status_code = status.HTTP_403_FORBIDDEN
 
 
-class AdminOnlyOperation(DandiException):
+class AdminOnlyOperationError(DandiError):
     pass

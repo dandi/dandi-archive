@@ -9,14 +9,14 @@ from more_itertools import ichunked
 from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
-from dandiapi.api.services.exceptions import NotAllowed
+from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.publish.exceptions import (
-    DandisetAlreadyPublished,
-    DandisetAlreadyPublishing,
-    DandisetBeingValidated,
-    DandisetInvalidMetadata,
-    DandisetNotLocked,
-    DandisetValidationPending,
+    DandisetAlreadyPublishedError,
+    DandisetAlreadyPublishingError,
+    DandisetBeingValidatedError,
+    DandisetInvalidMetadataError,
+    DandisetNotLockedError,
+    DandisetValidationPendingError,
 )
 from dandiapi.api.tasks import write_manifest_files
 
@@ -45,27 +45,26 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
         not user.has_perm('owner', dandiset)
         or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
     ):
-        raise NotAllowed
+        raise NotAllowedError
     if dandiset.zarr_archives.exists() or dandiset.embargoed_zarr_archives.exists():
-        # TODO: return a string instead of a list here
-        raise NotAllowed(['Cannot publish dandisets which contain zarrs'], 400)  # type: ignore
+        raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
 
     with transaction.atomic():
         draft_version: Version = dandiset.versions.select_for_update().get(version='draft')
         if not draft_version.publishable:
             match draft_version.status:
                 case Version.Status.PUBLISHED:
-                    raise DandisetAlreadyPublished
+                    raise DandisetAlreadyPublishedError
                 case Version.Status.PUBLISHING:
-                    raise DandisetAlreadyPublishing
+                    raise DandisetAlreadyPublishingError
                 case Version.Status.VALIDATING:
-                    raise DandisetBeingValidated
+                    raise DandisetBeingValidatedError
                 case Version.Status.INVALID:
-                    raise DandisetInvalidMetadata
+                    raise DandisetInvalidMetadataError
                 case Version.Status.PENDING:
-                    raise DandisetValidationPending
+                    raise DandisetValidationPendingError
                 case Version.Status.VALID:
-                    raise DandisetInvalidMetadata
+                    raise DandisetInvalidMetadataError
                 case other:
                     raise NotImplementedError(
                         f'Draft version of dandiset {dandiset.identifier} '
@@ -110,7 +109,7 @@ def _publish_dandiset(dandiset_id: int) -> None:
         )
 
         if old_version.status != Version.Status.PUBLISHING:
-            raise DandisetNotLocked(
+            raise DandisetNotLockedError(
                 'Dandiset must be in PUBLISHING state. Call `_lock_dandiset_for_publishing()` '
                 'before this function.'
             )

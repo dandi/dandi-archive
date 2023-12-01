@@ -57,7 +57,9 @@ class SocialAccountFactory(factory.django.DjangoModelFactory):
         # Supply a fake created date at least 1 year before now
         created = (
             faker.Faker()
-            .date_time_between(end_date=datetime.datetime.now() - datetime.timedelta(days=365))
+            .date_time_between(
+                end_date=datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365)
+            )
             .isoformat()
         )
 

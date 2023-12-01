@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -99,16 +100,21 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         # Strip away any computed fields from current and new metadata
         new_metadata = Version.strip_metadata(new_metadata)
-        old_metadata = Version.strip_metadata(version.metadata)
 
-        # Only save version if metadata has actually changed
-        if (name, new_metadata) != (version.name, old_metadata):
-            version.name = name
-            version.metadata = new_metadata
-            version.status = Version.Status.PENDING
-            version.save()
+        with transaction.atomic():
+            # Re-query for the version, this time using a SELECT FOR UPDATE to
+            # ensure the object doesn't change out from under us.
+            locked_version = Version.objects.select_for_update().get(id=version.id)
+            old_metadata = Version.strip_metadata(locked_version.metadata)
 
-        serializer = VersionDetailSerializer(instance=version)
+            # Only save version if metadata has actually changed
+            if (name, new_metadata) != (locked_version.name, old_metadata):
+                locked_version.name = name
+                locked_version.metadata = new_metadata
+                locked_version.status = Version.Status.PENDING
+                locked_version.save()
+
+        serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(

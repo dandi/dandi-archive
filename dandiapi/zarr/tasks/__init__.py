@@ -37,7 +37,7 @@ def ingest_zarr_archive(zarr_id: str, force: bool = False):
         delete_zarr_paths(zarr)
 
         # Instantiate updater and add files as they come in
-        logger.info(f'Computing checksum for zarr {zarr.zarr_id}...')
+        logger.info('Computing checksum for zarr %s...', zarr.zarr_id)
         storage_params = get_storage_params(zarr.storage)
         checksum = compute_zarr_checksum(
             yield_files_s3(

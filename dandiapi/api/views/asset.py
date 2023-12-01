@@ -8,7 +8,7 @@ from dandiapi.api.services.asset import (
     change_asset,
     remove_asset_from_version,
 )
-from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiable
+from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -102,7 +102,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         responses={
             200: 'The asset metadata.',
         },
-        operation_summary="Get an asset\'s metadata",
+        operation_summary="Get an asset's metadata",
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
@@ -167,6 +167,8 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 )
 
             return HttpResponseRedirect(url)
+        else:
+            raise TypeError('Invalid content_disposition: %s', content_disposition)
 
     @swagger_auto_schema(
         method='GET',
@@ -337,7 +339,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=versions__version,
         )
         if version.version != 'draft':
-            raise DraftDandisetNotModifiable
+            raise DraftDandisetNotModifiableError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
