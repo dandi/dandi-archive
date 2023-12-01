@@ -137,7 +137,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         version = metadata['version']
         # If we can't find any contributors, use this citation format
         citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI archive. {url}'
-        if 'contributor' in metadata and metadata['contributor']:
+        if 'contributor' in metadata and isinstance(metadata['contributor'], list):
             cl = '; '.join(
                 [
                     val['name']
