@@ -43,7 +43,7 @@ def _create_asset(
     return asset
 
 
-def change_asset(
+def change_asset(  # noqa: PLR0913
     *,
     user,
     asset: Asset,
