@@ -8,7 +8,16 @@ module.exports = {
   },
   "extends": [
     "plugin:vue/essential",
+    "plugin:import/recommended",
+    "plugin:import/typescript",
     "eslint:recommended",
-    "@vue/eslint-config-typescript"
-  ]
+    "@vue/eslint-config-typescript",
+  ],
+  settings: {
+    "import/resolver": {
+      typescript: {
+        project: "."
+      }
+    },
+  },
 }
