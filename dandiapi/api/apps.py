@@ -16,7 +16,7 @@ class PublishConfig(AppConfig):
     verbose_name = 'DANDI: Publish'
 
     @staticmethod
-    def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:
+    def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:  # noqa: ARG004
         from dandiapi.api.models.asset import Asset
         from dandiapi.api.models.dandiset import Dandiset
         from dandiapi.api.models.version import Version

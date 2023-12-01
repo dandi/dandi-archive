@@ -85,7 +85,7 @@ class Upload(BaseUpload):
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
     @staticmethod
-    def object_key(upload_id, *, dandiset: Dandiset | None = None):
+    def object_key(upload_id, *, dandiset: Dandiset | None = None):  # noqa: ARG004
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
