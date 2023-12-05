@@ -150,14 +150,13 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Cannot delete draft versions',
                 status=status.HTTP_403_FORBIDDEN,
             )
-        elif not request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 'Cannot delete published versions',
                 status=status.HTTP_403_FORBIDDEN,
             )
-        else:
-            doi = version.doi
-            version.delete()
-            if doi is not None:
-                delete_doi_task.delay(doi)
-            return Response(None, status=status.HTTP_204_NO_CONTENT)
+        doi = version.doi
+        version.delete()
+        if doi is not None:
+            delete_doi_task.delay(doi)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)

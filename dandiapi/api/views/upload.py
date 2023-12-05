@@ -147,7 +147,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             status=status.HTTP_409_CONFLICT,
             headers={'Location': asset_blobs.first().blob_id},
         )
-    elif dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+    if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
         embargoed_asset_blobs = EmbargoedAssetBlob.objects.filter(dandiset=dandiset, etag=etag)
         if embargoed_asset_blobs.exists():
             return Response(

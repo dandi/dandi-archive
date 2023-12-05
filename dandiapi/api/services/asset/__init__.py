@@ -59,7 +59,7 @@ def change_asset(
 
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError
-    elif version.version != 'draft':
+    if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
     path = new_metadata['path']
@@ -110,7 +110,7 @@ def add_asset_to_version(
 
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError
-    elif version.version != 'draft':
+    if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
     # Check if there are already any assets with the same path
@@ -156,7 +156,7 @@ def add_asset_to_version(
 def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Version:
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError
-    elif version.version != 'draft':
+    if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
     with transaction.atomic():

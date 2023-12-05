@@ -68,9 +68,8 @@ def delete_doi(doi: str) -> None:
                 if e.response and e.response.status_code == 404:
                     logging.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
-                else:
-                    logging.exception('Failed to fetch data for DOI %s', doi)
-                    raise
+                logging.exception('Failed to fetch data for DOI %s', doi)
+                raise
             if r.json()['data']['attributes']['state'] == 'draft':
                 try:
                     s.delete(doi_url).raise_for_status()

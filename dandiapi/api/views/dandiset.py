@@ -51,14 +51,14 @@ class DandisetFilterBackend(filters.OrderingFilter):
             # ordering can be either 'created' or '-created', so test for both
             if ordering.endswith('id'):
                 return queryset.order_by(ordering)
-            elif ordering.endswith('name'):
+            if ordering.endswith('name'):
                 # name refers to the name of the most recent version, so a subquery is required
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
                     '-created'
                 )[:1]
                 queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
                 return queryset.order_by(ordering)
-            elif ordering.endswith('modified'):
+            if ordering.endswith('modified'):
                 # modified refers to the modification timestamp of the most
                 # recent version, so a subquery is required
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
@@ -70,7 +70,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     modified_version=Subquery(latest_version.values('modified'))
                 )
                 return queryset.order_by(f'{ordering}_version')
-            elif ordering.endswith('size'):
+            if ordering.endswith('size'):
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
                     '-created'
                 )[:1]

@@ -26,15 +26,14 @@ def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
 
     if socialaccount is None:
         return user_to_dict(user)['name']
-    else:
-        social_user = social_account_to_dict(socialaccount)
 
-        # it's possible to have social users without a name if they've signed up, not filled out
-        # the questionnaire, and their github account has no attached name.
-        if social_user.get('name'):
-            return f'{social_user["name"]} (Github ID: {social_user["username"]})'
-        else:
-            return social_user['username']
+    social_user = social_account_to_dict(socialaccount)
+
+    # it's possible to have social users without a name if they've signed up, not filled out
+    # the questionnaire, and their github account has no attached name.
+    if social_user.get('name'):
+        return f'{social_user["name"]} (Github ID: {social_user["username"]})'
+    return social_user['username']
 
 
 def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
