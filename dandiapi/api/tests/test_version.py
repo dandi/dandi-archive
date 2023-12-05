@@ -236,6 +236,7 @@ def test_version_aggregate_assets_summary_valid_assets(draft_version, draft_asse
     invalid_asset = draft_asset_factory(status=Asset.Status.INVALID)
     draft_version.assets.add(valid_asset, invalid_asset)
     version_aggregate_assets_summary(draft_version)
+    draft_version.refresh_from_db()
     assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 1
 
 
@@ -342,6 +343,20 @@ def test_version_publish_version(draft_version, asset):
             'numberOfFiles': 0,
         },
     }
+
+
+@pytest.mark.django_db()
+def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_factory):
+    version = draft_version_factory(status=Version.Status.VALID)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+
+    assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
+    assert version.metadata['assetsSummary']['numberOfFiles'] == 1
+    assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
 
 
 @pytest.mark.django_db()
