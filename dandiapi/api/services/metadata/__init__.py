@@ -88,7 +88,7 @@ def version_aggregate_assets_summary(version: Version) -> None:
         .iterator()
     )
 
-    updated_metadata = {**version.metadata, **{'assetsSummary': assets_summary}}
+    updated_metadata = {**version.metadata, 'assetsSummary': assets_summary}
 
     updated_count = Version.objects.filter(id=version.id, metadata=version.metadata).update(
         modified=timezone.now(), metadata=updated_metadata
