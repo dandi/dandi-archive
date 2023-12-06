@@ -14,7 +14,7 @@ def s3_client():
 
 @click.command()
 @click.option('--delete', is_flag=True, default=False)
-def cleanup_blobs(delete: bool):
+def cleanup_blobs(*, delete: bool):
     client = s3_client()
     # Ignore pagination for now, hopefully there aren't enough objects to matter
     objs = client.list_object_versions(Bucket=BUCKET, Prefix='dev/')
