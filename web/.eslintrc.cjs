@@ -1,18 +1,18 @@
 /* eslint-env node */
-require("@rushstack/eslint-patch/modern-module-resolution");
+require('@rushstack/eslint-patch/modern-module-resolution');
 
 module.exports = {
-  "root": true,
-  "env": {
-    "node": true,
+  root: true,
+  env: {
+    node: true,
   },
-  "extends": [
-    "plugin:vue/essential",
+  extends: [
+    'plugin:vue/essential',
     'plugin:vuetify/recommended',
-    "plugin:import/recommended",
-    "plugin:import/typescript",
-    "eslint:recommended",
-    "@vue/eslint-config-typescript",
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'eslint:recommended',
+    '@vue/eslint-config-typescript',
   ],
   rules: {
     camelcase: 'off',
@@ -40,9 +40,9 @@ module.exports = {
     '@typescript-eslint/consistent-type-imports': 'error',
   },
   settings: {
-    "import/resolver": {
+    'import/resolver': {
       typescript: {
-        project: "."
+        project: '.'
       }
     },
   },
