@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+
+import HomeView from '@/views/HomeView/HomeView.vue';
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
@@ -10,14 +11,43 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue')
-    }
+      path: '/dandiset',
+      name: 'publicDandisets',
+      component: () => import('../views/PublicDandisetsView/PublicDandisetsView.vue'),
+    },
+    {
+      path: '/dandiset/my',
+      name: 'myDandisets',
+      component: () => import('../views/MyDandisetsView/MyDandisetsView.vue'),
+    },
+    {
+      path: '/dandiset/search',
+      name: 'searchDandisets',
+      component: () => import('../views/SearchDandisetsView/SearchDandisetsView.vue'),
+    },
+    {
+      path: '/dandiset/create',
+      name: 'createDandiset',
+      component: () => import('../views/CreateDandisetView/CreateDandisetView.vue'),
+    },
+    {
+      path: '/dandiset/:identifier/:version/files',
+      name: 'fileBrowser',
+      props: true,
+      component: () => import('../views/FileBrowserView/FileBrowser.vue'),
+    },
+    {
+      path: '/dandiset/:identifier/:version?',
+      name: 'dandisetLanding',
+      props: true,
+      component: () => import('../views/DandisetLandingView/DandisetLandingView.vue'),
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: () => import('../views/SearchView/SearchView.vue'),
+    },
   ]
 })
 
-export default router
+export default router;
