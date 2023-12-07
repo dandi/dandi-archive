@@ -1,46 +1,44 @@
-# dandi-archive
+# DANDI Archive Web Application ![ci](https://github.com/dandi/dandi-archive/actions/workflows/frontend-ci.yml/badge.svg) [![Netlify Status](https://api.netlify.com/api/v1/badges/e7424684-fbdb-4b77-a546-d5757a0f7552/deploy-status)](https://app.netlify.com/sites/gui-dandiarchive-org/deploys)
+The DANDI Archive web application (i.e. the dandi-archive frontend).
 
-This template should help get you started developing with Vue 3 in Vite.
+## Develop
 
-## Recommended IDE Setup
+### Build and Run
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```bash
+git clone https://github.com/dandi/dandi-archive
+cd web
+yarn install
+yarn run serve
 ```
 
-### Compile and Hot-Reload for Development
+**Note**: On Debian systems, the `yarn` command is from the unrelated `cmdtest` package.
+Instead, install and use `yarnpkg`.
 
-```sh
-npm run dev
+The web app will be served at `http://localhost:8085/`.
+
+To be useful, this app requires a server component, which you can run locally; see the [instructions](https://github.com/dandi/dandi-archive/#dandi-archive).
+
+### Test
+
+To fix the code formatting and check for common errors, run:
+
+```bash
+yarn run lint
 ```
 
-### Type-Check, Compile and Minify for Production
+### Schema Migration
+The web app uses TypeScript typings (src/types/schema.ts) that are automatically generated from the dandiset metadata's
+[JSON schema](https://github.com/dandi/schema). To change the schema version (and as a result, the types),
+use the `yarn migrate` command.
 
-```sh
-npm run build
+For example, to migrate to schema version 0.5.1, run:
+```bash
+yarn migrate 0.5.1
 ```
 
-### Lint with [ESLint](https://eslint.org/)
 
-```sh
-npm run lint
-```
+### Environment Variables
+
+- VUE_APP_SERVER_DOWNTIME_MESSAGE
+  - A custom error message displayed when the backend server can't be reached.
