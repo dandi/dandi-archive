@@ -266,7 +266,7 @@ import {
 import filesize from 'filesize';
 import { marked } from 'marked';
 import moment from 'moment';
-import { sanitize } from 'dompurify';
+import DOMPurify from 'dompurify';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
@@ -368,7 +368,7 @@ export default defineComponent({
       return shortenedDescription;
     });
     const htmlDescription: ComputedRef<string> = computed(
-      () => sanitize(marked.parse(description.value)),
+      () => DOMPurify.sanitize(marked.parse(description.value)),
     );
     const meta = computed(() => currentDandiset.value?.metadata);
 

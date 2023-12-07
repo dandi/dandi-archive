@@ -1,16 +1,18 @@
+/* eslint-env node */
+require('@rushstack/eslint-patch/modern-module-resolution');
+
 module.exports = {
   root: true,
   env: {
     node: true,
   },
-  plugins: [
-    'vuetify',
-  ],
   extends: [
+    'plugin:vue/essential',
+    'plugin:vuetify/recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
     'eslint:recommended',
-    'plugin:vue/recommended',
-    '@vue/airbnb',
-    '@vue/typescript',
+    '@vue/eslint-config-typescript',
   ],
   rules: {
     camelcase: 'off',
@@ -37,7 +39,11 @@ module.exports = {
     'import/prefer-default-export': 'off',
     '@typescript-eslint/consistent-type-imports': 'error',
   },
-  parserOptions: {
-    parser: '@typescript-eslint/parser',
+  settings: {
+    'import/resolver': {
+      typescript: {
+        project: '.'
+      }
+    },
   },
-};
+}

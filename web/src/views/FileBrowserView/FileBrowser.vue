@@ -406,7 +406,7 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
 
   // Formulate the two possible asset URLs -- the direct S3 link to the relevant
   // object, and the DANDI URL that redirects to the S3 one.
-  const baseApiUrl = process.env.VUE_APP_DANDI_API_ROOT;
+  const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
   const assetDandiUrl = `${baseApiUrl}assets/${path.asset?.asset_id}/download/`;
   const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
 
