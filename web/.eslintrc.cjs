@@ -8,6 +8,7 @@ module.exports = {
   },
   "extends": [
     "plugin:vue/essential",
+    'plugin:vuetify/recommended',
     "plugin:import/recommended",
     "plugin:import/typescript",
     "eslint:recommended",
