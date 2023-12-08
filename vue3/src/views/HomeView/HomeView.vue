@@ -14,7 +14,7 @@
         <v-container
           fluid
           class="d-flex flex-column py-0"
-          :class="[$vuetify.breakpoint.smAndUp ? 'brain-gradient' : 'hide-brain']"
+          :class="[$vuetify.display.smAndUp ? 'brain-gradient' : 'hide-brain']"
         >
           <v-row
             class="flex-grow-1"
