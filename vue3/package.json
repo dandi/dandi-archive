@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
-    "@koumoul/vjsf": "^2.21.4",
+    "@koumoul/vjsf": "^3.0.0-beta.46",
     "@resonant/oauth-client": "^0.9.2",
     "@sentry/integrations": "^7.13.0",
     "@sentry/tracing": "^7.13.0",
