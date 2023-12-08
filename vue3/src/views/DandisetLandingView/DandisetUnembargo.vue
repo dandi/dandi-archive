@@ -1,7 +1,7 @@
 <template>
   <v-card
     v-if="currentDandiset"
-    outlined
+    variant="outlined"
     class="mt-4 px-3"
   >
     <v-dialog
@@ -36,22 +36,22 @@
           <v-text-field
             v-model="confirmationPhrase"
             style="width: 30%;"
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
           />
         </v-card-text>
 
         <v-card-actions>
           <v-btn
             color="error"
-            depressed
+            variant="flat"
             :disabled="confirmationPhrase !== currentDandiset.dandiset.identifier"
             @click="unembargo()"
           >
             Yes
           </v-btn>
           <v-btn
-            depressed
+            variant="flat"
             @click="showWarningDialog = false"
           >
             No, take me back
@@ -64,19 +64,19 @@
       no-gutters
     >
       <v-tooltip
-        left
+        location="left"
         :disabled="!unembargoing"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <div
             class="px-1 pt-3"
             style="width: 100%"
-            v-on="on"
+            v-bind="props"
           >
             <v-btn
               block
               color="info"
-              depressed
+              variant="flat"
               :disabled="unembargoing"
               @click="unembargo()"
             >
@@ -90,7 +90,7 @@
       </v-tooltip>
     </v-row>
     <v-row>
-      <v-subheader class="mb-2 black--text text-h5">
+      <v-subheader class="mb-2 text-black text-h5">
         This Version
       </v-subheader>
     </v-row>

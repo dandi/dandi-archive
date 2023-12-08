@@ -145,13 +145,13 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
+                  <v-tooltip location="top">
+                    <template v-slot:activator="{ props }">
                       <v-btn
                         icon
                         :href="inlineURI(item.asset.asset_id)"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="props"
                       >
                         <v-icon color="primary">
                           mdi-open-in-app
@@ -163,13 +163,13 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
+                  <v-tooltip location="top">
+                    <template v-slot:activator="{ props }">
                       <v-btn
                         icon
                         :href="downloadURI(item.asset.asset_id)"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="props"
                       >
                         <v-icon color="primary">
                           mdi-download
@@ -181,15 +181,15 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
+                  <v-tooltip location="top">
+                    <template v-slot:activator="{ props }">
                       <v-btn
                         icon
                         :href="assetMetadataURI(item.asset.asset_id)"
                         target="_blank"
                         rel="noreferrer"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="props"
                       >
                         <v-icon color="primary">
                           mdi-information
@@ -202,23 +202,23 @@
 
                 <v-list-item-action v-if="item.asset">
                   <v-menu
-                    bottom
-                    left
+                    location="bottom left"
+
                   >
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ props }">
                       <v-btn
                         color="primary"
-                        x-small
+                        size="x-small"
                         :disabled="!item.services || !item.services.length"
-                        v-bind="attrs"
-                        v-on="on"
+                        icon
+                        v-bind="props"
                       >
-                        Open With <v-icon small>mdi-menu-down</v-icon>
+                        Open With <v-icon size="small">mdi-menu-down</v-icon>
                       </v-btn>
                     </template>
                     <v-list
                       v-if="item && item.services"
-                      dense
+                      density="compact"
                     >
                       <v-subheader
                         v-if="item.services.length"

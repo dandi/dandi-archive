@@ -6,7 +6,7 @@
     <v-row>
       <v-img
         :src="logo"
-        class="grey lighten-5"
+        class="bg-grey-lighten-5"
         position="left"
         max-height="500px"
         contain
@@ -22,7 +22,7 @@
             align="center"
           >
             <v-col class="splash-text my-12">
-              <div class="text-h2 font-weight-thin text-center light-blue--text text--darken-1">
+              <div class="text-h2 font-weight-thin text-center text-light-blue-darken-1">
                 The DANDI Archive
               </div>
               <div class="text-h6 font-weight-light text-center">
@@ -37,7 +37,7 @@
       </v-img>
     </v-row>
     <v-row no-gutters>
-      <v-col class="grey darken-2 pa-12">
+      <v-col class="bg-grey-darken-2 pa-12">
         <DandisetSearchField :dense="false" />
       </v-col>
     </v-row>

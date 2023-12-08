@@ -20,9 +20,9 @@ onMounted(populateSpeciesList);
     v-model="searchParameters.species"
     multiple
     clearable
-    outlined
+    variant="outlined"
     cache-items
-    :search-input.sync="searchTerm"
+    :search.sync="searchTerm"
     :items="options"
     :loading="loading"
     label="Species"

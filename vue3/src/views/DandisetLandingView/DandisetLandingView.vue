@@ -1,7 +1,7 @@
 <template>
   <div>
     <Meditor v-if="currentDandiset" />
-    <v-toolbar class="grey darken-2 white--text">
+    <v-toolbar class="bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
         v-model="page"
@@ -29,7 +29,7 @@
     <v-container
       v-else
       fluid
-      class="grey lighten-4 pa-0"
+      class="bg-grey-lighten-4 pa-0"
     >
       <v-progress-linear
         v-if="!currentDandiset || loading"

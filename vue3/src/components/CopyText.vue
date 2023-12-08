@@ -2,19 +2,19 @@
   <v-textarea
     v-if="isTextarea == true"
     ref="textField"
-    :value="text"
+    :model-value="text"
     class="cite-as-textarea"
     hide-details="auto"
-    outlined
+    variant="outlined"
     readonly
     :success-messages="messages"
     v-bind="$attrs"
   >
     <template #prepend>
-      <v-tooltip bottom>
-        <template #activator="{ on }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
           <v-icon
-            v-on="on"
+            v-bind="props"
             @click="copyToClipboard"
           >
             mdi-content-copy
@@ -30,18 +30,18 @@
     v-bind="$attrs"
     id="api-key-text"
     ref="textField"
-    :value="text"
+    :model-value="text"
     hide-details="auto"
-    outlined
-    dense
+    variant="outlined"
+    density="compact"
     readonly
     :success-messages="messages"
   >
     <template #prepend>
-      <v-tooltip bottom>
-        <template #activator="{ on }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
           <v-icon
-            v-on="on"
+            v-bind="props"
             @click="copyToClipboard"
           >
             mdi-content-copy

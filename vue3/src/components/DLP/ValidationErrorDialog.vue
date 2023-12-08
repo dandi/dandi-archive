@@ -49,12 +49,12 @@
                 </v-icon>
               </v-list-item-icon>
 
-              <v-list-item-content>
+              
                 <template v-if="error.field">
                   {{ error.field }}:
                 </template>
                 {{ error.message }}
-              </v-list-item-content>
+              
             </v-list-item>
             <v-divider />
           </div>
@@ -88,23 +88,23 @@
 
                 <!-- Inline single errors -->
                 <template v-if="errors.length === 1">
-                  <v-list-item-content>
+                  
                     <strong>{{ path }}</strong>
                     <template v-if="errors[0].field">
                       {{ errors[0].field }} -
                     </template>
                     {{ errors[0].message }}
-                  </v-list-item-content>
+                  
                 </template>
 
                 <!-- Group multiple asset errors -->
                 <template v-else>
                   <v-list-group class="multi-error-list-group">
                     <template #activator>
-                      <v-list-item-content>
+                      
                         <strong>{{ path }}</strong>
                         <v-list-item-subtitle>Click to expand</v-list-item-subtitle>
-                      </v-list-item-content>
+                      
                     </template>
 
                     <v-list-item
@@ -116,12 +116,12 @@
                           {{ getValidationErrorIcon(error.field) }}
                         </v-icon>
                       </v-list-item-icon>
-                      <v-list-item-content>
+                      
                         <template v-if="error.field">
                           {{ error.field }}:
                         </template>
                         {{ error.message }}
-                      </v-list-item-content>
+                      
                     </v-list-item>
                   </v-list-group>
                 </template>

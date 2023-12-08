@@ -25,9 +25,9 @@ watch(searchTerm, (newSearchTerm) => {
     v-model="searchParameters.genotype"
     multiple
     clearable
-    outlined
+    variant="outlined"
     cache-items
-    :search-input.sync="searchTerm"
+    :search.sync="searchTerm"
     :items="options"
     :loading="loading"
     label="Genotype(s)"

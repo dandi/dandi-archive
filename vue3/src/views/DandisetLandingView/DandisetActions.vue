@@ -3,9 +3,9 @@
     v-if="currentDandiset"
     height="100%"
     class="px-3 py-1 mb-3"
-    outlined
+    variant="outlined"
   >
-    <div class="black--text text-h5 mt-2">
+    <div class="text-black text-h5 mt-2">
       Dandiset Actions
     </div>
 
@@ -18,19 +18,19 @@
           >
             <v-btn
               id="download"
-              outlined
+              variant="outlined"
               block
               v-on="on"
             >
               <v-icon
                 color="primary"
-                left
+                start
               >
                 mdi-download
               </v-icon>
               <span>Download</span>
               <v-spacer />
-              <v-icon right>
+              <v-icon end>
                 mdi-chevron-down
               </v-icon>
             </v-btn>
@@ -44,19 +44,19 @@
           >
             <v-btn
               id="download"
-              outlined
+              variant="outlined"
               block
               v-on="on"
             >
               <v-icon
                 color="primary"
-                left
+                start
               >
                 mdi-format-quote-close
               </v-icon>
               <span>Cite As</span>
               <v-spacer />
-              <v-icon right>
+              <v-icon end>
                 mdi-chevron-down
               </v-icon>
             </v-btn>
@@ -70,14 +70,14 @@
       <v-row no-gutters>
         <v-btn
           id="view-data"
-          outlined
+          variant="outlined"
           block
           :disabled="currentDandiset.dandiset.embargo_status === 'UNEMBARGOING'"
           :to="fileBrowserLink"
           exact
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-folder
@@ -88,12 +88,12 @@
       </v-row>
       <v-btn
         id="view-edit-metadata"
-        outlined
+        variant="outlined"
         block
         @click="openMeditor = true"
       >
         <v-icon
-          left
+          start
           color="primary"
         >
           mdi-note-text
@@ -106,12 +106,12 @@
     <div class="my-4">
       <v-row no-gutters>
         <v-btn
-          outlined
+          variant="outlined"
           block
           :href="manifestLocation"
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-clipboard
@@ -129,7 +129,7 @@
         class="justify-center"
       >
         <v-btn
-          outlined
+          variant="outlined"
           class="justify-center"
         >
           <ShareDialog text="Share" />
