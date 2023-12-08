@@ -13,52 +13,6 @@ import dandiapi.api.storage
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ('api', '0001_initial'),
-        ('api', '0002_unique_asset_blob_etag_size'),
-        ('api', '0003_rename_uuids'),
-        ('api', '0004_generic_multipart_upload_id'),
-        ('api', '0005_version_doi'),
-        ('api', '0006_default_oauth_application'),
-        ('api', '0007_validation_status'),
-        ('api', '0008_version_validation_status'),
-        ('api', '0009_asset_published'),
-        ('api', '0010_blank_validation_errors'),
-        # 0011, 0014 omitted here, since it needs to run early
-        ('api', '0012_merge_20210630_1354'),
-        ('api', '0013_add_published_status'),
-        ('api', '0015_validation_fields'),
-        ('api', '0016_remove_metadata_tables'),
-        ('api', '0017_alter_version_version'),
-        ('api', '0018_alter_validation_errors'),
-        ('api', '0019_usermetadata'),
-        ('api', '0020_zarr'),
-        ('api', '0021_embargo_models'),
-        ('api', '0022_upload_dandiset_alter_stagingapplication_user'),
-        ('api', '0023_embargoedzarrarchive'),
-        ('api', '0024_biginteger_zarrarchives'),
-        ('api', '0025_zarrarchive_dandiset'),
-        ('api', '0026_alter_asset_id_alter_assetblob_id_alter_dandiset_id_and_more'),
-        ('api', '0027_embargoedzarrarchive_status_zarrarchive_status'),
-        ('api', '0028_alter_asset_previous'),
-        ('api', '0029_alter_usermetadata_user'),
-        ('api', '0030_alter_embargoedzarruploadfile_blob_and_more'),
-        ('api', '0031_asset_asset_metadata_has_schema_version_and_more'),
-        ('api', '0032_embargoedzarrarchive_checksum_zarrarchive_checksum_and_more'),
-        ('api', '0033_remove_embargoedzarrarchive_unique-embargo-dandiset-name_and_more'),
-        ('api', '0034_remove_embargoedzarrarchive_dandiset_and_more'),
-        ('api', '0035_alter_asset_zarr_delete_embargoedzarrarchive_and_more'),
-        ('api', '0036_dandisetuserobjectpermission_and_more'),
-        ('api', '0037_alter_version_status'),
-        ('api', '0038_assetpath_assetpathrelation_alter_asset_path_and_more'),
-        ('api', '0039_assetpath_consistent-leaf-paths'),
-        ('api', '0040_remove_assetpath_consistent-slash_and_more'),
-        ('api', '0041_assetblob_download_count_and_more'),
-        ('api', '0042_asset_remove_computed_fields'),
-        ('api', '0043_asset_asset_metadata_no_computed_keys_or_published'),
-        ('api', '0044_remove_embargoedupload_modified_and_more'),
-    ]
-
     initial = True
 
     dependencies = [
