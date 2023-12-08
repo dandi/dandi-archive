@@ -1,7 +1,7 @@
-from dandischema.digests.zarr import EMPTY_CHECKSUM
 from django.conf import settings
 from guardian.shortcuts import assign_perm
 import pytest
+from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.tests.fuzzy import UUID_RE
