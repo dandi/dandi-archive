@@ -3,6 +3,16 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
+    # Ensure this migration won't actually run in production,
+    # but will be resolved late in the migration DAG
+    replaces = [
+        (
+            'zarr',
+            '0004_remove_embargoedzarrarchive_zarr-embargoedzarrarchive-'
+            'consistent-checksum-status_and_more',
+        )
+    ]
+
     dependencies = [
         ('api', '0001_initial_v2'),
         ('zarr', '0001_initial_v2'),
