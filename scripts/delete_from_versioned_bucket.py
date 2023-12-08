@@ -16,6 +16,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import boto3
 import click
 
+WARN_THRESHOLD = 1000
+
 
 def delete_version(bucket, thing):
     key = thing['Key']
@@ -43,7 +45,7 @@ def delete_objects(*, profile: str, bucket: str, prefix: str, force: bool, threa
     delete_markers = response.get('DeleteMarkers', [])
     versions = response.get('Versions', [])
     delete_count = len(delete_markers) + len(versions)
-    if delete_count >= 1000:
+    if delete_count >= WARN_THRESHOLD:
         click.echo('There are more than 1000 objects to delete.')
         click.echo('This operation will continue to fetch objects until they are all deleted.')
     if force or click.confirm(f'Delete {delete_count} objects from {bucket.name}/{prefix}?'):

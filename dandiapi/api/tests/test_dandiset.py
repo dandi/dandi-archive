@@ -342,11 +342,11 @@ def test_dandiset_rest_create(api_client, user):
         },
         'most_recent_published_version': None,
     }
-    id = int(response.data['identifier'])
+    dandiset_id = int(response.data['identifier'])
 
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
-    dandiset = Dandiset.objects.get(id=id)
+    dandiset = Dandiset.objects.get(id=dandiset_id)
     assert list(dandiset.owners.all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
@@ -632,11 +632,11 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         },
         'most_recent_published_version': None,
     }
-    id = int(response.data['identifier'])
+    dandiset_id = int(response.data['identifier'])
 
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
-    dandiset = Dandiset.objects.get(id=id)
+    dandiset = Dandiset.objects.get(id=dandiset_id)
     assert list(dandiset.owners.all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.

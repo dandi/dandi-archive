@@ -236,9 +236,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             .filter(dandiset_id__in=[dandiset.id for dandiset in dandisets])
             .annotate(
                 **{
-                    filter_name: Count('asset_id', filter=filter)
-                    for filter_name, filter in query_filters.items()
-                    if filter != Q()
+                    query_filter_name: Count('asset_id', filter=query_filter_q)
+                    for query_filter_name, query_filter_q in query_filters.items()
+                    if query_filter_q != Q()
                 }
             )
         )
