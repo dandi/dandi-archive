@@ -263,7 +263,7 @@ import filesize from 'filesize';
 import { trimEnd } from 'lodash';
 import axios from 'axios';
 
-import { dandiRest } from '@/rest';
+import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { AssetFile, AssetPath } from '@/types';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
@@ -372,9 +372,9 @@ const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
 const embargoed = computed(() => currentDandiset.value?.dandiset.embargo_status === 'EMBARGOED');
 const splitLocation = computed(() => location.value.split('/'));
-const isAdmin = computed(() => dandiRest.user?.admin || false);
+const isAdmin = computed(() => user.value?.admin || false);
 const isOwner = computed(() => !!(
-  dandiRest.user && owners.value?.includes(dandiRest.user?.username)
+  user.value && owners.value?.includes(user.value?.username)
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
 

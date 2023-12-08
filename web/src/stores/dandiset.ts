@@ -4,7 +4,7 @@ import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
 // eslint-disable-next-line import/no-cycle
-import { dandiRest } from '@/rest';
+import { dandiRest, user } from '@/rest';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 
@@ -26,18 +26,16 @@ export const useDandisetStore = defineStore('dandiset', {
     version: (state) => (state.dandiset ? state.dandiset.version : draftVersion),
     schemaVersion: (state) => state.schema?.properties.schemaVersion.default,
     userCanModifyDandiset: (state) => {
-      const user = dandiRest?.user as User | null;
-
       // published versions are never editable, and logged out users can never edit a dandiset
       if (state.dandiset?.metadata?.version !== draftVersion || !user) {
         return false;
       }
       // if they're an admin, they can edit any dandiset
-      if (user.admin) {
+      if (user.value?.admin) {
         return true;
       }
       // otherwise check if they are an owner
-      return !!(state.owners?.find((owner) => owner.username === user.username));
+      return !!(state.owners?.find((owner) => owner.username === user.value?.username));
     },
   },
   actions: {

@@ -94,7 +94,7 @@
     <div v-if="!insideIFrame">
       <template v-if="loggedIn">
         <v-btn
-          :disabled="!dandiRest.user?.approved"
+          :disabled="!user?.approved"
           :to="{ name: 'createDandiset' }"
           exact
           class="mx-3"
@@ -139,6 +139,7 @@ import {
   loggedIn as loggedInFunc,
   insideIFrame as insideIFrameFunc,
   dandiRest,
+  user,
 } from '@/rest';
 import {
   dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
