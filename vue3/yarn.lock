@@ -3149,11 +3149,6 @@ timers-browserify@^2.0.4:
   dependencies:
     setimmediate "^1.0.4"
 
-tiny-cookie@^2.1.1:
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/tiny-cookie/-/tiny-cookie-2.5.1.tgz#11c72e58f4de854f6a24fd53aa207c6c35014581"
-  integrity sha512-w8FlBk1LMEBA7NY1lreQu4iTma/jxRQaKc2ucXFIv9/pDDPcnFrgO4swahGFAwJebHjwrHTyeoI7moH7G9YzSg==
-
 to-fast-properties@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/to-fast-properties/-/to-fast-properties-2.0.0.tgz#dc5e698cbd079265bc73e0377681a4e4e83f616e"
@@ -3347,13 +3342,6 @@ vm-browserify@^1.0.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/vm-browserify/-/vm-browserify-1.1.2.tgz#78641c488b8e6ca91a75f511e7a3b32a86e5dda0"
   integrity sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==
-
-vue-cookie-law@^1.13.3:
-  version "1.13.3"
-  resolved "https://registry.yarnpkg.com/vue-cookie-law/-/vue-cookie-law-1.13.3.tgz#c4fc5d9dd66772d4043c4f140790a0e502caabbc"
-  integrity sha512-n5ef5/dAB4cyUz6OaolYZEeyfV/fcsVU/RCTT/aHXcyjNbXf7EU2TgaOlMwu+cTOjdn5tBJKyKP6lr6IOUf9bg==
-  dependencies:
-    tiny-cookie "^2.1.1"
 
 vue-demi@>=0.14.5, vue-demi@>=0.14.6:
   version "0.14.6"
