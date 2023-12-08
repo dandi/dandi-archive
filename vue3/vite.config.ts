@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import vuetify from 'vite-plugin-vuetify';
 
 function getVersion() {
@@ -34,6 +35,9 @@ export default defineConfig({
   plugins: [
     vue(),
     vuetify(),
+    // Some dependencies, such as`@apidevtools/json-schema-ref-parser`,
+    // use Node APIs and require polyfills to work in the browser.
+    nodePolyfills(),
   ],
   resolve: {
     alias: {
