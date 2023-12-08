@@ -5,10 +5,10 @@
     min-width="420"
     max-width="420"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <slot
         name="activator"
-        :on="on"
+        v-bind="props"
       />
     </template>
     <v-card>

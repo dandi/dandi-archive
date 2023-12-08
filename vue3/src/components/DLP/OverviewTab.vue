@@ -2,11 +2,11 @@
   <div>
     <v-card
       v-if="contributors && contributors.length"
-      outlined
+      variant="outlined"
       height="100%"
     >
       <v-card-title class="font-weight-regular">
-        <v-icon class="mr-3 grey--text text--lighten-1">
+        <v-icon class="mr-3 text-grey-lighten-1">
           mdi-account-multiple
         </v-icon>
         Contributors
@@ -16,7 +16,7 @@
           v-for="(contributor, i) in contributors"
           :key="i"
           style="margin: 5px;"
-          outlined
+          variant="outlined"
         >
           {{ contributor.name }}
           <a
@@ -50,7 +50,7 @@
     >
       <template #content="slotProps">
         <div
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <span
             v-if="slotProps.item.awardNumber"
@@ -76,21 +76,21 @@
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
-          class="text-caption grey--text text--darken-1 related-resource"
+          class="text-caption text-grey-darken-1 related-resource"
         >
           <strong>ID: </strong>{{ slotProps.item.identifier }}
           <br>
         </span>
         <span
           v-if="slotProps.item.repository"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Repo: </strong>{{ slotProps.item.repository }}
           <br>
         </span>
         <span
           v-if="slotProps.item.relation"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
@@ -110,7 +110,7 @@
 
     <v-card
       v-if="assetSummary"
-      outlined
+      variant="outlined"
     >
       <v-card-title class="font-weight-regular">
         <v-progress-circular
@@ -121,7 +121,7 @@
         />
         <v-icon
           v-else
-          class="mr-3 grey--text text--lighten-1"
+          class="mr-3 text-grey-lighten-1"
         >
           mdi-clipboard-list
         </v-icon>
@@ -161,7 +161,7 @@
               :key="ii"
               :title="type"
               background-color="grey lighten-4"
-              class="grey lighten-4"
+              class="bg-grey-lighten-4"
               style="width: 100%;"
             >
               <div
@@ -193,7 +193,7 @@
                 </v-row>
                 <span
                   v-if="!isURL(item.identifier)"
-                  class="text-caption grey--text text--darken-1"
+                  class="text-caption text-grey-darken-1"
                 >
                   {{ item.identifier }}
                 </span>
@@ -213,7 +213,7 @@
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
-          class="text-caption grey--text text--darken-1 related-resource"
+          class="text-caption text-grey-darken-1 related-resource"
         >
           <strong>Identifier: </strong>{{ slotProps.item.identifier }}
           <br>

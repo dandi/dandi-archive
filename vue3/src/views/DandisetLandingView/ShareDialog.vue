@@ -6,10 +6,10 @@
     min-width="420"
     max-width="500"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <div
         class="d-inline"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon
           color="primary"
@@ -31,7 +31,7 @@
         <v-spacer />
         <v-btn
           icon
-          x-small
+          size="x-small"
           @click="dialog = false"
         >
           <v-icon>mdi-close</v-icon>
@@ -75,7 +75,7 @@
               <v-icon
                 class="mr-1"
                 color="blue"
-                large
+                size="large"
               >
                 mdi-twitter
               </v-icon>

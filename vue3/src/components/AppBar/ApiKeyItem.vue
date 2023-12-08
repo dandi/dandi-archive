@@ -9,13 +9,13 @@
         <v-icon>mdi-reload</v-icon>
       </v-btn>
     </v-list-item-action>
-    <v-list-item-content>
+    
       <CopyText
         :text="apiKey"
         label="API Key"
         icon-hover-text="Copy API key to clipboard"
       />
-    </v-list-item-content>
+    
   </v-list-item>
 </template>
 

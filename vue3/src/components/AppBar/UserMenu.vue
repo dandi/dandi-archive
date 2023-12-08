@@ -3,13 +3,13 @@
     :close-on-content-click="false"
   -->
   <v-menu offset-y>
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <v-btn
         icon
-        v-on="on"
+        v-bind="props"
       >
-        <v-avatar color="light-blue lighten-4">
-          <span class="primary--text">
+        <v-avatar color="light-blue-lighten-4">
+          <span class="text-primary">
             {{ userInitials }}
           </span>
         </v-avatar>
@@ -17,10 +17,10 @@
     </template>
     <v-list
       id="user-menu"
-      dense
+      density="compact"
     >
       <v-list-item>
-        <v-list-item-content>
+        
           <span v-if="user">
             You are logged in as <a
               :href="`https://github.com/${user.username}`"
@@ -29,13 +29,13 @@
               v-text="user.username"
             />.
           </span>
-        </v-list-item-content>
+        
       </v-list-item>
       <ApiKeyItem v-if="user?.approved" />
       <v-list-item @click="logout">
-        <v-list-item-content>
+        
           Logout
-        </v-list-item-content>
+        
         <v-list-item-action>
           <v-icon>mdi-logout</v-icon>
         </v-list-item-action>

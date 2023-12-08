@@ -12,18 +12,18 @@
             <template #label>
               Embargo this Dandiset
               <v-tooltip
-                right
+                location="right"
                 max-width="25%"
               >
-                <template #activator="{ on, attrs }">
+                <template #activator="{ props, attrs }">
                   <div
-                    v-bind="attrs"
+                   
                     style="cursor: help"
-                    v-on="on"
+                    v-bind="props"
                   >
                     <small class="ml-3 d-flex align-center">
                       (What is this?)
-                      <v-icon small>
+                      <v-icon size="small">
                         mdi-information
                       </v-icon>
                     </small>
@@ -52,8 +52,8 @@
           label="Title"
           :counter="nameMaxLength"
           required
-          outlined
-          dense
+          variant="outlined"
+          density="compact"
           class="my-4"
         />
 
@@ -69,8 +69,8 @@
           label="Description"
           :counter="descriptionMaxLength"
           required
-          outlined
-          dense
+          variant="outlined"
+          density="compact"
           class="my-4"
         />
         <div v-if="!embargoed">
@@ -92,7 +92,7 @@
             :items="dandiLicenses"
             label="License"
             class="my-4"
-            outlined
+            variant="outlined"
             dense
           />
         </div>
@@ -110,8 +110,8 @@
             label="Award number"
             :counter="120"
             :required="embargoed"
-            outlined
-            dense
+            variant="outlined"
+            density="compact"
             class="my-4"
             :rules="awardNumberRules"
           />
@@ -125,7 +125,7 @@
         type="submit"
         color="primary"
         :disabled="saveDisabled"
-        depressed
+        variant="flat"
         @click="registerDandiset"
       >
         Register Dandiset

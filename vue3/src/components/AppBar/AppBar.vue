@@ -6,8 +6,8 @@
       offset-y
       close-delay="300"
     >
-      <template #activator="{on}">
-        <v-app-bar-nav-icon v-on="on" />
+      <template #activator="{props}">
+        <v-app-bar-nav-icon v-bind="props" />
       </template>
       <v-list>
         <v-list-item-group>
@@ -41,7 +41,7 @@
               <v-icon
                 v-if="navItem.external"
                 class="ml-1"
-                small
+                size="small"
               >
                 mdi-open-in-new
               </v-icon>
@@ -66,7 +66,7 @@
           :key="navItem.text"
           :to="{name: navItem.to}"
           exact
-          text
+          variant="text"
         >
           {{ navItem.text }}
         </v-btn>
@@ -76,12 +76,12 @@
           :href="navItem.to"
           target="_blank"
           rel="noopener"
-          text
+          variant="text"
         >
           {{ navItem.text }}
           <v-icon
             class="ml-1"
-            small
+            size="small"
           >
             mdi-open-in-new
           </v-icon>
@@ -107,11 +107,11 @@
       </template>
       <template v-else>
         <v-tooltip
-          bottom
+          location="bottom"
           :disabled="cookiesEnabled"
         >
-          <template #activator="{ on }">
-            <div v-on="on">
+          <template #activator="{ props }">
+            <div v-bind="props">
               <v-btn
                 id="login"
                 class="mx-1"

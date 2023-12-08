@@ -1,6 +1,6 @@
 <template>
   <v-list
-    three-line
+    lines="three"
     subheader
   >
     <v-list-item
@@ -14,32 +14,32 @@
       }"
       exact
     >
-      <v-list-item-content>
-        <v-list-item-title class="wrap-text text-h6 grey--text text--darken-3 pb-1">
+      
+        <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 pb-1">
           {{ item.name }}
         </v-list-item-title>
         <v-list-item-subtitle>
           <v-chip
             v-if="item.version && item.version !== 'draft'"
             class="mr-1"
-            small
-            color="light-blue lighten-4"
+            size="small"
+            color="light-blue-lighten-4"
             text-color="light-blue darken-3"
           >
             <b>{{ item.version }}</b>
           </v-chip>
           <v-chip
             v-else
-            x-small
+            size="x-small"
             class="mr-1 px-2"
-            color="amber lighten-3"
+            color="amber-lighten-3"
             text-color="amber darken-4"
           >
             <b>DRAFT</b>
           </v-chip>
           <v-chip
             v-if="item.dandiset.embargo_status !== 'OPEN'"
-            x-small
+            size="x-small"
             class="mr-1 px-2"
             :color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4`"
             :text-color="
@@ -57,7 +57,7 @@
           ·
           <template v-if="dandisets">
             <v-icon
-              small
+              size="small"
               class="pb-1"
             >
               mdi-file
@@ -65,7 +65,7 @@
             {{ item.asset_count }}
             ·
             <v-icon
-              small
+              size="small"
               class="pb-1"
             >
               mdi-database
@@ -73,7 +73,7 @@
             {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
           </template>
         </v-list-item-subtitle>
-      </v-list-item-content>
+      
       <slot :name="item.dandiset.identifier" />
     </v-list-item>
   </v-list>
