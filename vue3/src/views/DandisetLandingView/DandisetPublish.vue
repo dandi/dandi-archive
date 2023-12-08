@@ -284,7 +284,7 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="$vuetify.display.md ? 12 : 4"
         style=""
       >
         {{ formatDate(currentDandiset.modified) }}
@@ -307,7 +307,7 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="$vuetify.display.md ? 12 : 4"
       >
         {{ formatDate(version.modified) }}
       </v-col>

@@ -1,7 +1,7 @@
 <template>
   <v-app-bar app>
     <v-menu
-      v-if="$vuetify.breakpoint.mobile"
+      v-if="$vuetify.display.mobile"
       open-on-hover
       offset-y
       close-delay="300"
@@ -59,7 +59,7 @@
         class="mr-3"
       />
     </router-link>
-    <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
+    <v-toolbar-items v-if="!$vuetify.display.mobile">
       <template v-for="navItem in navItems">
         <v-btn
           v-if="!navItem.external && (!navItem.if || navItem.if())"
