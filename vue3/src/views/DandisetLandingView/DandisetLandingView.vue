@@ -36,7 +36,7 @@
         indeterminate
       />
       <v-row no-gutters>
-        <v-col :cols="$vuetify.breakpoint.smAndDown ? 12 : 10">
+        <v-col :cols="$vuetify.display.smAndDown ? 12 : 10">
           <v-sheet
             v-if="!currentDandiset || loading"
             class="py-8 px-7"
@@ -52,7 +52,7 @@
           />
         </v-col>
         <v-col
-          v-if="!$vuetify.breakpoint.smAndDown"
+          v-if="!$vuetify.display.smAndDown"
           cols="2"
         >
           <v-sheet
@@ -67,7 +67,7 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="$vuetify.breakpoint.smAndDown">
+      <v-row v-if="$vuetify.display.smAndDown">
         <v-col cols="12">
           <v-sheet
             v-if="!currentDandiset || loading"
