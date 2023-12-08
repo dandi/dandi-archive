@@ -18,7 +18,6 @@ module.exports = {
     camelcase: 'off',
     'vuetify/no-deprecated-classes': 'error',
     'vuetify/grid-unknown-attributes': 'error',
-    'vuetify/no-legacy-grid': 'error',
     'no-underscore-dangle': [
       'error',
       {
