@@ -139,7 +139,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router/composables';
+import { useRouter } from 'vue-router';
 import type { ComputedRef } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
