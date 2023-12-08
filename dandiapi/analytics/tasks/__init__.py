@@ -89,7 +89,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
     for log_entry in s3logparse.parse_log_lines(
         line.decode('utf8') for line in data['Body'].iter_lines()
     ):
-        if log_entry.operation == 'REST.GET.OBJECT' and log_entry.status_code == 200:
+        if log_entry.operation == 'REST.GET.OBJECT' and log_entry.status_code == 200:  # noqa: PLR2004
             download_counts.update({log_entry.s3_key: 1})
 
     with transaction.atomic():
