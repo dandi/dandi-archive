@@ -33,10 +33,11 @@ Largely not formalized:
 - [x] Enable Issue tracking per Dandiset.
   - In the process of creating DataLad Dandisets on GitHub we already enable `Issues` functionality for all dandisets.
 - [ ] Initiate documentation in handbook on managing issues of the dandisets
-- [ ] Upon creation of a DataLad Dandiset on GitHub:
+- [ ] Upon creation of a Dandiset on dandi-archive:
+  - Create (via Github REST API) a git repository on GitHub in a configured (per instance) organization (referring to as `{organization}` below)
   - Invite all Dandiset owners in Triage role to the dandiset. In Triage scope they can close, label, assign issues. The other actions (e.g. user management) would need to be implemented using [bot].
   - Email them pointing to documentation (item above)
-- [ ] Setup https://github.com/dandisets [organization-wide](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file) [`.github/ISSUE_TEMPLATE`](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#creating-issue-forms) with different templates/types of issues to report
+- [ ] Setup https://github.com/{organization} [organization-wide](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file) [`.github/ISSUE_TEMPLATE`](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository#creating-issue-forms) with different templates/types of issues to report
 - [ ] DLP: add a button "View/Report Issues" or "Issues" leading to issue Tracker (e.g. [Issues](https://github.com/dandisets/000108/issues) for 000108)
   - Complimentary: dandi-archive could query/cache number of known open issues and include within that button, e.g. have it [(1) Issues](https://github.com/dandisets/000108/issues)
   - Complimentary:  asset-level issues filing in UI context menu per file, would pre-fill in the asset path
