@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import Vue, { onMounted, ref } from 'vue';
+import { onErrorCaptured, onMounted, ref } from 'vue';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -59,10 +59,10 @@ const connectedToServer = ref(true);
 
 // Catch any unhandled errors and display a snackbar prompt notifying the user.
 const showError = ref(false);
-Vue.config.errorHandler = (err: Error) => {
+onErrorCaptured((err) => {
   showError.value = true;
   throw err;
-};
+});
 
 onMounted(() => {
   Promise.all([
