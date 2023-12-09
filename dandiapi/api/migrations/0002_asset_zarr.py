@@ -16,8 +16,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('api', '0001_initial_v2'),
         ('zarr', '0001_initial_v2'),
-        # Merge the orphan api.0001_stagingapplication
-        ('api', '0001_stagingapplication'),
     ]
 
     operations = [
