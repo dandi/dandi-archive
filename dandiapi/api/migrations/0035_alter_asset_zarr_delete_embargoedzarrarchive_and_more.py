@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
     dependencies = [
         ('api', '0034_remove_embargoedzarrarchive_dandiset_and_more'),
-        ('zarr', '0001_initial'),
+        # ('zarr', '0001_initial'),
     ]
 
     operations = [

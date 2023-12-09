@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('api', '0034_remove_embargoedzarrarchive_dandiset_and_more'),
+        # ('api', '0034_remove_embargoedzarrarchive_dandiset_and_more'),
     ]
 
     operations = [
