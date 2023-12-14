@@ -13,7 +13,7 @@ ASSET_BLOB_TABLE = AssetBlob._meta.db_table
 VERSION_TABLE = Version._meta.db_table
 VERSION_ASSET_TABLE = Asset.versions.through._meta.db_table
 
-raw_sql = f'''
+raw_sql = f"""
 CREATE MATERIALIZED VIEW asset_search AS
     SELECT DISTINCT
         {VERSION_TABLE}.dandiset_id AS dandiset_id,
@@ -34,7 +34,7 @@ CREATE INDEX asset_search_metadata_species_name_idx ON asset_search ((asset_meta
 CREATE INDEX asset_search_metadata_genotype_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,genotype,name}}'));
 
 CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin (UPPER(asset_metadata->>'encodingFormat') gin_trgm_ops);
-'''  # noqa: S608
+"""  # noqa: S608
 
 
 class Migration(migrations.Migration):

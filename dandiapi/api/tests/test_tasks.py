@@ -301,56 +301,59 @@ def test_publish_task(
 
     published_version = draft_version.dandiset.versions.latest('created')
 
-    assert published_version.metadata == {
-        **draft_version.metadata,
-        'publishedBy': {
-            'id': URN_RE,
-            'name': 'DANDI publish',
-            'startDate': UTC_ISO_TIMESTAMP_RE,
-            'endDate': UTC_ISO_TIMESTAMP_RE,
-            'wasAssociatedWith': [
-                {
-                    'id': URN_RE,
-                    'identifier': 'RRID:SCR_017571',
-                    'name': 'DANDI API',
-                    # TODO: version the API
-                    'version': '0.1.0',
-                    'schemaKey': 'Software',
-                }
+    assert (
+        published_version.metadata
+        == {
+            **draft_version.metadata,
+            'publishedBy': {
+                'id': URN_RE,
+                'name': 'DANDI publish',
+                'startDate': UTC_ISO_TIMESTAMP_RE,
+                'endDate': UTC_ISO_TIMESTAMP_RE,
+                'wasAssociatedWith': [
+                    {
+                        'id': URN_RE,
+                        'identifier': 'RRID:SCR_017571',
+                        'name': 'DANDI API',
+                        # TODO: version the API
+                        'version': '0.1.0',
+                        'schemaKey': 'Software',
+                    }
+                ],
+                'schemaKey': 'PublishActivity',
+            },
+            'datePublished': UTC_ISO_TIMESTAMP_RE,
+            'manifestLocation': [
+                f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
             ],
-            'schemaKey': 'PublishActivity',
-        },
-        'datePublished': UTC_ISO_TIMESTAMP_RE,
-        'manifestLocation': [
-            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
-        ],
-        'identifier': f'DANDI:{draft_version.dandiset.identifier}',
-        'version': published_version.version,
-        'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
-        'url': (
-            f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
-            f'/{published_version.version}'
-        ),
-        'citation': published_version.citation(published_version.metadata),
-        'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
-        # Once the assets are linked, assetsSummary should be computed properly
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 200,
-            'numberOfFiles': 2,
-            'dataStandard': [
-                {
-                    'schemaKey': 'StandardsType',
-                    'identifier': 'RRID:SCR_015242',
-                    'name': 'Neurodata Without Borders (NWB)',
-                }
-            ],
-            'approach': [],
-            'measurementTechnique': [],
-            'variableMeasured': [],
-            'species': [],
-        },
-    }
+            'identifier': f'DANDI:{draft_version.dandiset.identifier}',
+            'version': published_version.version,
+            'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
+            'url': (
+                f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}'
+                f'/{published_version.version}'
+            ),
+            'citation': published_version.citation(published_version.metadata),
+            'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
+            # Once the assets are linked, assetsSummary should be computed properly
+            'assetsSummary': {
+                'schemaKey': 'AssetsSummary',
+                'numberOfBytes': 200,
+                'numberOfFiles': 2,
+                'dataStandard': [
+                    {
+                        'schemaKey': 'StandardsType',
+                        'identifier': 'RRID:SCR_015242',
+                        'name': 'Neurodata Without Borders (NWB)',
+                    }
+                ],
+                'approach': [],
+                'measurementTechnique': [],
+                'variableMeasured': [],
+                'species': [],
+            },
+        }
+    )
 
     assert published_version.assets.count() == 2
     new_draft_asset: Asset = published_version.assets.get(asset_id=old_draft_asset.asset_id)

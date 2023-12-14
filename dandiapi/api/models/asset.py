@@ -27,7 +27,7 @@ from .dandiset import Dandiset
 from .version import Version
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
-ASSET_PATH_REGEX = fr'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
+ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
 ASSET_COMPUTED_FIELDS = [
     'id',
     'path',
