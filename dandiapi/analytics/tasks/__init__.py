@@ -22,10 +22,11 @@ LogBucket = str
 
 
 def _bucket_objects_after(bucket: str, after: str | None) -> Generator[dict, None, None]:
-    assert bucket in [
+    if bucket not in {
         settings.DANDI_DANDISETS_LOG_BUCKET_NAME,
         settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME,
-    ]
+    }:
+        raise ValueError(f'Non-log bucket: {bucket}')
     embargoed = bucket == settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME
     s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
     kwargs = {}
@@ -40,10 +41,11 @@ def _bucket_objects_after(bucket: str, after: str | None) -> Generator[dict, Non
 @shared_task(queue='s3-log-processing', soft_time_limit=60, time_limit=80)
 def collect_s3_log_records_task(bucket: LogBucket) -> None:
     """Dispatch a task per S3 log file to process for download counts."""
-    assert bucket in [
+    if bucket not in {
         settings.DANDI_DANDISETS_LOG_BUCKET_NAME,
         settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME,
-    ]
+    }:
+        raise RuntimeError
     embargoed = bucket == settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME
     after = ProcessedS3Log.objects.filter(embargoed=embargoed).aggregate(last_log=Max('name'))[
         'last_log'
@@ -62,10 +64,11 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
     asset blobs. Prevents duplicate processing with a unique constraint on the ProcessedS3Log name
     and embargoed fields.
     """
-    assert bucket in [
+    if bucket not in {
         settings.DANDI_DANDISETS_LOG_BUCKET_NAME,
         settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME,
-    ]
+    }:
+        raise RuntimeError
     embargoed = bucket == settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME
 
     # short circuit if the log file has already been processed. note that this doesn't guarantee

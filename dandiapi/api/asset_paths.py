@@ -214,8 +214,10 @@ def _delete_asset_paths(asset: Asset, version: Version):
 
     # Ensure integrity
     leaf.refresh_from_db()
-    assert leaf.aggregate_size == 0
-    assert leaf.aggregate_files == 0
+    if leaf.aggregate_size != 0:
+        raise RuntimeError('Remaining non-zero aggregate_size')
+    if leaf.aggregate_files != 0:
+        raise RuntimeError('Remaining non-zero aggregate_files')
 
     # Delete leaf node and any other paths with no contained files
     AssetPath.objects.filter(aggregate_files=0).delete()

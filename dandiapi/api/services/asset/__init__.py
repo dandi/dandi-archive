@@ -52,10 +52,10 @@ def change_asset(
     Returns a tuple of the asset, and whether or not it was changed. When changing an asset, a new
     asset is created automatically.
     """
-    assert (
-        new_asset_blob or new_zarr_archive
-    ), 'One of new_zarr_archive or new_asset_blob must be given to change_asset_metadata'
-    assert 'path' in new_metadata, 'Path must be present in new_metadata'
+    if not new_asset_blob and not new_zarr_archive:
+        raise ValueError('One of new_zarr_archive or new_asset_blob must be given')
+    if 'path' not in new_metadata:
+        raise ValueError('Path must be present in new_metadata')
 
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError
@@ -103,10 +103,12 @@ def add_asset_to_version(
     metadata: dict,
 ) -> Asset:
     """Create an asset, adding it to a version."""
-    assert (
-        asset_blob or zarr_archive
-    ), 'One of zarr_archive or asset_blob must be given to add_asset_to_version'
-    assert 'path' in metadata, 'Path must be present in metadata'
+    if not asset_blob and not zarr_archive:
+        raise RuntimeError(
+            'One of zarr_archive or asset_blob must be given to add_asset_to_version'
+        )
+    if 'path' not in metadata:
+        raise RuntimeError('Path must be present in metadata')
 
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError

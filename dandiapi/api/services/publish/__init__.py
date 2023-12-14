@@ -26,8 +26,10 @@ def publish_asset(*, asset: Asset) -> None:
         # Lock asset to ensure it doesn't change out from under us while publishing
         locked_asset = Asset.objects.select_for_update().get(id=asset.id)
 
-        assert not locked_asset.published, 'asset is already published'
-        assert locked_asset.status == Asset.Status.VALID, 'asset is not VALID'
+        if locked_asset.published:
+            raise RuntimeError('Asset is already published')
+        if locked_asset.status != Asset.Status.VALID:
+            raise RuntimeError('Asset does not have VALID status')
 
         # Publish the asset
         locked_asset.metadata = asset.published_metadata()
