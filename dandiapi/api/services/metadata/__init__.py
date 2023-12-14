@@ -117,9 +117,10 @@ def validate_version_metadata(*, version: Version) -> None:
         metadata_for_validation[
             'id'
         ] = f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'
-        metadata_for_validation[
-            'url'
-        ] = f'{settings.DANDI_WEB_APP_URL}/dandiset/{publishable_version.dandiset.identifier}/{publishable_version.version}'
+        metadata_for_validation['url'] = (
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/'
+            f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
+        )
         metadata_for_validation['doi'] = '10.80507/dandi.123456/0.123456.1234'
         metadata_for_validation['assetsSummary'] = {
             'schemaKey': 'AssetsSummary',

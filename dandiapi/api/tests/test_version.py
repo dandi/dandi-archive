@@ -117,7 +117,10 @@ def test_published_version_metadata_computed(published_version: Version):
         'identifier': f'DANDI:{published_version.dandiset.identifier}',
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
-        'doi': f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}',
+        'doi': (
+            f'10.80507/dandi.'
+            f'{published_version.dandiset.identifier}/{published_version.version}'
+        ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
@@ -140,7 +143,10 @@ def test_published_version_metadata_computed(published_version: Version):
 def test_version_metadata_citation_draft(draft_version):
     name = draft_version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
-    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'
+    url = (
+        f'{settings.DANDI_WEB_APP_URL}/dandiset/'
+        f'{draft_version.dandiset.identifier}/{draft_version.version}'
+    )
     assert (
         draft_version.metadata['citation']
         == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'
@@ -152,9 +158,9 @@ def test_version_metadata_citation_published(published_version):
     name = published_version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
     url = f'https://doi.org/{published_version.doi}'
-    assert (
-        published_version.metadata['citation']
-        == f'{name} ({year}). (Version {published_version.version}) [Data set]. DANDI archive. {url}'
+    assert published_version.metadata['citation'] == (
+        f'{name} ({year}). (Version {published_version.version}) [Data set]. '
+        f'DANDI archive. {url}'
     )
 
 
@@ -303,50 +309,47 @@ def test_version_publish_version(draft_version, asset):
     publish_version.save()
 
     assert publish_version.dandiset == draft_version.dandiset
-    assert (
-        publish_version.metadata
-        == {
-            **draft_version.metadata,
-            'publishedBy': {
-                'id': URN_RE,
-                'name': 'DANDI publish',
-                'startDate': UTC_ISO_TIMESTAMP_RE,
-                'endDate': UTC_ISO_TIMESTAMP_RE,
-                'wasAssociatedWith': [
-                    {
-                        'id': URN_RE,
-                        'identifier': 'RRID:SCR_017571',
-                        'name': 'DANDI API',
-                        # TODO: version the API
-                        'version': '0.1.0',
-                        'schemaKey': 'Software',
-                    }
-                ],
-                'schemaKey': 'PublishActivity',
-            },
-            'dateCreated': UTC_ISO_TIMESTAMP_RE,
-            'datePublished': UTC_ISO_TIMESTAMP_RE,
-            'manifestLocation': [
-                f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
+    assert publish_version.metadata == {
+        **draft_version.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO: version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
             ],
-            'identifier': f'DANDI:{publish_version.dandiset.identifier}',
-            'version': publish_version.version,
-            'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
-            'url': (
-                f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
-                f'/{publish_version.version}'
-            ),
-            'citation': publish_version.citation(publish_version.metadata),
-            'doi': fake_doi,
-            # The published_version cannot have a properly defined assetsSummary yet, since that would
-            # require having created rows the Asset-to-Version join table, which is a side affect.
-            'assetsSummary': {
-                'schemaKey': 'AssetsSummary',
-                'numberOfBytes': 0,
-                'numberOfFiles': 0,
-            },
-        }
-    )
+            'schemaKey': 'PublishActivity',
+        },
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
+        'manifestLocation': [
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
+        ],
+        'identifier': f'DANDI:{publish_version.dandiset.identifier}',
+        'version': publish_version.version,
+        'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
+        'url': (
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
+            f'/{publish_version.version}'
+        ),
+        'citation': publish_version.citation(publish_version.metadata),
+        'doi': fake_doi,
+        # The published_version cannot have a properly defined assetsSummary yet, since that would
+        # require having created rows the Asset-to-Version join table, which is a side affect.
+        'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+        },
+    }
 
 
 @pytest.mark.django_db()

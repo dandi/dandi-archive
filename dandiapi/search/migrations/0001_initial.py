@@ -27,12 +27,17 @@ CREATE MATERIALIZED VIEW asset_search AS
 CREATE UNIQUE INDEX idx_asset_search_dandiset_id_asset_id ON asset_search (dandiset_id, asset_id);
 
 
-CREATE INDEX idx_asset_search_asset_size ON asset_search (asset_size);
-CREATE INDEX idx_asset_search_measurement_technique ON asset_search USING gin ((asset_metadata->'measurementTechnique'));
-CREATE INDEX asset_search_metadata_species_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,species,name}}'));
-CREATE INDEX asset_search_metadata_genotype_name_idx ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,genotype,name}}'));
+CREATE INDEX idx_asset_search_asset_size
+    ON asset_search (asset_size);
+CREATE INDEX idx_asset_search_measurement_technique
+    ON asset_search USING gin ((asset_metadata->'measurementTechnique'));
+CREATE INDEX asset_search_metadata_species_name_idx
+    ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,species,name}}'));
+CREATE INDEX asset_search_metadata_genotype_name_idx
+    ON asset_search ((asset_metadata #> '{{wasAttributedTo,0,genotype,name}}'));
 
-CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin (UPPER(asset_metadata->>'encodingFormat') gin_trgm_ops);
+CREATE INDEX idx_asset_search_encoding_format
+    ON asset_search USING gin (UPPER(asset_metadata->>'encodingFormat') gin_trgm_ops);
 """  # noqa: S608
 
 
