@@ -1,3 +1,38 @@
+# v0.3.67 (Thu Dec 14 2023)
+
+#### 🐛 Bug Fix
+
+- Convert `rest.ts` to composition API [#1774](https://github.com/dandi/dandi-archive/pull/1774) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add login redirect to user dashboard [#1781](https://github.com/dandi/dandi-archive/pull/1781) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add embargo re-design doc [#1772](https://github.com/dandi/dandi-archive/pull/1772) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Ensure that creating the default OAuth2 Application works on staging [#1779](https://github.com/dandi/dandi-archive/pull/1779) ([@brianhelba](https://github.com/brianhelba))
+- Squash migrations for "api", "analytics", and "zarr" apps [#1777](https://github.com/dandi/dandi-archive/pull/1777) ([@brianhelba](https://github.com/brianhelba))
+- Fix issues found by Ruff [#1776](https://github.com/dandi/dandi-archive/pull/1776) ([@brianhelba](https://github.com/brianhelba))
+- Switch frontend build process from Webpack to Vite [#1725](https://github.com/dandi/dandi-archive/pull/1725) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix FBT001 Boolean-typed positional argument in function definition [#1765](https://github.com/dandi/dandi-archive/pull/1765) ([@brianhelba](https://github.com/brianhelba))
+- Fix RET505 Unnecessary `else` / `elif` after `return` statement [#1752](https://github.com/dandi/dandi-archive/pull/1752) ([@brianhelba](https://github.com/brianhelba))
+- Avoid clobbering version metadata when calculating assets summary [#1557](https://github.com/dandi/dandi-archive/pull/1557) ([@danlamanna](https://github.com/danlamanna))
+- Add upload/asset blob garbage collection design doc [#1733](https://github.com/dandi/dandi-archive/pull/1733) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix DJ008 Model does not define `__str__` method [#1767](https://github.com/dandi/dandi-archive/pull/1767) ([@brianhelba](https://github.com/brianhelba))
+- [FIX] serviceUrl replacement [#1770](https://github.com/dandi/dandi-archive/pull/1770) ([@magland](https://github.com/magland))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/setup-python from 4 to 5 [#1780](https://github.com/dandi/dandi-archive/pull/1780) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- `test_zarr.py`: Import `EMPTY_CHECKSUM` from `zarr_checksum` [#1775](https://github.com/dandi/dandi-archive/pull/1775) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 7
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.66 (Fri Dec 01 2023)
 
 #### 🐛 Bug Fix
