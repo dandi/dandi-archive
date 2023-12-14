@@ -6,17 +6,6 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ('zarr', '0001_initial'),
-        ('zarr', '0002_remove_zarruploadfile_zarr_archive_and_more'),
-        ('zarr', '0003_zarr_rename_tables_indexes_constraints'),
-        (
-            'zarr',
-            '0004_remove_embargoedzarrarchive_zarr-embargoedzarrarchive-'
-            'consistent-checksum-status_and_more',
-        ),
-    ]
-
     initial = True
 
     dependencies = [

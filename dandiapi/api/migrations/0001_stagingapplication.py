@@ -8,11 +8,6 @@ import oauth2_provider.generators
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ('api', '0011_stagingapplication'),
-        ('api', '0014_alter_stagingapplication_skip_authorization'),
-    ]
-
     # This has no dependencies, but isn't considered "initial" by Django's definition
     initial = False
 
