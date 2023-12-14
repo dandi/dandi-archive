@@ -63,7 +63,8 @@ def test_dandiset_manager_visible_to(
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_list(api_client, dandiset):
+def test_dandiset_rest_list(api_client, user, dandiset):
+    # Test un-authenticated request
     assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
         'count': 1,
         'next': None,
@@ -80,6 +81,15 @@ def test_dandiset_rest_list(api_client, dandiset):
             }
         ],
     }
+
+    # Test request for embargoed dandisets while still un-authenticated
+    r = api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true', 'embargoed': 'true'})
+    assert r.status_code == 401
+
+    # Test request for embargoed dandisets after authenticated
+    api_client.force_authenticate(user=user)
+    r = api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true', 'embargoed': 'true'})
+    assert r.status_code == 200
 
 
 @pytest.mark.parametrize(
@@ -303,7 +313,10 @@ def test_dandiset_rest_embargo_access(
         api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
         == expected_dandiset_serialization
     )
-    assert api_client.get('/api/dandisets/').json() == expected_visible_pagination
+    assert (
+        api_client.get('/api/dandisets/', {'embargoed': 'true'}).json()
+        == expected_visible_pagination
+    )
 
 
 @pytest.mark.django_db()
