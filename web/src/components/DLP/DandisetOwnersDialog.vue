@@ -214,7 +214,7 @@
 <script lang="ts">
 import { debounce } from 'lodash';
 
-import { dandiRest } from '@/rest';
+import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Ref } from 'vue';
 import {
@@ -285,7 +285,6 @@ export default defineComponent({
       }
     }
 
-    const user = computed(() => dandiRest.user);
     function ownerIsCurrentUser(owner: User) {
       return user.value && user.value.username === owner.username;
     }
@@ -334,10 +333,10 @@ export default defineComponent({
       if (currentDandiset.value?.dandiset) {
         const owner = owners.value
           ?.map((u: User) => u.username)
-          .includes(dandiRest.user!.username);
+          .includes(user.value!.username);
 
         // If necessary, open display and return. Otherwise, proceed to save.
-        if (!adminWarningDisplay.value && dandiRest.user?.admin && !owner) {
+        if (!adminWarningDisplay.value && user.value?.admin && !owner) {
           adminWarningDisplay.value = true;
           return;
         }
