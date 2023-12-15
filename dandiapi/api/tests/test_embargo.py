@@ -74,7 +74,7 @@ def test_embargo_visibility(
 ):
     dandiset = dandiset_factory(embargo_status=embargo_status)
     version = draft_version_factory(dandiset=dandiset)
-    asset = draft_asset_factory(blob=None, embargoed_blob=embargoed_asset_blob)
+    asset = draft_asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 
     url = url_format.format(dandiset=dandiset, asset=asset)

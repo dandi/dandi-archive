@@ -3,15 +3,15 @@ from __future__ import annotations
 import json
 from uuid import uuid4
 
+import pytest
+import requests
 from django.conf import settings
 from django.db.utils import IntegrityError
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
-import pytest
-import requests
 
 from dandiapi.api.asset_paths import add_asset_paths, extract_paths
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
@@ -35,7 +35,7 @@ def test_asset_no_blob_zarr(draft_asset_factory):
     with pytest.raises(IntegrityError) as excinfo:
         asset.save()
 
-    assert 'exactly-one-blob' in str(excinfo.value)
+    assert 'blob-xor-zarr' in str(excinfo.value)
 
 
 @pytest.mark.django_db()
@@ -45,7 +45,7 @@ def test_asset_blob_and_zarr(draft_asset, zarr_archive):
     with pytest.raises(IntegrityError) as excinfo:
         draft_asset.save()
 
-    assert 'exactly-one-blob' in str(excinfo.value)
+    assert 'blob-xor-zarr' in str(excinfo.value)
 
 
 @pytest.mark.django_db()
@@ -1051,7 +1051,7 @@ def test_asset_rest_update_zarr(
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
+    asset = draft_asset_factory(blob=None, zarr=zarr_archive)
     draft_version.assets.add(asset)
     add_asset_paths(asset=asset, version=draft_version)
 
@@ -1222,7 +1222,7 @@ def test_asset_rest_delete_zarr(
     zarr_archive,
     zarr_file_factory,
 ):
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr_archive)
+    asset = draft_asset_factory(blob=None, zarr=zarr_archive)
     assign_perm('owner', user, draft_version.dandiset)
     draft_version.assets.add(asset)
 
@@ -1364,10 +1364,11 @@ def test_asset_download_embargo(
     draft_version_factory,
     dandiset_factory,
     asset_factory,
-    embargoed_asset_blob_factory,
+    embargoed_asset_blob,
+    monkeypatch,
 ):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = storage
+    # Pretend like AssetBlob was defined with the given storage
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
 
     # Set draft version as embargoed
     version = draft_version_factory(
@@ -1379,8 +1380,7 @@ def test_asset_download_embargo(
     client = authenticated_api_client
 
     # Generate assets and blobs
-    embargoed_blob = embargoed_asset_blob_factory(dandiset=version.dandiset)
-    asset = asset_factory(blob=None, embargoed_blob=embargoed_blob)
+    asset = asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 
     response = client.get(
@@ -1398,7 +1398,7 @@ def test_asset_download_embargo(
 
     assert cd_header == f'attachment; filename="{asset.path.split("/")[-1]}"'
 
-    with asset.embargoed_blob.blob.file.open('rb') as reader:
+    with asset.blob.blob.file.open('rb') as reader:
         assert download.content == reader.read()
 
 
