@@ -58,8 +58,9 @@ class BaseAssetBlob(TimeStampedModel):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
     blob_id = models.UUIDField(unique=True)
-    sha256 = models.CharField(
+    sha256 = models.CharField(  # noqa: DJ001
         null=True,
+        default=None,
         blank=True,
         max_length=64,
         validators=[RegexValidator(f'^{SHA256_REGEX}$')],

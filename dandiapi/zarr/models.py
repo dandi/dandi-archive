@@ -57,7 +57,7 @@ class BaseZarrArchive(TimeStampedModel):
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
-    checksum = models.CharField(max_length=512, null=True, default=None)
+    checksum = models.CharField(max_length=512, null=True, default=None, blank=True)  # noqa: DJ001
     status = models.CharField(
         max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
         choices=ZarrArchiveStatus.choices,
