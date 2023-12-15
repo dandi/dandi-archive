@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.core.files.storage import Storage
+from minio_storage.storage import MinioStorage
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
@@ -34,7 +36,6 @@ register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
 register(EmbargoedAssetBlobFactory)
 register(DandisetFactory)
-register(EmbargoedAssetBlobFactory)
 register(EmbargoedUploadFactory)
 register(PublishedVersionFactory, _name='published_version')
 register(DraftVersionFactory, _name='draft_version')
@@ -156,24 +157,3 @@ def storage(request, settings) -> Storage:
         )
 
     return storage_factory()
-
-
-@pytest.fixture(
-    params=[embargoed_s3_storage_factory, embargoed_minio_storage_factory],
-    ids=['s3', 'minio'],
-)
-def embargoed_storage(request) -> Storage:
-    storage_factory = request.param
-    return storage_factory()
-
-
-@pytest.fixture(
-    params=[
-        (s3_storage_factory, embargoed_s3_storage_factory),
-        (minio_storage_factory, embargoed_minio_storage_factory),
-    ],
-    ids=['s3', 'minio'],
-)
-def storage_tuple(request) -> tuple[Storage, Storage]:
-    storage_factory, embargoed_storage_factory = request.param
-    return (storage_factory(), embargoed_storage_factory())
