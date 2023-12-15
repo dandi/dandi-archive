@@ -379,8 +379,8 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.storage.get_embargo_storage,
-                        upload_to=dandiapi.api.storage.get_embargo_storage_prefix,
+                        storage=dandiapi.api.storage.get_storage,
+                        upload_to=dandiapi.api.storage.get_storage_prefix,
                     ),
                 ),
                 (
@@ -442,8 +442,8 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.storage.get_embargo_storage,
-                        upload_to=dandiapi.api.storage.get_embargo_storage_prefix,
+                        storage=dandiapi.api.storage.get_storage,
+                        upload_to=dandiapi.api.storage.get_storage_prefix,
                     ),
                 ),
                 (
