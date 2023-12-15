@@ -237,7 +237,7 @@ def test_zarr_rest_delete_file(
         f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': str(zarr_file.path)}]
     )
     assert resp.status_code == 204
-    assert not zarr_archive.storage.exists(zarr_archive.s3_path(zarr_file.path))
+    assert not zarr_archive.storage.exists(zarr_archive.s3_path(str(zarr_file.path)))
 
     # Assert zarr is back in pending state
     zarr_archive.refresh_from_db()
@@ -336,7 +336,7 @@ def test_zarr_rest_delete_multiple_files(
 
     # Assert not found
     for file in zarr_files:
-        assert not zarr_archive.storage.exists(zarr_archive.s3_path(file))
+        assert not zarr_archive.storage.exists(zarr_archive.s3_path(str(file.path)))
 
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
@@ -369,7 +369,7 @@ def test_zarr_rest_delete_missing_file(
     assert resp.json() == [
         f'File test-prefix/test-zarr/{zarr_archive.zarr_id}/does/not/exist does not exist.'
     ]
-    assert zarr_archive.storage.exists(zarr_archive.s3_path(zarr_file.path))
+    assert zarr_archive.storage.exists(zarr_archive.s3_path(str(zarr_file.path)))
 
     # Ingest
     zarr_archive.status = ZarrArchiveStatus.UPLOADED

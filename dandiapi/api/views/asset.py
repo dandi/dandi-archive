@@ -22,7 +22,6 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
 
-import os.path
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -146,7 +145,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         serializer.is_valid(raise_exception=True)
         content_disposition = serializer.validated_data['content_disposition']
         content_type = asset.metadata.get('encodingFormat', 'application/octet-stream')
-        asset_basename = os.path.basename(asset.path)
+        asset_basename = asset.path.split('/')[-1]
 
         if content_disposition == 'attachment':
             return HttpResponseRedirect(
