@@ -13,8 +13,8 @@ from django.db.utils import IntegrityError
 from s3logparse import s3logparse
 
 from dandiapi.analytics.models import ProcessedS3Log
-from dandiapi.api.models.asset import AssetBlob, EmbargoedAssetBlob
-from dandiapi.api.storage import get_boto_client, get_embargo_storage, get_storage
+from dandiapi.api.models.asset import AssetBlob
+from dandiapi.api.storage import get_boto_client, get_storage
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -31,8 +31,7 @@ def _bucket_objects_after(bucket: str, after: str | None) -> Generator[dict, Non
         settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME,
     }:
         raise ValueError(f'Non-log bucket: {bucket}')
-    embargoed = bucket == settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME
-    s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
+    s3 = get_boto_client(get_storage())
     kwargs = {}
     if after:
         kwargs['StartAfter'] = after
@@ -80,8 +79,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
     if ProcessedS3Log.objects.filter(name=s3_log_key.split('/')[-1], embargoed=embargoed).exists():
         return
 
-    s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
-    BlobModel = AssetBlob if not embargoed else EmbargoedAssetBlob  # noqa: N806
+    s3 = get_boto_client(get_storage())
     data = s3.get_object(Bucket=bucket, Key=s3_log_key)
     download_counts = Counter()
 
@@ -107,6 +105,6 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
         # multiple log files trying to update the same blobs. this serialization is enforced through
         # the task queue configuration.
         for blob, download_count in download_counts.items():
-            BlobModel.objects.filter(blob=blob).update(
+            AssetBlob.objects.filter(blob=blob).update(
                 download_count=F('download_count') + download_count
             )

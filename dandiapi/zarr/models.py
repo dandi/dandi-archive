@@ -10,7 +10,7 @@ from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.storage import get_embargo_storage, get_storage
+from dandiapi.api.storage import get_storage
 
 logger = logging.getLogger(name=__name__)
 
@@ -109,7 +109,7 @@ class ZarrArchive(BaseZarrArchive):
 
 
 class EmbargoedZarrArchive(BaseZarrArchive):
-    storage = get_embargo_storage()
+    storage = get_storage()
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
     )
@@ -117,6 +117,6 @@ class EmbargoedZarrArchive(BaseZarrArchive):
     def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""
         return (
-            f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
+            f'{settings.DANDI_ZARR_PREFIX_NAME}/'
             f'{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'
         )

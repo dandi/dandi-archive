@@ -6,6 +6,7 @@ This module is imported from celery.py in a post-app-load hook.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import timedelta
 import time
 from typing import TYPE_CHECKING
@@ -67,7 +68,6 @@ def validate_pending_asset_metadata():
         Asset.objects.filter(status=Asset.Status.PENDING)
         .filter(
             (Q(blob__isnull=False) & Q(blob__sha256__isnull=False))
-            | (Q(embargoed_blob__isnull=False) & Q(embargoed_blob__sha256__isnull=False))
             | (
                 Q(zarr__isnull=False)
                 & Q(zarr__checksum__isnull=False)

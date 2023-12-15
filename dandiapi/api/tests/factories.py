@@ -3,20 +3,18 @@ from __future__ import annotations
 import datetime
 import hashlib
 
+import factory
+import faker
 from allauth.socialaccount.models import SocialAccount
 from dandischema.digests.dandietag import DandiETag
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import files as django_files
-import factory
-import faker
 
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
     Dandiset,
-    EmbargoedAssetBlob,
-    EmbargoedUpload,
     Upload,
     UserMetadata,
     Version,
@@ -171,16 +169,9 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
 
 class EmbargoedAssetBlobFactory(AssetBlobFactory):
     class Meta:
-        model = EmbargoedAssetBlob
+        model = AssetBlob
 
-    dandiset = factory.SubFactory(DandisetFactory)
-
-    @factory.lazy_attribute
-    def blob(self):
-        return django_files.File(
-            file=django_files.base.ContentFile(faker.Faker().binary(self.size)).file,
-            name=EmbargoedUpload.object_key(self.blob_id, dandiset=self.dandiset),
-        )
+    embargoed = True
 
 
 class DraftAssetFactory(factory.django.DjangoModelFactory):
@@ -239,4 +230,6 @@ class UploadFactory(factory.django.DjangoModelFactory):
 
 class EmbargoedUploadFactory(UploadFactory):
     class Meta:
-        model = EmbargoedUpload
+        model = Upload
+
+    embargoed = True

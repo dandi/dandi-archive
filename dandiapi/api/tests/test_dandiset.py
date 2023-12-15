@@ -374,42 +374,45 @@ def test_dandiset_rest_create(api_client, user):
     # Verify that computed metadata was injected
     year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata == {
-        **metadata,
-        'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
-        ],
-        'name': name,
-        'identifier': DANDISET_SCHEMA_ID_RE,
-        'id': f'DANDI:{dandiset.identifier}/draft',
-        'version': 'draft',
-        'url': url,
-        'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'{user.last_name}, {user.first_name} ({year}) {name} '
-            f'(Version draft) [Data set]. DANDI archive. {url}'
-        ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Dandiset',
-        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': settings.DANDI_WEB_APP_URL,
-        'contributor': [
-            {
-                'name': 'Doe, John',
-                'email': user.email,
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            }
-        ],
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-        },
-    }
+    assert (
+        dandiset.draft_version.metadata
+        == {
+            **metadata,
+            'manifestLocation': [
+                f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            ],
+            'name': name,
+            'identifier': DANDISET_SCHEMA_ID_RE,
+            'id': f'DANDI:{dandiset.identifier}/draft',
+            'version': 'draft',
+            'url': url,
+            'dateCreated': UTC_ISO_TIMESTAMP_RE,
+            'citation': (
+                f'{user.last_name}, {user.first_name} ({year}) {name} '
+                f'(Version draft) [Data set]. DANDI archive. {url}'
+            ),
+            '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaKey': 'Dandiset',
+            'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
+            'repository': settings.DANDI_WEB_APP_URL,
+            'contributor': [
+                {
+                    'name': 'Doe, John',
+                    'email': user.email,
+                    'roleName': ['dcite:ContactPerson'],
+                    'schemaKey': 'Person',
+                    'affiliation': [],
+                    'includeInCitation': True,
+                }
+            ],
+            'assetsSummary': {
+                'schemaKey': 'AssetsSummary',
+                'numberOfBytes': 0,
+                'numberOfFiles': 0,
+            },
+        }
+    )
 
 
 @pytest.mark.django_db()
@@ -467,42 +470,45 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     # Verify that computed metadata was injected
     year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata == {
-        **metadata,
-        'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
-        ],
-        'name': name,
-        'identifier': f'DANDI:{identifier}',
-        'id': f'DANDI:{dandiset.identifier}/draft',
-        'version': 'draft',
-        'url': url,
-        'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
-            f'(Version draft) [Data set]. DANDI archive. {url}'
-        ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Dandiset',
-        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': settings.DANDI_WEB_APP_URL,
-        'contributor': [
-            {
-                'name': 'Doe, John',
-                'email': admin_user.email,
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            }
-        ],
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-        },
-    }
+    assert (
+        dandiset.draft_version.metadata
+        == {
+            **metadata,
+            'manifestLocation': [
+                f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            ],
+            'name': name,
+            'identifier': f'DANDI:{identifier}',
+            'id': f'DANDI:{dandiset.identifier}/draft',
+            'version': 'draft',
+            'url': url,
+            'dateCreated': UTC_ISO_TIMESTAMP_RE,
+            'citation': (
+                f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
+                f'(Version draft) [Data set]. DANDI archive. {url}'
+            ),
+            '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaKey': 'Dandiset',
+            'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
+            'repository': settings.DANDI_WEB_APP_URL,
+            'contributor': [
+                {
+                    'name': 'Doe, John',
+                    'email': admin_user.email,
+                    'roleName': ['dcite:ContactPerson'],
+                    'schemaKey': 'Person',
+                    'affiliation': [],
+                    'includeInCitation': True,
+                }
+            ],
+            'assetsSummary': {
+                'schemaKey': 'AssetsSummary',
+                'numberOfBytes': 0,
+                'numberOfFiles': 0,
+            },
+        }
+    )
 
 
 @pytest.mark.django_db()
@@ -574,41 +580,44 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     # Verify that computed metadata was injected
     year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata == {
-        **metadata,
-        'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
-        ],
-        'name': name,
-        'identifier': f'DANDI:{identifier}',
-        'id': f'DANDI:{dandiset.identifier}/draft',
-        'version': 'draft',
-        'url': url,
-        'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
-        ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Dandiset',
-        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
-        'repository': settings.DANDI_WEB_APP_URL,
-        'contributor': [
-            {
-                'name': 'Jane Doe',
-                'email': 'jane.doe@kitware.com',
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            }
-        ],
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-        },
-    }
+    assert (
+        dandiset.draft_version.metadata
+        == {
+            **metadata,
+            'manifestLocation': [
+                f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            ],
+            'name': name,
+            'identifier': f'DANDI:{identifier}',
+            'id': f'DANDI:{dandiset.identifier}/draft',
+            'version': 'draft',
+            'url': url,
+            'dateCreated': UTC_ISO_TIMESTAMP_RE,
+            'citation': (
+                f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
+            ),
+            '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaKey': 'Dandiset',
+            'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
+            'repository': settings.DANDI_WEB_APP_URL,
+            'contributor': [
+                {
+                    'name': 'Jane Doe',
+                    'email': 'jane.doe@kitware.com',
+                    'roleName': ['dcite:ContactPerson'],
+                    'schemaKey': 'Person',
+                    'affiliation': [],
+                    'includeInCitation': True,
+                }
+            ],
+            'assetsSummary': {
+                'schemaKey': 'AssetsSummary',
+                'numberOfBytes': 0,
+                'numberOfFiles': 0,
+            },
+        }
+    )
 
 
 @pytest.mark.django_db()
@@ -664,42 +673,45 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     # Verify that computed metadata was injected
     year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
-    assert dandiset.draft_version.metadata == {
-        **metadata,
-        'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
-        ],
-        'name': name,
-        'identifier': DANDISET_SCHEMA_ID_RE,
-        'id': f'DANDI:{dandiset.identifier}/draft',
-        'version': 'draft',
-        'url': url,
-        'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'{user.last_name}, {user.first_name} ({year}) {name} '
-            f'(Version draft) [Data set]. DANDI archive. {url}'
-        ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
-        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'schemaKey': 'Dandiset',
-        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:EmbargoedAccess'}],
-        'repository': settings.DANDI_WEB_APP_URL,
-        'contributor': [
-            {
-                'name': 'Doe, John',
-                'email': user.email,
-                'roleName': ['dcite:ContactPerson'],
-                'schemaKey': 'Person',
-                'affiliation': [],
-                'includeInCitation': True,
-            }
-        ],
-        'assetsSummary': {
-            'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 0,
-            'numberOfFiles': 0,
-        },
-    }
+    assert (
+        dandiset.draft_version.metadata
+        == {
+            **metadata,
+            'manifestLocation': [
+                f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            ],
+            'name': name,
+            'identifier': DANDISET_SCHEMA_ID_RE,
+            'id': f'DANDI:{dandiset.identifier}/draft',
+            'version': 'draft',
+            'url': url,
+            'dateCreated': UTC_ISO_TIMESTAMP_RE,
+            'citation': (
+                f'{user.last_name}, {user.first_name} ({year}) {name} '
+                f'(Version draft) [Data set]. DANDI archive. {url}'
+            ),
+            '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+            'schemaKey': 'Dandiset',
+            'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:EmbargoedAccess'}],
+            'repository': settings.DANDI_WEB_APP_URL,
+            'contributor': [
+                {
+                    'name': 'Doe, John',
+                    'email': user.email,
+                    'roleName': ['dcite:ContactPerson'],
+                    'schemaKey': 'Person',
+                    'affiliation': [],
+                    'includeInCitation': True,
+                }
+            ],
+            'assetsSummary': {
+                'schemaKey': 'AssetsSummary',
+                'numberOfBytes': 0,
+                'numberOfFiles': 0,
+            },
+        }
+    )
 
 
 @pytest.mark.django_db()
@@ -762,7 +774,7 @@ def test_dandiset_rest_delete_with_zarrs(
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, draft_version.dandiset)
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr)
+    asset = draft_asset_factory(blob=None, zarr=zarr)
 
     # Add paths
     add_asset_paths(asset=asset, version=draft_version)

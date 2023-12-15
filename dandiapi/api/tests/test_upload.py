@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from django.core.files.base import ContentFile
-from guardian.shortcuts import assign_perm
 import pytest
 import requests
+from django.core.files.base import ContentFile
+from guardian.shortcuts import assign_perm
 
-from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedAssetBlob, EmbargoedUpload, Upload
+from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedUpload, Upload
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
@@ -236,7 +236,7 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     assign_perm('owner', user, dandiset)
-    # This EmbargoedAssetBlob is in the same embargoed dandiset, so it should be deduplicated
+    # This embargoed AssetBlob is in the same embargoed dandiset, so it should be deduplicated
     embargoed_asset_blob = embargoed_asset_blob_factory(dandiset=dandiset)
 
     resp = api_client.post(
@@ -609,7 +609,7 @@ def test_upload_validate_embargo_existing_assetblob(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_upload_validate_embargo_existing_embargoedassetblob(
+def test_upload_validate_embargo_existing_embargoed_assetblob(
     api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
 ):
     api_client.force_authenticate(user=user)
@@ -638,7 +638,7 @@ def test_upload_validate_embargo_existing_embargoedassetblob(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_upload_validate_embargo_existing_embargoedassetblob_wrong_dandiset(
+def test_upload_validate_embargo_existing_embargoed_assetblob_wrong_dandiset(
     api_client, user, dandiset_factory, embargoed_upload_factory, embargoed_asset_blob_factory
 ):
     api_client.force_authenticate(user=user)

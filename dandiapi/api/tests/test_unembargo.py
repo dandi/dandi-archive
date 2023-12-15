@@ -3,35 +3,35 @@ from __future__ import annotations
 import math
 import os
 
+import factory
+import pytest
 from dandischema.digests.dandietag import PartGenerator, mb
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
-import factory
 from guardian.shortcuts import assign_perm
-import pytest
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.embargo import _unembargo_asset, unembargo_dandiset
 
 
 @pytest.mark.django_db()
 def test_asset_unembargo(
-    embargoed_storage, asset_factory, embargoed_asset_blob_factory, draft_version
+    storage, asset_factory, embargoed_asset_blob_factory, draft_version, monkeypatch
 ):
-    # Pretend like EmbargoedAssetBlob was defined with the given storage
-    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
+    # Pretend like AssetBlob was defined with the given storage
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
 
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
-    embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
+    embargoed_asset_blob: AssetBlob = embargoed_asset_blob_factory()
+    embargoed_asset: Asset = asset_factory(blob=embargoed_asset_blob)
     draft_version.assets.add(embargoed_asset)
 
     # Assert embargoed properties
     embargoed_sha256 = embargoed_asset.sha256
-    embargoed_etag = embargoed_asset.embargoed_blob.etag
-    assert embargoed_asset.blob is None
-    assert embargoed_asset.embargoed_blob is not None
+    embargoed_etag = embargoed_asset.blob.etag
+    assert embargoed_asset.blob is not None
+    assert embargoed_asset.blob.embargoed
     assert embargoed_asset.sha256 is not None
     assert 'embargo' in embargoed_asset.full_metadata['contentUrl'][1]
 
@@ -42,7 +42,7 @@ def test_asset_unembargo(
 
     # Assert unembargoed properties
     assert asset.blob is not None
-    assert asset.embargoed_blob is None
+    assert not asset.blob.embargoed
     assert asset.sha256 == embargoed_sha256
     assert asset.blob.etag == embargoed_etag
     assert 'embargo' not in asset.full_metadata['contentUrl'][1]
@@ -102,15 +102,13 @@ def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
-    storage_tuple,
+    storage,
     file_size,
     part_size,
     monkeypatch,
 ):
-    # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
-    storage, embargoed_storage = storage_tuple
+    # Pretend like AssetBlob was defined with the given storage
     monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-    monkeypatch.setattr(EmbargoedAssetBlob.blob.field, 'storage', embargoed_storage)
 
     # Monkey patch PartGenerator so that upload and copy use a smaller part size
     monkeypatch.setattr(PartGenerator, 'DEFAULT_PART_SIZE', part_size, raising=True)
@@ -121,7 +119,7 @@ def test_unembargo_dandiset(
     assign_perm('owner', user, dandiset)
 
     # Create an embargoed asset blob
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory(
+    embargoed_asset_blob: AssetBlob = embargoed_asset_blob_factory(
         size=file_size, blob=SimpleUploadedFile('test', content=os.urandom(file_size))
     )
 
@@ -130,13 +128,12 @@ def test_unembargo_dandiset(
     assert embargoed_asset_blob.etag.endswith(f'-{num_parts}')
 
     # Create asset from embargoed blob
-    embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
+    embargoed_asset: Asset = asset_factory(blob=embargoed_asset_blob)
     draft_version.assets.add(embargoed_asset)
 
     # Assert properties before unembargo
-    assert embargoed_asset.embargoed_blob is not None
-    assert embargoed_asset.blob is None
-    assert embargoed_asset.embargoed_blob.etag != ''
+    assert embargoed_asset.blob.embargoed
+    assert embargoed_asset.blob.etag != ''
 
     # Run unembargo and validate version metadata
     unembargo_dandiset(user=user, dandiset=dandiset)
@@ -156,8 +153,7 @@ def test_unembargo_dandiset(
     assert asset == embargoed_asset
 
     # Check blobs
-    assert asset.embargoed_blob is None
-    assert asset.blob is not None
+    assert not asset.blob.embargoed
     assert asset.blob.etag == embargoed_asset_blob.etag
 
     blob_id = str(asset.blob.blob_id)
@@ -172,12 +168,11 @@ def test_unembargo_dandiset_existing_blobs(
     asset_factory,
     asset_blob_factory,
     embargoed_asset_blob_factory,
-    storage_tuple,
+    storage,
+    monkeypatch,
 ):
-    # Pretend like AssetBlob/EmbargoedAssetBlob were defined with the given storage
-    storage, embargoed_storage = storage_tuple
-    AssetBlob.blob.field.storage = storage
-    EmbargoedAssetBlob.blob.field.storage = embargoed_storage
+    # Pretend like AssetBlob was defined with the given storage
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
 
     # Create dandiset and version
     dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -185,8 +180,8 @@ def test_unembargo_dandiset_existing_blobs(
     assign_perm('owner', user, dandiset)
 
     # Create embargoed assets
-    embargoed_asset_blob: EmbargoedAssetBlob = embargoed_asset_blob_factory()
-    embargoed_asset: Asset = asset_factory(embargoed_blob=embargoed_asset_blob, blob=None)
+    embargoed_asset_blob: AssetBlob = embargoed_asset_blob_factory()
+    embargoed_asset: Asset = asset_factory(blob=embargoed_asset_blob)
     draft_version.assets.add(embargoed_asset)
 
     # Create unembargoed asset with identical data
@@ -197,9 +192,8 @@ def test_unembargo_dandiset_existing_blobs(
     )
 
     # Assert properties before unembargo
-    assert embargoed_asset.embargoed_blob is not None
-    assert embargoed_asset.blob is None
-    assert embargoed_asset.embargoed_blob.etag != ''
+    assert embargoed_asset.blob.embargoed
+    assert embargoed_asset.blob.etag != ''
     assert existing_asset_blob.etag != ''
     assert embargoed_asset_blob.etag == existing_asset_blob.etag
 
@@ -221,8 +215,7 @@ def test_unembargo_dandiset_existing_blobs(
     assert asset == embargoed_asset
 
     # Check blobs
-    assert asset.embargoed_blob is None
-    assert asset.blob is not None
+    assert not asset.blob.embargoed
     assert asset.blob.etag == embargoed_asset_blob.etag
     assert asset.blob == existing_asset_blob
 
@@ -246,12 +239,12 @@ def test_unembargo_dandiset_normal_asset_blob(
 
     # Create asset
     asset_blob: AssetBlob = asset_blob_factory()
-    asset: Asset = asset_factory(blob=asset_blob, embargoed_blob=None)
+    asset: Asset = asset_factory(blob=asset_blob)
     draft_version.assets.add(asset)
 
     # Assert properties before unembargo
-    assert asset.embargoed_blob is None
     assert asset.blob is not None
+    assert not asset.blob.embargoed
 
     # Run unembargo
     unembargo_dandiset(user=user, dandiset=dandiset)
@@ -272,7 +265,6 @@ def test_unembargo_dandiset_normal_asset_blob(
 
     # Check that blob is unchanged
     assert fetched_asset.blob == asset_blob
-    assert asset.embargoed_blob is None
     assert asset.blob is not None
+    assert not asset.blob.embargoed
     assert asset.blob.etag
-    assert asset.blob
