@@ -115,10 +115,10 @@ jobs:
 
         # Populate the database with a dandiset for FileBrowser tests
       - name: Create a superuser
-        run: python manage.py createsuperuser --noinput --email admin@admin.com
+        run: python manage.py createsuperuser --noinput --email admin@example.com
 
       - name: Create Dandiset
-        run: python manage.py create_dev_dandiset --owner admin@admin.com
+        run: python manage.py create_dev_dandiset --owner admin@example.com
 
       - name: Install E2E tests
         run: yarn install --frozen-lockfile

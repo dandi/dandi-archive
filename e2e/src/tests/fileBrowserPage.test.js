@@ -1,4 +1,4 @@
-import { vBtn, vListItemSubtitle } from 'jest-puppeteer-vuetify';
+import { vBtn, vListItemSubtitle, vList } from 'jest-puppeteer-vuetify';
 import {
   waitForRequestsToFinish,
 } from '../util';
@@ -14,6 +14,6 @@ describe('file browser page', () => {
     await waitForRequestsToFinish();
 
     // Ensure that the page has loaded with a folder
-    await expect(page).toMatch('foo');
+    await expect(page).toContainXPath(vList());
   });
 });
