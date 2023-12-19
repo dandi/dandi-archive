@@ -10,44 +10,40 @@
         <v-app-bar-nav-icon v-bind="props" />
       </template>
       <v-list>
-        <v-list-item-group>
-          <template v-for="navItem in navItems">
-            <v-list-item
-              v-if="!navItem.if || navItem.if()"
-              :key="navItem.text"
-              :to="navItem.external ? undefined : {name: navItem.to}"
-              :href="navItem.external ? navItem.to : undefined"
-              :target="navItem.external ? '_blank' : undefined"
-              :rel="navItem.external ? 'noopener' : undefined"
-              exact
-              text
+        <template v-for="navItem in navItems">
+          <v-list-item
+            v-if="!navItem.if || navItem.if()"
+            :key="navItem.text"
+            :to="navItem.external ? undefined : {name: navItem.to}"
+            :href="navItem.external ? navItem.to : undefined"
+            :target="navItem.external ? '_blank' : undefined"
+            :rel="navItem.external ? 'noopener' : undefined"
+            exact
+            text
+          >
+            <span
+              v-if="!navItem.external"
+              class="text-md"
             >
-              <v-list-item-content
-                v-if="!navItem.external"
-                text
-                class="text-md"
-              >
-                {{ navItem.text }}
-              </v-list-item-content>
-              <v-list-item-content
-                v-if="navItem.external"
-                :href="navItem.to"
-                target="_blank"
-                rel="noopener"
-                text
-              >
-                {{ navItem.text }}
-              </v-list-item-content>
-              <v-icon
-                v-if="navItem.external"
-                class="ml-1"
-                size="small"
-              >
-                mdi-open-in-new
-              </v-icon>
-            </v-list-item>
-          </template>
-        </v-list-item-group>
+              {{ navItem.text }}
+            </span>
+            <a
+              v-if="navItem.external"
+              :href="navItem.to"
+              target="_blank"
+              rel="noopener"
+            >
+              {{ navItem.text }}
+          </a>
+            <v-icon
+              v-if="navItem.external"
+              class="ml-1"
+              size="small"
+            >
+              mdi-open-in-new
+            </v-icon>
+          </v-list-item>
+        </template>
       </v-list>
     </v-menu>
     <router-link to="/">
