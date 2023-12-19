@@ -117,6 +117,7 @@
                 class="mx-1"
                 color="primary"
                 rounded
+                variant="flat"
                 :disabled="!cookiesEnabled"
                 @click="login"
               >
