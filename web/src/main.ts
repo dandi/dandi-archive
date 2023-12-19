@@ -6,7 +6,6 @@ import VueSocialSharing from 'vue-social-sharing';
 // @ts-ignore missing definitions
 import * as Sentry from '@sentry/vue';
 import { CaptureConsole } from '@sentry/integrations';
-import { BrowserTracing } from '@sentry/tracing';
 
 // Import plugins first (order may matter)
 import pinia from '@/plugins/pinia';
@@ -23,13 +22,14 @@ Sentry.init({
   dsn: import.meta.env.VITE_APP_SENTRY_DSN,
   environment: import.meta.env.VITE_APP_SENTRY_ENVIRONMENT,
   integrations: [
-    new BrowserTracing({
-      tracingOrigins: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
+    new Sentry.BrowserTracing({
+      routingInstrumentation: Sentry.vueRouterInstrumentation(router),
     }),
     new CaptureConsole({
       levels: ['error'],
     }),
   ],
+  tracePropagationTargets: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
   tracesSampleRate: 0.01,
   trackComponents: true,
 });
