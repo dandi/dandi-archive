@@ -32,6 +32,7 @@ Sentry.init({
   tracePropagationTargets: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
   tracesSampleRate: 0.01,
   trackComponents: true,
+  attachProps: true,
 });
 
 Vue.use(VueGtag, {
