@@ -30,8 +30,12 @@ Sentry.init({
     }),
   ],
   tracePropagationTargets: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
+
+  // Capture 1% of traces for Sentry performance
   tracesSampleRate: 0.01,
+  // Capture extra data about Vue components
   trackComponents: true,
+  // Capture info about Vue component props
   attachProps: true,
 });
 
