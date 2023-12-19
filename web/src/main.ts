@@ -28,6 +28,7 @@ Sentry.init({
     new CaptureConsole({
       levels: ['error'],
     }),
+    new Sentry.Replay(),
   ],
   tracePropagationTargets: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
 
@@ -37,6 +38,11 @@ Sentry.init({
   trackComponents: true,
   // Capture info about Vue component props
   attachProps: true,
+
+  // Capture Replay for 10% of all sessions,
+  // plus for 100% of sessions with an error
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
 });
 
 Vue.use(VueGtag, {
