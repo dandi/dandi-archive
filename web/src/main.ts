@@ -19,6 +19,7 @@ import App from '@/App.vue';
 import router from '@/router';
 
 Sentry.init({
+  Vue,
   dsn: import.meta.env.VITE_APP_SENTRY_DSN,
   environment: import.meta.env.VITE_APP_SENTRY_ENVIRONMENT,
   integrations: [
