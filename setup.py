@@ -56,7 +56,6 @@ setup(
         'drf-extensions',
         'drf-yasg',
         'jsonschema',
-        'pydantic',
         'boto3[s3]',
         'more_itertools',
         'requests',
