@@ -6,7 +6,7 @@ from uuid import uuid4
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
-from django_extensions.db.models import TimeStampedModel
+from django_extensions.db.models import CreationDateTimeField
 
 from dandiapi.api.storage import (
     get_embargo_storage,
@@ -19,12 +19,10 @@ from .asset import AssetBlob, EmbargoedAssetBlob
 from .dandiset import Dandiset
 
 
-class BaseUpload(TimeStampedModel):
+class BaseUpload(models.Model):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
-    class Meta:
-        indexes = [models.Index(fields=['etag'])]
-        abstract = True
+    created = CreationDateTimeField()
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
     upload_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
@@ -39,6 +37,10 @@ class BaseUpload(TimeStampedModel):
     multipart_upload_id = models.CharField(max_length=128, unique=True, db_index=True)
     size = models.PositiveBigIntegerField()
 
+    class Meta:
+        indexes = [models.Index(fields=['etag'])]
+        abstract = True
+
     @staticmethod
     @abstractmethod
     def object_key(upload_id, *, dandiset: Dandiset):  # noqa: N805
@@ -49,7 +51,11 @@ class BaseUpload(TimeStampedModel):
         upload_id = uuid4()
         object_key = cls.object_key(upload_id, dandiset=dandiset)
         multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
-            object_key, size
+            object_key,
+            size,
+            # The upload HTTP API does not pass the file name or content type, and it would be a
+            # breaking change to start requiring this.
+            'application/octet-stream',
         )
 
         upload = cls(

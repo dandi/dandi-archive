@@ -1,7 +1,6 @@
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, F, OuterRef, Subquery, Sum
+from django.db.models import Count, Max, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
@@ -52,14 +51,14 @@ class DandisetFilterBackend(filters.OrderingFilter):
             # ordering can be either 'created' or '-created', so test for both
             if ordering.endswith('id'):
                 return queryset.order_by(ordering)
-            elif ordering.endswith('name'):
+            if ordering.endswith('name'):
                 # name refers to the name of the most recent version, so a subquery is required
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
                     '-created'
                 )[:1]
                 queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
                 return queryset.order_by(ordering)
-            elif ordering.endswith('modified'):
+            if ordering.endswith('modified'):
                 # modified refers to the modification timestamp of the most
                 # recent version, so a subquery is required
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
@@ -71,7 +70,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     modified_version=Subquery(latest_version.values('modified'))
                 )
                 return queryset.order_by(f'{ordering}_version')
-            elif ordering.endswith('size'):
+            if ordering.endswith('size'):
                 latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
                     '-created'
                 )[:1]
@@ -147,80 +146,71 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         lookup_url = self.kwargs[self.lookup_url_kwarg]
         try:
             lookup_value = int(lookup_url)
-        except ValueError:
-            raise Http404('Not a valid identifier.')
+        except ValueError as e:
+            raise Http404('Not a valid identifier.') from e
         self.kwargs[self.lookup_url_kwarg] = lookup_value
 
         dandiset = super().get_object()
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
-                raise NotAuthenticated()
+                raise NotAuthenticated
             if not self.request.user.has_perm('owner', dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
         return dandiset
 
     @staticmethod
     def _get_dandiset_to_version_map(dandisets):
+        """Map Dandiset IDs to that dandiset's draft and most recently published version."""
         relevant_versions = (
             Version.objects.select_related('dandiset')
             .filter(dandiset__in=dandisets)
             .order_by('-version', '-modified')
         )
 
-        # Get all published versions
-        latest_dandiset_version = (
-            Version.objects.exclude(version='draft')
-            .order_by('-version')
-            .filter(dandiset_id=OuterRef('dandiset_id'))
-            .values('version')[:1]
-        )
-        published = (
-            relevant_versions.exclude(version='draft')
-            .alias(latest=Subquery(latest_dandiset_version))
-            .filter(version=F('latest'))
-        )
+        # This query sums the size and file count for root paths, and groups by the version_id,
+        # ensuring that the queryset is unique w.r.t the version_id. For some reason, the
+        # `order_by` clause is necessary to ensure this grouping
+        version_stats = {
+            entry['version_id']: entry
+            for entry in get_root_paths_many(versions=relevant_versions)
+            .values('version_id')
+            .annotate(total_size=Sum('aggregate_size'), num_assets=Sum('aggregate_files'))
+            .order_by()
+        }
 
-        # Get all draft versions
-        drafts = relevant_versions.filter(version='draft')
-
-        # Union published with drafts
-        versions = published.union(drafts).order_by('dandiset_id', '-version')
-
-        # Map version IDs to their stats
-        version_stats = {}
-        root_paths = get_root_paths_many(versions=relevant_versions)
-        for path in root_paths:
-            if path.version_id not in version_stats:
-                version_stats[path.version_id] = {'total_size': 0, 'num_assets': 0}
-            version_stats[path.version_id]['total_size'] += path.aggregate_size
-            version_stats[path.version_id]['num_assets'] += path.aggregate_files
-
-        # Create a map from dandiset IDs to their draft and published versions
-        # Because of above query, a max of 1 of each (per dandiset) will be present.
-        dandisets_to_versions = {}
-        for version in versions:
-            version: Version
-
-            # Annnotate with total size and asset count (with default)
+        def annotate_version(version: Version):
+            """Annotate a version with its aggregate stats."""
             stats = version_stats.get(version.id, {'total_size': 0, 'num_assets': 0})
             version.total_size = stats['total_size']
             version.num_assets = stats['num_assets']
 
-            # Ensure entry in map exists
-            if version.dandiset_id not in dandisets_to_versions:
-                dandisets_to_versions[version.dandiset_id] = {
-                    'draft': None,
-                    'published': None,
-                }
+        # Create a map from dandiset IDs to their draft and published versions
+        dandisets_to_versions = {}
 
-            # Add draft or latest version
-            entry = dandisets_to_versions[version.dandiset_id]
-            if version.version == 'draft' and entry['draft'] is None:
-                entry['draft'] = version
-            elif entry['published'] is None:
-                entry['published'] = version
+        # Annotate and store all draft versions
+        drafts = relevant_versions.filter(version='draft')
+        for version in drafts:
+            annotate_version(version)
+            dandisets_to_versions[version.dandiset_id] = {
+                'published': None,
+                'draft': version,
+            }
+
+        # This query retrieves the versions with the max id for every dandiset_id. Since version id
+        # is a autoincrementing field, it maps directly to the most recently published version.
+        latest_published = Version.objects.filter(
+            id__in=(
+                relevant_versions.values('dandiset_id')
+                .exclude(version='draft')
+                .annotate(id=Max('id'))
+                .values_list('id', flat=True)
+            )
+        )
+        for version in latest_published:
+            annotate_version(version)
+            dandisets_to_versions[version.dandiset_id]['published'] = version
 
         return dandisets_to_versions
 
@@ -235,7 +225,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         query_serializer.is_valid(raise_exception=True)
         query_filters = query_serializer.to_query_filters()
         relevant_assets = AssetSearch.objects.all()
-        for _, query_filter in query_filters.items():
+        for query_filter in query_filters.values():
             relevant_assets = relevant_assets.filter(query_filter)
         qs = self.get_queryset()
         dandisets = self.filter_queryset(qs).filter(id__in=relevant_assets.values('dandiset_id'))
@@ -246,9 +236,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             .filter(dandiset_id__in=[dandiset.id for dandiset in dandisets])
             .annotate(
                 **{
-                    filter_name: Count('asset_id', filter=filter)
-                    for filter_name, filter in query_filters.items()
-                    if filter != Q()
+                    query_filter_name: Count('asset_id', filter=query_filter_q)
+                    for query_filter_name, query_filter_q in query_filters.items()
+                    if query_filter_q != Q()
                 }
             )
         )
@@ -368,10 +358,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_description='Set the owners of a dandiset. The user performing this action must\
                                be an owner of the dandiset themself.',
     )
-    # TODO move these into a viewset
+    # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
     def users(self, request, dandiset__pk):
-        dandiset = self.get_object()
+        dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
@@ -381,42 +371,50 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
 
-            def get_user_or_400(username):
-                # SocialAccount uses the generic JSONField instead of the PostGres JSONFIELD,
-                # so it is not empowered to do a more powerful query like:
-                # SocialAccount.objects.get(extra_data__login=username)
-                # We resort to doing this awkward search instead.
-                for social_account in SocialAccount.objects.filter(extra_data__icontains=username):
-                    if social_account.extra_data['login'] == username:
-                        return social_account.user
-                else:
-                    try:
-                        return User.objects.get(username=username)
-                    except ObjectDoesNotExist:
-                        raise ValidationError(f'User {username} not found')
-
-            owners = [
-                get_user_or_400(username=owner['username']) for owner in serializer.validated_data
-            ]
-            if len(owners) < 1:
+            # Ensure not all owners removed
+            if not serializer.validated_data:
                 raise ValidationError('Cannot remove all draft owners')
 
+            # Get all owners that have the provided username in one of the two possible locations
+            usernames = [owner['username'] for owner in serializer.validated_data]
+            user_owners = list(User.objects.filter(username__in=usernames))
+            socialaccount_owners = list(
+                SocialAccount.objects.select_related('user').filter(extra_data__login__in=usernames)
+            )
+
+            # Check that all owners were found
+            if len(user_owners) + len(socialaccount_owners) < len(usernames):
+                username_set = {
+                    *(user.username for user in user_owners),
+                    *(owner.extra_data['login'] for owner in socialaccount_owners),
+                }
+
+                # Raise exception on first username in list that's not found
+                for username in usernames:
+                    if username not in username_set:
+                        raise ValidationError(f'User {username} not found')
+
+            # All owners found
+            owners = user_owners + [acc.user for acc in socialaccount_owners]
             removed_owners, added_owners = dandiset.set_owners(owners)
             dandiset.save()
 
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-        for owner in dandiset.owners:
+        for owner_user in dandiset.owners:
             try:
-                owner = SocialAccount.objects.get(user=owner)
-                owner_dict = {'username': owner.extra_data['login']}
-                if 'name' in owner.extra_data:
-                    owner_dict['name'] = owner.extra_data['name']
+                owner_account = SocialAccount.objects.get(user=owner_user)
+                owner_dict = {'username': owner_account.extra_data['login']}
+                if 'name' in owner_account.extra_data:
+                    owner_dict['name'] = owner_account.extra_data['name']
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
                 owners.append(
-                    {'username': owner.username, 'name': f'{owner.first_name} {owner.last_name}'}
+                    {
+                        'username': owner_user.username,
+                        'name': f'{owner_user.first_name} {owner_user.last_name}',
+                    }
                 )
         return Response(owners, status=status.HTTP_200_OK)

@@ -3,9 +3,9 @@ Define and register any scheduled celery tasks.
 
 This module is imported from celery.py in a post-app-load hook.
 """
+from collections.abc import Iterable
 from datetime import timedelta
 import time
-from typing import Iterable
 
 from celery import shared_task
 from celery.app.base import Celery
@@ -43,7 +43,7 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
         time.sleep(1 / max_per_second)
 
 
-@shared_task(soft_time_limit=10)
+@shared_task(soft_time_limit=60)
 def aggregate_assets_summary_task(version_id: int):
     version = Version.objects.get(id=version_id)
     version_aggregate_assets_summary(version)

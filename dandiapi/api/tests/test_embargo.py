@@ -58,7 +58,7 @@ EMPTY_PAGINATION = {
         ),
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_embargo_visibility(
     api_client,
     user,

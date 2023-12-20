@@ -11,7 +11,7 @@ from django.forms.models import BaseInlineFormSet
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from guardian.admin import GuardedModelAdmin
 
 from dandiapi.api.models import (
@@ -59,7 +59,7 @@ class UserAdmin(BaseUserAdmin):
             )
         )
 
-    @admin.action(description="Export selected users\' emails")
+    @admin.action(description="Export selected users' emails")
     def export_emails_to_plaintext(self, request, queryset):
         response = HttpResponse(content_type='text/plain')
         writer = csv.writer(response)
@@ -69,8 +69,10 @@ class UserAdmin(BaseUserAdmin):
 
     @admin.display(ordering='metadata__status')
     def status(self, obj):
-        return mark_safe(
-            f'<a href="{reverse("user-approval", args=[obj.username])}">{obj.metadata.status}</a>'
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('user-approval', args=[obj.username]),
+            obj.metadata.status,
         )
 
     @admin.display()
@@ -79,7 +81,7 @@ class UserAdmin(BaseUserAdmin):
         if social_account is None:
             return '(none)'
         gh_username: str = social_account_to_dict(social_account)['username']
-        return mark_safe(f'<a href="https://github.com/{gh_username}">{gh_username}</a>')
+        return format_html('<a href="https://github.com/{}">{}</a>', gh_username, gh_username)
 
 
 admin.site.unregister(User)
@@ -140,6 +142,7 @@ class VersionStatusFilter(admin.SimpleListFilter):
         status = self.value()
         if status:
             return queryset.filter(status=status)
+        return None
 
 
 @admin.register(Version)
@@ -164,9 +167,7 @@ class VersionAdmin(admin.ModelAdmin):
 
         # Using the `asset_count` property here results in N queries being made
         # for N versions. Instead, use annotation to make one query for N versions.
-        qs = qs.annotate(number_of_assets=Count('assets'))
-
-        return qs
+        return qs.annotate(number_of_assets=Count('assets'))
 
     def number_of_assets(self, obj):
         return obj.number_of_assets
@@ -232,5 +233,5 @@ class AssetAdmin(admin.ModelAdmin):
 
 @admin.register(Upload)
 class UploadAdmin(admin.ModelAdmin):
-    list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'modified', 'created']
+    list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'created']
     list_display_links = ['id', 'upload_id']

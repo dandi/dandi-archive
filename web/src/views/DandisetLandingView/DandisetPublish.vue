@@ -354,7 +354,7 @@ import moment from 'moment';
 
 import type { RawLocation } from 'vue-router';
 import { useRoute } from 'vue-router/composables';
-import { dandiRest, loggedIn as loggedInFunc, user as userFunc } from '@/rest';
+import { dandiRest, loggedIn as loggedInFunc, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import router from '@/router';
 import type { User, Version } from '@/types';
@@ -404,7 +404,6 @@ const otherVersions: ComputedRef<Version[]|undefined> = computed(
   ).sort(sortVersions),
 );
 
-const user: ComputedRef<User|null> = computed(userFunc);
 const loggedIn: ComputedRef<boolean> = computed(loggedInFunc);
 
 const isOwner: ComputedRef<boolean> = computed(

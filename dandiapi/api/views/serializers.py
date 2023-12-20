@@ -10,11 +10,11 @@ from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 from dandiapi.search.models import AssetSearch
 
 
-def extract_contact_person(version):
+def extract_contact_person(version: Version) -> str:
     """Extract a version's contact person from its metadata."""
     # TODO: move this logic into dandischema since it is schema-dependant
     contributors = version.metadata.get('contributor')
-    if contributors is not None:
+    if contributors is not None and isinstance(contributors, list):
         for contributor in contributors:
             name = contributor.get('name')
             role_names = contributor.get('roleName')
@@ -120,7 +120,7 @@ class DandisetListSerializer(DandisetSerializer):
     """The dandiset serializer to be used in the listing endpoint."""
 
     class Meta(DandisetSerializer.Meta):
-        fields = DandisetSerializer.Meta.fields + ['most_recent_published_version', 'draft_version']
+        fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
 
     def get_draft_version(self, dandiset):
         draft = self.context['dandisets'].get(dandiset.id, {}).get('draft')
@@ -156,7 +156,7 @@ class DandisetSearchResultListSerializer(DandisetListSerializer):
     asset_counts = serializers.SerializerMethodField(method_name='get_asset_counts')
 
     class Meta(DandisetListSerializer.Meta):
-        fields = DandisetListSerializer.Meta.fields + ['asset_counts']
+        fields = [*DandisetListSerializer.Meta.fields, 'asset_counts']
 
     def get_asset_counts(self, dandiset):
         return self.context['asset_counts'].get(dandiset.id, {})
@@ -164,7 +164,7 @@ class DandisetSearchResultListSerializer(DandisetListSerializer):
 
 class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
-        fields = DandisetSerializer.Meta.fields + ['most_recent_published_version', 'draft_version']
+        fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
 
     most_recent_published_version = VersionSerializer(read_only=True)
     draft_version = VersionSerializer(read_only=True)
@@ -266,7 +266,8 @@ class VersionDetailSerializer(VersionSerializer):
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
 
     class Meta(VersionSerializer.Meta):
-        fields = VersionSerializer.Meta.fields + [
+        fields = [
+            *VersionSerializer.Meta.fields,
             'asset_validation_errors',
             'version_validation_errors',
             'metadata',
@@ -351,7 +352,7 @@ class AssetSerializer(serializers.ModelSerializer):
 
 class AssetDetailSerializer(AssetSerializer):
     class Meta(AssetSerializer.Meta):
-        fields = AssetSerializer.Meta.fields + ['metadata']
+        fields = [*AssetSerializer.Meta.fields, 'metadata']
 
 
 class AssetListSerializer(serializers.Serializer):

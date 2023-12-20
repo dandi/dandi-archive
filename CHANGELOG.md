@@ -1,3 +1,278 @@
+# v0.3.67 (Thu Dec 14 2023)
+
+#### 🐛 Bug Fix
+
+- Convert `rest.ts` to composition API [#1774](https://github.com/dandi/dandi-archive/pull/1774) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add login redirect to user dashboard [#1781](https://github.com/dandi/dandi-archive/pull/1781) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add embargo re-design doc [#1772](https://github.com/dandi/dandi-archive/pull/1772) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Ensure that creating the default OAuth2 Application works on staging [#1779](https://github.com/dandi/dandi-archive/pull/1779) ([@brianhelba](https://github.com/brianhelba))
+- Squash migrations for "api", "analytics", and "zarr" apps [#1777](https://github.com/dandi/dandi-archive/pull/1777) ([@brianhelba](https://github.com/brianhelba))
+- Fix issues found by Ruff [#1776](https://github.com/dandi/dandi-archive/pull/1776) ([@brianhelba](https://github.com/brianhelba))
+- Switch frontend build process from Webpack to Vite [#1725](https://github.com/dandi/dandi-archive/pull/1725) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix FBT001 Boolean-typed positional argument in function definition [#1765](https://github.com/dandi/dandi-archive/pull/1765) ([@brianhelba](https://github.com/brianhelba))
+- Fix RET505 Unnecessary `else` / `elif` after `return` statement [#1752](https://github.com/dandi/dandi-archive/pull/1752) ([@brianhelba](https://github.com/brianhelba))
+- Avoid clobbering version metadata when calculating assets summary [#1557](https://github.com/dandi/dandi-archive/pull/1557) ([@danlamanna](https://github.com/danlamanna))
+- Add upload/asset blob garbage collection design doc [#1733](https://github.com/dandi/dandi-archive/pull/1733) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix DJ008 Model does not define `__str__` method [#1767](https://github.com/dandi/dandi-archive/pull/1767) ([@brianhelba](https://github.com/brianhelba))
+- [FIX] serviceUrl replacement [#1770](https://github.com/dandi/dandi-archive/pull/1770) ([@magland](https://github.com/magland))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/setup-python from 4 to 5 [#1780](https://github.com/dandi/dandi-archive/pull/1780) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- `test_zarr.py`: Import `EMPTY_CHECKSUM` from `zarr_checksum` [#1775](https://github.com/dandi/dandi-archive/pull/1775) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 7
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.66 (Fri Dec 01 2023)
+
+#### 🐛 Bug Fix
+
+- Fix invalid contributors causing crash [#1771](https://github.com/dandi/dandi-archive/pull/1771) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove unnecessary quote escaping [#1766](https://github.com/dandi/dandi-archive/pull/1766) ([@brianhelba](https://github.com/brianhelba))
+- Fix a test failure [#1768](https://github.com/dandi/dandi-archive/pull/1768) ([@brianhelba](https://github.com/brianhelba))
+- Fix issues found by Ruff [#1763](https://github.com/dandi/dandi-archive/pull/1763) ([@brianhelba](https://github.com/brianhelba))
+- WIP: Fix RET503 Missing explicit `return` at the end of function able to return non-`None` value [#1762](https://github.com/dandi/dandi-archive/pull/1762) ([@brianhelba](https://github.com/brianhelba))
+- Fix issues found by Ruff [#1748](https://github.com/dandi/dandi-archive/pull/1748) ([@brianhelba](https://github.com/brianhelba))
+- Fix G004 Logging statement uses f-string [#1750](https://github.com/dandi/dandi-archive/pull/1750) ([@brianhelba](https://github.com/brianhelba))
+- Fix S113 Probable use of requests call without timeout [#1751](https://github.com/dandi/dandi-archive/pull/1751) ([@brianhelba](https://github.com/brianhelba))
+- Upgrade django-s3-file-field [#1735](https://github.com/dandi/dandi-archive/pull/1735) ([@brianhelba](https://github.com/brianhelba))
+- Fix N818 Exception name should be named with an Error suffix [#1749](https://github.com/dandi/dandi-archive/pull/1749) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.65 (Wed Nov 22 2023)
+
+#### 🐛 Bug Fix
+
+- Check that path is an asset before proceeding [#1759](https://github.com/dandi/dandi-archive/pull/1759) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+
+---
+
+# v0.3.64 (Wed Nov 22 2023)
+
+#### 🐛 Bug Fix
+
+- adjust neurosift service endpoint URL, passing additional info [#1706](https://github.com/dandi/dandi-archive/pull/1706) ([@magland](https://github.com/magland) [@waxlamp](https://github.com/waxlamp))
+- Optimize dandiset owner PUT endpoint [#1737](https://github.com/dandi/dandi-archive/pull/1737) ([@mvandenburgh](https://github.com/mvandenburgh) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.3.63 (Tue Nov 21 2023)
+
+#### 🐛 Bug Fix
+
+- Fix race condition in version PUT endpoint [#1757](https://github.com/dandi/dandi-archive/pull/1757) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.62 (Fri Nov 17 2023)
+
+#### 🐛 Bug Fix
+
+- [DATALAD RUNCMD] Replace youtube URL with the one with @dandiarchive [#1754](https://github.com/dandi/dandi-archive/pull/1754) ([@yarikoptic](https://github.com/yarikoptic))
+- Fix style issues found by Ruff [#1741](https://github.com/dandi/dandi-archive/pull/1741) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.3.61 (Thu Nov 09 2023)
+
+#### 🐛 Bug Fix
+
+- Fix S308 Use of `mark_safe` may expose cross-site scripting vulnerabilities [#1742](https://github.com/dandi/dandi-archive/pull/1742) ([@brianhelba](https://github.com/brianhelba))
+- Clean up and improve the performance of manifest file creation [#1738](https://github.com/dandi/dandi-archive/pull/1738) ([@brianhelba](https://github.com/brianhelba))
+- Fix PTH118 `os.path.join()` should be replaced by `Path` with `/` operator [#1743](https://github.com/dandi/dandi-archive/pull/1743) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 1
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+
+---
+
+# v0.3.60 (Tue Nov 07 2023)
+
+#### 🐛 Bug Fix
+
+- Add UPLOADED state to Zarr models [#1698](https://github.com/dandi/dandi-archive/pull/1698) ([@AlmightyYakob](https://github.com/AlmightyYakob) [@danlamanna](https://github.com/danlamanna))
+- Require Python 3.11 [#1736](https://github.com/dandi/dandi-archive/pull/1736) ([@brianhelba](https://github.com/brianhelba))
+- Add a note to registration page that no account is necessary to access public data [#1696](https://github.com/dandi/dandi-archive/pull/1696) ([@yarikoptic](https://github.com/yarikoptic) [@satra](https://github.com/satra))
+
+#### 🧪 Tests
+
+- Revert "Skip broken dandi-cli tests" - fixed up in dandi-cli 0.57.0 [#1732](https://github.com/dandi/dandi-archive/pull/1732) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 5
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.3.59 (Fri Oct 27 2023)
+
+#### 🐛 Bug Fix
+
+- Optimize dandiset listing endpoint [#1730](https://github.com/dandi/dandi-archive/pull/1730) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Update `django-composed-configuration` [#1731](https://github.com/dandi/dandi-archive/pull/1731) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/setup-node from 3 to 4 [#1726](https://github.com/dandi/dandi-archive/pull/1726) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.58 (Wed Oct 25 2023)
+
+#### 🐛 Bug Fix
+
+- Add sentry profiling [#1728](https://github.com/dandi/dandi-archive/pull/1728) ([@danlamanna](https://github.com/danlamanna))
+- Remove unnecessary atomic decorators from tasks [#1720](https://github.com/dandi/dandi-archive/pull/1720) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove pinning on django-storages[boto3] [#1717](https://github.com/dandi/dandi-archive/pull/1717) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporarily skip broken dandi-cli tests [#1718](https://github.com/dandi/dandi-archive/pull/1718) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove unused `modified` field on `Upload` model [#1713](https://github.com/dandi/dandi-archive/pull/1713) ([@mvandenburgh](https://github.com/mvandenburgh))
+- File page index fix [#1704](https://github.com/dandi/dandi-archive/pull/1704) ([@marySalvi](https://github.com/marySalvi))
+- Fix `requests` type errors [#1714](https://github.com/dandi/dandi-archive/pull/1714) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.57 (Mon Oct 16 2023)
+
+#### 🐛 Bug Fix
+
+- Upgrade `dandischema` dependency [#1703](https://github.com/dandi/dandi-archive/pull/1703) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.56 (Thu Oct 12 2023)
+
+#### 🐛 Bug Fix
+
+- Align Postgres tables/indexes/constraints with Django [#1697](https://github.com/dandi/dandi-archive/pull/1697) ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Prevent CHANGELOG.md from triggering staging deploy [#1699](https://github.com/dandi/dandi-archive/pull/1699) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.3.55 (Wed Oct 04 2023)
+
+#### 🐛 Bug Fix
+
+- Enable path-only changes to metadata to trigger asset change [#1689](https://github.com/dandi/dandi-archive/pull/1689) ([@waxlamp](https://github.com/waxlamp) [@AlmightyYakob](https://github.com/AlmightyYakob))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@AlmightyYakob](https://github.com/AlmightyYakob))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.3.54 (Wed Oct 04 2023)
+
+#### 🐛 Bug Fix
+
+- Use correct asset download URL for external services [#1692](https://github.com/dandi/dandi-archive/pull/1692) ([@waxlamp](https://github.com/waxlamp))
+- Fix possible race condition in deployment actions [#1679](https://github.com/dandi/dandi-archive/pull/1679) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.3.53 (Tue Oct 03 2023)
+
+#### 🐛 Bug Fix
+
+- Increase task timeouts for manifests/asset summaries [#1695](https://github.com/dandi/dandi-archive/pull/1695) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
+# v0.3.52 (Mon Oct 02 2023)
+
+#### 🐛 Bug Fix
+
+- Remove n+1 queries when using full_metadata [#1693](https://github.com/dandi/dandi-archive/pull/1693) ([@danlamanna](https://github.com/danlamanna))
+- Fix codespell errors [#1694](https://github.com/dandi/dandi-archive/pull/1694) ([@danlamanna](https://github.com/danlamanna))
+- Pin django-storages temporarily [#1691](https://github.com/dandi/dandi-archive/pull/1691) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Pin django-allauth to minimum version [#1680](https://github.com/dandi/dandi-archive/pull/1680) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporary fix for breaking change in `django-allauth` [#1678](https://github.com/dandi/dandi-archive/pull/1678) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Design doc for "undelete" feature [#1674](https://github.com/dandi/dandi-archive/pull/1674) ([@mvandenburgh](https://github.com/mvandenburgh) [@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/checkout from 3 to 4 [#1676](https://github.com/dandi/dandi-archive/pull/1676) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.51 (Mon Jul 31 2023)
 
 #### 🐛 Bug Fix

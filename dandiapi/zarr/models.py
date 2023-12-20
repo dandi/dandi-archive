@@ -19,13 +19,14 @@ logger = logging.Logger(name=__name__)
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'
+    UPLOADED = 'Uploaded'
     INGESTING = 'Ingesting'
     COMPLETE = 'Complete'
 
 
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
-    INGEST_ERROR_MSG = 'Zarr archive already ingested'
+    INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
 
     class Meta:
         get_latest_by = 'modified'
@@ -39,7 +40,11 @@ class BaseZarrArchive(TimeStampedModel):
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
                 check=models.Q(
                     checksum__isnull=True,
-                    status__in=[ZarrArchiveStatus.PENDING, ZarrArchiveStatus.INGESTING],
+                    status__in=[
+                        ZarrArchiveStatus.PENDING,
+                        ZarrArchiveStatus.UPLOADED,
+                        ZarrArchiveStatus.INGESTING,
+                    ],
                 )
                 | models.Q(checksum__isnull=False, status=ZarrArchiveStatus.COMPLETE),
             ),
@@ -65,8 +70,7 @@ class BaseZarrArchive(TimeStampedModel):
         signed_url = self.storage.url(self.s3_path(''))
         # Strip off the query parameters from the presigning, as they are different every time
         parsed = urlparse(signed_url)
-        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
-        return s3_url
+        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
 
     def generate_upload_urls(self, path_md5s: list[dict]):
         return [
@@ -93,21 +97,15 @@ class BaseZarrArchive(TimeStampedModel):
 
 
 class ZarrArchive(BaseZarrArchive):
-    class Meta(BaseZarrArchive.Meta):
-        db_table = 'api_zarrarchive'
-
     storage = get_storage()
     dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{str(zarr_path)}'  # noqa: E501
+        return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{zarr_path}'  # noqa: E501
 
 
 class EmbargoedZarrArchive(BaseZarrArchive):
-    class Meta(BaseZarrArchive.Meta):
-        db_table = 'api_embargoedzarrarchive'
-
     storage = get_embargo_storage()
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
@@ -115,4 +113,4 @@ class EmbargoedZarrArchive(BaseZarrArchive):
 
     def s3_path(self, zarr_path: str | Path):
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.dandiset.identifier}/{self.zarr_id}/{str(zarr_path)}'  # noqa: E501
+        return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'  # noqa: E501

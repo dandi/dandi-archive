@@ -13,11 +13,11 @@ from dandiapi.api.asset_paths import (
 )
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
+from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
 from dandiapi.api.tasks import publish_dandiset_task
 
 
-@pytest.fixture
+@pytest.fixture()
 def ingested_asset(draft_version_factory, asset_factory) -> Asset:
     asset: Asset = asset_factory()
     version: Version = draft_version_factory()
@@ -30,7 +30,7 @@ def ingested_asset(draft_version_factory, asset_factory) -> Asset:
 
 
 @pytest.mark.parametrize(
-    'path,expected',
+    ('path', 'expected'),
     [
         ('foo.txt', ['foo.txt']),
         ('foo/bar.txt', ['foo', 'foo/bar.txt']),
@@ -41,7 +41,7 @@ def test_extract_paths(path, expected):
     assert extract_paths(path) == expected
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset(draft_version_factory, asset_factory):
     # Create asset with version
     asset: Asset = asset_factory()
@@ -82,7 +82,7 @@ def test_asset_path_add_asset(draft_version_factory, asset_factory):
         )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
     # Create asset with version
     asset: Asset = asset_factory()
@@ -99,7 +99,7 @@ def test_asset_path_add_asset_idempotent(draft_version_factory, asset_factory):
     assert path.aggregate_size == asset.size
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_factory):
     # Create asset with version
     asset1: Asset = asset_factory()
@@ -113,14 +113,14 @@ def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_fact
     assert version.asset_paths.filter(asset__isnull=False).count() == 1
 
     # Ensure that adding asset2 raises the correct exception
-    with pytest.raises(AssetAlreadyExists):
+    with pytest.raises(AssetAlreadyExistsError):
         add_asset_paths(asset2, version)
 
     # Ensure that there no new asset paths created
     assert version.asset_paths.filter(asset__isnull=False).count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -154,7 +154,7 @@ def test_asset_path_add_version_asset_paths(draft_version_factory, asset_factory
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -176,7 +176,7 @@ def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, as
         assert path.aggregate_size == path.asset.size
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -195,7 +195,7 @@ def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory)
     assert path.aggregate_files == 2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_delete_asset(ingested_asset):
     asset = ingested_asset
     version = ingested_asset.versions.first()
@@ -208,7 +208,7 @@ def test_asset_path_delete_asset(ingested_asset):
     assert not AssetPath.objects.filter(path=asset.path, version=version).exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_delete_asset_idempotent(ingested_asset):
     asset = ingested_asset
     version = ingested_asset.versions.first()
@@ -218,7 +218,7 @@ def test_asset_path_delete_asset_idempotent(ingested_asset):
     delete_asset_paths(asset, version)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_update_asset(draft_version_factory, asset_factory):
     # Create asset with version
     version: Version = draft_version_factory()
@@ -246,7 +246,7 @@ def test_asset_path_update_asset(draft_version_factory, asset_factory):
         assert AssetPath.objects.filter(path=path, version=version).exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_delete_asset_shared_paths(
     draft_version_factory, asset_factory, asset_blob_factory
 ):
@@ -270,7 +270,7 @@ def test_asset_path_delete_asset_shared_paths(
     assert path.aggregate_files == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     assets = [asset_factory(path=path) for path in ['foo/bar.txt', 'foo/baz.txt', 'bar/foo.txt']]
@@ -284,15 +284,15 @@ def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     # Assert that there are two folders
     assert qs.count() == 2
     assert sorted([x.path for x in qs]) == ['bar', 'foo']
-    assert all([x.asset is None for x in qs])
+    assert all(x.asset is None for x in qs)
 
     # Search foo, assert there are two files
     qs = search_asset_paths('foo', version)
     assert qs.count() == 2
-    assert all([x.asset is not None for x in qs])
+    assert all(x.asset is not None for x in qs)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_publish_version(draft_version_factory, asset_factory):
     version: Version = draft_version_factory()
     asset = asset_factory(path='foo/bar.txt', status=Asset.Status.VALID)
@@ -323,7 +323,7 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory):
         AssetPath.objects.get(path=path, version=published_version)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
     version = draft_version_factory()
     version.assets.add(asset_factory(path='a'))
@@ -335,7 +335,7 @@ def test_asset_path_get_root_paths(draft_version_factory, asset_factory):
     assert get_root_paths(version).count() == 4
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
     version = draft_version_factory()
     version.assets.add(asset_factory(path='a'))

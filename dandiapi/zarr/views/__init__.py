@@ -132,14 +132,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
         )
         if not self.request.user.has_perm('owner', dandiset):
-            raise PermissionDenied()
+            raise PermissionDenied
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         try:
             zarr_archive.save()
-        except IntegrityError:
-            raise ValidationError('Zarr already exists')
+        except IntegrityError as e:
+            raise ValidationError('Zarr already exists') from e
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -164,11 +164,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
 
             # Don't ingest if already ingested/ingesting
             if zarr_archive.status != ZarrArchiveStatus.PENDING:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
+
+            zarr_archive.status = ZarrArchiveStatus.UPLOADED
+            zarr_archive.save()
 
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
@@ -265,18 +268,18 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
-                raise PermissionDenied()
+                raise PermissionDenied
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
 
             # Generate presigned urls
-            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
+            logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
             urls = zarr_archive.generate_upload_urls(serializer.validated_data)
 
             # Set status back to pending, since with these URLs the zarr could have been changed
@@ -284,7 +287,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive.save()
 
         # Return presigned urls
-        logger.info(f'Presigned {len(urls)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
+        logger.info(
+            'Presigned %d URLs to upload to zarr archive %s', len(urls), zarr_archive.zarr_id
+        )
         return Response(urls, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -301,12 +306,12 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update()
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if zarr_archive.status == ZarrArchiveStatus.INGESTING:
+            if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]

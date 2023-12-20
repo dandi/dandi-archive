@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out this repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Build Docker image
         run: |
@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         python:
-          - "3.10"
+          - "3.11"
         dandi-version:
           - release
           - master
@@ -58,7 +58,7 @@ jobs:
         run: docker image load -i dandiarchive-api.tgz
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 

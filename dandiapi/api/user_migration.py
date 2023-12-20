@@ -13,9 +13,9 @@ def copy_ownership(placeholder_user, user):
     from dandiapi.api.models import Dandiset
 
     owned_dandisets = get_objects_for_user(placeholder_user, 'owner', Dandiset)
-    logger.info(f'{placeholder_user} owns {owned_dandisets}')
+    logger.info('%s owns %s', placeholder_user, owned_dandisets)
     for dandiset in owned_dandisets:
-        logger.info(f'Moving ownership on {dandiset.identifier}')
+        logger.info('Moving ownership on %s', dandiset.identifier)
         assign_perm('owner', user, dandiset)
         remove_perm('owner', placeholder_user, dandiset)
 
@@ -31,14 +31,14 @@ def depose_placeholder(user):
         # No placeholder user, nothing to do
         return
 
-    logger.info(f'Replacing {placeholder_user} with {user}')
+    logger.info('Replacing %s with %s', placeholder_user, user)
     copy_ownership(placeholder_user, user)
     # The placeholder user has no further purpose, delete it
-    logger.info(f'Deleting {placeholder_user}')
+    logger.info('Deleting %s', placeholder_user)
     placeholder_user.delete()
 
 
 @receiver(user_logged_in)
-def user_log_in_listener(sender, user, **kwargs):
+def user_log_in_listener(*, sender, user, **kwargs):
     """Attempt replace a placeholder user every time a real user logs in."""
     depose_placeholder(user)

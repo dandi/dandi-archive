@@ -57,7 +57,9 @@ class SocialAccountFactory(factory.django.DjangoModelFactory):
         # Supply a fake created date at least 1 year before now
         created = (
             faker.Faker()
-            .date_time_between(end_date=datetime.datetime.now() - datetime.timedelta(days=365))
+            .date_time_between(
+                end_date=datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365)
+            )
             .isoformat()
         )
 
@@ -124,7 +126,7 @@ class PublishedVersionFactory(BaseVersionFactory):
     def _create(cls, *args, **kwargs):
         version: Version = super()._create(*args, **kwargs)
         version.doi = f'10.80507/dandi.{version.dandiset.identifier}/{version.version}'
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         version.metadata = {
             **version.metadata,
             'publishedBy': version.published_by(now),

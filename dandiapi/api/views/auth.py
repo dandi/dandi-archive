@@ -71,7 +71,7 @@ def authorize_view(request: HttpRequest) -> HttpResponse:
             f'{reverse("user-questionnaire")}'
             f'?{request.META["QUERY_STRING"]}&QUESTIONS={json.dumps(NEW_USER_QUESTIONS)}'
         )
-    elif not user.is_anonymous and (not user.first_name or not user.last_name):
+    if not user.is_anonymous and (not user.first_name or not user.last_name):
         # if this user doesn't have a first/last name available, redirect them to a
         # form to provide those before they can log in.
         return HttpResponseRedirect(
@@ -147,8 +147,8 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
     try:
         # questions to display in the form
         questions = json.loads(request.GET.get('QUESTIONS'))
-    except (JSONDecodeError, TypeError):
-        raise Http404()
+    except (JSONDecodeError, TypeError) as e:
+        raise Http404 from e
 
     return render(
         request,

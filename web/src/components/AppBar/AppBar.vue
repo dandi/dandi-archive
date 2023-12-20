@@ -55,7 +55,7 @@
         alt="DANDI logo"
         contain
         width="100px"
-        src="@/assets/logo.svg"
+        :src="logo"
         class="mr-3"
       />
     </router-link>
@@ -94,7 +94,7 @@
     <div v-if="!insideIFrame">
       <template v-if="loggedIn">
         <v-btn
-          :disabled="!dandiRest.user?.approved"
+          :disabled="!user?.approved"
           :to="{ name: 'createDandiset' }"
           exact
           class="mx-3"
@@ -139,11 +139,13 @@ import {
   loggedIn as loggedInFunc,
   insideIFrame as insideIFrameFunc,
   dandiRest,
+  user,
 } from '@/rest';
 import {
   dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
+import logo from '@/assets/logo.svg';
 
 interface NavigationItem {
   text: string,

@@ -27,7 +27,7 @@ class DandiMixin(ConfigMixin):
     DANDI_ALLOW_LOCALHOST_URLS = False
 
     # Needed for Sentry Performance to work in frontend
-    CORS_ALLOW_HEADERS = default_headers + ('baggage', 'sentry-trace')
+    CORS_ALLOW_HEADERS = (*default_headers, 'baggage', 'sentry-trace')
 
     @staticmethod
     def mutate_configuration(configuration: type[ComposedConfiguration]):
@@ -37,7 +37,8 @@ class DandiMixin(ConfigMixin):
             'dandiapi.api.apps.PublishConfig',
             'dandiapi.search.apps.SearchConfig',
             'dandiapi.zarr.apps.ZarrConfig',
-        ] + configuration.INSTALLED_APPS
+            *configuration.INSTALLED_APPS,
+        ]
 
         # Install guardian
         configuration.INSTALLED_APPS += ['guardian']
@@ -51,7 +52,7 @@ class DandiMixin(ConfigMixin):
         # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # TODO remove TokenAuthentication, it is only here to support
+            # TODO: remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]

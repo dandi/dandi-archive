@@ -1,6 +1,6 @@
 from django.conf import settings
 import djclick as click
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
 
 from dandiapi.api.models.upload import AssetBlob
 
@@ -8,13 +8,13 @@ BUCKET = settings.DANDI_DANDISETS_BUCKET_NAME
 
 
 def s3_client():
-    storage = S3Boto3Storage(bucket_name=BUCKET)
+    storage = S3Storage(bucket_name=BUCKET)
     return storage.connection.meta.client
 
 
 @click.command()
 @click.option('--delete', is_flag=True, default=False)
-def cleanup_blobs(delete: bool):
+def cleanup_blobs(*, delete: bool):
     client = s3_client()
     # Ignore pagination for now, hopefully there aren't enough objects to matter
     objs = client.list_object_versions(Bucket=BUCKET, Prefix='dev/')

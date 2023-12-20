@@ -5,7 +5,7 @@ from dandiapi.api.models.version import Version
 
 
 def _normalize_version_metadata(
-    raw_version_metadata: dict, embargo: bool, name: str, email: str
+    raw_version_metadata: dict, name: str, email: str, *, embargo: bool
 ) -> dict:
     """
     Take raw version metadata and convert it into something suitable to be used in a formal Version.
@@ -41,6 +41,4 @@ def _normalize_version_metadata(
     }
     # Run the version_metadata through the pydantic model to automatically include any boilerplate
     # like the access or repository fields
-    version_metadata = PydanticDandiset.unvalidated(**version_metadata).json_dict()
-
-    return version_metadata
+    return PydanticDandiset.unvalidated(**version_metadata).json_dict()

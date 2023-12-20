@@ -7,7 +7,10 @@ from django.utils import timezone
 import jsonschema.exceptions
 
 from dandiapi.api.models import Asset, Version
-from dandiapi.api.services.metadata.exceptions import AssetHasBeenPublished, VersionHasBeenPublished
+from dandiapi.api.services.metadata.exceptions import (
+    AssetHasBeenPublishedError,
+    VersionHasBeenPublishedError,
+)
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
 
 logger = get_task_logger(__name__)
@@ -38,7 +41,7 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 
     # Published assets are immutable
     if asset.published:
-        raise AssetHasBeenPublished()
+        raise AssetHasBeenPublishedError
 
     # track the state of the asset before to use optimistic locking
     asset_state = asset.status
@@ -76,18 +79,22 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 
 def version_aggregate_assets_summary(version: Version) -> None:
     if version.version != 'draft':
-        raise VersionHasBeenPublished()
+        raise VersionHasBeenPublishedError
 
-    version.metadata['assetsSummary'] = aggregate_assets_summary(
-        (
-            asset.full_metadata
-            for asset in version.assets.filter(status=Asset.Status.VALID).iterator()
-        )
+    assets_summary = aggregate_assets_summary(
+        asset.full_metadata
+        for asset in version.assets.filter(status=Asset.Status.VALID)
+        .select_related('blob', 'zarr')
+        .iterator()
     )
 
-    Version.objects.filter(id=version.id, version='draft').update(
-        modified=timezone.now(), metadata=version.metadata
+    updated_metadata = {**version.metadata, 'assetsSummary': assets_summary}
+
+    updated_count = Version.objects.filter(id=version.id, metadata=version.metadata).update(
+        modified=timezone.now(), metadata=updated_metadata
     )
+    if updated_count == 0:
+        logger.info('Skipped updating assetsSummary for version %s', version.id)
 
 
 def validate_version_metadata(*, version: Version) -> None:
@@ -117,7 +124,7 @@ def validate_version_metadata(*, version: Version) -> None:
 
     # Published versions are immutable
     if version.version != 'draft':
-        raise VersionHasBeenPublished()
+        raise VersionHasBeenPublishedError
 
     with transaction.atomic():
         # validating version metadata needs to lock the version to avoid racing with

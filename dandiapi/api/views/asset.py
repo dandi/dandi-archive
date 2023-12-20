@@ -8,14 +8,14 @@ from dandiapi.api.services.asset import (
     change_asset,
     remove_asset_from_version,
 )
-from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiable
+from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.zarr.models import ZarrArchive
 
 try:
-    from storages.backends.s3boto3 import S3Boto3Storage
+    from storages.backends.s3 import S3Storage
 except ImportError:
     # This should only be used for type interrogation, never instantiation
-    S3Boto3Storage = type('FakeS3Boto3Storage', (), {})
+    S3Storage = type('FakeS3Storage', (), {})
 try:
     from minio_storage.storage import MinioStorage
 except ImportError:
@@ -89,10 +89,10 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             if asset.embargoed_blob is not None:
                 if not self.request.user.is_authenticated:
                     # Clients must be authenticated to access it
-                    raise NotAuthenticated()
+                    raise NotAuthenticated
                 if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
                     # The user does not have ownership permission
-                    raise PermissionDenied()
+                    raise PermissionDenied
 
     def get_queryset(self):
         self.raise_if_unauthorized()
@@ -102,7 +102,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         responses={
             200: 'The asset metadata.',
         },
-        operation_summary="Get an asset\'s metadata",
+        operation_summary="Get an asset's metadata",
     )
     def retrieve(self, request, **kwargs):
         asset = self.get_object()
@@ -149,7 +149,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             return HttpResponseRedirect(
                 storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
             )
-        elif content_disposition == 'inline':
+        if content_disposition == 'inline':
             url = storage.generate_presigned_inline_url(
                 asset_blob.blob.name,
                 asset_basename,
@@ -167,6 +167,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 )
 
             return HttpResponseRedirect(url)
+        raise TypeError('Invalid content_disposition: %s', content_disposition)
 
     @swagger_auto_schema(
         method='GET',
@@ -236,10 +237,10 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         if version.dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
-                raise NotAuthenticated()
+                raise NotAuthenticated
             if not self.request.user.has_perm('owner', version.dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
 
     # Redefine info and download actions to update swagger manual_parameters
 
@@ -337,7 +338,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=versions__version,
         )
         if version.version != 'draft':
-            raise DraftDandisetNotModifiable()
+            raise DraftDandisetNotModifiableError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)

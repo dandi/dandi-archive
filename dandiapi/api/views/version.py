@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -49,10 +50,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
-                raise NotAuthenticated()
+                raise NotAuthenticated
             if not self.request.user.has_perm('owner', dandiset):
                 # The user does not have ownership permission
-                raise PermissionDenied()
+                raise PermissionDenied
         return super().get_queryset()
 
     @swagger_auto_schema(
@@ -99,16 +100,21 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
         # Strip away any computed fields from current and new metadata
         new_metadata = Version.strip_metadata(new_metadata)
-        old_metadata = Version.strip_metadata(version.metadata)
 
-        # Only save version if metadata has actually changed
-        if (name, new_metadata) != (version.name, old_metadata):
-            version.name = name
-            version.metadata = new_metadata
-            version.status = Version.Status.PENDING
-            version.save()
+        with transaction.atomic():
+            # Re-query for the version, this time using a SELECT FOR UPDATE to
+            # ensure the object doesn't change out from under us.
+            locked_version = Version.objects.select_for_update().get(id=version.id)
+            old_metadata = Version.strip_metadata(locked_version.metadata)
 
-        serializer = VersionDetailSerializer(instance=version)
+            # Only save version if metadata has actually changed
+            if (name, new_metadata) != (locked_version.name, old_metadata):
+                locked_version.name = name
+                locked_version.metadata = new_metadata
+                locked_version.status = Version.Status.PENDING
+                locked_version.save()
+
+        serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -144,14 +150,13 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Cannot delete draft versions',
                 status=status.HTTP_403_FORBIDDEN,
             )
-        elif not request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 'Cannot delete published versions',
                 status=status.HTTP_403_FORBIDDEN,
             )
-        else:
-            doi = version.doi
-            version.delete()
-            if doi is not None:
-                delete_doi_task.delay(doi)
-            return Response(None, status=status.HTTP_204_NO_CONTENT)
+        doi = version.doi
+        version.delete()
+        if doi is not None:
+            delete_doi_task.delay(doi)
+        return Response(None, status=status.HTTP_204_NO_CONTENT)

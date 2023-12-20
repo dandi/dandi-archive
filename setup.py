@@ -31,18 +31,20 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python',
     ],
-    python_requires='>=3.10',
+    python_requires='>=3.11',
     packages=find_namespace_packages(include=['dandiapi*']),
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema~=0.8.2',
+        'dandischema~=0.8.4',
         'django~=4.1.0',
         'django-admin-display',
-        'django-allauth',
+        # Require 0.58.0 as it is the first version to support postgres' native
+        # JSONField for SocialAccount.extra_data
+        'django-allauth>=0.58.0',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
@@ -61,23 +63,18 @@ setup(
         's3-log-parse',
         'zarr-checksum>=0.2.8',
         # Production-only
-        'django-composed-configuration[prod]>=0.22.0',
-        # pin directly to a version since we're extending the private multipart interface
-        'django-s3-file-field[boto3]==0.3.2',
-        'django-storages[boto3]',
+        'django-composed-configuration[prod]>=0.23.0',
+        'django-s3-file-field[s3]>=1.0.0',
+        'django-storages[s3]>=1.14.2',
         'gunicorn',
         # Development-only, but required
-        # TODO: starting with v0.5.0, django-minio-storage requires v7
-        # of the minio-py library. minio-py 7 introduces several
-        # breaking changes to the API, and django-s3-file-field is also
-        # incompatible with it since it has minio<7 as a dependency.
-        # Until these issues are resolved, we pin it to an older version.
-        'django-minio-storage<0.5.0',
+        'django-minio-storage',
+        'minio>7',
         'tqdm',
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.22.0',
+            'django-composed-configuration[dev]>=0.23.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',

@@ -88,8 +88,7 @@ class BaseAssetBlob(TimeStampedModel):
         signed_url = self.blob.url
         # Strip off the query parameters from the presigning, as they are different every time
         parsed = urlparse(signed_url)
-        s3_url = urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
-        return s3_url
+        return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
 
     def __str__(self) -> str:
         return self.blob.name
@@ -204,35 +203,33 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def size(self):
         if self.is_blob:
             return self.blob.size
-        elif self.is_embargoed_blob:
+        if self.is_embargoed_blob:
             return self.embargoed_blob.size
-        else:
-            return self.zarr.size
+        return self.zarr.size
 
     @property
     def sha256(self):
         if self.is_blob:
             return self.blob.sha256
-        elif self.is_embargoed_blob:
+        if self.is_embargoed_blob:
             return self.embargoed_blob.sha256
+        raise RuntimeError('Zarr does not support SHA256')
 
     @property
     def digest(self) -> dict[str, str]:
         if self.is_blob:
             return self.blob.digest
-        elif self.is_embargoed_blob:
+        if self.is_embargoed_blob:
             return self.embargoed_blob.digest
-        else:
-            return self.zarr.digest
+        return self.zarr.digest
 
     @property
     def s3_url(self) -> str:
         if self.is_blob:
             return self.blob.s3_url
-        elif self.is_embargoed_blob:
+        if self.is_embargoed_blob:
             return self.embargoed_blob.s3_url
-        else:
-            return self.zarr.s3_url
+        return self.zarr.s3_url
 
     def is_different_from(
         self,
@@ -240,6 +237,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
         zarr_archive: ZarrArchive | EmbargoedZarrArchive | None = None,
         metadata: dict,
+        path: str,
     ) -> bool:
         from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
 
@@ -262,6 +260,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
         if isinstance(zarr_archive, EmbargoedZarrArchive):
             raise NotImplementedError
+
+        if self.path != path:
+            return True
 
         if self.metadata != metadata:
             return True
@@ -298,7 +299,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     def published_metadata(self):
         """Generate the metadata of this asset as if it were being published."""
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         # Inject the publishedBy and datePublished fields
         return {
             **self.full_metadata,

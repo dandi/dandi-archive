@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
@@ -26,21 +25,25 @@ if TYPE_CHECKING:
 def extract_paths(path: str) -> list[str]:
     nodepaths: list[str] = path.split('/')
     for i in range(len(nodepaths))[1:]:
-        nodepaths[i] = os.path.join(nodepaths[i - 1], nodepaths[i])
+        nodepaths[i] = f'{nodepaths[i - 1]}/{nodepaths[i]}'
 
     return nodepaths
 
 
-def get_root_paths_many(versions: QuerySet[Version]) -> QuerySet[AssetPath]:
+def get_root_paths_many(versions: QuerySet[Version], *, join_assets=False) -> QuerySet[AssetPath]:
     """Return all root paths for all provided versions."""
+    qs = AssetPath.objects.get_queryset()
+
     # Use prefetch_related here instead of select_related,
     # as otherwise the resulting join is very large
-    qs = AssetPath.objects.prefetch_related(
-        'asset',
-        'asset__blob',
-        'asset__embargoed_blob',
-        'asset__zarr',
-    )
+    if join_assets:
+        qs = qs.prefetch_related(
+            'asset',
+            'asset__blob',
+            'asset__embargoed_blob',
+            'asset__zarr',
+        )
+
     return qs.filter(version__in=versions).exclude(path__contains='/').order_by('path')
 
 
@@ -122,12 +125,12 @@ def insert_asset_paths(asset: Asset, version: Version):
             path=asset.path, asset=asset, version=version
         )
     except IntegrityError as e:
-        from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
+        from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
 
         # If there are simultaneous requests to create the same asset, this check constraint can
         # fail, and should be handled directly, rather than be allowed to bubble up
         if 'unique-version-path' in str(e):
-            raise AssetAlreadyExists()
+            raise AssetAlreadyExistsError from e
 
         # Re-raise original exception otherwise
         raise
@@ -211,8 +214,10 @@ def _delete_asset_paths(asset: Asset, version: Version):
 
     # Ensure integrity
     leaf.refresh_from_db()
-    assert leaf.aggregate_size == 0
-    assert leaf.aggregate_files == 0
+    if leaf.aggregate_size != 0:
+        raise RuntimeError('Remaining non-zero aggregate_size')
+    if leaf.aggregate_files != 0:
+        raise RuntimeError('Remaining non-zero aggregate_files')
 
     # Delete leaf node and any other paths with no contained files
     AssetPath.objects.filter(aggregate_files=0).delete()
@@ -237,7 +242,7 @@ def update_asset_paths(old_asset: Asset, new_asset: Asset, version: Version):
 @transaction.atomic
 def add_version_asset_paths(version: Version):
     """Add every asset from a version."""
-    print('\t Leaves...')
+    # Leaves
     for asset in tqdm(version.assets.all()):
         insert_asset_paths(asset, version)
 
@@ -246,7 +251,6 @@ def add_version_asset_paths(version: Version):
     # https://stackoverflow.com/a/60221875
 
     # Get all nodes which haven't been computed yet
-    print('\t Nodes...')
     nodes = AssetPath.objects.filter(version=version, aggregate_files=0)
     for node in tqdm(nodes):
         child_link_ids = node.child_links.distinct('child_id').values_list('child_id', flat=True)

@@ -38,7 +38,7 @@ CREATE INDEX idx_asset_search_encoding_format ON asset_search USING gin (UPPER(a
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0041_assetblob_download_count_and_more'),
+        ('api', '0001_initial_v2'),
     ]
 
     operations = [

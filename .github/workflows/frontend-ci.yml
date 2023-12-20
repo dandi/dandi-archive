@@ -13,9 +13,9 @@ jobs:
           working-directory: web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 16 # TODO: use latest version when we update to Vue 3
 
@@ -26,7 +26,7 @@ jobs:
         run: yarn run lint --no-fix
 
       - name: Type-check Vue app
-        run: yarn run type
+        run: yarn run type-check
 
       - name: Build Vue app
         run: yarn run build
@@ -70,19 +70,18 @@ jobs:
       DANDI_ALLOW_LOCALHOST_URLS: 1
 
       # Web client env vars
-      VUE_APP_DANDI_API_ROOT: http://localhost:8000/api/
-      VUE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
-      VUE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
+      VITE_APP_DANDI_API_ROOT: http://localhost:8000/api/
+      VITE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
+      VITE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
 
       # E2E tests env vars
       CLIENT_URL: http://localhost:8085
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: '16'
           cache: 'yarn'
           cache-dependency-path: web/yarn.lock
 
@@ -92,9 +91,9 @@ jobs:
         working-directory: web
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install latest version of pip
         run: pip install --upgrade pip
@@ -102,7 +101,7 @@ jobs:
       - uses: actions/cache@v3
         id: pip-cache
         with:
-          path: ${{ env.pythonLocation}}/lib/python3.10/site-packages/*
+          path: ${{ env.pythonLocation}}/lib/python3.11/site-packages/*
           key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
 
       - name: Install dandi-api dependencies
@@ -116,23 +115,23 @@ jobs:
 
       - name: Install E2E tests
         run: yarn install --frozen-lockfile
-        working-directory: web/test
+        working-directory: e2e
 
       - name: Lint E2E tests
         run: yarn run lint --no-fix --max-warnings=0
-        working-directory: web/test
+        working-directory: e2e
 
       - name: Run E2E tests
         run: |
           # start vue dev server and wait for it to start
-          yarn --cwd .. run serve 2> /dev/null &
+          yarn --cwd ../web/ run dev 2> /dev/null &
           while ! nc -z localhost 8085; do
             sleep 3
           done
 
           # start the dandi-api server
-          python ../../manage.py runserver &
+          python ../manage.py runserver &
 
           # run the E2E tests
           yarn run test
-        working-directory: web/test
+        working-directory: e2e

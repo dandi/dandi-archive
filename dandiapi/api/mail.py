@@ -26,15 +26,14 @@ def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
 
     if socialaccount is None:
         return user_to_dict(user)['name']
-    else:
-        social_user = social_account_to_dict(socialaccount)
 
-        # it's possible to have social users without a name if they've signed up, not filled out
-        # the questionnaire, and their github account has no attached name.
-        if social_user.get('name'):
-            return f'{social_user["name"]} (Github ID: {social_user["username"]})'
-        else:
-            return social_user['username']
+    social_user = social_account_to_dict(socialaccount)
+
+    # it's possible to have social users without a name if they've signed up, not filled out
+    # the questionnaire, and their github account has no attached name.
+    if social_user.get('name'):
+        return f'{social_user["name"]} (Github ID: {social_user["username"]})'
+    return social_user['username']
 
 
 def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
@@ -92,7 +91,7 @@ def build_registered_message(user: User, socialaccount: SocialAccount):
 
 
 def send_registered_notice_email(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending registration message to {user}')
+    logger.info('Sending registration message to %s', user)
     messages = [build_registered_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -112,7 +111,7 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
 
 
 def send_new_user_message_email(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending new user message for {user} to admins')
+    logger.info('Sending new user message for %s to admins', user)
     messages = [build_new_user_messsage(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -133,7 +132,7 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
 
 
 def send_approved_user_message(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending approved user message to {user}')
+    logger.info('Sending approved user message to %s', user)
     messages = [build_approved_user_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -154,7 +153,7 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
 
 
 def send_rejected_user_message(user: User, socialaccount: SocialAccount):
-    logger.info(f'Sending rejected user message to {user}')
+    logger.info('Sending rejected user message to %s', user)
     messages = [build_rejected_user_message(user, socialaccount)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -170,7 +169,7 @@ def build_pending_users_message(users: Iterable[User]):
 
 
 def send_pending_users_message(users: Iterable[User]):
-    logger.info(f'Sending pending users message to admins at {ADMIN_EMAIL}')
+    logger.info('Sending pending users message to admins at %s', ADMIN_EMAIL)
     messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)

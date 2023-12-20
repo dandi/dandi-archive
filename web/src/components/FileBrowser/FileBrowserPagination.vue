@@ -19,10 +19,9 @@
       <v-icon>mdi-chevron-left</v-icon>
     </v-btn>
     <v-text-field
-      v-model="pageInput"
+      v-model.number="pageInput"
       hide-details
       single-line
-      type="number"
       dense
       style="max-width: 5%;"
       class="pa-0 mx-2 my-0"
@@ -31,7 +30,9 @@
       :max="pageCount"
       :maxlength="pageCount"
       :rules="[pageIsValid]"
+      @change="emit('changePage', pageInput)"
     />
+
     <span>of {{ pageCount }}</span>
     <v-btn
       class="mx-2"
@@ -53,7 +54,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { toRef } from 'vue';
+import { useRoute } from 'vue-router/composables';
 
 const props = defineProps({
   page: {
@@ -66,21 +68,14 @@ const props = defineProps({
   },
 });
 
+const route = useRoute();
+
 function pageIsValid(page: number): boolean {
   return page > 0 && page <= props.pageCount;
 }
 
 const emit = defineEmits(['changePage']);
 
-// Note: the v-textfield `v-model` returns a string value despite its type being 'number', so
-// we have to handle converting back and forth below.
-const pageInput = ref(props.page.toString());
+const pageInput = Number(route.query.page) || toRef(props, 'page');
 
-watch(() => props.page, (newPage) => { pageInput.value = newPage.toString(); });
-watch(pageInput, (newPage) => {
-  const page = Number(newPage);
-  if (page > 0 && page <= props.pageCount) {
-    emit('changePage', page);
-  }
-});
 </script>

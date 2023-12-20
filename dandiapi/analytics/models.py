@@ -3,14 +3,6 @@ from django.db import models
 
 
 class ProcessedS3Log(models.Model):
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['name', 'embargoed'],
-                name='%(app_label)s_%(class)s_unique_name_embargoed',
-            )
-        ]
-
     name = models.CharField(
         max_length=36,
         validators=[
@@ -20,3 +12,14 @@ class ProcessedS3Log(models.Model):
     )
     # This is necessary to determine which bucket the logfile corresponds to
     embargoed = models.BooleanField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'embargoed'],
+                name='%(app_label)s_%(class)s_unique_name_embargoed',
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.name

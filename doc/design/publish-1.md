@@ -116,7 +116,7 @@ This involves digesting the Version metadata into something that can be used by 
 See the doi-generation-1.md design document for more details.
 
 4. For every draft Asset in the draft Version, the required publish metadata fields are injected, turning those Assets into published Assets.
-Published Assets, e.g. Asssets that already have those fields from previous publishes, _are skipped_.
+Published Assets, e.g. Assets that already have those fields from previous publishes, _are skipped_.
 Because they describe Assets that have already been published in a past version, there is no reason to re-publish them.
 
 5. Associate all of the publish Assets, new and old, with the new published Version.

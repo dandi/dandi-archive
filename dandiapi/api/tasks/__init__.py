@@ -1,6 +1,5 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db.transaction import atomic
 
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
@@ -19,10 +18,10 @@ logger = get_task_logger(__name__)
 def calculate_sha256(blob_id: str) -> None:
     try:
         asset_blob = AssetBlob.objects.get(blob_id=blob_id)
-        logger.info(f'Found AssetBlob {blob_id}')
+        logger.info('Found AssetBlob %s', blob_id)
     except AssetBlob.DoesNotExist:
         asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
-        logger.info(f'Found EmbargoedAssetBlob {blob_id}')
+        logger.info('Found EmbargoedAssetBlob %s', blob_id)
 
     sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
 
@@ -32,8 +31,7 @@ def calculate_sha256(blob_id: str) -> None:
     asset_blob.save()
 
 
-@shared_task(soft_time_limit=60)
-@atomic
+@shared_task(soft_time_limit=180)
 def write_manifest_files(version_id: int) -> None:
     version: Version = Version.objects.get(id=version_id)
     logger.info('Writing manifests for version %s:%s', version.dandiset.identifier, version.version)
@@ -46,7 +44,6 @@ def write_manifest_files(version_id: int) -> None:
 
 
 @shared_task(soft_time_limit=10)
-@atomic
 def validate_asset_metadata_task(asset_id: int) -> None:
     from dandiapi.api.services.metadata import validate_asset_metadata
 
@@ -56,7 +53,6 @@ def validate_asset_metadata_task(asset_id: int) -> None:
 
 
 @shared_task(soft_time_limit=30)
-@atomic
 def validate_version_metadata_task(version_id: int) -> None:
     from dandiapi.api.services.metadata import validate_version_metadata
 
@@ -78,7 +74,6 @@ def unembargo_dandiset_task(dandiset_id: int):
 
 
 @shared_task
-@atomic
 def publish_dandiset_task(dandiset_id: int):
     from dandiapi.api.services.publish import _publish_dandiset
 

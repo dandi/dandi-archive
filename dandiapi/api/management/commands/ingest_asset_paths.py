@@ -7,6 +7,6 @@ from dandiapi.api.models import Version
 @click.command()
 def ingest_asset_paths():
     for version in Version.objects.iterator():
-        print(f'Version: {version}')
-        print(f'\t {version.assets.count()} assets')
+        click.echo(f'Version: {version}')
+        click.echo(f'\t {version.assets.count()} assets')
         add_version_asset_paths(version)

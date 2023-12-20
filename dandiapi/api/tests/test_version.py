@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -24,7 +24,7 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_next_published_version_nosave(dandiset):
     # Without saving, the output should be reproducible
     version_str_1 = Version.next_published_version(dandiset)
@@ -33,7 +33,7 @@ def test_version_next_published_version_nosave(dandiset):
     assert version_str_1 == VERSION_ID_RE
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_next_published_version_save(mocker, dandiset, published_version_factory):
     # Given an existing version at the current time, a different one should be allocated
     next_published_version_spy = mocker.spy(Version, 'next_published_version')
@@ -44,7 +44,7 @@ def test_version_next_published_version_save(mocker, dandiset, published_version
     assert version_1.version != version_str_2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_next_published_version_simultaneous_save(
     dandiset_factory,
     published_version_factory,
@@ -60,7 +60,7 @@ def test_version_next_published_version_simultaneous_save(
     assert version_1.version == version_2.version
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_draft_version_metadata_computed(draft_version: Version):
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     draft_version.metadata = original_metadata
@@ -95,7 +95,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
     assert draft_version.metadata == expected_metadata
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_published_version_metadata_computed(published_version: Version):
     original_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION}
     published_version.metadata = original_metadata
@@ -135,10 +135,10 @@ def test_published_version_metadata_computed(published_version: Version):
     assert published_version.metadata == expected_metadata
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_citation_draft(draft_version):
     name = draft_version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
     assert (
         draft_version.metadata['citation']
@@ -146,10 +146,10 @@ def test_version_metadata_citation_draft(draft_version):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_citation_published(published_version):
     name = published_version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'https://doi.org/{published_version.doi}'
     assert (
         published_version.metadata['citation']
@@ -157,19 +157,19 @@ def test_version_metadata_citation_published(published_version):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_citation_no_contributors(version):
     version.metadata['contributor'] = []
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_citation_contributor_not_in_citation(version):
     version.metadata['contributor'] = [
         {'name': 'Jane Doe'},
@@ -178,25 +178,25 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_citation_contributor(version):
     version.metadata['contributor'] = [{'name': 'Doe, Jane', 'includeInCitation': True}]
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. '
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_citation_multiple_contributors(version):
     version.metadata['contributor'] = [
         {'name': 'John Doe', 'includeInCitation': True},
@@ -205,14 +205,14 @@ def test_version_metadata_citation_multiple_contributors(version):
     version.save()
 
     name = version.metadata['name'].rstrip('.')
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
         f'DANDI archive. '
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_context(version):
     version.metadata['schemaVersion'] = '6.6.6'
     version.save()
@@ -222,7 +222,7 @@ def test_version_metadata_context(version):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_metadata_assets_summary_missing(version, asset):
     version.assets.add(asset)
 
@@ -230,16 +230,17 @@ def test_version_metadata_assets_summary_missing(version, asset):
     version.save()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_aggregate_assets_summary_valid_assets(draft_version, draft_asset_factory):
     valid_asset = draft_asset_factory(status=Asset.Status.VALID)
     invalid_asset = draft_asset_factory(status=Asset.Status.INVALID)
     draft_version.assets.add(valid_asset, invalid_asset)
     version_aggregate_assets_summary(draft_version)
+    draft_version.refresh_from_db()
     assert draft_version.metadata['assetsSummary']['numberOfFiles'] == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_valid_with_valid_asset(version, asset):
     version.assets.add(asset)
 
@@ -251,7 +252,7 @@ def test_version_valid_with_valid_asset(version, asset):
     assert version.publishable
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
     'status',
     [
@@ -267,7 +268,7 @@ def test_version_invalid(version, status):
     assert not version.publishable
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
     'status',
     [
@@ -288,7 +289,7 @@ def test_version_valid_with_invalid_asset(version, asset, status):
     assert not version.publishable
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_publish_version(draft_version, asset):
     # Normally the publish endpoint would inject a doi, so we must do it manually
     fake_doi = 'doi'
@@ -313,7 +314,7 @@ def test_version_publish_version(draft_version, asset):
                     'id': URN_RE,
                     'identifier': 'RRID:SCR_017571',
                     'name': 'DANDI API',
-                    # TODO version the API
+                    # TODO: version the API
                     'version': '0.1.0',
                     'schemaKey': 'Software',
                 }
@@ -344,7 +345,21 @@ def test_version_publish_version(draft_version, asset):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_factory):
+    version = draft_version_factory(status=Version.Status.VALID)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    version_aggregate_assets_summary(version)
+    version.refresh_from_db()
+
+    assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
+    assert version.metadata['assetsSummary']['numberOfFiles'] == 1
+    assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
+
+
+@pytest.mark.django_db()
 def test_version_size(
     version,
     asset_factory,
@@ -362,7 +377,7 @@ def test_version_size(
     assert version.size == 700
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_list(api_client, version, draft_version_factory):
     # Create an extra version so that there are multiple versions to filter down
     draft_version_factory()
@@ -392,7 +407,7 @@ def test_version_rest_list(api_client, version, draft_version_factory):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_retrieve(api_client, version, draft_version_factory):
     # Create an extra version so that there are multiple versions to filter down
     draft_version_factory()
@@ -405,7 +420,7 @@ def test_version_rest_retrieve(api_client, version, draft_version_factory):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_info(api_client, version):
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
@@ -431,7 +446,7 @@ def test_version_rest_info(api_client, version):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
     'asset_status',
     [Asset.Status.PENDING, Asset.Status.VALIDATING, Asset.Status.VALID, Asset.Status.INVALID],
@@ -481,7 +496,7 @@ def test_version_rest_info_with_asset(
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_update(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -507,7 +522,7 @@ def test_version_rest_update(api_client, user, draft_version):
         # This should be stripped out
         'dateCreated': 'foobar',
     }
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/draft'
     saved_metadata = {
         **new_metadata,
@@ -566,7 +581,7 @@ def test_version_rest_update(api_client, user, draft_version):
     assert draft_version.status == Version.Status.PENDING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_update_published_version(api_client, user, published_version):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -584,7 +599,7 @@ def test_version_rest_update_published_version(api_client, user, published_versi
     assert resp.data == 'Only draft versions can be modified.'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_update_not_an_owner(api_client, user, version):
     api_client.force_authenticate(user=user)
 
@@ -601,7 +616,7 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_publish(
     api_client: APIClient,
     user: User,
@@ -635,7 +650,7 @@ def test_version_rest_publish(
     assert draft_version.status == Version.Status.PUBLISHING
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_publish_zarr(
     api_client,
     user: User,
@@ -648,7 +663,7 @@ def test_version_rest_publish_zarr(
     api_client.force_authenticate(user=user)
 
     # create and ingest zarr archive
-    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset)
+    zarr_archive = zarr_archive_factory(dandiset=draft_version.dandiset, status='Uploaded')
     zarr_file_factory(zarr_archive=zarr_archive)
     ingest_zarr_archive(zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
@@ -670,10 +685,10 @@ def test_version_rest_publish_zarr(
         f'/versions/{draft_version.version}/publish/'
     )
     assert resp.status_code == 400
-    assert resp.json() == ['Cannot publish dandisets which contain zarrs']
+    assert resp.json() == 'Cannot publish dandisets which contain zarrs'
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
     api_client.force_authenticate(user=user)
     version.assets.add(asset)
@@ -684,7 +699,7 @@ def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_publish_not_a_draft(api_client, user, published_version, asset):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -697,9 +712,9 @@ def test_version_rest_publish_not_a_draft(api_client, user, published_version, a
     assert resp.status_code == 405
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    'status,expected_data,expected_status_code',
+    ('status', 'expected_data', 'expected_status_code'),
     [
         (
             Version.Status.PENDING,
@@ -740,7 +755,7 @@ def test_version_rest_publish_invalid(
     assert resp.data == expected_data
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_update_no_changed_metadata(
     api_client: APIClient, admin_user, draft_version: Version
 ):
@@ -762,7 +777,7 @@ def test_version_rest_update_no_changed_metadata(
     assert draft_version.modified == old_modified_time
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_delete_published_not_admin(api_client, user, published_version):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -775,7 +790,7 @@ def test_version_rest_delete_published_not_admin(api_client, user, published_ver
     assert published_version in Version.objects.all()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_delete_published_admin(api_client, admin_user, published_version):
     api_client.force_authenticate(user=admin_user)
     response = api_client.delete(
@@ -786,7 +801,7 @@ def test_version_rest_delete_published_admin(api_client, admin_user, published_v
     assert not Version.objects.all()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_delete_draft_not_admin(api_client, user, draft_version):
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -798,7 +813,7 @@ def test_version_rest_delete_draft_not_admin(api_client, user, draft_version):
     assert draft_version in Version.objects.all()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_version_rest_delete_draft_admin(api_client, admin_user, draft_version):
     api_client.force_authenticate(user=admin_user)
     response = api_client.delete(

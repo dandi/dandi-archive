@@ -31,16 +31,12 @@ PAPERTRAIL_TOKEN = os.getenv('PAPERTRAIL_APIKEY', None)
 @click.option(
     '-o', '--out', 'output_file', help='The output file', default='logs.tsv.gz', show_default=True
 )
-def cli(start, end, force, amend, output_file):
+def cli(*, start, end, force, amend, output_file):
     if PAPERTRAIL_TOKEN is None:
         raise ClickException(
-            ' '.join(
-                [
-                    'Must set the PAPERTRAIL_APIKEY environment variable.',
-                    'You can find this at https://papertrailapp.com/account/profile',
-                    '(must be logged in with heroku).',
-                ]
-            )
+            'Must set the PAPERTRAIL_APIKEY environment variable. '
+            'You can find this at https://papertrailapp.com/account/profile '
+            '(must be logged in with heroku).'
         )
 
     if force and amend:
@@ -61,7 +57,9 @@ def cli(start, end, force, amend, output_file):
 
     # Get archive list
     headers = {'X-Papertrail-Token': PAPERTRAIL_TOKEN}
-    resp = requests.get('https://papertrailapp.com/api/v1/archives.json', headers=headers)
+    resp = requests.get(
+        'https://papertrailapp.com/api/v1/archives.json', headers=headers, timeout=30
+    )
     if not resp.ok:
         raise ClickException('Could not retrieve archive list')
     archives: list[dict] = resp.json()
@@ -95,8 +93,8 @@ def cli(start, end, force, amend, output_file):
     # Function to download an archive
     def download_archive(archive: dict):
         link = archive['_links']['download']['href']
-        resp = requests.get(link, headers=headers, stream=True)
-        with open(output_file, 'ab') as outfile:
+        resp = requests.get(link, headers=headers, timeout=30, stream=True)
+        with output_file.open('ab') as outfile:
             outfile.write(resp.raw.read())
 
     # Iterate over every entry within range

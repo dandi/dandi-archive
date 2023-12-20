@@ -6,13 +6,21 @@ on:
       - master
     paths-ignore:
       - "web/**"
+      - "CHANGELOG.md"
+
+concurrency:
+  # If this workflow is already running, cancel it to avoid a scenario
+  # where the older run finishes *after* the newer run and overwrites
+  # the deployment with an older version of the app.
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
     name: Deploy to Heroku
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch history for all branches and tags
 
