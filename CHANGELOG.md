@@ -1,3 +1,16 @@
+# v0.3.69 (Wed Dec 20 2023)
+
+#### 🐛 Bug Fix
+
+- Approval view: automatically redirect back to page after authentication [#1786](https://github.com/dandi/dandi-archive/pull/1786) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove explicit dependency on `pydantic` [#1796](https://github.com/dandi/dandi-archive/pull/1796) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.68 (Wed Dec 20 2023)
 
 #### 🐛 Bug Fix
