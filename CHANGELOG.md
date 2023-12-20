@@ -1,3 +1,18 @@
+# v0.3.68 (Wed Dec 20 2023)
+
+#### 🐛 Bug Fix
+
+- Update + Reconfigure Vue Sentry SDK [#1795](https://github.com/dandi/dandi-archive/pull/1795) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove old squashed migrations [#1778](https://github.com/dandi/dandi-archive/pull/1778) ([@brianhelba](https://github.com/brianhelba))
+- Fix S101 Use of `assert` detected [#1783](https://github.com/dandi/dandi-archive/pull/1783) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.67 (Thu Dec 14 2023)
 
 #### 🐛 Bug Fix
