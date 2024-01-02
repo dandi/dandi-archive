@@ -116,3 +116,49 @@ sequenceDiagram
 
 - Deleting tags of 10,000 objects took ~18 seconds
 - Deleting tags of 100,000 objects took ~2 minutes
+
+## Semantic Quirks of Embargo
+
+During redesign deliberations, we noticed some oddities of how embargo might interact with deduplication in ways that raise some questions about the intended semantics of embargo. This section reviews some examples and states those questions for discussion and resolution among the full team.
+
+### Embargoed Dandiset includes open asset
+
+**Scenario.** Someone creates an open Dandiset 1, uploading asset A to it. They then create an embargoed Dandiset 2, also uploading asset A to that.
+
+**Quirk.** Dandiset 2, though embargoed, contains an asset that is open and therefore world-readable. In spirit this contradicts the embargo on Dandiset 2.
+
+**Remediation.** None needed, despite the apparent contradiction. Though Dandiset 2 contains a world-readable asset, no one who is not authorized to view the contents of Dandiset 2 knows that fact; for all they know, any data at all, *including open assets stored in the archive*, could be in that Dandiset. Thus, no excess information about Dandiset 2 is leaked.
+
+### Open Dandiset includes embargoed asset
+
+**Scenario.** Roughly the opposite of the last scenario: someone creates an *embargoed* Dandiset 3, uploading asset B to it. They then create an *open* Dandiset 4, also uploading B to that.
+
+**Quirk.** Dandiset 4 now contains a hidden asset, which contradicts the openness of Dandiset 4 and seems to compromise the secrecy of Dandiset 3.
+
+**Remediation.** There are a couple of ideas here:
+
+1. **Don’t allow embargoed Dandiset assets to be used in open Dandisets.** At upload time, the API would simply refuse to allow hidden assets that are part of any embargoed Dandiset to be uploaded to an open Dandiset.
+
+   This cuts the problem off at the root, but it is subject to a failure of our imaginations: perhaps there is a valid reason a neuroscientist would want to do this. One example: if a standard community tool exists that generates a skeleton Dandiset that includes something boilerplateish like a license file or copyright notice, people would regularly include those in embargoed Dandisets, and that could trigger this error condition somewhat baselessly.
+
+   On the other hand, perhaps scientists would have a reason to want to include the same data in both an embargoed Dandiset and an open one. For instance, perhaps embargoed experiments are using some base but non-secret data within an embargoed Dandiset, and that same data needs to be part of an open Dandiset.
+
+2. **Allow this type of sharing but force the user to provide an explicit flag to do so.** In this remediation, the user would receive a warning that they are trying to include embargoed data in an open Dandiset. The API / client would return an error with a prompt to retry with a `--force` type flag, which would then allow the upload to occur. The embargoed assets would remain hidden to the public in the S3 bucket, and data access to the open Dandiset’s asset holding would occur via presigned URLs (the same way as for authorized users to embargoed Dandiset assets).
+
+The major questions here are:
+
+- **Are the semantics valid of placing an embargoed asset in an open Dandiset?**
+- **Would a scientist ever want to push data to an embargoed Dandiset, and also to an open Dandiset?**
+
+### Two embargoed Dandisets include a shared embargoed asset
+
+**Scenario.** Someone creates embargoed Dandisets 5 and 6, uploading asset C to each. Then, they unembargo Dandiset 6, leading to a scenario similar to the previous one.
+
+**Quirk.** This is the same state as the previous scenario, but the same remediations do not seem to apply. Disallowing the unembargo operation is a nonstarter because that leads to a sort of deadlock: there would be no way to unembargo Dandisets 5 and 6. And forcing the user to explicitly include a flag does not help since we still end up in that deadlock situation. Furthermore, the questions about intent do not come up here: it seems reasonable that a scientist would indeed prepare two Dandisets with a shared, embargoed asset.
+
+**Remediation.** In this case, it seems that we need to allow for unembargo and fall back to the situation described above, where access to the asset is granted through presigned URLs, without otherwise disclosing the fact that the asset is still present in another embargoed Dandiset. A warning to the user on their attempt to unembargo may be warranted so they can decide if they want to expose that asset while it is still under embargo in the other Dandiset.
+
+Finally, this brings up a question about when to remove the `embargoed` tag from the object in the S3 bucket: we would insert logic to detect whether the embargoed asset is included in any other embargoed Dandisets, and only trigger the tag removal if there are none. This brings up one major question:
+
+- **Do these situations nullify the effect/need to keep data hidden in the bucket at all?**
+The answer to this is probably “no”, but some discussion may help to illuminate answers to the other questions and quirks above.
