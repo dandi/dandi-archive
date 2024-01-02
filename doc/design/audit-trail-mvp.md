@@ -30,9 +30,9 @@ collaboration.
     
     ```
     YYYYMMDDTHHMMSS.mmmm: X added asset at path (/full/path) checksum
-    YYYYMMDDTHHMMSS.mmmm: X modified asset at path (/full/path) checksum
-    YYYYMMDDTHHMMSS.mmmm: X deleted asset at path (/full/path) checksum
-    YYYYMMDDTHHMMSS.mmmm: X modified dandiset metadata
+    YYYYMMDDTHHMMSS.mmmm: X updated asset at path (/full/path) checksum
+    YYYYMMDDTHHMMSS.mmmm: X removed asset at path (/full/path) checksum
+    YYYYMMDDTHHMMSS.mmmm: X updated dandiset metadata
     ```
     
 3. **Extensible significant action list.** The significant actions the system is
