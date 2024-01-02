@@ -21,6 +21,7 @@ from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
+from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModified
 from dandiapi.api.tasks import (
     validate_asset_metadata_task,
     validate_version_metadata_task,
@@ -43,7 +44,11 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
         time.sleep(1 / max_per_second)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(
+    soft_time_limit=60,
+    autoretry_for=(VersionMetadataConcurrentlyModified,),
+    retry_backoff=True,
+)
 def aggregate_assets_summary_task(version_id: int):
     version = Version.objects.get(id=version_id)
     version_aggregate_assets_summary(version)

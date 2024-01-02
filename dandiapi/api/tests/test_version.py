@@ -11,6 +11,7 @@ from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
+from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModified
 
 if TYPE_CHECKING:
     from rest_framework.test import APIClient
@@ -357,6 +358,20 @@ def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_fac
     assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
     assert version.metadata['assetsSummary']['numberOfFiles'] == 1
     assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
+
+
+@pytest.mark.django_db()
+def test_version_aggregate_assets_summary_metadata_modified(
+    draft_version_factory, draft_asset_factory
+):
+    version = draft_version_factory(status=Version.Status.VALID)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    # Modify the metadata passed to the function so that it's mismatched
+    version.metadata['foo'] = 'bar'
+    with pytest.raises(VersionMetadataConcurrentlyModified):
+        version_aggregate_assets_summary(version)
 
 
 @pytest.mark.django_db()
