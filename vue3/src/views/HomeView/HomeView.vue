@@ -9,7 +9,6 @@
         class="bg-grey-lighten-5"
         position="left"
         max-height="500px"
-        contain
       >
         <v-container
           fluid
