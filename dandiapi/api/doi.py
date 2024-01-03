@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 import requests
 
-from dandiapi.api.models import Version
+if TYPE_CHECKING:
+    from dandiapi.api.models import Version
 
 # All of the required DOI configuration settings
 DANDI_DOI_SETTINGS = [

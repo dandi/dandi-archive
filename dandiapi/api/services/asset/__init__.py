@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.db import transaction
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
@@ -12,7 +14,9 @@ from dandiapi.api.services.asset.exceptions import (
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
 )
-from dandiapi.zarr.models import ZarrArchive
+
+if TYPE_CHECKING:
+    from dandiapi.zarr.models import ZarrArchive
 
 
 def _create_asset(
