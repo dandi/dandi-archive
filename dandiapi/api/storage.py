@@ -12,11 +12,11 @@ from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
 from django.core.files.storage import Storage, get_storage_class
-from minio.error import NoSuchKey
+from minio import S3Error
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
-from s3_file_field._multipart_boto3 import Boto3MultipartManager
 from s3_file_field._multipart_minio import MinioMultipartManager
+from s3_file_field._multipart_s3 import S3MultipartManager
 from storages.backends.s3 import S3Storage
 
 
@@ -26,8 +26,8 @@ class ChecksumCalculatorFile:
     def __init__(self):
         self.h = hashlib.sha256()
 
-    def write(self, bytes):
-        self.h.update(bytes)
+    def write(self, data: bytes) -> None:
+        self.h.update(data)
 
     @property
     def checksum(self):
@@ -44,36 +44,30 @@ class DandiMultipartMixin:
     _url_expiration = timedelta(days=7)
 
 
-class DandiBoto3MultipartManager(DandiMultipartMixin, Boto3MultipartManager):
+class DandiS3MultipartManager(DandiMultipartMixin, S3MultipartManager):
     """A custom multipart manager for passing ACL information."""
 
-    def _create_upload_id(self, object_key: str, content_type: str | None = None) -> str:
-        kwargs = {
-            'Bucket': self._bucket_name,
-            'Key': object_key,
-            'ACL': 'bucket-owner-full-control',
-        }
-
-        if content_type is not None:
-            kwargs['Content-Type'] = content_type
-
-        resp = self._client.create_multipart_upload(**kwargs)
+    def _create_upload_id(self, object_key: str, content_type: str) -> str:
+        resp = self._client.create_multipart_upload(
+            Bucket=self._bucket_name,
+            Key=object_key,
+            ContentType=content_type,
+            ACL='bucket-owner-full-control',
+        )
         return resp['UploadId']
 
 
 class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
     """A custom multipart manager for passing ACL information."""
 
-    def _create_upload_id(self, object_key: str, content_type: str | None = None) -> str:
-        metadata = {'x-amz-acl': 'bucket-owner-full-control'}
-
-        if content_type is not None:
-            metadata['Content-Type'] = content_type
-
-        return self._client._new_multipart_upload(
+    def _create_upload_id(self, object_key: str, content_type: str) -> str:
+        return self._client._create_multipart_upload(
             bucket_name=self._bucket_name,
             object_name=object_key,
-            metadata=metadata,
+            headers={
+                'Content-Type': content_type,
+                'x-amz-acl': 'bucket-owner-full-control',
+            },
         )
 
 
@@ -124,7 +118,7 @@ class TimeoutS3Storage(S3Storage):
 class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
     @property
     def multipart_manager(self):
-        return DandiBoto3MultipartManager(self)
+        return DandiS3MultipartManager(self)
 
     def etag_from_blob_name(self, blob_name) -> str | None:
         client = self.connection.meta.client
@@ -197,8 +191,10 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
     def etag_from_blob_name(self, blob_name) -> str | None:
         try:
             response = self.client.stat_object(self.bucket_name, blob_name)
-        except NoSuchKey:
-            return None
+        except S3Error as e:
+            if e.code == 'NoSuchKey':
+                return None
+            raise
         else:
             return response.etag
 
@@ -215,7 +211,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         )
 
     def generate_presigned_head_object_url(self, key: str) -> str:
-        return self.base_url_client.presigned_url('HEAD', self.bucket_name, key)
+        return self.base_url_client.get_presigned_url('HEAD', self.bucket_name, key)
 
     def generate_presigned_download_url(self, key: str, path: str) -> str:
         return self.base_url_client.presigned_get_object(
@@ -292,7 +288,7 @@ def create_s3_storage(bucket_name: str) -> Storage:
         # TODO: filename transforming?
         # TODO: content_type
     else:
-        raise Exception(f'Unknown storage: {default_storage_class}')
+        raise TypeError(f'Unknown storage: {default_storage_class}')
 
     return storage
 
@@ -301,11 +297,12 @@ def get_boto_client(storage: Storage | None = None):
     """Return an s3 client from the current storage."""
     storage = storage if storage else get_storage()
     if isinstance(storage, MinioStorage):
+        storage_params = get_storage_params(storage)
         return boto3.client(
             's3',
-            endpoint_url=storage.client._endpoint_url,
-            aws_access_key_id=storage.client._access_key,
-            aws_secret_access_key=storage.client._secret_key,
+            endpoint_url=storage_params['endpoint_url'],
+            aws_access_key_id=storage_params['access_key'],
+            aws_secret_access_key=storage_params['secret_key'],
             region_name='us-east-1',
         )
 
@@ -315,9 +312,9 @@ def get_boto_client(storage: Storage | None = None):
 def get_storage_params(storage: Storage):
     if isinstance(storage, MinioStorage):
         return {
-            'endpoint_url': storage.client._endpoint_url,
-            'access_key': storage.client._access_key,
-            'secret_key': storage.client._secret_key,
+            'endpoint_url': storage.client._base_url._url.geturl(),
+            'access_key': storage.client._provider.retrieve().access_key,
+            'secret_key': storage.client._provider.retrieve().secret_key,
         }
 
     return {

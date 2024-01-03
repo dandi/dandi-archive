@@ -52,7 +52,7 @@ import UserStatusBanner from '@/components/UserStatusBanner.vue';
 
 const store = useDandisetStore();
 
-const SERVER_DOWNTIME_MESSAGE = process.env.VUE_APP_SERVER_DOWNTIME_MESSAGE || 'Connection to server failed.';
+const SERVER_DOWNTIME_MESSAGE = import.meta.env.VITE_APP_SERVER_DOWNTIME_MESSAGE || 'Connection to server failed.';
 
 const verifiedServerConnection = ref(false);
 const connectedToServer = ref(true);

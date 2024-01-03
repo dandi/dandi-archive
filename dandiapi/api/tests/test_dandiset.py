@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -342,11 +342,11 @@ def test_dandiset_rest_create(api_client, user):
         },
         'most_recent_published_version': None,
     }
-    id = int(response.data['identifier'])
+    dandiset_id = int(response.data['identifier'])
 
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
-    dandiset = Dandiset.objects.get(id=id)
+    dandiset = Dandiset.objects.get(id=dandiset_id)
     assert list(dandiset.owners.all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
@@ -357,7 +357,7 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
@@ -450,7 +450,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
@@ -557,7 +557,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
@@ -632,11 +632,11 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         },
         'most_recent_published_version': None,
     }
-    id = int(response.data['identifier'])
+    dandiset_id = int(response.data['identifier'])
 
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
-    dandiset = Dandiset.objects.get(id=id)
+    dandiset = Dandiset.objects.get(id=dandiset_id)
     assert list(dandiset.owners.all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
@@ -647,7 +647,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     assert dandiset.draft_version.status == Version.Status.PENDING
 
     # Verify that computed metadata was injected
-    year = datetime.now().year
+    year = datetime.datetime.now(datetime.UTC).year
     url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}/draft'
     assert dandiset.draft_version.metadata == {
         **metadata,
@@ -1010,3 +1010,19 @@ def test_dandiset_rest_search_identifier(api_client, draft_version):
 
     assert results[0]['draft_version']['version'] == draft_version.version
     assert results[0]['draft_version']['name'] == draft_version.name
+
+
+@pytest.mark.django_db()
+@pytest.mark.parametrize(
+    'contributors',
+    [None, 'string', 1, [], {}],
+)
+def test_dandiset_contact_person_malformed_contributors(api_client, draft_version, contributors):
+    draft_version.metadata['contributor'] = contributors
+    draft_version.save()
+
+    results = api_client.get(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/',
+    )
+
+    assert results.data['draft_version']['dandiset']['contact_person'] == ''

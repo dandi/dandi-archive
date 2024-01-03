@@ -13,7 +13,7 @@ from dandiapi.api.asset_paths import (
 )
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
-from dandiapi.api.services.asset.exceptions import AssetAlreadyExists
+from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
 from dandiapi.api.tasks import publish_dandiset_task
 
 
@@ -113,7 +113,7 @@ def test_asset_path_add_asset_conflicting_path(draft_version_factory, asset_fact
     assert version.asset_paths.filter(asset__isnull=False).count() == 1
 
     # Ensure that adding asset2 raises the correct exception
-    with pytest.raises(AssetAlreadyExists):
+    with pytest.raises(AssetAlreadyExistsError):
         add_asset_paths(asset2, version)
 
     # Ensure that there no new asset paths created

@@ -44,12 +44,13 @@ def create_doi(version: Version) -> str:
                     settings.DANDI_DOI_API_USER,
                     settings.DANDI_DOI_API_PASSWORD,
                 ),
+                timeout=30,
             ).raise_for_status()
         except requests.exceptions.HTTPError as e:
-            logging.error('Failed to create DOI %s', doi)
-            logging.error(request_body)
+            logging.exception('Failed to create DOI %s', doi)
+            logging.exception(request_body)
             if e.response:
-                logging.error(e.response.text)
+                logging.exception(e.response.text)
             raise
     return doi
 
@@ -64,15 +65,14 @@ def delete_doi(doi: str) -> None:
                 r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code == 404:
+                if e.response and e.response.status_code == requests.codes.not_found:
                     logging.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
-                else:
-                    logging.error('Failed to fetch data for DOI %s', doi)
-                    raise
+                logging.exception('Failed to fetch data for DOI %s', doi)
+                raise
             if r.json()['data']['attributes']['state'] == 'draft':
                 try:
                     s.delete(doi_url).raise_for_status()
                 except requests.exceptions.HTTPError:
-                    logging.error('Failed to delete DOI %s', doi)
+                    logging.exception('Failed to delete DOI %s', doi)
                     raise

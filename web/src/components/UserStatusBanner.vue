@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts">
-import { dandiRest } from '@/rest';
+import { user } from '@/rest';
 import type { ComputedRef } from 'vue';
 import { computed, defineComponent } from 'vue';
 
@@ -30,8 +30,7 @@ export default defineComponent({
   components: { },
   setup() {
     const bannerInfo: ComputedRef<StatusBanner|null> = computed(() => {
-      const { user } = dandiRest;
-      switch (user?.status) {
+      switch (user.value?.status) {
         case 'PENDING':
           return {
             text: 'Your DANDI account is currently pending approval. Please allow up to 2 business days for approval and contact the DANDI admins at help@dandiarchive.org if you have any questions.',

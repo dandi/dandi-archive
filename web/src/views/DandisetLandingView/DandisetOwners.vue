@@ -94,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { dandiRest, loggedIn } from '@/rest';
+import { loggedIn, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
 import { computed, ref } from 'vue';
@@ -105,13 +105,13 @@ const ownerDialog = ref(false);
 const owners = computed(() => store.owners);
 
 const manageOwnersDisabled = computed(() => {
-  if (dandiRest.user?.admin) {
+  if (user.value?.admin) {
     return false;
   }
-  if (!dandiRest.user || !owners.value) {
+  if (!user.value || !owners.value) {
     return true;
   }
-  return !owners.value.find((owner) => owner.username === dandiRest.user?.username);
+  return !owners.value.find((owner) => owner.username === user.value?.username);
 });
 const limitedOwners = computed(() => {
   if (!owners.value) {

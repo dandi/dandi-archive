@@ -1,8 +1,10 @@
 from allauth.socialaccount.models import SocialAccount
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Exists, OuterRef
+from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
@@ -75,7 +77,12 @@ class DashboardView(DashboardMixin, TemplateView):
 
 
 @require_http_methods(['GET', 'POST'])
-def user_approval_view(request, username: str):
+def user_approval_view(request: HttpRequest, username: str):
+    # Redirect user to login if they're not authenticated
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(redirect_to=f'{settings.LOGIN_URL}?next={request.path}')
+
+    # If they are authenticated but are not a superuser, deny access
     if not request.user.is_superuser:
         raise PermissionDenied
 

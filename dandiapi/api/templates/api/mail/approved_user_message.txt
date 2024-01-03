@@ -8,7 +8,7 @@ Please use the following links to post any questions or issues.
 
 Discussions: https://github.com/dandi/helpdesk/discussions
 Issues: https://github.com/dandi/helpdesk/issues/new/choose
-YouTube: https://www.youtube.com/channel/UCsLLBNhtcV-wL8cCZWveDCA
+YouTube: https://www.youtube.com/@dandiarchive
 (please Subscribe)
 
 Thank you for choosing DANDI for your neurophysiology data needs.

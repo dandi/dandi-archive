@@ -5,7 +5,7 @@ from dandiapi.api.models.version import Version
 
 
 def _normalize_version_metadata(
-    raw_version_metadata: dict, embargo: bool, name: str, email: str
+    raw_version_metadata: dict, name: str, email: str, *, embargo: bool
 ) -> dict:
     """
     Take raw version metadata and convert it into something suitable to be used in a formal Version.

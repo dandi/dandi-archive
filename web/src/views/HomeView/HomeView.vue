@@ -5,7 +5,7 @@
   >
     <v-row>
       <v-img
-        src="@/assets/logo.svg"
+        :src="logo"
         class="grey lighten-5"
         position="left"
         max-height="500px"
@@ -50,6 +50,7 @@ import { watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router/composables';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import logo from '@/assets/logo.svg';
 
 /**
 * Redirect old hash URLS to the correct one. This is only done on

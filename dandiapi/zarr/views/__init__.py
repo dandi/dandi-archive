@@ -138,8 +138,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         try:
             zarr_archive.save()
-        except IntegrityError:
-            raise ValidationError('Zarr already exists')
+        except IntegrityError as e:
+            raise ValidationError('Zarr already exists') from e
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -279,7 +279,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             # Generate presigned urls
-            logger.info(f'Beginning upload to zarr archive {zarr_archive.zarr_id}')
+            logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
             urls = zarr_archive.generate_upload_urls(serializer.validated_data)
 
             # Set status back to pending, since with these URLs the zarr could have been changed
@@ -287,7 +287,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive.save()
 
         # Return presigned urls
-        logger.info(f'Presigned {len(urls)} URLs to upload to zarr archive {zarr_archive.zarr_id}')
+        logger.info(
+            'Presigned %d URLs to upload to zarr archive %s', len(urls), zarr_archive.zarr_id
+        )
         return Response(urls, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(

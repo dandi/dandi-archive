@@ -21,17 +21,17 @@
     >
       <v-list-item>
         <v-list-item-content>
-          <span v-if="dandiRest.user">
+          <span v-if="user">
             You are logged in as <a
-              :href="`https://github.com/${dandiRest.user.username}`"
+              :href="`https://github.com/${user.username}`"
               target="_blank"
               rel="noopener"
-              v-text="dandiRest.user.username"
+              v-text="user.username"
             />.
           </span>
         </v-list-item-content>
       </v-list-item>
-      <ApiKeyItem v-if="dandiRest.user?.approved" />
+      <ApiKeyItem v-if="user?.approved" />
       <v-list-item @click="logout">
         <v-list-item-content>
           Logout
@@ -47,10 +47,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { user as userFunc, dandiRest } from '@/rest';
+import { user, dandiRest } from '@/rest';
 import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
 
-const user = computed(userFunc);
 const userInitials = computed(() => {
   if (user.value) {
     const { name } = user.value;

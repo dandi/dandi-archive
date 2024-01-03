@@ -10,11 +10,11 @@ from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 from dandiapi.search.models import AssetSearch
 
 
-def extract_contact_person(version):
+def extract_contact_person(version: Version) -> str:
     """Extract a version's contact person from its metadata."""
     # TODO: move this logic into dandischema since it is schema-dependant
     contributors = version.metadata.get('contributor')
-    if contributors is not None:
+    if contributors is not None and isinstance(contributors, list):
         for contributor in contributors:
             name = contributor.get('name')
             role_names = contributor.get('roleName')
