@@ -5,6 +5,7 @@ from typing import Any
 
 # from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+
 # from django.core.mail.message import EmailMessage
 from django.test.client import Client
 from django.urls.base import reverse

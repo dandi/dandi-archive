@@ -93,7 +93,7 @@ setup(
             'pytest-factoryboy',
             'pytest-memray',
             'pytest-mock',
-            'setuptools'
+            'setuptools',
         ],
     },
 )

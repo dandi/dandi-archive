@@ -118,7 +118,8 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         #         Only send emails when the user fills out the questionnaire for the first time.
         #         If they go back later and update it for whatever reason, they should not receive
         #         another email confirming their registration. Additionally, users who have already
-        #         been approved that go back and update the form later should also not receive an email.
+        #         been approved that go back and
+        #         update the form later should also not receive an email.
         if (
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
