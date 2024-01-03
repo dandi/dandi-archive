@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.db import transaction
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths

@@ -1,5 +1,6 @@
 # Separate from settings.py due to being a somewhat of a premature import there.
 # See https://github.com/dandi/dandi-api/pull/482#issuecomment-901250541 .
+from __future__ import annotations
 from drf_yasg.inspectors import SwaggerAutoSchema
 
 

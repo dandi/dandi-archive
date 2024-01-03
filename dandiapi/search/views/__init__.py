@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from django.http.response import JsonResponse

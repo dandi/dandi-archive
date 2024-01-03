@@ -1,3 +1,4 @@
+from __future__ import annotations
 from guardian.shortcuts import assign_perm
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM

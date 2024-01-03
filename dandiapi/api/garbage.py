@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import timedelta
 
 from django.db.models import Exists, OuterRef

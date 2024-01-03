@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.core.exceptions import (
     PermissionDenied as DjangoPermissionDenied,
     ValidationError as DjangoValidationError,

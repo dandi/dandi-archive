@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.conf import settings
 
 from dandiapi import __version__

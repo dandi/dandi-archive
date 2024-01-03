@@ -1,3 +1,4 @@
+from __future__ import annotations
 from importlib.metadata import version
 
 # This project module is imported for us when Django starts. To ensure that Celery app is always

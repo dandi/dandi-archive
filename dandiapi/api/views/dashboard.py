@@ -1,3 +1,4 @@
+from __future__ import annotations
 from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin

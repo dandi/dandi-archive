@@ -1,3 +1,4 @@
+from __future__ import annotations
 import djclick as click
 
 from dandiapi.api.models import Asset, Version

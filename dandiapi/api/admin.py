@@ -1,3 +1,4 @@
+from __future__ import annotations
 import csv
 
 from allauth.socialaccount.models import SocialAccount

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pytest
 from rest_framework.permissions import SAFE_METHODS
 

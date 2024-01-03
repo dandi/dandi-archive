@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 
 from dandischema.metadata import aggregate_assets_summary, validate

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.db import migrations
 from django.db.models import Q
 from oauth2_provider.settings import oauth2_settings

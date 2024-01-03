@@ -1,3 +1,4 @@
+from __future__ import annotations
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import Count, Max, OuterRef, Subquery, Sum

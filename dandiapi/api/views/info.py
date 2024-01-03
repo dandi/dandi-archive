@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.conf import settings
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers

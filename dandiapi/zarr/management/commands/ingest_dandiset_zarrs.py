@@ -1,3 +1,4 @@
+from __future__ import annotations
 import djclick as click
 
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs as _ingest_dandiset_zarrs

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
