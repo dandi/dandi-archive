@@ -161,14 +161,14 @@
       <v-menu
         :nudge-width="200"
       >
-        <template #activator="{ props, attrs }">
+        <template #activator="{ props: menu }">
           <v-tooltip location="bottom">
-            <template #activator="{ on: tooltip }">
+            <template v-slot:activator="{ props: tooltip }">
               <v-card
                 class="bg-amber-lighten-5 no-text-transform"
                 variant="outlined"
-               
-                v-on="v-bind="props""
+
+                v-on="{ ...tooltip, ...menu }"
               >
                 <v-row class="align-center px-4">
                   <v-col
