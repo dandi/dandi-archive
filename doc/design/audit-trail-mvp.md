@@ -71,6 +71,10 @@ to be created, and because that new `Asset` instance points to its "ancestor"
 via a `previous` property, the history of an asset is at least partially
 traceable through this "asset chain".
 
+**Note: the following analysis concerns only the extent of significant action
+data that is recoverable from the existing database records; it does _not_
+preclude the inclusion of any significant action data _going into the future_.**
+
 ### Audit
 
 | Action | Recoverable fields | Unrecoverable fields | Notes |
