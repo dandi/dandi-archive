@@ -1025,7 +1025,9 @@ def test_dandiset_rest_search_identifier(api_client, user_factory, draft_version
     'contributors',
     [None, 'string', 1, [], {}],
 )
-def test_dandiset_contact_person_malformed_contributors(api_client, user_factory, draft_version, contributors):
+def test_dandiset_contact_person_malformed_contributors(
+    api_client, user_factory, draft_version, contributors
+):
     api_client.force_authenticate(user=user_factory())
     draft_version.metadata['contributor'] = contributors
     draft_version.save()

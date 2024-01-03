@@ -21,6 +21,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
@@ -35,7 +36,6 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
 )
 from dandiapi.search.models import AssetSearch
-from dandiapi.api.permissions import IsApproved
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
@@ -86,6 +86,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
                 )
                 return queryset.order_by(ordering)
         return queryset
+
 
 class DandisetViewSet(ReadOnlyModelViewSet):
     serializer_class = DandisetDetailSerializer

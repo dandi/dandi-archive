@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from allauth.socialaccount.models import SocialAccount
+# from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.core.mail.message import EmailMessage
+# from django.core.mail.message import EmailMessage
 from django.test.client import Client
 from django.urls.base import reverse
 import pytest
@@ -14,9 +14,9 @@ from rest_framework.exceptions import ErrorDetail
 from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-from dandiapi.api.mail import ADMIN_EMAIL
+# from dandiapi.api.mail import ADMIN_EMAIL
 from dandiapi.api.models import UserMetadata
-from dandiapi.api.views.auth import COLLECT_USER_NAME_QUESTIONS, NEW_USER_QUESTIONS, QUESTIONS
+from dandiapi.api.views.auth import COLLECT_USER_NAME_QUESTIONS, NEW_USER_QUESTIONS
 from dandiapi.api.views.users import user_to_dict
 
 
@@ -27,7 +27,6 @@ def serialize_social_account(social_account):
         'admin': social_account.user.is_superuser,
         'status': social_account.user.metadata.status,
     }
-
 
 
 # TODO: linc-archive #14: Fix commented-out test

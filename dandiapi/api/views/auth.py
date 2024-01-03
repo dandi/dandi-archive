@@ -19,11 +19,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from dandiapi.api.mail import (
-    send_approved_user_message,
-    send_new_user_message_email,
-    send_registered_notice_email,
-)
+# from dandiapi.api.mail import (
+#     send_approved_user_message,
+#     send_new_user_message_email,
+#     send_registered_notice_email,
+# )
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
 
@@ -59,27 +59,28 @@ COLLECT_USER_NAME_QUESTIONS = QUESTIONS[:2]
 
 @require_http_methods(['GET'])
 def authorize_view(request: HttpRequest) -> HttpResponse:
-    from django.contrib.sites.models import Site
-#     raise Exception(Site.objects.get_current())
+    # from django.contrib.sites.models import Site
+
+    #     raise Exception(Site.objects.get_current())
     """Override authorization endpoint to handle user questionnaire."""
-#     user: User = request.user
-#     if (
-#         user.is_authenticated
-#         and not user.is_superuser
-#         and user.metadata.status == UserMetadata.Status.INCOMPLETE
-#     ):
-#         # send user to questionnaire if they haven't filled it out yet
-#         return HttpResponseRedirect(
-#             f'{reverse("user-questionnaire")}'
-#             f'?{request.META["QUERY_STRING"]}&QUESTIONS={json.dumps(NEW_USER_QUESTIONS)}'
-#         )
-#     elif not user.is_anonymous and (not user.first_name or not user.last_name):
-#         # if this user doesn't have a first/last name available, redirect them to a
-#         # form to provide those before they can log in.
-#         return HttpResponseRedirect(
-#             f'{reverse("user-questionnaire")}'
-#             f'?{request.META["QUERY_STRING"]}&QUESTIONS={json.dumps(COLLECT_USER_NAME_QUESTIONS)}'
-#         )
+    #     user: User = request.user
+    #     if (
+    #         user.is_authenticated
+    #         and not user.is_superuser
+    #         and user.metadata.status == UserMetadata.Status.INCOMPLETE
+    #     ):
+    #         # send user to questionnaire if they haven't filled it out yet
+    #         return HttpResponseRedirect(
+    #             f'{reverse("user-questionnaire")}'
+    #             f'?{request.META["QUERY_STRING"]}&QUESTIONS={json.dumps(NEW_USER_QUESTIONS)}'
+    #         )
+    #     elif not user.is_anonymous and (not user.first_name or not user.last_name):
+    #         # if this user doesn't have a first/last name available, redirect them to a
+    #         # form to provide those before they can log in.
+    #         return HttpResponseRedirect(
+    #             f'{reverse("user-questionnaire")}'
+    #             f'?{request.META["QUERY_STRING"]}&QUESTIONS={json.dumps(COLLECT_USER_NAME_QUESTIONS)}'
+    #         )
 
     # otherwise, continue with normal authorization workflow
     return AuthorizationView.as_view()(request)
@@ -114,10 +115,10 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             user.last_name = req_body['Last Name']
             user.save(update_fields=['last_name'])
 
-#         Only send emails when the user fills out the questionnaire for the first time.
-#         If they go back later and update it for whatever reason, they should not receive
-#         another email confirming their registration. Additionally, users who have already
-#         been approved that go back and update the form later should also not receive an email.
+        #         Only send emails when the user fills out the questionnaire for the first time.
+        #         If they go back later and update it for whatever reason, they should not receive
+        #         another email confirming their registration. Additionally, users who have already
+        #         been approved that go back and update the form later should also not receive an email.
         if (
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
@@ -130,15 +131,15 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             )
             user_metadata.save(update_fields=['status'])
 
-#             # send email indicating the user has signed up
-#             for socialaccount in user.socialaccount_set.all():
-#                 # Send approved email if they have been auto-approved
-#                 if user_metadata.status == UserMetadata.Status.APPROVED:
-#                     send_approved_user_message(user, socialaccount)
-#                 # otherwise, send "awaiting approval" email
-#                 else:
-#                     send_registered_notice_email(user, socialaccount)
-#                     send_new_user_message_email(user, socialaccount)
+        #             # send email indicating the user has signed up
+        #             for socialaccount in user.socialaccount_set.all():
+        #                 # Send approved email if they have been auto-approved
+        #                 if user_metadata.status == UserMetadata.Status.APPROVED:
+        #                     send_approved_user_message(user, socialaccount)
+        #                 # otherwise, send "awaiting approval" email
+        #                 else:
+        #                     send_registered_notice_email(user, socialaccount)
+        #                     send_new_user_message_email(user, socialaccount)
 
         # pass on OAuth query string params to auth endpoint
         return HttpResponseRedirect(
