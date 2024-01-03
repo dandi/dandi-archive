@@ -1,24 +1,9 @@
 <template>
-  <v-container
-    class="bg-grey-darken-3 pa-0"
-    fluid
-  >
+  <v-container class="bg-grey-darken-3 pa-0" fluid>
     <v-row class="py-6 mt-2">
-      <template v-for="stat in stats" :key="stat.name">
-        <v-col
-          class="py-0 flex-grow-1"
-          md="4"
-          sm="4"
-          cols="12"
-        >
-          <SingleStat
-            :name="stat.name"
-            :value="stat.value.toString()"
-            :description="stat.description"
-            :href="stat.href"
-          />
-        </v-col>
-      </template>
+      <v-col v-for="stat in stats" :key="stat.name" class="py-0 flex-grow-1" md="4" sm="4" cols="12">
+        <SingleStat :name="stat.name" :value="stat.value.toString()" :description="stat.description" :href="stat.href" />
+      </v-col>
     </v-row>
   </v-container>
 </template>
