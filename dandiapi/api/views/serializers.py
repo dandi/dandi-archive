@@ -173,7 +173,7 @@ class DandisetDetailSerializer(DandisetSerializer):
 class DandisetQueryParameterSerializer(serializers.Serializer):
     draft = serializers.BooleanField(default=True)
     empty = serializers.BooleanField(default=True)
-    embargoed = serializers.BooleanField(default=True)
+    embargoed = serializers.BooleanField(default=False)
     user = serializers.CharField(required=False)
 
 
