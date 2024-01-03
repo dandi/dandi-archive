@@ -9,12 +9,12 @@
       selectable
       :to="{
         name: 'dandisetLanding',
-        params: { identifier: item.dandiset.identifier, origin },
+        params: { identifier: item.dandiset.identifier },
         query: { ...$route.query, pos: getPos(index) },
       }"
       exact
     >
-      
+
         <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 pb-1">
           {{ item.name }}
         </v-list-item-title>
@@ -73,7 +73,7 @@
             {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
           </template>
         </v-list-item-subtitle>
-      
+
       <slot :name="item.dandiset.identifier" />
     </v-list-item>
   </v-list>
