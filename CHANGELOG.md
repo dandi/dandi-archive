@@ -1,3 +1,17 @@
+# v0.3.71 (Thu Jan 04 2024)
+
+#### 🐛 Bug Fix
+
+- Check if version still exists before proceeding with validation [#1808](https://github.com/dandi/dandi-archive/pull/1808) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Generate correct docs for dandisets endpoint [#1807](https://github.com/dandi/dandi-archive/pull/1807) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.70 (Wed Jan 03 2024)
 
 #### 🐛 Bug Fix
