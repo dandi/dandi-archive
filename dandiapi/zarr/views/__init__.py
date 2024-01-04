@@ -16,11 +16,11 @@ from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
-from dandiapi.api.permissions import IsApproved
 
 logger = logging.getLogger(__name__)
 

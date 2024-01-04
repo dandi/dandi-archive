@@ -12,6 +12,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
@@ -20,7 +21,6 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
-from dandiapi.api.permissions import IsApproved
 
 
 class VersionFilter(filters.FilterSet):
