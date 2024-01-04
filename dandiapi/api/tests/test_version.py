@@ -378,7 +378,9 @@ def test_version_size(
 
 
 @pytest.mark.django_db()
-def test_version_rest_list(api_client, version, draft_version_factory):
+def test_version_rest_list(api_client, user, version, draft_version_factory):
+    api_client.force_authenticate(user=user)
+
     # Create an extra version so that there are multiple versions to filter down
     draft_version_factory()
 
@@ -408,7 +410,9 @@ def test_version_rest_list(api_client, version, draft_version_factory):
 
 
 @pytest.mark.django_db()
-def test_version_rest_retrieve(api_client, version, draft_version_factory):
+def test_version_rest_retrieve(api_client, user, version, draft_version_factory):
+    api_client.force_authenticate(user=user)
+
     # Create an extra version so that there are multiple versions to filter down
     draft_version_factory()
 
@@ -421,7 +425,9 @@ def test_version_rest_retrieve(api_client, version, draft_version_factory):
 
 
 @pytest.mark.django_db()
-def test_version_rest_info(api_client, version):
+def test_version_rest_info(api_client, user, version):
+    api_client.force_authenticate(user=user)
+
     assert api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/info/'
     ).data == {
@@ -452,8 +458,9 @@ def test_version_rest_info(api_client, version):
     [Asset.Status.PENDING, Asset.Status.VALIDATING, Asset.Status.VALID, Asset.Status.INVALID],
 )
 def test_version_rest_info_with_asset(
-    api_client, draft_version_factory, draft_asset_factory, asset_status: Asset.Status
+    api_client, user, draft_version_factory, draft_asset_factory, asset_status: Asset.Status
 ):
+    api_client.force_authenticate(user=user)
     version = draft_version_factory(status=Version.Status.VALID)
     asset = draft_asset_factory(status=asset_status)
     version.assets.add(asset)

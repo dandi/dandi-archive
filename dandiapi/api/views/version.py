@@ -20,6 +20,7 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
+from dandiapi.api.permissions import IsApproved
 
 
 class VersionFilter(filters.FilterSet):
@@ -42,6 +43,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
 
     lookup_field = 'version'
     lookup_value_regex = Version.VERSION_REGEX
+
+    permission_classes = [IsApproved]
 
     def get_queryset(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the

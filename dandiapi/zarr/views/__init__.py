@@ -20,6 +20,7 @@ from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
+from dandiapi.api.permissions import IsApproved
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     queryset = ZarrArchive.objects.select_related('dandiset').order_by('created').all()
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
+
+    permission_classes = [IsApproved]
 
     @swagger_auto_schema(
         query_serializer=ZarrListQuerySerializer,
