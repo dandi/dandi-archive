@@ -120,7 +120,9 @@ def validate_version_metadata(*, version: Version) -> None:
         }
         return metadata_for_validation
 
-    logger.info('Validating dandiset metadata for version %s', version.id)
+    version_id = version.id
+
+    logger.info('Validating dandiset metadata for version %s', version_id)
 
     # Published versions are immutable
     if version.version != 'draft':
@@ -134,6 +136,13 @@ def validate_version_metadata(*, version: Version) -> None:
             .select_for_update()
             .first()
         )
+
+        # It's possible for this version to get deleted during execution of this function.
+        # If that happens *before* the select_for_update query, return early.
+        if version is None:
+            logger.info('Version %s no longer exists, skipping validation', version_id)
+            return
+
         version.status = Version.Status.VALIDATING
         version.save()
 
