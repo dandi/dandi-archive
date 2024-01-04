@@ -100,4 +100,5 @@ def test_approved_or_readonly(
             assert response.status_code < 400
             return
 
+        # Would occur due to ReadOnlyModelViewSet
         assert response.status_code >= 400
