@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
         # Trying to make this actually swappable doesn't work, since "oauth2_provider.Application"
         # always gets declared when "AbstractApplication" is imported.
         ('oauth2_provider', '0003_auto_20201211_1314'),
-        'api',
+        ('api', '0001_initial_v2'),
     ]
 
     operations = [migrations.RunPython(create_application, reverse_create_application)]
