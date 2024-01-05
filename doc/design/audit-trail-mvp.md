@@ -17,7 +17,7 @@ collaboration.
    action* (see list [below](#significant-actions)) occurs successfully, the archive will generate a
    persistent record of that action, including the following data:
     - The date and time
-    - The authorized user who triggered the action
+    - The authorized user who triggered the action (note that this may be an actual user or the system itself for internal automated actions)
     - The ID of the Dandiset on which the action occurs
     - Event-specific data about the action itself
 
