@@ -48,7 +48,8 @@ def test_asset_blob_and_zarr(draft_asset, zarr_archive):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
+def test_asset_rest_path(api_client, user, draft_version_factory, asset_factory):
+    api_client.force_authenticate(user=user)
     # Initialize version and contained assets
     version: Version = draft_version_factory()
     asset = asset_factory(path='foo/bar/baz/a.txt')
@@ -69,7 +70,8 @@ def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_factory):
+def test_asset_rest_path_not_found(api_client, user, draft_version_factory, asset_factory):
+    api_client.force_authenticate(user=user)
     # Initialize version and contained assets
     version: Version = draft_version_factory()
     asset = asset_factory(path='foo/a.txt')
@@ -233,7 +235,9 @@ def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_list(api_client, version, asset, asset_factory):
+def test_asset_rest_list(api_client, user, version, asset, asset_factory):
+    api_client.force_authenticate(user=user)
+
     version.assets.add(asset)
 
     # Create an extra asset so that there are multiple assets to filter down
@@ -260,7 +264,9 @@ def test_asset_rest_list(api_client, version, asset, asset_factory):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_list_include_metadata(api_client, version, asset, asset_factory):
+def test_asset_rest_list_include_metadata(api_client, user, version, asset, asset_factory):
+    api_client.force_authenticate(user=user)
+
     version.assets.add(asset)
 
     # Create an extra asset so that there are multiple assets to filter down
@@ -301,7 +307,11 @@ def test_asset_rest_list_include_metadata(api_client, version, asset, asset_fact
     ],
 )
 @pytest.mark.django_db()
-def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, result_indices):
+def test_asset_rest_list_path_filter(
+    api_client, user, version, asset_factory, path, result_indices
+):
+    api_client.force_authenticate(user=user)
+
     assets = [
         asset_factory(path='foo.txt'),
         asset_factory(path='bar.txt'),
@@ -348,7 +358,8 @@ def test_asset_rest_list_path_filter(api_client, version, asset_factory, path, r
     ids=['created', '-created', 'modified', '-modified', 'path', '-path'],
 )
 @pytest.mark.django_db()
-def test_asset_rest_list_ordering(api_client, version, asset_factory, order_param, ordering):
+def test_asset_rest_list_ordering(api_client, user, version, asset_factory, order_param, ordering):
+    api_client.force_authenticate(user=user)
     # Create asset B first so that the path ordering is different from the created ordering.
     b = asset_factory(path='b')
     a = asset_factory(path='a')
@@ -369,7 +380,8 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
 
 
 @pytest.mark.django_db()
-def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
+def test_asset_rest_retrieve(api_client, user, version, asset, asset_factory):
+    api_client.force_authenticate(user=user)
     version.assets.add(asset)
 
     # Create an extra asset so that there are multiple assets to filter down
@@ -385,7 +397,8 @@ def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
+def test_asset_rest_retrieve_no_sha256(api_client, user, version, asset):
+    api_client.force_authenticate(user=user)
     version.assets.add(asset)
     # Remove the sha256 from the factory asset
     asset.blob.sha256 = None
@@ -401,7 +414,8 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_info(api_client, version, asset):
+def test_asset_rest_info(api_client, user, version, asset):
+    api_client.force_authenticate(user=user)
     version.assets.add(asset)
 
     assert api_client.get(
@@ -429,7 +443,8 @@ def test_asset_rest_info(api_client, version, asset):
         (Asset.Status.INVALID, 'error'),
     ],
 )
-def test_asset_rest_validation(api_client, version, asset, status, validation_error):
+def test_asset_rest_validation(api_client, user, version, asset, status, validation_error):
+    api_client.force_authenticate(user=user)
     version.assets.add(asset)
 
     asset.status = status
@@ -1108,7 +1123,7 @@ def test_asset_rest_update_zarr(
 
 
 @pytest.mark.django_db()
-def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
+def test_asset_rest_update_unauthorized(api_client, user, draft_version, asset):
     draft_version.assets.add(asset)
     new_metadata = asset.metadata
     new_metadata['new_field'] = 'new_value'
@@ -1330,12 +1345,13 @@ def test_asset_rest_delete_published_version(api_client, user, published_version
 
 
 @pytest.mark.django_db()
-def test_asset_download(api_client, storage, version, asset):
+def test_asset_download(api_client, user, storage, version, asset):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
 
     version.assets.add(asset)
 
+    api_client.force_authenticate(user=user)
     response = api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.asset_id}/download/'
@@ -1402,7 +1418,8 @@ def test_asset_download_embargo(
 
 
 @pytest.mark.django_db()
-def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
+def test_asset_download_zarr(api_client, user, version, asset_factory, zarr_archive):
+    api_client.force_authenticate(user=user)
     asset = asset_factory(blob=None, zarr=zarr_archive)
     version.assets.add(asset)
 
@@ -1414,7 +1431,9 @@ def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
 
 
 @pytest.mark.django_db()
-def test_asset_direct_download(api_client, storage, version, asset):
+def test_asset_direct_download(api_client, user, storage, version, asset):
+    api_client.force_authenticate(user=user)
+
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
 
@@ -1437,7 +1456,9 @@ def test_asset_direct_download(api_client, storage, version, asset):
 
 
 @pytest.mark.django_db()
-def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_archive):
+def test_asset_direct_download_zarr(api_client, user, version, asset_factory, zarr_archive):
+    api_client.force_authenticate(user=user)
+
     asset = asset_factory(blob=None, zarr=zarr_archive)
     version.assets.add(asset)
 
@@ -1446,7 +1467,9 @@ def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_arc
 
 
 @pytest.mark.django_db()
-def test_asset_direct_download_head(api_client, storage, version, asset):
+def test_asset_direct_download_head(api_client, user, storage, version, asset):
+    api_client.force_authenticate(user=user)
+
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
 
@@ -1469,14 +1492,18 @@ def test_asset_direct_download_head(api_client, storage, version, asset):
 
 
 @pytest.mark.django_db()
-def test_asset_direct_metadata(api_client, asset):
+def test_asset_direct_metadata(api_client, user, asset):
+    api_client.force_authenticate(user=user)
+
     assert (
         json.loads(api_client.get(f'/api/assets/{asset.asset_id}/').content) == asset.full_metadata
     )
 
 
 @pytest.mark.django_db()
-def test_asset_direct_info(api_client, asset):
+def test_asset_direct_info(api_client, user, asset):
+    api_client.force_authenticate(user=user)
+
     assert api_client.get(f'/api/assets/{asset.asset_id}/info/').json() == {
         'asset_id': str(asset.asset_id),
         'blob': str(asset.blob.blob_id),
@@ -1509,7 +1536,9 @@ def test_asset_direct_info(api_client, asset):
         ('a/b/c.txt', ['a/b/c.txt']),
     ],
 )
-def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expected_paths):
+def test_asset_rest_glob(api_client, user, asset_factory, version, glob_pattern, expected_paths):
+    api_client.force_authenticate(user=user)
+
     paths = ('a/b.txt', 'a/b/c.txt', 'a/b/c/d.txt', 'a/b/c/e.txt', 'a/b/d/e.txt')
     for path in paths:
         version.assets.add(asset_factory(path=path))

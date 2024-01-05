@@ -16,6 +16,7 @@ from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.common import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -93,6 +94,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     queryset = ZarrArchive.objects.select_related('dandiset').order_by('created').all()
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
+
+    permission_classes = [IsApproved]
 
     @swagger_auto_schema(
         query_serializer=ZarrListQuerySerializer,

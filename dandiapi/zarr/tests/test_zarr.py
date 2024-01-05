@@ -381,7 +381,9 @@ def test_zarr_rest_delete_missing_file(
 
 
 @pytest.mark.django_db()
-def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory):
+def test_zarr_file_list(
+    authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory
+):
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
 
@@ -397,11 +399,11 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_fil
         zarr_file_factory(zarr_archive=zarr_archive, path=file)
 
     # Check base listing
-    resp = api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/files/')
+    resp = authenticated_api_client.get(f'/api/zarr/{zarr_archive.zarr_id}/files/')
     assert [x['Key'] for x in resp.json()['results']] == sorted(files)
 
     # Check that prefix query param works as expected
-    resp = api_client.get(
+    resp = authenticated_api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/'},
     )
@@ -412,21 +414,21 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_fil
     ]
 
     # Check that prefix and after work together
-    resp = api_client.get(
+    resp = authenticated_api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/', 'after': 'foo/bar/a.txt'},
     )
     assert [x['Key'] for x in resp.json()['results']] == ['foo/bar/b.txt', 'foo/baz.txt']
 
     # Use limit query param
-    resp = api_client.get(
+    resp = authenticated_api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/', 'after': 'foo/bar/a.txt', 'limit': 1},
     )
     assert [x['Key'] for x in resp.json()['results']] == ['foo/bar/b.txt']
 
     # Check download flag
-    resp = api_client.get(
+    resp = authenticated_api_client.get(
         f'/api/zarr/{zarr_archive.zarr_id}/files/',
         {'prefix': 'foo/bar/a.txt', 'download': True},
     )
@@ -437,12 +439,14 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_fil
 
 
 @pytest.mark.django_db()
-def test_zarr_explore_head(api_client, storage, zarr_archive: ZarrArchive):
+def test_zarr_explore_head(authenticated_api_client, storage, zarr_archive: ZarrArchive):
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
 
     filepath = 'foo/bar.txt'
-    resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
+    resp = authenticated_api_client.head(
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath}
+    )
     assert resp.status_code == 302
     assert resp.headers['Location'].startswith(
         f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{filepath}?'  # noqa: E501

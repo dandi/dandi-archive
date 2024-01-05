@@ -63,7 +63,8 @@ def test_dandiset_manager_visible_to(
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_list(api_client, dandiset):
+def test_dandiset_rest_list(api_client, dandiset, user_factory):
+    api_client.force_authenticate(user=user_factory())
     assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
         'count': 1,
         'next': None,
@@ -105,12 +106,14 @@ def test_dandiset_rest_list(api_client, dandiset):
 def test_dandiset_versions(
     api_client,
     dandiset_factory,
+    user_factory,
     draft_version_factory,
     published_version_factory,
     asset_factory,
     params,
     results,
 ):
+    api_client.force_authenticate(user=user_factory())
     # Create some dandisets of different kinds.
     #
     # Dandiset with empty draft
@@ -217,7 +220,8 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_retrieve(api_client, dandiset):
+def test_dandiset_rest_retrieve(api_client, dandiset, user_factory):
+    api_client.force_authenticate(user=user_factory())
     assert api_client.get(f'/api/dandisets/{dandiset.identifier}/').data == {
         'identifier': dandiset.identifier,
         'created': TIMESTAMP_RE,
@@ -240,6 +244,7 @@ def test_dandiset_rest_embargo_access(
 ):
     owner = user_factory()
     unauthorized_user = user_factory()
+    api_client.force_authenticate(user=user_factory())
     dandiset = dandiset_factory(embargo_status=embargo_status)
     assign_perm('owner', owner, dandiset)
 
@@ -792,9 +797,9 @@ def test_dandiset_rest_delete_published_admin(api_client, published_version, adm
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_get_owners(api_client, dandiset, social_account):
+def test_dandiset_rest_get_owners(api_client, user_factory, dandiset, social_account):
     assign_perm('owner', social_account.user, dandiset)
-
+    api_client.force_authenticate(user=user_factory())
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
     assert resp.status_code == 200
@@ -807,9 +812,9 @@ def test_dandiset_rest_get_owners(api_client, dandiset, social_account):
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_get_owners_no_social_account(api_client, dandiset, user):
+def test_dandiset_rest_get_owners_no_social_account(api_client, user_factory, dandiset, user):
     assign_perm('owner', user, dandiset)
-
+    api_client.force_authenticate(user=user_factory())
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
     assert resp.status_code == 200
@@ -988,17 +993,20 @@ def test_dandiset_rest_add_malformed(api_client, dandiset, user):
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_search_no_query(api_client):
+def test_dandiset_rest_search_no_query(api_client, user_factory):
+    api_client.force_authenticate(user=user_factory())
     assert api_client.get('/api/dandisets/').data['results'] == []
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_search_empty_query(api_client):
+def test_dandiset_rest_search_empty_query(api_client, user_factory):
+    api_client.force_authenticate(user=user_factory())
     assert api_client.get('/api/dandisets/', {'search': ''}).data['results'] == []
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_search_identifier(api_client, draft_version):
+def test_dandiset_rest_search_identifier(api_client, user_factory, draft_version):
+    api_client.force_authenticate(user=user_factory())
     results = api_client.get(
         '/api/dandisets/',
         {'search': draft_version.dandiset.identifier, 'draft': 'true', 'empty': 'true'},
@@ -1017,7 +1025,10 @@ def test_dandiset_rest_search_identifier(api_client, draft_version):
     'contributors',
     [None, 'string', 1, [], {}],
 )
-def test_dandiset_contact_person_malformed_contributors(api_client, draft_version, contributors):
+def test_dandiset_contact_person_malformed_contributors(
+    api_client, user_factory, draft_version, contributors
+):
+    api_client.force_authenticate(user=user_factory())
     draft_version.metadata['contributor'] = contributors
     draft_version.save()
 

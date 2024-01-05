@@ -23,7 +23,7 @@
           >
             <v-col class="splash-text my-12">
               <div class="text-h2 font-weight-thin text-center light-blue--text text--darken-1">
-                LINC BRAIN Intiative
+                LINC BRAIN Initiative
               </div>
               <div class="text-h6 font-weight-light text-center">
                 The BRAIN Initiative archive for publishing and sharing

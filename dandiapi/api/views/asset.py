@@ -42,6 +42,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import EmbargoedAssetBlob, validate_asset_path
+from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -79,6 +80,8 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
+
+    permission_classes = [IsApproved]
 
     def raise_if_unauthorized(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
@@ -227,6 +230,7 @@ class AssetRequestSerializer(serializers.Serializer):
 
 class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet):
     pagination_class = DandiPagination
+    # Inherited from AssetViewSet -- permission_classes = [IsApproved]
 
     def raise_if_unauthorized(self):
         version = get_object_or_404(
