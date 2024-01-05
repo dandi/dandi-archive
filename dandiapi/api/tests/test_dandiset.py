@@ -63,24 +63,29 @@ def test_dandiset_manager_visible_to(
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_list(api_client, dandiset, user_factory):
-    api_client.force_authenticate(user=user_factory())
-    assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
-        'count': 1,
-        'next': None,
-        'previous': None,
-        'results': [
-            {
-                'identifier': dandiset.identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'draft_version': None,
-                'most_recent_published_version': None,
-                'contact_person': '',
-                'embargo_status': 'OPEN',
-            }
-        ],
-    }
+def test_dandiset_rest_list(api_client, dandiset, user):
+    # # Test un-authenticated request
+    # assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
+    #     'count': 1,
+    #     'next': None,
+    #     'previous': None,
+    #     'results': [
+    #         {
+    #             'identifier': dandiset.identifier,
+    #             'created': TIMESTAMP_RE,
+    #             'modified': TIMESTAMP_RE,
+    #             'draft_version': None,
+    #             'most_recent_published_version': None,
+    #             'contact_person': '',
+    #             'embargo_status': 'OPEN',
+    #         }
+    #     ],
+    # }
+    r = api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true', 'embargoed': 'true'})
+    assert r.status_code == 401
+    api_client.force_authenticate(user=user)
+    r = api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true', 'embargoed': 'true'})
+    assert r.status_code == 200
 
 
 @pytest.mark.parametrize(
@@ -308,7 +313,10 @@ def test_dandiset_rest_embargo_access(
         api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
         == expected_dandiset_serialization
     )
-    assert api_client.get('/api/dandisets/').json() == expected_visible_pagination
+    assert (
+        api_client.get('/api/dandisets/', {'embargoed': 'true'}).json()
+        == expected_visible_pagination
+    )
 
 
 @pytest.mark.django_db()
