@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     # This is creating a swappable model, so it needs to exist before the OAuth2 models are created
     run_before = [
-        ('oauth2_provider', '0001_initial'),
+        ('0001_initial'),
     ]
 
     operations = [
