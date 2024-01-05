@@ -34,7 +34,7 @@ jobs:
         run: python setup.py sdist --formats=gztar
 
       - name: Create Heroku Build
-        run: heroku run python manage.py migrate --fake oauth2_provider -a linc-staging-terraform && heroku builds:create -a linc-staging-terraform --source-tar=dist/$(python setup.py --fullname).tar.gz
+        run: heroku builds:create -a linc-staging-terraform --source-tar=dist/$(python setup.py --fullname).tar.gz
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY  }}
           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL  }}
