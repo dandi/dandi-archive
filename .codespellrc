@@ -1,6 +1,7 @@
 [codespell]
-skip = .git,node_modules,dist,venv,.venv,.mypy_cache,.tox,yarn.lock,CHANGELOG.md,./htmlcov,*.pyc,*.log,./doc
+skip = .git,node_modules,dist,venv,.venv,.mypy_cache,.tox,yarn.lock,CHANGELOG.md,./htmlcov,*.pyc,*.log
 # Disabled until https://github.com/codespell-project/codespell/issues/2727
 # got answer/re-solution
 # dictionary = .codespell_dict
+builtin = clear
 # ignore-words-list = 
