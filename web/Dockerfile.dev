@@ -1,14 +1,17 @@
-FROM node:16
+FROM node:latest
 
-# Arbitrary directory inside the container
+# Set the working directory
 WORKDIR /usr/src/app
 
-COPY package.json ./
+# Copy package.json and install dependencies
+COPY package.json yarn.lock ./
+RUN yarn install --production=false
 
-RUN yarn install
-
+# Copy the rest of your application's code
 COPY . .
 
+# Expose the port the app runs on
 EXPOSE 8085
 
-CMD [ "yarn", "run", "serve" ]
+# Start the application
+CMD ["yarn", "run", "dev"]

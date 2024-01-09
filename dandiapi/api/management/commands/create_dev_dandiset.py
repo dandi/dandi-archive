@@ -1,3 +1,4 @@
+import hashlib
 from uuid import uuid4
 
 from django.conf import settings
@@ -15,8 +16,13 @@ from dandiapi.api.tasks import calculate_sha256
 @click.command()
 @click.option('--name', default='Development Dandiset')
 @click.option('--owner', 'email', required=True, help='The email address of the owner')
-def create_dev_dandiset(*, name: str, email: str):
+@click.option('--first_name', default='Randi')
+@click.option('--last_name', default='Dandi')
+def create_dev_dandiset(name: str, email: str, first_name: str, last_name: str):
     owner = User.objects.get(email=email)
+    owner.first_name = first_name
+    owner.last_name = last_name
+    owner.save()
 
     version_metadata = {
         'description': 'An informative description',
@@ -26,16 +32,19 @@ def create_dev_dandiset(*, name: str, email: str):
         user=owner, embargo=False, version_name=name, version_metadata=version_metadata
     )
 
-    uploaded_file = SimpleUploadedFile(name='foo/bar.txt', content=b'A' * 20)
+    file_size = 20
+    file_content = b'A' * file_size
+    uploaded_file = SimpleUploadedFile(name='foo/bar.txt', content=file_content)
     etag = '76d36e98f312e98ff908c8c82c8dd623-0'
+
     try:
         asset_blob = AssetBlob.objects.get(etag=etag)
     except AssetBlob.DoesNotExist:
+        # Since the SimpleUploadedFile is non-zarr asset, validation fails
+        # without a sha2_256 initially provided.
+        sha256_hash = hashlib.sha256(file_content).hexdigest()
         asset_blob = AssetBlob(
-            blob_id=uuid4(),
-            blob=uploaded_file,
-            etag=etag,
-            size=20,
+            blob_id=uuid4(), blob=uploaded_file, etag=etag, size=file_size, sha256=sha256_hash
         )
         asset_blob.save()
     asset_metadata = {

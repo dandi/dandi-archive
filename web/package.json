@@ -2,7 +2,7 @@
   "name": "dandi-archive",
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 8085",
     "build": "vite build",
     "preview": "vite preview --port 4173",
     "type-check": "vue-tsc --noEmit",

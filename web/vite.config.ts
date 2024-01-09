@@ -31,7 +31,6 @@ function getGitRevision() {
 process.env.VITE_APP_VERSION = getVersion();
 process.env.VITE_APP_GIT_REVISION = getGitRevision();
 
-
 // https://vitejs.dev/config/
 export default defineConfig({
   server: {
