@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script can be used to launch the linc-archive UI with ease locally
+# This script can be used to launch the UI with ease locally
 # Happy developing!
 
 if [ $# -lt 2 ]; then
@@ -27,5 +27,5 @@ docker-compose run --rm django ./manage.py createcachetable
 docker-compose run --rm django ./manage.py createsuperuser
 docker-compose run --rm django ./manage.py create_dev_dandiset --owner $email
 
-# Run Application
+# Bring backend application to life!
 docker-compose up
