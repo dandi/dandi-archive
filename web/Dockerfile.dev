@@ -1,0 +1,19 @@
+# Use node:16 due to project still being on Vue 2 and not Vue 3 - as of Jan 2024
+FROM node:16
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy package.json and install dependencies
+COPY package.json yarn.lock ./
+RUN yarn install --production=false
+
+# Copy the rest of your application's code
+COPY . .
+
+# Expose the port the app runs on
+EXPOSE 8085
+
+# Start the application
+CMD ["yarn", "run", "dev"]
+
