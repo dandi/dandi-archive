@@ -22,7 +22,7 @@
             width="60%"
             class="white--text pl-2 py-1 text-left"
           >
-            <div>> dandi download https://dandiarchive.org/dandiset/{{ dandisetIdentifier }}/draft</div>
+            <div>{{ downloadCommand }}</div>
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
             <div>> dandi organize &lt;source_folder&gt;</div>
@@ -53,4 +53,16 @@ import { useDandisetStore } from '@/stores/dandiset';
 
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
+
+const downloadCommand = computed(() => {
+  const baseUrl = import.meta.env.VITE_APP_DANDI_API_ROOT === 'https://api-staging.dandiarchive.org/api/'
+    ? 'https://gui-staging.dandiarchive.org/dandiset/'
+    : 'https://dandiarchive.org/dandiset/';
+
+  return dandisetIdentifier.value
+    ? `> dandi download ${baseUrl}${dandisetIdentifier.value}/draft`
+    : ''; // Empty string just as a fallback in case store.dandiset? is undefined
+});
 </script>
+
+
