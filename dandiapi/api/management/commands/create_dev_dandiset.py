@@ -19,10 +19,11 @@ from dandiapi.api.tasks import calculate_sha256
 @click.option('--first_name', default='Randi The Admin')
 @click.option('--last_name', default='Dandi')
 def create_dev_dandiset(name: str, email: str, first_name: str, last_name: str):
-    owner = User.objects.get(email=email)
-    owner.first_name = first_name
-    owner.last_name = last_name
-    owner.save()
+    owner, is_created = User.objects.get_or_create(email=email)
+    if not is_created:
+        owner.first_name = first_name
+        owner.last_name = last_name
+        owner.save()
 
     version_metadata = {
         'description': 'An informative description',
