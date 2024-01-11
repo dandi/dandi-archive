@@ -16,7 +16,7 @@ from dandiapi.api.tasks import calculate_sha256
 @click.command()
 @click.option('--name', default='Development Dandiset')
 @click.option('--owner', 'email', required=True, help='The email address of the owner')
-@click.option('--first_name', default='Randi')
+@click.option('--first_name', default='Randi The Admin')
 @click.option('--last_name', default='Dandi')
 def create_dev_dandiset(name: str, email: str, first_name: str, last_name: str):
     owner = User.objects.get(email=email)
