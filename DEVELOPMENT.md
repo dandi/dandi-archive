@@ -7,8 +7,8 @@ This is the simplest configuration for developers to start with.
 
 1. Ensure you have installed Docker on your local machine
 2. Run `./admin_dev_startup.sh <fun-image-name-you-can-pick> <your-email>`.  When prompted, enter an username and password in the command prompt. (If you run into local errors with the script, you may need to run `chmod +x admin_dev_startup.sh` first)
-3. Navigate to `localhost:8000/admin`, and log in with the username and password you used in Step #2.  Under the `User` section, select the username and change the `Status` from `Incomplete` to `Approved`.
-4. Navigate to `localhost:8085` and select `LOG IN WITH GITHUB`.
+3. If not routed to `localhost:8000` upon clicking `LOG IN WITH GITHUB` (If routed appropriately, just log in), navigate to `localhost:8000/admin`, and log in with the username and password you used in Step #2.  Under the `User` section, select the username and change the `Status` from `Incomplete` to `Approved`.
+4. Return to `localhost:8085` and if not logged in yet, select `LOG IN WITH GITHUB`.
 
 ### Application Maintenance
 Occasionally, new package dependencies or schema changes will necessitate
