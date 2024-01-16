@@ -30,7 +30,7 @@
                   </div>
                 </template>
                 <span>
-                  Embargoed Dandisets are hidden from public access until a specific time period has
+                  Embargoed datasets are hidden from public access until a specific time period has
                   elapsed. Uploading data to the DANDI archive under embargo requires a relevant
                   NIH award number, and the data will be automatically published when the embargo
                   period expires.
@@ -84,7 +84,7 @@
               target="_blank"
               rel="noopener"
             >
-              licenses for Dandisets
+              licenses for datasets
             </a>.
           </div>
           <v-select
