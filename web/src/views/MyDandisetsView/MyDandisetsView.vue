@@ -1,11 +1,11 @@
 <template>
   <DandisetsPage
-    title="My Dandisets"
+    title="My Datasets"
     user
   >
     <template #no-content>
       <div>
-        You haven't created any dandisets yet
+        You haven't created any datasets yet
       </div>
     </template>
   </DandisetsPage>
