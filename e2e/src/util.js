@@ -106,7 +106,7 @@ export async function registerDandiset(name, description) {
     await cookieBanner.click();
   }
 
-  await expect(page).toClickXPath(vBtn('New Dandiset'));
+  await expect(page).toClickXPath(vBtn('New Dataset'));
   await expect(page).toFillXPath(vTextField('Title'), name);
   await expect(page).toFillXPath(vTextarea('Description'), description);
   // eslint-disable-next-line no-undef
