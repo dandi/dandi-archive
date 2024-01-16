@@ -1,3 +1,17 @@
+# v0.3.72 (Tue Jan 16 2024)
+
+#### 🐛 Bug Fix
+
+- Retry aggregate_assets_summary_task on version metadata race condition [#1803](https://github.com/dandi/dandi-archive/pull/1803) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add an e2e test for the FileBrowser [#1789](https://github.com/dandi/dandi-archive/pull/1789) ([@marySalvi](https://github.com/marySalvi))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+
+---
+
 # v0.3.71 (Thu Jan 04 2024)
 
 #### 🐛 Bug Fix
