@@ -4,7 +4,7 @@ The end-to-end tests use [Puppeteer](https://github.com/puppeteer/puppeteer/) an
 
 ## Installation
 ```bash
-cd test
+cd e2e
 yarn install
 ```
 
@@ -19,7 +19,7 @@ To get the API server running, follow the instructions in the [README in the `da
 
 Assuming the web app is running at `http://localhost:8085`:
 ```bash
-# within "test"
+# within "e2e"
 CLIENT_URL=http://localhost:8085 yarn run test
 ```
 
@@ -28,7 +28,7 @@ Frequently when writing tests, they will not work the first time.
 For browser based tests, it is very helpful to be able to see the state of the browser at the point of failure.
 Use this command to run the browser in headful mode and extend the Jest test timeout to 1 hour:
 ```bash
-# within "test"
+# within "e2e"
 CLIENT_URL=http://localhost:8085 yarn run test-debug
 ```
 You can also include `await jestPuppeteer.debug();` at any point in the test to create a manual breakpoint.

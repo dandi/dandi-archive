@@ -101,7 +101,7 @@
           color="primary"
           rounded
         >
-          New Dandiset
+          New Dataset
         </v-btn>
         <UserMenu />
       </template>

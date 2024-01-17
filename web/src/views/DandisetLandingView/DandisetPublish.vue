@@ -70,7 +70,7 @@
               <v-col>
                 <span>
                   As an <span class="font-weight-bold">admin</span>,
-                  you may publish Dandisets without being an owner.
+                  you may publish datasets without being an owner.
                 </span>
               </v-col>
             </v-row>
