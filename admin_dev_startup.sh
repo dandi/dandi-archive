@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script can be used to launch the UI with ease locally
+# This script can be used to launch the front-end and back-end applications locally.
 # Happy developing!
 
 if [ $# -lt 2 ]; then
@@ -22,10 +22,10 @@ docker run -d -v "$(pwd):/usr/src/app" -v /usr/src/app/node_modules -p 8085:8085
 cd ..
 
 # Run Docker Compose commands for backend
-docker-compose run --rm django ./manage.py migrate
-docker-compose run --rm django ./manage.py createcachetable
-docker-compose run --rm django ./manage.py createsuperuser
-docker-compose run --rm django ./manage.py create_dev_dandiset --owner $email
+docker compose run --rm django ./manage.py migrate
+docker compose run --rm django ./manage.py createcachetable
+docker compose run --rm django ./manage.py createsuperuser
+docker compose run --rm django ./manage.py create_dev_dandiset --owner $email
 
 # Bring backend application to life!
-docker-compose up
+docker compose up
