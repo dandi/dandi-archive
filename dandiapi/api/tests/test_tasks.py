@@ -5,6 +5,8 @@ import hashlib
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.forms.models import model_to_dict
+from django.utils import timezone
 from guardian.shortcuts import assign_perm
 import pytest
 
@@ -190,12 +192,41 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
 def test_validate_version_metadata(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
-    tasks.validate_version_metadata_task(draft_version.id)
+    # Bypass .save to manually set an older timestamp
+    old_modified = timezone.now() - datetime.timedelta(minutes=10)
+    updated = Version.objects.filter(id=draft_version.id).update(modified=old_modified)
+    assert updated == 1
 
+    tasks.validate_version_metadata_task(draft_version.id)
     draft_version.refresh_from_db()
 
     assert draft_version.status == Version.Status.VALID
     assert draft_version.validation_errors == []
+
+    # Ensure modified field was updated
+    assert draft_version.modified > old_modified
+
+
+@pytest.mark.django_db()
+def test_validate_version_metadata_no_side_effects(draft_version: Version, asset: Asset):
+    draft_version.assets.add(asset)
+
+    # Set the version `status` and `validation_errors` fields to something
+    # which can't be a result of validate_version_metadata
+    draft_version.status = Version.Status.PENDING
+    draft_version.validation_errors = [{'foo': 'bar'}]
+    draft_version.save()
+
+    # Validate version metadata, storing the model data before and after
+    old_data = model_to_dict(draft_version)
+    tasks.validate_version_metadata_task(draft_version.id)
+    draft_version.refresh_from_db()
+    new_data = model_to_dict(draft_version)
+
+    # Check that change is isolated to these two fields
+    assert old_data.pop('status') != new_data.pop('status')
+    assert old_data.pop('validation_errors') != new_data.pop('validation_errors')
+    assert old_data == new_data
 
 
 @pytest.mark.django_db()

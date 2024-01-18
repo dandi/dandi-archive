@@ -140,43 +140,42 @@ def validate_version_metadata(*, version: Version) -> None:
     with transaction.atomic():
         # validating version metadata needs to lock the version to avoid racing with
         # other modifications e.g. aggregate_assets_summary.
-        version = (
-            Version.objects.filter(id=version.id, status=Version.Status.PENDING)
-            .select_for_update()
-            .first()
-        )
 
         # It's possible for this version to get deleted during execution of this function.
         # If that happens *before* the select_for_update query, return early.
-        if version is None:
+        version_qs = Version.objects.filter(id=version.id).select_for_update()
+        if not version_qs.filter(status=Version.Status.PENDING).exists():
             logger.info('Version %s no longer exists, skipping validation', version_id)
             return
 
-        version.status = Version.Status.VALIDATING
-        version.save()
-
+        # Set to validating and continue
+        version_qs.update(status=Version.Status.VALIDATING)
         try:
             validate(
-                _build_validatable_version_metadata(version),
+                _build_validatable_version_metadata(version_qs.first()),
                 schema_key='PublishedDandiset',
                 json_validation=True,
             )
         except dandischema.exceptions.ValidationError as e:
             logger.info('Error while validating version %s', version.id)
-            version.status = Version.Status.INVALID
-
-            validation_errors = _collect_validation_errors(e)
-            version.validation_errors = validation_errors
-            version.save()
+            version_qs.update(
+                status=Version.Status.INVALID,
+                validation_errors=_collect_validation_errors(e),
+                modified=timezone.now(),
+            )
             return
         except ValueError as e:
             # A bare ValueError is thrown when dandischema generates its own exceptions, like a
             # mismatched schemaVersion.
-            version.status = Version.Status.INVALID
-            version.validation_errors = [{'field': '', 'message': str(e)}]
-            version.save()
+            logger.info('Error while validating version %s', version.id)
+            version_qs.update(
+                status=Version.Status.INVALID,
+                validation_errors=[{'field': '', 'message': str(e)}],
+                modified=timezone.now(),
+            )
             return
+
         logger.info('Successfully validated version %s', version.id)
-        version.status = Version.Status.VALID
-        version.validation_errors = []
-        version.save()
+        version_qs.update(
+            status=Version.Status.VALID, validation_errors=[], modified=timezone.now()
+        )
