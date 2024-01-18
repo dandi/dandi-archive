@@ -150,7 +150,8 @@ def validate_version_metadata(*, version: Version) -> None:
         logger.info('Successfully validated version %s', version.id)
         return (Version.Status.VALID, [])
 
-    logger.info('Validating dandiset metadata for version %s', version.id)
+    version_id = version.id
+    logger.info('Validating dandiset metadata for version %s', version_id)
 
     # Published versions are immutable
     if version.version != 'draft':
@@ -159,15 +160,23 @@ def validate_version_metadata(*, version: Version) -> None:
     with transaction.atomic():
         # validating version metadata needs to lock the version to avoid racing with
         # other modifications e.g. aggregate_assets_summary.
+        version_qs = Version.objects.filter(id=version_id).select_for_update()
+        current_version = version_qs.first()
 
         # It's possible for this version to get deleted during execution of this function.
         # If that happens *before* the select_for_update query, return early.
-        version_qs = Version.objects.filter(id=version.id).select_for_update()
-        if not version_qs.filter(status=Version.Status.PENDING).exists():
-            logger.info('Version %s no longer exists, skipping validation', version.id)
+        if current_version is None:
+            logger.info('Version %s no longer exists, skipping validation', version_id)
+            return
+
+        # If the version has since been modified, return early
+        if current_version.status != Version.Status.PENDING:
+            logger.info(
+                'Skipping validation for version %s due to concurrent modification', version_id
+            )
             return
 
         # Set to validating and continue
         version_qs.update(status=Version.Status.VALIDATING)
-        status, errors = _get_version_validation_result(version_qs.first())
+        status, errors = _get_version_validation_result(current_version)
         version_qs.update(status=status, validation_errors=errors, modified=timezone.now())
