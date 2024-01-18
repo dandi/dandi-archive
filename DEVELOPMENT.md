@@ -3,19 +3,12 @@
 ## Develop with Docker (recommended quickstart)
 This is the simplest configuration for developers to start with.
 
-### Initial Setup
-1. Run `docker-compose run --rm django ./manage.py migrate`
-2. Run `docker-compose run --rm django ./manage.py createcachetable`
-3. Run `docker-compose run --rm django ./manage.py createsuperuser`
-   and follow the prompts to create your own user.
-   Set your username to your email to ensure parity with how GitHub logins work.
-4. Run `docker-compose run --rm django ./manage.py create_dev_dandiset --owner your.email@email.com`
-   to create a dummy dandiset to start working with.
+## Instructions for local development with front-end hot reloading
 
-### Run Application
-1. Run `docker-compose up`
-2. Access the site, starting at http://localhost:8000/admin/
-3. When finished, use `Ctrl+C`
+1. Ensure you have installed Docker on your local machine
+2. Run `./admin_dev_startup.sh <fun-image-name-you-can-pick> <your-email>`.  When prompted, enter an username and password in the command prompt. (If you run into local errors with the script, you may need to run `chmod +x admin_dev_startup.sh` first)
+3. Navigate to `localhost:8000/admin`, and log in with the username and password you used in Step #2.  Under the `User` section, select the username and change the `Status` from `Incomplete` to `Approved`.
+4. Navigate to `localhost:8085` and select `LOG IN WITH GITHUB`.
 
 ### Application Maintenance
 Occasionally, new package dependencies or schema changes will necessitate
