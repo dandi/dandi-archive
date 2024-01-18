@@ -36,7 +36,7 @@ const size = ref(0);
 
 const stats = computed(() => [
   {
-    name: 'dandisets',
+    name: 'datasets',
     value: dandisets.value,
     description: 'A DANDI dataset including files and dataset-level metadata',
     href: '/dandiset',
