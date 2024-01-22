@@ -3,6 +3,7 @@ import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.conf import settings
 from django.db import transaction
+from django.db.models.query_utils import Q
 from django.utils import timezone
 import jsonschema.exceptions
 
@@ -115,7 +116,11 @@ def validate_version_metadata(*, version: Version) -> None:
         metadata_for_validation['doi'] = '10.80507/dandi.123456/0.123456.1234'
         metadata_for_validation['assetsSummary'] = {
             'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 1 if version.assets.filter(blob__size__gt=0).exists() else 0,
+            'numberOfBytes': 1
+            if version.assets.filter(
+                Q(blob__size__gt=0) | Q(zarr__size__gt=0) | Q(embargoed_blob__size__gt=0)
+            ).exists()
+            else 0,
             'numberOfFiles': 1 if version.assets.exists() else 0,
         }
         return metadata_for_validation
