@@ -128,7 +128,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             # Return early if attempting to access embargoed data without authentication
             if show_embargoed and not self.request.user.is_authenticated:
-                raise UnauthorizedEmbargoAccessError()
+                raise UnauthorizedEmbargoAccessError
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
