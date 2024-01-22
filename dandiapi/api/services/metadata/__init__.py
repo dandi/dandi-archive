@@ -13,6 +13,7 @@ from dandiapi.api.services.metadata.exceptions import (
     VersionHasBeenPublishedError,
 )
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
+from dandiapi.zarr.models import ZarrArchiveStatus
 
 logger = get_task_logger(__name__)
 
@@ -81,10 +82,12 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 def version_aggregate_assets_summary(version: Version) -> None:
     if version.version != 'draft':
         raise VersionHasBeenPublishedError
-    breakpoint()
+
     assets_summary = aggregate_assets_summary(
         asset.full_metadata
-        for asset in version.assets.filter(status=Asset.Status.VALID)
+        for asset in version.assets.filter(
+            Q(status=Asset.Status.VALID) | Q(zarr__status=ZarrArchiveStatus.UPLOADED)
+        )
         .select_related('blob', 'zarr')
         .iterator()
     )

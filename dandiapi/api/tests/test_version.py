@@ -348,7 +348,7 @@ def test_version_publish_version(draft_version, asset):
 
 @pytest.mark.parametrize(
     'asset_type',
-    ["embargoed_blob", "blob", "zarr"],
+    ["blob", "embargoed_blob", "zarr"],
 )
 @pytest.mark.django_db()
 def test_version_aggregate_assets_summary(
@@ -365,8 +365,7 @@ def test_version_aggregate_assets_summary(
         asset = draft_asset_factory(status=Asset.Status.VALID)
 
     elif asset_type is 'embargoed_blob':
-        embargoed_asset = embargoed_asset_blob_factory(dandiset=version.dandiset)
-        asset = draft_asset_factory(blob=None, embargoed_blob=embargoed_asset, zarr=None)
+        asset = embargoed_asset_blob_factory(dandiset=version.dandiset)
 
     elif asset_type is 'zarr':
         zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
@@ -389,6 +388,9 @@ def test_version_aggregate_assets_summary(
 
     elif asset_type is 'zarr':
         assert version.metadata['assetsSummary']['numberOfBytes'] == asset.size
+
+    if asset_type is 'zarr':
+        breakpoint()
 
     assert version.metadata['assetsSummary']['numberOfFiles'] == 1
     assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
