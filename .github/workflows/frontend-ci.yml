@@ -98,7 +98,7 @@ jobs:
       - name: Install latest version of pip
         run: pip install --upgrade pip
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: pip-cache
         with:
           path: ${{ env.pythonLocation}}/lib/python3.11/site-packages/*
