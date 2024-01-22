@@ -10,7 +10,7 @@ from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
-from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModified
+from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -376,7 +376,7 @@ def test_version_aggregate_assets_summary_metadata_modified(
 
     # Modify the metadata passed to the function so that it's mismatched
     version.metadata['foo'] = 'bar'
-    with pytest.raises(VersionMetadataConcurrentlyModified):
+    with pytest.raises(VersionMetadataConcurrentlyModifiedError):
         version_aggregate_assets_summary(version)
 
 

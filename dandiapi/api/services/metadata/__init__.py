@@ -13,7 +13,7 @@ from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.metadata.exceptions import (
     AssetHasBeenPublishedError,
     VersionHasBeenPublishedError,
-    VersionMetadataConcurrentlyModified,
+    VersionMetadataConcurrentlyModifiedError,
 )
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
 
@@ -102,7 +102,7 @@ def version_aggregate_assets_summary(version: Version) -> None:
     )
     if updated_count == 0:
         logger.info('Skipped updating assetsSummary for version %s', version.id)
-        raise VersionMetadataConcurrentlyModified
+        raise VersionMetadataConcurrentlyModifiedError
 
 
 def validate_version_metadata(*, version: Version) -> None:

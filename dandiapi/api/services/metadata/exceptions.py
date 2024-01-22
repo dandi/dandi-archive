@@ -15,6 +15,6 @@ class VersionHasBeenPublishedError(DandiError):
     message = 'This version has been published and cannot be modified.'
 
 
-class VersionMetadataConcurrentlyModified(DandiError):
+class VersionMetadataConcurrentlyModifiedError(DandiError):
     http_status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     message = 'The metadata for this version has been modified since the request began.'

@@ -25,7 +25,7 @@ from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
-from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccess
+from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccessError
 from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
 from dandiapi.api.views.serializers import (
@@ -128,7 +128,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             # Return early if attempting to access embargoed data without authentication
             if show_embargoed and not self.request.user.is_authenticated:
-                raise UnauthorizedEmbargoAccess()
+                raise UnauthorizedEmbargoAccessError()
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
