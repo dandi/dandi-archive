@@ -84,6 +84,9 @@ class Upload(BaseUpload):
     blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
+    def __str__(self) -> str:
+        return self.upload_id
+
     @staticmethod
     def object_key(upload_id, *, dandiset: Dandiset | None = None):  # noqa: ARG004
         upload_id = str(upload_id)
@@ -109,6 +112,9 @@ class EmbargoedUpload(BaseUpload):
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_uploads', on_delete=models.CASCADE
     )
+
+    def __str__(self) -> str:
+        return self.upload_id
 
     @staticmethod
     def object_key(upload_id, *, dandiset: Dandiset):
