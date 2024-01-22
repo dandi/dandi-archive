@@ -49,6 +49,10 @@ ignore = [
 
   # Try to fix upstream
   "RUF012", #  Mutable class attributes should be annotated with `typing.ClassVar`
+
+  # Fix in DANDI codebase. PR that will fix this:
+  # https://github.com/dandi/dandi-archive/pull/1782
+  "PTH119", # TODO: re-enable this when it's fixed
 ]
 
 [tool.ruff.per-file-ignores]
