@@ -123,4 +123,5 @@ dmypy.json
 # End of https://www.gitignore.io/api/django
 
 # Editor settings
-.vscode 
+.vscode
+.idea

@@ -81,7 +81,7 @@ def validate_asset_metadata(*, asset: Asset) -> bool:
 def version_aggregate_assets_summary(version: Version) -> None:
     if version.version != 'draft':
         raise VersionHasBeenPublishedError
-
+    breakpoint()
     assets_summary = aggregate_assets_summary(
         asset.full_metadata
         for asset in version.assets.filter(status=Asset.Status.VALID)

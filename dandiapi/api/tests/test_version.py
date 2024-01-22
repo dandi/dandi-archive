@@ -19,6 +19,7 @@ from dandiapi.api import tasks
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERSION_ID_RE
@@ -345,19 +346,52 @@ def test_version_publish_version(draft_version, asset):
     }
 
 
+@pytest.mark.parametrize(
+    'asset_type',
+    ["embargoed_blob", "blob", "zarr"],
+)
 @pytest.mark.django_db()
-def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_factory):
+def test_version_aggregate_assets_summary(
+    draft_version_factory,
+    draft_asset_factory,
+    embargoed_asset_blob_factory,
+    zarr_archive_factory,
+    asset_type
+):
+
     version = draft_version_factory(status=Version.Status.VALID)
-    asset = draft_asset_factory(status=Asset.Status.VALID)
+
+    if asset_type is 'blob':
+        asset = draft_asset_factory(status=Asset.Status.VALID)
+
+    elif asset_type is 'embargoed_blob':
+        embargoed_asset = embargoed_asset_blob_factory(dandiset=version.dandiset)
+        asset = draft_asset_factory(blob=None, embargoed_blob=embargoed_asset, zarr=None)
+
+    elif asset_type is 'zarr':
+        zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
+        asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr)
+
     version.assets.add(asset)
 
     version_aggregate_assets_summary(version)
     version.refresh_from_db()
 
-    assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
+    assert 1 == version.assets.count()
+    asset = version.assets.first()
+
+    if asset_type is 'blob':
+        assert version.metadata['assetsSummary']['numberOfBytes'] == asset.blob.size
+
+    elif asset_type is 'embargoed_blob':
+        breakpoint()
+        assert version.metadata['assetsSummary']['numberOfBytes'] == asset.embargoed_blob.blob.size
+
+    elif asset_type is 'zarr':
+        assert version.metadata['assetsSummary']['numberOfBytes'] == asset.size
+
     assert version.metadata['assetsSummary']['numberOfFiles'] == 1
     assert version.metadata['assetsSummary']['schemaKey'] == 'AssetsSummary'
-
 
 @pytest.mark.django_db()
 def test_version_size(
