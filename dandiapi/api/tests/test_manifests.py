@@ -1,6 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.files.storage import Storage
 import pytest
 from rest_framework.renderers import JSONRenderer
 from rest_framework_yaml.renderers import YAMLRenderer
@@ -13,6 +16,9 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import AssetBlob, Version
+
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
 
 
 @pytest.mark.django_db()

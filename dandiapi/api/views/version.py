@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.db import transaction
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters

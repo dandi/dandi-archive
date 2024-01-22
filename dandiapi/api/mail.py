@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 import logging
+from typing import TYPE_CHECKING
 
-from allauth.socialaccount.models import SocialAccount
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core import mail
 from django.template.loader import render_to_string
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from allauth.socialaccount.models import SocialAccount
+    from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
 

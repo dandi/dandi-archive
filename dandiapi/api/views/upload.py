@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.db import transaction
 from django.http.response import Http404, HttpResponseBase
@@ -11,7 +12,6 @@ from rest_framework import serializers, status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
-from rest_framework.request import Request
 from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
@@ -20,6 +20,9 @@ from dandiapi.api.models.asset import EmbargoedAssetBlob
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
 
 supported_digests = {'dandi:dandi-etag': 'etag', 'dandi:sha2-256': 'sha256'}
 

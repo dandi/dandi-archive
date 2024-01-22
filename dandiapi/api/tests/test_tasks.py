@@ -1,17 +1,22 @@
+from __future__ import annotations
+
 import datetime
 import hashlib
+from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.contrib.auth.models import User
-from django.core.files.storage import Storage
 from guardian.shortcuts import assign_perm
 import pytest
-from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, EmbargoedAssetBlob, Version
 
 from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.core.files.storage import Storage
+    from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db()
@@ -317,7 +322,7 @@ def test_publish_task(
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',  # noqa: E501
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
         ],
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': published_version.version,

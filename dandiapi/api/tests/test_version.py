@@ -5,15 +5,15 @@ from time import sleep
 from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
-from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModified
+from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import User
     from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
@@ -72,7 +72,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
     expected_metadata = {
         **original_metadata,
         'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'
         ],
         'name': draft_version.name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
@@ -84,7 +84,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
         ),
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': draft_version.dandiset.created.isoformat(),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -117,14 +117,17 @@ def test_published_version_metadata_computed(published_version: Version):
         'identifier': f'DANDI:{published_version.dandiset.identifier}',
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
-        'doi': f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}',  # noqa: E501
+        'doi': (
+            f'10.80507/dandi.'
+            f'{published_version.dandiset.identifier}/{published_version.version}'
+        ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
             f'{published_version.dandiset.identifier}/{published_version.version}'
         ),
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': published_version.dandiset.created.isoformat(),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,
@@ -140,10 +143,13 @@ def test_published_version_metadata_computed(published_version: Version):
 def test_version_metadata_citation_draft(draft_version):
     name = draft_version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
-    url = f'{settings.DANDI_WEB_APP_URL}/dandiset/{draft_version.dandiset.identifier}/{draft_version.version}'  # noqa: E501
+    url = (
+        f'{settings.DANDI_WEB_APP_URL}/dandiset/'
+        f'{draft_version.dandiset.identifier}/{draft_version.version}'
+    )
     assert (
         draft_version.metadata['citation']
-        == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
+        == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'
     )
 
 
@@ -152,9 +158,9 @@ def test_version_metadata_citation_published(published_version):
     name = published_version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
     url = f'https://doi.org/{published_version.doi}'
-    assert (
-        published_version.metadata['citation']
-        == f'{name} ({year}). (Version {published_version.version}) [Data set]. DANDI archive. {url}'  # noqa: E501
+    assert published_version.metadata['citation'] == (
+        f'{name} ({year}). (Version {published_version.version}) [Data set]. '
+        f'DANDI archive. {url}'
     )
 
 
@@ -325,7 +331,7 @@ def test_version_publish_version(draft_version, asset):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'datePublished': UTC_ISO_TIMESTAMP_RE,
         'manifestLocation': [
-            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',  # noqa: E501
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
         ],
         'identifier': f'DANDI:{publish_version.dandiset.identifier}',
         'version': publish_version.version,
@@ -370,7 +376,7 @@ def test_version_aggregate_assets_summary_metadata_modified(
 
     # Modify the metadata passed to the function so that it's mismatched
     version.metadata['foo'] = 'bar'
-    with pytest.raises(VersionMetadataConcurrentlyModified):
+    with pytest.raises(VersionMetadataConcurrentlyModifiedError):
         version_aggregate_assets_summary(version)
 
 
@@ -543,7 +549,7 @@ def test_version_rest_update(api_client, user, draft_version):
         **new_metadata,
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{draft_version.dandiset.identifier}/versions/draft/assets/'
         ],
         'name': new_name,
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',

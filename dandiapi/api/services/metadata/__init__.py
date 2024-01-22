@@ -1,18 +1,24 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-import jsonschema.exceptions
 
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.metadata.exceptions import (
     AssetHasBeenPublishedError,
     VersionHasBeenPublishedError,
-    VersionMetadataConcurrentlyModified,
+    VersionMetadataConcurrentlyModifiedError,
 )
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
+
+if TYPE_CHECKING:
+    import jsonschema.exceptions
 
 logger = get_task_logger(__name__)
 
@@ -96,7 +102,7 @@ def version_aggregate_assets_summary(version: Version) -> None:
     )
     if updated_count == 0:
         logger.info('Skipped updating assetsSummary for version %s', version.id)
-        raise VersionMetadataConcurrentlyModified
+        raise VersionMetadataConcurrentlyModifiedError
 
 
 def validate_version_metadata(*, version: Version) -> None:
@@ -110,10 +116,11 @@ def validate_version_metadata(*, version: Version) -> None:
 
         metadata_for_validation[
             'id'
-        ] = f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'  # noqa
-        metadata_for_validation[
-            'url'
-        ] = f'{settings.DANDI_WEB_APP_URL}/dandiset/{publishable_version.dandiset.identifier}/{publishable_version.version}'  # noqa
+        ] = f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'
+        metadata_for_validation['url'] = (
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/'
+            f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
+        )
         metadata_for_validation['doi'] = '10.80507/dandi.123456/0.123456.1234'
         metadata_for_validation['assetsSummary'] = {
             'schemaKey': 'AssetsSummary',

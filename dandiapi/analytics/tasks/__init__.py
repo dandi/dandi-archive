@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from collections import Counter
-from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from celery.app import shared_task
 from celery.utils.log import get_task_logger
@@ -14,6 +16,9 @@ from s3logparse import s3logparse
 from dandiapi.analytics.models import ProcessedS3Log
 from dandiapi.api.models.asset import AssetBlob, EmbargoedAssetBlob
 from dandiapi.api.storage import get_boto_client, get_embargo_storage, get_storage
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 logger = get_task_logger(__name__)
 
@@ -77,14 +82,14 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
         return
 
     s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
-    BlobModel = AssetBlob if not embargoed else EmbargoedAssetBlob
+    BlobModel = AssetBlob if not embargoed else EmbargoedAssetBlob  # noqa: N806
     data = s3.get_object(Bucket=bucket, Key=s3_log_key)
     download_counts = Counter()
 
     for log_entry in s3logparse.parse_log_lines(
         line.decode('utf8') for line in data['Body'].iter_lines()
     ):
-        if log_entry.operation == 'REST.GET.OBJECT' and log_entry.status_code == 200:
+        if log_entry.operation == 'REST.GET.OBJECT' and log_entry.status_code == 200:  # noqa: PLR2004
             download_counts.update({log_entry.s3_key: 1})
 
     with transaction.atomic():

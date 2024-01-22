@@ -23,10 +23,10 @@ except ImportError:
     MinioStorage = type('FakeMinioStorage', (), {})
 
 import os.path
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import QuerySet
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
@@ -57,6 +57,9 @@ from dandiapi.api.views.serializers import (
     AssetSerializer,
     AssetValidationSerializer,
 )
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 
 class AssetFilter(filters.FilterSet):

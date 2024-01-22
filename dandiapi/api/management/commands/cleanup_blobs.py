@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.conf import settings
 import djclick as click
 from storages.backends.s3 import S3Storage
