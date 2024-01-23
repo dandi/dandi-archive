@@ -41,7 +41,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema~=0.8.4',
+        'dandischema~=0.9.0',
         'django~=4.1.0',
         'django-admin-display',
         # Require 0.58.0 as it is the first version to support postgres' native
