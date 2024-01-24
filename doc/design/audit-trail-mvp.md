@@ -52,7 +52,7 @@ additional, event-specific data each will carry with it.
 | Add owner | date_time, user_id, dandiset_id | owner_id |
 | Remove owner | date_time, user_id, dandiset_id | owner_id |
 | Update Dandiset metadata | date_time, user_id, dandiset_id | metadata |
-| Add asset | date_time, user_id, dandiset_id | asset_path, checksum, metadata, blob_id |
+| Add asset | date_time, user_id, dandiset_id | asset_path, checksum, metadata, blob_id, asset_id |
 | Update asset | date_time, user_id, dandiset_id | asset_path, checksum, blob_id, metadata |
 | Remove asset | date_time, user_id, dandiset_id | asset_path |
 | Publish Dandiset | date_time, user_id, dandiset_id | version |
