@@ -207,3 +207,16 @@ view within their home Dandiset (if a given Dandiset is under embargo, for
 example). The approach eliminates the problematic user stores listed above, and
 it has the advantage of simplicity as well, while reasonably preserving the
 secretive nature of embargoed Dandisets.
+
+## A Note on Future Work
+
+The concept of "embargo" originates with NIH and its offer of a period in which
+researchers can conduct studies and publish results without fear of being
+scooped, in exchange for committing to publish their data after that embargo
+period; as such, it is a somewhat complex collection of functionality that rests
+upon the ability to hide objects in DANDI's S3 bucket.
+
+Other upcoming features that users have asked for, such as the ability to upload
+"restricted" data (i.e., data that is viewable freely by users authorized do so
+generally, but no others), will also make use of some of the rudimentary
+elements that are driving this embargo design.
