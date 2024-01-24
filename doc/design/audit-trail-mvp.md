@@ -54,7 +54,7 @@ additional, event-specific data each will carry with it.
 | Update Dandiset metadata | date_time, user_id, dandiset_id | metadata |
 | Add asset | date_time, user_id, dandiset_id | asset_path, checksum, metadata, blob_id, asset_id |
 | Update asset | date_time, user_id, dandiset_id | asset_path, checksum, blob_id, metadata, asset_id, old_asset_id |
-| Remove asset | date_time, user_id, dandiset_id | asset_path |
+| Remove asset | date_time, user_id, dandiset_id | asset_path, asset_id |
 | Publish Dandiset | date_time, user_id, dandiset_id | version |
 | Delete Dandiset | date_time, user_id, dandiset_id | none |
 
