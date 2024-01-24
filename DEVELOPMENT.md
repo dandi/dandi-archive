@@ -9,7 +9,7 @@ This is the simplest configuration for developers to start with.
 3. Run `docker-compose run --rm django ./manage.py createsuperuser`
    and follow the prompts to create your own user.
    Set your username to your email to ensure parity with how GitHub logins work.
-4. Run `docker-compose run --rm django ./manage.py create_dev_dandiset --owner your.email@email.com`
+4. Run `docker-compose run --rm django ./manage.py create_dev_dandiset --owner your.email@example.com`
    to create a dummy dandiset to start working with.
 
 ### Run Application
@@ -46,7 +46,7 @@ but allows developers to run Python code on their native system.
 8. Run `./manage.py migrate`
 9. Run `./manage.py createcachetable`
 10. Run `./manage.py createsuperuser` and follow the prompts to create your own user
-11. Run `./manage.py create_dev_dandiset --owner your.email@email.com`
+11. Run `./manage.py create_dev_dandiset --owner your.email@example.com`
    to create a dummy dandiset to start working with.
 
 ### Run Application
@@ -137,7 +137,7 @@ For frequent deployment administration tasks, `django-extensions` provides a con
 ### create_dev_dandiset
 
 ```
-python manage.py create_dev_dandiset --owner your.email@email.com --name My Dummy Dandiset
+python manage.py create_dev_dandiset --owner your.email@example.com --name My Dummy Dandiset
 ```
 
 This creates a dummy dandiset with valid metadata and a single dummy asset.
