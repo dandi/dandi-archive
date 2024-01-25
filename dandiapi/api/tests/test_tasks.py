@@ -292,7 +292,8 @@ def test_validate_version_metadata_no_assets(
     assert draft_version.validation_errors == [
         {
             'field': 'assetsSummary',
-            'message': 'A Dandiset containing no files or zero bytes is not publishable',
+            'message': 'Value error, '
+                       'A Dandiset containing no files or zero bytes is not publishable',
         }
     ]
 
