@@ -128,7 +128,8 @@ Then go to `/swagger` and use `GET /auth/token` end-point.
 ### Supplying the Token
 In API endpoint calls, add the `Authorization` HTTP header with a value of
 `Token <token_value>`. For example, for a token `1234`, include the header:
-`Authorization: Token 1234`.
+`Authorization: Bearer 1234` (following OAuth2 RFC 6750) or 
+`Authorization: Token 1234` (following Django rest framework).
 
 ## Scripts
 

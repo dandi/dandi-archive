@@ -57,6 +57,7 @@ class DandiMixin(ConfigMixin):
             # TODO: remove TokenAuthentication, it is only here to support
             # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
+            'dandiapi.api.auth.BearerTokenAuthentication',
         ]
 
         # Caching
