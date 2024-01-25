@@ -153,7 +153,7 @@ def test_validate_asset_metadata_no_digest(draft_asset: Asset):
 
     assert draft_asset.status == Asset.Status.INVALID
     assert draft_asset.validation_errors == [
-        {'field': 'digest', 'message': 'A non-zarr asset must have a sha2_256.'}
+        {'field': 'digest', 'message': 'Value error, A non-zarr asset must have a sha2_256.'}
     ]
 
 
