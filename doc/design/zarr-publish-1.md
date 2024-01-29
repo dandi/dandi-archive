@@ -20,7 +20,7 @@ The publishing procedure would follow the description found in the [publish-1 de
 ## MVP User requirements (Target date: April 30, 2024)
 
 1. Publish Dandisets that contain Zarr archives.
-1. The published Dandisets must be immutable and accesible.
+1. The published Dandisets must be immutable and accessible.
 1. The draft version of the Dandiset should be mutable.
 1. Minimize storage costs in the design.
 
