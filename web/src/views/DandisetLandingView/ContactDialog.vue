@@ -32,18 +32,30 @@
         Select an e-mail Recipient
       </v-card-title>
       <v-list>
-        <v-list-item
-          :href="`mailto:${owners}?subject=Regarding%20Dandiset%20${currentDandiset?.name}%20${currentDandiset?.metadata?.id} &body=${currentUser?.value?.username}`"
+        <v-tooltip
+          :disabled="loggedIn()"
+          open-on-hover
+          right
         >
-        <v-icon
-          color="primary"
-          left
-          small
-        >
-          mdi-card-account-mail
-        </v-icon>
-          Dandiset Owners
-        </v-list-item>
+          <template #activator="{ on }">
+            <v-list-item
+              v-on="on"
+              :class="loggedIn() ? 'black--text' : 'grey--text'"
+              :selectable="!loggedIn()"
+              :href="`mailto:${owners}?subject=Regarding%20Dandiset%20${currentDandiset?.name}%20${currentDandiset?.metadata?.id} &body=${currentUser?.value?.username}`"
+            >
+            <v-icon
+              color="primary"
+              left
+              small
+            >
+              mdi-card-account-mail
+            </v-icon>
+              Dandiset Owners
+            </v-list-item>
+          </template>
+          <span> You must me logged in to contact the owner </span>
+        </v-tooltip>
       <v-divider />
 
         <v-list-item
@@ -66,7 +78,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { user } from '@/rest';
+import { loggedIn, user } from '@/rest';
 
 const store = useDandisetStore();
 const owners = computed(() => store.owners?.map((owner) => owner.username).toString());
