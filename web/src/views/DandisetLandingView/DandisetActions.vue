@@ -37,13 +37,15 @@
           </template>
         </DownloadDialog>
       </v-row>
-      <v-row no-gutters>
+      <v-row
+        no-gutters
+      >
         <CiteAsDialog>
           <template
             #activator="{ on }"
           >
             <v-btn
-              id="download"
+              id="cite_as"
               outlined
               block
               v-on="on"
@@ -62,6 +64,11 @@
             </v-btn>
           </template>
         </CiteAsDialog>
+      </v-row>
+      <v-row
+        no-gutters
+      >
+        <ContactDialog />
       </v-row>
     </div>
 
@@ -151,6 +158,7 @@ import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
+import ContactDialog from './ContactDialog.vue';
 
 const store = useDandisetStore();
 
