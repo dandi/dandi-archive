@@ -17,15 +17,22 @@ The publishing procedure would follow the description found in the [publish-1 de
 3. User publishes the Dandiset and thereby creates a new immutable version of the Dandiset.
 4. User repeats steps 2 and 3.
 
-## MVP Requirements (Target date: April 30, 2024)
+## MVP User requirements (Target date: April 30, 2024)
 
-1. Support versioning of Zarr archives without creating a copy of the entire Zarr archive.
-1. Support publishing immutable versions of Dandisets with Zarr archives, where the Zarr archives are potentially updated between versions.
+1. Publish Dandisets that contain Zarr archives.
+1. The published Dandisets must be immutable and accesible.
+1. The draft version of the Dandiset should be mutable.
 1. Minimize storage costs in the design.
 
-## MVP+1 Requirements
+## MVP+1 User requirements
 
 1. Support linking of a Zarr asset to multiple Dandisets - [dandi-archive/issues/1792](https://github.com/dandi/dandi-archive/issues/1792)
 
+## MVP Technical specifications
 
+1. TODO
+
+## MVP+1 Technical specifications
+
+1. TODO
 
