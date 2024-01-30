@@ -1,10 +1,13 @@
-from allauth.socialaccount.models import SocialAccount
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Exists, OuterRef
-from django.http.response import HttpResponseRedirect
+from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
@@ -12,6 +15,9 @@ from django.views.generic.base import TemplateView
 from dandiapi.api.mail import send_approved_user_message, send_rejected_user_message
 from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
+
+if TYPE_CHECKING:
+    from allauth.socialaccount.models import SocialAccount
 
 
 class DashboardMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -77,10 +83,10 @@ class DashboardView(DashboardMixin, TemplateView):
 
 
 @require_http_methods(['GET', 'POST'])
-def user_approval_view(request, username: str):
+def user_approval_view(request: HttpRequest, username: str):
     # Redirect user to login if they're not authenticated
     if not request.user.is_authenticated:
-        return HttpResponseRedirect(redirect_to=settings.LOGIN_URL)
+        return HttpResponseRedirect(redirect_to=f'{settings.LOGIN_URL}?next={request.path}')
 
     # If they are authenticated but are not a superuser, deny access
     if not request.user.is_superuser:

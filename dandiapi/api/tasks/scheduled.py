@@ -3,12 +3,13 @@ Define and register any scheduled celery tasks.
 
 This module is imported from celery.py in a post-app-load hook.
 """
-from collections.abc import Iterable
+from __future__ import annotations
+
 from datetime import timedelta
 import time
+from typing import TYPE_CHECKING
 
 from celery import shared_task
-from celery.app.base import Celery
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -21,12 +22,18 @@ from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
+from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.tasks import (
     validate_asset_metadata_task,
     validate_version_metadata_task,
     write_manifest_files,
 )
 from dandiapi.zarr.models import ZarrArchiveStatus
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from celery.app.base import Celery
 
 logger = get_task_logger(__name__)
 
@@ -43,7 +50,11 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
         time.sleep(1 / max_per_second)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(
+    soft_time_limit=60,
+    autoretry_for=(VersionMetadataConcurrentlyModifiedError,),
+    retry_backoff=True,
+)
 def aggregate_assets_summary_task(version_id: int):
     version = Version.objects.get(id=version_id)
     version_aggregate_assets_summary(version)

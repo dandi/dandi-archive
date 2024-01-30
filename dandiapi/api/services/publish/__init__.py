@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import datetime
+from typing import TYPE_CHECKING
 
 from dandischema.metadata import aggregate_assets_summary, validate
-from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import QuerySet
 from more_itertools import ichunked
 
 from dandiapi.api import doi
@@ -19,6 +20,10 @@ from dandiapi.api.services.publish.exceptions import (
     DandisetValidationPendingError,
 )
 from dandiapi.api.tasks import write_manifest_files
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.db.models import QuerySet
 
 
 def publish_asset(*, asset: Asset) -> None:
@@ -120,7 +125,7 @@ def _publish_dandiset(dandiset_id: int) -> None:
         new_version.save()
 
         # Bulk create the join table rows to optimize linking assets to new_version
-        AssetVersions = Version.assets.through
+        AssetVersions = Version.assets.through  # noqa: N806
 
         # Add a new many-to-many association directly to any already published assets
         already_published_assets: QuerySet[Asset] = old_version.assets.filter(published=True)

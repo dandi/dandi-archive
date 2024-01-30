@@ -1,10 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
-from django.core.files.storage import Storage
-from minio_storage.storage import MinioStorage
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
-from storages.backends.s3 import S3Storage
 
 from dandiapi.api.storage import create_s3_storage
 from dandiapi.api.tests.factories import (
@@ -22,6 +23,11 @@ from dandiapi.api.tests.factories import (
 )
 from dandiapi.zarr.tests.factories import ZarrArchiveFactory
 from dandiapi.zarr.tests.utils import upload_zarr_file
+
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
+    from minio_storage.storage import MinioStorage
+    from storages.backends.s3 import S3Storage
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
@@ -84,7 +90,7 @@ def authenticated_api_client(user) -> APIClient:
 # storage fixtures are copied from django-s3-file-field test fixtures
 
 
-def base_s3_storage_factory(bucket_name: str) -> 'S3Storage':
+def base_s3_storage_factory(bucket_name: str) -> S3Storage:
     return create_s3_storage(bucket_name)
 
 
@@ -109,12 +115,12 @@ def embargoed_minio_storage_factory() -> MinioStorage:
 
 
 @pytest.fixture()
-def s3_storage() -> 'S3Storage':
+def s3_storage() -> S3Storage:
     return s3_storage_factory()
 
 
 @pytest.fixture()
-def embargoed_s3_storage() -> 'S3Storage':
+def embargoed_s3_storage() -> S3Storage:
     return s3_storage_factory()
 
 

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 from json.decoder import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse
 from django.http.response import Http404, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -16,7 +15,6 @@ from oauth2_provider.views.base import AuthorizationView
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 from dandiapi.api.mail import (
@@ -26,6 +24,11 @@ from dandiapi.api.mail import (
 )
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.http import HttpRequest, HttpResponse
+    from rest_framework.request import Request
 
 
 @swagger_auto_schema(

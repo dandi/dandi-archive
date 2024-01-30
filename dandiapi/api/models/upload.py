@@ -26,8 +26,9 @@ class BaseUpload(models.Model):
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
     upload_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
-    etag = models.CharField(
+    etag = models.CharField(  # noqa: DJ001
         null=True,
+        default=None,
         blank=True,
         max_length=40,
         validators=[RegexValidator(f'^{ETAG_REGEX}$')],
@@ -43,7 +44,7 @@ class BaseUpload(models.Model):
 
     @staticmethod
     @abstractmethod
-    def object_key(upload_id, *, dandiset: Dandiset):  # noqa: N805
+    def object_key(upload_id, *, dandiset: Dandiset):
         pass
 
     @classmethod
@@ -83,8 +84,11 @@ class Upload(BaseUpload):
     blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
+    def __str__(self) -> str:
+        return self.upload_id
+
     @staticmethod
-    def object_key(upload_id, *, dandiset: Dandiset | None = None):
+    def object_key(upload_id, *, dandiset: Dandiset | None = None):  # noqa: ARG004
         upload_id = str(upload_id)
         return (
             f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}'
@@ -108,6 +112,9 @@ class EmbargoedUpload(BaseUpload):
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_uploads', on_delete=models.CASCADE
     )
+
+    def __str__(self) -> str:
+        return self.upload_id
 
     @staticmethod
     def object_key(upload_id, *, dandiset: Dandiset):

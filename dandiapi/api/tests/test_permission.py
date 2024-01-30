@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from rest_framework.permissions import SAFE_METHODS
 
@@ -54,7 +56,7 @@ from rest_framework.permissions import SAFE_METHODS
         ),
         (
             'get',
-            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',  # noqa: E501
+            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',
             False,
         ),
         # Zarrs

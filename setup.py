@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from setuptools import find_namespace_packages, setup
@@ -56,7 +58,6 @@ setup(
         'drf-extensions',
         'drf-yasg',
         'jsonschema',
-        'pydantic',
         'boto3[s3]',
         'more_itertools',
         'requests',

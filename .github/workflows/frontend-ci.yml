@@ -98,7 +98,7 @@ jobs:
       - name: Install latest version of pip
         run: pip install --upgrade pip
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: pip-cache
         with:
           path: ${{ env.pythonLocation}}/lib/python3.11/site-packages/*
@@ -112,6 +112,13 @@ jobs:
 
       - name: Create any cache tables
         run: python manage.py createcachetable
+
+        # Populate the database with a dandiset for FileBrowser tests
+      - name: Create a superuser
+        run: python manage.py createsuperuser --noinput --email admin@example.com
+
+      - name: Create Dandiset
+        run: python manage.py create_dev_dandiset --owner admin@example.com
 
       - name: Install E2E tests
         run: yarn install --frozen-lockfile

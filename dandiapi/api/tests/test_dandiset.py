@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 from django.conf import settings
@@ -63,7 +65,8 @@ def test_dandiset_manager_visible_to(
 
 
 @pytest.mark.django_db()
-def test_dandiset_rest_list(api_client, dandiset):
+def test_dandiset_rest_list(api_client, user, dandiset):
+    # Test un-authenticated request
     assert api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true'}).json() == {
         'count': 1,
         'next': None,
@@ -80,6 +83,15 @@ def test_dandiset_rest_list(api_client, dandiset):
             }
         ],
     }
+
+    # Test request for embargoed dandisets while still un-authenticated
+    r = api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true', 'embargoed': 'true'})
+    assert r.status_code == 401
+
+    # Test request for embargoed dandisets after authenticated
+    api_client.force_authenticate(user=user)
+    r = api_client.get('/api/dandisets/', {'draft': 'true', 'empty': 'true', 'embargoed': 'true'})
+    assert r.status_code == 200
 
 
 @pytest.mark.parametrize(
@@ -303,7 +315,10 @@ def test_dandiset_rest_embargo_access(
         api_client.get(f'/api/dandisets/{dandiset.identifier}/').json()
         == expected_dandiset_serialization
     )
-    assert api_client.get('/api/dandisets/').json() == expected_visible_pagination
+    assert (
+        api_client.get('/api/dandisets/', {'embargoed': 'true'}).json()
+        == expected_visible_pagination
+    )
 
 
 @pytest.mark.django_db()
@@ -362,7 +377,7 @@ def test_dandiset_rest_create(api_client, user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
@@ -374,7 +389,7 @@ def test_dandiset_rest_create(api_client, user):
             f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
@@ -455,7 +470,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -467,7 +482,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
@@ -562,7 +577,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
         'identifier': f'DANDI:{identifier}',
@@ -573,7 +588,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'citation': (
             f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}],
@@ -652,7 +667,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     assert dandiset.draft_version.metadata == {
         **metadata,
         'manifestLocation': [
-            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'  # noqa: E501
+            f'{settings.DANDI_API_URL}/api/dandisets/{dandiset.identifier}/versions/draft/assets/'
         ],
         'name': name,
         'identifier': DANDISET_SCHEMA_ID_RE,
@@ -664,7 +679,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
             f'{user.last_name}, {user.first_name} ({year}) {name} '
             f'(Version draft) [Data set]. DANDI archive. {url}'
         ),
-        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',  # noqa: E501
+        '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
         'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:EmbargoedAccess'}],

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from dandiapi.api.management.commands.create_dev_dandiset import create_dev_dandiset

@@ -1,13 +1,18 @@
-from collections import OrderedDict
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models.query_utils import Q
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from collections import OrderedDict
 
 
 def extract_contact_person(version: Version) -> str:
@@ -122,6 +127,7 @@ class DandisetListSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
         fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
 
+    @swagger_serializer_method(serializer_or_field=DandisetVersionSerializer)
     def get_draft_version(self, dandiset):
         draft = self.context['dandisets'].get(dandiset.id, {}).get('draft')
         if draft is None:
@@ -129,6 +135,7 @@ class DandisetListSerializer(DandisetSerializer):
 
         return DandisetVersionSerializer(draft).data
 
+    @swagger_serializer_method(serializer_or_field=DandisetVersionSerializer)
     def get_most_recent_published_version(self, dandiset):
         version = self.context['dandisets'].get(dandiset.id, {}).get('published')
         if version is None:
@@ -173,7 +180,7 @@ class DandisetDetailSerializer(DandisetSerializer):
 class DandisetQueryParameterSerializer(serializers.Serializer):
     draft = serializers.BooleanField(default=True)
     empty = serializers.BooleanField(default=True)
-    embargoed = serializers.BooleanField(default=True)
+    embargoed = serializers.BooleanField(default=False)
     user = serializers.CharField(required=False)
 
 

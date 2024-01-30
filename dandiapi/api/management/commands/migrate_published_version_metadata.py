@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from difflib import ndiff
 from pprint import pformat
 
@@ -14,7 +16,8 @@ from dandiapi.api.tasks import write_manifest_files
 @click.argument('to_version')
 def migrate_published_version_metadata(*, dandiset: str, published_version: str, to_version: str):
     click.echo(
-        f'Migrating published version {dandiset}/{published_version} metadata to version {to_version}'  # noqa: E501
+        f'Migrating published version {dandiset}/{published_version} '
+        f'metadata to version {to_version}'
     )
     version = Version.objects.exclude(version='draft').get(
         dandiset=dandiset, version=published_version
@@ -23,7 +26,7 @@ def migrate_published_version_metadata(*, dandiset: str, published_version: str,
 
     try:
         metanew = migrate(metadata, to_version=to_version, skip_validation=False)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         click.echo(f'Failed to migrate {dandiset}/{published_version}')
         click.echo(e)
         raise click.Abort from e

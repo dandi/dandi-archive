@@ -2,21 +2,24 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db.models import OuterRef, Q, Subquery
-from django.http.response import HttpResponseBase
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
+
+if TYPE_CHECKING:
+    from django.http.response import HttpResponseBase
+    from rest_framework.request import Request
 
 logger = logging.getLogger(__name__)
 

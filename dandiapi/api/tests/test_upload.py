@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import uuid
 
@@ -175,9 +177,9 @@ def test_upload_initialize_embargo(api_client, user, dandiset_factory):
     assert not Upload.objects.all().exists()
     upload = EmbargoedUpload.objects.get(upload_id=resp.data['upload_id'])
     upload_id = str(upload.upload_id)
-    assert (
-        upload.blob.name
-        == f'test-embargo-prefix/{dandiset.identifier}/blobs/{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'  # noqa: E501
+    assert upload.blob.name == (
+        f'test-embargo-prefix/{dandiset.identifier}/blobs/'
+        f'{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'
     )
 
 

@@ -1,3 +1,79 @@
+# v0.3.72 (Tue Jan 16 2024)
+
+#### 🐛 Bug Fix
+
+- Retry aggregate_assets_summary_task on version metadata race condition [#1803](https://github.com/dandi/dandi-archive/pull/1803) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add an e2e test for the FileBrowser [#1789](https://github.com/dandi/dandi-archive/pull/1789) ([@marySalvi](https://github.com/marySalvi))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+
+---
+
+# v0.3.71 (Thu Jan 04 2024)
+
+#### 🐛 Bug Fix
+
+- Check if version still exists before proceeding with validation [#1808](https://github.com/dandi/dandi-archive/pull/1808) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Generate correct docs for dandisets endpoint [#1807](https://github.com/dandi/dandi-archive/pull/1807) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.3.70 (Wed Jan 03 2024)
+
+#### 🐛 Bug Fix
+
+- Return 401 on unauthenticated embargo dandiset list [#1790](https://github.com/dandi/dandi-archive/pull/1790) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Remove `requirements.txt` file [#1798](https://github.com/dandi/dandi-archive/pull/1798) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/download-artifact from 3 to 4 [#1793](https://github.com/dandi/dandi-archive/pull/1793) ([@dependabot[bot]](https://github.com/dependabot[bot]) [@mvandenburgh](https://github.com/mvandenburgh))
+- [gh-actions](deps): Bump actions/upload-artifact from 3 to 4 [#1794](https://github.com/dandi/dandi-archive/pull/1794) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 3
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.69 (Wed Dec 20 2023)
+
+#### 🐛 Bug Fix
+
+- Approval view: automatically redirect back to page after authentication [#1786](https://github.com/dandi/dandi-archive/pull/1786) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove explicit dependency on `pydantic` [#1796](https://github.com/dandi/dandi-archive/pull/1796) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.68 (Wed Dec 20 2023)
+
+#### 🐛 Bug Fix
+
+- Update + Reconfigure Vue Sentry SDK [#1795](https://github.com/dandi/dandi-archive/pull/1795) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove old squashed migrations [#1778](https://github.com/dandi/dandi-archive/pull/1778) ([@brianhelba](https://github.com/brianhelba))
+- Fix S101 Use of `assert` detected [#1783](https://github.com/dandi/dandi-archive/pull/1783) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.67 (Thu Dec 14 2023)
 
 #### 🐛 Bug Fix

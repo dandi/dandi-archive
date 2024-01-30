@@ -1,5 +1,7 @@
-from django.contrib.auth.models import User
-from django.db.models.query import QuerySet
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.http.response import JsonResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
@@ -7,6 +9,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+    from django.db.models.query import QuerySet
 
 
 class SearchSerializer(serializers.Serializer):

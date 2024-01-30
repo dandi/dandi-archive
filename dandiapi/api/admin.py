@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import csv
+from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib import admin, messages
@@ -8,7 +11,6 @@ from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
 from django.db.models.query import Prefetch, QuerySet
 from django.forms.models import BaseInlineFormSet
-from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse
 from django.utils.html import format_html
@@ -25,6 +27,9 @@ from dandiapi.api.models import (
 )
 from dandiapi.api.views.users import social_account_to_dict
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs
+
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'

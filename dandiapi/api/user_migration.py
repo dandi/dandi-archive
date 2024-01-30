@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from allauth.account.signals import user_logged_in
