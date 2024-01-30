@@ -149,6 +149,7 @@
                     icon
                     :href="inlineURI(item.asset.asset_id)"
                     target="_blank"
+                    title="View asset"
                   >
                     <v-icon color="primary">
                       mdi-eye
@@ -160,6 +161,7 @@
                   <v-btn
                     icon
                     :href="downloadURI(item.asset.asset_id)"
+                    title="Download asset"
                   >
                     <v-icon color="primary">
                       mdi-download
@@ -173,6 +175,7 @@
                     :href="assetMetadataURI(item.asset.asset_id)"
                     target="_blank"
                     rel="noopener"
+                    title="View asset metadata"
                   >
                     <v-icon color="primary">
                       mdi-information
@@ -190,6 +193,7 @@
                         v-if="item.services && item.services.length"
                         color="primary"
                         icon
+                        title="Open in external service"
                         v-bind="attrs"
                         v-on="on"
                       >
