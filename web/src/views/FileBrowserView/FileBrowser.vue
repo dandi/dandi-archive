@@ -151,6 +151,7 @@
                         icon
                         :href="inlineURI(item.asset.asset_id)"
                         target="_blank"
+                        rel="noreferrer"
                         v-bind="attrs"
                         v-on="on"
                       >
@@ -188,7 +189,7 @@
                         icon
                         :href="assetMetadataURI(item.asset.asset_id)"
                         target="_blank"
-                        rel="noopener"
+                        rel="noreferrer"
                         v-bind="attrs"
                         v-on="on"
                       >
@@ -242,7 +243,7 @@
                         :key="el.name"
                         :href="el.url"
                         target="_blank"
-                        rel="noopener"
+                        rel="noreferrer"
                       >
                         <v-list-item-title class="font-weight-light">
                           {{ el.name }}
