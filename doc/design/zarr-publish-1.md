@@ -1,6 +1,6 @@
 # Publish Dandisets that contain Zarr archives, and support updates to the Zarr archive after publishing the Dandiset
 
-This document describes the current implementation of publishing Dandisets with Zarr archives, a desired use case, and the associated requirements of this use case.
+This document describes the current implementation of publishing Dandisets with Zarr archives, desired use cases, and the associated requirements.
 
 ## Current implementation
 
@@ -21,6 +21,11 @@ The publishing procedure would follow the description found in the [publish-1 de
 
 Upload a Zarr archive to an embargoed Dandiset. 
 
+## Use case 3
+
+Reuse a Zarr archive in more than one Dandiset.
+
+Allow for a Zarr archive that is uploaded as part of an original Dandiset to be packaged in a new Dandiset without duplicating the Zarr archive.  The new Dandiset could be created by potentially different authors and could contain additional raw and/or analyzed data.  This feature has been previously implemented for other asset types with [add_asset_to_dandiset.py](https://gist.github.com/satra/29404d965226e4c99fb48e7502953503#file-add_asset_to_dandiset-py).  Further details of this feature request have been previously documented in [dandi-archive #1792](https://github.com/dandi/dandi-archive/issues/1792).
 
 ## MVP User requirements (Target date: April 30, 2024)
 
