@@ -17,6 +17,11 @@ The publishing procedure would follow the description found in the [publish-1 de
 3. User publishes the Dandiset and thereby creates a new immutable version of the Dandiset.
 4. User repeats steps 2 and 3.
 
+## Use case 2
+
+Upload a Zarr archive to an embargoed Dandiset. 
+
+
 ## MVP User requirements (Target date: April 30, 2024)
 
 1. Publish Dandisets that contain Zarr archives.
