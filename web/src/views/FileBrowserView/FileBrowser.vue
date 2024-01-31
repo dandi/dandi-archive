@@ -158,7 +158,7 @@
                         </v-icon>
                       </v-btn>
                     </template>
-                    <span>Open asset in browser</span>
+                    <span>Open asset in browser (you can also click on the item itself)</span>
                   </v-tooltip>
                 </v-list-item-action>
 
