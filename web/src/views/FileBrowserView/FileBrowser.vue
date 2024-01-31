@@ -156,11 +156,11 @@
                         v-on="on"
                       >
                         <v-icon color="primary">
-                          mdi-eye
+                          mdi-open-in-new
                         </v-icon>
                       </v-btn>
                     </template>
-                    <span>View asset in browser</span>
+                    <span>Open asset in new window</span>
                   </v-tooltip>
                 </v-list-item-action>
 
