@@ -36,7 +36,7 @@ Allow for a Zarr archive that is uploaded as part of an original Dandiset to be 
 
 ## MVP+1 User requirements
 
-1. Support linking of a Zarr asset to multiple Dandisets - [dandi-archive/issues/1792](https://github.com/dandi/dandi-archive/issues/1792)
+1. Support linking of a Zarr asset to multiple Dandisets
 
 ## MVP Technical specifications
 
