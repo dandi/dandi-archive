@@ -116,7 +116,7 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click="openItem(item)"
+                @click.self="openItem(item)"
               >
                 <v-icon
                   class="mr-2"
