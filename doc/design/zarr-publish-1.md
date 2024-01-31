@@ -43,6 +43,7 @@ Allow for a Zarr archive that is uploaded as part of an original Dandiset to be 
 1. Support versioning of Zarr archives.
 1. Create a unique web address for each published version of the Zarr archive.
 1. Provide access to the Zarr archive versions through the web app and command line interface.
+1. TODO: add additional specifications
 
 ## MVP+1 Technical specifications
 
