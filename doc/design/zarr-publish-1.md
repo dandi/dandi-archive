@@ -36,3 +36,23 @@ The publishing procedure would follow the description found in the [publish-1 de
 
 1. TODO
 
+## Potential solutions
+
+1. Implement a Django backend for Zarr
+    1. Stores data in a Postgres database that references the Zarr chunks in S3.
+
+1. Earthmover's [Arraylake](https://earthmover.io/blog/arraylake-beta-launch)
+    - Notes
+        - Edits of the Zarr archive must happen through the Arraylake Python API, and thus the `dandi-cli` should be updated.
+    - Questions
+        - Egress costs?
+        - Formal testing of Python API and infrastructure to ensure data integrity?
+
+1. Create manifest file with paths and version IDs for each chunk for a specific version of the Zarr archive.
+    1. Steps
+        1. Initiate S3 bucket versioning
+    1. Questions
+        1. Store the manifest file in a database instead of S3 for improved performance?
+    1. Constraints
+        1. If the Zarr archive must be re-chunked then the user would need to upload the entire Zarr archive.
+        1. Garbage collection would need to be updated.
