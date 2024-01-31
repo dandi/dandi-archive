@@ -116,7 +116,7 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click="selectPath(item)"
+                @click="openItem(item)"
               >
                 <v-icon
                   class="mr-2"
@@ -445,12 +445,16 @@ function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
 }
 
-function selectPath(item: AssetPath) {
+function openItem(item: AssetPath) {
   const { asset, path } = item;
 
-  // Return early if path is a file
-  if (asset) { return; }
-  location.value = path;
+  if (asset) {
+    // If the item is an asset, open it in the browser.
+    window.open(inlineURI(asset.asset_id), "_self");
+  } else {
+    // If it's a directory, move into it.
+    location.value = path;
+  }
 }
 
 function navigateToParent() {
