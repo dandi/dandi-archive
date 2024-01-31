@@ -30,7 +30,9 @@ The publishing procedure would follow the description found in the [publish-1 de
 
 ## MVP Technical specifications
 
-1. TODO
+1. Support versioning of Zarr archives.
+1. Create a unique web address for each published version of the Zarr archive.
+1. Provide access to the Zarr archive versions through the web app and command line interface.
 
 ## MVP+1 Technical specifications
 
