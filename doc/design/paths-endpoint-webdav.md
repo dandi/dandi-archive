@@ -9,7 +9,7 @@ Submitted as a PR to avoid spagetti thread discussion on https://github.com/dand
     * `asset_id` (PRESENT)
     * `blob_id`
     * `zarr_id`
-    * `path`
+    * `path` (PRESENT)
     * `size`  (PRESENT)
     * `created` (GOOD TO HAVE)
     * `modified` (SUGGESTED to be included)
