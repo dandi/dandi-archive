@@ -1,6 +1,6 @@
 # Discussion on metadata needed for dandidav
 
-Submitted as a PR to avoid spagetti thread discussion on https://github.com/dandi/dandi-archive/issues/1837#issuecomment-1921864949
+Submitted as a PR to avoid spaghetti thread discussion on https://github.com/dandi/dandi-archive/issues/1837#issuecomment-1921864949
 
 
 @jwodder listed needed properties and metadata fields:
