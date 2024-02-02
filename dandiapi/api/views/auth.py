@@ -109,10 +109,10 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         user_metadata.save(update_fields=['questionnaire_form'])
 
         # Save first and last name if applicable
-        if 'First Name' in req_body and req_body['First Name']:
+        if req_body.get('First Name'):
             user.first_name = req_body['First Name']
             user.save(update_fields=['first_name'])
-        if 'Last Name' in req_body and req_body['Last Name']:
+        if req_body.get('Last Name'):
             user.last_name = req_body['Last Name']
             user.save(update_fields=['last_name'])
 
