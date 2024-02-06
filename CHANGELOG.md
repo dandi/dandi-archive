@@ -1,3 +1,25 @@
+# v0.3.73 (Tue Feb 06 2024)
+
+#### 🐛 Bug Fix
+
+- Always rebuild and deploy the frontend [#1857](https://github.com/dandi/dandi-archive/pull/1857) ([@waxlamp](https://github.com/waxlamp))
+- Use Ruff for Python static analysis and formatting [#1784](https://github.com/dandi/dandi-archive/pull/1784) ([@brianhelba](https://github.com/brianhelba) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- It is time again to get to the new year and update Copyright statement [#1852](https://github.com/dandi/dandi-archive/pull/1852) ([@yarikoptic](https://github.com/yarikoptic))
+- [gh-actions](deps): Bump actions/cache from 3 to 4 [#1822](https://github.com/dandi/dandi-archive/pull/1822) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 5
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.72 (Tue Jan 16 2024)
 
 #### 🐛 Bug Fix
