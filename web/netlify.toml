@@ -1,6 +1,7 @@
 [build]
 publish = "dist"
 command = "yarn run build"
+ignore = "false"
 
 # Staging
 [context.master.environment]
