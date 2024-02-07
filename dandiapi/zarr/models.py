@@ -16,7 +16,7 @@ from dandiapi.api.storage import get_embargo_storage, get_storage
 if TYPE_CHECKING:
     from pathlib import Path
 
-logger = logging.Logger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 # The status of the zarr ingestion (checksums, size, file count)
