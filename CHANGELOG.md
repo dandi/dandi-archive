@@ -1,3 +1,15 @@
+# v0.3.74 (Wed Feb 07 2024)
+
+#### 🐛 Bug Fix
+
+- Fix remaining problems with version display [#1860](https://github.com/dandi/dandi-archive/pull/1860) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.73 (Tue Feb 06 2024)
 
 #### 🐛 Bug Fix
