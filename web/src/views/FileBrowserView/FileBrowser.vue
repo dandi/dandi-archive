@@ -145,39 +145,61 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-btn
-                    icon
-                    :href="inlineURI(item.asset.asset_id)"
-                    target="_blank"
-                  >
-                    <v-icon color="primary">
-                      mdi-eye
-                    </v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :href="inlineURI(item.asset.asset_id)"
+                        target="_blank"
+                        rel="noreferrer"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon color="primary">
+                          mdi-eye
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span>View asset in browser</span>
+                  </v-tooltip>
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-btn
-                    icon
-                    :href="downloadURI(item.asset.asset_id)"
-                  >
-                    <v-icon color="primary">
-                      mdi-download
-                    </v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :href="downloadURI(item.asset.asset_id)"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon color="primary">
+                          mdi-download
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span>Download asset</span>
+                  </v-tooltip>
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-btn
-                    icon
-                    :href="assetMetadataURI(item.asset.asset_id)"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <v-icon color="primary">
-                      mdi-information
-                    </v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :href="assetMetadataURI(item.asset.asset_id)"
+                        target="_blank"
+                        rel="noreferrer"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon color="primary">
+                          mdi-information
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span>View asset metadata</span>
+                  </v-tooltip>
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
@@ -190,6 +212,7 @@
                         v-if="item.services && item.services.length"
                         color="primary"
                         icon
+                        title="Open in external service"
                         v-bind="attrs"
                         v-on="on"
                       >
@@ -220,7 +243,7 @@
                         :key="el.name"
                         :href="el.url"
                         target="_blank"
-                        rel="noopener"
+                        rel="noreferrer"
                       >
                         <v-list-item-title class="font-weight-light">
                           {{ el.name }}
