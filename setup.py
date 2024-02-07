@@ -17,7 +17,6 @@ setup(
     description='',
     # Determine version with scm
     use_scm_version={'version_scheme': 'post-release'},
-    setup_requires=['setuptools_scm'],
     long_description=long_description,
     long_description_content_type='text/markdown',
     license='Apache 2.0',
