@@ -26,7 +26,7 @@ The `release` branch is kept up to date using a GitHub CI workflow. Whenever a r
 The staging and production Netlify sites are now both managed using a single `netlify.toml`. [Deploy contexts](https://docs.netlify.com/configure-builds/file-based-configuration/#deploy-contexts) allow us to differentiate between the production and staging sites. Production uses the default configuration, while staging uses a `branch-deploy` configuration.
 
 ## Heroku deployment
-Heroku is configured to automatically deploy from `master` for the staging app and from `release` for the production app.
+GitHub CI workflows [backend-staging-deploy.yml](../../.github/workflows/backend-staging-deploy.yml) and [backend-production-deploy.yml](../../.github/workflows/backend-production-deploy.yml) are used to deploy the staging and production Heroku apps respectively.
 
 ## Development process
 To make changes to production, developers should:
