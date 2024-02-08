@@ -150,17 +150,15 @@
                       <v-btn
                         icon
                         :href="inlineURI(item.asset.asset_id)"
-                        target="_blank"
-                        rel="noreferrer"
                         v-bind="attrs"
                         v-on="on"
                       >
                         <v-icon color="primary">
-                          mdi-open-in-new
+                          mdi-open-in-app
                         </v-icon>
                       </v-btn>
                     </template>
-                    <span>Open asset in new window</span>
+                    <span>Open asset in browser</span>
                   </v-tooltip>
                 </v-list-item-action>
 
