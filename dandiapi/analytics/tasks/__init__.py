@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import Counter
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from celery.app import shared_task
@@ -78,7 +77,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
 
     # short circuit if the log file has already been processed. note that this doesn't guarantee
     # exactly once processing, that's what the unique constraint on ProcessedS3Log is for.
-    if ProcessedS3Log.objects.filter(name=Path(s3_log_key).name, embargoed=embargoed).exists():
+    if ProcessedS3Log.objects.filter(name=s3_log_key.split('/')[-1], embargoed=embargoed).exists():
         return
 
     s3 = get_boto_client(get_storage() if not embargoed else get_embargo_storage())
@@ -94,7 +93,7 @@ def process_s3_log_file_task(bucket: LogBucket, s3_log_key: str) -> None:
 
     with transaction.atomic():
         try:
-            log = ProcessedS3Log(name=Path(s3_log_key).name, embargoed=embargoed)
+            log = ProcessedS3Log(name=s3_log_key.split('/')[-1], embargoed=embargoed)
             # disable constraint validation checking so duplicate errors can be detected and
             # ignored. the rest of the full_clean errors should still be raised.
             log.full_clean(validate_constraints=False)
