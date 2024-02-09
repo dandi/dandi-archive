@@ -1,3 +1,26 @@
+# v0.3.75 (Fri Feb 09 2024)
+
+#### 🐛 Bug Fix
+
+- Open asset on click [#1847](https://github.com/dandi/dandi-archive/pull/1847) ([@waxlamp](https://github.com/waxlamp))
+- Improve file browser view action icons [#1846](https://github.com/dandi/dandi-archive/pull/1846) ([@waxlamp](https://github.com/waxlamp))
+- Add a Nix Flake for native build dependencies [#1843](https://github.com/dandi/dandi-archive/pull/1843) ([@waxlamp](https://github.com/waxlamp))
+- Add tooltips to describe FileBrowserView action icons [#1845](https://github.com/dandi/dandi-archive/pull/1845) ([@waxlamp](https://github.com/waxlamp))
+- Build project with `build` & `pyproject.toml` [#1855](https://github.com/dandi/dandi-archive/pull/1855) ([@jwodder](https://github.com/jwodder))
+- Fix lint errors [#1854](https://github.com/dandi/dandi-archive/pull/1854) ([@waxlamp](https://github.com/waxlamp))
+
+#### 📝 Documentation
+
+- Fix documentation about release process to Heroku -- done by GitHub CI now not Heroku itself [#1856](https://github.com/dandi/dandi-archive/pull/1856) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 3
+
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.74 (Wed Feb 07 2024)
 
 #### 🐛 Bug Fix
