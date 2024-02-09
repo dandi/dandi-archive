@@ -181,7 +181,7 @@ const descriptionMaxLength: ComputedRef<number> = computed(
   () => store.schema.properties.description.maxLength,
 );
 const dandiLicenses: ComputedRef<LicenseType[]> = computed(
-  () => store.schema.definitions.LicenseType.enum,
+  () => store.schema.$defs.LicenseType.enum,
 );
 
 if (!loggedIn()) {
