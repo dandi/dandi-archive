@@ -1,4 +1,4 @@
-# Publish Dandisets that contain Zarr archives, and support updates to the Zarr archive after publishing the Dandiset
+# Publishing Dandisets that contain Zarr archives
 
 This document describes the current implementation of publishing Dandisets with Zarr archives, desired use cases, and the associated requirements.
 
