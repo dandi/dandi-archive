@@ -8,7 +8,7 @@ This is the simplest configuration for developers to start with.
 2. Run `docker-compose run --rm django ./manage.py createcachetable`
 3. Run `docker-compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
-   We set your username to your git email to ensure parity with how GitHub logins work.
+   This sets your username to your git email to ensure parity with how GitHub logins work. You can also replace the command substitution expression with a literal email address, or omit the `--email` option entirely to run the command in interactive mode.
 4. Run `docker-compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
 
