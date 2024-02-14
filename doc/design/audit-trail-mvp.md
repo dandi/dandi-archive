@@ -51,18 +51,20 @@ The following is the list of actions performed on Dandisets that are considered
 "significant" (i.e., require an audit record to be generated), along with any
 additional, event-specific data each will carry with it.
 
-| Action                  | General data                    | Specific data                                                                   |
-| ---                     | ---                             | ---                                                                             |
-| Create Dandiset         | date_time, user_id, dandiset_id | metadata, embargoed                                                             |
-| Add owner               | date_time, user_id, dandiset_id | owner_id                                                                        |
-| Remove owner            | date_time, user_id, dandiset_id | owner_id                                                                        |
-| Update Version metadata | date_time, user_id, dandiset_id | metadata                                                                        |
+| Action                  | General data                    | Specific data                                                                            |
+| ---                     | ---                             | ---                                                                                      |
+| Create Dandiset         | date_time, user_id, dandiset_id | metadata, embargoed                                                                      |
+| Add owner               | date_time, user_id, dandiset_id | owner_id                                                                                 |
+| Remove owner            | date_time, user_id, dandiset_id | owner_id                                                                                 |
+| Update Version metadata | date_time, user_id, dandiset_id | metadata                                                                                 |
 | Add asset               | date_time, user_id, dandiset_id | asset_path, checksum, metadata, blob_id, zarr_id, asset_id                               |
 | Update asset            | date_time, user_id, dandiset_id | asset_path, old_asset_path, checksum, blob_id, zarr_id, metadata, asset_id, old_asset_id |
-| Remove asset            | date_time, user_id, dandiset_id | asset_path, asset_id                                                            |
-| Unembargo Dandiset      | date_time, user_id, dandiset_id | (none)                                                                          |
-| Publish Dandiset        | date_time, user_id, dandiset_id | version                                                                         |
-| Delete Dandiset         | date_time, user_id, dandiset_id | (none)                                                                          |
+| Remove asset            | date_time, user_id, dandiset_id | asset_path, asset_id                                                                     |
+| Request Zarr upload     | date_time, user_id, dandiset_id | asset_path, asset_id, zarr_id                                                            |
+| Finalize Zarr           | date_time, user_id, dandiset_id | asset_path, asset_id, zarr_id                                                            |
+| Unembargo Dandiset      | date_time, user_id, dandiset_id | (none)                                                                                   |
+| Publish Dandiset        | date_time, user_id, dandiset_id | version                                                                                  |
+| Delete Dandiset         | date_time, user_id, dandiset_id | (none)                                                                                   |
 
 ## Asset chain analysis
 
