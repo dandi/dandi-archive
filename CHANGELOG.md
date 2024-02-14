@@ -1,3 +1,25 @@
+# v0.3.76 (Wed Feb 14 2024)
+
+#### 🐛 Bug Fix
+
+- Don't use .save() in validate_version_metadata [#1800](https://github.com/dandi/dandi-archive/pull/1800) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add quirks section to embargo redesign doc [#1802](https://github.com/dandi/dandi-archive/pull/1802) ([@waxlamp](https://github.com/waxlamp))
+- Remove obsolete/not-applicable TODO [#1829](https://github.com/dandi/dandi-archive/pull/1829) ([@yarikoptic](https://github.com/yarikoptic))
+- Don't use filesystem APIs to manipulate URLs [#1782](https://github.com/dandi/dandi-archive/pull/1782) ([@brianhelba](https://github.com/brianhelba))
+
+#### 📝 Documentation
+
+- DEVELOPMENT.md: set email to the one known to git [#1828](https://github.com/dandi/dandi-archive/pull/1828) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 4
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.75 (Fri Feb 09 2024)
 
 #### 🐛 Bug Fix
