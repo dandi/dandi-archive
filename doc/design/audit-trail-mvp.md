@@ -11,6 +11,11 @@ when a given owner did not make the change and wishes to know who to speak to
 about those changes. In essence, it is a tool to support effective
 collaboration.
 
+Additionally, this audit feature can support other efforts that depend on the
+stream of events affecting a Dandiset, such as reconstructing the history of
+changes that are then reflected in the DataLad versions of Dandisets maintained
+at https://github.com/dandisets.
+
 ## Requirements
 
 1. **Persistent tracking of significant actions.** Whenever a *significant
