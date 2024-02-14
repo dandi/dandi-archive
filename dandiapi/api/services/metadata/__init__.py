@@ -129,8 +129,28 @@ def validate_version_metadata(*, version: Version) -> None:
         }
         return metadata_for_validation
 
-    version_id = version.id
+    def _get_version_validation_result(
+        version: Version,
+    ) -> tuple[Version.Status, list[dict[str, str]]]:
+        try:
+            validate(
+                _build_validatable_version_metadata(version),
+                schema_key='PublishedDandiset',
+                json_validation=True,
+            )
+        except dandischema.exceptions.ValidationError as e:
+            logger.info('Error while validating version %s', version.id)
+            return (Version.Status.INVALID, _collect_validation_errors(e))
+        except ValueError as e:
+            # A bare ValueError is thrown when dandischema generates its own exceptions, like a
+            # mismatched schemaVersion.
+            logger.info('Error while validating version %s', version.id)
+            return (Version.Status.INVALID, [{'field': '', 'message': str(e)}])
 
+        logger.info('Successfully validated version %s', version.id)
+        return (Version.Status.VALID, [])
+
+    version_id = version.id
     logger.info('Validating dandiset metadata for version %s', version_id)
 
     # Published versions are immutable
@@ -140,43 +160,23 @@ def validate_version_metadata(*, version: Version) -> None:
     with transaction.atomic():
         # validating version metadata needs to lock the version to avoid racing with
         # other modifications e.g. aggregate_assets_summary.
-        version = (
-            Version.objects.filter(id=version.id, status=Version.Status.PENDING)
-            .select_for_update()
-            .first()
-        )
+        version_qs = Version.objects.filter(id=version_id).select_for_update()
+        current_version = version_qs.first()
 
         # It's possible for this version to get deleted during execution of this function.
         # If that happens *before* the select_for_update query, return early.
-        if version is None:
+        if current_version is None:
             logger.info('Version %s no longer exists, skipping validation', version_id)
             return
 
-        version.status = Version.Status.VALIDATING
-        version.save()
-
-        try:
-            validate(
-                _build_validatable_version_metadata(version),
-                schema_key='PublishedDandiset',
-                json_validation=True,
+        # If the version has since been modified, return early
+        if current_version.status != Version.Status.PENDING:
+            logger.info(
+                'Skipping validation for version %s due to concurrent modification', version_id
             )
-        except dandischema.exceptions.ValidationError as e:
-            logger.info('Error while validating version %s', version.id)
-            version.status = Version.Status.INVALID
+            return
 
-            validation_errors = _collect_validation_errors(e)
-            version.validation_errors = validation_errors
-            version.save()
-            return
-        except ValueError as e:
-            # A bare ValueError is thrown when dandischema generates its own exceptions, like a
-            # mismatched schemaVersion.
-            version.status = Version.Status.INVALID
-            version.validation_errors = [{'field': '', 'message': str(e)}]
-            version.save()
-            return
-        logger.info('Successfully validated version %s', version.id)
-        version.status = Version.Status.VALID
-        version.validation_errors = []
-        version.save()
+        # Set to validating and continue
+        version_qs.update(status=Version.Status.VALIDATING)
+        status, errors = _get_version_validation_result(current_version)
+        version_qs.update(status=status, validation_errors=errors, modified=timezone.now())
