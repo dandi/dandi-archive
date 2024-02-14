@@ -143,7 +143,7 @@ During redesign deliberations, we noticed some oddities of how embargo might int
 
    On the other hand, perhaps scientists would have a reason to want to include the same data in both an embargoed Dandiset and an open one. For instance, perhaps embargoed experiments are using some base but non-secret data within an embargoed Dandiset, and that same data needs to be part of an open Dandiset.
 
-2. **Allow this type of sharing but force the user to provide an explicit flag to do so.** In this remediation, the user would receive a warning that they are trying to include embargoed data in an open Dandiset. The API / client would return an error with a prompt to retry with a `--force` type flag, which would then allow the upload to occur. The embargoed assets would remain hidden to the public in the S3 bucket, and data access to the open Dandiset’s asset holding would occur via presigned URLs (the same way as for authorized users to embargoed Dandiset assets).
+2. **Allow this type of sharing but force the user to provide an explicit flag to do so.** In this remediation, the user would receive a warning that they are trying to include embargoed data in an open Dandiset. The API / client would return an error with a prompt to retry with a `--force` type flag, which would then allow the upload to occur. The embargoed assets would become open to the public in the S3 bucket, and data access to the open Dandiset’s asset holding would occur in the usual manner.
 
 The major questions here are:
 
