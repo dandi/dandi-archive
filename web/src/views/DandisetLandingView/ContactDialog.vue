@@ -33,16 +33,16 @@
       </v-card-title>
       <v-list>
         <v-tooltip
-          :disabled="loggedIn()"
+          :disabled="loggedIn() || !owners"
           open-on-hover
           right
         >
           <template #activator="{ on }">
             <v-list-item
               v-on="on"
-              :class="loggedIn() ? 'black--text' : 'grey--text'"
+              :class="(loggedIn() || !owners) ? 'black--text' : 'grey--text'"
               :selectable="!loggedIn()"
-              :href="`mailto:${owners}?subject=Regarding%20Dandiset%20${currentDandiset?.name}%20${currentDandiset?.metadata?.id} &body=${currentUser?.value?.username}`"
+              :href="makeTemplate(owners)"
             >
             <v-icon
               color="primary"
@@ -54,23 +54,35 @@
               Dandiset Owners
             </v-list-item>
           </template>
-          <span> You must me logged in to contact the owner </span>
+          <span v-if="!loggedIn()"> You must me logged in to contact the owner </span>
+          <span v-else> No owner e-mail available </span>
         </v-tooltip>
       <v-divider />
+        <v-tooltip
+            :disabled="contacts"
+            open-on-hover
+            right
+          >
 
-        <v-list-item
-          :href="`mailto:${contacts}?subject=Regarding%20Dandiset%20${currentDandiset?.name}%20${currentDandiset?.metadata?.id} &body=${currentUser?.value?.username}`"
-        >
-        <v-icon
-          color="primary"
-          left
-          small
-        >
-          mdi-card-account-mail
-        </v-icon>
-          Contact Person
-        </v-list-item>
-
+          <template #activator="{ on }">
+          <v-list-item
+            v-on="on"
+            :class=" !owners ? 'black--text' : 'grey--text'"
+            :selectable="!owners"
+            :href="makeTemplate(contacts)"
+          >
+          <v-icon
+            color="primary"
+            left
+            small
+          >
+            mdi-card-account-mail
+          </v-icon>
+            Contact Person
+          </v-list-item>
+            </template>
+          <span> No contact e-mail available </span>
+        </v-tooltip>
       </v-list>
     </v-card>
   </v-menu>
@@ -78,14 +90,21 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { loggedIn, user } from '@/rest';
+import { loggedIn } from '@/rest';
 
 const store = useDandisetStore();
 const owners = computed(() => store.owners?.map((owner) => owner.username).toString());
 const contacts = computed(() => store.dandiset?.metadata?.contributor?.map((contact) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
-const currentUser = computed(() => user);
 const currentDandiset = computed(() => store.dandiset);
-currentDandiset.value?.metadata?.id
+
+const makeTemplate = (contact: string | undefined) => {
+  if (!contact) {
+    return '';
+  }
+  // Subject is: Regarding [dandiset_name]  [dandiset_id]
+  return `mailto:${contact}?subject=Regarding%20Dandiset%20${currentDandiset?.value?.name}%20${currentDandiset?.value?.metadata?.id}`;
+};
+
 
 </script>
 <style scoped>
