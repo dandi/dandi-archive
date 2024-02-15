@@ -26,8 +26,9 @@
         </v-icon>
       </v-btn>
     </template>
-    <v-card>
-      <v-card-title class="pb-0">
+    <v-card
+    >
+      <v-card-title class="pb-0" style="min-width: fit-content;">
         Select an e-mail Recipient
       </v-card-title>
       <v-list>
@@ -50,7 +51,7 @@
             >
               mdi-card-account-mail
             </v-icon>
-              Dandiset Owner
+              Dandiset Owners
             </v-list-item>
           </template>
           <span> You must me logged in to contact the owner </span>
