@@ -4,7 +4,7 @@ This document describes the current implementation of publishing Dandisets with 
 
 ## Current implementation
 
-When a blob asset is updated, a new version (i.e. a copy) is uploaded to the S3 bucket.  Zarr archives are too large so multiple copies should not be created.  A Zarr archive is uploaded once and it is updated in place.  This design means that the Zarr archive is immutable once the Dandiset is published, so that the published Dandiset is immutable. Currently, a Dandiset cannot be published if it contains a Zarr asset.  For more details, see the [zarr-support-3 design doc](https://github.com/dandi/dandi-archive/blob/master/doc/design/zarr-support-3.md).
+When a non-Zarr asset blob is updated, a new copy of that file is uploaded to the S3 bucket.  Zarr archives are too large so multiple copies should not be created.  A Zarr archive is uploaded once and it is updated in place.  This design means that the Zarr archive is immutable once the Dandiset is published, so that the published Dandiset is immutable. Currently, a Dandiset cannot be published if it contains a Zarr asset.  For more details, see the [zarr-support-3 design doc](https://github.com/dandi/dandi-archive/blob/master/doc/design/zarr-support-3.md).
 
 ## Use case 1
 
