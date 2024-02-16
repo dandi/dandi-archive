@@ -13,9 +13,9 @@ Publish a Dandiset containing a Zarr archive(s), and subsequently update the Zar
 The publishing procedure would follow the description found in the [publish-1 design doc](https://github.com/dandi/dandi-archive/blob/master/doc/design/publish-1.md).  A modified publishing procedure that includes Zarr archive(s) is summarized below.
 
 1. User uploads a new Dandiset which includes a Zarr archive(s).
-2. User uploads an updated Zarr archive(s) to the `Draft` version of the Dandiset.  
-3. User publishes the Dandiset and thereby creates a new immutable version of the Dandiset.
-4. User repeats steps 2 and 3.
+1. User publishes the Dandiset and thereby creates a new immutable version of the Dandiset.
+1. User uploads an updated Zarr archive(s) to the `Draft` version of the Dandiset.
+1. User repeats steps 2 and 3.
 
 ## Use case 2
 
