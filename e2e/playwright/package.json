@@ -1,0 +1,10 @@
+{
+  "name": "dandi-playwright-test",
+  "scripts": {},
+  "devDependencies": {
+    "@playwright/test": "^1.41.2",
+    "@types/node": "^20.11.19",
+    "axios": "^1.6.7",
+    "lodash": "^4.17.21"
+  }
+}
