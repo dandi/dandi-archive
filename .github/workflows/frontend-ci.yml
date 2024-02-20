@@ -31,7 +31,7 @@ jobs:
       - name: Build Vue app
         run: yarn run build
 
-  test-e2e:
+  test-e2e-puppeteer:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -122,23 +122,23 @@ jobs:
 
       - name: Install E2E tests
         run: yarn install --frozen-lockfile
-        working-directory: e2e
+        working-directory: e2e/puppeteer
 
       - name: Lint E2E tests
         run: yarn run lint --no-fix --max-warnings=0
-        working-directory: e2e
+        working-directory: e2e/puppeteer
 
       - name: Run E2E tests
         run: |
           # start vue dev server and wait for it to start
-          yarn --cwd ../web/ run dev 2> /dev/null &
+          yarn --cwd ../../web/ run dev 2> /dev/null &
           while ! nc -z localhost 8085; do
             sleep 3
           done
 
           # start the dandi-api server
-          python ../manage.py runserver &
+          python ../../manage.py runserver &
 
           # run the E2E tests
           yarn run test
-        working-directory: e2e
+        working-directory: e2e/puppeteer
