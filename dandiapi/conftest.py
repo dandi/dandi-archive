@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
 register(AssetBlobFactory)
-register(EmbargoedAssetBlobFactory)
+register(EmbargoedAssetBlobFactory, _name='embargoed_asset_blob')
 register(DandisetFactory)
 register(EmbargoedUploadFactory)
 register(PublishedVersionFactory, _name='published_version')
@@ -99,10 +99,6 @@ def s3_storage_factory():
     return base_s3_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
-def embargoed_s3_storage_factory():
-    return base_s3_storage_factory(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
-
-
 def base_minio_storage_factory(bucket_name: str) -> MinioStorage:
     return create_s3_storage(bucket_name)
 
@@ -111,27 +107,13 @@ def minio_storage_factory() -> MinioStorage:
     return base_minio_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
-def embargoed_minio_storage_factory() -> MinioStorage:
-    return base_minio_storage_factory(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
-
-
 @pytest.fixture()
 def s3_storage() -> S3Storage:
     return s3_storage_factory()
 
 
 @pytest.fixture()
-def embargoed_s3_storage() -> S3Storage:
-    return s3_storage_factory()
-
-
-@pytest.fixture()
 def minio_storage() -> MinioStorage:
-    return minio_storage_factory()
-
-
-@pytest.fixture()
-def embargoed_minio_storage() -> MinioStorage:
     return minio_storage_factory()
 
 
