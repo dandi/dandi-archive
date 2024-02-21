@@ -59,8 +59,7 @@ class Upload(models.Model):
             # The upload HTTP API does not pass the file name or content type, and it would be a
             # breaking change to start requiring this.
             'application/octet-stream',
-            # TODO: Pass embargoed
-            # embargoed
+            tagging='embargoed=true' if embargoed else None,
         )
 
         upload = cls(
