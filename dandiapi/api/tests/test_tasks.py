@@ -153,7 +153,7 @@ def test_validate_asset_metadata_no_digest(draft_asset: Asset):
 
     assert draft_asset.status == Asset.Status.INVALID
     assert draft_asset.validation_errors == [
-        {'field': 'digest', 'message': 'A non-zarr asset must have a sha2_256.'}
+        {'field': 'digest', 'message': 'Value error, A non-zarr asset must have a sha2_256.'}
     ]
 
 
@@ -292,7 +292,8 @@ def test_validate_version_metadata_no_assets(
     assert draft_version.validation_errors == [
         {
             'field': 'assetsSummary',
-            'message': 'A Dandiset containing no files or zero bytes is not publishable',
+            'message': 'Value error, '
+            'A Dandiset containing no files or zero bytes is not publishable',
         }
     ]
 
