@@ -14,6 +14,7 @@ from django.core.files.storage import Storage, get_storage_class
 from minio import S3Error
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
+from s3_file_field._multipart import PresignedPartTransfer, PresignedTransfer, UploadTooLargeError
 from s3_file_field._multipart_minio import MinioMultipartManager
 from s3_file_field._multipart_s3 import S3MultipartManager
 from storages.backends.s3 import S3Storage
@@ -47,20 +48,61 @@ class DandiMultipartMixin:
 
 
 class DandiS3MultipartManager(DandiMultipartMixin, S3MultipartManager):
-    """A custom multipart manager for passing ACL information."""
+    """
+    A custom multipart manager.
 
-    def _create_upload_id(self, object_key: str, content_type: str) -> str:
+    This custom multipart manager does the following:
+        1. Passes ACL information to multipart upload creation
+        2. Allows for passing tags to multipart uploads
+    """
+
+    def initialize_upload(
+        self,
+        object_key: str,
+        file_size: int,
+        content_type: str,
+        tagging: str | None = None,
+    ) -> PresignedTransfer:
+        if file_size > self.max_object_size:
+            raise UploadTooLargeError('File is larger than the S3 maximum object size.')
+
+        upload_id = self._create_upload_id(object_key, content_type, tagging)
+        parts = [
+            PresignedPartTransfer(
+                part_number=part_number,
+                size=part_size,
+                upload_url=self._generate_presigned_part_url(
+                    object_key, upload_id, part_number, part_size
+                ),
+            )
+            for part_number, part_size in self._iter_part_sizes(file_size)
+        ]
+        return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
+
+    def _create_upload_id(self, object_key: str, content_type: str, tagging: str | None) -> str:
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
             ContentType=content_type,
             ACL='bucket-owner-full-control',
+            Tagging=tagging,
         )
         return resp['UploadId']
 
 
 class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
     """A custom multipart manager for passing ACL information."""
+
+    # Override this method for interoperability with DandiS3MultipartManager
+    def initialize_upload(
+        self,
+        object_key: str,
+        file_size: int,
+        content_type: str,
+        *args,
+        **kwargs,
+    ) -> PresignedTransfer:
+        return super().initialize_upload(object_key, file_size, content_type)
 
     def _create_upload_id(self, object_key: str, content_type: str) -> str:
         return self._client._create_multipart_upload(  # noqa: SLF001
