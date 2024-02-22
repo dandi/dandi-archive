@@ -63,14 +63,6 @@ def delete_doi_task(doi: str) -> None:
 
 
 @shared_task
-def unembargo_dandiset_task(dandiset_id: int):
-    from dandiapi.api.services.embargo import _unembargo_dandiset
-
-    dandiset = Dandiset.objects.get(id=dandiset_id)
-    _unembargo_dandiset(dandiset)
-
-
-@shared_task
 def publish_dandiset_task(dandiset_id: int):
     from dandiapi.api.services.publish import _publish_dandiset
 
