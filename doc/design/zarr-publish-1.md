@@ -27,27 +27,16 @@ Reuse a Zarr archive in more than one Dandiset.
 
 Allow for a Zarr archive that is uploaded as part of an original Dandiset to be packaged in a new Dandiset without duplicating the Zarr archive.  The new Dandiset could be created by potentially different authors and could contain additional raw and/or analyzed data.  This feature has been previously implemented for other asset types with [add_asset_to_dandiset.py](https://gist.github.com/satra/29404d965226e4c99fb48e7502953503#file-add_asset_to_dandiset-py).  Further details of this feature request have been previously documented in #1792.
 
-## MVP User requirements (Target date: April 30, 2024)
+## Requirements (Target date: April 30, 2024)
 
 1. Publish Dandisets that contain Zarr archives.
-1. The published Dandisets must be immutable and accessible.
-1. The draft version of the Dandiset should be mutable.
-1. Minimize storage costs in the design.
+2. If the same Zarr archive is uploaded to multiple Dandisets, then the Zarr archive should not be re-uploaded.
 
-## MVP+1 User requirements
+## Implementation details
 
-1. Support linking of a Zarr asset to multiple Dandisets
-
-## MVP Technical specifications
-
-1. Support versioning of Zarr archives.
-1. Create a unique web address for each published version of the Zarr archive.
-1. Provide access to the Zarr archive versions through the web app and command line interface.
-1. TODO: add additional specifications
-
-## MVP+1 Technical specifications
-
-1. TODO
+1. Design a lightweight object to version Zarr archives.
+    1. For a candidate implementation see https://github.com/dandi/zarr-manifests/.
+2. Minimize storage costs in the design.
 
 ## Potential solutions
 
