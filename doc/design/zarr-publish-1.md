@@ -1,6 +1,7 @@
 # Publishing Dandisets that contain Zarr archives
 
 This document describes the current implementation of publishing Dandisets with Zarr archives, desired use cases, and the associated requirements.
+Note that once the requirements for `Use case 1` are implemented, then `Use cases 2-3` will be capable.
 
 ## Current implementation
 
