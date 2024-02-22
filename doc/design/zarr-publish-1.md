@@ -30,7 +30,7 @@ Allow for a Zarr archive that is uploaded as part of an original Dandiset to be 
 ## Requirements (Target date: April 30, 2024)
 
 1. Publish Dandisets that contain Zarr archives.
-2. If the same Zarr archive is uploaded to multiple Dandisets, then the Zarr archive should not be re-uploaded.
+2. If the same Zarr archive is uploaded to multiple Dandisets, then the Zarr archive should not be re-uploaded.  This requirement would mirror the behavior of non-Zarr asset blobs.
 
 ## Implementation details
 
