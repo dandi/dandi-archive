@@ -2,52 +2,25 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.conf import settings
+from django.db import transaction
 
-from dandiapi.api.copy import copy_object_multipart
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
-from dandiapi.api.tasks import unembargo_dandiset_task
 
-from .exceptions import AssetNotEmbargoedError, DandisetNotEmbargoedError
+from .exceptions import DandisetNotEmbargoedError
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.db.models import QuerySet
 
 
-def _unembargo_asset(asset: Asset):
-    """Unembargo an asset by copying its blob to the public bucket."""
-    if not asset.blob.embargoed:
-        raise AssetNotEmbargoedError
-
-    # TODO: Replace this with object tag removal
-    # Matching AssetBlob doesn't exist, copy blob to public bucket
-    # resp = copy_object_multipart(
-    #     asset.embargoed_blob.blob.storage,
-    #     source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
-    #     source_key=asset.embargoed_blob.blob.name,
-    #     dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-    #     dest_key=Upload.object_key(
-    #         asset.embargoed_blob.blob_id, dandiset=asset.embargoed_blob.dandiset
-    #     ),
-    # )
-
-    # if resp.etag != asset.embargoed_blob.etag:
-    #     raise RuntimeError('ETag mismatch between copied object and original embargoed object')
-
-    # Update blob embargoed flag
-    asset.blob.embargoed = False
-    asset.blob.save()
-
-
+@transaction.atomic()
 def _unembargo_dandiset(dandiset: Dandiset):
+    # TODO: Remove embargoed tags from objects in s3
+
     draft_version: Version = dandiset.draft_version
     embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(blob__embargoed=True)
-
-    # Unembargo all assets
-    for asset in embargoed_assets.iterator():
-        _unembargo_asset(asset)
+    AssetBlob.objects.filter(assets__in=embargoed_assets).update(embargoed=False)
 
     # Update draft version metadata
     draft_version.metadata['access'] = [
@@ -68,4 +41,4 @@ def unembargo_dandiset(*, user: User, dandiset: Dandiset):
     if not user.has_perm('owner', dandiset):
         raise DandisetOwnerRequiredError
 
-    unembargo_dandiset_task.delay(dandiset.id)
+    # TODO: Send email to admins?
