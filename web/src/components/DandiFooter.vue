@@ -15,7 +15,7 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2023 The DANDI Team<br>
+          &copy; 2019 - 2024 The DANDI Team<br>
           version
           <a
             class="version-link"
@@ -47,6 +47,16 @@
             rel="noopener"
             href="https://registry.opendata.aws/dandiarchive/"
           >AWS Open Dataset</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+          <br>
+          <br>
+          - <a
+            target="_blank"
+            rel="noopener"
+            :href="sentryLandingPageUrl"
+          >Sentry</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -88,7 +98,7 @@
 import { defineComponent } from 'vue';
 import CookieLaw from 'vue-cookie-law';
 
-import { dandiAboutUrl } from '@/utils/constants';
+import { dandiAboutUrl, sentryLandingPageUrl } from '@/utils/constants';
 import { cookiesEnabled } from '@/rest';
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -100,6 +110,7 @@ export default defineComponent({
   setup() {
     return {
       dandiAboutUrl,
+      sentryLandingPageUrl,
       version,
       githubLink,
       cookiesEnabled,

@@ -3,6 +3,7 @@ const dandiAboutUrl = 'https://www.dandiarchive.org/';
 const dandiDocumentationUrl = 'https://www.dandiarchive.org/handbook/10_using_dandi/';
 const dandiHelpUrl = 'https://github.com/dandi/helpdesk/issues/new/choose';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
+const sentryLandingPageUrl = 'https://sentry.io/';
 
 const draftVersion = 'draft';
 
@@ -56,6 +57,7 @@ export {
   draftVersion,
   dandiHelpUrl,
   VALIDATION_ICONS,
-  sortingOptions,
   DANDISETS_PER_PAGE,
+  sentryLandingPageUrl,
+  sortingOptions,
 };
