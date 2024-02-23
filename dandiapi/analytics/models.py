@@ -12,13 +12,16 @@ class ProcessedS3Log(models.Model):
             RegexValidator(r'^\d{4}-(\d{2}-){5}[A-F0-9]{16}$')
         ],
     )
-    # This is necessary to determine which bucket the logfile corresponds to
-    embargoed = models.BooleanField()
+
+    # Represents if this s3 log file was embargoed prior to the embargo re-design.
+    # If this field is True, the log file lives in the S3 bucket pointed to by the
+    # DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME setting.
+    historically_embargoed = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'embargoed'],
+                fields=['name', 'historically_embargoed'],
                 name='%(app_label)s_%(class)s_unique_name_embargoed',
             )
         ]
