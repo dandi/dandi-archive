@@ -7,18 +7,35 @@ from django.db import migrations, models
 def migrate_embargoed_asset_blobs(apps, _):
     Asset = apps.get_model('api.Asset')
     AssetBlob = apps.get_model('api.AssetBlob')
-
-    # We must include a filter to only include assets which are part of a version, as otherwise
-    # we may include an embargoed asset which has been previously updated. Since updating an asset
-    # results in a new asset which points to the same blob as the original asset, this would copy
-    # the same blob twice, resulting in an integrity error (same blob_id).
-    embargoed_assets = Asset.objects.filter(
-        embargoed_blob__isnull=False, versions__isnull=False
-    ).select_related('embargoed_blob')
+    embargoed_assets = Asset.objects.filter(embargoed_blob__isnull=False).select_related(
+        'embargoed_blob'
+    )
 
     # For each relevant asset, create a new asset blob with embargoed=True,
     # and point the asset to that
     for asset in embargoed_assets.iterator():
+        # Check if the blob we care about already exists (possibly under a different blob_id due to
+        # de-duplication).
+        # This will handle the following cases:
+        #   1. This asset is part of an "asset chain", where multiple assets point to the same blob
+        #   2. This blob this asset points to exists across multiple embargoed dandisets under
+        #       different blob_ids, due to the lack of cross-dandiset embargo de-duplication.
+        #   3. This blob this asset points to already exists as a normal AssetBlob, due to the lack
+        #       of de-duplication between open and embargoed dandisets. This is essentially the same
+        #       as the above case, but between an embargoed and open dandiset, instead of two
+        #       embargoed dandisets.
+        #
+        # In case #3, the asset will effectively be un-embargoed.
+        existing_blob = AssetBlob.objects.filter(
+            etag=asset.embargoed_blob.etag, size=asset.embargoed_blob.size
+        ).first()
+        if existing_blob:
+            asset.blob = existing_blob
+            asset.embargoed_blob = None
+            asset.save()
+            continue
+
+        # This asset's blob hasn't been transitioned yet
         blob_id = str(asset.embargoed_blob.blob_id)
         new_blob_location = f'blobs/{blob_id[0:3]}/{blob_id[3:6]}/{blob_id}'
         new_asset_blob = AssetBlob.objects.create(
@@ -35,6 +52,8 @@ def migrate_embargoed_asset_blobs(apps, _):
         asset.blob = new_asset_blob
         asset.embargoed_blob = None
         asset.save()
+
+    assert not Asset.objects.filter(embargoed_blob__isnull=False).exists()  # noqa: S101
 
 
 class Migration(migrations.Migration):
@@ -53,39 +72,6 @@ class Migration(migrations.Migration):
             name='embargoed',
             field=models.BooleanField(default=False),
         ),
-        # Migrate all embargoedassetblobs and embargoeduploads to other models with embargoed=True
+        # Migrate all embargoedassetblobs to assetblobs with embargoed=True
         migrations.RunPython(migrate_embargoed_asset_blobs),
-        migrations.RemoveField(
-            model_name='embargoedassetblob',
-            name='dandiset',
-        ),
-        migrations.RemoveField(
-            model_name='embargoedupload',
-            name='dandiset',
-        ),
-        migrations.RemoveConstraint(
-            model_name='asset',
-            name='exactly-one-blob',
-        ),
-        migrations.RemoveField(
-            model_name='asset',
-            name='embargoed_blob',
-        ),
-        migrations.AddConstraint(
-            model_name='asset',
-            constraint=models.CheckConstraint(
-                check=models.Q(
-                    models.Q(('blob__isnull', True), ('zarr__isnull', False)),
-                    models.Q(('blob__isnull', False), ('zarr__isnull', True)),
-                    _connector='OR',
-                ),
-                name='blob-xor-zarr',
-            ),
-        ),
-        migrations.DeleteModel(
-            name='EmbargoedAssetBlob',
-        ),
-        migrations.DeleteModel(
-            name='EmbargoedUpload',
-        ),
     ]
