@@ -64,5 +64,3 @@ const downloadCommand = computed(() => {
     : ''; // Empty string just as a fallback in case store.dandiset? is undefined
 });
 </script>
-
-

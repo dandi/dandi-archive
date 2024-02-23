@@ -127,14 +127,11 @@ function formatDownloadCommand(identifier: string, version: string): string {
       : 'https://dandiarchive.org/dandiset/';
     return `dandi download ${baseUrl}${identifier}/draft`;
   }
-
   if (!version) {
     return `dandi download DANDI:${identifier}`;
   }
-
   return `dandi download DANDI:${identifier}/${version}`;
 }
-
 
 const store = useDandisetStore();
 
