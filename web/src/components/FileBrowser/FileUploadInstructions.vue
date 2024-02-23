@@ -54,9 +54,11 @@ import { useDandisetStore } from '@/stores/dandiset';
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
 
+if (dandisetIdentifier.value === undefined) {
+  throw new Error('store.dandiset must be defined');
+}
+
 const downloadCommand = computed(() => {
-  return dandisetIdentifier.value
-    ? `> dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
-    : ''; // Empty string just as a fallback in case store.dandiset? is undefined
+  return `> dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
 });
 </script>
