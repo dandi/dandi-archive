@@ -12,15 +12,10 @@ class ProcessedS3Log(models.Model):
             RegexValidator(r'^\d{4}-(\d{2}-){5}[A-F0-9]{16}$')
         ],
     )
-    # This is necessary to determine which bucket the logfile corresponds to
-    embargoed = models.BooleanField()
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=['name', 'embargoed'],
-                name='%(app_label)s_%(class)s_unique_name_embargoed',
-            )
+            models.UniqueConstraint(fields=['name'], name='%(app_label)s_%(class)s_unique_name')
         ]
 
     def __str__(self) -> str:

@@ -15,8 +15,6 @@ def s3_log_bucket():
 
 @pytest.fixture()
 def s3_log_file(s3_log_bucket, asset_blob):
-    # TODO: What to do when embargoed
-    # embargoed = s3_log_bucket == settings.DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME
     s3 = get_boto_client()
 
     log_file_name = '2019-02-06-00-00-38-5C5B0E0CA8F2B1B5'
