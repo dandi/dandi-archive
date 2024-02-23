@@ -22,7 +22,7 @@
             width="60%"
             class="white--text pl-2 py-1 text-left"
           >
-            <div>{{ downloadCommand }}</div>
+            <div>> {{ downloadCommand }}</div>
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
             <div>> dandi organize &lt;source_folder&gt;</div>
@@ -59,6 +59,6 @@ if (dandisetIdentifier.value === undefined) {
 }
 
 const downloadCommand = computed(() => {
-  return `> dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
+  return `dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
 });
 </script>
