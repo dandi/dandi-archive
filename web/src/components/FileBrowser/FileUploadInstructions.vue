@@ -55,12 +55,8 @@ const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
 
 const downloadCommand = computed(() => {
-  const baseUrl = import.meta.env.VITE_APP_DANDI_API_ROOT === 'https://api-staging.dandiarchive.org/api/'
-    ? 'https://gui-staging.dandiarchive.org/dandiset/'
-    : 'https://dandiarchive.org/dandiset/';
-
   return dandisetIdentifier.value
-    ? `> dandi download ${baseUrl}${dandisetIdentifier.value}/draft`
+    ? `> dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
     : ''; // Empty string just as a fallback in case store.dandiset? is undefined
 });
 </script>
