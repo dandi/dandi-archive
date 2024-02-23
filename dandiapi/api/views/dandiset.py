@@ -28,16 +28,12 @@ from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccessError
 from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
-from dandiapi.api.views.serializers import (
-    CreateDandisetQueryParameterSerializer,
-    DandisetDetailSerializer,
-    DandisetListSerializer,
-    DandisetQueryParameterSerializer,
-    DandisetSearchQueryParameterSerializer,
-    DandisetSearchResultListSerializer,
-    UserSerializer,
-    VersionMetadataSerializer,
-)
+from dandiapi.api.views.serializers import (CreateDandisetQueryParameterSerializer,
+                                            DandisetDetailSerializer, DandisetListSerializer,
+                                            DandisetQueryParameterSerializer,
+                                            DandisetSearchQueryParameterSerializer,
+                                            DandisetSearchResultListSerializer, UserSerializer,
+                                            VersionMetadataSerializer)
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
@@ -381,7 +377,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
-
             # Ensure not all owners removed
             if not serializer.validated_data:
                 raise ValidationError('Cannot remove all draft owners')
@@ -413,19 +408,24 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
+
         for owner_user in dandiset.owners:
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
                 if 'name' in owner_account.extra_data:
                     owner_dict['name'] = owner_account.extra_data['name']
+                if request.user.is_authenticated and 'email' in owner_account.extra_data:
+                    owner_dict['email'] = owner_account.extra_data['email']
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
-                owners.append(
-                    {
-                        'username': owner_user.username,
-                        'name': f'{owner_user.first_name} {owner_user.last_name}',
-                    }
-                )
+                owner_dict = {
+                    'username': owner_user.username,
+                    'name': f'{owner_user.first_name} {owner_user.last_name}',
+                }
+                if request.user.is_authenticated:  # Check if user is logged in
+                    owner_dict['email'] = owner_user.email
+                owners.append(owner_dict)
+
         return Response(owners, status=status.HTTP_200_OK)
