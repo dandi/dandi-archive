@@ -1,8 +1,4 @@
 <template>
-  <!--
-    Do we want to set the width here? Default is nearly the same.
-    If we do want to set wouldn't width=500 be sufficient?
-  -->
   <v-menu
     offset-y
     :close-on-content-click="false"
