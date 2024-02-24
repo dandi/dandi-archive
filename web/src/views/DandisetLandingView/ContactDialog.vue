@@ -29,19 +29,19 @@
     <v-card
     >
       <v-card-title class="pb-0" style="min-width: fit-content;">
-        Select an e-mail Recipient
+        Select an e-mail Recipient!
       </v-card-title>
       <v-list>
         <v-tooltip
-          :disabled="loggedIn() || !owners"
+          :disabled="!owners ? false : loggedIn()"
           open-on-hover
           right
         >
           <template #activator="{ on }">
             <v-list-item
               v-on="on"
-              :class="(loggedIn() || !owners) ? 'black--text' : 'grey--text'"
-              :selectable="!loggedIn()"
+              :class="(!loggedIn() || !owners) ? 'grey--text': 'black--text'"
+              :selectable="!loggedIn() || !owners"
               :href="makeTemplate(owners)"
             >
             <v-icon
@@ -55,11 +55,11 @@
             </v-list-item>
           </template>
           <span v-if="!loggedIn()"> You must me logged in to contact the owner </span>
-          <span v-else> No owner e-mail available </span>
+          <span v-if="!owners"> No owner e-mail available </span>
         </v-tooltip>
       <v-divider />
         <v-tooltip
-            :disabled="contacts"
+            :disabled="!contacts ? false : true"
             open-on-hover
             right
           >
@@ -67,8 +67,8 @@
           <template #activator="{ on }">
           <v-list-item
             v-on="on"
-            :class=" !owners ? 'black--text' : 'grey--text'"
-            :selectable="!owners"
+            :class=" contacts ? 'black--text' : 'grey--text'"
+            :selectable="!contacts"
             :href="makeTemplate(contacts)"
           >
           <v-icon
@@ -93,7 +93,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { loggedIn } from '@/rest';
 
 const store = useDandisetStore();
-const owners = computed(() => store.owners?.map((owner) => owner.username).toString());
+const owners = computed(() => store.owners?.map((owner) => owner.email).toString());
 const contacts = computed(() => store.dandiset?.metadata?.contributor?.map((contact) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
 const currentDandiset = computed(() => store.dandiset);
 
