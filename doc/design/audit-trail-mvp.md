@@ -60,7 +60,8 @@ additional, event-specific data each will carry with it.
 | Add asset               | date_time, user_id, dandiset_id | asset_path, checksum, metadata, blob_id, zarr_id, asset_id                               |
 | Update asset            | date_time, user_id, dandiset_id | asset_path, old_asset_path, checksum, blob_id, zarr_id, metadata, asset_id, old_asset_id |
 | Remove asset            | date_time, user_id, dandiset_id | asset_path, asset_id                                                                     |
-| Request Zarr upload     | date_time, user_id, dandiset_id | asset_path, asset_id, zarr_id                                                            |
+| Prepare Zarr upload     | date_time, user_id, dandiset_id | asset_path, asset_id, zarr_id                                                            |
+| Delete Zarr chunks      | date_time, user_id, dandiset_id | asset_path, asset_id, zarr_id                                                            |
 | Finalize Zarr           | date_time, user_id, dandiset_id | asset_path, asset_id, zarr_id                                                            |
 | Unembargo Dandiset      | date_time, user_id, dandiset_id | (none)                                                                                   |
 | Publish Dandiset        | date_time, user_id, dandiset_id | version                                                                                  |
