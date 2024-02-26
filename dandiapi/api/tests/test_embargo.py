@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from dandiapi.api.models import Dandiset
+from dandiapi.api.services.embargo import AssetBlobEmbargoedError, remove_asset_blob_embargoed_tag
 
 
 @pytest.fixture(
@@ -86,3 +87,12 @@ def test_embargo_visibility(
     response = getattr(api_client, method)(url)
     # The client is now authenticated but not an owner, so all response codes should be 403
     assert response.status_code == 403
+
+
+@pytest.mark.django_db()
+def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
+    with pytest.raises(AssetBlobEmbargoedError):
+        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
+
+    # Test that error not raised on non-embargoed asset blob
+    remove_asset_blob_embargoed_tag(asset_blob)

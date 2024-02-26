@@ -6,6 +6,7 @@ from django.db import transaction
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
 from dandiapi.api.models.asset import Asset, AssetBlob
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
@@ -14,6 +15,7 @@ from dandiapi.api.services.asset.exceptions import (
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
 )
+from dandiapi.api.tasks import remove_asset_blob_embargoed_tag_task
 
 if TYPE_CHECKING:
     from dandiapi.zarr.models import ZarrArchive
@@ -133,7 +135,16 @@ def add_asset_to_version(
     if zarr_archive and zarr_archive.dandiset != version.dandiset:
         raise ZarrArchiveBelongsToDifferentDandisetError
 
+    # Creating an asset in an OPEN dandiset that points to an embargoed blob results in that
+    # blob being un-embargoed
+    unembargo_asset_blob = (
+        asset_blob.embargoed and version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
+    )
     with transaction.atomic():
+        if unembargo_asset_blob:
+            asset_blob.embargoed = False
+            asset_blob.save()
+
         asset = _create_asset(
             path=path, asset_blob=asset_blob, zarr_archive=zarr_archive, metadata=metadata
         )
@@ -144,6 +155,11 @@ def add_asset_to_version(
         version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
+
+    # Perform this after the above transaction has finished, to ensure we only operate on
+    # un-embargoed asset blobs
+    if unembargo_asset_blob:
+        remove_asset_blob_embargoed_tag_task.delay(blob_id=asset_blob.blob_id)
 
     return asset
 

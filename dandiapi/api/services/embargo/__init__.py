@@ -2,16 +2,29 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.db import transaction
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
+from dandiapi.api.storage import get_boto_client
 
-from .exceptions import DandisetNotEmbargoedError
+from .exceptions import AssetBlobEmbargoedError, DandisetNotEmbargoedError
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.db.models import QuerySet
+
+
+def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
+    if asset_blob.embargoed:
+        raise AssetBlobEmbargoedError
+
+    client = get_boto_client()
+    client.delete_object_tagging(
+        Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
+        Key=asset_blob.blob.name,
+    )
 
 
 @transaction.atomic()
