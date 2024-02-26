@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from uuid import uuid4
 
-import pytest
-import requests
 from django.conf import settings
 from django.db.utils import IntegrityError
 from django.urls import reverse
 from guardian.shortcuts import assign_perm
+import pytest
+import requests
 
 from dandiapi.api.asset_paths import add_asset_paths, extract_paths
 from dandiapi.api.models import Asset, AssetBlob, Version
@@ -602,9 +602,15 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
 
 
 @pytest.mark.django_db()
-def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_blob):
+def test_asset_create_embargo(
+    api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    draft_version = draft_version_factory(dandiset=dandiset)
+
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
+    assert draft_version.dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
 
     path = 'test/create/asset.txt'
     metadata = {
@@ -622,24 +628,52 @@ def test_asset_create_embargo(api_client, user, draft_version, embargoed_asset_b
         format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
-    assert resp == {
-        'asset_id': UUID_RE,
-        'path': path,
-        'size': embargoed_asset_blob.size,
-        'blob': embargoed_asset_blob.blob_id,
-        'zarr': None,
-        'created': TIMESTAMP_RE,
-        'modified': TIMESTAMP_RE,
-        'metadata': new_asset.full_metadata,
-    }
-    for key in metadata:
-        assert resp['metadata'][key] == metadata[key]
 
-    # The version modified date should be updated
-    start_time = draft_version.modified
-    draft_version.refresh_from_db()
-    end_time = draft_version.modified
-    assert start_time < end_time
+    assert new_asset.blob.embargoed
+    assert new_asset.zarr is None
+
+    # Adding an Asset should trigger a revalidation
+    assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db()
+def test_asset_create_embargoed_asset_blob_open_dandiset(
+    api_client, user, draft_version, embargoed_asset_blob, mocker
+):
+    # Ensure that creating an asset in an open dandiset that points to an embargoed asset blob
+    # results in that asset blob being un-embargoed
+    assert draft_version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
+    assert embargoed_asset_blob.embargoed
+
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    # Mock this so we can check that it's been called later
+    mocked_func = mocker.patch('dandiapi.api.services.embargo.remove_asset_blob_embargoed_tag')
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        format='json',
+    ).json()
+    new_asset = Asset.objects.get(asset_id=resp['asset_id'])
+
+    assert new_asset.blob == embargoed_asset_blob
+    assert not new_asset.blob.embargoed
+
+    # We can't test that the tags were correctly removed in a testing env, but we can test that the
+    # function which removes the tags was correctly invoked
+    mocked_func.assert_called_once()
 
     # Adding an Asset should trigger a revalidation
     assert draft_version.status == Version.Status.PENDING
