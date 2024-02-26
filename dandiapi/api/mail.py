@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from allauth.socialaccount.models import SocialAccount
     from django.contrib.auth.models import User
 
+    from dandiapi.api.models.dandiset import Dandiset
+
 logger = logging.getLogger(__name__)
 
 BASE_RENDER_CONTEXT = {
@@ -175,5 +177,30 @@ def build_pending_users_message(users: Iterable[User]):
 def send_pending_users_message(users: Iterable[User]):
     logger.info('Sending pending users message to admins at %s', ADMIN_EMAIL)
     messages = [build_pending_users_message(users)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
+    dandiset_context = [
+        {
+            'identifier': ds.identifier,
+            'owners': [user.username for user in ds.owners],
+            'asset_count': ds.draft_version.asset_count,
+            'size': ds.draft_version.size,
+        }
+        for ds in dandisets
+    ]
+    render_context = {**BASE_RENDER_CONTEXT, 'dandisets': dandiset_context}
+    return build_message(
+        subject='DANDI: new dandisets to un-embargo',
+        message=render_to_string('api/mail/dandisets_to_unembargo.txt', render_context),
+        to=[ADMIN_EMAIL],
+    )
+
+
+def send_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
+    logger.info('Sending dandisets to un-embargo message to admins at %s', ADMIN_EMAIL)
+    messages = [build_dandisets_to_unembargo_message(dandisets)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
