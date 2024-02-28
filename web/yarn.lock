@@ -160,10 +160,10 @@
   resolved "https://registry.yarnpkg.com/@jsdevtools/ono/-/ono-7.1.3.tgz#9df03bbd7c696a5c58885c34aa06da41c8543796"
   integrity sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==
 
-"@koumoul/vjsf@^2.21.4":
-  version "2.23.2"
-  resolved "https://registry.yarnpkg.com/@koumoul/vjsf/-/vjsf-2.23.2.tgz#fdee8ad7ea9865ec9675b47d560123627a1226e2"
-  integrity sha512-/NloSj/wMjxrLHk5jCcT5Y/ifZ1bwpb1NFi6UHXzJ3nFI7qcOQGi1ZXB4CQuS2HsdTktOyzebrMYwXMgaXqzjw==
+"@koumoul/vjsf@2.23.3":
+  version "2.23.3"
+  resolved "https://registry.yarnpkg.com/@koumoul/vjsf/-/vjsf-2.23.3.tgz#4f2e1516b9bec385f32e3e69f15ad3f932f445ed"
+  integrity sha512-glSxVYlMdLW712CiDBBbaIrbtMhc/dCCaz2/HkHK2m2S84seqXshqST4UUfblZXffbC02n9se1cOPfHpwOaxtQ==
   dependencies:
     debounce "^1.2.1"
     debounce-promise "^3.1.2"

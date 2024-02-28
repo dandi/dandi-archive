@@ -11,7 +11,7 @@
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
     "@girder/oauth-client": "^0.8.0",
-    "@koumoul/vjsf": "^2.21.4",
+    "@koumoul/vjsf": "2.23.3",
     "@sentry/integrations": "^7.88.0",
     "@sentry/vue": "^7.88.0",
     "ajv": "^8.12.0",
