@@ -180,17 +180,15 @@ class DandisetDetailSerializer(DandisetSerializer):
 class DandisetQueryParameterSerializer(serializers.Serializer):
     draft = serializers.BooleanField(
         default=True,
-        help_text="Whether to include dandisets that only have draft "
+        help_text='Whether to include dandisets that only have draft '
         "versions (i.e., haven't been published yet).",
     )
-    empty = serializers.BooleanField(
-        default=True, help_text="Whether to include empty dandisets."
-    )
+    empty = serializers.BooleanField(default=True, help_text='Whether to include empty dandisets.')
     embargoed = serializers.BooleanField(
-        default=False, help_text="Whether to include embargoed dandisets."
+        default=False, help_text='Whether to include embargoed dandisets.'
     )
     user = serializers.ChoiceField(
-        choices=["me"],
+        choices=['me'],
         required=False,
         help_text='Set this value to "me" to only return dandisets owned by the current user.',
     )
