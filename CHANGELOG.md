@@ -1,3 +1,38 @@
+# v0.3.77 (Thu Feb 29 2024)
+
+:tada: This release contains work from new contributors! :tada:
+
+Thanks for all your work!
+
+:heart: Isaac To ([@candleindark](https://github.com/candleindark))
+
+:heart: Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+#### 🐛 Bug Fix
+
+- Require v0.60.0 of `dandi-cli` [#1878](https://github.com/dandi/dandi-archive/pull/1878) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update VJSF to 2.23.3 [#1874](https://github.com/dandi/dandi-archive/pull/1874) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Design doc for Audit MVP [#1801](https://github.com/dandi/dandi-archive/pull/1801) ([@waxlamp](https://github.com/waxlamp))
+- Fix `UserMetadata` not being created if `createsuperuser` script is used [#1113](https://github.com/dandi/dandi-archive/pull/1113) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Boost dandischema to 0.9.* series so we get support for pydantic 2.0 and schema 0.6.5 [#1823](https://github.com/dandi/dandi-archive/pull/1823) ([@yarikoptic](https://github.com/yarikoptic) [@candleindark](https://github.com/candleindark) [@mvandenburgh](https://github.com/mvandenburgh))
+- Add e2e test for meditor validation [#1865](https://github.com/dandi/dandi-archive/pull/1865) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add .DS_Store to .gitignore [#1863](https://github.com/dandi/dandi-archive/pull/1863) ([@kabilar](https://github.com/kabilar))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/add-to-project from 0.5.0 to 0.6.0 [#1872](https://github.com/dandi/dandi-archive/pull/1872) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 6
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.76 (Wed Feb 14 2024)
 
 #### 🐛 Bug Fix
