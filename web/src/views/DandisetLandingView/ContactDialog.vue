@@ -7,7 +7,7 @@
       #activator="{ on, attrs }"
     >
       <v-btn
-        id="download"
+        id="contact"
         outlined
         block
         v-bind="attrs"
@@ -91,10 +91,11 @@
 import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import { loggedIn } from '@/rest';
+import type { User, Person, Organization} from '@/types';
 
 const store = useDandisetStore();
-const owners = computed(() => store.owners?.map((owner) => owner.email).toString());
-const contacts = computed(() => store.dandiset?.metadata?.contributor?.map((contact) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
+const owners = computed(() => store.owners?.map((owner: User) => owner.email).toString());
+const contacts = computed(() => store.dandiset?.metadata?.contributor?.map((contact: Person | Organization) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
 const currentDandiset = computed(() => store.dandiset);
 
 const makeTemplate = (contact: string | undefined) => {
@@ -104,7 +105,6 @@ const makeTemplate = (contact: string | undefined) => {
   // Subject is: Regarding [dandiset_name]  [dandiset_id]
   return `mailto:${contact}?subject=Regarding%20Dandiset%20${currentDandiset?.value?.name}%20${currentDandiset?.value?.metadata?.id}`;
 };
-
 
 </script>
 <style scoped>
