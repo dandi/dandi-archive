@@ -3,6 +3,7 @@ Define and register any scheduled celery tasks.
 
 This module is imported from celery.py in a post-app-load hook.
 """
+
 from __future__ import annotations
 
 from datetime import timedelta

@@ -11,6 +11,7 @@ This script was the best way I could find to bulk delete objects in an S3 direct
 You will need an AWS CLI profile set up with permission to delete objects from the desired bucket.
 See https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html
 """
+
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
