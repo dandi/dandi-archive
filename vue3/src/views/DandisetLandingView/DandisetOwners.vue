@@ -52,10 +52,10 @@
             :disabled="!manageOwnersDisabled"
             location="left"
           >
-            <template #activator="{ props }">
+            <template #activator="{ props: tooltipProps }">
               <div
                 style="width: 100%;"
-                v-bind="props"
+                v-bind="tooltipProps"
               >
                 <v-btn
                   id="manage"
