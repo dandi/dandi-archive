@@ -28,12 +28,16 @@ from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccessError
 from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
-from dandiapi.api.views.serializers import (CreateDandisetQueryParameterSerializer,
-                                            DandisetDetailSerializer, DandisetListSerializer,
-                                            DandisetQueryParameterSerializer,
-                                            DandisetSearchQueryParameterSerializer,
-                                            DandisetSearchResultListSerializer, UserSerializer,
-                                            VersionMetadataSerializer)
+from dandiapi.api.views.serializers import (
+    CreateDandisetQueryParameterSerializer,
+    DandisetDetailSerializer,
+    DandisetListSerializer,
+    DandisetQueryParameterSerializer,
+    DandisetSearchQueryParameterSerializer,
+    DandisetSearchResultListSerializer,
+    UserSerializer,
+    VersionMetadataSerializer,
+)
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
@@ -413,19 +417,19 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
-                if 'name' in owner_account.extra_data:
-                    owner_dict['name'] = owner_account.extra_data['name']
-                if request.user.is_authenticated and 'email' in owner_account.extra_data:
-                    owner_dict['email'] = owner_account.extra_data['email']
+                owner_dict['name'] = owner_account.extra_data.get('name', None)
+                owner_dict['email'] = (
+                    owner_account.extra_data['email']
+                    if request.user.is_authenticated and 'email' in owner_account.extra_data
+                    else None
+                )
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
                 owner_dict = {
                     'username': owner_user.username,
                     'name': f'{owner_user.first_name} {owner_user.last_name}',
+                    'email': owner_user.email if request.user.is_authenticated else None,
                 }
-                if request.user.is_authenticated:  # Check if user is logged in
-                    owner_dict['email'] = owner_user.email
-                owners.append(owner_dict)
 
         return Response(owners, status=status.HTTP_200_OK)
