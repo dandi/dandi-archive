@@ -91,19 +91,29 @@
 import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import { loggedIn } from '@/rest';
-import type { User, Person, Organization} from '@/types';
+import type { User, Person, Organization, Email} from '@/types';
 
 const store = useDandisetStore();
-const owners = computed(() => store.owners?.map((owner: User) => owner.email).toString());
-const contacts = computed(() => store.dandiset?.metadata?.contributor?.map((contact: Person | Organization) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
+const owners = computed(() => store.owners?.map((owner: User) => owner.email));
+const contacts = computed(() =>
+  store.dandiset?.metadata?.contributor?.filter(
+    (contact: Person | Organization) =>
+      contact.roleName?.includes("dcite:ContactPerson"))
+    .map((contact: Person | Organization) =>
+      contact.email as Email
+    )
+);
 const currentDandiset = computed(() => store.dandiset);
 
-const makeTemplate = (contact: string | undefined) => {
-  if (!contact) {
-    return '';
+const makeTemplate = (contacts: string[] | undefined) => {
+  if (contacts === undefined) {
+    throw new Error('Contact is undefined.');
   }
-  // Subject is: Regarding [dandiset_name]  [dandiset_id]
-  return `mailto:${contact}?subject=Regarding%20Dandiset%20${currentDandiset?.value?.name}%20${currentDandiset?.value?.metadata?.id}`;
+  if (currentDandiset.value){
+    const subject = encodeURIComponent(`Regarding Dandiset ${currentDandiset.value.name} ${currentDandiset.value.metadata?.id}`);
+    const contact = contacts.join(',');
+    return `mailto:${contact}?subject=${subject}`;
+  }
 };
 
 </script>
