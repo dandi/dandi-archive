@@ -93,8 +93,8 @@ import { useDandisetStore } from '@/stores/dandiset';
 import { loggedIn } from '@/rest';
 
 const store = useDandisetStore();
-const owners = computed(() => store.owners?.flatMap((owner) => owner.email).toString());
-const contacts = computed(() => store.dandiset?.metadata?.contributor?.flatMap((contact) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
+const owners = computed(() => store.owners?.map((owner) => owner.email).toString());
+const contacts = computed(() => store.dandiset?.metadata?.contributor?.map((contact) => contact.roleName?.includes("dcite:ContactPerson") ? contact.email: '').toString());
 const currentDandiset = computed(() => store.dandiset);
 
 const makeTemplate = (contact: string | undefined) => {
