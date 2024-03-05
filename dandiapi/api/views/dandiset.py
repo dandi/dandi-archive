@@ -431,5 +431,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     'name': f'{owner_user.first_name} {owner_user.last_name}',
                     'email': owner_user.email if request.user.is_authenticated else None,
                 }
+                owners.append(owner_dict)
 
         return Response(owners, status=status.HTTP_200_OK)
