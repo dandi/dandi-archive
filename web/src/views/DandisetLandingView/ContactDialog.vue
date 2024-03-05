@@ -38,48 +38,52 @@
           right
         >
           <template #activator="{ on }">
-            <v-list-item
-              v-on="on"
-              :class="(!loggedIn() || !owners) ? 'grey--text': 'black--text'"
-              :selectable="!loggedIn() || !owners"
-              :href="makeTemplate(owners)"
+            <div
+            v-on="on"
             >
-            <v-icon
-              color="primary"
-              left
-              small
-            >
-              mdi-card-account-mail
-            </v-icon>
-              Dandiset Owners
-            </v-list-item>
+              <v-list-item
+                :disabled="!loggedIn() || !owners"
+                :selectable="!loggedIn() || !owners"
+                :href="makeTemplate(owners)"
+              >
+                <v-icon
+                  color="primary"
+                  left
+                  small
+                >
+                  mdi-card-account-mail
+                </v-icon>
+                Dandiset Owners
+              </v-list-item>
+            </div>
           </template>
           <span v-if="!loggedIn()"> You must me logged in to contact the owner </span>
           <span v-if="!owners"> No owner e-mail available </span>
         </v-tooltip>
       <v-divider />
         <v-tooltip
-            :disabled="!contacts ? false : true"
+            :disabled="contacts === undefined || contacts?.length > 0 "
             open-on-hover
             right
           >
 
           <template #activator="{ on }">
-          <v-list-item
-            v-on="on"
-            :class=" contacts ? 'black--text' : 'grey--text'"
-            :selectable="!contacts"
-            :href="makeTemplate(contacts)"
-          >
-          <v-icon
-            color="primary"
-            left
-            small
-          >
-            mdi-card-account-mail
-          </v-icon>
-            Contact Person
-          </v-list-item>
+            <div v-on="on">
+              <v-list-item
+                :disabled=" contacts?.length === 0 || !contacts"
+                :selectable="!contacts"
+                :href="makeTemplate(contacts)"
+              >
+                <v-icon
+                  color="primary"
+                  left
+                  small
+                >
+                  mdi-card-account-mail
+                </v-icon>
+                Contact Person
+              </v-list-item>
+            </div>
             </template>
           <span> No contact e-mail available </span>
         </v-tooltip>
