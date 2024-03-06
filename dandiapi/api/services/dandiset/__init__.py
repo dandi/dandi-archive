@@ -65,5 +65,10 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
     with transaction.atomic():
+        # Record the audit event first so that the AuditRecord instance has a
+        # chance to grab the Dandiset information before it is destroyed.
+        audit_record = AuditRecord.delete_dandiset(dandiset=dandiset, user=user)
+        audit_record.save()
+
         dandiset.versions.all().delete()
         dandiset.delete()
