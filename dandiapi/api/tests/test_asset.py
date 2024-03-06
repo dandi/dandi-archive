@@ -370,6 +370,25 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
 
 
 @pytest.mark.django_db()
+def test_asset_path_ordering(api_client, version, asset_factory):
+    # The default collation will ignore special characters, including slashes, on the first pass. If
+    # there are ties, it uses these characters to break ties. This means that in the below example,
+    # removing the slashes leads to a comparison of 'az' and 'aaz', which would obviously sort the
+    # latter before the former. However, with the slashes, it's clear that 'a/z' should come before
+    # 'aa/z'. This is fixed by changing the collation of the path field, and as such this test
+    # serves as a regression test.
+    a = asset_factory(path='a/z')
+    b = asset_factory(path='aa/z')
+    version.assets.add(a)
+    version.assets.add(b)
+
+    asset_listing = Asset.objects.filter(versions__in=[version]).order_by('path')
+    assert asset_listing.count() == 2
+    assert asset_listing[0].pk == a.pk
+    assert asset_listing[1].pk == b.pk
+
+
+@pytest.mark.django_db()
 def test_asset_rest_retrieve(api_client, version, asset, asset_factory):
     version.assets.add(asset)
 
