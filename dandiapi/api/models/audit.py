@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 AuditRecordType = Literal[
     'create_dandiset',
+    'change_owners',
 ]
 AUDIT_RECORD_CHOICES = [(t, t) for t in get_args(AuditRecordType)]
 
@@ -51,4 +52,23 @@ class AuditRecord(models.Model):
         }
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='create_dandiset', details=details
+        )
+
+    @staticmethod
+    def change_owners(
+        *, dandiset: Dandiset, user: User, removed_owners: list[User], added_owners: list[User]
+    ):
+        def glean_user_info(user: User):
+            return {
+                'username': user.username,
+                'email': user.email,
+                'name': f'{user.first_name} {user.last_name}',
+            }
+
+        details = {
+            'removed_owners': [glean_user_info(u) for u in removed_owners],
+            'added_owners': [glean_user_info(u) for u in added_owners],
+        }
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='change_owners', details=details
         )
