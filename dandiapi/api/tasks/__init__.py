@@ -78,7 +78,7 @@ def unembargo_dandiset_task(dandiset_id: int, user_id: int):
 
 
 @shared_task
-def publish_dandiset_task(dandiset_id: int):
+def publish_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.publish import _publish_dandiset
 
-    _publish_dandiset(dandiset_id=dandiset_id)
+    _publish_dandiset(dandiset_id=dandiset_id, user_id=user_id)
