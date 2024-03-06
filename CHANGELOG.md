@@ -1,3 +1,21 @@
+# v0.3.78 (Wed Mar 06 2024)
+
+#### 🐛 Bug Fix
+
+- Use different collation for Asset `path` field [#1885](https://github.com/dandi/dandi-archive/pull/1885) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Run all linting commands, even if some of them fail [#1882](https://github.com/dandi/dandi-archive/pull/1882) ([@waxlamp](https://github.com/waxlamp))
+- Add format changes from ruff update [#1883](https://github.com/dandi/dandi-archive/pull/1883) ([@marySalvi](https://github.com/marySalvi))
+- Update Heroku Python runtime [#1876](https://github.com/dandi/dandi-archive/pull/1876) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.77 (Thu Feb 29 2024)
 
 :tada: This release contains work from new contributors! :tada:
