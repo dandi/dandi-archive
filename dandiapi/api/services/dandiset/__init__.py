@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from dandiapi.api.models.audit import AuditRecord
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
@@ -44,6 +45,11 @@ def create_dandiset(
         )
         draft_version.full_clean(validate_constraints=False)
         draft_version.save()
+
+        audit_record = AuditRecord.create_dandiset(
+            dandiset=dandiset, user=user, metadata=version_metadata, embargoed=embargo
+        )
+        audit_record.save()
 
     return dandiset, draft_version
 
