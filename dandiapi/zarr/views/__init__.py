@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from dandiapi.api.models.audit import AuditRecord
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.common import DandiPagination
@@ -139,7 +140,13 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         try:
-            zarr_archive.save()
+            with transaction.atomic():
+                zarr_archive.save()
+
+                audit_record = AuditRecord.create_zarr(
+                    dandiset=dandiset, user=request.user, zarr_archive=zarr_archive
+                )
+                audit_record.save()
         except IntegrityError as e:
             raise ValidationError('Zarr already exists') from e
 
@@ -174,6 +181,11 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             zarr_archive.status = ZarrArchiveStatus.UPLOADED
             zarr_archive.save()
+
+            audit_record = AuditRecord.finalize_zarr(
+                dandiset=zarr_archive.dandiset, user=request.user, zarr_archive=zarr_archive
+            )
+            audit_record.save()
 
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
@@ -289,6 +301,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive.mark_pending()
             zarr_archive.save()
 
+            audit_record = AuditRecord.upload_zarr(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                urls=urls,
+            )
+            audit_record.save()
+
         # Return presigned urls
         logger.info(
             'Presigned %d URLs to upload to zarr archive %s', len(urls), zarr_archive.zarr_id
@@ -319,5 +339,13 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
+
+            audit_record = AuditRecord.delete_zarr_chunks(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=paths,
+            )
+            audit_record.save()
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)

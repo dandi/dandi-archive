@@ -19,6 +19,10 @@ AuditRecordType = Literal[
     'add_asset',
     'update_asset',
     'remove_asset',
+    'create_zarr',
+    'upload_zarr',
+    'delete_zarr_chunks',
+    'finalize_zarr',
 ]
 AUDIT_RECORD_CHOICES = [(t, t) for t in get_args(AuditRecordType)]
 
@@ -124,4 +128,47 @@ class AuditRecord(models.Model):
         }
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='remove_asset', details=details
+        )
+
+    @staticmethod
+    def create_zarr(*, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive) -> AuditRecord:
+        details = {
+            'zarr_id': zarr_archive.id,
+            'name': zarr_archive.name,
+        }
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='create_zarr', details=details
+        )
+
+    @staticmethod
+    def upload_zarr(
+        *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, urls: list[str]
+    ) -> AuditRecord:
+        details = {
+            'zarr_id': zarr_archive.id,
+            'num_urls': len(urls),
+        }
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='upload_zarr', details=details
+        )
+
+    @staticmethod
+    def delete_zarr_chunks(
+        *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, paths: list[str]
+    ) -> AuditRecord:
+        details = {
+            'zarr_id': zarr_archive.id,
+            'num_chunks': len(paths),
+        }
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='delete_zarr_chunks', details=details
+        )
+
+    @staticmethod
+    def finalize_zarr(*, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive) -> AuditRecord:
+        details = {
+            'zarr_id': zarr_archive.id,
+        }
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='finalize_zarr', details=details
         )
