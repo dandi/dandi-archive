@@ -23,6 +23,7 @@ AuditRecordType = Literal[
     'upload_zarr',
     'delete_zarr_chunks',
     'finalize_zarr',
+    'unembargo_dandiset',
 ]
 AUDIT_RECORD_CHOICES = [(t, t) for t in get_args(AuditRecordType)]
 
@@ -171,4 +172,10 @@ class AuditRecord(models.Model):
         }
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='finalize_zarr', details=details
+        )
+
+    @staticmethod
+    def unembargo_dandiset(*, dandiset: Dandiset, user: User) -> AuditRecord:
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='unembargo_dandiset', details={}
         )

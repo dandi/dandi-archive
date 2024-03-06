@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 
 from dandiapi.api.copy import copy_object_multipart
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+from dandiapi.api.models import Asset, AssetBlob, AuditRecord, Dandiset, Upload, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.tasks import unembargo_dandiset_task
 
@@ -56,7 +56,7 @@ def _unembargo_asset(asset: Asset):
     asset.save()
 
 
-def _unembargo_dandiset(dandiset: Dandiset):
+def _unembargo_dandiset(dandiset: Dandiset, user: User):
     draft_version: Version = dandiset.draft_version
     embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(embargoed_blob__isnull=False)
 
@@ -74,6 +74,9 @@ def _unembargo_dandiset(dandiset: Dandiset):
     dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
     dandiset.save()
 
+    audit_record = AuditRecord.unembargo_dandiset(dandiset=dandiset, user=user)
+    audit_record.save()
+
 
 def unembargo_dandiset(*, user: User, dandiset: Dandiset):
     """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
@@ -83,4 +86,4 @@ def unembargo_dandiset(*, user: User, dandiset: Dandiset):
     if not user.has_perm('owner', dandiset):
         raise DandisetOwnerRequiredError
 
-    unembargo_dandiset_task.delay(dandiset.id)
+    unembargo_dandiset_task.delay(dandiset.id, user.id)

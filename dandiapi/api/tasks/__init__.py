@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.contrib.auth.models import User
 
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
@@ -68,11 +69,12 @@ def delete_doi_task(doi: str) -> None:
 
 
 @shared_task
-def unembargo_dandiset_task(dandiset_id: int):
+def unembargo_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.embargo import _unembargo_dandiset
 
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    _unembargo_dandiset(dandiset)
+    user = User.objects.get(id=user_id)
+    _unembargo_dandiset(dandiset, user)
 
 
 @shared_task
