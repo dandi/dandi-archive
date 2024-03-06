@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 AuditRecordType = Literal[
     'create_dandiset',
     'change_owners',
+    'update_metadata',
 ]
 AUDIT_RECORD_CHOICES = [(t, t) for t in get_args(AuditRecordType)]
 
@@ -71,4 +72,11 @@ class AuditRecord(models.Model):
         }
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='change_owners', details=details
+        )
+
+    @staticmethod
+    def update_metadata(*, dandiset: Dandiset, user: User, metadata: dict) -> AuditRecord:
+        details = {'metadata': metadata}
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='update_metadata', details=details
         )
