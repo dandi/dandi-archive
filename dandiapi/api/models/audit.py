@@ -16,6 +16,9 @@ AuditRecordType = Literal[
     'create_dandiset',
     'change_owners',
     'update_metadata',
+    'add_asset',
+    'update_asset',
+    'remove_asset',
 ]
 AUDIT_RECORD_CHOICES = [(t, t) for t in get_args(AuditRecordType)]
 
@@ -79,4 +82,46 @@ class AuditRecord(models.Model):
         details = {'metadata': metadata}
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='update_metadata', details=details
+        )
+
+    @staticmethod
+    def _asset_details(asset: Asset) -> dict:
+        checksum = (
+            (asset.blob and asset.blob.etag)
+            or (asset.embargoed_blob and asset.embargoed_blob.etag)
+            or (asset.zarr and asset.zarr.checksum)
+        )
+
+        return {
+            'path': asset.path,
+            'asset_blob_id': asset.blob and asset.blob.id,
+            'embargoed_asset_blob_id': asset.embargoed_blob and asset.embargoed_blob.id,
+            'zarr_archive_id': asset.zarr and asset.zarr.id,
+            'asset_id': asset.id,
+            'checksum': checksum,
+            'metadata': asset.metadata,
+        }
+
+    @staticmethod
+    def add_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
+        details = AuditRecord._asset_details(asset)
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='add_asset', details=details
+        )
+
+    @staticmethod
+    def update_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
+        details = AuditRecord._asset_details(asset)
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='update_asset', details=details
+        )
+
+    @staticmethod
+    def remove_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
+        details = {
+            'path': asset.path,
+            'asset_id': asset.id,
+        }
+        return AuditRecord.make_audit_record(
+            dandiset=dandiset, user=user, record_type='remove_asset', details=details
         )

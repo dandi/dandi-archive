@@ -6,6 +6,7 @@ from django.db import transaction
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
 from dandiapi.api.models.asset import Asset, AssetBlob, EmbargoedAssetBlob
+from dandiapi.api.models.audit import AuditRecord
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
@@ -84,7 +85,7 @@ def change_asset(  # noqa: PLR0913
         raise AssetAlreadyExistsError
 
     with transaction.atomic():
-        remove_asset_from_version(user=user, asset=asset, version=version)
+        remove_asset_from_version(user=user, asset=asset, version=version, audit=False)
 
         new_asset = add_asset_to_version(
             user=user,
@@ -92,10 +93,14 @@ def change_asset(  # noqa: PLR0913
             asset_blob=new_asset_blob,
             zarr_archive=new_zarr_archive,
             metadata=new_metadata,
+            audit=False,
         )
         # Set previous asset and save
         new_asset.previous = asset
         new_asset.save()
+
+        audit_record = AuditRecord.update_asset(dandiset=version.dandiset, user=user, asset=asset)
+        audit_record.save()
 
     return new_asset, True
 
@@ -107,6 +112,7 @@ def add_asset_to_version(
     asset_blob: AssetBlob | EmbargoedAssetBlob | None = None,
     zarr_archive: ZarrArchive | None = None,
     metadata: dict,
+    audit: bool = True,
 ) -> Asset:
     """Create an asset, adding it to a version."""
     if not asset_blob and not zarr_archive:
@@ -158,10 +164,16 @@ def add_asset_to_version(
         # Save the version so that the modified field is updated
         version.save()
 
+        if audit:
+            audit_record = AuditRecord.add_asset(dandiset=version.dandiset, user=user, asset=asset)
+            audit_record.save()
+
     return asset
 
 
-def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Version:
+def remove_asset_from_version(
+    *, user, asset: Asset, version: Version, audit: bool = True
+) -> Version:
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
@@ -176,5 +188,11 @@ def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Versio
         version.status = Version.Status.PENDING
         # Save the version so that the modified field is updated
         version.save()
+
+        if audit:
+            audit_record = AuditRecord.remove_asset(
+                dandiset=version.dandiset, user=user, asset=asset
+            )
+            audit_record.save()
 
     return version
