@@ -134,7 +134,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         INVALID = 'Invalid'
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C.utf8')
+    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
