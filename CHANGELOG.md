@@ -1,3 +1,15 @@
+# v0.3.79 (Thu Mar 07 2024)
+
+#### 🐛 Bug Fix
+
+- Change asset path collation to "C" [#1888](https://github.com/dandi/dandi-archive/pull/1888) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.78 (Wed Mar 06 2024)
 
 #### 🐛 Bug Fix
