@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             model_name='asset',
             name='path',
             field=models.CharField(
-                db_collation='C.utf8',
+                db_collation='C',
                 max_length=512,
                 validators=[dandiapi.api.models.asset.validate_asset_path],
             ),
