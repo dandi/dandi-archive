@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
+from botocore.config import Config
 from django.conf import settings
 from django.db import transaction
 
@@ -14,22 +16,32 @@ from .exceptions import AssetBlobEmbargoedError, DandisetNotEmbargoedError
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from django.db.models import QuerySet
+    from mypy_boto3_s3 import S3Client
 
 
-def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
-    if asset_blob.embargoed:
-        raise AssetBlobEmbargoedError
-
-    client = get_boto_client()
+def _delete_asset_blob_tags(client: S3Client, blob: str):
     client.delete_object_tagging(
         Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-        Key=asset_blob.blob.name,
+        Key=blob,
     )
+
+
+# NOTE: In testing this took ~2 minutes for 100,000 files
+def _remove_dandiset_asset_blob_embargo_tags(dandiset: Dandiset):
+    # First we need to generate a CSV manifest containing all asset blobs that need to be untaged
+    embargoed_asset_blobs = AssetBlob.objects.filter(
+        embargoed=True, assets__versions__dandiset=dandiset
+    ).values_list('blob', flat=True)
+
+    client = get_boto_client(config=Config(max_pool_connections=100))
+    with ThreadPoolExecutor(max_workers=100) as e:
+        for blob in embargoed_asset_blobs:
+            e.submit(_delete_asset_blob_tags, client=client, blob=blob)
 
 
 @transaction.atomic()
 def _unembargo_dandiset(dandiset: Dandiset):
-    # TODO: Remove embargoed tags from objects in s3
+    # NOTE: Before proceeding, all asset blobs must have their embargoed tags removed in s3
 
     draft_version: Version = dandiset.draft_version
     embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(blob__embargoed=True)
@@ -44,6 +56,14 @@ def _unembargo_dandiset(dandiset: Dandiset):
     # Set access on dandiset
     dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
     dandiset.save()
+
+
+def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
+    """Remove the embargoed tag of an asset blob."""
+    if asset_blob.embargoed:
+        raise AssetBlobEmbargoedError
+
+    _delete_asset_blob_tags(client=get_boto_client(), blob=asset_blob.blob.name)
 
 
 def unembargo_dandiset(*, user: User, dandiset: Dandiset):
