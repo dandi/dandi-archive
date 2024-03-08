@@ -337,20 +337,19 @@ def create_s3_storage(bucket_name: str) -> Storage:
     return storage
 
 
-def get_boto_client(storage: Storage | None = None):
+def get_boto_client(storage: Storage | None = None, config: Config | None = None):
     """Return an s3 client from the current storage."""
     storage = storage if storage else get_storage()
-    if isinstance(storage, MinioStorage):
-        storage_params = get_storage_params(storage)
-        return boto3.client(
-            's3',
-            endpoint_url=storage_params['endpoint_url'],
-            aws_access_key_id=storage_params['access_key'],
-            aws_secret_access_key=storage_params['secret_key'],
-            region_name='us-east-1',
-        )
-
-    return storage.connection.meta.client
+    storage_params = get_storage_params(storage)
+    region_name = 'us-east-1' if isinstance(storage, MinioStorage) else 'us-east-2'
+    return boto3.client(
+        's3',
+        endpoint_url=storage_params['endpoint_url'],
+        aws_access_key_id=storage_params['access_key'],
+        aws_secret_access_key=storage_params['secret_key'],
+        region_name=region_name,
+        config=config,
+    )
 
 
 def get_storage_params(storage: Storage):
