@@ -309,50 +309,47 @@ def test_version_publish_version(draft_version, asset):
     publish_version.save()
 
     assert publish_version.dandiset == draft_version.dandiset
-    assert (
-        publish_version.metadata
-        == {
-            **draft_version.metadata,
-            'publishedBy': {
-                'id': URN_RE,
-                'name': 'DANDI publish',
-                'startDate': UTC_ISO_TIMESTAMP_RE,
-                'endDate': UTC_ISO_TIMESTAMP_RE,
-                'wasAssociatedWith': [
-                    {
-                        'id': URN_RE,
-                        'identifier': 'RRID:SCR_017571',
-                        'name': 'DANDI API',
-                        # TODO: version the API
-                        'version': '0.1.0',
-                        'schemaKey': 'Software',
-                    }
-                ],
-                'schemaKey': 'PublishActivity',
-            },
-            'dateCreated': UTC_ISO_TIMESTAMP_RE,
-            'datePublished': UTC_ISO_TIMESTAMP_RE,
-            'manifestLocation': [
-                f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',  # noqa: E501
+    assert publish_version.metadata == {
+        **draft_version.metadata,
+        'publishedBy': {
+            'id': URN_RE,
+            'name': 'DANDI publish',
+            'startDate': UTC_ISO_TIMESTAMP_RE,
+            'endDate': UTC_ISO_TIMESTAMP_RE,
+            'wasAssociatedWith': [
+                {
+                    'id': URN_RE,
+                    'identifier': 'RRID:SCR_017571',
+                    'name': 'DANDI API',
+                    # TODO: version the API
+                    'version': '0.1.0',
+                    'schemaKey': 'Software',
+                }
             ],
-            'identifier': f'DANDI:{publish_version.dandiset.identifier}',
-            'version': publish_version.version,
-            'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
-            'url': (
-                f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
-                f'/{publish_version.version}'
-            ),
-            'citation': publish_version.citation(publish_version.metadata),
-            'doi': fake_doi,
-            # The published_version cannot have a properly defined assetsSummary yet, since that would
-            # require having created rows the Asset-to-Version join table, which is a side affect.
-            'assetsSummary': {
-                'schemaKey': 'AssetsSummary',
-                'numberOfBytes': 0,
-                'numberOfFiles': 0,
-            },
-        }
-    )
+            'schemaKey': 'PublishActivity',
+        },
+        'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'datePublished': UTC_ISO_TIMESTAMP_RE,
+        'manifestLocation': [
+            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{publish_version.dandiset.identifier}/{publish_version.version}/assets.yaml',
+        ],
+        'identifier': f'DANDI:{publish_version.dandiset.identifier}',
+        'version': publish_version.version,
+        'id': f'DANDI:{publish_version.dandiset.identifier}/{publish_version.version}',
+        'url': (
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/{publish_version.dandiset.identifier}'
+            f'/{publish_version.version}'
+        ),
+        'citation': publish_version.citation(publish_version.metadata),
+        'doi': fake_doi,
+        # The published_version cannot have a properly defined assetsSummary yet, since that would
+        # require having created rows the Asset-to-Version join table, which is a side affect.
+        'assetsSummary': {
+            'schemaKey': 'AssetsSummary',
+            'numberOfBytes': 0,
+            'numberOfFiles': 0,
+        },
+    }
 
 
 @pytest.mark.django_db()
