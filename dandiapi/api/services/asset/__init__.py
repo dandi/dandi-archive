@@ -143,7 +143,7 @@ def add_asset_to_version(
         and version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
     )
     with transaction.atomic():
-        if unembargo_asset_blob:
+        if asset_blob and unembargo_asset_blob:
             asset_blob.embargoed = False
             asset_blob.save()
 
@@ -160,7 +160,7 @@ def add_asset_to_version(
 
     # Perform this after the above transaction has finished, to ensure we only operate on
     # un-embargoed asset blobs
-    if unembargo_asset_blob:
+    if asset_blob and unembargo_asset_blob:
         remove_asset_blob_embargoed_tag_task.delay(blob_id=asset_blob.blob_id)
 
     return asset
