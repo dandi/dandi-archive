@@ -13,7 +13,7 @@ from .asset import AssetBlob
 from .dandiset import Dandiset
 
 
-class Upload(models.Model):
+class Upload(models.Model):  # noqa: DJ008
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
     created = CreationDateTimeField()

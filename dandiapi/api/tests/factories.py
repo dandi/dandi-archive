@@ -3,13 +3,13 @@ from __future__ import annotations
 import datetime
 import hashlib
 
-import factory
-import faker
 from allauth.socialaccount.models import SocialAccount
 from dandischema.digests.dandietag import DandiETag
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import files as django_files
+import factory
+import faker
 
 from dandiapi.api.models import (
     Asset,
