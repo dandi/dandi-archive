@@ -210,10 +210,14 @@ jobs:
     - name: Install test data
       run: |
         # Run migrations up to the point in time the playwright fixture was created
-        python manage.py migrate auth authtoken
+        for app in auth authtoken; do
+            python manage.py migrate $app
+        done
         python manage.py migrate api 0005
+
         # Load the playwright test data
         python manage.py loaddata playwright
+
         # Run the rest of the migrations
         python manage.py migrate
 
