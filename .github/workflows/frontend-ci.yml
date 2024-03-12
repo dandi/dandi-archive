@@ -213,14 +213,14 @@ jobs:
     - name: Install dandi-api dependencies
       run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
+    - name: Install test data
+      run: python manage.py loaddata playwright
+
     - name: Apply migrations to API server
       run: python manage.py migrate
 
     - name: Create any cache tables
       run: python manage.py createcachetable
-
-    - name: Install test data
-      run: python manage.py loaddata playwright
 
     - name: Install dependencies
       run: yarn install --frozen-lockfile
