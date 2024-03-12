@@ -2,8 +2,6 @@ name: CI for frontend
 on:
   pull_request:
   push:
-    branches:
-      - master
   schedule:
     - cron: "0 0 * * *"
 jobs:
@@ -209,14 +207,17 @@ jobs:
     - name: Install dandi-api dependencies
       run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
-    - name: Apply migrations to API server
-      run: python manage.py migrate
+    - name: Install test data
+      run: |
+        # Run migrations up to the point in time the playwright fixture was created
+        python manage.py migrate api 0005
+        # Load the playwright test data
+        python manage.py loaddata playwright
+        # Run the rest of the migrations
+        python manage.py migrate
 
     - name: Create any cache tables
       run: python manage.py createcachetable
-
-    - name: Install test data
-      run: python manage.py loaddata playwright
 
     - name: Install dependencies
       run: yarn install --frozen-lockfile
