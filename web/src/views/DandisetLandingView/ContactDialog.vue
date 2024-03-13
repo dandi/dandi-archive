@@ -33,7 +33,7 @@
       </v-card-title>
       <v-list>
         <v-tooltip
-          :disabled="!owners ? false : loggedIn()"
+          :disabled="!(loggedIn() || !isDisabled(owners))"
           open-on-hover
           right
         >
@@ -42,8 +42,7 @@
             v-on="on"
             >
               <v-list-item
-                :disabled="!loggedIn() || !owners"
-                :selectable="!loggedIn() || !owners"
+                :disabled="!loggedIn() || isDisabled(owners)"
                 :href="makeTemplate(owners)"
               >
                 <v-icon
@@ -57,12 +56,12 @@
               </v-list-item>
             </div>
           </template>
-          <span v-if="!loggedIn()"> You must me logged in to contact the owner </span>
-          <span v-if="!owners"> No owner e-mail available </span>
+          <span v-if="!loggedIn()"> You must be logged in to contact the owner </span>
+          <span v-if="isDisabled(owners)"> No owner e-mail available </span>
         </v-tooltip>
       <v-divider />
         <v-tooltip
-            :disabled="contacts === undefined || contacts?.length > 0 "
+            :disabled=!isDisabled(contacts)
             open-on-hover
             right
           >
@@ -70,8 +69,7 @@
           <template #activator="{ on }">
             <div v-on="on">
               <v-list-item
-                :disabled=" contacts?.length === 0 || !contacts"
-                :selectable="!contacts"
+                :disabled="isDisabled(contacts)"
                 :href="makeTemplate(contacts)"
               >
                 <v-icon
@@ -113,12 +111,18 @@ const makeTemplate = (contacts: string[] | undefined) => {
   if (contacts === undefined) {
     throw new Error('Contact is undefined.');
   }
+  if (currentDandiset.value === undefined) {
+    throw new Error('Dandiset is undefined.');
+  }
   if (currentDandiset.value){
-    const subject = encodeURIComponent(`Regarding Dandiset ${currentDandiset.value.name} ${currentDandiset.value.metadata?.id}`);
+    const subject = encodeURIComponent(`Regarding Dandiset ${currentDandiset.value.dandiset.identifier} ("${currentDandiset.value.name}")`);
     const contact = contacts.join(',');
     return `mailto:${contact}?subject=${subject}`;
   }
 };
+
+const isDisabled = (contacts: string[] | undefined): boolean =>
+  contacts === undefined || contacts.length === 0 || contacts[0] === '';
 
 </script>
 <style scoped>
