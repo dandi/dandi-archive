@@ -42,6 +42,12 @@ following fields:
     - `"versionId"` — The S3 version ID (as a string) of the current version of
       the S3 object in which the entry is stored in the Archive's S3 bucket
 
+        - **Implementation Note:** Obtaining an S3 object's current version ID
+          requires using either (a) the `GetObject` S3 API call (for a single
+          object) or (b) the `ListObjectVersions` S3 API call, including
+          client-side filtering out of all non-latest entries (for all objects
+          under a given common S3 prefix).
+
     - `"lastModified"` — The `LastModified` timestamp of the entry's S3 object
       as a string of the form `"YYYY-MM-DDTHH:MM:SS±HH:MM"`
 
