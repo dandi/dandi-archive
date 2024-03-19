@@ -19,13 +19,11 @@ Whenever Dandi Archive calculates the checksum for a Zarr in the Archive, it
 shall additionally produce a *manifest file* listing various information about
 the Zarr and its entries in the format described in the next section.  This
 manifest file shall be stored in the Archive's S3 bucket at the path
-`zarr-manifest/{zarr_id}.json`, where `{zarr_id}` is replaced by the ID of the
-Zarr.  The manifest file shall be world-readable, unless the Zarr is embargoed
-or belongs to an embargoed Dandiset, in which case appropriate steps shall be
-taken to limit read access to the file.
-
-If a manifest file is generated for a Zarr for which an earlier manifest file
-was already generated, the newer file shall replace the older.
+`zarr-manifest/{zarr_id}/{checksum}.json`, where `{zarr_id}` is replaced by the
+ID of the Zarr and `{checksum}` is replaced by the Dandi Zarr checksum of the
+Zarr at that point in time.  The manifest file shall be world-readable, unless
+the Zarr is embargoed or belongs to an embargoed Dandiset, in which case
+appropriate steps shall be taken to limit read access to the file.
 
 Manifest files shall also be generated for all Zarrs already in the Archive
 when this feature is first implemented.
