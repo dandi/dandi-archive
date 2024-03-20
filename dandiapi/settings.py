@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import sys
 
 from composed_configuration import (
     ComposedConfiguration,
@@ -78,6 +79,11 @@ class DandiMixin(ConfigMixin):
         configuration.REST_FRAMEWORK['EXCEPTION_HANDLER'] = (
             'dandiapi.drf_utils.rewrap_django_core_exceptions'
         )
+
+        # By default, set request rate limit to a very high number, effectively disabling it.
+        configuration.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+            'anon': f'{sys.maxsize}/minute',
+        }
 
         # If this environment variable is set, the pydantic model will allow URLs with localhost
         # in them. This is important for development and testing environments, where URLs will
@@ -180,6 +186,11 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     def mutate_configuration(configuration: type[ComposedConfiguration]):
         # We're configuring sentry by hand since we need to pass custom options (traces_sampler).
         configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
+
+        # In production, enable rate limiting for unauthenticated users
+        configuration.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+            'anon': '300/minute',
+        }
 
     ENABLE_GITHUB_OAUTH = True
 
