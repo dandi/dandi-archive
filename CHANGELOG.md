@@ -1,3 +1,21 @@
+# v0.3.80 (Thu Mar 21 2024)
+
+#### 🐛 Bug Fix
+
+- Temporarily pin DRF [#1895](https://github.com/dandi/dandi-archive/pull/1895) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Improve Swagger documentation for /dandisets/ query params [#1875](https://github.com/dandi/dandi-archive/pull/1875) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Boost dandischema to 0.10.1 which released 0.6.7 schema [#1893](https://github.com/dandi/dandi-archive/pull/1893) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.79 (Thu Mar 07 2024)
 
 #### 🐛 Bug Fix
