@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Count, Max, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
@@ -23,7 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
-from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models import AuditRecord, Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccessError
 from dandiapi.api.services.embargo import unembargo_dandiset
@@ -408,7 +409,17 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             # All owners found
             owners = user_owners + [acc.user for acc in socialaccount_owners]
             removed_owners, added_owners = dandiset.set_owners(owners)
-            dandiset.save()
+            with transaction.atomic():
+                dandiset.save()
+
+                if removed_owners or added_owners:
+                    audit_record = AuditRecord.change_owners(
+                        dandiset=dandiset,
+                        user=request.user,
+                        removed_owners=removed_owners,
+                        added_owners=added_owners,
+                    )
+                    audit_record.save()
 
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 

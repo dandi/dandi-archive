@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
-from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models import AuditRecord, Dandiset, Version
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM, DandiPagination
@@ -115,6 +115,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 locked_version.metadata = new_metadata
                 locked_version.status = Version.Status.PENDING
                 locked_version.save()
+
+                audit_record = AuditRecord.update_metadata(
+                    dandiset=locked_version.dandiset, user=request.user, metadata=new_metadata
+                )
+                audit_record.save()
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
