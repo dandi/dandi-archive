@@ -5,9 +5,9 @@ from rest_framework import status
 from dandiapi.api.services.exceptions import DandiError
 
 
-class AssetNotEmbargoedError(DandiError):
+class AssetBlobEmbargoedError(DandiError):
     http_status_code = status.HTTP_400_BAD_REQUEST
-    message = 'Only embargoed assets can be unembargoed.'
+    message = 'This operation cannot be performed on embargoed assets blobs.'
 
 
 class DandisetNotEmbargoedError(DandiError):

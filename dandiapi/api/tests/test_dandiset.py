@@ -762,7 +762,7 @@ def test_dandiset_rest_delete_with_zarrs(
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, draft_version.dandiset)
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr)
+    asset = draft_asset_factory(blob=None, zarr=zarr)
 
     # Add paths
     add_asset_paths(asset=asset, version=draft_version)

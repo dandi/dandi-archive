@@ -11,20 +11,23 @@ from dandiapi.api.manifests import (
     write_dandiset_jsonld,
     write_dandiset_yaml,
 )
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, EmbargoedAssetBlob, Version
+from dandiapi.api.models import Asset, AssetBlob, Version
 
 logger = get_task_logger(__name__)
 
 
+@shared_task(soft_time_limit=60)
+def remove_asset_blob_embargoed_tag_task(blob_id: str) -> None:
+    from dandiapi.api.services.embargo import remove_asset_blob_embargoed_tag
+
+    asset_blob = AssetBlob.objects.get(blob_id=blob_id)
+    remove_asset_blob_embargoed_tag(asset_blob)
+
+
 @shared_task(queue='calculate_sha256', soft_time_limit=86_400)
 def calculate_sha256(blob_id: str) -> None:
-    try:
-        asset_blob = AssetBlob.objects.get(blob_id=blob_id)
-        logger.info('Found AssetBlob %s', blob_id)
-    except AssetBlob.DoesNotExist:
-        asset_blob = EmbargoedAssetBlob.objects.get(blob_id=blob_id)
-        logger.info('Found EmbargoedAssetBlob %s', blob_id)
-
+    asset_blob = AssetBlob.objects.get(blob_id=blob_id)
+    logger.info('Found AssetBlob %s', blob_id)
     sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
 
     # TODO: Run dandi-cli validation
@@ -65,14 +68,6 @@ def validate_version_metadata_task(version_id: int) -> None:
 @shared_task
 def delete_doi_task(doi: str) -> None:
     delete_doi(doi)
-
-
-@shared_task
-def unembargo_dandiset_task(dandiset_id: int):
-    from dandiapi.api.services.embargo import _unembargo_dandiset
-
-    dandiset = Dandiset.objects.get(id=dandiset_id)
-    _unembargo_dandiset(dandiset)
 
 
 @shared_task
