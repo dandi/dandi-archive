@@ -2,6 +2,7 @@ version: '3'
 services:
   postgres:
     image: postgres:latest
+    pull_policy: always
     command: postgres -c log_lock_waits=on -c log_min_duration_statement=100
     environment:
       POSTGRES_DB: django
