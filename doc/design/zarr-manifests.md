@@ -12,18 +12,30 @@ where noted, the manifest file format defined herein matches the format used by
 the proof of concept.
 
 
-Archive Behavior
-----------------
+Creating & Storing Manifest Files
+---------------------------------
 
 Whenever Dandi Archive calculates the checksum for a Zarr in the Archive, it
 shall additionally produce a *manifest file* listing various information about
 the Zarr and its entries in the format described in the next section.  This
 manifest file shall be stored in the Archive's S3 bucket at the path
-`zarr-manifest/{zarr_id}/{checksum}.json`, where `{zarr_id}` is replaced by the
-ID of the Zarr and `{checksum}` is replaced by the Dandi Zarr checksum of the
-Zarr at that point in time.  The manifest file shall be world-readable, unless
-the Zarr is embargoed or belongs to an embargoed Dandiset, in which case
-appropriate steps shall be taken to limit read access to the file.
+`zarr-manifest/{dir1}/{dir2}/{zarr_id}/{checksum}.json`, where:
+
+- `{dir1}` is replaced by the first three characters of the Zarr ID
+- `{dir2}` is replaced by the next three characters of the Zarr ID
+- `{zarr_id}` is replaced by the ID of the Zarr
+- `{checksum}` is replaced by the Dandi Zarr checksum of the Zarr at that point
+  in time
+
+This directory structure (a) will allow `dandidav` to change the data source
+for its `/zarr/` hierarchy from the proof-of-concept to the S3 bucket with
+minimal code changes and (b) ensures that the number of entries within each
+directory in the bucket under `zarr-manifest/` is not colossal, thereby
+avoiding tremendous resource usage by `dandidav`.
+
+The manifest file shall be world-readable, unless the Zarr is embargoed or
+belongs to an embargoed Dandiset, in which case appropriate steps shall be
+taken to limit read access to the file.
 
 Manifest files shall also be generated for all Zarrs already in the Archive
 when this feature is first implemented.
@@ -152,3 +164,36 @@ following fields:
 > - A `zarrChecksumMismatch` field inside the `statistics` object, used to
 >   store the checksum that the API reports for a Zarr when it disagrees with
 >   the checksum calculated by the manifest-generation code
+
+
+Archive API Changes
+-------------------
+
+***WIP***
+
+* Zarr version IDs equal the Zarr checksum
+
+* Asset properties gain `zarr_version: str | null` field (absent or null if Zarr is not yet ingested or asset is not a Zarr)
+    - Not settable by client
+    - Mint new asset when version changes?
+
+* Add `zarr_version` field to …/assets/path/ results
+
+* Zarr `contentUrl`s:
+    - Make API download URLs for Zarrs redirect to dandidav
+    - Replace S3 URLs with webdav.{archive_domain}/zarr/ URLs?
+        - Document needed changes to dandidav?
+            - The bucket for the Archive instance will now be given on the command line (only required if a custom/non-default API URL is given)
+            - The bucket's region will have to be looked up & stored before starting the webserver
+            - Zarrs under `/dandisets/` will no longer determine their S3 location via `contentUrl`; instead, they will combine the Archive's bucket & region with the Zarr ID in the asset properties (templated into "zarr/{zarr_id}/")
+
+* Getting specific Zarr versions & their files from API endpoints
+    - `GET /zarr/versions/` (paginated)
+    - `GET /zarr/versions/{version_id}/` ?
+    - `GET /zarr/versions/{version_id}/files/[?prefix=...]` (paginated)
+        - The Zarr entry objects returned in `…/files/` responses (with & without `versions/{version_id}/`) will need to gain a `VersionId` field containing the S3 object version ID
+    - Nothing under /zarr/versions/ is writable over the API
+
+* Publishing Zarrs: Just ensure that the `zarr_version` in Zarr assets is frozen and that no entries/S3 object versions from the referenced version are ever deleted ?
+
+* Does garbage collection of old Zarr versions need to be discussed?
