@@ -188,6 +188,9 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
         configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
 
         # In production, enable rate limiting for unauthenticated users
+        configuration.REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+            'rest_framework.throttling.AnonRateThrottle',
+        ]
         configuration.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
             'anon': '300/minute',
         }
