@@ -188,9 +188,10 @@ Archive API Changes
             - Zarrs under `/dandisets/` will no longer determine their S3 location via `contentUrl`; instead, they will combine the Archive's bucket & region with the Zarr ID in the asset properties (templated into "zarr/{zarr_id}/")
 
 * Getting specific Zarr versions & their files from API endpoints
-    - `GET /zarr/versions/` (paginated)
-    - `GET /zarr/versions/{version_id}/` ?
-    - `GET /zarr/versions/{version_id}/files/[?prefix=...]` (paginated)
+    - The current `/zarr/{zarr_id}/…` endpoints operate on the most recent version of the Zarr
+    - `GET /zarr/{zarr_id}/versions/` (paginated)
+    - `GET /zarr/{zarr_id}/versions/{version_id}/` ?
+    - `GET /zarr/{zarr_id}/versions/{version_id}/files/[?prefix=...]` (paginated)
         - The Zarr entry objects returned in `…/files/` responses (with & without `versions/{version_id}/`) will need to gain a `VersionId` field containing the S3 object version ID
     - Nothing under /zarr/versions/ is writable over the API
 
