@@ -1,3 +1,19 @@
+# v0.3.81 (Mon Mar 25 2024)
+
+#### 🐛 Bug Fix
+
+- Optimize asset list endpoint [#1904](https://github.com/dandi/dandi-archive/pull/1904) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Revert rate limiting of asset list endpoint [#1905](https://github.com/dandi/dandi-archive/pull/1905) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add missing setting for DRF throttle class [#1903](https://github.com/dandi/dandi-archive/pull/1903) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Rate limit assets list endpoint for unauthenticated users [#1899](https://github.com/dandi/dandi-archive/pull/1899) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.80 (Thu Mar 21 2024)
 
 #### 🐛 Bug Fix
