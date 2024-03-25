@@ -1539,4 +1539,5 @@ def test_asset_rest_glob(api_client, asset_factory, version, glob_pattern, expec
         {'glob': glob_pattern},
     )
 
-    assert expected_paths == [asset['path'] for asset in resp.json()['results']]
+    # Sort both lists before comparing since ordering is not considered
+    assert sorted(expected_paths) == sorted([asset['path'] for asset in resp.json()['results']])
