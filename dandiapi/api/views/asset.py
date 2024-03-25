@@ -36,7 +36,6 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle, BaseThrottle
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
@@ -82,12 +81,6 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_class = AssetFilter
-
-    def get_throttles(self) -> list[BaseThrottle]:
-        if self.action == 'list':
-            throttles = [*self.throttle_classes, AnonRateThrottle]
-            return [throttle() for throttle in throttles]
-        return super().get_throttles()
 
     def raise_if_unauthorized(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
