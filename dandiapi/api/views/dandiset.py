@@ -27,7 +27,8 @@ from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccessError
 from dandiapi.api.services.embargo import unembargo_dandiset
-from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
+from dandiapi.api.views.common import DANDISET_PK_PARAM
+from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,

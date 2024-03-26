@@ -72,7 +72,7 @@ class DandiMixin(ConfigMixin):
 
         # Pagination
         configuration.REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = (
-            'dandiapi.api.views.common.DandiPagination'
+            'dandiapi.api.views.pagination.DandiPagination'
         )
 
         configuration.REST_FRAMEWORK['EXCEPTION_HANDLER'] = (

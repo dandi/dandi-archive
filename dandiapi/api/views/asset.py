@@ -44,8 +44,8 @@ from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
-    DandiPagination,
 )
+from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
     AssetDownloadQueryParameterSerializer,
