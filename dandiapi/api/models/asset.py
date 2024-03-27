@@ -162,6 +162,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     published = models.BooleanField(default=False)
 
     class Meta:
+        ordering = ['created']
         constraints = [
             models.CheckConstraint(
                 name='exactly-one-blob',
