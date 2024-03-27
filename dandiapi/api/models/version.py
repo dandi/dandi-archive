@@ -46,6 +46,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     validation_errors = models.JSONField(default=list, blank=True, null=True)
 
     class Meta:
+        ordering = ['version']
         unique_together = ['dandiset', 'version']
         constraints = [
             models.CheckConstraint(

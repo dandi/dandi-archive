@@ -28,6 +28,7 @@ class BaseZarrArchive(TimeStampedModel):
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
 
     class Meta:
+        ordering = ['created']
         get_latest_by = 'modified'
         abstract = True
         constraints = [
