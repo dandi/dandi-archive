@@ -1,3 +1,15 @@
+# v0.3.82 (Fri Mar 29 2024)
+
+#### 🐛 Bug Fix
+
+- Only include total count in the first page of list views [#1911](https://github.com/dandi/dandi-archive/pull/1911) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.81 (Mon Mar 25 2024)
 
 #### 🐛 Bug Fix
