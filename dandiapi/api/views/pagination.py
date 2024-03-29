@@ -1,3 +1,12 @@
+"""
+Implement an optimized pagination scheme.
+
+This module provides a custom pagination implementation, as the existing `PageNumberPagination`
+class returns a `count` field for every page returned. This can be very inefficient on large tables,
+and in reality, the count is only necessary on the first page of results. This module implements
+such a pagination scheme, only returning 'count' on the first page of results.
+"""
+
 from __future__ import annotations
 
 from collections import OrderedDict
