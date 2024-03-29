@@ -30,7 +30,6 @@ from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import get_objects_for_user
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
@@ -41,6 +40,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import validate_asset_path
+from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -84,8 +84,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         # user has ownership
         asset_id = self.kwargs.get('asset_id')
         if asset_id is not None:
-            asset = get_object_or_404(Asset, asset_id=asset_id)
-
+            asset = get_object_or_404(Asset.objects.select_related('blob'), asset_id=asset_id)
             # TODO: When EmbargoedZarrArchive is implemented, check that as well
             if asset.blob and asset.blob.embargoed:
                 if not self.request.user.is_authenticated:
@@ -94,9 +93,12 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
                 # User must be an owner on any of the dandisets this asset belongs to
                 asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
-                user_dandisets = get_objects_for_user(self.request.user, 'owner', Dandiset)
-                intersection = asset_dandisets & user_dandisets
-                if not intersection.exists():
+                asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
+                    content_object__in=asset_dandisets,
+                    user=self.request.user,
+                    permission__codename='owner',
+                )
+                if not asset_dandisets_owned_by_user.exists():
                     raise PermissionDenied
 
     def get_queryset(self):
