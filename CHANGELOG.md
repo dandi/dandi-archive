@@ -1,3 +1,15 @@
+# v0.3.83 (Mon Apr 01 2024)
+
+#### 🐛 Bug Fix
+
+- Add default ordering to paginated models [#1910](https://github.com/dandi/dandi-archive/pull/1910) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.82 (Fri Mar 29 2024)
 
 #### 🐛 Bug Fix
