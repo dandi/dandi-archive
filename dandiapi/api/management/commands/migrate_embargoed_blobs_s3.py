@@ -96,27 +96,64 @@ def is_success(future):
     return future.done() and not future.cancelled() and future.exception() is None
 
 
+def check_object(*, old_blob: str, old_etag: str, old_size: int):
+    blob = '/'.join(old_blob.split('/')[1:])
+    resp = client.head_object(Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=blob)
+
+    old_etag = old_etag.strip('"')
+    etag = resp['ETag'].strip('"')
+    if etag != old_etag:
+        raise Exception(f"Etags don't match for blob {blob}: {etag} != {old_etag}")  # noqa: TRY002
+
+    size = resp['ContentLength']
+    if size != old_size:
+        raise Exception(f"Sizes don't match for blob {blob}: {size} != {old_size}")  # noqa: TRY002
+
+    # Now check for tags
+    expected_tags = [{'Key': 'embargoed', 'Value': 'true'}]
+    resp = client.get_object_tagging(Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=blob)
+    if resp['TagSet'] != expected_tags:
+        raise Exception(  # noqa: TRY002
+            f"Tag set doesn't match for blob {blob}: {resp['TagSet']} != {expected_tags}"
+        )
+
+
 @click.command()
 def copy_embargoed_blobs():
     # Get the current list of all embargoed asset blobs in storage. Order randomly so that size
     # isn't skewed to one side or another, hopefully giving consistent progression
-    embargoed_blobs = EmbargoedAssetBlob.objects.all().order_by('?').values('blob', 'size')
+    embargoed_blobs = list(
+        EmbargoedAssetBlob.objects.all().order_by('?').values('blob', 'etag', 'size')
+    )
 
     # Use s3 client to copy objects. We would ideally use s3 batch to accomplish this, but we need
     # to remove the dandiset prefix that exists for every object in the embargoed bucket, and it
     # doesn't seem that s3 batch supports that operation.
-
-    failures = []
-    with tqdm(total=embargoed_blobs.count()) as pbar, ThreadPoolExecutor(max_workers=40) as e:
+    click.echo('Copying S3 Objects...')
+    with tqdm(total=len(embargoed_blobs)) as pbar, ThreadPoolExecutor(max_workers=40) as e:
         futures = [e.submit(copy_object, blob['blob'], blob['size']) for blob in embargoed_blobs]
         for future in as_completed(futures):
             pbar.update(1)
-            if not is_success(future):
-                failures.append(future)
+            future.result()
 
     # Reaching here means all the thread jobs have finished
-    if failures:
-        click.echo('Failures in embargo migration')
-        click.echo(failures)
+    click.echo(click.style(text='All files successfully copied', fg='green'))
+    click.echo('Verifying new object integrity...')
 
-    click.echo(click.style(text='Success', fg='green'))
+    # Check that all files exist in the new bucket with their tags
+    with tqdm(total=len(embargoed_blobs)) as pbar, ThreadPoolExecutor(max_workers=100) as e:
+        futures = [
+            e.submit(
+                check_object,
+                old_blob=blob['blob'],
+                old_etag=blob['etag'],
+                old_size=blob['size'],
+            )
+            for blob in embargoed_blobs
+        ]
+        for future in as_completed(futures):
+            pbar.update(1)
+            future.result()
+
+    # Reaching here means all the thread jobs have finished
+    click.echo(click.style(text='All objects verified', fg='green'))
