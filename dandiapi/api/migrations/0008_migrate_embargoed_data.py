@@ -26,6 +26,8 @@ def migrate_embargoed_asset_blobs(apps, _):
             etag=embargoed_blob.etag, size=embargoed_blob.size
         ).first()
         if existing_blob:
+            existing_blob.download_count += embargoed_blob.download_count
+            existing_blob.save()
             return existing_blob
 
         blob_id = str(embargoed_blob.blob_id)
