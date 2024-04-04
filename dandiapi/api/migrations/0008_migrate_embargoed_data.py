@@ -7,13 +7,9 @@ from django.db import migrations, models
 def migrate_embargoed_asset_blobs(apps, _):
     Asset = apps.get_model('api.Asset')
     AssetBlob = apps.get_model('api.AssetBlob')
-    embargoed_assets = Asset.objects.filter(embargoed_blob__isnull=False).select_related(
-        'embargoed_blob'
-    )
+    EmbargoedAssetBlob = apps.get_model('api.EmbargoedAssetBlob')
 
-    # For each relevant asset, create a new asset blob with embargoed=True,
-    # and point the asset to that
-    for asset in embargoed_assets.iterator():
+    def migrate_embargoed_blob(embargoed_blob):
         # Check if the blob we care about already exists (possibly under a different blob_id due to
         # de-duplication).
         # This will handle the following cases:
@@ -27,33 +23,41 @@ def migrate_embargoed_asset_blobs(apps, _):
         #
         # In case #3, the asset will effectively be un-embargoed.
         existing_blob = AssetBlob.objects.filter(
-            etag=asset.embargoed_blob.etag, size=asset.embargoed_blob.size
+            etag=embargoed_blob.etag, size=embargoed_blob.size
         ).first()
         if existing_blob:
-            asset.blob = existing_blob
-            asset.embargoed_blob = None
-            asset.save()
-            continue
+            return existing_blob
 
-        # This asset's blob hasn't been transitioned yet
-        blob_id = str(asset.embargoed_blob.blob_id)
+        blob_id = str(embargoed_blob.blob_id)
         new_blob_location = f'blobs/{blob_id[0:3]}/{blob_id[3:6]}/{blob_id}'
-        new_asset_blob = AssetBlob.objects.create(
+        return AssetBlob.objects.create(
             embargoed=True,
             blob=new_blob_location,
-            blob_id=asset.embargoed_blob.blob_id,
-            created=asset.embargoed_blob.created,
-            modified=asset.embargoed_blob.modified,
-            sha256=asset.embargoed_blob.sha256,
-            etag=asset.embargoed_blob.etag,
-            size=asset.embargoed_blob.size,
-            download_count=asset.embargoed_blob.download_count,
+            blob_id=embargoed_blob.blob_id,
+            created=embargoed_blob.created,
+            modified=embargoed_blob.modified,
+            sha256=embargoed_blob.sha256,
+            etag=embargoed_blob.etag,
+            size=embargoed_blob.size,
+            download_count=embargoed_blob.download_count,
         )
-        asset.blob = new_asset_blob
+
+    # For each relevant asset, create a new asset blob with embargoed=True,
+    # and point the asset to that
+    embargoed_assets = Asset.objects.filter(embargoed_blob__isnull=False).select_related(
+        'embargoed_blob'
+    )
+    for asset in embargoed_assets.iterator():
+        asset.blob = migrate_embargoed_blob(asset.embargoed_blob)
         asset.embargoed_blob = None
         asset.save()
-
     assert not Asset.objects.filter(embargoed_blob__isnull=False).exists()  # noqa: S101
+
+    # Finally, handle orphaned EmbargoedAssetBlobs. Since we've already taken care of all assets
+    # that point to embargoed blobs, we can migrate the remaining embargoed blobs without issue.
+    embargoed_blobs = EmbargoedAssetBlob.objects.iterator()
+    for embargoed_blob in embargoed_blobs:
+        migrate_embargoed_blob(embargoed_blob)
 
 
 class Migration(migrations.Migration):
