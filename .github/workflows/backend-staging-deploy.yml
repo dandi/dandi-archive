@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - "web/**"
       - "CHANGELOG.md"
+  workflow_dispatch:
 
 concurrency:
   # If this workflow is already running, cancel it to avoid a scenario
