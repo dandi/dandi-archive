@@ -1,12 +1,13 @@
 name: Deploy backend to staging
 
 on:
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - "web/**"
-      - "CHANGELOG.md"
+  # TODO: temporariliy disable deploy on push to `master` until embargo redesign is ready
+  # push:
+  #   branches:
+  #     - master
+  #   paths-ignore:
+  #     - "web/**"
+  #     - "CHANGELOG.md"
   workflow_dispatch:
 
 concurrency:
