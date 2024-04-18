@@ -85,7 +85,8 @@ class DandiS3MultipartManager(DandiMultipartMixin, S3MultipartManager):
             Key=object_key,
             ContentType=content_type,
             ACL='bucket-owner-full-control',
-            Tagging=tagging,
+            # The param to create_multipart_upload must be a string
+            Tagging=tagging or '',
         )
         return resp['UploadId']
 
