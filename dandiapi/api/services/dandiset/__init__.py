@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from dandiapi.api.models.audit import AuditRecord
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
@@ -45,6 +46,11 @@ def create_dandiset(
         draft_version.full_clean(validate_constraints=False)
         draft_version.save()
 
+        audit_record = AuditRecord.create_dandiset(
+            dandiset=dandiset, user=user, metadata=version_metadata, embargoed=embargo
+        )
+        audit_record.save()
+
     return dandiset, draft_version
 
 
@@ -59,5 +65,10 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
     with transaction.atomic():
+        # Record the audit event first so that the AuditRecord instance has a
+        # chance to grab the Dandiset information before it is destroyed.
+        audit_record = AuditRecord.delete_dandiset(dandiset=dandiset, user=user)
+        audit_record.save()
+
         dandiset.versions.all().delete()
         dandiset.delete()
