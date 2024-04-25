@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.core import mail
 from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -202,5 +203,33 @@ def build_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
 def send_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
     logger.info('Sending dandisets to un-embargo message to admins at %s', ADMIN_EMAIL)
     messages = [build_dandisets_to_unembargo_message(dandisets)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_dandiset_unembargoed_message(dandiset: Dandiset):
+    dandiset_context = {
+        'identifier': dandiset.identifier,
+        'ui_link': f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}',
+    }
+
+    render_context = {
+        **BASE_RENDER_CONTEXT,
+        'dandiset': dandiset_context,
+    }
+    html_message = render_to_string('api/mail/dandiset_unembargoed.html', render_context)
+    return build_message(
+        subject='Your Dandiset has been un-embargoed!',
+        message=strip_tags(html_message),
+        html_message=html_message,
+        to=[owner.email for owner in dandiset.owners],
+    )
+
+
+def send_dandiset_unembargoed_message(dandiset: Dandiset):
+    logger.info(
+        'Sending dandisets un-embargoed message to dandiset %s owners.', dandiset.identifier
+    )
+    messages = [build_dandiset_unembargoed_message(dandiset)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
