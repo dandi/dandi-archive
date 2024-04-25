@@ -194,14 +194,14 @@ def build_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
     ]
     render_context = {**BASE_RENDER_CONTEXT, 'dandisets': dandiset_context}
     return build_message(
-        subject='DANDI: new dandisets to un-embargo',
+        subject='DANDI: New Dandisets to un-embargo',
         message=render_to_string('api/mail/dandisets_to_unembargo.txt', render_context),
-        to=[ADMIN_EMAIL],
+        to=[settings.DANDI_DEV_EMAIL],
     )
 
 
 def send_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
-    logger.info('Sending dandisets to un-embargo message to admins at %s', ADMIN_EMAIL)
+    logger.info('Sending dandisets to un-embargo message to devs at %s', settings.DANDI_DEV_EMAIL)
     messages = [build_dandisets_to_unembargo_message(dandisets)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
