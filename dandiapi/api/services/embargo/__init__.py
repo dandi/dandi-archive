@@ -7,6 +7,7 @@ from botocore.config import Config
 from django.conf import settings
 from django.db import transaction
 
+from dandiapi.api.mail import send_dandisets_to_unembargo_message
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.storage import get_boto_client
@@ -78,3 +79,6 @@ def unembargo_dandiset(*, user: User, dandiset: Dandiset):
     # initiate the un-embargo process
     dandiset.embargo_status = Dandiset.EmbargoStatus.UNEMBARGOING
     dandiset.save()
+
+    # Send initial email to ensure it's seen in a timely manner
+    send_dandisets_to_unembargo_message(dandisets=[dandiset])
