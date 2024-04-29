@@ -1,3 +1,22 @@
+# v0.3.84 (Mon Apr 29 2024)
+
+#### 🐛 Bug Fix
+
+- Remove all-contributors auto plugin [#1928](https://github.com/dandi/dandi-archive/pull/1928) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Embargo Re-Design [#1890](https://github.com/dandi/dandi-archive/pull/1890) ([@jjnesbitt](https://github.com/jjnesbitt) [@mvandenburgh](https://github.com/mvandenburgh))
+- Remove unnecessary `noqa` directive [#1926](https://github.com/dandi/dandi-archive/pull/1926) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Update our instructions for installation to state newer versions of python and dandi-cli [#1919](https://github.com/dandi/dandi-archive/pull/1919) ([@yarikoptic](https://github.com/yarikoptic))
+- Add `workflow_dispatch` trigger to staging deploy workflow [#1924](https://github.com/dandi/dandi-archive/pull/1924) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Optimize asset permission check function [#1912](https://github.com/dandi/dandi-archive/pull/1912) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.83 (Mon Apr 01 2024)
 
 #### 🐛 Bug Fix
