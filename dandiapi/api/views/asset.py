@@ -39,7 +39,8 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.models.asset import EmbargoedAssetBlob, validate_asset_path
+from dandiapi.api.models.asset import validate_asset_path
+from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -83,13 +84,21 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         # user has ownership
         asset_id = self.kwargs.get('asset_id')
         if asset_id is not None:
-            asset = get_object_or_404(Asset, asset_id=asset_id)
-            if asset.embargoed_blob is not None:
+            asset = get_object_or_404(Asset.objects.select_related('blob'), asset_id=asset_id)
+            # TODO: When EmbargoedZarrArchive is implemented, check that as well
+            if asset.blob and asset.blob.embargoed:
                 if not self.request.user.is_authenticated:
                     # Clients must be authenticated to access it
                     raise NotAuthenticated
-                if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
-                    # The user does not have ownership permission
+
+                # User must be an owner on any of the dandisets this asset belongs to
+                asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
+                asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
+                    content_object__in=asset_dandisets,
+                    user=self.request.user,
+                    permission__codename='owner',
+                )
+                if not asset_dandisets_owned_by_user.exists():
                     raise PermissionDenied
 
     def get_queryset(self):
@@ -129,10 +138,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             )
 
         # Assign asset_blob
-        if asset.is_blob:
-            asset_blob = asset.blob
-        elif asset.is_embargoed_blob:
-            asset_blob = asset.embargoed_blob
+        asset_blob = asset.blob
 
         # Redirect to correct presigned URL
         storage = asset_blob.blob.storage
@@ -185,19 +191,12 @@ class AssetRequestSerializer(serializers.Serializer):
     blob_id = serializers.UUIDField(required=False)
     zarr_id = serializers.UUIDField(required=False)
 
-    def get_blob(self) -> AssetBlob | EmbargoedAssetBlob | None:
+    def get_blob(self) -> AssetBlob | None:
         asset_blob = None
-        embargoed_asset_blob = None
-
         if 'blob_id' in self.validated_data:
-            try:
-                asset_blob = AssetBlob.objects.get(blob_id=self.validated_data['blob_id'])
-            except AssetBlob.DoesNotExist:
-                embargoed_asset_blob = get_object_or_404(
-                    EmbargoedAssetBlob, blob_id=self.validated_data['blob_id']
-                )
+            asset_blob = get_object_or_404(AssetBlob, blob_id=self.validated_data['blob_id'])
 
-        return asset_blob or embargoed_asset_blob
+        return asset_blob
 
     def get_zarr_archive(self) -> ZarrArchive | None:
         zarr_archive = None
@@ -254,7 +253,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     @swagger_auto_schema(
         method='GET',
         operation_summary='Django serialization of an asset',
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[
+            ASSET_ID_PARAM,
+            VERSIONS_DANDISET_PK_PARAM,
+            VERSIONS_VERSION_PARAM,
+        ],
         responses={200: AssetDetailSerializer},
     )
     @action(detail=True, methods=['GET'])
@@ -266,7 +269,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         method='GET',
         operation_summary='Get the download link for an asset.',
         operation_description='',
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[
+            ASSET_ID_PARAM,
+            VERSIONS_DANDISET_PK_PARAM,
+            VERSIONS_VERSION_PARAM,
+        ],
         responses={
             200: None,  # This disables the auto-generated 200 response
             301: 'Redirect to object store',
@@ -280,7 +287,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer},
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[
+            ASSET_ID_PARAM,
+            VERSIONS_DANDISET_PK_PARAM,
+            VERSIONS_VERSION_PARAM,
+        ],
         operation_summary='Get any validation errors associated with an asset',
         operation_description='',
     )
@@ -432,9 +443,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         # Now we can retrieve the actual fully joined rows using the limited number of assets we're
         # going to return
         queryset = self.filter_queryset(
-            Asset.objects.filter(id__in=page_of_asset_ids).select_related(
-                'blob', 'embargoed_blob', 'zarr'
-            )
+            Asset.objects.filter(id__in=page_of_asset_ids).select_related('blob', 'zarr')
         )
 
         # Must apply this to the main queryset, since it affects the data returned

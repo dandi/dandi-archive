@@ -6,12 +6,15 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.core import mail
 from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from allauth.socialaccount.models import SocialAccount
     from django.contrib.auth.models import User
+
+    from dandiapi.api.models.dandiset import Dandiset
 
 logger = logging.getLogger(__name__)
 
@@ -175,5 +178,58 @@ def build_pending_users_message(users: Iterable[User]):
 def send_pending_users_message(users: Iterable[User]):
     logger.info('Sending pending users message to admins at %s', ADMIN_EMAIL)
     messages = [build_pending_users_message(users)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
+    dandiset_context = [
+        {
+            'identifier': ds.identifier,
+            'owners': [user.username for user in ds.owners],
+            'asset_count': ds.draft_version.asset_count,
+            'size': ds.draft_version.size,
+        }
+        for ds in dandisets
+    ]
+    render_context = {**BASE_RENDER_CONTEXT, 'dandisets': dandiset_context}
+    return build_message(
+        subject='DANDI: New Dandisets to un-embargo',
+        message=render_to_string('api/mail/dandisets_to_unembargo.txt', render_context),
+        to=[settings.DANDI_DEV_EMAIL],
+    )
+
+
+def send_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
+    logger.info('Sending dandisets to un-embargo message to devs at %s', settings.DANDI_DEV_EMAIL)
+    messages = [build_dandisets_to_unembargo_message(dandisets)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_dandiset_unembargoed_message(dandiset: Dandiset):
+    dandiset_context = {
+        'identifier': dandiset.identifier,
+        'ui_link': f'{settings.DANDI_WEB_APP_URL}/dandiset/{dandiset.identifier}',
+    }
+
+    render_context = {
+        **BASE_RENDER_CONTEXT,
+        'dandiset': dandiset_context,
+    }
+    html_message = render_to_string('api/mail/dandiset_unembargoed.html', render_context)
+    return build_message(
+        subject='Your Dandiset has been un-embargoed!',
+        message=strip_tags(html_message),
+        html_message=html_message,
+        to=[owner.email for owner in dandiset.owners],
+    )
+
+
+def send_dandiset_unembargoed_message(dandiset: Dandiset):
+    logger.info(
+        'Sending dandisets un-embargoed message to dandiset %s owners.', dandiset.identifier
+    )
+    messages = [build_dandiset_unembargoed_message(dandiset)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
