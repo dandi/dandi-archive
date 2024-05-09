@@ -32,8 +32,7 @@ def calculate_sha256(blob_id: str) -> None:
 
     # TODO: Run dandi-cli validation
 
-    asset_blob.sha256 = sha256
-    asset_blob.save()
+    AssetBlob.objects.filter(blob_id=blob_id).update(sha256=sha256)
 
 
 @shared_task(soft_time_limit=180)
