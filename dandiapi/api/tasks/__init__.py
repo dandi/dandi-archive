@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
@@ -13,6 +15,9 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
 logger = get_task_logger(__name__)
 
 
@@ -25,9 +30,9 @@ def remove_asset_blob_embargoed_tag_task(blob_id: str) -> None:
 
 
 @shared_task(queue='calculate_sha256', soft_time_limit=86_400)
-def calculate_sha256(blob_id: str) -> None:
+def calculate_sha256(blob_id: str | UUID) -> None:
     asset_blob = AssetBlob.objects.get(blob_id=blob_id)
-    logger.info('Found AssetBlob %s', blob_id)
+    logger.info('Calculating sha256 checksum for asset blob %s', blob_id)
     sha256 = asset_blob.blob.storage.sha256_checksum(asset_blob.blob.name)
 
     # TODO: Run dandi-cli validation
