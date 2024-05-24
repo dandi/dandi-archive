@@ -155,7 +155,7 @@ class TimeoutS3Storage(S3Storage):
     def __init__(self, **settings):
         super().__init__(**settings)
 
-        self.config = self.config.merge(
+        self.client_config = self.client_config.merge(
             Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 2})
         )
 
