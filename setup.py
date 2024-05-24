@@ -67,7 +67,7 @@ setup(
         # Production-only
         'django-composed-configuration[prod]>=0.23.0',
         'django-s3-file-field[s3]>=1.0.0',
-        'django-storages[s3]>=1.14.2',
+        'django-storages[s3]>=1.14.3',
         'gunicorn',
         # Development-only, but required
         'django-minio-storage',
