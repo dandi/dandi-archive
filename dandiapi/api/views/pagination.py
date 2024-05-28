@@ -16,6 +16,7 @@ from django.utils.functional import cached_property
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+
 class LazyPage(Page):
     """
     A page class that doesn't call .count() on the queryset it's paging from.
