@@ -11,11 +11,13 @@ from __future__ import annotations
 
 from collections import OrderedDict
 
+from django.core.cache import cache
 from django.core.paginator import Page, Paginator
 from django.utils.functional import cached_property
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+CACHE_TIMEOUT = 60 * 5  # 5 minutes
 
 class LazyPage(Page):
     """
@@ -46,7 +48,7 @@ class LazyPage(Page):
 
 
 class LazyPaginator(Paginator):
-    """A Paginator that doesn't call .count() on the queryset."""
+    """A Paginator that references a cached .count() on the queryset."""
 
     # Set this to infinity so that inherited code doesn't assume we're done paginating
     num_pages = float('inf')
@@ -88,7 +90,7 @@ class LazyPagination(PageNumberPagination):
         """Overridden to only include the count of the queryset on the first page."""
         page_dict = OrderedDict(
             [
-                ('count', self.page.paginator.count if self.page.number == 1 else None),
+                ('count', len(self.page.paginator.object_list)),
                 ('next', self.get_next_link()),
                 ('previous', self.get_previous_link()),
                 ('results', data),
