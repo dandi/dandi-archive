@@ -11,13 +11,10 @@ from __future__ import annotations
 
 from collections import OrderedDict
 
-from django.core.cache import cache
 from django.core.paginator import Page, Paginator
 from django.utils.functional import cached_property
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-
-CACHE_TIMEOUT = 60 * 5  # 5 minutes
 
 class LazyPage(Page):
     """
@@ -48,7 +45,10 @@ class LazyPage(Page):
 
 
 class LazyPaginator(Paginator):
-    """A Paginator that references a cached .count() on the queryset."""
+    """A Paginator that references a cached .count() on the queryset via the length of
+    the self.object_list cached property value
+
+    """
 
     # Set this to infinity so that inherited code doesn't assume we're done paginating
     num_pages = float('inf')
