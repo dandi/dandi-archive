@@ -1,12 +1,3 @@
-"""
-Implement an optimized pagination scheme.
-
-This module provides a custom pagination implementation, as the existing `PageNumberPagination`
-class returns a `count` field for every page returned. This can be very inefficient on large tables,
-and in reality, the count is only necessary on the first page of results. This module implements
-such a pagination scheme, only returning 'count' on the first page of results.
-"""
-
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -15,6 +6,24 @@ from django.core.paginator import Page, Paginator
 from django.utils.functional import cached_property
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+
+
+class DandiPagination(PageNumberPagination):
+    page_size = 100
+    max_page_size = 1000
+    page_size_query_param = 'page_size'
+
+    @cached_property
+    def page_size_query_description(self):
+        return f'{super().page_size_query_description[:-1]} (maximum {self.max_page_size}).'
+
+
+"""
+The below code provides a custom pagination implementation, as the existing `PageNumberPagination`
+class returns a `count` field for every page returned. This can be very inefficient on large tables,
+and in reality, the count is only necessary on the first page of results. This module implements
+such a pagination scheme, only returning 'count' on the first page of results.
+"""
 
 
 class LazyPage(Page):
@@ -96,7 +105,3 @@ class LazyPagination(PageNumberPagination):
         )
 
         return Response(page_dict)
-
-
-# Alias
-DandiPagination = LazyPagination
