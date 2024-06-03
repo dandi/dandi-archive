@@ -1,3 +1,31 @@
+# v0.3.85 (Mon Jun 03 2024)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Ben Dichter ([@bendichter](https://github.com/bendichter)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Empty PR to trigger a release [#1951](https://github.com/dandi/dandi-archive/pull/1951) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Only use custom pagination class for asset list endpoint [#1947](https://github.com/dandi/dandi-archive/pull/1947) ([@jjnesbitt](https://github.com/jjnesbitt))
+- In 1.14.3 it became client_config and .config was announced deprecated [#1946](https://github.com/dandi/dandi-archive/pull/1946) ([@yarikoptic](https://github.com/yarikoptic))
+- neurosift external service for .nwb.lindi.json [#1922](https://github.com/dandi/dandi-archive/pull/1922) ([@magland](https://github.com/magland))
+- Fix documentation for server downtime message var [#1927](https://github.com/dandi/dandi-archive/pull/1927) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Revert "Add `workflow_dispatch` trigger to staging deploy workflow" [#1930](https://github.com/dandi/dandi-archive/pull/1930) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 📝 Documentation
+
+- add handbook to welcome email [#1945](https://github.com/dandi/dandi-archive/pull/1945) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 4
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.84 (Mon Apr 29 2024)
 
 #### 🐛 Bug Fix
