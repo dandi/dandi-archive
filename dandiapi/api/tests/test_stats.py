@@ -1,7 +1,8 @@
 from __future__ import annotations
+from dandiapi.api.models import UserMetadata
+from django.contrib.auth.models import User
 
 import pytest
-
 
 @pytest.mark.django_db()
 def test_stats_baseline(api_client):
@@ -33,10 +34,20 @@ def test_stats_published(api_client, published_version_factory):
 
 @pytest.mark.django_db()
 def test_stats_user(api_client, user):
+
+    # Create users with different statuses
+    approved_user_count = 0
+    for status in UserMetadata.Status.choices:
+        user = User.objects.create(username=f'{status.lower()}_user')
+        UserMetadata.objects.create(user=user, status=status)
+        if status == UserMetadata.Status.APPROVED:
+            approved_user_count += 1
+
     stats = api_client.get('/api/stats/').data
 
-    # django-guardian automatically creates an AnonymousUser
-    assert stats['user_count'] == 2
+    # Assert that the user count only includes users with APPROVED status
+    assert stats['user_count'] == 1
+    assert stats['user_count'] == approved_user_count
 
 
 @pytest.mark.django_db()
@@ -50,7 +61,7 @@ def test_stats_asset(api_client, version, asset):
 @pytest.mark.django_db()
 def test_stats_embargoed_asset(api_client, version, asset_factory, embargoed_asset_blob_factory):
     embargoed_asset = asset_factory()
-    embargoed_asset.blob = embargoed_asset_blob_factory()
+    embargoed_asset.embargoed_blob = embargoed_asset_blob_factory()
     version.assets.add(embargoed_asset)
 
     stats = api_client.get('/api/stats/').data
@@ -66,7 +77,7 @@ def test_stats_embargoed_and_regular_blobs(
     version.assets.add(asset)
 
     embargoed_asset = asset_factory()
-    embargoed_asset.blob = embargoed_asset_blob_factory()
+    embargoed_asset.embargoed_blob = embargoed_asset_blob_factory()
     version.assets.add(embargoed_asset)
 
     stats = api_client.get('/api/stats/').data
