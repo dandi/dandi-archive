@@ -46,7 +46,7 @@ from dandiapi.api.views.common import (
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
 )
-from dandiapi.api.views.pagination import DandiPagination
+from dandiapi.api.views.pagination import DandiPagination, LazyPagination
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
     AssetDownloadQueryParameterSerializer,
@@ -431,7 +431,10 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             asset_queryset = asset_queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
 
         # Retrieve just the first N asset IDs, and use them for pagination
-        page_of_asset_ids = self.paginate_queryset(asset_queryset.values_list('id', flat=True))
+        # Use custom pagination class to reduce unnecessary counts of assets
+        paginator = LazyPagination()
+        qs = asset_queryset.values_list('id', flat=True)
+        page_of_asset_ids = paginator.paginate_queryset(qs, request=self.request, view=self)
 
         # Not sure when the page is ever None, but this condition is checked for compatibility with
         # the original implementation: https://github.com/encode/django-rest-framework/blob/f4194c4684420ac86485d9610adf760064db381f/rest_framework/mixins.py#L37-L46
@@ -453,7 +456,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
         # Paginate and return
         serializer = self.get_serializer(queryset, many=True, metadata=include_metadata)
-        return self.get_paginated_response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         query_serializer=AssetPathsQueryParameterSerializer,
