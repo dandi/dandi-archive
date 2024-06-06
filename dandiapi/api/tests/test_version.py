@@ -4,6 +4,7 @@ import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
+from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
@@ -84,6 +85,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
         ),
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': draft_version.dandiset.created.isoformat(),
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -127,6 +129,7 @@ def test_published_version_metadata_computed(published_version: Version):
         ),
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': published_version.dandiset.created.isoformat(),
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -556,6 +559,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'url': url,
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -633,6 +637,94 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
         ).status_code
         == 403
     )
+
+
+@pytest.mark.parametrize(
+    ('access'),
+    [
+        'some value',
+        123,
+        None,
+        [],
+        ['a', 'b'],
+        ['a', 'b', {}],
+        [{'schemaKey': 'AccessRequirements', 'status': 'foobar'}],
+    ],
+)
+@pytest.mark.django_db()
+def test_version_rest_update_access_values(api_client, user, draft_version, access):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_metadata = {**draft_version.metadata, 'access': access}
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+        format='json',
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+
+    access = draft_version.metadata['access']
+    assert access != new_metadata['access']
+    assert access[0]['schemaKey'] == 'AccessRequirements'
+    assert (
+        access[0]['status'] == AccessType.EmbargoedAccess.value
+        if draft_version.dandiset.embargoed
+        else AccessType.OpenAccess.value
+    )
+
+
+@pytest.mark.django_db()
+def test_version_rest_update_access_missing(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    # Check that the field missing entirely is also okay
+    new_metadata = {**draft_version.metadata}
+    new_metadata.pop('access', None)
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+        format='json',
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+    assert 'access' in draft_version.metadata
+    access = draft_version.metadata['access']
+    assert access[0]['schemaKey'] == 'AccessRequirements'
+    assert (
+        access[0]['status'] == AccessType.EmbargoedAccess.value
+        if draft_version.dandiset.embargoed
+        else AccessType.OpenAccess.value
+    )
+
+
+@pytest.mark.django_db()
+def test_version_rest_update_access_valid(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    # Check that extra fields persist
+    new_metadata = {**draft_version.metadata, 'access': [{'extra': 'field'}]}
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+        format='json',
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+    access = draft_version.metadata['access']
+    assert access != new_metadata['access']
+    assert access[0]['schemaKey'] == 'AccessRequirements'
+    assert (
+        access[0]['status'] == AccessType.EmbargoedAccess.value
+        if draft_version.dandiset.embargoed
+        else AccessType.OpenAccess.value
+    )
+
+    assert access[0]['extra'] == 'field'
 
 
 @pytest.mark.django_db()
