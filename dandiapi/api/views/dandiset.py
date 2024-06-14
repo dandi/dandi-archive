@@ -25,7 +25,10 @@ from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
-from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccessError
+from dandiapi.api.services.dandiset.exceptions import (
+    DandisetUnEmbargoInProgressError,
+    UnauthorizedEmbargoAccessError,
+)
 from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -374,6 +377,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     def users(self, request, dandiset__pk):
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
+            if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+                raise DandisetUnEmbargoInProgressError
+
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
             if response:
