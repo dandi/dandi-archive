@@ -9,6 +9,7 @@ from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 
@@ -667,6 +668,36 @@ def test_version_rest_publish(
 
     draft_version.refresh_from_db()
     assert draft_version.status == Version.Status.PUBLISHING
+
+
+@pytest.mark.django_db()
+def test_version_rest_publish_embargo(api_client: APIClient, user: User, draft_version_factory):
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
+def test_version_rest_publish_unembargoing(
+    api_client: APIClient, user: User, draft_version_factory
+):
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 400
 
 
 @pytest.mark.django_db()
