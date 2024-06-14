@@ -637,6 +637,35 @@ def test_asset_create_embargo(
 
 
 @pytest.mark.django_db()
+def test_asset_create_unembargoing(
+    api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    draft_version = draft_version_factory(dandiset=dandiset)
+
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+        'meta': 'data',
+        'foo': ['bar', 'baz'],
+        '1': 2,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        format='json',
+    )
+
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
 def test_asset_create_embargoed_asset_blob_open_dandiset(
     api_client, user, draft_version, embargoed_asset_blob, mocker
 ):
@@ -1093,6 +1122,35 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
 
 
 @pytest.mark.django_db()
+def test_asset_rest_update_unembargoing(
+    api_client, user, draft_version_factory, asset, embargoed_asset_blob
+):
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+    draft_version.assets.add(asset)
+
+    new_path = 'test/asset/rest/update.txt'
+    new_metadata = {
+        'encodingFormat': 'application/x-nwb',
+        'path': new_path,
+        'foo': 'bar',
+        'num': 123,
+        'list': ['a', 'b', 'c'],
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/',
+        {'metadata': new_metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        format='json',
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
 def test_asset_rest_update_zarr(
     api_client,
     user,
@@ -1264,6 +1322,23 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
     # Deleting an Asset should trigger a revalidation
     assert draft_version.status == Version.Status.PENDING
+
+
+@pytest.mark.django_db()
+def test_asset_rest_delete_unembargoing(api_client, user, draft_version_factory, asset):
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    draft_version.assets.add(asset)
+
+    # Make request
+    api_client.force_authenticate(user=user)
+    response = api_client.delete(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/'
+        f'versions/{draft_version.version}/assets/{asset.asset_id}/'
+    )
+    assert response.status_code == 400
 
 
 @pytest.mark.django_db()
