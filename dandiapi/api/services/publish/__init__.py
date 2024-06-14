@@ -42,7 +42,7 @@ def publish_asset(*, asset: Asset) -> None:
         locked_asset.save()
 
 
-def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
+def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  # noqa: C901
     """
     Prepare a dandiset to be published by locking it and setting its status to PUBLISHING.
 
