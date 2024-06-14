@@ -166,7 +166,19 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'publishedBy',
             'manifestLocation',
         ]
-        return {key: metadata[key] for key in metadata if key not in computed_fields}
+        stripped = {key: metadata[key] for key in metadata if key not in computed_fields}
+
+        # Strip the status and schemaKey fields, as modifying them is not supported
+        if (
+            'access' in stripped
+            and isinstance(stripped['access'], list)
+            and len(stripped['access'])
+            and isinstance(stripped['access'][0], dict)
+        ):
+            stripped['access'][0].pop('schemaKey', None)
+            stripped['access'][0].pop('status', None)
+
+        return stripped
 
     def _populate_access_metadata(self):
         default_access = [{}]
