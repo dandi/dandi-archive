@@ -602,6 +602,32 @@ def test_version_rest_update(api_client, user, draft_version):
 
 
 @pytest.mark.django_db()
+def test_version_rest_update_unembargoing(api_client, user, draft_version_factory):
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_name = 'A unique and special name!'
+    new_metadata = {
+        '@context': (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{settings.DANDI_SCHEMA_VERSION}/context.json'
+        ),
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'num': 123,
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': new_name},
+        format='json',
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
 def test_version_rest_update_published_version(api_client, user, published_version):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
