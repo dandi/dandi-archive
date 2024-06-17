@@ -13,3 +13,8 @@ class AssetBlobEmbargoedError(DandiError):
 class DandisetNotEmbargoedError(DandiError):
     http_status_code = status.HTTP_400_BAD_REQUEST
     message = 'Dandiset not embargoed'
+
+
+class DandisetActiveUploadsError(DandiError):
+    http_status_code = status.HTTP_400_BAD_REQUEST
+    message = 'Dandiset un-embargo not allowed with active uploads'
