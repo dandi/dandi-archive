@@ -17,6 +17,7 @@ from s3_file_field._multipart import TransferredPart, TransferredParts
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.permissions import IsApproved
+from dandiapi.api.services.dandiset.exceptions import DandisetUnEmbargoInProgressError
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
@@ -134,6 +135,10 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
     if response:
         return response
+
+    # Ensure dandiset not in the process of un-embargo
+    if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+        raise DandisetUnEmbargoInProgressError
 
     logging.info(
         'Starting upload initialization of size %s, ETag %s to dandiset %s',
