@@ -9,7 +9,7 @@ from dandiapi.api.services.asset import (
     remove_asset_from_version,
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
-from dandiapi.api.services.dandiset.exceptions import DandisetUnEmbargoInProgressError
+from dandiapi.api.services.embargo.exceptions import DandisetUnEmbargoInProgressError
 from dandiapi.zarr.models import ZarrArchive
 
 try:

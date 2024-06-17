@@ -25,11 +25,11 @@ from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
-from dandiapi.api.services.dandiset.exceptions import (
+from dandiapi.api.services.embargo import unembargo_dandiset
+from dandiapi.api.services.embargo.exceptions import (
     DandisetUnEmbargoInProgressError,
     UnauthorizedEmbargoAccessError,
 )
-from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (

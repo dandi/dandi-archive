@@ -17,7 +17,7 @@ from s3_file_field._multipart import TransferredPart, TransferredParts
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.permissions import IsApproved
-from dandiapi.api.services.dandiset.exceptions import DandisetUnEmbargoInProgressError
+from dandiapi.api.services.embargo.exceptions import DandisetUnEmbargoInProgressError
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
