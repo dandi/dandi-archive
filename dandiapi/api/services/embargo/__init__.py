@@ -48,12 +48,6 @@ def _unembargo_dandiset(dandiset: Dandiset):
     embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(blob__embargoed=True)
     AssetBlob.objects.filter(assets__in=embargoed_assets).update(embargoed=False)
 
-    # Update draft version metadata
-    draft_version.metadata['access'] = [
-        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
-    ]
-    draft_version.save()
-
     # Set access on dandiset
     dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
     dandiset.save()
