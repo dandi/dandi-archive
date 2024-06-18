@@ -83,7 +83,7 @@ def unembargo_dandiset(*, user: User, dandiset: Dandiset):
         raise DandisetActiveUploadsError
 
     # A scheduled task will pick up any new dandisets with this status and email the admins to
-    # initiate the un-embargo process
+    # initiate the unembargo process
     dandiset.embargo_status = Dandiset.EmbargoStatus.UNEMBARGOING
     dandiset.save()
 

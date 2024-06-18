@@ -751,7 +751,7 @@ def test_dandiset_rest_delete(api_client, draft_version_factory, user):
     assert response.status_code == 204
     assert not Dandiset.objects.all()
 
-    # Ensure that currently un-embargoing dandisets can't be deleted
+    # Ensure that currently unembargoing dandisets can't be deleted
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
@@ -891,7 +891,7 @@ def test_dandiset_rest_change_owners_unembargoing(
     user_factory,
     social_account_factory,
 ):
-    """Test that un-embargoing a dandiset prevents user modification."""
+    """Test that unembargoing a dandiset prevents user modification."""
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )

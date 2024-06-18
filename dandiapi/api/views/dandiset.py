@@ -27,7 +27,7 @@ from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.embargo import unembargo_dandiset
 from dandiapi.api.services.embargo.exceptions import (
-    DandisetUnEmbargoInProgressError,
+    DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
 )
 from dandiapi.api.views.common import DANDISET_PK_PARAM
@@ -378,7 +378,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
-                raise DandisetUnEmbargoInProgressError
+                raise DandisetUnembargoInProgressError
 
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)

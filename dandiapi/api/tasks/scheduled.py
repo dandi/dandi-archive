@@ -114,7 +114,7 @@ def send_pending_users_email() -> None:
 
 @shared_task(soft_time_limit=20)
 def send_dandisets_to_unembargo_email() -> None:
-    """Send an email to admins listing dandisets that have requested un-embargo."""
+    """Send an email to admins listing dandisets that have requested unembargo."""
     dandisets = Dandiset.objects.filter(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
     if dandisets.exists():
         send_dandisets_to_unembargo_message(dandisets)
@@ -148,7 +148,7 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     # Send daily email to admins containing a list of users awaiting approval
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
 
-    # Send daily email to admins containing a list of dandisets to un-embargo
+    # Send daily email to admins containing a list of dandisets to unembargo
     sender.add_periodic_task(crontab(hour=0, minute=0), send_dandisets_to_unembargo_email.s())
 
     # Refresh the materialized view used by asset search every 10 mins.

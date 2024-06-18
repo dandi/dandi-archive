@@ -670,7 +670,7 @@ def test_asset_create_embargoed_asset_blob_open_dandiset(
     api_client, user, draft_version, embargoed_asset_blob, mocker
 ):
     # Ensure that creating an asset in an open dandiset that points to an embargoed asset blob
-    # results in that asset blob being un-embargoed
+    # results in that asset blob being unembargoed
     assert draft_version.dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN
     assert embargoed_asset_blob.embargoed
 

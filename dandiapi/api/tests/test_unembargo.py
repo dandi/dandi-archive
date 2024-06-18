@@ -36,7 +36,7 @@ def test_unembargo_dandiset_sends_emails(
     send_dandisets_to_unembargo_email()
 
     assert mailoutbox
-    assert 'un-embargo' in mailoutbox[0].subject
+    assert 'unembargo' in mailoutbox[0].subject
     assert dandiset.identifier in mailoutbox[0].message().get_payload()
     assert user.username in mailoutbox[0].message().get_payload()
 

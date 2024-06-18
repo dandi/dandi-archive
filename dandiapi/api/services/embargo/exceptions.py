@@ -17,12 +17,12 @@ class DandisetNotEmbargoedError(DandiError):
 
 class DandisetActiveUploadsError(DandiError):
     http_status_code = status.HTTP_400_BAD_REQUEST
-    message = 'Dandiset un-embargo not allowed with active uploads'
+    message = 'Dandiset unembargo not allowed with active uploads'
 
 
-class DandisetUnEmbargoInProgressError(DandiError):
+class DandisetUnembargoInProgressError(DandiError):
     http_status_code = status.HTTP_400_BAD_REQUEST
-    message = 'Dandiset modification not allowed during un-embargo'
+    message = 'Dandiset modification not allowed during unembargo'
 
 
 class UnauthorizedEmbargoAccessError(DandiError):

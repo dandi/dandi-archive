@@ -9,7 +9,7 @@ from dandiapi.api.services.asset import (
     remove_asset_from_version,
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
-from dandiapi.api.services.embargo.exceptions import DandisetUnEmbargoInProgressError
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -325,7 +325,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         )
 
         if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
-            raise DandisetUnEmbargoInProgressError
+            raise DandisetUnembargoInProgressError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -362,7 +362,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         if version.version != 'draft':
             raise DraftDandisetNotModifiableError
         if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
-            raise DandisetUnEmbargoInProgressError
+            raise DandisetUnembargoInProgressError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -400,7 +400,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             version=versions__version,
         )
         if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
-            raise DandisetUnEmbargoInProgressError
+            raise DandisetUnembargoInProgressError
 
         # Lock asset for delete
         with transaction.atomic():

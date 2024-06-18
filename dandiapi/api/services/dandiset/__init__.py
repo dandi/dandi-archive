@@ -5,7 +5,7 @@ from django.db import transaction
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
-from dandiapi.api.services.embargo.exceptions import DandisetUnEmbargoInProgressError
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import AdminOnlyOperationError, NotAllowedError
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 
@@ -57,7 +57,7 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
         raise NotAllowedError('Cannot delete dandisets that are currently being published.')
     if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
-        raise DandisetUnEmbargoInProgressError
+        raise DandisetUnembargoInProgressError
 
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
