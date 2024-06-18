@@ -1,3 +1,17 @@
+# v0.3.86 (Tue Jun 18 2024)
+
+#### 🐛 Bug Fix
+
+- Restrict updates to metadata `access` field [#1954](https://github.com/dandi/dandi-archive/pull/1954) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix race condition in sha256 calculation task [#1936](https://github.com/dandi/dandi-archive/pull/1936) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.85 (Mon Jun 03 2024)
 
 :tada: This release contains work from a new contributor! :tada:
