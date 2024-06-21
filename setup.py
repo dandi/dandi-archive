@@ -86,6 +86,8 @@ setup(
             'django-stubs',
             'djangorestframework-stubs',
             'types-setuptools',
+            'dandi',
+            'fsspec[http]',
         ],
         'test': [
             'factory-boy',
