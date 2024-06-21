@@ -1,3 +1,15 @@
+# v0.3.87 (Fri Jun 21 2024)
+
+#### 🐛 Bug Fix
+
+- Lock dandisets during un-embargo [#1957](https://github.com/dandi/dandi-archive/pull/1957) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.86 (Tue Jun 18 2024)
 
 #### 🐛 Bug Fix
