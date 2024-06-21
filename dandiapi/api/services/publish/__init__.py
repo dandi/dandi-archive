@@ -42,17 +42,18 @@ def publish_asset(*, asset: Asset) -> None:
         locked_asset.save()
 
 
-def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
+def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  # noqa: C901
     """
     Prepare a dandiset to be published by locking it and setting its status to PUBLISHING.
 
     This function MUST be called before _publish_dandiset is called.
     """
-    if (
-        not user.has_perm('owner', dandiset)
-        or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
-    ):
+    if not user.has_perm('owner', dandiset):
         raise NotAllowedError
+
+    if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+        raise NotAllowedError('Operation only allowed on OPEN dandisets', 400)
+
     if dandiset.zarr_archives.exists() or dandiset.embargoed_zarr_archives.exists():
         raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
 

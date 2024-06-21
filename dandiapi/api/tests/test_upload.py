@@ -110,6 +110,25 @@ def test_upload_initialize(api_client, user, dandiset_factory, embargoed):
 
 
 @pytest.mark.django_db()
+def test_upload_initialize_unembargoing(api_client, user, dandiset_factory):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    api_client.force_authenticate(user=user)
+    assign_perm('owner', user, dandiset)
+
+    content_size = 123
+    resp = api_client.post(
+        '/api/uploads/initialize/',
+        {
+            'contentSize': content_size,
+            'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
 def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset_blob):
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, dandiset)

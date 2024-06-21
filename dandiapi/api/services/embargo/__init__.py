@@ -12,7 +12,11 @@ from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.storage import get_boto_client
 
-from .exceptions import AssetBlobEmbargoedError, DandisetNotEmbargoedError
+from .exceptions import (
+    AssetBlobEmbargoedError,
+    DandisetActiveUploadsError,
+    DandisetNotEmbargoedError,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -69,8 +73,11 @@ def unembargo_dandiset(*, user: User, dandiset: Dandiset):
     if not user.has_perm('owner', dandiset):
         raise DandisetOwnerRequiredError
 
+    if dandiset.uploads.count():
+        raise DandisetActiveUploadsError
+
     # A scheduled task will pick up any new dandisets with this status and email the admins to
-    # initiate the un-embargo process
+    # initiate the unembargo process
     dandiset.embargo_status = Dandiset.EmbargoStatus.UNEMBARGOING
     dandiset.save()
 

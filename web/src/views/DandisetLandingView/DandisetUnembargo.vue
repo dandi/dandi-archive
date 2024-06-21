@@ -17,11 +17,11 @@
         <v-divider class="my-3" />
         <v-card-text>
           <span>
-            This action will un-embargo this dandiset. Note that this is a
+            This action will unembargo this dandiset. Note that this is a
             <span class="font-weight-bold">
               permanent
             </span>
-            action and cannot be undone. Once a dandiset has been un-embargoed,
+            action and cannot be undone. Once a dandiset has been unembargoed,
             it cannot be re-embargoed.
             <br><br>
             Note: this may take several days to complete.

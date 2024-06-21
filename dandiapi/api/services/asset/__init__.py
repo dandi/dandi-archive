@@ -136,7 +136,7 @@ def add_asset_to_version(
         raise ZarrArchiveBelongsToDifferentDandisetError
 
     # Creating an asset in an OPEN dandiset that points to an embargoed blob results in that
-    # blob being un-embargoed
+    # blob being unembargoed
     unembargo_asset_blob = (
         asset_blob is not None
         and asset_blob.embargoed
@@ -159,7 +159,7 @@ def add_asset_to_version(
         version.save()
 
     # Perform this after the above transaction has finished, to ensure we only operate on
-    # un-embargoed asset blobs
+    # unembargoed asset blobs
     if asset_blob and unembargo_asset_blob:
         remove_asset_blob_embargoed_tag_task.delay(blob_id=asset_blob.blob_id)
 

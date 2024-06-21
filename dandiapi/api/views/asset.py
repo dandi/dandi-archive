@@ -9,6 +9,7 @@ from dandiapi.api.services.asset import (
     remove_asset_from_version,
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -318,10 +319,13 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     )
     def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset=versions__dandiset__pk,
             version=versions__version,
         )
+
+        if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+            raise DandisetUnembargoInProgressError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -351,12 +355,14 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Update the metadata of an asset."""
         version: Version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
         if version.version != 'draft':
             raise DraftDandisetNotModifiableError
+        if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+            raise DandisetUnembargoInProgressError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -389,10 +395,12 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     )
     def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
+        if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+            raise DandisetUnembargoInProgressError
 
         # Lock asset for delete
         with transaction.atomic():

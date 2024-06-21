@@ -1,5 +1,5 @@
 {% autoescape off %}
-The following new dandisets are awaiting un-embargo:
+The following new dandisets are awaiting unembargo:
 
 {% for ds in dandisets %}
 Dandiset ID: {{ ds.identifier }}
