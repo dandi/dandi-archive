@@ -22,11 +22,12 @@ from django.db.models.query_utils import Q
 from dandiapi.analytics.tasks import collect_s3_log_records_task
 from dandiapi.api.mail import send_dandisets_to_unembargo_message, send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
-from dandiapi.api.models.asset import Asset
+from dandiapi.api.models.asset import Asset, AssetBlob
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.tasks import (
+    calculate_sha256,
     validate_asset_metadata_task,
     validate_version_metadata_task,
     write_manifest_files,
@@ -61,6 +62,19 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
 def aggregate_assets_summary_task(version_id: int):
     version = Version.objects.get(id=version_id)
     version_aggregate_assets_summary(version)
+
+
+@shared_task(soft_time_limit=30)
+def recalculate_missing_sha256_checksums():
+    blobs_missing = AssetBlob.objects.filter(sha256__isnull=True).values_list('blob_id', flat=True)
+    num_missing = blobs_missing.count()
+    if num_missing == 0:
+        logger.info('No blobs with missing checksums found')
+        return
+
+    logger.info('Found %s blobs with missing checksums', num_missing)
+    for blob_id in blobs_missing:
+        calculate_sha256.delay(blob_id)
 
 
 @shared_task(soft_time_limit=30)
@@ -156,3 +170,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Process new S3 logs every hour
     sender.add_periodic_task(timedelta(hours=1), collect_s3_log_records_task.s())
+
+    # Check for asset blobs with missing sha256 checksums once a day
+    sender.add_periodic_task(crontab(hour=3, minute=0), recalculate_missing_sha256_checksums.s())
