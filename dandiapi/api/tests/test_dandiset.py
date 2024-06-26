@@ -827,6 +827,7 @@ def test_dandiset_rest_get_owners(api_client, dandiset, social_account):
         {
             'username': social_account.extra_data['login'],
             'name': social_account.extra_data['name'],
+            'email': None,
         }
     ]
 
@@ -838,7 +839,13 @@ def test_dandiset_rest_get_owners_no_social_account(api_client, dandiset, user):
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
     assert resp.status_code == 200
-    assert resp.data == [{'username': user.username, 'name': f'{user.first_name} {user.last_name}'}]
+    assert resp.data == [
+        {
+            'username': user.username,
+            'name': f'{user.first_name} {user.last_name}',
+            'email': None,
+        }
+    ]
 
 
 @pytest.mark.parametrize(
@@ -873,6 +880,7 @@ def test_dandiset_rest_change_owner(
         {
             'username': social_account2.extra_data['login'],
             'name': social_account2.extra_data['name'],
+            'email': social_account2.extra_data['email'],
         }
     ]
     assert list(dandiset.owners) == [user2]
@@ -945,10 +953,12 @@ def test_dandiset_rest_add_owner(
         {
             'username': social_account1.extra_data['login'],
             'name': social_account1.extra_data['name'],
+            'email': social_account1.extra_data['email'],
         },
         {
             'username': social_account2.extra_data['login'],
             'name': social_account2.extra_data['name'],
+            'email': social_account2.extra_data['email'],
         },
     ]
     assert list(dandiset.owners) == [user1, user2]
@@ -985,6 +995,7 @@ def test_dandiset_rest_remove_owner(
         {
             'username': social_account1.extra_data['login'],
             'name': social_account1.extra_data['name'],
+            'email': social_account1.extra_data['email'],
         }
     ]
     assert list(dandiset.owners) == [user1]

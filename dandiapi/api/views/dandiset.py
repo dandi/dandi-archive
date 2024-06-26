@@ -423,8 +423,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
-                if 'name' in owner_account.extra_data:
-                    owner_dict['name'] = owner_account.extra_data['name']
+                owner_dict['name'] = owner_account.extra_data.get('name', None)
+                owner_dict['email'] = (
+                    owner_account.extra_data['email']
+                    if request.user.is_authenticated and 'email' in owner_account.extra_data
+                    else None
+                )
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
@@ -432,6 +436,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     {
                         'username': owner_user.username,
                         'name': f'{owner_user.first_name} {owner_user.last_name}',
+                        'email': owner_user.email if request.user.is_authenticated else None,
                     }
                 )
+
         return Response(owners, status=status.HTTP_200_OK)
