@@ -381,6 +381,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
+
             # Ensure not all owners removed
             if not serializer.validated_data:
                 raise ValidationError('Cannot remove all draft owners')
@@ -412,7 +413,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-
         for owner_user in dandiset.owners:
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
