@@ -121,12 +121,8 @@ const makeTemplate = (contacts: string[] | undefined) => {
   }
 };
 
-const isDisabled = (contacts: string[] | undefined): boolean => {
-  if (contacts === undefined || contacts.length === 0 || contacts[0] === '') {
-    return true;
-  }
-  return false;
-};
+const isDisabled = (contacts: string[] | undefined): boolean =>
+  contacts === undefined || contacts.length === 0 || contacts[0] === '';
 
 </script>
 <style scoped>
