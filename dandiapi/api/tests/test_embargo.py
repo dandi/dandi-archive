@@ -10,6 +10,7 @@ from dandiapi.api.services.embargo import AssetBlobEmbargoedError, remove_asset_
     params=[
         Dandiset.EmbargoStatus.EMBARGOED,
         Dandiset.EmbargoStatus.UNEMBARGOING,
+        Dandiset.EmbargoStatus.UNEMBARGO_PENDING,
     ]
 )
 def embargo_status(request):

@@ -110,8 +110,14 @@ def test_upload_initialize(api_client, user, dandiset_factory, embargoed):
 
 
 @pytest.mark.django_db()
-def test_upload_initialize_unembargoing(api_client, user, dandiset_factory):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.UNEMBARGO_PENDING, Dandiset.EmbargoStatus.UNEMBARGOING],
+)
+def test_upload_initialize_unembargo_in_progress(
+    api_client, user, dandiset_factory, embargo_status
+):
+    dandiset = dandiset_factory(embargo_status=embargo_status)
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, dandiset)
 

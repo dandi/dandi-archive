@@ -606,10 +606,14 @@ def test_version_rest_update(api_client, user, draft_version):
 
 
 @pytest.mark.django_db()
-def test_version_rest_update_unembargoing(api_client, user, draft_version_factory):
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.UNEMBARGO_PENDING, Dandiset.EmbargoStatus.UNEMBARGOING],
+)
+def test_version_rest_update_unembargo_in_progress(
+    api_client, user, draft_version_factory, embargo_status
+):
+    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 
@@ -802,12 +806,14 @@ def test_version_rest_publish_embargo(api_client: APIClient, user: User, draft_v
 
 
 @pytest.mark.django_db()
-def test_version_rest_publish_unembargoing(
-    api_client: APIClient, user: User, draft_version_factory
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.UNEMBARGO_PENDING, Dandiset.EmbargoStatus.UNEMBARGOING],
+)
+def test_version_rest_publish_unembargo_in_progress(
+    api_client: APIClient, user: User, draft_version_factory, embargo_status
 ):
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
+    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
 

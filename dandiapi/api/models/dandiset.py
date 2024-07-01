@@ -40,6 +40,7 @@ class Dandiset(TimeStampedModel):
 
     class EmbargoStatus(models.TextChoices):
         EMBARGOED = 'EMBARGOED', 'Embargoed'
+        UNEMBARGO_PENDING = 'UNEMBARGO_PENDING', 'Unembargo Pending'
         UNEMBARGOING = 'UNEMBARGOING', 'Unembargoing'
         OPEN = 'OPEN', 'Open'
 
@@ -61,6 +62,13 @@ class Dandiset(TimeStampedModel):
     @property
     def embargoed(self) -> bool:
         return self.embargo_status == self.EmbargoStatus.EMBARGOED
+
+    @property
+    def unembargo_in_progress(self) -> bool:
+        return self.embargo_status in [
+            self.EmbargoStatus.UNEMBARGO_PENDING,
+            self.EmbargoStatus.UNEMBARGOING,
+        ]
 
     @property
     def most_recent_published_version(self):

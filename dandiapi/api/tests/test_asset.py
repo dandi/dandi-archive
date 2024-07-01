@@ -637,10 +637,14 @@ def test_asset_create_embargo(
 
 
 @pytest.mark.django_db()
-def test_asset_create_unembargoing(
-    api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.UNEMBARGO_PENDING, Dandiset.EmbargoStatus.UNEMBARGOING],
+)
+def test_asset_create_unembargo_in_progress(
+    api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob, embargo_status
 ):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    dandiset = dandiset_factory(embargo_status=embargo_status)
     draft_version = draft_version_factory(dandiset=dandiset)
 
     assign_perm('owner', user, draft_version.dandiset)
@@ -1122,12 +1126,14 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
 
 
 @pytest.mark.django_db()
-def test_asset_rest_update_unembargoing(
-    api_client, user, draft_version_factory, asset, embargoed_asset_blob
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.UNEMBARGO_PENDING, Dandiset.EmbargoStatus.UNEMBARGOING],
+)
+def test_asset_rest_update_unembargo_in_progress(
+    api_client, user, draft_version_factory, asset, embargoed_asset_blob, embargo_status
 ):
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
+    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
     assign_perm('owner', user, draft_version.dandiset)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
@@ -1325,10 +1331,14 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_delete_unembargoing(api_client, user, draft_version_factory, asset):
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.UNEMBARGO_PENDING, Dandiset.EmbargoStatus.UNEMBARGOING],
+)
+def test_asset_rest_delete_unembargo_in_progress(
+    api_client, user, draft_version_factory, asset, embargo_status
+):
+    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
     assign_perm('owner', user, draft_version.dandiset)
     draft_version.assets.add(asset)
 

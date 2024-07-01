@@ -450,7 +450,7 @@ const publishDisabledMessage: ComputedRef<string> = computed(() => {
   if (currentDandiset.value?.status === 'Published') {
     return 'No changes since last publish.';
   }
-  if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING') {
+  if (currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING' || currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGO_PENDING') {
     return 'This dandiset is being unembargoed, please wait.';
   }
   if (publishing.value) {

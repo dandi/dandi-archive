@@ -8,11 +8,12 @@ from botocore.config import Config
 from django.conf import settings
 from django.db import transaction
 
-from dandiapi.api.mail import send_dandiset_unembargoed_message, send_dandisets_to_unembargo_message
+from dandiapi.api.mail import send_dandiset_unembargoed_message
 from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.storage import get_boto_client
+from dandiapi.api.tasks import unembargo_dandiset_task
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -65,9 +66,9 @@ def unembargo_dandiset(ds: Dandiset):
     logger.info('Unembargoing Dandiset %s', ds.identifier)
     logger.info('\t%s assets', ds.draft_version.assets.count())
 
-    if ds.embargo_status != Dandiset.EmbargoStatus.UNEMBARGOING:
+    if ds.embargo_status != Dandiset.EmbargoStatus.UNEMBARGO_PENDING:
         raise DandiError(
-            message=f'Expected dandiset state {Dandiset.EmbargoStatus.UNEMBARGOING}, found {ds.embargo_status}',  # noqa: E501
+            message=f'Expected dandiset state {Dandiset.EmbargoStatus.UNEMBARGO_PENDING}, found {ds.embargo_status}',  # noqa: E501
             http_status_code=500,
         )
     if ds.uploads.all().exists():
@@ -119,10 +120,8 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
     if dandiset.uploads.count():
         raise DandisetActiveUploadsError
 
-    # A scheduled task will pick up any new dandisets with this status
     Dandiset.objects.filter(pk=dandiset.pk).update(
-        embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+        embargo_status=Dandiset.EmbargoStatus.UNEMBARGO_PENDING
     )
 
-    # Send initial email to ensure it's seen in a timely manner
-    send_dandisets_to_unembargo_message(dandisets=[dandiset])
+    unembargo_dandiset_task.delay(dandiset_id=dandiset.pk)

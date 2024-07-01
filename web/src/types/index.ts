@@ -20,7 +20,7 @@ export interface Dandiset {
   // eslint-disable-next-line no-use-before-define
   most_recent_published_version?: Version,
   contact_person?: string,
-  embargo_status: 'EMBARGOED' | 'UNEMBARGOING' | 'OPEN',
+  embargo_status: 'EMBARGOED' | 'UNEMBARGO_PENDING' | 'UNEMBARGOING' | 'OPEN',
 }
 
 export interface DandisetSearchResult extends Dandiset {
