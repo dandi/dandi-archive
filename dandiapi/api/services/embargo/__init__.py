@@ -60,7 +60,8 @@ def _remove_dandiset_asset_blob_embargo_tags(dandiset: Dandiset):
 
 
 @transaction.atomic()
-def _unembargo_dandiset(ds: Dandiset):
+def unembargo_dandiset(ds: Dandiset):
+    """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
     logger.info('Unembargoing Dandiset %s', ds.identifier)
     logger.info('\t%s assets', ds.draft_version.assets.count())
 
@@ -107,8 +108,8 @@ def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
     _delete_asset_blob_tags(client=get_boto_client(), blob=asset_blob.blob.name)
 
 
-def unembargo_dandiset(*, user: User, dandiset: Dandiset):
-    """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
+def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
+    """Set dandiset status to kickoff unembargo."""
     if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
         raise DandisetNotEmbargoedError
 
