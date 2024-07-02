@@ -95,7 +95,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Only draft versions can be modified.',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
-        if version.dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+        if version.dandiset.unembargo_in_progress:
             raise DandisetUnembargoInProgressError
 
         serializer = VersionMetadataSerializer(data=request.data)

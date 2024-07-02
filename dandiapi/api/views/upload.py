@@ -137,7 +137,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         return response
 
     # Ensure dandiset not in the process of unembargo
-    if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+    if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
     logging.info(

@@ -63,6 +63,10 @@ class Dandiset(TimeStampedModel):
         return self.embargo_status == self.EmbargoStatus.EMBARGOED
 
     @property
+    def unembargo_in_progress(self) -> bool:
+        return self.embargo_status == self.EmbargoStatus.UNEMBARGOING
+
+    @property
     def most_recent_published_version(self):
         return self.versions.exclude(version='draft').order_by('modified').last()
 

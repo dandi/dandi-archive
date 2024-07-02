@@ -69,23 +69,27 @@ def test_kickoff_dandiset_unembargo_active_uploads(
     assert resp.status_code == 400
 
 
-@pytest.mark.django_db()
-def test_kickoff_dandiset_unembargo(api_client, user, draft_version_factory, mailoutbox):
+# transaction=True required due to how `kickoff_dandiset_unembargo` calls `unembargo_dandiset_task`
+@pytest.mark.django_db(transaction=True)
+def test_kickoff_dandiset_unembargo(api_client, user, draft_version_factory, mailoutbox, mocker):
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds: Dandiset = draft_version.dandiset
 
     assign_perm('owner', user, ds)
     api_client.force_authenticate(user=user)
 
+    # mock this task to check if called
+    patched_task = mocker.patch('dandiapi.api.services.embargo.unembargo_dandiset_task')
+
     resp = api_client.post(f'/api/dandisets/{ds.identifier}/unembargo/')
     assert resp.status_code == 200
 
     ds.refresh_from_db()
     assert ds.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING
-    assert mailoutbox
-    assert 'unembargo' in mailoutbox[0].subject
-    assert ds.identifier in mailoutbox[0].message().get_payload()
-    assert user.username in mailoutbox[0].message().get_payload()
+
+    # Check that unembargo dandiset task was delayed
+    assert len(patched_task.mock_calls) == 1
+    assert str(patched_task.mock_calls[0]) == f'call.delay({ds.pk})'
 
 
 @pytest.mark.django_db()

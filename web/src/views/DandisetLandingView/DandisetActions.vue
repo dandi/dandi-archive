@@ -72,7 +72,7 @@
           id="view-data"
           outlined
           block
-          :disabled="currentDandiset.dandiset.embargo_status === 'UNEMBARGOING'"
+          :disabled="unembargo_in_progress"
           :to="fileBrowserLink"
           exact
         >
@@ -156,6 +156,7 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.version);
+const unembargo_in_progress = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
 
 const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
   if (!currentDandiset.value) {

@@ -377,7 +377,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     def users(self, request, dandiset__pk):  # noqa: C901
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
-            if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+            if dandiset.unembargo_in_progress:
                 raise DandisetUnembargoInProgressError
 
             # Verify that the user is currently an owner

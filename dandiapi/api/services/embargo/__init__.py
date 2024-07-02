@@ -8,11 +8,12 @@ from botocore.config import Config
 from django.conf import settings
 from django.db import transaction
 
-from dandiapi.api.mail import send_dandiset_unembargoed_message, send_dandisets_to_unembargo_message
+from dandiapi.api.mail import send_dandiset_unembargoed_message
 from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.storage import get_boto_client
+from dandiapi.api.tasks import unembargo_dandiset_task
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -119,10 +120,8 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
     if dandiset.uploads.count():
         raise DandisetActiveUploadsError
 
-    # A scheduled task will pick up any new dandisets with this status
-    Dandiset.objects.filter(pk=dandiset.pk).update(
-        embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
-    )
-
-    # Send initial email to ensure it's seen in a timely manner
-    send_dandisets_to_unembargo_message(dandisets=[dandiset])
+    with transaction.atomic():
+        Dandiset.objects.filter(pk=dandiset.pk).update(
+            embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+        )
+        transaction.on_commit(lambda: unembargo_dandiset_task.delay(dandiset.pk))
