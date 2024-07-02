@@ -43,8 +43,17 @@ def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
     return social_user['username']
 
 
-def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
-    email_message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
+def build_message(  # noqa: PLR0913
+    to: list[str],
+    subject: str,
+    message: str,
+    html_message: str | None = None,
+    cc: list[str] | None = None,
+    bcc: list[str] | None = None,
+):
+    email_message = mail.EmailMultiAlternatives(
+        subject=subject, body=message, to=to, cc=cc, bcc=bcc
+    )
     if html_message is not None:
         email_message.attach_alternative(html_message, 'text/html')
     return email_message
@@ -204,5 +213,31 @@ def build_dandiset_unembargoed_message(dandiset: Dandiset):
 def send_dandiset_unembargoed_message(dandiset: Dandiset):
     logger.info('Sending dandisets unembargoed message to dandiset %s owners.', dandiset.identifier)
     messages = [build_dandiset_unembargoed_message(dandiset)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_dandiset_unembargo_failed_message(dandiset: Dandiset):
+    dandiset_context = {
+        'identifier': dandiset.identifier,
+    }
+
+    render_context = {**BASE_RENDER_CONTEXT, 'dandiset': dandiset_context}
+    html_message = render_to_string('api/mail/dandiset_unembargo_failed.html', render_context)
+    return build_message(
+        subject=f'DANDI: Unembargo failed for dandiset {dandiset.identifier}',
+        message=strip_tags(html_message),
+        html_message=html_message,
+        to=[owner.email for owner in dandiset.owners],
+        bcc=[settings.DANDI_DEV_EMAIL],
+    )
+
+
+def send_dandiset_unembargo_failed_message(dandiset: Dandiset):
+    logger.info(
+        'Sending dandiset unembargo failed message for dandiset %s to dandiset owners and devs',
+        dandiset.identifier,
+    )
+    messages = [build_dandiset_unembargo_failed_message(dandiset)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)

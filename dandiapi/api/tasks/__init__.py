@@ -4,6 +4,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 
 from dandiapi.api.doi import delete_doi
+from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
     write_assets_yaml,
@@ -82,4 +83,10 @@ def unembargo_dandiset_task(dandiset_id: int):
     from dandiapi.api.services.embargo import unembargo_dandiset
 
     ds = Dandiset.objects.get(pk=dandiset_id)
-    unembargo_dandiset(ds)
+
+    # If the unembargo fails for any reason, send an email, but continue the error propagation
+    try:
+        unembargo_dandiset(ds)
+    except Exception:
+        send_dandiset_unembargo_failed_message(ds)
+        raise

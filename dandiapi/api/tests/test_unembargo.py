@@ -14,6 +14,7 @@ from dandiapi.api.services.embargo import (
 )
 from dandiapi.api.services.embargo.exceptions import DandisetActiveUploadsError
 from dandiapi.api.services.exceptions import DandiError
+from dandiapi.api.tasks import unembargo_dandiset_task
 
 if TYPE_CHECKING:
     from dandiapi.api.models.asset import AssetBlob
@@ -162,3 +163,19 @@ def test_unembargo_dandiset(
     owner_email_set = {user.email for user in owners}
     mailoutbox_to_email_set = set(mailoutbox[0].to)
     assert owner_email_set == mailoutbox_to_email_set
+
+
+@pytest.mark.django_db()
+def test_unembargo_dandiset_task_failure(draft_version_factory, mailoutbox):
+    # Intentionally set the status to embargoed so the task will fail
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    ds: Dandiset = draft_version.dandiset
+
+    with pytest.raises(DandiError):
+        unembargo_dandiset_task.delay(ds.pk)
+
+    assert mailoutbox
+    assert 'Unembargo failed' in mailoutbox[0].subject
+    payload = mailoutbox[0].message().get_payload()[0].get_payload()
+    assert ds.identifier in payload
+    assert 'error during the unembargo' in payload
