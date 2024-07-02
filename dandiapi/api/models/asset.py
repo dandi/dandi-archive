@@ -218,10 +218,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         if self.path != path:
             return True
 
-        if self.metadata != metadata:
-            return True
-
-        return False
+        return self.metadata != metadata
 
     @staticmethod
     def dandi_asset_id(asset_id: str | uuid.UUID):
