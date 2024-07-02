@@ -1,16 +1,18 @@
 from __future__ import annotations
-from dandiapi.api.models import UserMetadata
-from django.contrib.auth.models import User
 
+from django.contrib.auth.models import User
 import pytest
+
+from dandiapi.api.models import UserMetadata
+
 
 @pytest.mark.django_db()
 def test_stats_baseline(api_client):
     assert api_client.get('/api/stats/').data == {
         'dandiset_count': 0,
         'published_dandiset_count': 0,
-        # django-guardian automatically creates an AnonymousUser
-        'user_count': 1,
+        # django-guardian automatically creates an AnonymousUser, but user is not approved
+        'user_count': 0,
         'size': 0,
     }
 
@@ -34,6 +36,8 @@ def test_stats_published(api_client, published_version_factory):
 
 @pytest.mark.django_db()
 def test_stats_user(api_client, user):
+    # Reset the User table for test
+    User.objects.all().delete()
 
     # Create users with different statuses
     approved_user_count = 0
