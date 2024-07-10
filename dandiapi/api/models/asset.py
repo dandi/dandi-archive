@@ -218,7 +218,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         if self.path != path:
             return True
 
-        if self.metadata != metadata:
+        if self.metadata != metadata:  # noqa: SIM103
             return True
 
         return False
