@@ -40,7 +40,8 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'dandischema~=0.10.1',
+        # Pin dandischema to exact version to make explicit which schema version is being used
+        'dandischema==0.10.1',  # schema version 0.6.7
         'django~=4.1.0',
         'django-admin-display',
         # Require 0.58.0 as it is the first version to support postgres' native
@@ -67,7 +68,7 @@ setup(
         # Production-only
         'django-composed-configuration[prod]>=0.23.0',
         'django-s3-file-field[s3]>=1.0.0',
-        'django-storages[s3]>=1.14.3',
+        'django-storages[s3]==1.14.3',
         'gunicorn',
         # Development-only, but required
         'django-minio-storage',
