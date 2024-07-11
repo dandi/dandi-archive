@@ -108,6 +108,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
                 {
                     'name': f'{faker.Faker().last_name()}, {faker.Faker().first_name()}',
                     'roleName': ['dcite:ContactPerson'],
+                    'email': faker.Faker().email(),
                     'schemaKey': 'Person',
                 }
             ],
