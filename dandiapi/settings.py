@@ -167,6 +167,11 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
         }
     }
 
+    @staticmethod
+    def mutate_configuration(configuration: ComposedConfiguration):
+        # use md5 in testing for quicker user creation
+        configuration.PASSWORD_HASHERS.insert(0, 'django.contrib.auth.hashers.MD5PasswordHasher')
+
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
     pass
