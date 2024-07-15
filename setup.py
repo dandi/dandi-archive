@@ -41,7 +41,7 @@ setup(
     install_requires=[
         'celery',
         # Pin dandischema to exact version to make explicit which schema version is being used
-        'dandischema==0.10.1',  # schema version 0.6.7
+        'dandischema==0.10.2',  # schema version 0.6.8
         'django~=4.1.0',
         'django-admin-display',
         # Require 0.58.0 as it is the first version to support postgres' native
