@@ -1,3 +1,19 @@
+# v0.3.88 (Mon Jul 15 2024)
+
+#### 🐛 Bug Fix
+
+- Bump dandischema to 0.10.2 (schema version 0.6.8) [#1976](https://github.com/dandi/dandi-archive/pull/1976) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Pin updated dependencies [#1977](https://github.com/dandi/dandi-archive/pull/1977) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Suppress lint error (SIM103) [#1973](https://github.com/dandi/dandi-archive/pull/1973) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Remove File to avoid confusion [#1972](https://github.com/dandi/dandi-archive/pull/1972) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.87 (Fri Jun 21 2024)
 
 #### 🐛 Bug Fix
