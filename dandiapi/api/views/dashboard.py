@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -7,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Exists, OuterRef
-from django.http import HttpRequest, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
@@ -80,6 +81,26 @@ class DashboardView(DashboardMixin, TemplateView):
             .filter(metadata__status=UserMetadata.Status.APPROVED)
             .order_by('-date_joined')
         )
+
+
+def mailchimp_csv_view(request: HttpRequest) -> HttpResponse:
+    """Generate a Mailchimp-compatible CSV file of all active users."""
+    # In production, there's a placeholder user with a blank email that we want
+    # to avoid.
+    users = User.objects.filter(is_active=True).exclude(email='')
+    data = users.values_list('email', 'first_name', 'last_name')
+
+    response = HttpResponse(
+        content_type='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename="dandi_users_mailchimp.csv"',
+        },
+    )
+    writer = csv.writer(response)
+    writer.writerow(('Email Address', 'First Name', 'Last Name'))
+    writer.writerows(data)
+
+    return response
 
 
 @require_http_methods(['GET', 'POST'])
