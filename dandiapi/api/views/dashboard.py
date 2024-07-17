@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Exists, OuterRef
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponseRedirect, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 from django.views.generic.base import TemplateView
@@ -83,22 +83,35 @@ class DashboardView(DashboardMixin, TemplateView):
         )
 
 
-def mailchimp_csv_view(request: HttpRequest) -> HttpResponse:
+def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     """Generate a Mailchimp-compatible CSV file of all active users."""
     # In production, there's a placeholder user with a blank email that we want
     # to avoid.
     users = User.objects.filter(is_active=True).exclude(email='')
     data = users.values_list('email', 'first_name', 'last_name').iterator()
 
-    response = HttpResponse(
-        content_type='text/csv',
+    def streaming_output():
+        """A generator that "streams" CSV rows using a pseudo-buffer."""
+
+        # This class implements a filelike's write() interface to provide a way
+        # for the CSV writer to "return" the CSV lines as strings.
+        class Echo:
+            def write(self, value):
+                return value
+
+        # Yield back the rows of the CSV file.
+        writer = csv.writer(Echo())
+        yield writer.writerow(('Email Address', 'First Name', 'Last Name'))
+        for row in data:
+            yield writer.writerow(data)
+
+    response = StreamingHttpResponse(
+        streaming_output(),
+        content_type='text/plain',
         headers={
             'Content-Disposition': 'attachment; filename="dandi_users_mailchimp.csv"',
         },
     )
-    writer = csv.writer(response)
-    writer.writerow(('Email Address', 'First Name', 'Last Name'))
-    writer.writerows(data)
 
     return response
 
