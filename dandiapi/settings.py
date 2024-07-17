@@ -169,7 +169,9 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
 
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration):
-        # use md5 in testing for quicker user creation
+        # use md5 in testing for quicker user creation.
+        # TODO: remove this when it is implemented upstream
+        # Issue: https://github.com/kitware-resonant/django-composed-configuration/issues/211
         configuration.PASSWORD_HASHERS.insert(0, 'django.contrib.auth.hashers.MD5PasswordHasher')
 
 
