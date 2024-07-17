@@ -88,7 +88,7 @@ def mailchimp_csv_view(request: HttpRequest) -> HttpResponse:
     # In production, there's a placeholder user with a blank email that we want
     # to avoid.
     users = User.objects.filter(is_active=True).exclude(email='')
-    data = users.values_list('email', 'first_name', 'last_name')
+    data = users.values_list('email', 'first_name', 'last_name').iterator()
 
     response = HttpResponse(
         content_type='text/csv',
