@@ -88,7 +88,9 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     # In production, there's a placeholder user with a blank email that we want
     # to avoid.
     users = User.objects.filter(is_active=True).exclude(email='')
-    data = users.values_list('email', 'first_name', 'last_name').iterator()
+
+    fieldnames = ['email', 'first_name', 'last_name']
+    data = users.values(*fieldnames).iterator()
 
     def streaming_output():
         """A generator that "streams" CSV rows using a pseudo-buffer."""
@@ -100,10 +102,10 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
                 return value
 
         # Yield back the rows of the CSV file.
-        writer = csv.writer(Echo())
-        yield writer.writerow(('Email Address', 'First Name', 'Last Name'))
+        writer = csv.DictWriter(Echo(), fieldnames=fieldnames)
+        yield writer.writeheader()
         for row in data:
-            yield writer.writerow(data)
+            yield writer.writerow(row)
 
     response = StreamingHttpResponse(
         streaming_output(),
