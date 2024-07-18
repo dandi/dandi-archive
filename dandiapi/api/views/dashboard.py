@@ -87,7 +87,7 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     """Generate a Mailchimp-compatible CSV file of all active users."""
     # In production, there's a placeholder user with a blank email that we want
     # to avoid.
-    users = User.objects.filter(is_active=True).exclude(email='')
+    users = User.objects.filter(metadata__status=UserMetadata.Status.APPROVED).exclude(email='')
 
     fieldnames = ['email', 'first_name', 'last_name']
     data = users.values(*fieldnames).iterator()
