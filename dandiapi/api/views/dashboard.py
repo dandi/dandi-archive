@@ -92,7 +92,7 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     fieldnames = ['email', 'first_name', 'last_name']
     data = users.values(*fieldnames).iterator()
 
-    def streaming_output():
+    def streaming_output() -> Iterator[str]:
         """A generator that "streams" CSV rows using a pseudo-buffer."""
 
         # This class implements a filelike's write() interface to provide a way
