@@ -90,7 +90,7 @@ def unembargo_dandiset(ds: Dandiset):
 
     # Fetch version to ensure changed embargo_status is included
     # Save version to update metadata through populate_metadata
-    v = Version.objects.get(dandiset=ds, version='draft')
+    v = Version.objects.select_for_update().get(dandiset=ds, version='draft')
     v.save()
     logger.info('Version metadata updated')
 
