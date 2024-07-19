@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.manifests import (
@@ -12,6 +13,7 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.services.metadata import re_extract_asset_metadata
 
 logger = get_task_logger(__name__)
 
@@ -74,3 +76,20 @@ def publish_dandiset_task(dandiset_id: int):
     from dandiapi.api.services.publish import _publish_dandiset
 
     _publish_dandiset(dandiset_id=dandiset_id)
+
+
+@shared_task
+def dispatch_assets_to_re_extract():
+    assets_to_migrate = Asset.objects.prefetch_related('versions').filter(
+        metadata__schemaVersion__lt=settings.DANDI_SCHEMA_VERSION,
+        versions__version='draft',
+    )
+
+    for asset in assets_to_migrate:
+        re_extract_asset_metadata_task.delay(asset_id=asset.id)
+
+
+@shared_task
+def re_extract_asset_metadata_task(asset_id: int):
+    asset = Asset.objects.get(id=asset_id)
+    re_extract_asset_metadata(asset=asset)
