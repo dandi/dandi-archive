@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from botocore.config import Config
 from django.conf import settings
 from django.db import transaction
+from more_itertools import chunked
 
 from dandiapi.api.mail import send_dandiset_unembargoed_message
 from dandiapi.api.models import AssetBlob, Dandiset, Version
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE = 5000
 
 
 def _delete_asset_blob_tags(client: S3Client, blob: str):
@@ -39,25 +41,25 @@ def _delete_asset_blob_tags(client: S3Client, blob: str):
 
 # NOTE: In testing this took ~2 minutes for 100,000 files
 def _remove_dandiset_asset_blob_embargo_tags(dandiset: Dandiset):
-    embargoed_asset_blobs = list(
-        AssetBlob.objects.filter(embargoed=True, assets__versions__dandiset=dandiset).values_list(
-            'blob', flat=True
-        )
+    client = get_boto_client(config=Config(max_pool_connections=100))
+    embargoed_asset_blobs = (
+        AssetBlob.objects.filter(embargoed=True, assets__versions__dandiset=dandiset)
+        .values_list('blob', flat=True)
+        .iterator(chunk_size=ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE)
     )
 
-    client = get_boto_client(config=Config(max_pool_connections=100))
-    with ThreadPoolExecutor(max_workers=100) as e:
-        futures = [
-            e.submit(_delete_asset_blob_tags, client=client, blob=blob)
-            for blob in embargoed_asset_blobs
-        ]
+    # Chunk the blobs so we're never storing a list of all embargoed blobs
+    chunks = chunked(embargoed_asset_blobs, ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE)
+    for chunk in chunks:
+        with ThreadPoolExecutor(max_workers=100) as e:
+            futures = [
+                e.submit(_delete_asset_blob_tags, client=client, blob=blob) for blob in chunk
+            ]
 
-    # Check if any failed and raise exception if so
-    failed = [
-        blob for i, blob in enumerate(embargoed_asset_blobs) if futures[i].exception() is not None
-    ]
-    if failed:
-        raise AssetTagRemovalError('Some blobs failed to remove tags', blobs=failed)
+        # Check if any failed and raise exception if so
+        failed = [blob for i, blob in enumerate(chunk) if futures[i].exception() is not None]
+        if failed:
+            raise AssetTagRemovalError('Some blobs failed to remove tags', blobs=failed)
 
 
 @transaction.atomic()

@@ -9,10 +9,14 @@ import pytest
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.embargo import (
     AssetBlobEmbargoedError,
+    _remove_dandiset_asset_blob_embargo_tags,
     remove_asset_blob_embargoed_tag,
     unembargo_dandiset,
 )
-from dandiapi.api.services.embargo.exceptions import DandisetActiveUploadsError
+from dandiapi.api.services.embargo.exceptions import (
+    AssetTagRemovalError,
+    DandisetActiveUploadsError,
+)
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.tasks import unembargo_dandiset_task
 
@@ -112,6 +116,54 @@ def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory)
     upload_factory(dandiset=ds)
     with pytest.raises(DandisetActiveUploadsError):
         unembargo_dandiset(ds)
+
+
+@pytest.mark.django_db()
+def test_remove_dandiset_asset_blob_embargo_tags_chunks(
+    draft_version_factory,
+    asset_factory,
+    embargoed_asset_blob_factory,
+    mocker,
+):
+    delete_asset_blob_tags_mock = mocker.patch(
+        'dandiapi.api.services.embargo._delete_asset_blob_tags'
+    )
+    chunk_size = mocker.patch('dandiapi.api.services.embargo.ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE', 2)
+
+    draft_version: Version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    ds: Dandiset = draft_version.dandiset
+    for _ in range(chunk_size + 1):
+        asset = asset_factory(blob=embargoed_asset_blob_factory())
+        draft_version.assets.add(asset)
+
+    _remove_dandiset_asset_blob_embargo_tags(dandiset=ds)
+
+    # Assert that _delete_asset_blob_tags was called chunk_size +1 times, to ensure that it works
+    # correctly across chunks
+    assert len(delete_asset_blob_tags_mock.mock_calls) == chunk_size + 1
+
+
+@pytest.mark.django_db()
+def test_delete_asset_blob_tags_fails(
+    draft_version_factory,
+    asset_factory,
+    embargoed_asset_blob_factory,
+    mocker,
+):
+    mocker.patch('dandiapi.api.services.embargo._delete_asset_blob_tags', side_effect=ValueError)
+    draft_version: Version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    ds: Dandiset = draft_version.dandiset
+    asset = asset_factory(blob=embargoed_asset_blob_factory())
+    draft_version.assets.add(asset)
+
+    # Check that if an exception within `_delete_asset_blob_tags` is raised, it's propagated upwards
+    # as an AssetTagRemovalError
+    with pytest.raises(AssetTagRemovalError):
+        _remove_dandiset_asset_blob_embargo_tags(dandiset=ds)
 
 
 @pytest.mark.django_db()
