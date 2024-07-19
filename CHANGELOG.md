@@ -1,3 +1,15 @@
+# v0.3.89 (Fri Jul 19 2024)
+
+#### 🐛 Bug Fix
+
+- Add dashboard link to view to emit user list as Mailchimp-compatible CSV [#1979](https://github.com/dandi/dandi-archive/pull/1979) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.88 (Mon Jul 15 2024)
 
 #### 🐛 Bug Fix
