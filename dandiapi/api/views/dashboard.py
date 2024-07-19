@@ -112,7 +112,7 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
 
     return StreamingHttpResponse(
         streaming_output(),
-        content_type='text/plain',
+        content_type='text/csv',
         headers={
             'Content-Disposition': 'attachment; filename="dandi_users_mailchimp.csv"',
         },
