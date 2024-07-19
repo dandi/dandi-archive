@@ -87,9 +87,10 @@ class DashboardView(DashboardMixin, TemplateView):
 
 def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     """Generate a Mailchimp-compatible CSV file of all active users."""
-    # In production, there's a placeholder user with a blank email that we want
-    # to avoid.
-    users = User.objects.filter(metadata__status=UserMetadata.Status.APPROVED).exclude(email='')
+    # Exclude the django-guardian anonymous user account.
+    users = User.objects.filter(metadata__status=UserMetadata.Status.APPROVED).exclude(
+        username='AnonymousUser'
+    )
 
     fieldnames = ['email', 'first_name', 'last_name']
     data = users.values(*fieldnames).iterator()
