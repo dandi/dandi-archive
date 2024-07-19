@@ -18,6 +18,8 @@ from dandiapi.api.models import Asset, AssetBlob, Upload, UserMetadata, Version
 from dandiapi.api.views.users import social_account_to_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from allauth.socialaccount.models import SocialAccount
 
 
@@ -93,7 +95,7 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
     data = users.values(*fieldnames).iterator()
 
     def streaming_output() -> Iterator[str]:
-        """A generator that "streams" CSV rows using a pseudo-buffer."""
+        """Stream out the header and CSV rows (for consumption by streaming response)."""
 
         # This class implements a filelike's write() interface to provide a way
         # for the CSV writer to "return" the CSV lines as strings.
@@ -107,15 +109,13 @@ def mailchimp_csv_view(request: HttpRequest) -> StreamingHttpResponse:
         for row in data:
             yield writer.writerow(row)
 
-    response = StreamingHttpResponse(
+    return StreamingHttpResponse(
         streaming_output(),
         content_type='text/plain',
         headers={
             'Content-Disposition': 'attachment; filename="dandi_users_mailchimp.csv"',
         },
     )
-
-    return response
 
 
 @require_http_methods(['GET', 'POST'])
