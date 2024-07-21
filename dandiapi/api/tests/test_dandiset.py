@@ -734,21 +734,31 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
     assert response.data == f'Invalid Identifier {identifier}'
 
 
-@pytest.mark.parametrize(
-    ('embargo_status'),
-    [choice[0] for choice in Dandiset.EmbargoStatus.choices],
-    ids=[choice[1] for choice in Dandiset.EmbargoStatus.choices],
-)
 @pytest.mark.django_db()
-def test_dandiset_rest_delete(api_client, draft_version_factory, user, embargo_status):
-    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
+def test_dandiset_rest_delete(api_client, draft_version_factory, user):
     api_client.force_authenticate(user=user)
-    assign_perm('owner', user, draft_version.dandiset)
 
+    # Ensure that open or embargoed dandisets can be deleted
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.OPEN)
+    assign_perm('owner', user, draft_version.dandiset)
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert response.status_code == 204
-
     assert not Dandiset.objects.all()
+
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, draft_version.dandiset)
+    response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
+    assert response.status_code == 204
+    assert not Dandiset.objects.all()
+
+    # Ensure that currently unembargoing dandisets can't be deleted
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
+    assert response.status_code == 400
+    assert Dandiset.objects.count() == 1
 
 
 @pytest.mark.django_db()
@@ -762,7 +772,7 @@ def test_dandiset_rest_delete_with_zarrs(
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, draft_version.dandiset)
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
-    asset = draft_asset_factory(blob=None, embargoed_blob=None, zarr=zarr)
+    asset = draft_asset_factory(blob=None, zarr=zarr)
 
     # Add paths
     add_asset_paths(asset=asset, version=draft_version)
@@ -831,14 +841,20 @@ def test_dandiset_rest_get_owners_no_social_account(api_client, dandiset, user):
     assert resp.data == [{'username': user.username, 'name': f'{user.first_name} {user.last_name}'}]
 
 
+@pytest.mark.parametrize(
+    'embargo_status',
+    [Dandiset.EmbargoStatus.OPEN, Dandiset.EmbargoStatus.EMBARGOED],
+)
 @pytest.mark.django_db()
 def test_dandiset_rest_change_owner(
     api_client,
-    draft_version,
+    draft_version_factory,
     user_factory,
     social_account_factory,
     mailoutbox,
+    embargo_status,
 ):
+    draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
     dandiset = draft_version.dandiset
     user1 = user_factory()
     user2 = user_factory()
@@ -866,6 +882,37 @@ def test_dandiset_rest_change_owner(
     assert mailoutbox[0].to == [user1.email]
     assert mailoutbox[1].subject == f'Added to Dandiset "{dandiset.draft_version.name}"'
     assert mailoutbox[1].to == [user2.email]
+
+
+@pytest.mark.django_db()
+def test_dandiset_rest_change_owners_unembargoing(
+    api_client,
+    draft_version_factory,
+    user_factory,
+    social_account_factory,
+):
+    """Test that unembargoing a dandiset prevents user modification."""
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    dandiset = draft_version.dandiset
+    user1 = user_factory()
+    user2 = user_factory()
+    social_account1 = social_account_factory(user=user1)
+    social_account2 = social_account_factory(user=user2)
+    assign_perm('owner', user1, dandiset)
+    api_client.force_authenticate(user=user1)
+
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [
+            {'username': social_account1.extra_data['login']},
+            {'username': social_account2.extra_data['login']},
+        ],
+        format='json',
+    )
+
+    assert resp.status_code == 400
 
 
 @pytest.mark.django_db()

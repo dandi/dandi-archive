@@ -40,5 +40,5 @@ yarn migrate 0.5.1
 
 ### Environment Variables
 
-- VUE_APP_SERVER_DOWNTIME_MESSAGE
+- VITE_APP_SERVER_DOWNTIME_MESSAGE
   - A custom error message displayed when the backend server can't be reached.

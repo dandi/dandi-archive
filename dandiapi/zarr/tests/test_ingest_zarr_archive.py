@@ -86,7 +86,7 @@ def test_ingest_zarr_archive_force(zarr_archive_factory, zarr_file_factory):
 def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, draft_asset_factory):
     # Create zarr and asset
     zarr: ZarrArchive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
-    asset = draft_asset_factory(zarr=zarr, blob=None, embargoed_blob=None)
+    asset = draft_asset_factory(zarr=zarr, blob=None)
 
     # Assert asset size, metadata
     assert asset.size == 0

@@ -21,10 +21,10 @@
             <span class="font-weight-bold">
               permanent
             </span>
-            action and is not undoable. Once a dandiset has been unembargoed,
+            action and cannot be undone. Once a dandiset has been unembargoed,
             it cannot be re-embargoed.
             <br><br>
-            Note: this may take a while if your dandiset is large.
+            Note: this may take several days to complete.
           </span>
         </v-card-text>
         <v-card-text>

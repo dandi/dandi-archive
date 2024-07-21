@@ -15,9 +15,9 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
-from dandiapi.api.models import AssetBlob, Dandiset, EmbargoedUpload, Upload
-from dandiapi.api.models.asset import EmbargoedAssetBlob
+from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.permissions import IsApproved
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
@@ -136,6 +136,10 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     if response:
         return response
 
+    # Ensure dandiset not in the process of unembargo
+    if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+        raise DandisetUnembargoInProgressError
+
     logging.info(
         'Starting upload initialization of size %s, ETag %s to dandiset %s',
         content_size,
@@ -150,22 +154,10 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             status=status.HTTP_409_CONFLICT,
             headers={'Location': asset_blobs.first().blob_id},
         )
-    if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-        embargoed_asset_blobs = EmbargoedAssetBlob.objects.filter(dandiset=dandiset, etag=etag)
-        if embargoed_asset_blobs.exists():
-            return Response(
-                'Blob already exists.',
-                status=status.HTTP_409_CONFLICT,
-                headers={'Location': embargoed_asset_blobs.first().blob_id},
-            )
+
     logging.info('Blob with ETag %s does not yet exist', etag)
 
-    if dandiset.embargo_status == Dandiset.EmbargoStatus.OPEN:
-        upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
-    else:
-        upload, initialization = EmbargoedUpload.initialize_multipart_upload(
-            etag, content_size, dandiset
-        )
+    upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
     logging.info('Upload of ETag %s initialized', etag)
     upload.save()
     logging.info('Upload of ETag %s saved', etag)
@@ -195,12 +187,9 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     request_serializer.is_valid(raise_exception=True)
     parts: list[TransferredPart] = request_serializer.save()
 
-    try:
-        upload = Upload.objects.get(upload_id=upload_id)
-    except Upload.DoesNotExist:
-        upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
-        if not request.user.has_perm('owner', upload.dandiset):
-            raise Http404 from None
+    upload: Upload = get_object_or_404(Upload, upload_id=upload_id)
+    if upload.embargoed and not request.user.has_perm('owner', upload.dandiset):
+        raise Http404 from None
 
     completion = TransferredParts(
         object_key=upload.blob.name,
@@ -235,12 +224,9 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
 
     Also starts the asynchronous checksum calculation process.
     """
-    try:
-        upload = Upload.objects.get(upload_id=upload_id)
-    except Upload.DoesNotExist:
-        upload = get_object_or_404(EmbargoedUpload, upload_id=upload_id)
-        if not request.user.has_perm('owner', upload.dandiset):
-            raise Http404 from None
+    upload = get_object_or_404(Upload, upload_id=upload_id)
+    if upload.embargoed and not request.user.has_perm('owner', upload.dandiset):
+        raise Http404 from None
 
     # Verify that the upload was successful
     if not upload.object_key_exists():
@@ -265,20 +251,8 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
                 etag=upload.etag, size=upload.size
             )
         except AssetBlob.DoesNotExist:
-            if type(upload) is EmbargoedUpload:
-                # Perhaps another embargoed upload completed before this one
-                try:
-                    asset_blob = EmbargoedAssetBlob.objects.select_for_update(no_key=True).get(
-                        etag=upload.etag, size=upload.size, dandiset=upload.dandiset
-                    )
-                except EmbargoedAssetBlob.DoesNotExist:
-                    asset_blob = upload.to_embargoed_asset_blob()
-                    asset_blob.save()
-            elif type(upload) is Upload:
-                asset_blob = upload.to_asset_blob()
-                asset_blob.save()
-            else:
-                raise ValueError(f'Unknown Upload type {type(upload)}') from None
+            asset_blob = upload.to_asset_blob()
+            asset_blob.save()
 
         # Clean up the upload
         upload.delete()

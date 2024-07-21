@@ -4,11 +4,13 @@ import datetime
 from time import sleep
 from typing import TYPE_CHECKING
 
+from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 
@@ -84,6 +86,7 @@ def test_draft_version_metadata_computed(draft_version: Version):
         ),
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': draft_version.dandiset.created.isoformat(),
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -127,6 +130,7 @@ def test_published_version_metadata_computed(published_version: Version):
         ),
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': published_version.dandiset.created.isoformat(),
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -389,9 +393,7 @@ def test_version_size(
     zarr_archive_factory,
 ):
     version.assets.add(asset_factory(blob=asset_blob_factory(size=100)))
-    version.assets.add(
-        asset_factory(blob=None, embargoed_blob=embargoed_asset_blob_factory(size=200))
-    )
+    version.assets.add(asset_factory(blob=embargoed_asset_blob_factory(size=200)))
     version.assets.add(asset_factory(blob=None, zarr=zarr_archive_factory(size=400)))
     add_version_asset_paths(version=version)
 
@@ -558,6 +560,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'url': url,
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
@@ -603,6 +606,32 @@ def test_version_rest_update(api_client, user, draft_version):
 
 
 @pytest.mark.django_db()
+def test_version_rest_update_unembargoing(api_client, user, draft_version_factory):
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_name = 'A unique and special name!'
+    new_metadata = {
+        '@context': (
+            'https://raw.githubusercontent.com/dandi/schema/master/releases/'
+            f'{settings.DANDI_SCHEMA_VERSION}/context.json'
+        ),
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'num': 123,
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': new_name},
+        format='json',
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
 def test_version_rest_update_published_version(api_client, user, published_version):
     assign_perm('owner', user, published_version.dandiset)
     api_client.force_authenticate(user=user)
@@ -637,6 +666,94 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
     )
 
 
+@pytest.mark.parametrize(
+    ('access'),
+    [
+        'some value',
+        123,
+        None,
+        [],
+        ['a', 'b'],
+        ['a', 'b', {}],
+        [{'schemaKey': 'AccessRequirements', 'status': 'foobar'}],
+    ],
+)
+@pytest.mark.django_db()
+def test_version_rest_update_access_values(api_client, user, draft_version, access):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    new_metadata = {**draft_version.metadata, 'access': access}
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+        format='json',
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+
+    access = draft_version.metadata['access']
+    assert access != new_metadata['access']
+    assert access[0]['schemaKey'] == 'AccessRequirements'
+    assert (
+        access[0]['status'] == AccessType.EmbargoedAccess.value
+        if draft_version.dandiset.embargoed
+        else AccessType.OpenAccess.value
+    )
+
+
+@pytest.mark.django_db()
+def test_version_rest_update_access_missing(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    # Check that the field missing entirely is also okay
+    new_metadata = {**draft_version.metadata}
+    new_metadata.pop('access', None)
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+        format='json',
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+    assert 'access' in draft_version.metadata
+    access = draft_version.metadata['access']
+    assert access[0]['schemaKey'] == 'AccessRequirements'
+    assert (
+        access[0]['status'] == AccessType.EmbargoedAccess.value
+        if draft_version.dandiset.embargoed
+        else AccessType.OpenAccess.value
+    )
+
+
+@pytest.mark.django_db()
+def test_version_rest_update_access_valid(api_client, user, draft_version):
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    # Check that extra fields persist
+    new_metadata = {**draft_version.metadata, 'access': [{'extra': 'field'}]}
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': draft_version.name},
+        format='json',
+    )
+    assert resp.status_code == 200
+    draft_version.refresh_from_db()
+    access = draft_version.metadata['access']
+    assert access != new_metadata['access']
+    assert access[0]['schemaKey'] == 'AccessRequirements'
+    assert (
+        access[0]['status'] == AccessType.EmbargoedAccess.value
+        if draft_version.dandiset.embargoed
+        else AccessType.OpenAccess.value
+    )
+
+    assert access[0]['extra'] == 'field'
+
+
 @pytest.mark.django_db()
 def test_version_rest_publish(
     api_client: APIClient,
@@ -669,6 +786,36 @@ def test_version_rest_publish(
 
     draft_version.refresh_from_db()
     assert draft_version.status == Version.Status.PUBLISHING
+
+
+@pytest.mark.django_db()
+def test_version_rest_publish_embargo(api_client: APIClient, user: User, draft_version_factory):
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db()
+def test_version_rest_publish_unembargoing(
+    api_client: APIClient, user: User, draft_version_factory
+):
+    draft_version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user=user)
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/publish/'
+    )
+    assert resp.status_code == 400
 
 
 @pytest.mark.django_db()

@@ -18,6 +18,7 @@ from dandiapi.api.views import (
     authorize_view,
     blob_read_view,
     info_view,
+    mailchimp_csv_view,
     root_content_view,
     stats_view,
     upload_complete_view,
@@ -105,6 +106,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
+    path('dashboard/mailchimp/', mailchimp_csv_view, name='mailchimp-csv'),
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),

@@ -21,7 +21,6 @@ from dandiapi.api.models import (
     AssetBlob,
     AuditRecord,
     Dandiset,
-    EmbargoedAssetBlob,
     Upload,
     UserMetadata,
     Version,
@@ -189,33 +188,17 @@ class AssetBlobAdmin(admin.ModelAdmin):
         return super().get_queryset(request).prefetch_related('assets')
 
 
-@admin.register(EmbargoedAssetBlob)
-class EmbargoedAssetBlobAdmin(AssetBlobAdmin):
-    list_display = [
-        'id',
-        'blob_id',
-        'dandiset',
-        'blob',
-        'references',
-        'size',
-        'sha256',
-        'modified',
-        'created',
-    ]
-
-
 class AssetBlobInline(LimitedTabularInline):
     model = AssetBlob
 
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['blob', 'embargoed_blob', 'zarr', 'versions']
+    autocomplete_fields = ['blob', 'zarr', 'versions']
     fields = [
         'asset_id',
         'path',
         'blob',
-        'embargoed_blob',
         'zarr',
         'metadata',
         'versions',

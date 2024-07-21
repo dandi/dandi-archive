@@ -102,10 +102,10 @@
               <v-list>
                 <v-list-item>
                   Install the Python client (DANDI CLI)
-                  in a Python 3.7+ environment using command:
+                  in a Python 3.8+ environment using command:
                 </v-list-item>
                 <v-list-item>
-                  <kbd>pip install "dandi>=0.13.0"</kbd>
+                  <kbd>pip install "dandi>=0.60.0"</kbd>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-content>

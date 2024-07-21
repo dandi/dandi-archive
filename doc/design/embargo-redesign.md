@@ -71,9 +71,9 @@ sequenceDiagram
     end
 ```
 
-## Change to Un-Embargo Procedure
+## Change to Unembargo Procedure
 
-Once the time comes to *********un-embargo********* those files, all that is required is to remove the `embargoed` tag from all of the objects. This can be achieved by an [S3 Batch Operations Job](https://docs.aws.amazon.com/AmazonS3/latest/userguide/batch-ops-create-job.html), in which the list of files is specified (all files belonging to the dandiset), and the desired action is specified (delete/replace tags).
+Once the time comes to *********unembargo********* those files, all that is required is to remove the `embargoed` tag from all of the objects. This can be achieved by an [S3 Batch Operations Job](https://docs.aws.amazon.com/AmazonS3/latest/userguide/batch-ops-create-job.html), in which the list of files is specified (all files belonging to the dandiset), and the desired action is specified (delete/replace tags).
 
 The benefit of this approach is that once the files are uploaded, no further movement is required to change the embargo state, eliminating the storage, egress, and time costs associated with unembargoing from a second bucket. Using S3 Batch Operations to perform the untagging also means we can rely on AWS’s own error reporting mechanisms, while retrying any failed operations requires only minimal engineering effort within the Archive codebase.
 
@@ -85,7 +85,7 @@ The benefit of this approach is that once the files are uploaded, no further mov
 4. If there are no failures, the Job ID is set to null in the DB model, and the embargo status, metadata, etc. is updated to reflect that the dandiset is now `OPEN`.
 5. Otherwise, an exception is raised and attended to by the developers.
 
-A diagram of the un-embargo procedure (pertaining to just the objects) is shown below
+A diagram of the unembargo procedure (pertaining to just the objects) is shown below
 
 ```mermaid
 sequenceDiagram
@@ -95,8 +95,8 @@ sequenceDiagram
     participant Worker
     participant S3
 
-    Client ->> Server: Un-embargo dandiset
-    Server ->> Worker: Dispatch un-embargo task
+    Client ->> Server: Unembargo dandiset
+    Server ->> Worker: Dispatch unembargo task
     Worker ->> S3: List of all dandiset objects are aggregated into a manifest
     Worker ->> S3: S3 Batch Operation job created
     S3 ->> Worker: Job ID is returned
