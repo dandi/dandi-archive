@@ -50,9 +50,10 @@ def build_message(  # noqa: PLR0913
     html_message: str | None = None,
     cc: list[str] | None = None,
     bcc: list[str] | None = None,
+    reply_to: list[str] | None = None,
 ):
     email_message = mail.EmailMultiAlternatives(
-        subject=subject, body=message, to=to, cc=cc, bcc=bcc
+        subject=subject, body=message, to=to, cc=cc, bcc=bcc, reply_to=reply_to
     )
     if html_message is not None:
         email_message.attach_alternative(html_message, 'text/html')
@@ -230,6 +231,7 @@ def build_dandiset_unembargo_failed_message(dandiset: Dandiset):
         html_message=html_message,
         to=[owner.email for owner in dandiset.owners],
         bcc=[settings.DANDI_DEV_EMAIL],
+        reply_to=[ADMIN_EMAIL],
     )
 
 
