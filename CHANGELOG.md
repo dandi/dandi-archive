@@ -1,3 +1,15 @@
+# v0.3.90 (Mon Jul 22 2024)
+
+#### 🐛 Bug Fix
+
+- Automate dandiset unembargo [#1965](https://github.com/dandi/dandi-archive/pull/1965) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.89 (Fri Jul 19 2024)
 
 #### 🐛 Bug Fix
