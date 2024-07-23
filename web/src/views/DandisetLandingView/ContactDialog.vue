@@ -29,7 +29,7 @@
     <v-card
     >
       <v-card-title class="pb-0" style="min-width: fit-content;">
-        Select an e-mail Recipient!
+        Select an e-mail recipient:
       </v-card-title>
       <v-list>
         <v-tooltip
@@ -79,7 +79,7 @@
                 >
                   mdi-card-account-mail
                 </v-icon>
-                Contact Person
+                Dandiset Contact Person
               </v-list-item>
             </div>
             </template>
