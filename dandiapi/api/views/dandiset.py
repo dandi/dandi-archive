@@ -426,6 +426,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 owner_dict['name'] = owner_account.extra_data.get('name', None)
                 owner_dict['email'] = (
                     owner_account.extra_data['email']
+                    # Only logged-in users can see owners' email addresses
                     if request.user.is_authenticated and 'email' in owner_account.extra_data
                     else None
                 )
