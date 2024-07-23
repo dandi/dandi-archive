@@ -35,7 +35,7 @@
         <v-tooltip
           :disabled="!(loggedIn() || !isDisabled(owners))"
           open-on-hover
-          right
+          left
         >
           <template #activator="{ on }">
             <div
@@ -63,7 +63,7 @@
         <v-tooltip
             :disabled=!isDisabled(contacts)
             open-on-hover
-            right
+            left
           >
 
           <template #activator="{ on }">
