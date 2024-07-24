@@ -308,7 +308,6 @@ def test_publish_task(
     draft_asset_factory,
     published_asset_factory,
     draft_version_factory,
-    user_factory,
     django_capture_on_commit_callbacks,
 ):
     # Create a draft_version in PUBLISHING state
@@ -326,8 +325,6 @@ def test_publish_task(
 
     # Ensure that the number of versions increases by 1 after publishing
     starting_version_count = draft_version.dandiset.versions.count()
-
-    user = user_factory()
 
     with django_capture_on_commit_callbacks(execute=True):
         tasks.publish_dandiset_task(draft_version.dandiset.id, user.id)
