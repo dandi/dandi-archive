@@ -295,7 +295,7 @@ def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
 
 
 @pytest.mark.django_db()
-def test_asset_path_publish_version(draft_version_factory, asset_factory, user_factory):
+def test_asset_path_publish_version(draft_version_factory, asset_factory, user):
     version: Version = draft_version_factory()
     asset = asset_factory(path='foo/bar.txt', status=Asset.Status.VALID)
     version.assets.add(asset)
@@ -307,8 +307,6 @@ def test_asset_path_publish_version(draft_version_factory, asset_factory, user_f
     # Pretend this dandiset is locked for publishing
     version.status = Version.Status.PUBLISHING
     version.save()
-
-    user = user_factory()
 
     # Publish
     publish_dandiset_task(version.dandiset.id, user.id)
