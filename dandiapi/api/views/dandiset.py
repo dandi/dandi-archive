@@ -413,9 +413,9 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                         raise ValidationError(f'User {username} not found')
 
             # All owners found
-            owners = user_owners + [acc.user for acc in socialaccount_owners]
-            removed_owners, added_owners = dandiset.set_owners(owners)
             with transaction.atomic():
+                owners = user_owners + [acc.user for acc in socialaccount_owners]
+                removed_owners, added_owners = dandiset.set_owners(owners)
                 dandiset.save()
 
                 if removed_owners or added_owners:
