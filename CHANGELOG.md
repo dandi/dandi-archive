@@ -1,3 +1,15 @@
+# v0.3.91 (Wed Jul 24 2024)
+
+#### 🐛 Bug Fix
+
+- Fix N query problem with VersionStatusFilter [#1986](https://github.com/dandi/dandi-archive/pull/1986) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.90 (Mon Jul 22 2024)
 
 #### 🐛 Bug Fix
