@@ -62,7 +62,7 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         raise NotAllowedError('Cannot delete dandisets with published versions.')
     if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
         raise NotAllowedError('Cannot delete dandisets that are currently being published.')
-    if dandiset.embargo_status == Dandiset.EmbargoStatus.UNEMBARGOING:
+    if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
     # Delete all versions first, so that AssetPath deletion is cascaded

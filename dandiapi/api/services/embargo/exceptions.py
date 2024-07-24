@@ -30,3 +30,9 @@ class UnauthorizedEmbargoAccessError(DandiError):
     message = (
         'Authentication credentials must be provided when attempting to access embargoed dandisets'
     )
+
+
+class AssetTagRemovalError(Exception):
+    def __init__(self, message: str, blobs: list[str]) -> None:
+        super().__init__(message)
+        self.blobs = blobs

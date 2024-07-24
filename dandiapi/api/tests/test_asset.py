@@ -637,7 +637,7 @@ def test_asset_create_embargo(
 
 
 @pytest.mark.django_db()
-def test_asset_create_unembargoing(
+def test_asset_create_unembargo_in_progress(
     api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob
 ):
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
@@ -1122,7 +1122,7 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
 
 
 @pytest.mark.django_db()
-def test_asset_rest_update_unembargoing(
+def test_asset_rest_update_unembargo_in_progress(
     api_client, user, draft_version_factory, asset, embargoed_asset_blob
 ):
     draft_version = draft_version_factory(
@@ -1325,7 +1325,7 @@ def test_asset_rest_delete(api_client, user, draft_version, asset):
 
 
 @pytest.mark.django_db()
-def test_asset_rest_delete_unembargoing(api_client, user, draft_version_factory, asset):
+def test_asset_rest_delete_unembargo_in_progress(api_client, user, draft_version_factory, asset):
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
