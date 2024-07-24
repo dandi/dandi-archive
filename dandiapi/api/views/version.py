@@ -121,7 +121,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 locked_version.save()
 
                 audit_record = AuditRecord.update_metadata(
-                    dandiset=locked_version.dandiset, user=request.user, metadata=locked_version.metadata
+                    dandiset=locked_version.dandiset,
+                    user=request.user,
+                    metadata=locked_version.metadata,
                 )
                 audit_record.save()
 
