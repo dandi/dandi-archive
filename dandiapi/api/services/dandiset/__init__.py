@@ -49,7 +49,7 @@ def create_dandiset(
         draft_version.save()
 
         audit_record = AuditRecord.create_dandiset(
-            dandiset=dandiset, user=user, metadata=version_metadata, embargoed=embargo
+            dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
         )
         audit_record.save()
 
