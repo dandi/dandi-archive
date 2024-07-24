@@ -135,12 +135,17 @@ class VersionStatusFilter(admin.SimpleListFilter):
     title = 'status'
     parameter_name = 'status'
 
-    def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request)
-        for status in qs.values_list('status', flat=True).distinct():
-            count = qs.filter(status=status).count()
-            if count:
-                yield (status, f'{status} ({count})')
+    def lookups(self, *args, **kwargs):
+        # The queryset for VersionAdmin contains unnecessary data,
+        # so just use base queryset from Version.objects
+        qs = (
+            Version.objects.values_list('status')
+            .distinct()
+            .annotate(total=Count('status'))
+            .order_by()
+        )
+        for status, count in qs:
+            yield (status, f'{status} ({count})')
 
     def queryset(self, request, queryset):
         status = self.value()
