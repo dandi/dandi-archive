@@ -292,20 +292,21 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
+            paths = serializer.validated_data
 
             # Generate presigned urls
             logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
-            urls = zarr_archive.generate_upload_urls(serializer.validated_data)
+            urls = zarr_archive.generate_upload_urls(paths)
 
             # Set status back to pending, since with these URLs the zarr could have been changed
             zarr_archive.mark_pending()
             zarr_archive.save()
 
-            audit_record = AuditRecord.upload_zarr(
+            audit_record = AuditRecord.upload_zarr_chunks(
                 dandiset=zarr_archive.dandiset,
                 user=request.user,
                 zarr_archive=zarr_archive,
-                urls=urls,
+                paths=[p['path'] for p in paths],
             )
             audit_record.save()
 

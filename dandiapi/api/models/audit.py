@@ -157,11 +157,11 @@ class AuditRecord(models.Model):
 
     @staticmethod
     def upload_zarr_chunks(
-        *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, urls: list[str]
+        *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, paths: list[str]
     ) -> AuditRecord:
         details = {
             'zarr_id': zarr_archive.id,
-            'num_urls': len(urls),
+            'paths': paths,
         }
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='upload_zarr_chunks', details=details
@@ -173,7 +173,7 @@ class AuditRecord(models.Model):
     ) -> AuditRecord:
         details = {
             'zarr_id': zarr_archive.id,
-            'num_chunks': len(paths),
+            'paths': paths,
         }
         return AuditRecord.make_audit_record(
             dandiset=dandiset, user=user, record_type='delete_zarr_chunks', details=details
