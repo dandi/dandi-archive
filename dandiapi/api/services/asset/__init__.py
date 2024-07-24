@@ -105,7 +105,7 @@ def change_asset(  # noqa: PLR0913
     return new_asset, True
 
 
-def add_asset_to_version(
+def add_asset_to_version(  # noqa: PLR0913, C901
     *,
     user,
     version: Version,
