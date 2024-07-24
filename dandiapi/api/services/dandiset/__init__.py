@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.db import transaction
+from guardian.shortcuts import assign_perm
 
 from dandiapi.api.models.audit import AuditRecord
 from dandiapi.api.models.dandiset import Dandiset
@@ -37,7 +38,7 @@ def create_dandiset(
         dandiset = Dandiset(id=identifier, embargo_status=embargo_status)
         dandiset.full_clean()
         dandiset.save()
-        dandiset.add_owner(user)
+        assign_perm('owner', user, dandiset)
         draft_version = Version(
             dandiset=dandiset,
             name=version_name,
