@@ -26,3 +26,28 @@ services:
     ports:
       - ${DOCKER_MINIO_PORT-9000}:9000
       - ${DOCKER_MINIO_CONSOLE_PORT-9001}:9001
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 10s
+      retries: 10
+
+
+  # Create dev and test buckets
+  createbuckets:
+    image: minio/mc:latest
+    environment:
+      MINIO_ACCESS_KEY: minioAccessKey
+      MINIO_SECRET_KEY: minioSecretKey
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minioAccessKey minioSecretKey;
+      /usr/bin/mc mb myminio/dandi-dandisets --with-versioning;
+      /usr/bin/mc mb myminio/test-dandiapi-dandisets --with-versioning;
+      /usr/bin/mc version enable myminio/dandi-dandisets;
+      /usr/bin/mc version enable myminio/test-dandiapi-dandisets;
+      exit 0;
+      "
