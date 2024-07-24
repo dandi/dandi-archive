@@ -20,7 +20,7 @@ AuditRecordType = Literal[
     'update_asset',
     'remove_asset',
     'create_zarr',
-    'upload_zarr',
+    'upload_zarr_chunks',
     'delete_zarr_chunks',
     'finalize_zarr',
     'unembargo_dandiset',
@@ -144,7 +144,7 @@ class AuditRecord(models.Model):
         )
 
     @staticmethod
-    def upload_zarr(
+    def upload_zarr_chunks(
         *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, urls: list[str]
     ) -> AuditRecord:
         details = {
@@ -152,7 +152,7 @@ class AuditRecord(models.Model):
             'num_urls': len(urls),
         }
         return AuditRecord.make_audit_record(
-            dandiset=dandiset, user=user, record_type='upload_zarr', details=details
+            dandiset=dandiset, user=user, record_type='upload_zarr_chunks', details=details
         )
 
     @staticmethod
