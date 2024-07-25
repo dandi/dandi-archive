@@ -420,13 +420,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 dandiset.save()
 
                 if removed_owners or added_owners:
-                    audit_record = audit.change_owners(
+                    audit.change_owners(
                         dandiset=dandiset,
                         user=request.user,
                         removed_owners=removed_owners,
                         added_owners=added_owners,
                     )
-                    audit_record.save()
 
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 

@@ -121,12 +121,11 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 locked_version.status = Version.Status.PENDING
                 locked_version.save()
 
-                audit_record = audit.update_metadata(
+                audit.update_metadata(
                     dandiset=locked_version.dandiset,
                     user=request.user,
                     metadata=locked_version.metadata,
                 )
-                audit_record.save()
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)

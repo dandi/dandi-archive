@@ -48,10 +48,9 @@ def create_dandiset(
         draft_version.full_clean(validate_constraints=False)
         draft_version.save()
 
-        audit_record = audit.create_dandiset(
+        audit.create_dandiset(
             dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
         )
-        audit_record.save()
 
     return dandiset, draft_version
 
@@ -71,8 +70,7 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     with transaction.atomic():
         # Record the audit event first so that the AuditRecord instance has a
         # chance to grab the Dandiset information before it is destroyed.
-        audit_record = audit.delete_dandiset(dandiset=dandiset, user=user)
-        audit_record.save()
+        audit.delete_dandiset(dandiset=dandiset, user=user)
 
         dandiset.versions.all().delete()
         dandiset.delete()

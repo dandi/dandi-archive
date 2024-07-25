@@ -103,8 +103,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
 
     logger.info('...Done')
 
-    audit_record = audit.unembargo_dandiset(dandiset=ds, user=user)
-    audit_record.save()
+    audit.unembargo_dandiset(dandiset=ds, user=user)
 
 
 def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:

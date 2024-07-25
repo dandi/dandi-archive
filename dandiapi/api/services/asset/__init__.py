@@ -99,8 +99,7 @@ def change_asset(  # noqa: PLR0913
         new_asset.previous = asset
         new_asset.save()
 
-        audit_record = audit.update_asset(dandiset=version.dandiset, user=user, asset=asset)
-        audit_record.save()
+        audit.update_asset(dandiset=version.dandiset, user=user, asset=asset)
 
     return new_asset, True
 
@@ -165,8 +164,7 @@ def add_asset_to_version(  # noqa: PLR0913, C901
         version.save()
 
         if do_audit:
-            audit_record = audit.add_asset(dandiset=version.dandiset, user=user, asset=asset)
-            audit_record.save()
+            audit.add_asset(dandiset=version.dandiset, user=user, asset=asset)
 
     # Perform this after the above transaction has finished, to ensure we only
     # operate on unembargoed asset blobs
@@ -195,7 +193,6 @@ def remove_asset_from_version(
         version.save()
 
         if do_audit:
-            audit_record = audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
-            audit_record.save()
+            audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
 
     return version

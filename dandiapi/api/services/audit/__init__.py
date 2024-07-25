@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 def _make_audit_record(
     *, dandiset: Dandiset, user: User, record_type: AuditRecordType, details: dict
 ) -> AuditRecord:
-    return AuditRecord(
+    audit_record = AuditRecord(
         dandiset_id=dandiset.id,
         username=user.username,
         user_email=user.email,
@@ -24,6 +24,9 @@ def _make_audit_record(
         record_type=record_type,
         details=details,
     )
+    audit_record.save()
+
+    return audit_record
 
 
 def create_dandiset(*, dandiset: Dandiset, user: User, metadata: dict, embargoed: bool):

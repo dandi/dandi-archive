@@ -192,10 +192,9 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         transaction.on_commit(lambda: _create_doi(new_version.id))
 
         user = User.objects.get(id=user_id)
-        audit_record = audit.publish_dandiset(
+        audit.publish_dandiset(
             dandiset=new_version.dandiset, user=user, version=new_version.version
         )
-        audit_record.save()
 
 
 def publish_dandiset(*, user: User, dandiset: Dandiset) -> None:
