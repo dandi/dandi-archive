@@ -24,7 +24,8 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
-from dandiapi.api.models import AuditRecord, Dandiset, Version
+from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
 from dandiapi.api.services.embargo import kickoff_dandiset_unembargo
 from dandiapi.api.services.embargo.exceptions import (
@@ -419,7 +420,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 dandiset.save()
 
                 if removed_owners or added_owners:
-                    audit_record = AuditRecord.change_owners(
+                    audit_record = audit.change_owners(
                         dandiset=dandiset,
                         user=request.user,
                         removed_owners=removed_owners,

@@ -10,7 +10,8 @@ from django.db import transaction
 from more_itertools import chunked
 
 from dandiapi.api.mail import send_dandiset_unembargoed_message
-from dandiapi.api.models import AssetBlob, AuditRecord, Dandiset, Version
+from dandiapi.api.models import AssetBlob, Dandiset, Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.storage import get_boto_client
@@ -102,7 +103,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
 
     logger.info('...Done')
 
-    audit_record = AuditRecord.unembargo_dandiset(dandiset=ds, user=user)
+    audit_record = audit.unembargo_dandiset(dandiset=ds, user=user)
     audit_record.save()
 
 

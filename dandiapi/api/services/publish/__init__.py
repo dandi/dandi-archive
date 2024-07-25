@@ -10,7 +10,8 @@ from more_itertools import ichunked
 
 from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
-from dandiapi.api.models import Asset, AuditRecord, Dandiset, Version
+from dandiapi.api.models import Asset, Dandiset, Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.publish.exceptions import (
     DandisetAlreadyPublishedError,
@@ -191,7 +192,7 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         transaction.on_commit(lambda: _create_doi(new_version.id))
 
         user = User.objects.get(id=user_id)
-        audit_record = AuditRecord.publish_dandiset(
+        audit_record = audit.publish_dandiset(
             dandiset=new_version.dandiset, user=user, version=new_version.version
         )
         audit_record.save()

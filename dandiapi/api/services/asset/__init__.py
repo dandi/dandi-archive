@@ -6,9 +6,9 @@ from django.db import transaction
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
 from dandiapi.api.models.asset import Asset, AssetBlob
-from dandiapi.api.models.audit import AuditRecord
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
     AssetPathConflictError,
@@ -85,7 +85,7 @@ def change_asset(  # noqa: PLR0913
         raise AssetAlreadyExistsError
 
     with transaction.atomic():
-        remove_asset_from_version(user=user, asset=asset, version=version, audit=False)
+        remove_asset_from_version(user=user, asset=asset, version=version, do_audit=False)
 
         new_asset = add_asset_to_version(
             user=user,
@@ -93,13 +93,13 @@ def change_asset(  # noqa: PLR0913
             asset_blob=new_asset_blob,
             zarr_archive=new_zarr_archive,
             metadata=new_metadata,
-            audit=False,
+            do_audit=False,
         )
         # Set previous asset and save
         new_asset.previous = asset
         new_asset.save()
 
-        audit_record = AuditRecord.update_asset(dandiset=version.dandiset, user=user, asset=asset)
+        audit_record = audit.update_asset(dandiset=version.dandiset, user=user, asset=asset)
         audit_record.save()
 
     return new_asset, True
@@ -112,7 +112,7 @@ def add_asset_to_version(  # noqa: PLR0913, C901
     asset_blob: AssetBlob | None = None,
     zarr_archive: ZarrArchive | None = None,
     metadata: dict,
-    audit: bool = True,
+    do_audit: bool = True,
 ) -> Asset:
     """Create an asset, adding it to a version."""
     if not asset_blob and not zarr_archive:
@@ -164,8 +164,8 @@ def add_asset_to_version(  # noqa: PLR0913, C901
         # Save the version so that the modified field is updated
         version.save()
 
-        if audit:
-            audit_record = AuditRecord.add_asset(dandiset=version.dandiset, user=user, asset=asset)
+        if do_audit:
+            audit_record = audit.add_asset(dandiset=version.dandiset, user=user, asset=asset)
             audit_record.save()
 
     # Perform this after the above transaction has finished, to ensure we only
@@ -177,7 +177,7 @@ def add_asset_to_version(  # noqa: PLR0913, C901
 
 
 def remove_asset_from_version(
-    *, user, asset: Asset, version: Version, audit: bool = True
+    *, user, asset: Asset, version: Version, do_audit: bool = True
 ) -> Version:
     if not user.has_perm('owner', version.dandiset):
         raise DandisetOwnerRequiredError
@@ -194,10 +194,8 @@ def remove_asset_from_version(
         # Save the version so that the modified field is updated
         version.save()
 
-        if audit:
-            audit_record = AuditRecord.remove_asset(
-                dandiset=version.dandiset, user=user, asset=asset
-            )
+        if do_audit:
+            audit_record = audit.remove_asset(dandiset=version.dandiset, user=user, asset=asset)
             audit_record.save()
 
     return version
