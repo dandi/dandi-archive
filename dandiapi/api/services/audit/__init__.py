@@ -66,16 +66,11 @@ def update_metadata(*, dandiset: Dandiset, user: User, metadata: dict) -> AuditR
 
 
 def _asset_details(asset: Asset) -> dict:
-    checksum = (
-        (asset.blob and asset.blob.etag)
-        or (asset.embargoed_blob and asset.embargoed_blob.etag)
-        or (asset.zarr and asset.zarr.checksum)
-    )
+    checksum = (asset.blob and asset.blob.etag) or (asset.zarr and asset.zarr.checksum)
 
     return {
         'path': asset.path,
         'asset_blob_id': asset.blob and asset.blob.id,
-        'embargoed_asset_blob_id': asset.embargoed_blob and asset.embargoed_blob.id,
         'zarr_archive_id': asset.zarr and asset.zarr.id,
         'asset_id': asset.id,
         'checksum': checksum,
