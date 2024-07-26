@@ -129,4 +129,4 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
         Dandiset.objects.filter(pk=dandiset.pk).update(
             embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
         )
-        transaction.on_commit(lambda: unembargo_dandiset_task.delay(dandiset.pk))
+        transaction.on_commit(lambda: unembargo_dandiset_task.delay(dandiset.pk, user.id))
