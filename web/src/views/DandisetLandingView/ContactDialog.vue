@@ -99,7 +99,7 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 
-const dandisetOwnerEmails = computed(() => store.owners?.map((owner: User) => owner.email));
+const dandisetOwnerEmails = computed(() => store.owners?.map((owner: User) => owner.email) || []);
 
 const dandisetContactPersonEmails = computed(() =>
   currentDandiset.value?.metadata?.contributor?.filter(
@@ -113,12 +113,10 @@ const dandisetContactPersonEmails = computed(() =>
     .filter((email?: Email) => email !== undefined)
     // Exclude users with an empty email
     .filter((email: Email) => email !== '')
+    || []
 );
 
-const makeTemplate = (contacts: string[] | undefined) => {
-  if (contacts === undefined) {
-    throw new Error('Contact is undefined.');
-  }
+const makeTemplate = (contacts: string[]) => {
   if (currentDandiset.value === undefined) {
     throw new Error('Dandiset is undefined.');
   }
