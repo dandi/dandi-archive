@@ -122,7 +122,6 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
     if not user.has_perm('owner', dandiset):
         raise DandisetOwnerRequiredError
 
-    unembargo_dandiset_task.delay(dandiset.id, user.id)
     if dandiset.uploads.count():
         raise DandisetActiveUploadsError
 
