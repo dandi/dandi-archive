@@ -43,7 +43,7 @@
             >
               <v-list-item
                 :disabled="disableDandisetOwnersButton"
-                :href="makeTemplate(dandisetOwnerEmails)"
+                :href="dandisetOwnersMailToLink"
               >
                 <v-icon
                   color="primary"
@@ -70,7 +70,7 @@
             <div v-on="on">
               <v-list-item
                 :disabled="disableContactPersonButton"
-                :href="makeTemplate(dandisetContactPersonEmails)"
+                :href="contactPersonMailToLink"
               >
                 <v-icon
                   color="primary"
@@ -128,10 +128,13 @@ const makeTemplate = (contacts: string[]) => {
 };
 
 const disableContactPersonButton = computed(() => !dandisetContactPersonEmails.value?.length)
+const contactPersonMailToLink = computed(() => currentDandiset.value ? makeTemplate(dandisetContactPersonEmails.value) : '');
+
 const disableDandisetOwnersButton = computed(
   // Only logged in users can access owners' emails
   () => !loggedIn() || !dandisetOwnerEmails.value?.length
 );
+const dandisetOwnersMailToLink = computed(() => currentDandiset.value ? makeTemplate(dandisetOwnerEmails.value) : '');
 
 </script>
 <style scoped>
