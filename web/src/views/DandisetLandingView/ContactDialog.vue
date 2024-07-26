@@ -33,7 +33,7 @@
       </v-card-title>
       <v-list>
         <v-tooltip
-          :disabled="!(loggedIn() || !isDisabled(owners))"
+          :disabled="!disableDandisetOwnersButton"
           open-on-hover
           left
         >
@@ -42,8 +42,8 @@
             v-on="on"
             >
               <v-list-item
-                :disabled="!loggedIn() || isDisabled(owners)"
-                :href="makeTemplate(owners)"
+                :disabled="disableDandisetOwnersButton"
+                :href="makeTemplate(dandisetOwnerEmails)"
               >
                 <v-icon
                   color="primary"
@@ -57,11 +57,11 @@
             </div>
           </template>
           <span v-if="!loggedIn()"> You must be logged in to contact the owner </span>
-          <span v-if="isDisabled(owners)"> No owner e-mail available </span>
+          <span v-if="!dandisetOwnerEmails?.length"> No owner e-mail available </span>
         </v-tooltip>
       <v-divider />
         <v-tooltip
-            :disabled=!isDisabled(contacts)
+            :disabled="!disableContactPersonButton"
             open-on-hover
             left
           >
@@ -69,8 +69,8 @@
           <template #activator="{ on }">
             <div v-on="on">
               <v-list-item
-                :disabled="isDisabled(contacts)"
-                :href="makeTemplate(contacts)"
+                :disabled="disableContactPersonButton"
+                :href="makeTemplate(dandisetContactPersonEmails)"
               >
                 <v-icon
                   color="primary"
@@ -96,16 +96,24 @@ import { loggedIn } from '@/rest';
 import type { User, Person, Organization, Email} from '@/types';
 
 const store = useDandisetStore();
-const owners = computed(() => store.owners?.map((owner: User) => owner.email));
-const contacts = computed(() =>
-  store.dandiset?.metadata?.contributor?.filter(
+
+const currentDandiset = computed(() => store.dandiset);
+
+const dandisetOwnerEmails = computed(() => store.owners?.map((owner: User) => owner.email));
+
+const dandisetContactPersonEmails = computed(() =>
+  currentDandiset.value?.metadata?.contributor?.filter(
     (contact: Person | Organization) =>
-      contact.roleName?.includes("dcite:ContactPerson"))
+      contact.roleName?.includes("dcite:ContactPerson")
+    )
     .map((contact: Person | Organization) =>
       contact.email as Email
     )
+    // Exclude users missing an email
+    .filter((email?: Email) => email !== undefined)
+    // Exclude users with an empty email
+    .filter((email: Email) => email !== '')
 );
-const currentDandiset = computed(() => store.dandiset);
 
 const makeTemplate = (contacts: string[] | undefined) => {
   if (contacts === undefined) {
@@ -121,8 +129,11 @@ const makeTemplate = (contacts: string[] | undefined) => {
   }
 };
 
-const isDisabled = (contacts: string[] | undefined): boolean =>
-  contacts === undefined || contacts.length === 0 || contacts[0] === '';
+const disableContactPersonButton = computed(() => !dandisetContactPersonEmails.value?.length)
+const disableDandisetOwnersButton = computed(
+  // Only logged in users can access owners' emails
+  () => !loggedIn() || !dandisetOwnerEmails.value?.length
+);
 
 </script>
 <style scoped>
