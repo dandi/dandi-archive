@@ -211,6 +211,26 @@ def test_validate_version_metadata(draft_version: Version, asset: Asset):
 
 
 @pytest.mark.django_db()
+def test_validate_version_metadata_non_pending_version(draft_version: Version, asset: Asset):
+    # Bypass .save to manually set an older timestamp, set status to INVALID
+    old_modified = timezone.now() - datetime.timedelta(minutes=10)
+    updated = Version.objects.filter(id=draft_version.id).update(
+        modified=old_modified, status=Version.Status.INVALID, validation_errors=['foobar']
+    )
+    assert updated == 1
+
+    draft_version.refresh_from_db()
+    old_validation_errors = draft_version.validation_errors
+    tasks.validate_version_metadata_task(draft_version.id)
+    draft_version.refresh_from_db()
+
+    # Assert fields not updated
+    assert draft_version.status == Version.Status.INVALID
+    assert draft_version.validation_errors == old_validation_errors
+    assert draft_version.modified == old_modified
+
+
+@pytest.mark.django_db()
 def test_validate_version_metadata_no_side_effects(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
