@@ -172,7 +172,7 @@ def validate_version_metadata(*, version: Version) -> None:
         # If the version has since been modified, return early
         if current_version.status != Version.Status.PENDING:
             logger.info(
-                'Skipping validation for version %s due to concurrent modification', version_id
+                'Skipping validation for version with a status of %s', current_version.status
             )
             return
 
