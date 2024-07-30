@@ -99,7 +99,7 @@ def change_asset(  # noqa: PLR0913
         new_asset.previous = asset
         new_asset.save()
 
-        audit.update_asset(dandiset=version.dandiset, user=user, asset=asset)
+        audit.update_asset(dandiset=version.dandiset, user=user, asset=new_asset)
 
     return new_asset, True
 
