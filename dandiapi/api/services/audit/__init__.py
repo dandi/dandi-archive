@@ -70,9 +70,9 @@ def _asset_details(asset: Asset) -> dict:
 
     return {
         'path': asset.path,
-        'asset_blob_id': asset.blob and asset.blob.id,
-        'zarr_archive_id': asset.zarr and asset.zarr.id,
-        'asset_id': asset.id,
+        'asset_blob_id': asset.blob and str(asset.blob.blob_id),
+        'zarr_archive_id': asset.zarr and str(asset.zarr.zarr_id),
+        'asset_id': str(asset.asset_id),
         'checksum': checksum,
         'metadata': asset.metadata,
     }
@@ -95,7 +95,7 @@ def update_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord
 def remove_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
     details = {
         'path': asset.path,
-        'asset_id': asset.id,
+        'asset_id': str(asset.asset_id),
     }
     return _make_audit_record(
         dandiset=dandiset, user=user, record_type='remove_asset', details=details
@@ -104,7 +104,7 @@ def remove_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord
 
 def create_zarr(*, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive) -> AuditRecord:
     details = {
-        'zarr_id': zarr_archive.id,
+        'zarr_id': str(zarr_archive.zarr_id),
         'name': zarr_archive.name,
     }
     return _make_audit_record(
@@ -116,7 +116,7 @@ def upload_zarr_chunks(
     *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, paths: list[str]
 ) -> AuditRecord:
     details = {
-        'zarr_id': zarr_archive.id,
+        'zarr_id': str(zarr_archive.zarr_id),
         'paths': paths,
     }
     return _make_audit_record(
@@ -128,7 +128,7 @@ def delete_zarr_chunks(
     *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, paths: list[str]
 ) -> AuditRecord:
     details = {
-        'zarr_id': zarr_archive.id,
+        'zarr_id': str(zarr_archive.zarr_id),
         'paths': paths,
     }
     return _make_audit_record(
@@ -138,7 +138,7 @@ def delete_zarr_chunks(
 
 def finalize_zarr(*, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive) -> AuditRecord:
     details = {
-        'zarr_id': zarr_archive.id,
+        'zarr_id': str(zarr_archive.zarr_id),
     }
     return _make_audit_record(
         dandiset=dandiset, user=user, record_type='finalize_zarr', details=details
