@@ -122,12 +122,14 @@ import CopyText from '@/components/CopyText.vue';
 
 function formatDownloadCommand(identifier: string, version: string): string {
   if (version === 'draft') {
-    return `dandi download https://dandiarchive.org/dandiset/${identifier}/draft`;
+    return `dandi download ${window.location.origin}/dandiset/${identifier}/draft`;
   }
+  const isDandiDomain = window.location.origin === 'https://dandiarchive.org';
   if (!version) {
-    return `dandi download DANDI:${identifier}`;
+    return isDandiDomain ? `dandi download DANDI:${identifier}` : `dandi download ${window.location.origin}/dandiset/${identifier}`;
   }
-  return `dandi download DANDI:${identifier}/${version}`;
+  // For other specific versions
+  return isDandiDomain ? `dandi download DANDI:${identifier}/${version}` : `dandi download ${window.location.origin}/dandiset/${identifier}/${version}`;
 }
 
 const store = useDandisetStore();
