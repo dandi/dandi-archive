@@ -139,13 +139,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
-        try:
-            with transaction.atomic():
-                zarr_archive.save()
+        with transaction.atomic():
+            try:
+                with transaction.atomic():
+                    zarr_archive.save()
+            except IntegrityError as e:
+                raise ValidationError('Zarr already exists') from e
 
-                audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
-        except IntegrityError as e:
-            raise ValidationError('Zarr already exists') from e
+            audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
