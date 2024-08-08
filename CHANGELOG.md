@@ -1,3 +1,18 @@
+# v0.3.92 (Tue Jul 30 2024)
+
+#### 🐛 Bug Fix
+
+- Add retries to sha256 checksum calculation task [#1937](https://github.com/dandi/dandi-archive/pull/1937) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Contact owner [#1840](https://github.com/dandi/dandi-archive/pull/1840) ([@marySalvi](https://github.com/marySalvi) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mary Salvi ([@marySalvi](https://github.com/marySalvi))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.91 (Wed Jul 24 2024)
 
 #### 🐛 Bug Fix

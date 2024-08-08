@@ -7,6 +7,7 @@ export interface User {
   username: string,
   name: string,
   admin?: boolean,
+  email: string,
   status: 'INCOMPLETE' | 'PENDING' | 'APPROVED' | 'REJECTED',
   approved: boolean,
 }
