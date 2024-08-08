@@ -140,6 +140,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():
+            # Use nested transaction block to prevent zarr creation race condition
             try:
                 with transaction.atomic():
                     zarr_archive.save()
