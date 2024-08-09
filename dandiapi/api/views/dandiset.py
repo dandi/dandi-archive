@@ -376,7 +376,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
-    def users(self, request, dandiset__pk):
+    def users(self, request, dandiset__pk):  # noqa: C901
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             if dandiset.unembargo_in_progress:
