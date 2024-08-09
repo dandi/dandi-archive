@@ -20,7 +20,7 @@ COPY ./setup.py /opt/django-project/setup.py
 # Copy git folder for setuptools_scm
 COPY ./.git/ /opt/django-project/.git/
 
-# Don't install as editable, so that when the directory is mounted over with docker-compose, the
+# Don't install as editable, so that when the directory is mounted over with `docker compose`, the
 # installation still exists (otherwise the dandiapi.egg-info/ directory would be overwritten, and
 # the installation would no longer exist)
 RUN pip install /opt/django-project[dev]
