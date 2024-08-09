@@ -15,6 +15,7 @@ from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services import audit
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -138,10 +139,15 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
-        try:
-            zarr_archive.save()
-        except IntegrityError as e:
-            raise ValidationError('Zarr already exists') from e
+        with transaction.atomic():
+            # Use nested transaction block to prevent zarr creation race condition
+            try:
+                with transaction.atomic():
+                    zarr_archive.save()
+            except IntegrityError as e:
+                raise ValidationError('Zarr already exists') from e
+
+            audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -174,6 +180,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             zarr_archive.status = ZarrArchiveStatus.UPLOADED
             zarr_archive.save()
+
+            audit.finalize_zarr(
+                dandiset=zarr_archive.dandiset, user=request.user, zarr_archive=zarr_archive
+            )
 
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
@@ -280,14 +290,22 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
+            paths = serializer.validated_data
 
             # Generate presigned urls
             logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
-            urls = zarr_archive.generate_upload_urls(serializer.validated_data)
+            urls = zarr_archive.generate_upload_urls(paths)
 
             # Set status back to pending, since with these URLs the zarr could have been changed
             zarr_archive.mark_pending()
             zarr_archive.save()
+
+            audit.upload_zarr_chunks(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=[p['path'] for p in paths],
+            )
 
         # Return presigned urls
         logger.info(
@@ -319,5 +337,12 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
+
+            audit.delete_zarr_chunks(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=paths,
+            )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)

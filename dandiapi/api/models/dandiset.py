@@ -99,16 +99,6 @@ class Dandiset(TimeStampedModel):
         # Return the owners added/removed so they can be emailed
         return removed_owners, added_owners
 
-    def add_owner(self, new_owner):
-        old_owners = get_users_with_perms(self, only_with_perms_in=['owner'])
-        if new_owner not in old_owners:
-            assign_perm('owner', new_owner, self)
-
-    def remove_owner(self, owner):
-        owners = get_users_with_perms(self, only_with_perms_in=['owner'])
-        if owner in owners:
-            remove_perm('owner', owner, self)
-
     @classmethod
     def published_count(cls):
         """Return the number of Dandisets with published Versions."""

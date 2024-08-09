@@ -94,28 +94,34 @@ def test_kickoff_dandiset_unembargo(api_client, user, draft_version_factory, mai
 
     # Check that unembargo dandiset task was delayed
     assert len(patched_task.mock_calls) == 1
-    assert str(patched_task.mock_calls[0]) == f'call.delay({ds.pk})'
+    assert str(patched_task.mock_calls[0]) == f'call.delay({ds.pk}, {user.id})'
 
 
 @pytest.mark.django_db()
-def test_unembargo_dandiset_not_unembargoing(draft_version_factory):
+def test_unembargo_dandiset_not_unembargoing(draft_version_factory, user, api_client):
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds: Dandiset = draft_version.dandiset
 
+    assign_perm('owner', user, ds)
+    api_client.force_authenticate(user=user)
+
     with pytest.raises(DandiError):
-        unembargo_dandiset(ds)
+        unembargo_dandiset(ds, user)
 
 
 @pytest.mark.django_db()
-def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory):
+def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory, user, api_client):
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     ds: Dandiset = draft_version.dandiset
 
+    assign_perm('owner', user, ds)
+    api_client.force_authenticate(user=user)
+
     upload_factory(dandiset=ds)
     with pytest.raises(DandisetActiveUploadsError):
-        unembargo_dandiset(ds)
+        unembargo_dandiset(ds, user)
 
 
 @pytest.mark.django_db()
@@ -191,7 +197,7 @@ def test_unembargo_dandiset(
     # Patch this function to check if it's been called, since we can't test the tagging directly
     patched = mocker.patch('dandiapi.api.services.embargo._delete_asset_blob_tags')
 
-    unembargo_dandiset(ds)
+    unembargo_dandiset(ds, owners[0])
     patched.assert_called_once()
 
     embargoed_blob.refresh_from_db()
@@ -218,13 +224,16 @@ def test_unembargo_dandiset(
 
 
 @pytest.mark.django_db()
-def test_unembargo_dandiset_task_failure(draft_version_factory, mailoutbox):
+def test_unembargo_dandiset_task_failure(draft_version_factory, mailoutbox, user, api_client):
     # Intentionally set the status to embargoed so the task will fail
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds: Dandiset = draft_version.dandiset
 
+    assign_perm('owner', user, ds)
+    api_client.force_authenticate(user=user)
+
     with pytest.raises(DandiError):
-        unembargo_dandiset_task.delay(ds.pk)
+        unembargo_dandiset_task.delay(ds.pk, user.id)
 
     assert mailoutbox
     assert 'Unembargo failed' in mailoutbox[0].subject
