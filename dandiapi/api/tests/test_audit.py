@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import AuditRecord, Dandiset
+from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.storage import get_boto_client
 from dandiapi.zarr.models import ZarrArchive
 
@@ -268,6 +270,36 @@ def test_audit_remove_asset(
     verify_model_properties(rec, user)
     assert rec.details['path'] == path
     assert rec.details['asset_id'] == str(asset_id)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_audit_publish_dandiset(
+    api_client, user, dandiset_factory, draft_version_factory, draft_asset_factory
+):
+    # Create a Dandiset whose draft version has one asset.
+    dandiset = dandiset_factory()
+    assign_perm('owner', user, dandiset)
+    draft_version = draft_version_factory(dandiset=dandiset)
+    draft_asset = draft_asset_factory()
+    draft_version.assets.add(draft_asset)
+    add_version_asset_paths(draft_version)
+
+    # Validate the asset and then the draft version (to make it publishable
+    # through the API).
+    validate_asset_metadata(asset=draft_asset)
+    validate_version_metadata(version=draft_version)
+
+    # Publish the Dandiset.
+    api_client.force_authenticate(user=user)
+    resp = api_client.post(
+        f'/api/dandisets/{dandiset.identifier}/versions/draft/publish/',
+    )
+    assert resp.status_code == 202
+
+    # Verify publish_dandiset audit record.
+    rec = get_latest_audit_record(dandiset=dandiset, record_type='publish_dandiset')
+    verify_model_properties(rec, user)
+    assert rec.details['version'] == dandiset.most_recent_published_version.version
 
 
 @pytest.mark.django_db()
