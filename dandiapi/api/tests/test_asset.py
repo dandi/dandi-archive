@@ -421,6 +421,66 @@ def test_asset_rest_retrieve_no_sha256(api_client, version, asset):
 
 
 @pytest.mark.django_db()
+def test_asset_rest_retrieve_embargoed_admin(
+    api_client,
+    draft_version_factory,
+    draft_asset_factory,
+    admin_user,
+    storage,
+    monkeypatch,
+):
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
+
+    api_client.force_authenticate(user=admin_user)
+    version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    ds = version.dandiset
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset = draft_asset_factory(blob__embargoed=True)
+    version.assets.add(asset)
+
+    # Asset View
+    r = api_client.get(f'/api/assets/{asset.asset_id}/')
+    assert r.status_code == 200
+
+    # Nested Asset View
+    r = api_client.get(
+        f'/api/dandisets/{ds.identifier}/versions/{version.version}/assets/{asset.asset_id}/'
+    )
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db()
+def test_asset_rest_download_embargoed_admin(
+    api_client,
+    draft_version_factory,
+    draft_asset_factory,
+    admin_user,
+    storage,
+    monkeypatch,
+):
+    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
+
+    api_client.force_authenticate(user=admin_user)
+    version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    ds = version.dandiset
+
+    # Create an extra asset so that there are multiple assets to filter down
+    asset = draft_asset_factory(blob__embargoed=True)
+    version.assets.add(asset)
+
+    # Asset View
+    r = api_client.get(f'/api/assets/{asset.asset_id}/download/')
+    assert r.status_code == 302
+
+    # Nested Asset View
+    r = api_client.get(
+        f'/api/dandisets/{ds.identifier}/versions/{version.version}/assets/{asset.asset_id}/download/'
+    )
+    assert r.status_code == 302
+
+
+@pytest.mark.django_db()
 def test_asset_rest_info(api_client, version, asset):
     version.assets.add(asset)
 

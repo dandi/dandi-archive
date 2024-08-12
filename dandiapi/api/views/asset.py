@@ -92,6 +92,10 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                     # Clients must be authenticated to access it
                     raise NotAuthenticated
 
+                # Admins are allowed to access any embargoed asset blob
+                if self.request.user.is_superuser:
+                    return
+
                 # User must be an owner on any of the dandisets this asset belongs to
                 asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
                 asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
