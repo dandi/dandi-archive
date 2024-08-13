@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
+from django.contrib.auth.models import User
 
 from dandiapi.api.doi import delete_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
@@ -84,21 +85,22 @@ def delete_doi_task(doi: str) -> None:
 
 
 @shared_task
-def publish_dandiset_task(dandiset_id: int):
+def publish_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.publish import _publish_dandiset
 
-    _publish_dandiset(dandiset_id=dandiset_id)
+    _publish_dandiset(dandiset_id=dandiset_id, user_id=user_id)
 
 
 @shared_task(soft_time_limit=1200)
-def unembargo_dandiset_task(dandiset_id: int):
+def unembargo_dandiset_task(dandiset_id: int, user_id: int):
     from dandiapi.api.services.embargo import unembargo_dandiset
 
     ds = Dandiset.objects.get(pk=dandiset_id)
+    user = User.objects.get(id=user_id)
 
     # If the unembargo fails for any reason, send an email, but continue the error propagation
     try:
-        unembargo_dandiset(ds)
+        unembargo_dandiset(ds, user)
     except Exception:
         send_dandiset_unembargo_failed_message(ds)
         raise
