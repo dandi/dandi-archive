@@ -1,21 +1,41 @@
-Zarr Manifest Files
-===================
+# Zarr Manifest Files
 
 This document specifies *Zarr manifest files*, each of which describes a Zarr
 in the Dandi Archive, including the Zarr's internal directory structure and
 details on all of the Zarr's *entries* (regular, non-directory files).  The
 Dandi Archive is to automatically generate these files and serve them via S3.
 
-@yarikoptic has already produced proof-of-concept manifest files for all Zarrs
-in the Dandi Archive at <https://github.com/dandi/zarr-manifests>.  Except
-where noted, the manifest file format defined herein matches the format used by
-the proof of concept.
 
+## Current prototype
 
-Creating & Storing Manifest Files
----------------------------------
+### Creating manifest files
 
-Whenever Dandi Archive calculates the checksum for a Zarr in the Archive, it
+Proof-of-concept implementation to produce manifest files for all Zarrs
+in the Dandi Archive, and actual produced manifest files are provided from https://datasets.datalad.org/?dir=/dandi/zarr-manifests, which is a [DataLad dataset](https://handbook.datalad.org/en/latest/glossary.html#term-DataLad-dataset) with individual manifest files are annexed.
+
+**Note:** https://datasets.datalad.org/dandi/zarr-manifests/zarr-manifests-v2-sorted/ and subfolders provides ad-hoc json record listing folders/files to avoid parsing stock apache2 index.
+
+CRON job runs daily on typhon (server at Dartmouth).
+Except where noted, the manifest file format defined herein matches the format used by the proof of concept.
+
+### Data access using manifest files
+
+[dandidav](https://github.com/dandi/dandidav)---a WebDAV server for the DANDI---serves Zarrs from the Archive using the manifest files.
+Actual data is served from the Archive's S3 bucket, but the WebDAV server uses the manifest files to determine the structure of the Zarrs and the versions of the Zarrs' entries.
+Two "end-points" within that namespace are provided:
+
+- [webdav.dandiarchive.org/zarrs](https://webdav.dandiarchive.org/zarrs) -- all Zarrs across all dandisets, possibly with multiple versions. E.g. see [zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62](https://webdav.dandiarchive.org/zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62) which ATM has 3 versions.
+- [webdav.dandiarchive.org/dandisets/](https://webdav.dandiarchive.org/dandisets/)`{dandiset_id}/{version}/{path}/`. E.g. for aforementioned Zarr - https://webdav.dandiarchive.org/dandisets/000026/draft/sub-I48/ses-SPIM/micr/sub-I48_ses-SPIM_sample-BrocaAreaS09_stain-Somatostatin_SPIM.ome.zarr/ -- a specific version (the latest, currently [6efea0a8e95e67ecb5af7aa028dece14-18147--30560865836](https://webdav.dandiarchive.org/zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62/6efea0a8e95e67ecb5af7aa028dece14-18147--30560865836.zarr/)).
+
+Tools which support following redirections for individual files within Zarr can be pointed to those locations to "consume" zarrs of specific versions.
+ATM dandisets do not support publishing (versioning) of Zarrs, so there would be only `/draft/` versions of dandisets with Zarrs.
+If this design is supported/implemented, particular versions of Zarrs would be made available from within particular versions of the `/dandisets/{dandiset_id}/`s.
+
+## Design details
+
+### Creating & Storing Manifest Files
+
+Whenever DANDI Archive calculates the checksum for a Zarr in the Archive, it
 shall additionally produce a *manifest file* listing various information about
 the Zarr and its entries in the format described in the next section.  This
 manifest file shall be stored in the Archive's S3 bucket at the path
