@@ -1,3 +1,56 @@
+# v0.3.93 (Wed Aug 14 2024)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger release process [#2005](https://github.com/dandi/dandi-archive/pull/2005) ([@waxlamp](https://github.com/waxlamp))
+- Upgrade oauth client package [#1998](https://github.com/dandi/dandi-archive/pull/1998) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Merge remote-tracking branch 'origin/master' into audit-backend [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Replace `docker-compose` with `docker compose` to fix newly failing CI tests [#1999](https://github.com/dandi/dandi-archive/pull/1999) ([@waxlamp](https://github.com/waxlamp))
+- Merge remote-tracking branch 'origin/fix-docker-compose' into audit-backend [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add test for publish_dandiset audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Disable complexity warning on users view [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add explanatory comment [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Use nested transaction to handle integrity error [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Split long tests up into individual tests [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- bugfix: Pass correct and stringified ID values in asset/zarr records [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- bugfix: Include correct asset in update_asset record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add tests [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Fix invocation of unembargo routines in tests [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Remove duplicate task launch line [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Remove references to deleted model fields [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Use audit service in zarr views [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Eliminate the need for manually calling .save() [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Create a service layer module for audit [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Use the `user` fixture directly [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Reformat long line [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Suppress ruff warnings for complexity and number of arguments [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Report list of paths to zarr chunk audit records [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Report live metadata to audit records [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Move "set new owners" operation inside of transaction [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Remove Dandiset add_owner() and remove_owner() methods [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Apply formatting to new migration [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add explanatory comments for weird char field length limits [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Rename upload_zarr to upload_zarr_chunks [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Fix tests broken by signature changes [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add migration for AuditRecord [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate delete_dandiset audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate publish_dandiset audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate unembargo_dandiset audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate [create|upload|finalize|delete]_zarr audit records [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate [add|update|remove]_asset audit records [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate update_metadata audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate change_owners audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Generate create_dandiset audit record [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add admin model for AuditRecord [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+- Add AuditRecord model [#1886](https://github.com/dandi/dandi-archive/pull/1886) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.92 (Tue Jul 30 2024)
 
 #### 🐛 Bug Fix
