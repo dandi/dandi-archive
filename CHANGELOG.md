@@ -1,3 +1,17 @@
+# v0.3.94 (Fri Aug 16 2024)
+
+#### 🐛 Bug Fix
+
+- Fix admin access to embargoed asset blobs [#2004](https://github.com/dandi/dandi-archive/pull/2004) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Re-validate version metadata during unembargo [#1989](https://github.com/dandi/dandi-archive/pull/1989) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Separate core model logic from top-level asset service layer functions [#1991](https://github.com/dandi/dandi-archive/pull/1991) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.93 (Wed Aug 14 2024)
 
 #### 🐛 Bug Fix
