@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.db import transaction
+from django.utils import timezone
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
 from dandiapi.api.models.asset import Asset, AssetBlob
@@ -59,9 +60,9 @@ def _add_asset_to_version(
     add_asset_paths(asset, version)
 
     # Trigger a version metadata validation, as saving the version might change the metadata
-    version.status = Version.Status.PENDING
-    # Save the version so that the modified field is updated
-    version.save()
+    Version.objects.filter(id=version.id).update(
+        status=Version.Status.PENDING, modified=timezone.now()
+    )
 
     return asset
 
@@ -72,9 +73,9 @@ def _remove_asset_from_version(*, asset: Asset, version: Version):
     version.assets.remove(asset)
 
     # Trigger a version metadata validation, as saving the version might change the metadata
-    version.status = Version.Status.PENDING
-    # Save the version so that the modified field is updated
-    version.save()
+    Version.objects.filter(id=version.id).update(
+        status=Version.Status.PENDING, modified=timezone.now()
+    )
 
 
 def change_asset(  # noqa: PLR0913
