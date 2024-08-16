@@ -108,6 +108,66 @@ class ZarrArchive(BaseZarrArchive):
         )
 
 
+class ZarrArchiveVersion(models.Model):
+    zarr = models.ForeignKey(ZarrArchive, related_name='versions', on_delete=models.CASCADE)
+    version = models.UUIDField()
+
+
+class ZarrArchiveFile(models.Model):
+    zarr_version = models.ForeignKey(
+        ZarrArchiveVersion, related_name='files', on_delete=models.CASCADE
+    )
+
+    # File info
+    key = models.CharField(max_length=256, db_index=True)
+    version_id = models.CharField(max_length=32)
+    etag = models.CharField(max_length=32)
+
+    # Metadata may be contained in one of three fields
+    zattrs = models.JSONField(null=True)
+    zarray = models.JSONField(null=True)
+    zgroup = models.JSONField(null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(name='unique-file-data', fields=['key', 'version_id', 'etag']),
+            models.UniqueConstraint(name='unique-zarr-key', fields=['zarr_version', 'key']),
+            models.CheckConstraint(
+                name='consistent-metadata-field',
+                check=(
+                    (
+                        models.Q(
+                            zattrs__isnull=True,
+                            zarray__isnull=True,
+                            zgroup__isnull=True,
+                        )
+                        & ~models.Q(key__endswith='.zattrs')
+                        & ~models.Q(key__endswith='.zarray')
+                        & ~models.Q(key__endswith='.zgroup')
+                    )
+                    | models.Q(
+                        key__endswith='.zattrs',
+                        zattrs__isnull=False,
+                        zarray__isnull=True,
+                        zgroup__isnull=True,
+                    )
+                    | models.Q(
+                        key__endswith='.zarray',
+                        zattrs__isnull=True,
+                        zarray__isnull=False,
+                        zgroup__isnull=True,
+                    )
+                    | models.Q(
+                        key__endswith='.zgroup',
+                        zattrs__isnull=True,
+                        zarray__isnull=True,
+                        zgroup__isnull=False,
+                    )
+                ),
+            ),
+        ]
+
+
 class EmbargoedZarrArchive(BaseZarrArchive):
     storage = get_storage()
     dandiset = models.ForeignKey(
