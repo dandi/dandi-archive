@@ -14,6 +14,7 @@ from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.services.exceptions import DandiError
+from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task
 
@@ -94,8 +95,14 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     # Fetch version to ensure changed embargo_status is included
     # Save version to update metadata through populate_metadata
     v = Version.objects.select_for_update().get(dandiset=ds, version='draft')
+    v.status = Version.Status.PENDING
     v.save()
     logger.info('Version metadata updated')
+
+    # Pre-emptively validate version metadata, so that old validation
+    # errors don't show up once un-embargo is finished
+    validate_version_metadata(version=v)
+    logger.info('Version metadata validated')
 
     # Notify owners of completed unembargo
     send_dandiset_unembargoed_message(ds)

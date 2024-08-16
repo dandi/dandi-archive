@@ -7,6 +7,7 @@ from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.version import Version
 from dandiapi.api.services.embargo import (
     AssetBlobEmbargoedError,
     _remove_dandiset_asset_blob_embargo_tags,
@@ -22,7 +23,6 @@ from dandiapi.api.tasks import unembargo_dandiset_task
 
 if TYPE_CHECKING:
     from dandiapi.api.models.asset import AssetBlob
-    from dandiapi.api.models.version import Version
 
 
 @pytest.mark.django_db()
@@ -221,6 +221,33 @@ def test_unembargo_dandiset(
     owner_email_set = {user.email for user in owners}
     mailoutbox_to_email_set = set(mailoutbox[0].to)
     assert owner_email_set == mailoutbox_to_email_set
+
+
+@pytest.mark.django_db()
+def test_unembargo_dandiset_validate_version_metadata(
+    draft_version_factory, asset_factory, user, mocker
+):
+    from dandiapi.api.services import embargo as embargo_service
+
+    draft_version: Version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+    )
+    ds: Dandiset = draft_version.dandiset
+    assign_perm('owner', user, ds)
+
+    draft_version.validation_errors = ['error ajhh']
+    draft_version.status = Version.Status.INVALID
+    draft_version.save()
+    draft_version.assets.add(asset_factory())
+
+    # Spy on the imported function in the embargo service
+    validate_version_spy = mocker.spy(embargo_service, 'validate_version_metadata')
+
+    unembargo_dandiset(ds, user=user)
+
+    assert validate_version_spy.call_count == 1
+    draft_version.refresh_from_db()
+    assert not draft_version.validation_errors
 
 
 @pytest.mark.django_db()
