@@ -665,7 +665,7 @@ def test_asset_create_unembargo_in_progress(
     assert resp.status_code == 400
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db(transaction=True)
 def test_asset_create_embargoed_asset_blob_open_dandiset(
     api_client, user, draft_version, embargoed_asset_blob, mocker
 ):
