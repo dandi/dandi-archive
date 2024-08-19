@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -18,7 +19,7 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveFile, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
@@ -346,3 +347,29 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        responses={
+            200: 'Zarr file found and is metadata file',
+            302: 'Zarr file found',
+            404: 'File not found',
+        },
+        operation_summary='Retrieve a single file from a zarr archive.',
+    )
+    @action(methods=['GET'], detail=True, url_path='file/(?P<key>[./a-zA-Z0-9]+)')
+    def retrieve_file(self, request, zarr_id, key):
+        """Retrieve a single file from a zarr archive."""
+        zarr: ZarrArchive = get_object_or_404(ZarrArchive, zarr_id=zarr_id)
+        file: ZarrArchiveFile = get_object_or_404(ZarrArchiveFile, zarr_version__zarr=zarr, key=key)
+        path = zarr.s3_path(file.key)
+
+        # Check if special key
+        metadata = file.metadata
+        if metadata is not None:
+            return Response(metadata, status=status.HTTP_200_OK)
+
+        # url = zarr.storage.url(path)
+        # s3_path = f'http://{settings.DANDI_DANDISETS_BUCKET_NAME}/{path}'
+        # url = f's3://dandiarchive/{path}'
+        url = f'https://dandiarchive.s3.amazonaws.com/{path}'
+        return HttpResponseRedirect(url)

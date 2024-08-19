@@ -167,6 +167,25 @@ class ZarrArchiveFile(models.Model):
             ),
         ]
 
+    @property
+    def is_metadata_key(self):
+        return (
+            self.key.endswith('.zattrs')
+            or self.key.endswith('.zarray')
+            or self.key.endswith('.zgroup')
+        )
+
+    @property
+    def metadata(self):
+        if self.key.endswith('.zattrs'):
+            return self.zattrs
+        if self.key.endswith('.zarray'):
+            return self.zarray
+        if self.key.endswith('.zgroup'):
+            return self.zgroup
+
+        return None
+
 
 class EmbargoedZarrArchive(BaseZarrArchive):
     storage = get_storage()
