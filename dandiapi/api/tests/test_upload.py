@@ -524,16 +524,10 @@ def test_upload_validate_wrong_etag(api_client, user, upload):
 def test_upload_validate_existing_assetblob(api_client, user, upload, asset_blob_factory):
     api_client.force_authenticate(user=user)
 
-    asset_blob = asset_blob_factory(etag=upload.etag, size=upload.size)
+    asset_blob_factory(etag=upload.etag, size=upload.size)
 
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
-    assert resp.status_code == 200
-    assert resp.data == {
-        'blob_id': str(asset_blob.blob_id),
-        'etag': asset_blob.etag,
-        'sha256': asset_blob.sha256,
-        'size': asset_blob.size,
-    }
+    assert resp.status_code == 409
 
     assert AssetBlob.objects.all().count() == 1
     assert not Upload.objects.all().exists()
@@ -549,16 +543,10 @@ def test_upload_validate_embargo_existing_assetblob(
     embargoed_upload = embargoed_upload_factory(dandiset=dandiset)
 
     # The upload should recognize this preexisting AssetBlob and use it instead
-    asset_blob = asset_blob_factory(etag=embargoed_upload.etag, size=embargoed_upload.size)
+    asset_blob_factory(etag=embargoed_upload.etag, size=embargoed_upload.size)
 
     resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
-    assert resp.status_code == 200
-    assert resp.data == {
-        'blob_id': str(asset_blob.blob_id),
-        'etag': asset_blob.etag,
-        'sha256': asset_blob.sha256,
-        'size': asset_blob.size,
-    }
+    assert resp.status_code == 409
 
     assert AssetBlob.objects.all().count() == 1
 
@@ -574,17 +562,9 @@ def test_upload_validate_embargo_existing_embargoed_assetblob(
 
     # The upload should recognize this preexisting embargoed AssetBlob and use it instead
     # This only works because the embargoed asset blob belongs to the same dandiset
-    embargoed_asset_blob = embargoed_asset_blob_factory(
-        etag=embargoed_upload.etag, size=embargoed_upload.size
-    )
+    embargoed_asset_blob_factory(etag=embargoed_upload.etag, size=embargoed_upload.size)
 
     resp = api_client.post(f'/api/uploads/{embargoed_upload.upload_id}/validate/')
-    assert resp.status_code == 200
-    assert resp.data == {
-        'blob_id': str(embargoed_asset_blob.blob_id),
-        'etag': embargoed_asset_blob.etag,
-        'sha256': embargoed_asset_blob.sha256,
-        'size': embargoed_asset_blob.size,
-    }
+    assert resp.status_code == 409
 
     assert AssetBlob.objects.all().count() == 1
