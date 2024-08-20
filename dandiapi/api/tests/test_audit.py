@@ -62,7 +62,7 @@ def create_dandiset(
     return Dandiset.objects.get(pk=dandiset_id)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_create_dandiset(api_client, user):
     """Test create_dandiset audit record."""
     # Create a Dandiset with specified name and metadata.
@@ -79,7 +79,7 @@ def test_audit_create_dandiset(api_client, user):
     assert rec.details['metadata']['name'] == name
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_change_owners(api_client, user_factory, draft_version):
     """Test the change_owners audit record."""
     # Create some users.
@@ -116,7 +116,7 @@ def test_audit_change_owners(api_client, user_factory, draft_version):
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_update_metadata(api_client, draft_version, user):
     # Create a Dandiset.
     dandiset = draft_version.dandiset
@@ -145,7 +145,7 @@ def test_audit_update_metadata(api_client, draft_version, user):
     assert metadata['foo'] == 'bar'
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_delete_dandiset(api_client, user, draft_version):
     # Create a Dandiset.
     dandiset = draft_version.dandiset
@@ -183,7 +183,7 @@ def test_audit_unembargo(api_client, user):
     assert rec.details == {}
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_add_asset(api_client, user, draft_version, asset_blob_factory):
     # Create a Dandiset.
     dandiset = draft_version.dandiset
@@ -211,7 +211,7 @@ def test_audit_add_asset(api_client, user, draft_version, asset_blob_factory):
     assert rec.details['asset_blob_id'] == blob.blob_id
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_update_asset(
     api_client, user, draft_version, asset_blob_factory, draft_asset_factory
 ):
@@ -245,7 +245,7 @@ def test_audit_update_asset(
     assert rec.details['asset_blob_id'] == blob.blob_id
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_remove_asset(
     api_client, user, draft_version, asset_blob_factory, draft_asset_factory
 ):
@@ -302,7 +302,7 @@ def test_audit_publish_dandiset(
     assert rec.details['version'] == dandiset.most_recent_published_version.version
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_zarr_create(api_client, user, draft_version):
     # Create a Dandiset.
     dandiset = draft_version.dandiset
@@ -328,7 +328,7 @@ def test_audit_zarr_create(api_client, user, draft_version):
     assert rec.details['zarr_id'] == zarr_id
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_factory, storage):
     ZarrArchive.storage = storage
 
@@ -354,7 +354,7 @@ def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_
     assert rec.details['paths'] == paths
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_finalize_zarr(
     api_client, user, draft_version, zarr_archive_factory, storage, settings
 ):
@@ -395,7 +395,7 @@ def test_audit_finalize_zarr(
     assert rec.details['zarr_id'] == zarr.zarr_id
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_audit_delete_zarr_chunks(
     api_client, user, draft_version, zarr_archive_factory, storage, settings
 ):

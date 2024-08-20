@@ -9,7 +9,7 @@ from dandiapi.api.garbage import stale_assets
 from dandiapi.api.models import Asset, Version
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stale_assets(version: Version, draft_asset_factory, published_asset_factory):
     stale_date = timezone.now() - timedelta(days=8)
 

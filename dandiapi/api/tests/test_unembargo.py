@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from dandiapi.api.models.asset import AssetBlob
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
     with pytest.raises(AssetBlobEmbargoedError):
         remove_asset_blob_embargoed_tag(embargoed_asset_blob)
@@ -34,7 +34,7 @@ def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob,
     remove_asset_blob_embargoed_tag(asset_blob)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(
     api_client, user, dandiset_factory, draft_version_factory
 ):
@@ -47,7 +47,7 @@ def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(
     assert resp.status_code == 400
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_kickoff_dandiset_unembargo_not_owner(
     api_client, user, dandiset_factory, draft_version_factory
 ):
@@ -59,7 +59,7 @@ def test_kickoff_dandiset_unembargo_not_owner(
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_kickoff_dandiset_unembargo_active_uploads(
     api_client, user, dandiset_factory, draft_version_factory, upload_factory
 ):
@@ -97,7 +97,7 @@ def test_kickoff_dandiset_unembargo(api_client, user, draft_version_factory, mai
     assert str(patched_task.mock_calls[0]) == f'call.delay({ds.pk}, {user.id})'
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_unembargo_dandiset_not_unembargoing(draft_version_factory, user, api_client):
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds: Dandiset = draft_version.dandiset
@@ -109,7 +109,7 @@ def test_unembargo_dandiset_not_unembargoing(draft_version_factory, user, api_cl
         unembargo_dandiset(ds, user)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory, user, api_client):
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
@@ -124,7 +124,7 @@ def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory,
         unembargo_dandiset(ds, user)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_remove_dandiset_asset_blob_embargo_tags_chunks(
     draft_version_factory,
     asset_factory,
@@ -151,7 +151,7 @@ def test_remove_dandiset_asset_blob_embargo_tags_chunks(
     assert len(delete_asset_blob_tags_mock.mock_calls) == chunk_size + 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_asset_blob_tags_fails(
     draft_version_factory,
     asset_factory,
@@ -172,7 +172,7 @@ def test_delete_asset_blob_tags_fails(
         _remove_dandiset_asset_blob_embargo_tags(dandiset=ds)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
@@ -223,7 +223,7 @@ def test_unembargo_dandiset(
     assert owner_email_set == mailoutbox_to_email_set
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_unembargo_dandiset_validate_version_metadata(
     draft_version_factory, asset_factory, user, mocker
 ):
@@ -250,7 +250,7 @@ def test_unembargo_dandiset_validate_version_metadata(
     assert not draft_version.validation_errors
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_unembargo_dandiset_task_failure(draft_version_factory, mailoutbox, user, api_client):
     # Intentionally set the status to embargoed so the task will fail
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)

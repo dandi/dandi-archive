@@ -16,7 +16,7 @@ def mb(bytes_size: int) -> int:
     return bytes_size * 2**20
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_blob_read(api_client, asset_blob):
     assert api_client.post(
         '/api/blobs/digest/',
@@ -30,7 +30,7 @@ def test_blob_read(api_client, asset_blob):
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_blob_read_sha256(api_client, asset_blob):
     assert api_client.post(
         '/api/blobs/digest/',
@@ -44,7 +44,7 @@ def test_blob_read_sha256(api_client, asset_blob):
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_blob_read_bad_algorithm(api_client, asset_blob):
     resp = api_client.post(
         '/api/blobs/digest/',
@@ -55,7 +55,7 @@ def test_blob_read_bad_algorithm(api_client, asset_blob):
     assert resp.data == 'Unsupported Digest Algorithm. Supported: dandi:dandi-etag, dandi:sha2-256'
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_blob_read_does_not_exist(api_client):
     resp = api_client.post(
         '/api/blobs/digest/',
@@ -65,7 +65,7 @@ def test_blob_read_does_not_exist(api_client):
     assert resp.status_code == 404
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize('embargoed', [True, False])
 def test_upload_initialize(api_client, user, dandiset_factory, embargoed):
     dandiset = dandiset_factory(
@@ -109,7 +109,7 @@ def test_upload_initialize(api_client, user, dandiset_factory, embargoed):
     assert upload.blob.name == f'test-prefix/blobs/{upload_id[:3]}/{upload_id[3:6]}/{upload_id}'
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_unembargo_in_progress(api_client, user, dandiset_factory):
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
     api_client.force_authenticate(user=user)
@@ -128,7 +128,7 @@ def test_upload_initialize_unembargo_in_progress(api_client, user, dandiset_fact
     assert resp.status_code == 400
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset_blob):
     api_client.force_authenticate(user=user)
     assign_perm('owner', user, dandiset)
@@ -148,7 +148,7 @@ def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_not_an_owner(api_client, user, dandiset):
     api_client.force_authenticate(user=user)
 
@@ -167,7 +167,7 @@ def test_upload_initialize_not_an_owner(api_client, user, dandiset):
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_factory):
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -189,7 +189,7 @@ def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_facto
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_embargo_existing_asset_blob(
     api_client, user, dandiset_factory, asset_blob
 ):
@@ -213,7 +213,7 @@ def test_upload_initialize_embargo_existing_asset_blob(
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_embargo_existing_embargoed_asset_blob(
     api_client, user, dandiset_factory, embargoed_asset_blob_factory
 ):
@@ -238,7 +238,7 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
     assert not Upload.objects.all().exists()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_initialize_unauthorized(api_client):
     assert (
         api_client.post(

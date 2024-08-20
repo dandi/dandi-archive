@@ -61,7 +61,7 @@ EMPTY_PAGINATION = {
         ),
     ],
 )
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_embargo_visibility(
     api_client,
     user,
@@ -89,7 +89,7 @@ def test_embargo_visibility(
     assert response.status_code == 403
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
     with pytest.raises(AssetBlobEmbargoedError):
         remove_asset_blob_embargoed_tag(embargoed_asset_blob)

@@ -6,7 +6,7 @@ from dandiapi.api.management.commands.create_dev_dandiset import create_dev_dand
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_create_dev_dandiset(user):
     create_dev_dandiset('--name', 'My Test Dandiset', '--owner', user.email)
 
