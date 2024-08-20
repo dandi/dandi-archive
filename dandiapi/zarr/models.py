@@ -130,7 +130,7 @@ class ZarrArchiveFile(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(name='unique-file-data', fields=['key', 'version_id', 'etag']),
+            # models.UniqueConstraint(name='unique-file-data', fields=['key', 'version_id', 'etag']),
             models.UniqueConstraint(name='unique-zarr-key', fields=['zarr_version', 'key']),
             models.CheckConstraint(
                 name='consistent-metadata-field',
