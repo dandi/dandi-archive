@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from uuid import uuid4
 
+from dandischema.models import AccessType
 from django.conf import settings
 from django.db.utils import IntegrityError
 from django.urls import reverse
@@ -193,6 +194,7 @@ def test_asset_full_metadata(draft_asset_factory):
     assert asset.full_metadata == {
         **raw_metadata,
         'id': f'dandiasset:{asset.asset_id}',
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         'path': asset.path,
         'identifier': str(asset.asset_id),
         'contentUrl': [download_url, blob_url],
@@ -219,6 +221,7 @@ def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
     assert asset.full_metadata == {
         **raw_metadata,
         'id': f'dandiasset:{asset.asset_id}',
+        'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
         'path': asset.path,
         'identifier': str(asset.asset_id),
         'contentUrl': [download_url, s3_url],
@@ -679,6 +682,12 @@ def test_asset_create_embargo(
         'meta': 'data',
         'foo': ['bar', 'baz'],
         '1': 2,
+        'access': [
+            {
+                'schemaKey': 'AccessRequirements',
+                'status': AccessType.OpenAccess.value,
+            }
+        ],
     }
 
     resp = api_client.post(
@@ -689,6 +698,7 @@ def test_asset_create_embargo(
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
 
+    assert new_asset.full_metadata['access'][0]['status'] == AccessType.EmbargoedAccess.value
     assert new_asset.blob.embargoed
     assert new_asset.zarr is None
 
