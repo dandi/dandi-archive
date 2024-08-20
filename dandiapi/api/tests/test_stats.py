@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_baseline(api_client):
     assert api_client.get('/api/stats/').data == {
         'dandiset_count': 0,
@@ -14,7 +14,7 @@ def test_stats_baseline(api_client):
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_draft(api_client, dandiset):
     stats = api_client.get('/api/stats/').data
 
@@ -22,7 +22,7 @@ def test_stats_draft(api_client, dandiset):
     assert stats['published_dandiset_count'] == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_published(api_client, published_version_factory):
     published_version_factory()
     stats = api_client.get('/api/stats/').data
@@ -31,7 +31,7 @@ def test_stats_published(api_client, published_version_factory):
     assert stats['published_dandiset_count'] == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_user(api_client, user):
     stats = api_client.get('/api/stats/').data
 
@@ -39,7 +39,7 @@ def test_stats_user(api_client, user):
     assert stats['user_count'] == 2
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_asset(api_client, version, asset):
     version.assets.add(asset)
     stats = api_client.get('/api/stats/').data
@@ -47,7 +47,7 @@ def test_stats_asset(api_client, version, asset):
     assert stats['size'] == asset.size
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_embargoed_asset(api_client, version, asset_factory, embargoed_asset_blob_factory):
     embargoed_asset = asset_factory()
     embargoed_asset.blob = embargoed_asset_blob_factory()
@@ -57,7 +57,7 @@ def test_stats_embargoed_asset(api_client, version, asset_factory, embargoed_ass
     assert stats['size'] == embargoed_asset.size
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_embargoed_and_regular_blobs(
     api_client, version, asset_factory, asset_blob_factory, embargoed_asset_blob_factory
 ):

@@ -8,12 +8,12 @@ from dandiapi.analytics.tasks import collect_s3_log_records_task, process_s3_log
 from dandiapi.api.storage import create_s3_storage, get_boto_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3_log_bucket():
     return create_s3_storage(settings.DANDI_DANDISETS_LOG_BUCKET_NAME).bucket_name
 
 
-@pytest.fixture()
+@pytest.fixture
 def s3_log_file(s3_log_bucket, asset_blob):
     s3 = get_boto_client()
 
@@ -44,7 +44,7 @@ def s3_log_file(s3_log_bucket, asset_blob):
     s3.delete_object(Bucket=s3_log_bucket, Key=log_file_name)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_processing_s3_log_files(s3_log_file, asset_blob):
     collect_s3_log_records_task()
     asset_blob.refresh_from_db()
@@ -53,7 +53,7 @@ def test_processing_s3_log_files(s3_log_file, asset_blob):
     assert asset_blob.download_count == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_processing_s3_log_files_idempotent(s3_log_file, asset_blob):
     # this tests that the outer task which collects the log files to process is
     # idempotent, in other words, it uses StartAfter correctly.
@@ -66,7 +66,7 @@ def test_processing_s3_log_files_idempotent(s3_log_file, asset_blob):
     assert asset_blob.download_count == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_processing_s3_log_file_task_idempotent(s3_log_file, asset_blob):
     # this tests that the inner task which processes a single log file is
     # idempotent, utilizing the unique constraint on ProcessedS3Log correctly.

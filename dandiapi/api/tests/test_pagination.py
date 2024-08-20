@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_asset_pagination(api_client, version, asset_factory):
     endpoint = f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/'
 

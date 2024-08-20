@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from rest_framework.test import APIClient
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
     # Pretend like AssetBlob was defined with the given storage
     AssetBlob.blob.field.storage = storage
@@ -40,7 +40,7 @@ def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
     assert asset_blob.sha256 == sha256
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_calculate_checksum_task_embargo(
     storage: Storage, embargoed_asset_blob_factory, monkeypatch
 ):
@@ -60,7 +60,7 @@ def test_calculate_checksum_task_embargo(
     assert asset_blob.sha256 == sha256
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_manifest_files(storage: Storage, version: Version, asset_factory):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -100,7 +100,7 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
     assert storage.exists(collection_jsonld_path)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_asset_metadata(draft_asset: Asset):
     tasks.validate_asset_metadata_task(draft_asset.id)
 
@@ -110,7 +110,7 @@ def test_validate_asset_metadata(draft_asset: Asset):
     assert draft_asset.validation_errors == []
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_asset_metadata_malformed_schema_version(draft_asset: Asset):
     draft_asset.metadata['schemaVersion'] = 'xxx'
     draft_asset.save()
@@ -127,7 +127,7 @@ def test_validate_asset_metadata_malformed_schema_version(draft_asset: Asset):
     )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_asset_metadata_no_encoding_format(draft_asset: Asset):
     del draft_asset.metadata['encodingFormat']
     draft_asset.save()
@@ -142,7 +142,7 @@ def test_validate_asset_metadata_no_encoding_format(draft_asset: Asset):
     ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_asset_metadata_no_digest(draft_asset: Asset):
     draft_asset.blob.sha256 = None
     draft_asset.blob.save()
@@ -160,7 +160,7 @@ def test_validate_asset_metadata_no_digest(draft_asset: Asset):
     ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_asset_metadata_malformed_keywords(draft_asset: Asset):
     draft_asset.metadata['keywords'] = 'foo'
     draft_asset.save()
@@ -175,7 +175,7 @@ def test_validate_asset_metadata_malformed_keywords(draft_asset: Asset):
     ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version: Version):
     draft_version.assets.add(draft_asset)
 
@@ -191,7 +191,7 @@ def test_validate_asset_metadata_saves_version(draft_asset: Asset, draft_version
     assert draft_version.modified != old_datetime
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
@@ -210,7 +210,7 @@ def test_validate_version_metadata(draft_version: Version, asset: Asset):
     assert draft_version.modified > old_modified
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata_non_pending_version(draft_version: Version, asset: Asset):
     # Bypass .save to manually set an older timestamp, set status to INVALID
     old_modified = timezone.now() - datetime.timedelta(minutes=10)
@@ -230,7 +230,7 @@ def test_validate_version_metadata_non_pending_version(draft_version: Version, a
     assert draft_version.modified == old_modified
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata_no_side_effects(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
@@ -252,7 +252,7 @@ def test_validate_version_metadata_no_side_effects(draft_version: Version, asset
     assert old_data == new_data
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata_malformed_schema_version(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
@@ -270,7 +270,7 @@ def test_validate_version_metadata_malformed_schema_version(draft_version: Versi
     )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata_no_description(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
@@ -287,7 +287,7 @@ def test_validate_version_metadata_no_description(draft_version: Version, asset:
     ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata_malformed_license(draft_version: Version, asset: Asset):
     draft_version.assets.add(asset)
 
@@ -304,7 +304,7 @@ def test_validate_version_metadata_malformed_license(draft_version: Version, ass
     ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_validate_version_metadata_no_assets(
     draft_version: Version,
 ):
@@ -321,7 +321,7 @@ def test_validate_version_metadata_no_assets(
     ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_publish_task(
     api_client: APIClient,
     user: User,
