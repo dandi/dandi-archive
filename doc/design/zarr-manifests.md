@@ -1,10 +1,14 @@
-# Zarr Manifest Files
+# Zarr Versioning/Publishing support via Manifest Files
 
-This document specifies *Zarr manifest files*, each of which describes a Zarr
+This document specifies
+
+1. [x] *Zarr manifest files*, each of which describes a Zarr
 in the Dandi Archive, including the Zarr's internal directory structure and
 details on all of the Zarr's *entries* (regular, non-directory files).  The
 Dandi Archive is to automatically generate these files and serve them via S3.
-
+2. [ ] Changes needed to the DANDI Archive's API, DB Data Model, and internal logic.
+3. [ ] Changes needed to AWS (S3 in particular; likely TerraForm) configuration.
+4. [ ] Changes needed (if any) to dandischema.
 
 ## Current prototype
 
@@ -15,23 +19,24 @@ in the Dandi Archive, and actual produced manifest files are provided from https
 
 **Note:** https://datasets.datalad.org/dandi/zarr-manifests/zarr-manifests-v2-sorted/ and subfolders provides ad-hoc json record listing folders/files to avoid parsing stock apache2 index.
 
-CRON job runs daily on typhon (server at Dartmouth).
+[CRON job](https://github.com/dandi/zarr-manifests/blob/master/cronjob) runs daily on typhon (server at Dartmouth) to create manifest files (only) for new/updated zarrs in the archive.
 Except where noted, the manifest file format defined herein matches the format used by the proof of concept.
+As embargoed access to Zarrs is not implemented yet, embargo-related designs here might be incomplete.
 
 ### Data access using manifest files
 
 [dandidav](https://github.com/dandi/dandidav)---a WebDAV server for the DANDI---serves Zarrs from the Archive using the manifest files.
 Actual data is served from the Archive's S3 bucket, but the WebDAV server uses the manifest files to determine the structure of the Zarrs and the versions of the Zarrs' entries.
-Two "end-points" within that namespace are provided:
+Two "end-points" to access Zarrs within that namespace are provided, but only one of them uses Zarr manifests:
 
-- [webdav.dandiarchive.org/zarrs](https://webdav.dandiarchive.org/zarrs) -- all Zarrs across all dandisets, possibly with multiple versions. E.g. see [zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62](https://webdav.dandiarchive.org/zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62) which ATM has 3 versions.
-- [webdav.dandiarchive.org/dandisets/](https://webdav.dandiarchive.org/dandisets/)`{dandiset_id}/{version}/{path}/`. E.g. for aforementioned Zarr - https://webdav.dandiarchive.org/dandisets/000026/draft/sub-I48/ses-SPIM/micr/sub-I48_ses-SPIM_sample-BrocaAreaS09_stain-Somatostatin_SPIM.ome.zarr/ -- a specific version (the latest, currently [6efea0a8e95e67ecb5af7aa028dece14-18147--30560865836](https://webdav.dandiarchive.org/zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62/6efea0a8e95e67ecb5af7aa028dece14-18147--30560865836.zarr/)).
+- [webdav.dandiarchive.org/zarrs](https://webdav.dandiarchive.org/zarrs) -- **uses manifests** for all Zarrs across all dandisets, possibly with multiple versions. E.g. see [zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62](https://webdav.dandiarchive.org/zarrs/057/f84/057f84d5-a88b-490a-bedf-06f3f50e9e62) which ATM has 3 versions.
+- [webdav.dandiarchive.org/dandisets/](https://webdav.dandiarchive.org/dandisets/)`{dandiset_id}/{version}/{path}/` -- **does not** use manifest files but gets listing directly from S3, so provides access only to the current version (possibly not even finalized yet during upload) of the zarr at that path.
 
-Tools which support following redirections for individual files within Zarr can be pointed to those locations to "consume" zarrs of specific versions.
+Tools which support following redirections for individual files within Zarr can be pointed to the locations under the former end-point to "consume" zarr of a specific version.
 ATM dandisets do not support publishing (versioning) of Zarrs, so there would be only `/draft/` versions of dandisets with Zarrs.
 If this design is supported/implemented, particular versions of Zarrs would be made available from within particular versions of the `/dandisets/{dandiset_id}/`s.
 
-## Design details
+## Proposed design
 
 ### Creating & Storing Manifest Files
 
@@ -53,7 +58,7 @@ minimal code changes and (b) ensures that the number of entries within each
 directory in the bucket under `zarr-manifest/` is not colossal, thereby
 avoiding tremendous resource usage by `dandidav`.
 
-The manifest file shall be world-readable, unless the Zarr is embargoed or
+**Embargo.** The manifest file shall be world-readable, unless the Zarr is embargoed or
 belongs to an embargoed Dandiset, in which case appropriate steps shall be
 taken to limit read access to the file.
 
@@ -61,8 +66,7 @@ Manifest files shall also be generated for all Zarrs already in the Archive
 when this feature is first implemented.
 
 
-Manifest File Format
---------------------
+### Manifest File Format
 
 A Zarr manifest file is a JSON document consisting of a JSON object with the
 following fields:
@@ -186,8 +190,9 @@ following fields:
 >   the checksum calculated by the manifest-generation code
 
 
-Archive API Changes
--------------------
+### Archive Changes
+
+#### API Changes
 
 ***WIP***
 
@@ -217,4 +222,17 @@ Archive API Changes
 
 * Publishing Zarrs: Just ensure that the `zarr_version` in Zarr assets is frozen and that no entries/S3 object versions from the referenced version are ever deleted ?
 
-* Does garbage collection of old Zarr versions need to be discussed?
+#### Garbage collection
+
+* GC of Manifests: manifests older than X days (e.g. 30) can be deleted if not referenced by any Zarr asset (draft or published).
+* GC of Manifests should trigger analysis/deletion of S3 objects based on their content:
+  * if it is the last manifest(s) to be removed for a zarr, the zarr asset and `/zarr/{zarr_id}/` "folder" should be removed as well (including all versions of all keys);
+  * upon deletion of a set of manifests for a `zarr_id`, collect key and versionId's referenced in those manifests but not in any other manifest for that Zarr, and delete those particular versions of those Keys from S3. If a key has no other versions, delete that key fully (do not keep lonely`DeleteMarker`)
+
+### AWS Configuration Changes
+
+`zarr/` prefix must be excluded from "trailing delete".
+This necessary because a file within Zarr could be deleted in subsequent version, while still accessed by its VersionId in the previous one.
+ATM there is no filter in [terraform/modules/dandiset_bucket/main.tf (expire_deleted_objects)](https://github.com/dandi/dandi-infrastructure/blob/master/terraform/modules/dandiset_bucket/main.tf#L310).
+
+### dandi-schema
