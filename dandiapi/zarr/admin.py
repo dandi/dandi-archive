@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.contrib import admin, messages
 from django.utils.translation import ngettext
 
-from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
+from dandiapi.zarr.models import ZarrArchive
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
@@ -30,10 +30,3 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
             % queryset.count(),
             messages.SUCCESS,
         )
-
-
-@admin.register(EmbargoedZarrArchive)
-class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
-    search_fields = ['zarr_id', 'name']
-    list_display = ['id', 'zarr_id', 'name', 'dandiset']
-    list_display_links = ['id', 'zarr_id', 'name']
