@@ -195,7 +195,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         metadata: dict,
         path: str,
     ) -> bool:
-        from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
+        from dandiapi.zarr.models import ZarrArchive
 
         if isinstance(asset_blob, AssetBlob) and self.blob is not None and self.blob != asset_blob:
             return True
@@ -207,8 +207,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         ):
             return True
 
-        if isinstance(zarr_archive, EmbargoedZarrArchive):
-            raise NotImplementedError
+        # TODO: Check embargoed zarrs
 
         if self.path != path:
             return True

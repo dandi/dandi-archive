@@ -3,16 +3,20 @@ from __future__ import annotations
 from django.contrib import admin, messages
 from django.utils.translation import ngettext
 
-from dandiapi.zarr.models import EmbargoedZarrArchive, ZarrArchive
+from dandiapi.zarr.models import ZarrArchive
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
 @admin.register(ZarrArchive)
 class ZarrArchiveAdmin(admin.ModelAdmin):
     search_fields = ['zarr_id', 'name']
-    list_display = ['id', 'zarr_id', 'name', 'dandiset']
+    list_display = ['id', 'zarr_id', 'name', 'dandiset', 'public']
     list_display_links = ['id', 'zarr_id', 'name']
     actions = ('ingest_zarr_archive',)
+
+    @admin.display(boolean=True, description='Public Access', ordering='embargoed')
+    def public(self, obj: ZarrArchive):
+        return not obj.embargoed
 
     @admin.action(description='Ingest selected zarr archives')
     def ingest_zarr_archive(self, request, queryset):
@@ -30,10 +34,3 @@ class ZarrArchiveAdmin(admin.ModelAdmin):
             % queryset.count(),
             messages.SUCCESS,
         )
-
-
-@admin.register(EmbargoedZarrArchive)
-class EmbargoedZarrArchiveAdmin(admin.ModelAdmin):
-    search_fields = ['zarr_id', 'name']
-    list_display = ['id', 'zarr_id', 'name', 'dandiset']
-    list_display_links = ['id', 'zarr_id', 'name']
