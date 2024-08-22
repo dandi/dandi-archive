@@ -18,6 +18,7 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.zarr.models import ZarrArchive
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -31,6 +32,15 @@ def remove_asset_blob_embargoed_tag_task(blob_id: str) -> None:
 
     asset_blob = AssetBlob.objects.get(blob_id=blob_id)
     remove_asset_blob_embargoed_tag(asset_blob)
+
+
+# TODO
+@shared_task(soft_time_limit=60)
+def remove_zarr_embargoed_tags_task(zarr_id: str) -> None:
+    from dandiapi.api.services.embargo import remove_zarr_embargoed_tags
+
+    zarr = ZarrArchive.objects.get(zarr_id=zarr_id)
+    remove_zarr_embargoed_tags(zarr)
 
 
 @shared_task(

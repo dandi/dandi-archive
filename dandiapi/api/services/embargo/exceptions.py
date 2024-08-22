@@ -10,6 +10,11 @@ class AssetBlobEmbargoedError(DandiError):
     message = 'This operation cannot be performed on embargoed assets blobs.'
 
 
+class ZarrArchiveEmbargoedError(DandiError):
+    http_status_code = status.HTTP_400_BAD_REQUEST
+    message = 'This operation cannot be performed on embargoed zarr archives.'
+
+
 class DandisetNotEmbargoedError(DandiError):
     http_status_code = status.HTTP_400_BAD_REQUEST
     message = 'Dandiset not embargoed'

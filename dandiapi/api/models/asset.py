@@ -167,6 +167,12 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     def is_zarr(self):
         return self.zarr is not None
 
+    def is_embargoed(self):
+        if self.blob is not None:
+            return self.blob.embargoed
+
+        return self.zarr.embargoed  # type: ignore reportAttributeAccessIssue
+
     @property
     def size(self):
         if self.is_blob:
@@ -211,8 +217,6 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             and self.zarr != zarr_archive
         ):
             return True
-
-        # TODO: Check embargoed zarrs
 
         if self.path != path:
             return True
@@ -278,7 +282,4 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             .aggregate(size=models.Sum('size'))['size']
             or 0
             for cls in (AssetBlob, ZarrArchive)
-            # adding of Zarrs to embargoed dandisets is not supported
-            # so no point of adding EmbargoedZarr here since would also result in error
-            # TODO: add EmbagoedZarr whenever supported
         )

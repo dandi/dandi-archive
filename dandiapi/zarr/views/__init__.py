@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
@@ -14,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
 from dandiapi.api.services import audit
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
@@ -109,6 +110,13 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         # Add filters from query parameters
         data = query_serializer.validated_data
         queryset: QuerySet[ZarrArchive] = self.get_queryset()
+
+        # Filter zarrs to either open access or owned
+        user_owned_dandiset_ids = DandisetUserObjectPermission.objects.filter(
+            user=self.request.user, permission__codename='owner'
+        ).values_list('content_object_id', flat=True)
+        queryset = queryset.filter(Q(embargoed=False) | Q(dandiset_id__in=user_owned_dandiset_ids))
+
         if 'dandiset' in data:
             queryset = queryset.filter(dandiset=int(data['dandiset'].lstrip('0')))
         if 'name' in data:

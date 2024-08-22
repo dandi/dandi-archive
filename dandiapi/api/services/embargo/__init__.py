@@ -23,18 +23,21 @@ from .exceptions import (
     AssetTagRemovalError,
     DandisetActiveUploadsError,
     DandisetNotEmbargoedError,
+    ZarrArchiveEmbargoedError,
 )
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
     from mypy_boto3_s3 import S3Client
 
+    from dandiapi.zarr.models import ZarrArchive
+
 
 logger = logging.getLogger(__name__)
 ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE = 5000
 
 
-def _delete_asset_blob_tags(client: S3Client, blob: str):
+def _delete_object_tags(client: S3Client, blob: str):
     client.delete_object_tagging(
         Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
         Key=blob,
@@ -54,9 +57,7 @@ def _remove_dandiset_asset_blob_embargo_tags(dandiset: Dandiset):
     chunks = chunked(embargoed_asset_blobs, ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE)
     for chunk in chunks:
         with ThreadPoolExecutor(max_workers=100) as e:
-            futures = [
-                e.submit(_delete_asset_blob_tags, client=client, blob=blob) for blob in chunk
-            ]
+            futures = [e.submit(_delete_object_tags, client=client, blob=blob) for blob in chunk]
 
         # Check if any failed and raise exception if so
         failed = [blob for i, blob in enumerate(chunk) if futures[i].exception() is not None]
@@ -118,7 +119,27 @@ def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
     if asset_blob.embargoed:
         raise AssetBlobEmbargoedError
 
-    _delete_asset_blob_tags(client=get_boto_client(), blob=asset_blob.blob.name)
+    _delete_object_tags(client=get_boto_client(), blob=asset_blob.blob.name)
+
+
+def remove_zarr_embargoed_tags(zarr: ZarrArchive) -> None:
+    """Remove the embargoed tag of an asset blob."""
+    if zarr.embargoed:
+        raise ZarrArchiveEmbargoedError
+
+    client = get_boto_client()
+    paginator = client.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Prefix=zarr.s3_path(''))
+
+    with ThreadPoolExecutor(max_workers=100) as e:
+        for page in pages:
+            keys = [obj['Key'] for obj in page.get('Contents', [])]
+            futures = [e.submit(_delete_object_tags, client=client, blob=key) for key in keys]
+
+            # Check if any failed and raise exception if so
+            failed = [key for i, key in enumerate(keys) if futures[i].exception() is not None]
+            if failed:
+                raise AssetTagRemovalError('Some zarr files failed to remove tags', blobs=failed)
 
 
 def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
