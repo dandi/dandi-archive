@@ -38,6 +38,7 @@ export interface Version {
   version: string,
   name: string,
   asset_count: number,
+  active_uploads: number
   size: number,
   status: 'Pending' | 'Validating' | 'Valid' | 'Invalid' | 'Published',
   validation_error?: string,

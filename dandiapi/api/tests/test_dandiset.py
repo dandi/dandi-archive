@@ -343,6 +343,7 @@ def test_dandiset_rest_create(api_client, user):
             'version': 'draft',
             'name': name,
             'asset_count': 0,
+            'active_uploads': 0,
             'size': 0,
             'dandiset': {
                 'identifier': DANDISET_ID_RE,
@@ -436,6 +437,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             'version': 'draft',
             'name': name,
             'asset_count': 0,
+            'active_uploads': 0,
             'size': 0,
             'dandiset': {
                 'identifier': identifier,
@@ -543,6 +545,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
             'version': 'draft',
             'name': name,
             'asset_count': 0,
+            'active_uploads': 0,
             'size': 0,
             'dandiset': {
                 'identifier': identifier,
@@ -633,6 +636,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
             'version': 'draft',
             'name': name,
             'asset_count': 0,
+            'active_uploads': 0,
             'size': 0,
             'dandiset': {
                 'identifier': DANDISET_ID_RE,

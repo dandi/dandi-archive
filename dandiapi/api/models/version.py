@@ -72,6 +72,13 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         )
 
     @property
+    def active_uploads(self):
+        if self.version != 'draft':
+            return 0
+
+        return self.dandiset.uploads.count()
+
+    @property
     def publishable(self) -> bool:
         if self.status != Version.Status.VALID:
             return False
