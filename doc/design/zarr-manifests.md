@@ -198,15 +198,43 @@ following fields:
 
 * Zarr version IDs equal the Zarr checksum
 
-* Asset properties gain `zarr_version: str | null` field (absent or null if Zarr is not yet ingested or asset is not a Zarr)
-    - Not settable by client
-    - Mint new asset when version changes?
+- `Zarr` model has `.checksum`
+  - (?) Not settable by client
+  - (?) Upon changes to zarr asset initiated, `Zarr.checksum` reset to None, which stays such until Zarr is finalized
+  - (?) Zarr should be denied new changes if `Zarr.checksum` is already None, and until it is finalized
+  - Make `/finalize` to return new Zarr checksum:
+    - might take awhile, so we might want to return some upload ID to be able to re-request checksum for specific upload
+    - at this point we have not minted yet a new asset!
+    - **Alternative**: do establish ZarrVersion
+      - `many-to-many` between `zarr_id` and `zarr_version`.
+      - `/finalize` would return new `zarr_version_id`
+      - **Alternatives**:
+        - PUT/PATCH/POST calls in API expecting `zarr_id` should be changed to provide `zarr_version_id` instead
+        - We just add `/zarr/{zarr_id}/{zarr_version_id}/` call which would return `checksum` for that version.
 
-* Add `zarr_version` field to …/assets/path/ results
+* Side discussion: new Zarr version/checksum compute is relatively expensive.
+  It could be "cheap" if we rely on prior manifest + changes (new files with checksums) or DELETEs. But it would require 'fsck' style re-check
+  and possibly "fixing" the version. Fragile since there would be no state to describe some prior state of Zarr to "checksum" it.
 
+* To not change DB model, to not breed zarr specific DB model fields, rely on `metadata.digest.dandi:dandi-zarr-checksum` for Zarr checksum.
+  - Add `zarr_checksum` to `Zarr` model, but it must be just a convenience duplicate of the checksum in the metadata. But then some return of the API would need to be adjusted to return this dedicated `zarr_checksum` in addition to value in `metadata`
+  - We mint new asset when metadata changes, so new asset is produced when metadata record with a new version of Zarr (new checksum) is provided
+    - we verify that checksum is consistent with the the `checksum` of zarr_id provided
+      - NOTE: this means we would not be able to re-use versioned zarr from released version!
+
+* …/assets/ results gain `zarr_checksum`
+  - they can only optionally contain `metadata` hence, we want to have `zarr_checksum` in the response
+  - Q: What is "Version" int returned now for each asset?
+  likely internal DB Version.id - unclear why it is in API response in such a form.
+* …/assets/paths/ -- no change since point to `asset_id`
+
+* …/assets/{asset_id}/download/ -- point to versioned version based on checksum in metadata
+  * `webdav.{archive_domain}/zarrs/{dir1}/{dir2}/{zarr_id}/{checksum}/` URLs
+        ([...redirect /download/ for zarrs to webdav](https://github.com/dandi/dandi-archive/issues/1993))
 * Zarr `contentUrl`s:
     - Make API download URLs for Zarrs redirect to dandidav
-    - Replace S3 URLs with webdav.{archive_domain}/zarr/ URLs?
+    - Replace S3 URLs with `webdav.{archive_domain}/zarrs/{dir1}/{dir2}/{zarr_id}/{checksum}/` URLs
+      ([...redirect /download/ for zarrs to webdav](https://github.com/dandi/dandi-archive/issues/1993)) ?
         - Document needed changes to dandidav?
             - The bucket for the Archive instance will now be given on the command line (only required if a custom/non-default API URL is given)
             - The bucket's region will have to be looked up & stored before starting the webserver
@@ -220,9 +248,10 @@ following fields:
         - The Zarr entry objects returned in `…/files/` responses (with & without `versions/{version_id}/`) will need to gain a `VersionId` field containing the S3 object version ID
     - Nothing under /zarr/versions/ is writable over the API
 
-* Publishing Zarrs: Just ensure that the `zarr_version` in Zarr assets is frozen and that no entries/S3 object versions from the referenced version are ever deleted ?
+* Publishing Dandisets with Zarrs: Just ensure that no entries/S3 object versions from the referenced version are ever deleted (see GC section below)
 
-#### Garbage collection
+
+#### Garbage collection (GC)
 
 * GC of Manifests: manifests older than X days (e.g. 30) can be deleted if not referenced by any Zarr asset (draft or published).
 * GC of Manifests should trigger analysis/deletion of S3 objects based on their content:
