@@ -1,3 +1,24 @@
+# v0.3.95 (Tue Aug 27 2024)
+
+#### 🐛 Bug Fix
+
+- Respond with 409 when creating duplicate asset blobs [#2011](https://github.com/dandi/dandi-archive/pull/2011) ([@danlamanna](https://github.com/danlamanna))
+- Apply new `ruff` rules [#2009](https://github.com/dandi/dandi-archive/pull/2009) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add Neurosift service for AVI files [#1983](https://github.com/dandi/dandi-archive/pull/1983) ([@magland](https://github.com/magland))
+
+#### 🏠 Internal
+
+- [gh-actions](deps): Bump actions/add-to-project from 0.6.0 to 1.0.2 [#1962](https://github.com/dandi/dandi-archive/pull/1962) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.94 (Fri Aug 16 2024)
 
 #### 🐛 Bug Fix
