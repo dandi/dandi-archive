@@ -65,7 +65,7 @@
     >
       <v-tooltip
         left
-        :disabled="!unembargo_in_progress"
+        :disabled="!unembargoDisabled"
       >
         <template #activator="{ on }">
           <div
@@ -77,7 +77,7 @@
               block
               color="info"
               depressed
-              :disabled="unembargo_in_progress"
+              :disabled="unembargoDisabled"
               @click="unembargo()"
             >
               {{ unembargo_in_progress ? 'Unembargoing' : 'Unembargo' }}
@@ -87,6 +87,7 @@
           </div>
         </template>
         <span v-if="unembargo_in_progress">This dandiset is being unembargoed, please wait.</span>
+        <span v-else-if="currentDandiset.active_uploads">This dandiset has active uploads. Please complete or clear these uploads before proceeding.</span>
       </v-tooltip>
     </v-row>
     <v-row>
@@ -127,6 +128,7 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
+const unembargoDisabled = computed(() => !!(unembargo_in_progress.value || currentDandiset.value === null || currentDandiset.value.active_uploads));
 const showWarningDialog = ref(false);
 const confirmationPhrase = ref('');
 
