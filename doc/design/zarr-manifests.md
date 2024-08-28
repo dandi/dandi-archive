@@ -60,7 +60,8 @@ avoiding tremendous resource usage by `dandidav`.
 
 **Embargo.** The manifest file shall be world-readable, unless the Zarr is embargoed or
 belongs to an embargoed Dandiset, in which case appropriate steps shall be
-taken to limit read access to the file.
+taken to limit read access to the file. Related issues/aspects on zarrbargo:
+- [? avoid dedicated EmbargoedZarrArchive](https://github.com/dandi/dandi-archive/issues/2003#issuecomment-2315718976)
 
 Manifest files shall also be generated for all Zarrs already in the Archive
 when this feature is first implemented.
@@ -192,7 +193,7 @@ following fields:
 
 ### Archive Changes
 
-#### API Changes
+#### Model/API Changes
 
 ***WIP***
 
@@ -216,7 +217,7 @@ following fields:
   It could be "cheap" if we rely on prior manifest + changes (new files with checksums) or DELETEs. But it would require 'fsck' style re-check
   and possibly "fixing" the version. Fragile since there would be no state to describe some prior state of Zarr to "checksum" it.
 
-* To not change DB model, to not breed zarr specific DB model fields, rely on `metadata.digest.dandi:dandi-zarr-checksum` for Zarr checksum.
+* To not change DB model too much, to not breed zarr specific DB model fields, rely on `metadata.digest.dandi:dandi-zarr-checksum` for Zarr checksum.
   - Add `zarr_checksum` to `Zarr` model, but it must be just a convenience duplicate of the checksum in the metadata. But then some return of the API would need to be adjusted to return this dedicated `zarr_checksum` in addition to value in `metadata`
   - We mint new asset when metadata changes, so new asset is produced when metadata record with a new version of Zarr (new checksum) is provided
     - we verify that checksum is consistent with the the `checksum` of zarr_id provided
@@ -250,6 +251,10 @@ following fields:
 
 * Publishing Dandisets with Zarrs: Just ensure that no entries/S3 object versions from the referenced version are ever deleted (see GC section below)
 
+* Remove `.dandiset` attribute from [*ZarrArchive](https://github.com/dandi/dandi-archive/blob/HEAD/dandiapi/zarr/models.py#L101):
+  - It should be possible to associate Zarr with multiple dandisets
+  - GC should take care about picking up stale Zarrs as it does Blobs
+  - Would remove `ingest_dandiset_zarrs` (seems to be just a service helper ATM anyways)
 
 #### Garbage collection (GC)
 
