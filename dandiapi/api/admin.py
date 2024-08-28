@@ -216,6 +216,7 @@ class AssetAdmin(admin.ModelAdmin):
         'asset_id',
         'path',
         'blob',
+        'zarr',
         'status',
         'size',
         'modified',
