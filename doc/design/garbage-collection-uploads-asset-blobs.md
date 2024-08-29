@@ -29,6 +29,32 @@ In both cases, we need to delete both the blob from S3 and the row from the DB i
 
 Due to the trailing delete lifecycle rule, the actual uploaded data will remain recoverable for up to 30 days after this deletion, after which the lifecycle rule will clear it out of the bucket permanently.
 
+### Audit logs
+
+We also need to consider how to capture garbage collection in the audit log. In addition to providing audit information, this will enable us to associate a deleted blob back to its asset database record when restoring it from the trailing delete mechanism.
+
+The new audit record types will be as follows:
+
+#### `garbage_collect_asset_blob`
+```json
+{
+    "asset_id": UUID4,
+    "asset_blob_id": UUID4,
+    "path": string,
+    "checksum": string,
+    "embargoed": boolean,
+    "metadata": dict,
+}
+```
+
+#### `garbage_collect_upload`
+```json
+{
+    "dandiset_id": int,
+    "embargoed": boolean,
+}
+```
+
 ## Data
 
 The current amount of orphaned data in the system as of 11/6/2023 is as follows:
