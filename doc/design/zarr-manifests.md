@@ -256,6 +256,46 @@ following fields:
   - GC should take care about picking up stale Zarrs as it does Blobs
   - Would remove `ingest_dandiset_zarrs` (seems to be just a service helper ATM anyways)
 
+* Remove `.name` attribute from `BaseZarrArchive`. zarr_id is unique identifier for the mutable Zarr.
+
+#### Some outloud thinking
+
+* `Asset` -- (largely) a CoW entry binding together *content* and metadata.
+* ATM *content* can be immutable `AssetBlob` (in `.blob`) or mutable `ZarrArchive` (in `.zarr`).
+* `blob_id` is UUID (not checksum) but just a unique identifier for the **immutable** blob which later assigned a computed `checksum`:
+  * storage on S3 is not "content-addressable" but after `blob_id`
+  * changes to the blob are not possible, but new blobs can be created
+  * Upload of a blob involves
+    * producing `upload_id` (and urls to use for upload)
+    * `/blobs/{upload_id}/complete/` endpoint to complete which returns `complete_url`
+    * also there is `/blobs/{upload_id}/validate/` to finally get `blob_id` and `etag` and trigger compute of sha256 checksum to be filled out later
+    * `blob_id` (thus pointing to immutable content) is provided to create a new `Asset`
+* `zarr_id` is UUID for a **mutable** content, with `.checksum` also being computed "async" by `/zarr/{zarr_id}/finalize`
+  * changes to Zarr could be done, resulting in a `.checksum` being updated
+  * **there is no notion of `upload_id`** for Zarrs: multiple PUT/DELETE requests could be submitted in parallel (?).
+  * `/zarr/{zarr_id}/finalize` does not return anything
+* Although upload procedures differ significantly between blobs and zarrs, they could be "uniformized" as upon completion, the **new** `_id` which identifies that particular (immutable) **content** is returned.
+* We use UUIDs for all the API-accessible `_id`s so there **already** should be no overlaps between `blob_id` and `zarr_id`.
+  * In the model and API for interactions with Assets, we could use generic **`content_id`** which would be some UUID resolvable to a `blob_id` or `zarr_id`.
+  * That later would allow to extend into other types of content, possibly requiring different upload or download procedures, such as hypothetical:
+    * `RemoteAssets` - blobs or Zarrs on other DANDI instances for which we provide interfaces to get "registered"
+    * ...
+* We could have a `AssetContent` model/table with `content_id` and `content_type` (blob, zarr, remote, …) and then `Asset` pointing to `content_id` (instead of separate `blob` and `zarr`) and may be duplicate `content_type` for convenience (or just make DBM do needed joint).
+  * Yarik does not know on  DBM efficient way to orchestrate such linkage into multiple external tables, but there must be some design pattern.
+* **content** needs `size` and `etag` (or `checksum`)
+
+#### Some inconsistencies
+
+which we can either resolve and/or take advantage off (to avoid breaking interface "in-place")
+
+- There is `Asset`
+- API has all endpoints in plulal `/blobs/`, `/dandisets/`, `/assets/` but a singular `/zarr/`.
+  - We could add/use `/zarrs/` in parallel to (being deprecated) `/zarr/` e.g. for support of versioned zarrs operations
+- We have no `Blob` model -- `blob_id` for a `AssetBlob` (not just `Blob`)
+- We have no `Zarr` model -- `zarr_id` for a `ZarrArchive` (not just `Zarr`)
+  - We could come up with `AssetZarrArchive` for an **immutable** (version specific) `ZarrArchive`
+  - **note** we need a new dedicated `azarr_id` (for "Asset" zarr_id) or `vzarr_id` (for "Versioned" zarr_id) to distinguish from mutable `zarr_id`.
+
 #### Garbage collection (GC)
 
 * GC of Manifests: manifests older than X days (e.g. 30) can be deleted if not referenced by any Zarr asset (draft or published).
