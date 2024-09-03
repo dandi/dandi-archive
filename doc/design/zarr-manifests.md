@@ -3,14 +3,14 @@
 This document specifies
 
 1. [x] *Zarr manifest files*, each of which describes a Zarr
-in the Dandi Archive, including the Zarr's internal directory structure and
+in the DANDI Archive, including the Zarr's internal directory structure and
 details on all of the Zarr's *entries* (regular, non-directory files).  The
 Dandi Archive is to automatically generate these files and serve them via S3.
 2. [ ] Changes needed to the DANDI Archive's API, DB Data Model, and internal logic.
 3. [ ] Changes needed to AWS (S3 in particular; likely TerraForm) configuration.
 4. [ ] Changes needed (if any) to dandischema.
 
-## Current prototype
+## Current prototype elements
 
 ### Creating manifest files
 
@@ -193,6 +193,43 @@ following fields:
 
 ### Archive Changes
 
+#### Some outloud thinking
+
+* `Asset` -- (largely) a CoW entry binding together *content* and metadata.
+* ATM *content* can be immutable `AssetBlob` (in `.blob`) or mutable `ZarrArchive` (in `.zarr`).
+* `blob_id` is UUID (not checksum) but just a unique identifier for the **immutable** blob which later assigned a computed `checksum`:
+  * storage on S3 is not "content-addressable" but location is based on `blob_id`
+  * changes to the blob are not possible, but new blobs can be created
+  * Upload of a blob involves
+    * producing `upload_id` (and urls to use for upload; Q: could have been `blob_id`?)
+    * `/blobs/{upload_id}/complete/` endpoint to complete which returns `complete_url`
+    * also there is `/blobs/{upload_id}/validate/` to finally get `blob_id` and `etag` and trigger compute of sha256 checksum to be filled out later
+    * `blob_id` (thus pointing to immutable content) is provided to create a new `Asset`
+* `zarr_id` is UUID for a **mutable** content, with `.checksum` also being computed "async" by `/zarr/{zarr_id}/finalize`
+  * changes to Zarr could be done, resulting in a `.checksum` being updated
+  * **there is no notion of `upload_id`** for Zarrs: multiple PUT/DELETE requests could be submitted in parallel (?).
+  * `/zarr/{zarr_id}/finalize` does not return anything (could have returned some `vzarr_id`, see below)
+* Although upload procedures differ significantly between blobs and zarrs, they could be "uniformized" as upon completion, the **new** `_id` which identifies that particular (immutable) **content** is returned.
+* We use UUIDs for all the API-accessible `_id`s so there **already** should be no overlaps between `blob_id` and `zarr_id`.
+  * In the model and API for interactions with Assets, we could use generic **`content_id`** which would be some UUID resolvable to a `blob_id` or `zarr_id`.
+  * That later would allow to extend into other types of content, possibly requiring different upload or download procedures, such as hypothetical:
+    * `RemoteAssets` - blobs or Zarrs on other DANDI instances for which we provide interfaces to get "registered". "upload" procedure and underlying model would differ
+    * ...
+* We could have a `Content` model/table with `content_id` and `content_type` (blob, zarr, remote, …) and then `Asset` to point to `Content` (via `content_id`, instead of separate `blob` and `zarr`) and may be duplicate `content_type` for convenience (or just make DBM do needed joint).
+  * Yarik does not know on DBM efficient way to orchestrate such linkage into multiple external tables, but there must be some design pattern.
+* **content** (`blob` or `zarr`) uniformly should have `size` and some `etag` (or `checksum`)
+
+#### Some inconsistencies
+
+which we can either resolve and/or take advantage off (to avoid breaking interface "in-place")
+
+- API has all endpoints in plural `/blobs/`, `/dandisets/`, `/assets/` but a singular `/zarr/`.
+  - We could add/use `/zarrs/` in parallel to (being deprecated) `/zarr/` e.g. for support of versioned zarrs operations
+- We have no `Blob` model -- `blob_id` for a `AssetBlob` (not just `Blob`)
+- We have no `Zarr` model -- `zarr_id` for a `ZarrArchive` (not just `Zarr`)
+  - We could come up with `AssetZarrArchive` for an **immutable** (version specific) `ZarrArchive`
+  - **note** we need a new dedicated `azarr_id` (for "Asset" zarr_id) or `vzarr_id` (for "Versioned" zarr_id) to distinguish from mutable `zarr_id`.
+
 #### Model/API Changes
 
 ***WIP***
@@ -201,17 +238,19 @@ following fields:
 
 - `Zarr` model has `.checksum`
   - (?) Not settable by client
+  - Zarr .checksum should not identify the zarr (we could have multiple zarrs which would "arrive" at the same checksum)
+  - We cannot/should not deduplicate based on Zarr checksum similarly to how we do for the blobs
+    - Zarrs are mutable, so even if we deduplicate, user might not be able to update the Zarr etc.
   - (?) Upon changes to zarr asset initiated, `Zarr.checksum` reset to None, which stays such until Zarr is finalized
   - (?) Zarr should be denied new changes if `Zarr.checksum` is already None, and until it is finalized
-  - Make `/finalize` to return new Zarr checksum:
-    - might take awhile, so we might want to return some upload ID to be able to re-request checksum for specific upload
+  - Make `/finalize` to return some `upload_id` or even `vzarr_id` to be able to re-request checksum for specific upload
     - at this point we have not minted yet a new asset!
-    - **Alternative**: do establish ZarrVersion
-      - `many-to-many` between `zarr_id` and `zarr_version`.
-      - `/finalize` would return new `zarr_version_id`
+    - **Alternative**: do establish VersionedZarr (or ZarrVersion, `zarrv_id`)
+      - `many-to-many` between `zarr_id` and `vzarr_id`.
+      - `/finalize` would return new `vzarr_id`
       - **Alternatives**:
-        - PUT/PATCH/POST calls in API expecting `zarr_id` should be changed to provide `zarr_version_id` instead
-        - We just add `/zarr/{zarr_id}/{zarr_version_id}/` call which would return `checksum` for that version.
+        - PUT/PATCH/POST calls in API expecting `zarr_id` should be changed to provide `vzarr_id` instead
+        - We just add `/zarr/{zarr_id}/{vzarr_id}/` call which would return `checksum` for that version. (note, could have been `/zarr/{vzarr_id}` since no overlap among ids, so may be `/zarrs/{vzarr_id}` or `/vzarrs/{vzarr_id}`?)
 
 * Side discussion: new Zarr version/checksum compute is relatively expensive.
   It could be "cheap" if we rely on prior manifest + changes (new files with checksums) or DELETEs. But it would require 'fsck' style re-check
@@ -257,44 +296,6 @@ following fields:
   - Would remove `ingest_dandiset_zarrs` (seems to be just a service helper ATM anyways)
 
 * Remove `.name` attribute from `BaseZarrArchive`. zarr_id is unique identifier for the mutable Zarr.
-
-#### Some outloud thinking
-
-* `Asset` -- (largely) a CoW entry binding together *content* and metadata.
-* ATM *content* can be immutable `AssetBlob` (in `.blob`) or mutable `ZarrArchive` (in `.zarr`).
-* `blob_id` is UUID (not checksum) but just a unique identifier for the **immutable** blob which later assigned a computed `checksum`:
-  * storage on S3 is not "content-addressable" but after `blob_id`
-  * changes to the blob are not possible, but new blobs can be created
-  * Upload of a blob involves
-    * producing `upload_id` (and urls to use for upload)
-    * `/blobs/{upload_id}/complete/` endpoint to complete which returns `complete_url`
-    * also there is `/blobs/{upload_id}/validate/` to finally get `blob_id` and `etag` and trigger compute of sha256 checksum to be filled out later
-    * `blob_id` (thus pointing to immutable content) is provided to create a new `Asset`
-* `zarr_id` is UUID for a **mutable** content, with `.checksum` also being computed "async" by `/zarr/{zarr_id}/finalize`
-  * changes to Zarr could be done, resulting in a `.checksum` being updated
-  * **there is no notion of `upload_id`** for Zarrs: multiple PUT/DELETE requests could be submitted in parallel (?).
-  * `/zarr/{zarr_id}/finalize` does not return anything
-* Although upload procedures differ significantly between blobs and zarrs, they could be "uniformized" as upon completion, the **new** `_id` which identifies that particular (immutable) **content** is returned.
-* We use UUIDs for all the API-accessible `_id`s so there **already** should be no overlaps between `blob_id` and `zarr_id`.
-  * In the model and API for interactions with Assets, we could use generic **`content_id`** which would be some UUID resolvable to a `blob_id` or `zarr_id`.
-  * That later would allow to extend into other types of content, possibly requiring different upload or download procedures, such as hypothetical:
-    * `RemoteAssets` - blobs or Zarrs on other DANDI instances for which we provide interfaces to get "registered"
-    * ...
-* We could have a `AssetContent` model/table with `content_id` and `content_type` (blob, zarr, remote, …) and then `Asset` pointing to `content_id` (instead of separate `blob` and `zarr`) and may be duplicate `content_type` for convenience (or just make DBM do needed joint).
-  * Yarik does not know on  DBM efficient way to orchestrate such linkage into multiple external tables, but there must be some design pattern.
-* **content** needs `size` and `etag` (or `checksum`)
-
-#### Some inconsistencies
-
-which we can either resolve and/or take advantage off (to avoid breaking interface "in-place")
-
-- There is `Asset`
-- API has all endpoints in plulal `/blobs/`, `/dandisets/`, `/assets/` but a singular `/zarr/`.
-  - We could add/use `/zarrs/` in parallel to (being deprecated) `/zarr/` e.g. for support of versioned zarrs operations
-- We have no `Blob` model -- `blob_id` for a `AssetBlob` (not just `Blob`)
-- We have no `Zarr` model -- `zarr_id` for a `ZarrArchive` (not just `Zarr`)
-  - We could come up with `AssetZarrArchive` for an **immutable** (version specific) `ZarrArchive`
-  - **note** we need a new dedicated `azarr_id` (for "Asset" zarr_id) or `vzarr_id` (for "Versioned" zarr_id) to distinguish from mutable `zarr_id`.
 
 #### Garbage collection (GC)
 
