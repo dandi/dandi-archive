@@ -11,7 +11,7 @@ DANDI is freely accessible to the neuroscience research community. Membership is
 
 - With an academic email not linked to your GitHub, please contact help@dandiarchive.org for assistance using this academic email address to verify your academic affiliation.
 
-- Without an academic email, account approval is still possible under specific circumstances. Appeal decisions at help@dandiarchive.org.
+- Without an academic email, account approval is still possible under specific circumstances. You can appeal the decision by contacting help@dandiarchive.org.
 
 For more information, see the "Create a DANDI Account page" at https://www.dandiarchive.org/handbook/16_account.
 
