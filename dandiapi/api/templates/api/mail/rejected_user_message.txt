@@ -2,7 +2,6 @@
 Dear {{ greeting_name }},
 
 Your DANDI account has been denied approval.
-
 {% if rejection_reason %}
     Detailed reason:
     {{ rejection_reason }}
