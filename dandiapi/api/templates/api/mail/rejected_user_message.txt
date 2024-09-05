@@ -5,7 +5,7 @@ Your DANDI account has been denied approval.
 
 DANDI is freely accessible to the neuroscience research community. Membership is usually granted automatically to GitHub accounts with a .edu or similar academic email. If your registration is denied:
 
-- With an academic email not linked to your GitHub, please contact help@dandiarchive.org for assistance using this email address to verify your academic affiliation.
+- With an academic email not linked to your GitHub, please contact help@dandiarchive.org for assistance using this academic email address to verify your academic affiliation.
 
 - Without an academic email, account approval is still possible under specific circumstances. Appeal decisions at help@dandiarchive.org.
 
