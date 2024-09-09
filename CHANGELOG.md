@@ -1,3 +1,15 @@
+# v0.3.96 (Mon Sep 09 2024)
+
+#### 🐛 Bug Fix
+
+- Use bulk_update for updating blob download counts [#2025](https://github.com/dandi/dandi-archive/pull/2025) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.95 (Tue Aug 27 2024)
 
 #### 🐛 Bug Fix
