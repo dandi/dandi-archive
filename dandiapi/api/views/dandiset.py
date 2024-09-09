@@ -356,6 +356,39 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         return Response(None, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        methods=['GET'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'List active uploads',
+        },
+    )
+    @action(methods=['GET'], detail=True, url_path='uploads')
+    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    def uploads(self, request, dandiset__pk):
+        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+
+        # TODO: Return uploads as list
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            204: 'Active uploads cleared',
+        },
+        operation_summary='Delete all active uploads from a dandiset.',
+    )
+    @uploads.mapping.delete
+    def clear_uploads(self, request, dandiset__pk):
+        dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
+        if dandiset.unembargo_in_progress:
+            raise DandisetUnembargoInProgressError
+
+        dandiset.uploads.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
         method='GET',
         manual_parameters=[DANDISET_PK_PARAM],
         responses={200: UserSerializer(many=True)},
