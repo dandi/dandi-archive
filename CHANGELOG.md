@@ -1,3 +1,15 @@
+# v0.3.99 (Tue Sep 10 2024)
+
+#### 🐛 Bug Fix
+
+- Manually configure celery to retry connections on startup [#2026](https://github.com/dandi/dandi-archive/pull/2026) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 1
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+
+---
+
 # v0.3.98 (Tue Sep 10 2024)
 
 #### 🐛 Bug Fix
