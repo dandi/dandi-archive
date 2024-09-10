@@ -88,6 +88,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'version',
             'name',
             'asset_count',
+            'active_uploads',
             'size',
             'status',
             'created',
