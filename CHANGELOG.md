@@ -1,3 +1,15 @@
+# v0.3.97 (Tue Sep 10 2024)
+
+#### 🐛 Bug Fix
+
+- Disable GUI "Unembargo" button if there are active uploads [#2015](https://github.com/dandi/dandi-archive/pull/2015) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.96 (Mon Sep 09 2024)
 
 #### 🐛 Bug Fix
