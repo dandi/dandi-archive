@@ -10,7 +10,7 @@ def remove_access_fields(apps, _):
     AuditRecord = apps.get_model('api.AuditRecord')
 
     # Use the postgres jsonb '-' operator to delete the 'access' field from metadata
-    Asset.objects.filter(metadata__access__isnull=False).update(
+    Asset.objects.filter(published=False, metadata__access__isnull=False).update(
         metadata=RawSQL("metadata - 'access'", [])
     )
 
