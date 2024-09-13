@@ -7,10 +7,17 @@ from django.db.models.expressions import RawSQL
 
 def remove_access_fields(apps, _):
     Asset = apps.get_model('api.Asset')
+    AuditRecord = apps.get_model('api.AuditRecord')
 
     # Use the postgres jsonb '-' operator to delete the 'access' field from metadata
     Asset.objects.filter(metadata__access__isnull=False).update(
         metadata=RawSQL("metadata - 'access'", [])
+    )
+
+    # Delete access field from existing audit records
+    # https://www.postgresql.org/docs/current/functions-json.html#:~:text=jsonb%20%23%2D%20text%5B%5D%20%E2%86%92%20jsonb
+    AuditRecord.objects.filter(record_type__in=['add_asset', 'update_asset']).update(
+        details=RawSQL("details #- '{metadata, access}'", [])
     )
 
 
