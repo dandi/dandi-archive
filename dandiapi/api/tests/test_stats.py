@@ -47,7 +47,16 @@ def test_stats_user(api_client, user_factory):
         for _ in range(users_per_status):
             username = f'{status_value.lower()}_user_{user_index}'
             user = user_factory(username=username)
-            UserMetadata.objects.create(user=user, status=status_value)
+            user_metadata, created = UserMetadata.objects.get_or_create(
+                user=user,
+                defaults={
+                    'status': status_value,
+                    'questionnaire_form': None,
+                    'rejection_reason': ''
+                }
+            )
+            if not created:
+                pass
             if status_value == UserMetadata.Status.APPROVED:
                 approved_user_count += 1
             user_index += 1
