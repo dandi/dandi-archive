@@ -11,7 +11,6 @@ def test_stats_baseline(api_client):
     assert api_client.get('/api/stats/').data == {
         'dandiset_count': 0,
         'published_dandiset_count': 0,
-        # django-guardian automatically creates an AnonymousUser, but user is not approved
         'user_count': 0,
         'size': 0,
     }
@@ -35,23 +34,27 @@ def test_stats_published(api_client, published_version_factory):
 
 
 @pytest.mark.django_db()
-def test_stats_user(api_client, user):
-    # Reset the User table for test
+def test_stats_user(api_client, user_factory):
     User.objects.all().delete()
 
-    # Create users with different statuses
+    # Create multiple users with different statuses
     approved_user_count = 0
+    users_per_status = 3
+    user_index = 0
+
     for status in UserMetadata.Status.choices:
         status_value = status[0]
-        user = User.objects.create(username=f'{status_value.lower()}_user')
-        UserMetadata.objects.create(user=user, status=status_value)
-        if status_value == UserMetadata.Status.APPROVED:
-            approved_user_count += 1
+        for _ in range(users_per_status):
+            username = f'{status_value.lower()}_user_{user_index}'
+            user = user_factory(username=username)
+            UserMetadata.objects.create(user=user, status=status_value)
+            if status_value == UserMetadata.Status.APPROVED:
+                approved_user_count += 1
+            user_index += 1
 
     stats = api_client.get('/api/stats/').data
 
     # Assert that the user count only includes users with APPROVED status
-    assert stats['user_count'] == 1
     assert stats['user_count'] == approved_user_count
 
 
