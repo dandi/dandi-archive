@@ -33,7 +33,7 @@ def test_stats_published(api_client, published_version_factory):
     assert stats['published_dandiset_count'] == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stats_user(api_client, user_factory):
     User.objects.all().delete()
 
