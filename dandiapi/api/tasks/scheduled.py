@@ -20,10 +20,9 @@ from django.db import connection
 from django.db.models.query_utils import Q
 
 from dandiapi.analytics.tasks import collect_s3_log_records_task
-from dandiapi.api.mail import send_dandisets_to_unembargo_message, send_pending_users_message
+from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
-from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.tasks import (
@@ -112,14 +111,6 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-@shared_task(soft_time_limit=20)
-def send_dandisets_to_unembargo_email() -> None:
-    """Send an email to admins listing dandisets that have requested un-embargo."""
-    dandisets = Dandiset.objects.filter(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
-    if dandisets.exists():
-        send_dandisets_to_unembargo_message(dandisets)
-
-
 @shared_task(soft_time_limit=60)
 def refresh_materialized_view_search() -> None:
     """
@@ -147,9 +138,6 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
 
     # Send daily email to admins containing a list of users awaiting approval
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
-
-    # Send daily email to admins containing a list of dandisets to un-embargo
-    sender.add_periodic_task(crontab(hour=0, minute=0), send_dandisets_to_unembargo_email.s())
 
     # Refresh the materialized view used by asset search every 10 mins.
     sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())

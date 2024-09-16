@@ -19,6 +19,7 @@ from guardian.admin import GuardedModelAdmin
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
+    AuditRecord,
     Dandiset,
     Upload,
     UserMetadata,
@@ -135,12 +136,17 @@ class VersionStatusFilter(admin.SimpleListFilter):
     title = 'status'
     parameter_name = 'status'
 
-    def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request)
-        for status in qs.values_list('status', flat=True).distinct():
-            count = qs.filter(status=status).count()
-            if count:
-                yield (status, f'{status} ({count})')
+    def lookups(self, *args, **kwargs):
+        # The queryset for VersionAdmin contains unnecessary data,
+        # so just use base queryset from Version.objects
+        qs = (
+            Version.objects.values_list('status')
+            .distinct()
+            .annotate(total=Count('status'))
+            .order_by()
+        )
+        for status, count in qs:
+            yield (status, f'{status} ({count})')
 
     def queryset(self, request, queryset):
         status = self.value()
@@ -210,6 +216,7 @@ class AssetAdmin(admin.ModelAdmin):
         'asset_id',
         'path',
         'blob',
+        'zarr',
         'status',
         'size',
         'modified',
@@ -223,3 +230,39 @@ class AssetAdmin(admin.ModelAdmin):
 class UploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'created']
     list_display_links = ['id', 'upload_id']
+
+
+@admin.register(AuditRecord)
+class AuditRecordAdmin(admin.ModelAdmin):
+    actions = None
+    date_hierarchy = 'timestamp'
+    search_fields = [
+        'dandiset_id',
+        'username',
+        'record_type',
+    ]
+    list_display = [
+        'id',
+        'timestamp',
+        'dandiset',
+        'record_type',
+        'details',
+        'username',
+    ]
+
+    @admin.display(description='Dandiset', ordering='dandiset_id')
+    def dandiset(self, obj):
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('admin:api_dandiset_change', args=(obj.dandiset_id,)),
+            f'{obj.dandiset_id:06}',
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

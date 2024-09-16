@@ -37,13 +37,15 @@
           </template>
         </DownloadDialog>
       </v-row>
-      <v-row no-gutters>
+      <v-row
+        no-gutters
+      >
         <CiteAsDialog>
           <template
             #activator="{ on }"
           >
             <v-btn
-              id="download"
+              id="cite_as"
               outlined
               block
               v-on="on"
@@ -63,6 +65,11 @@
           </template>
         </CiteAsDialog>
       </v-row>
+      <v-row
+        no-gutters
+      >
+        <ContactDialog />
+      </v-row>
     </div>
 
     <!-- Files and Metadata buttons -->
@@ -72,7 +79,7 @@
           id="view-data"
           outlined
           block
-          :disabled="currentDandiset.dandiset.embargo_status === 'UNEMBARGOING'"
+          :disabled="unembargo_in_progress"
           :to="fileBrowserLink"
           exact
         >
@@ -151,11 +158,13 @@ import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
+import ContactDialog from './ContactDialog.vue';
 
 const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.version);
+const unembargo_in_progress = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
 
 const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
   if (!currentDandiset.value) {

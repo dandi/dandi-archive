@@ -21,7 +21,7 @@ def migrate_embargoed_asset_blobs(apps, _):
         #       as the above case, but between an embargoed and open dandiset, instead of two
         #       embargoed dandisets.
         #
-        # In case #3, the asset will effectively be un-embargoed.
+        # In case #3, the asset will effectively be unembargoed.
         existing_blob = AssetBlob.objects.filter(
             etag=embargoed_blob.etag, size=embargoed_blob.size
         ).first()

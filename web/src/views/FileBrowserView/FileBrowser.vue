@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentDandiset && currentDandiset.dandiset.embargo_status !== 'UNEMBARGOING'">
+  <div v-if="!unembargo_in_progress">
     <v-progress-linear
       v-if="!currentDandiset"
       indeterminate
@@ -357,6 +357,13 @@ const EXTERNAL_SERVICES = [
     regex: /\.nwb.lindi.json$/,
     maxsize: Infinity,
     endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+  },
+
+  {
+    name: 'Neurosift',
+    regex: /\.avi$/,
+    maxsize: Infinity,
+    endpoint: 'https://neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   }
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -390,6 +397,7 @@ const updating = ref(false);
 const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
 const embargoed = computed(() => currentDandiset.value?.dandiset.embargo_status === 'EMBARGOED');
+const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING')
 const splitLocation = computed(() => location.value.split('/'));
 const isAdmin = computed(() => user.value?.admin || false);
 const isOwner = computed(() => !!(

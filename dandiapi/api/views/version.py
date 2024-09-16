@@ -14,6 +14,8 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services import audit
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
@@ -94,6 +96,8 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 'Only draft versions can be modified.',
                 status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
+        if version.dandiset.unembargo_in_progress:
+            raise DandisetUnembargoInProgressError
 
         serializer = VersionMetadataSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -116,6 +120,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 locked_version.metadata = new_metadata
                 locked_version.status = Version.Status.PENDING
                 locked_version.save()
+
+                audit.update_metadata(
+                    dandiset=locked_version.dandiset,
+                    user=request.user,
+                    metadata=locked_version.metadata,
+                )
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)

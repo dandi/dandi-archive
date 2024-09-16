@@ -32,13 +32,6 @@ def _normalize_version_metadata(
                 'includeInCitation': True,
             },
         ],
-        # TODO: move this into dandischema
-        'access': [
-            {
-                'schemaKey': 'AccessRequirements',
-                'status': 'dandi:EmbargoedAccess' if embargo else 'dandi:OpenAccess',
-            }
-        ],
         **version_metadata,
     }
     # Run the version_metadata through the pydantic model to automatically include any boilerplate

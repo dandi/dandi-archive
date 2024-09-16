@@ -5,6 +5,7 @@ import hashlib
 
 from allauth.socialaccount.models import SocialAccount
 from dandischema.digests.dandietag import DandiETag
+from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import files as django_files
@@ -95,10 +96,19 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
             'schemaVersion': settings.DANDI_SCHEMA_VERSION,
             'schemaKey': 'Dandiset',
             'description': faker.Faker().sentence(),
+            'access': [
+                {
+                    'schemaKey': 'AccessRequirements',
+                    'status': AccessType.EmbargoedAccess.value
+                    if self.dandiset.embargoed
+                    else AccessType.OpenAccess.value,
+                }
+            ],
             'contributor': [
                 {
                     'name': f'{faker.Faker().last_name()}, {faker.Faker().first_name()}',
                     'roleName': ['dcite:ContactPerson'],
+                    'email': faker.Faker().email(),
                     'schemaKey': 'Person',
                 }
             ],

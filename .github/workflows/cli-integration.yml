@@ -84,12 +84,12 @@ jobs:
       - name: Dump Docker Compose logs
         if: failure()
         run: |
-          docker-compose \
+          docker compose \
             -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
             logs --timestamps
 
       - name: Shut down Docker Compose
         run: |
-          docker-compose \
+          docker compose \
             -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
             down -v

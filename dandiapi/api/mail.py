@@ -43,8 +43,18 @@ def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
     return social_user['username']
 
 
-def build_message(subject: str, message: str, to: list[str], html_message: str | None = None):
-    email_message = mail.EmailMultiAlternatives(subject=subject, body=message, to=to)
+def build_message(  # noqa: PLR0913
+    to: list[str],
+    subject: str,
+    message: str,
+    html_message: str | None = None,
+    cc: list[str] | None = None,
+    bcc: list[str] | None = None,
+    reply_to: list[str] | None = None,
+):
+    email_message = mail.EmailMultiAlternatives(
+        subject=subject, body=message, to=to, cc=cc, bcc=bcc, reply_to=reply_to
+    )
     if html_message is not None:
         email_message.attach_alternative(html_message, 'text/html')
     return email_message
@@ -182,31 +192,6 @@ def send_pending_users_message(users: Iterable[User]):
         connection.send_messages(messages)
 
 
-def build_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
-    dandiset_context = [
-        {
-            'identifier': ds.identifier,
-            'owners': [user.username for user in ds.owners],
-            'asset_count': ds.draft_version.asset_count,
-            'size': ds.draft_version.size,
-        }
-        for ds in dandisets
-    ]
-    render_context = {**BASE_RENDER_CONTEXT, 'dandisets': dandiset_context}
-    return build_message(
-        subject='DANDI: New Dandisets to un-embargo',
-        message=render_to_string('api/mail/dandisets_to_unembargo.txt', render_context),
-        to=[settings.DANDI_DEV_EMAIL],
-    )
-
-
-def send_dandisets_to_unembargo_message(dandisets: Iterable[Dandiset]):
-    logger.info('Sending dandisets to un-embargo message to devs at %s', settings.DANDI_DEV_EMAIL)
-    messages = [build_dandisets_to_unembargo_message(dandisets)]
-    with mail.get_connection() as connection:
-        connection.send_messages(messages)
-
-
 def build_dandiset_unembargoed_message(dandiset: Dandiset):
     dandiset_context = {
         'identifier': dandiset.identifier,
@@ -219,7 +204,7 @@ def build_dandiset_unembargoed_message(dandiset: Dandiset):
     }
     html_message = render_to_string('api/mail/dandiset_unembargoed.html', render_context)
     return build_message(
-        subject='Your Dandiset has been un-embargoed!',
+        subject='Your Dandiset has been unembargoed!',
         message=strip_tags(html_message),
         html_message=html_message,
         to=[owner.email for owner in dandiset.owners],
@@ -227,9 +212,34 @@ def build_dandiset_unembargoed_message(dandiset: Dandiset):
 
 
 def send_dandiset_unembargoed_message(dandiset: Dandiset):
-    logger.info(
-        'Sending dandisets un-embargoed message to dandiset %s owners.', dandiset.identifier
-    )
+    logger.info('Sending dandisets unembargoed message to dandiset %s owners.', dandiset.identifier)
     messages = [build_dandiset_unembargoed_message(dandiset)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_dandiset_unembargo_failed_message(dandiset: Dandiset):
+    dandiset_context = {
+        'identifier': dandiset.identifier,
+    }
+
+    render_context = {**BASE_RENDER_CONTEXT, 'dandiset': dandiset_context}
+    html_message = render_to_string('api/mail/dandiset_unembargo_failed.html', render_context)
+    return build_message(
+        subject=f'DANDI: Unembargo failed for dandiset {dandiset.identifier}',
+        message=strip_tags(html_message),
+        html_message=html_message,
+        to=[owner.email for owner in dandiset.owners],
+        bcc=[settings.DANDI_DEV_EMAIL],
+        reply_to=[ADMIN_EMAIL],
+    )
+
+
+def send_dandiset_unembargo_failed_message(dandiset: Dandiset):
+    logger.info(
+        'Sending dandiset unembargo failed message for dandiset %s to dandiset owners and devs',
+        dandiset.identifier,
+    )
+    messages = [build_dandiset_unembargo_failed_message(dandiset)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)

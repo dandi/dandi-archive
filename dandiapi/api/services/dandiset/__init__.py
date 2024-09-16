@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from django.db import transaction
+from guardian.shortcuts import assign_perm
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import AdminOnlyOperationError, NotAllowedError
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 
@@ -35,7 +38,7 @@ def create_dandiset(
         dandiset = Dandiset(id=identifier, embargo_status=embargo_status)
         dandiset.full_clean()
         dandiset.save()
-        dandiset.add_owner(user)
+        assign_perm('owner', user, dandiset)
         draft_version = Version(
             dandiset=dandiset,
             name=version_name,
@@ -44,6 +47,10 @@ def create_dandiset(
         )
         draft_version.full_clean(validate_constraints=False)
         draft_version.save()
+
+        audit.create_dandiset(
+            dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
+        )
 
     return dandiset, draft_version
 
@@ -55,9 +62,15 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         raise NotAllowedError('Cannot delete dandisets with published versions.')
     if dandiset.versions.filter(status=Version.Status.PUBLISHING).exists():
         raise NotAllowedError('Cannot delete dandisets that are currently being published.')
+    if dandiset.unembargo_in_progress:
+        raise DandisetUnembargoInProgressError
 
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
     with transaction.atomic():
+        # Record the audit event first so that the AuditRecord instance has a
+        # chance to grab the Dandiset information before it is destroyed.
+        audit.delete_dandiset(dandiset=dandiset, user=user)
+
         dandiset.versions.all().delete()
         dandiset.delete()

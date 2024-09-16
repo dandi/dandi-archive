@@ -4,12 +4,14 @@ import datetime
 from typing import TYPE_CHECKING
 
 from dandischema.metadata import aggregate_assets_summary, validate
+from django.contrib.auth.models import User
 from django.db import transaction
 from more_itertools import ichunked
 
 from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.publish.exceptions import (
     DandisetAlreadyPublishedError,
@@ -22,7 +24,6 @@ from dandiapi.api.services.publish.exceptions import (
 from dandiapi.api.tasks import write_manifest_files
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import User
     from django.db.models import QuerySet
 
 
@@ -42,17 +43,18 @@ def publish_asset(*, asset: Asset) -> None:
         locked_asset.save()
 
 
-def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:
+def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  # noqa: C901
     """
     Prepare a dandiset to be published by locking it and setting its status to PUBLISHING.
 
     This function MUST be called before _publish_dandiset is called.
     """
-    if (
-        not user.has_perm('owner', dandiset)
-        or dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN
-    ):
+    if not user.has_perm('owner', dandiset):
         raise NotAllowedError
+
+    if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+        raise NotAllowedError('Operation only allowed on OPEN dandisets', 400)
+
     if dandiset.zarr_archives.exists() or dandiset.embargoed_zarr_archives.exists():
         raise NotAllowedError('Cannot publish dandisets which contain zarrs', 400)
 
@@ -103,7 +105,7 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
     return publishable_version
 
 
-def _publish_dandiset(dandiset_id: int) -> None:
+def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
     """
     Publish a dandiset.
 
@@ -189,10 +191,15 @@ def _publish_dandiset(dandiset_id: int) -> None:
 
         transaction.on_commit(lambda: _create_doi(new_version.id))
 
+        user = User.objects.get(id=user_id)
+        audit.publish_dandiset(
+            dandiset=new_version.dandiset, user=user, version=new_version.version
+        )
+
 
 def publish_dandiset(*, user: User, dandiset: Dandiset) -> None:
     from dandiapi.api.tasks import publish_dandiset_task
 
     with transaction.atomic():
         _lock_dandiset_for_publishing(user=user, dandiset=dandiset)
-        transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id))
+        transaction.on_commit(lambda: publish_dandiset_task.delay(dandiset.id, user.id))

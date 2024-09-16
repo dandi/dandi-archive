@@ -113,6 +113,8 @@ class DandiMixin(ConfigMixin):
 
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
+    # Retry connections in case rabbit isn't immediately running
+    CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
     # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
     # button to appear in Swagger, along with a spurious "authorize" button that
