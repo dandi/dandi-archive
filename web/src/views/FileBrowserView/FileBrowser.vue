@@ -361,6 +361,13 @@ const EXTERNAL_SERVICES = [
 
   {
     name: 'Neurosift',
+    regex: /\.nwb.lindi.tar$/,
+    maxsize: Infinity,
+    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+  },
+
+  {
+    name: 'Neurosift',
     regex: /\.avi$/,
     maxsize: Infinity,
     endpoint: 'https://neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
