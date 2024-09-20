@@ -1,3 +1,21 @@
+# v0.3.101 (Fri Sep 20 2024)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, null[@aaronkanzer](https://github.com/aaronkanzer), for all your work!
+
+#### 🐛 Bug Fix
+
+- Only include APPROVED users for stats on homepage [#1952](https://github.com/dandi/dandi-archive/pull/1952) (aaronkanzer@Aarons-MacBook-Pro.local [@aaronkanzer](https://github.com/aaronkanzer) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 3
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.100 (Fri Sep 20 2024)
 
 #### 🐛 Bug Fix
