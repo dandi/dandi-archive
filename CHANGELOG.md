@@ -1,3 +1,23 @@
+# v0.3.102 (Fri Sep 20 2024)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, null[@aaronkanzer](https://github.com/aaronkanzer), for all your work!
+
+#### 🐛 Bug Fix
+
+- Empty PR to force a release [#2032](https://github.com/dandi/dandi-archive/pull/2032) ([@waxlamp](https://github.com/waxlamp))
+- For staging environment, include dynamic text for `dandi download` command [#1810](https://github.com/dandi/dandi-archive/pull/1810) (aaronkanzer@Aarons-MacBook-Pro.local [@waxlamp](https://github.com/waxlamp) [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 4
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Aaron Kanzer (aaronkanzer@dhcp-10-29-239-233.dyn.MIT.EDU)
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.101 (Fri Sep 20 2024)
 
 :tada: This release contains work from a new contributor! :tada:
