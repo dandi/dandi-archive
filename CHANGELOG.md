@@ -1,3 +1,15 @@
+# v0.3.100 (Fri Sep 20 2024)
+
+#### 🐛 Bug Fix
+
+- Add text from the Handbook to the rejected user email [#2022](https://github.com/dandi/dandi-archive/pull/2022) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.3.99 (Tue Sep 10 2024)
 
 #### 🐛 Bug Fix
