@@ -35,7 +35,6 @@ def test_stats_published(api_client, published_version_factory):
 
 @pytest.mark.django_db
 def test_stats_user(api_client, user_factory):
-    User.objects.all().delete()
 
     # Create multiple users with different statuses
     approved_user_count = 0
