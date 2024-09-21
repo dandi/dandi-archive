@@ -99,10 +99,10 @@ def test_dandiset_rest_list(api_client, user, dandiset):
     [
         ('', ['empty', 'draft', 'published', 'erased']),
         ('?draft=false', ['published', 'erased']),
-        ('?empty=false', ['draft', 'published']),
+        ('?empty=false', ['draft', 'published', 'erased']),
         ('?draft=true&empty=true', ['empty', 'draft', 'published', 'erased']),
         ('?empty=true&draft=true', ['empty', 'draft', 'published', 'erased']),
-        ('?draft=false&empty=false', ['published']),
+        ('?draft=false&empty=false', ['published', 'erased']),
     ],
     ids=[
         'nothing',
