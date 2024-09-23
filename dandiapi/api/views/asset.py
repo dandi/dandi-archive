@@ -354,15 +354,16 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         request_body=AssetRequestSerializer,
         responses={200: AssetDetailSerializer},
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary='Update the metadata of an asset.',
+        operation_summary='Create an asset with updated metadata.',
         operation_description='User must be an owner of the associated dandiset.\
-                               Only draft versions can be modified.',
+                               Only draft versions can be modified.\
+                               Old asset is returned if no updates to metadata are made.',
     )
     @method_decorator(
         permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
     )
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
-        """Update the metadata of an asset."""
+        """Create an asset with updated metadata."""
         version: Version = get_object_or_404(
             Version.objects.select_related('dandiset'),
             dandiset__pk=versions__dandiset__pk,
