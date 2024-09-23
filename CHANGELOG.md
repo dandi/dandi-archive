@@ -1,3 +1,15 @@
+# v0.3.104 (Mon Sep 23 2024)
+
+#### 🐛 Bug Fix
+
+- ../assets/{asset_id}/ PUT: clarify that new asset is created [#2019](https://github.com/dandi/dandi-archive/pull/2019) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.103 (Mon Sep 23 2024)
 
 #### 🐛 Bug Fix
