@@ -1,3 +1,15 @@
+# v0.3.105 (Mon Sep 23 2024)
+
+#### 🐛 Bug Fix
+
+- Fix Dandiset emptiness detection logic [#2035](https://github.com/dandi/dandi-archive/pull/2035) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.104 (Mon Sep 23 2024)
 
 #### 🐛 Bug Fix
