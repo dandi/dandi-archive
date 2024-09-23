@@ -354,7 +354,7 @@ const EXTERNAL_SERVICES = [
 
   {
     name: 'Neurosift',
-    regex: /\.nwb.lindi.json$/,
+    regex: /\.nwb\.lindi\.(json|tar)$/,
     maxsize: Infinity,
     endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   },
