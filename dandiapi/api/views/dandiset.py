@@ -144,13 +144,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 # Only include dandisets that have assets in their most recent version.
                 most_recent_version = (
                     Version.objects.filter(dandiset=OuterRef('pk'))
-                    .order_by('created')
+                    .order_by('-created')
                     .annotate(asset_count=Count('assets'))[:1]
                 )
                 queryset = queryset.annotate(
-                    draft_asset_count=Subquery(most_recent_version.values('asset_count'))
+                    asset_count=Subquery(most_recent_version.values('asset_count'))
                 )
-                queryset = queryset.filter(draft_asset_count__gt=0)
+                queryset = queryset.filter(asset_count__gt=0)
             if not show_embargoed:
                 queryset = queryset.filter(embargo_status='OPEN')
         return queryset
