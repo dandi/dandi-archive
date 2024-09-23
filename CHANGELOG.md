@@ -1,3 +1,15 @@
+# v0.3.103 (Mon Sep 23 2024)
+
+#### 🐛 Bug Fix
+
+- add external neurosift service for .nwb.lindi.tar [#2030](https://github.com/dandi/dandi-archive/pull/2030) ([@magland](https://github.com/magland))
+
+#### Authors: 1
+
+- Jeremy Magland ([@magland](https://github.com/magland))
+
+---
+
 # v0.3.102 (Fri Sep 20 2024)
 
 :tada: This release contains work from a new contributor! :tada:
