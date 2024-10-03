@@ -14,12 +14,14 @@ def calculate_sha256(asset_id: str | None = None, blob_id: str | None = None):
 
     Either blob-id or asset-id should be provided.
     """
+    # Handle mutually exclusive option failure cases.
     if not asset_id and not blob_id:
         raise ValueError('Provide either asset_id or blob_id')
+    if asset_id and blob_id:
+        raise ValueError('Provide only asset_id or blob_id, not both')
 
+    # Make sure we have a good blob_id to work with.
     if asset_id:
-        if blob_id:
-            raise ValueError('Provide only asset_id or blob_id, not both')
         asset = Asset.objects.get(asset_id=asset_id)
         blob_id = asset.blob_id
 
