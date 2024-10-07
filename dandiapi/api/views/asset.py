@@ -164,6 +164,11 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
                 storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
             )
         if content_disposition == 'inline':
+            # Client might have not correctly identified/provided the content type which
+            # now forbids correct handling of the file in the browser.
+            if asset_basename.endswith('.json') and content_type == 'application/octet-stream':
+                content_type = 'application/json'
+
             url = storage.generate_presigned_inline_url(
                 asset_blob.blob.name,
                 asset_basename,
