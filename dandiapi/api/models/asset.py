@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 import uuid
 
+from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.exceptions import ValidationError
@@ -24,6 +25,7 @@ ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
 ASSET_COMPUTED_FIELDS = [
     'id',
+    'access',
     'path',
     'identifier',
     'contentUrl',
@@ -236,6 +238,15 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         metadata = {
             **self.metadata,
             'id': self.dandi_asset_id(self.asset_id),
+            'access': [
+                {
+                    'schemaKey': 'AccessRequirements',
+                    # TODO: When embargoed zarrs land, include that logic here
+                    'status': AccessType.EmbargoedAccess.value
+                    if self.blob and self.blob.embargoed
+                    else AccessType.OpenAccess.value,
+                }
+            ],
             'path': self.path,
             'identifier': str(self.asset_id),
             'contentUrl': [download_url, self.s3_url],
