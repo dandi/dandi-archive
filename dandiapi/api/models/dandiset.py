@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms, remove_perm
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
+    from dandiapi.api.models.upload import Upload
+    from dandiapi.api.models.version import Version
 
 
 class DandisetManager(models.Manager):
@@ -37,6 +45,11 @@ class Dandiset(TimeStampedModel):
     IDENTIFIER_REGEX = r'\d{6}'
 
     objects: DandisetManager = DandisetManager()
+
+    # Type hints
+    id: int
+    uploads: RelatedManager[Upload]
+    versions: RelatedManager[Version]
 
     class EmbargoStatus(models.TextChoices):
         EMBARGOED = 'EMBARGOED', 'Embargoed'

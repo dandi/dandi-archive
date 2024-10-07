@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 import re
+import typing
 from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
-from django.contrib.auth.models import User
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AnonymousUser, User
 from django.db.models import OuterRef, Q, Subquery
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, parser_classes, permission_classes
@@ -22,6 +24,10 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
 
 logger = logging.getLogger(__name__)
+
+
+def user_is_logged_in(user: AbstractBaseUser | AnonymousUser) -> typing.TypeGuard[User]:
+    return user.is_authenticated
 
 
 def _get_user_status(user: User):

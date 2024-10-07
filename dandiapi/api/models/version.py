@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import typing
 
 from dandischema.models import AccessType
 from django.conf import settings
@@ -16,11 +17,21 @@ from dandiapi.api.models.metadata import PublishableMetadataMixin
 
 from .dandiset import Dandiset
 
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
+    from dandiapi.api.models.asset import Asset
+
 logger = logging.getLogger(__name__)
 
 
 class Version(PublishableMetadataMixin, TimeStampedModel):
     VERSION_REGEX = r'(0\.\d{6}\.\d{4})|draft'
+
+    # Declare type hints
+    id: int
+    dandiset_id: int
+    assets: RelatedManager[Asset]
 
     class Status(models.TextChoices):
         PENDING = 'Pending'
@@ -92,9 +103,9 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         from .asset import Asset
 
         # Get assets that are not VALID (could be pending, validating, or invalid)
-        invalid_assets: models.QuerySet[Asset] = self.assets.exclude(
-            status=Asset.Status.VALID
-        ).values('status', 'path', 'validation_errors')
+        invalid_assets = self.assets.exclude(status=Asset.Status.VALID).values(
+            'status', 'path', 'validation_errors'
+        )
 
         asset_validating_error = {
             'field': '',

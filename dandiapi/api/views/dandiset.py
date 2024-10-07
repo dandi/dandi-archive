@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing
 from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
@@ -44,6 +45,7 @@ from dandiapi.api.views.serializers import (
     UserSerializer,
     VersionMetadataSerializer,
 )
+from dandiapi.api.views.users import user_is_logged_in
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
@@ -159,6 +161,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Alternative to path converters, which DRF doesn't support
         # https://docs.djangoproject.com/en/3.0/topics/http/urls/#registering-custom-path-converters
 
+        self.lookup_url_kwarg = typing.cast(str, self.lookup_url_kwarg)
         lookup_url = self.kwargs[self.lookup_url_kwarg]
         try:
             lookup_value = int(lookup_url)
@@ -168,7 +171,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset = super().get_object()
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            if not self.request.user.is_authenticated:
+            if not user_is_logged_in(self.request.user):
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
             if not self.request.user.has_perm('owner', dandiset):
@@ -199,8 +202,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         def annotate_version(version: Version):
             """Annotate a version with its aggregate stats."""
             stats = version_stats.get(version.id, {'total_size': 0, 'num_assets': 0})
-            version.total_size = stats['total_size']
-            version.num_assets = stats['num_assets']
+            version.total_size = stats['total_size']  # type: ignore reportAttributeAccessIssue
+            version.num_assets = stats['num_assets']  # type: ignore reportAttributeAccessIssue
 
         # Create a map from dandiset IDs to their draft and published versions
         dandisets_to_versions = {}

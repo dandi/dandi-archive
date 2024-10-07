@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import typing
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
@@ -10,7 +11,7 @@ from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.storage import get_storage
+from dandiapi.api.storage import VerbatimNameMinioStorage, VerbatimNameS3Storage, get_storage
 
 logger = logging.getLogger(name=__name__)
 
@@ -26,6 +27,10 @@ class ZarrArchiveStatus(models.TextChoices):
 class BaseZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
+
+    # Type hints
+    storage: VerbatimNameMinioStorage | VerbatimNameS3Storage
+    s3_path: typing.Callable[[str], str]
 
     class Meta:
         ordering = ['created']
@@ -63,6 +68,9 @@ class BaseZarrArchive(TimeStampedModel):
 
     @property
     def digest(self) -> dict[str, str]:
+        if self.checksum is None:
+            raise RuntimeError('Zarr checksum accessed before set')
+
         return {'dandi:dandi-zarr-checksum': self.checksum}
 
     @property

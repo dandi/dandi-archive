@@ -128,7 +128,7 @@ def change_asset(  # noqa: PLR0913
         )
 
         # Set previous asset and save
-        new_asset.previous = asset
+        new_asset.previous = asset  # type: ignore reportAttributeAccessIssue
         new_asset.save()
 
         audit.update_asset(dandiset=version.dandiset, user=user, asset=new_asset)

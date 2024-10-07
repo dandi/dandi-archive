@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import TYPE_CHECKING
+import typing
 from urllib.parse import urlparse, urlunparse
 import uuid
 
@@ -19,6 +19,11 @@ from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import get_storage, get_storage_prefix
 
 from .version import Version
+
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
+    from dandiapi.zarr.models import ZarrArchive  # noqa: TCH004
 
 ASSET_CHARS_REGEX = r'[A-z0-9(),&\s#+~_=-]'
 ASSET_PATH_REGEX = rf'^({ASSET_CHARS_REGEX}?\/?\.?{ASSET_CHARS_REGEX})+$'
@@ -43,13 +48,13 @@ def validate_asset_path(path: str):
     return path
 
 
-if TYPE_CHECKING:
-    from dandiapi.zarr.models import ZarrArchive
-
-
 class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
+
+    # Type hints
+    id: int
+    assets: RelatedManager[Asset]
 
     embargoed = models.BooleanField(default=False)
     blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
@@ -99,6 +104,9 @@ class AssetBlob(TimeStampedModel):
 class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
+    # Type hints
+    id: int
+
     class Status(models.TextChoices):
         PENDING = 'Pending'
         VALIDATING = 'Validating'
@@ -106,7 +114,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         INVALID = 'Invalid'
 
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
-    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')
+    path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')  # type: ignore  # noqa: PGH003
     blob = models.ForeignKey(
         AssetBlob, related_name='assets', on_delete=models.CASCADE, null=True, blank=True
     )
@@ -169,27 +177,32 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @property
     def size(self):
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.size
 
+        self.zarr = typing.cast(ZarrArchive, self.zarr)
         return self.zarr.size
 
     @property
     def sha256(self):
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.sha256
         raise RuntimeError('Zarr does not support SHA256')
 
     @property
     def digest(self) -> dict[str, str]:
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.digest
+
+        self.zarr = typing.cast(ZarrArchive, self.zarr)
         return self.zarr.digest
 
     @property
     def s3_url(self) -> str:
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.s3_url
+
+        self.zarr = typing.cast(ZarrArchive, self.zarr)
         return self.zarr.s3_url
 
     def is_different_from(

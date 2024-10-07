@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import hashlib
+import typing
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -161,6 +162,13 @@ class TimeoutS3Storage(S3Storage):
 
 
 class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
+    # Type hints
+    bucket_name: str
+    default_acl: str | None
+    endpoint_url: str
+    access_key: str
+    secret_key: str
+
     @property
     def multipart_manager(self):
         return DandiS3MultipartManager(self)
@@ -283,7 +291,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         return calculator.checksum
 
 
-def create_s3_storage(bucket_name: str) -> Storage:
+def create_s3_storage(bucket_name: str) -> VerbatimNameS3Storage | VerbatimNameMinioStorage:
     """
     Return a new Storage instance, compatible with the default Storage class.
 
@@ -355,12 +363,16 @@ def get_boto_client(storage: Storage | None = None, config: Config | None = None
 
 def get_storage_params(storage: Storage):
     if isinstance(storage, MinioStorage):
+        if storage.client._provider is None:  # noqa: SLF001
+            raise RuntimeError('Minio client._provider is None')
+
         return {
             'endpoint_url': storage.client._base_url._url.geturl(),  # noqa: SLF001
             'access_key': storage.client._provider.retrieve().access_key,  # noqa: SLF001
             'secret_key': storage.client._provider.retrieve().secret_key,  # noqa: SLF001
         }
 
+    storage = typing.cast(VerbatimNameS3Storage, storage)
     return {
         'endpoint_url': storage.endpoint_url,
         'access_key': storage.access_key,
@@ -368,7 +380,7 @@ def get_storage_params(storage: Storage):
     }
 
 
-def get_storage() -> Storage:
+def get_storage():
     return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
