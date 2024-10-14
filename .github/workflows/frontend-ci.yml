@@ -144,7 +144,7 @@ jobs:
         working-directory: e2e/puppeteer
 
   test-e2e-playwright:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     services:
       postgres:
         image: postgres:latest
