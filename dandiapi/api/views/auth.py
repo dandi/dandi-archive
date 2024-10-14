@@ -124,7 +124,9 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
-            is_edu_email: bool = user.email.endswith('.edu')
+            is_edu_email: bool = user.email.endswith('.edu') or user.email.endswith(
+                '@alleninstitute.org'
+            )
 
             # auto-approve users with edu emails, otherwise require manual approval
             user_metadata.status = (
