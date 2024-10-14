@@ -19,7 +19,7 @@
         >
           mdi-web
         </v-icon>
-        <span>External services</span>
+        <span>Open with</span>
         <v-spacer />
         <v-icon right>
           mdi-chevron-down
@@ -29,7 +29,7 @@
     <v-card
     >
       <v-card-title class="pb-0" style="min-width: fit-content;">
-        Select an external service:
+        External services:
       </v-card-title>
       <v-list>
         <v-tooltip
