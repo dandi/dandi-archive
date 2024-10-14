@@ -69,6 +69,12 @@ const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
 
 const openInNeurosift = () => {
+  const dandisetUrl = currentDandiset.value?.metadata?.url;
+  if (!dandisetUrl) {
+    alert('Unexpected: No url field found in the metadata of the dandiset');
+    return;
+  }
+  const staging = dandisetUrl.startsWith('https://gui-staging.dandiarchive.org/');
   const fullId = currentDandiset.value?.metadata?.id;
   // e.g., DANDI:000776/0.241009.1509
   if (!fullId) {
@@ -81,7 +87,11 @@ const openInNeurosift = () => {
     alert(`Unexpected: Invalid id field found in the metadata: ${fullId}`);
     return;
   }
-  return `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}`;
+  let href = `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}`;
+  if (staging) {
+    href += '&staging=1';
+  }
+  return href;
 };
 
 </script>
