@@ -168,8 +168,9 @@ def _add_asset_paths(asset: Asset, version: Version):
     )
 
     # Update size + file count
+    leaf_size = leaf.asset.size if leaf.asset is not None else 0
     AssetPath.objects.filter(id__in=parent_ids).update(
-        aggregate_size=F('aggregate_size') + leaf.asset.size,
+        aggregate_size=F('aggregate_size') + leaf_size,
         aggregate_files=F('aggregate_files') + 1,
     )
 

@@ -13,6 +13,11 @@ from rest_framework.exceptions import ValidationError
 from dandiapi.api.models import Dandiset
 from dandiapi.api.storage import VerbatimNameMinioStorage, VerbatimNameS3Storage, get_storage
 
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
+    from dandiapi.api.models.asset import Asset
+
 logger = logging.getLogger(name=__name__)
 
 
@@ -31,6 +36,7 @@ class BaseZarrArchive(TimeStampedModel):
     # Type hints
     storage: VerbatimNameMinioStorage | VerbatimNameS3Storage
     s3_path: typing.Callable[[str], str]
+    assets: RelatedManager[Asset]
 
     class Meta:
         ordering = ['created']

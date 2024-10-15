@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import typing
 from typing import TYPE_CHECKING
 
+from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -248,6 +250,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 'Size': obj['Size'],
             }
             for obj in listing.get('Contents', [])
+            if 'Key' in obj and 'LastModified' in obj and 'ETag' in obj and 'Size' in obj
         ]
 
         # Create next listing if necessary
@@ -329,7 +332,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
             if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
-
+            self.request.user = typing.cast(User, self.request.user)
+            zarr_archive.dandiset = typing.cast(Dandiset, zarr_archive.dandiset)
             if not self.request.user.has_perm('owner', zarr_archive.dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied
@@ -340,7 +344,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             audit.delete_zarr_chunks(
                 dandiset=zarr_archive.dandiset,
-                user=request.user,
+                user=self.request.user,
                 zarr_archive=zarr_archive,
                 paths=paths,
             )

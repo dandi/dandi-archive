@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.db import models
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 
 class AssetPath(models.Model):
+    # Type hints
+    id: int
+    child_links: RelatedManager[AssetPathRelation]
+    parent_links: RelatedManager[AssetPathRelation]
+
     path = models.CharField(max_length=512)
 
     # Protect deletion, since otherwise aggregate fields would become out of sync
