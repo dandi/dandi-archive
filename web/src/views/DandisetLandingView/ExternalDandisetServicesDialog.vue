@@ -28,9 +28,6 @@
     </template>
     <v-card
     >
-      <v-card-title class="pb-0" style="min-width: fit-content;">
-        External services:
-      </v-card-title>
       <v-list>
         <v-tooltip
           open-on-hover
