@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dandi.dandiapi import RemoteReadableAsset
 from dandi.metadata.nwb import nwb2asset
@@ -14,6 +15,9 @@ from tqdm import tqdm
 
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services.asset import change_asset
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +81,7 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
 
 def extract_dandiset_assets(dandiset: Dandiset):
     # Only update NWB assets which are out of date and do not belong to a published version
-    assets = dandiset.draft_version.assets.filter(
+    assets: QuerySet[Asset] = dandiset.draft_version.assets.filter(
         published=False,
         path__iendswith='.nwb',
         metadata__schemaVersion__lt=get_schema_version(),
@@ -86,7 +90,7 @@ def extract_dandiset_assets(dandiset: Dandiset):
         logger.info('No old draft NWB assets found in dandiset %s. Skipping...', dandiset)
         return
 
-    for asset in tqdm(assets):
+    for asset in tqdm(assets.iterator(), total=assets.count()):
         extract_asset_metadata(asset=asset, draft_version=dandiset.draft_version)
 
 
@@ -101,7 +105,7 @@ def asset(asset_id: str):
         )
 
     # Re-extract for every draft version
-    for version in draft_versions:
+    for version in draft_versions.iterator():
         extract_asset_metadata(asset=asset, draft_version=version)
 
 
@@ -116,6 +120,6 @@ def dandiset(dandiset_id: str):
 
 @group.command(name='all', help='Re-extracts the metadata of all assets in all draft versions')
 def all_dandisets():
-    for dandiset in Dandiset.objects.all():
+    for dandiset in Dandiset.objects.iterator():
         logger.info('DANDISET: %s', dandiset.identifier)
         extract_dandiset_assets(dandiset)
