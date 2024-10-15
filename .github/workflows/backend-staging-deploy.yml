@@ -24,6 +24,11 @@ jobs:
         with:
           fetch-depth: 0 # fetch history for all branches and tags
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
