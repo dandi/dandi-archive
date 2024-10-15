@@ -7,7 +7,7 @@ The staging Netlify site is deployed automatically from `master`. The production
 
 The staging and production Heroku apps are deployed manually from a GitHub CI workflow using a GitHub action.
 
-Netlify and Heroku can deploy themselves automatically from a branch, but not from a release tag. This means we need to deploy manually from GitHub CI, which is quite complex and not ideal. Additionally, Netlify does not support multiple `netlify.toml` configuration files in a single project directory, which means the deployment CI step deletes the `netlify.toml` in the production deployment and specifies the environment with the Netlify CLI instead. 
+Netlify and Heroku can deploy themselves automatically from a branch, but not from a release tag. This means we need to deploy manually from GitHub CI, which is quite complex and not ideal. Additionally, Netlify does not support multiple `netlify.toml` configuration files in a single project directory, which means the deployment CI step deletes the `netlify.toml` in the production deployment and specifies the environment with the Netlify CLI instead.
 
 This proposed solution is to use a second `release` branch which tracks the released code. This allows us to use the automatic Netlify and Heroku deployments rather than pushing manually from GitHub CI.
 
