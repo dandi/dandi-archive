@@ -51,11 +51,12 @@ QUESTIONS = [
     {'question': 'Last Name', 'max_length': 100},
     {'question': 'Affiliation(s)', 'max_length': 1000},
     {'question': 'Lab/project website', 'max_length': 1000},
-    {'question': 'Please describe how your research project will utilize'
-     ' DANDI resources. (Please note that users can freely'
-     ' search, view, and download public datasets without'
-     ' an account.)',
-     'max_length': 1000
+    {
+        'question': 'Please describe how your research project will utilize'
+        ' DANDI resources. (Please note that users can freely'
+        ' search, view, and download public datasets without'
+        ' an account.)',
+        'max_length': 1000,
     },
 ]
 
