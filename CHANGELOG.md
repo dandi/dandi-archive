@@ -1,3 +1,7 @@
+# Upcoming Release
+
+- Add Neurosift external service for Dandisets (web) issue #2039
+
 # v0.3.105 (Mon Sep 23 2024)
 
 #### 🐛 Bug Fix
