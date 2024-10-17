@@ -32,14 +32,14 @@ at https://github.com/dandisets.
 
    A possible example of such a display follows (the final rendered form may
    differ from this depending on best practices, etc.):
-    
+
     ```
     YYYYMMDDTHHMMSS.mmmm: X added asset at path (/full/path) checksum
     YYYYMMDDTHHMMSS.mmmm: X updated asset at path (/full/path) checksum
     YYYYMMDDTHHMMSS.mmmm: X removed asset at path (/full/path) checksum
     YYYYMMDDTHHMMSS.mmmm: X updated dandiset metadata
     ```
-    
+
 3. **Extensible significant action list.** The significant actions the system is
    capable of tracking should be extensible--that is, in the future new actions
    should be able to be added to the system, and existing actions should be able
