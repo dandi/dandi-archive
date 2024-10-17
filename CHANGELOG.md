@@ -1,3 +1,30 @@
+# v0.3.106 (Thu Oct 17 2024)
+
+#### 🐛 Bug Fix
+
+- Derive asset `access` field from asset blob [#2010](https://github.com/dandi/dandi-archive/pull/2010) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add command for asset metadata re-extraction [#1545](https://github.com/dandi/dandi-archive/pull/1545) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Explicitly install Python in CD workflows [#2046](https://github.com/dandi/dandi-archive/pull/2046) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Auto-allow people with @alleninstitute.org email addresses [#2044](https://github.com/dandi/dandi-archive/pull/2044) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- Add calculate_sha256 management command to trigger (re)computation for a blob [#1938](https://github.com/dandi/dandi-archive/pull/1938) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+
+#### 🧪 Tests
+
+- Do login into docker hub so we could reliably build our docker image [#2043](https://github.com/dandi/dandi-archive/pull/2043) ([@yarikoptic](https://github.com/yarikoptic))
+- Stick to ubuntu-22.04 for now for frontend-ci.yml [#2042](https://github.com/dandi/dandi-archive/pull/2042) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.105 (Mon Sep 23 2024)
 
 #### 🐛 Bug Fix
