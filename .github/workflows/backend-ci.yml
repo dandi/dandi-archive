@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tox-env: [lint, type, test, check-migrations]
+        tox-env: [lint, type, test, check-migrations, ruff-latest]
     services:
       postgres:
         image: postgres:latest
@@ -48,6 +48,7 @@ jobs:
           pip install --upgrade pip
           pip install tox
       - name: Run tests
+        continue-on-error: ${{ matrix.tox-env == 'ruff-latest' }}
         run: |
           tox -e ${{ matrix.tox-env }}
         env:
