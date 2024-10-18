@@ -123,13 +123,6 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         choices=Status.choices,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
-    previous = models.ForeignKey(
-        'Asset',
-        blank=True,
-        null=True,
-        default=None,
-        on_delete=models.SET_NULL,
-    )
     published = models.BooleanField(default=False)
 
     class Meta:

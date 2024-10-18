@@ -127,10 +127,6 @@ def change_asset(  # noqa: PLR0913
             metadata=new_metadata,
         )
 
-        # Set previous asset and save
-        new_asset.previous = asset
-        new_asset.save()
-
         audit.update_asset(dandiset=version.dandiset, user=user, asset=new_asset)
 
     return new_asset, True
