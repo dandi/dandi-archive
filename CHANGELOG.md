@@ -1,3 +1,18 @@
+# v0.3.107 (Tue Oct 22 2024)
+
+#### 🐛 Bug Fix
+
+- Update new user registration questions [#2054](https://github.com/dandi/dandi-archive/pull/2054) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+- Pin ruff version to avoid spurious test failures [#2053](https://github.com/dandi/dandi-archive/pull/2053) ([@waxlamp](https://github.com/waxlamp))
+- Pin ubuntu-22.04 for all CI jobs [#2056](https://github.com/dandi/dandi-archive/pull/2056) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.106 (Thu Oct 17 2024)
 
 #### 🐛 Bug Fix
