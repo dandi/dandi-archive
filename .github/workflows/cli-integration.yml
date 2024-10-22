@@ -12,7 +12,7 @@ on:
 
 jobs:
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out this repository
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
           path: dandiarchive-api.tgz
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build-image
     strategy:
       fail-fast: false
