@@ -49,8 +49,12 @@ def auth_token_view(request: Request) -> HttpResponseBase:
 QUESTIONS = [
     {'question': 'First Name', 'max_length': 100},
     {'question': 'Last Name', 'max_length': 100},
-    {'question': 'What do you plan to use DANDI for?', 'max_length': 1000},
-    {'question': 'Please list any affiliations you have.', 'max_length': 1000},
+    {'question': 'Affiliation(s)', 'max_length': 1000},
+    {'question': 'Lab/project website', 'max_length': 1000},
+    {
+        'question': 'Please describe how your research project will utilize DANDI resources.',
+        'max_length': 1000,
+    },
 ]
 
 # questions for new users

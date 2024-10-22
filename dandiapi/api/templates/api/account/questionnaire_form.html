@@ -17,6 +17,13 @@
         {% for name, value in query_params.items %}
           <input type="hidden" name="{{ name }}" value="{{ value }}">
         {% endfor %}
+
+        <div>
+          <b><i>
+              Please note that users can freely search, view, and download public datasets without an account!
+          </b></i>
+        </div>
+
         <button id="btn" class="btn waves-effect waves-light blue" type="submit" disabled>
           <span>Submit</span>
           <i class="material-icons right">send</i>
