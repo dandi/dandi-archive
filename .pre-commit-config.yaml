@@ -19,5 +19,18 @@ repos:
   hooks:
   # Run the linter.
   - id: ruff
+
   # Run the formatter.
   - id: ruff-format
+
+  # Run the linter in fix-only mode.
+  - id: ruff
+    alias: ruff-fix-only
+    stages: [manual]
+    args: [--fix-only]
+
+  # Run the formatter in check mode.
+  - id: ruff-format
+    alias: ruff-format-check
+    stages: [manual]
+    args: [--check]
