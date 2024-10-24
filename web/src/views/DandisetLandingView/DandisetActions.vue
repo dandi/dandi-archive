@@ -70,6 +70,11 @@
       >
         <ContactDialog />
       </v-row>
+      <v-row
+        no-gutters
+      >
+        <ExternalDandisetServicesDialog />
+      </v-row>
     </div>
 
     <!-- Files and Metadata buttons -->
@@ -159,6 +164,7 @@ import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
 import ContactDialog from './ContactDialog.vue';
+import ExternalDandisetServicesDialog from './ExternalDandisetServicesDialog.vue';
 
 const store = useDandisetStore();
 
