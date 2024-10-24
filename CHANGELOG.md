@@ -1,3 +1,18 @@
+# v0.3.108 (Thu Oct 24 2024)
+
+#### 🐛 Bug Fix
+
+- Empty PR to trigger release [#2059](https://github.com/dandi/dandi-archive/pull/2059) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove `Asset.previous` field [#2008](https://github.com/dandi/dandi-archive/pull/2008) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add pre-commit config and apply it across codebase [#2045](https://github.com/dandi/dandi-archive/pull/2045) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.107 (Tue Oct 22 2024)
 
 #### 🐛 Bug Fix
