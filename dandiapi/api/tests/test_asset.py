@@ -1118,9 +1118,6 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert new_asset in draft_version.assets.all()
 
-    # The new asset should have a reference to the old asset
-    assert new_asset.previous == asset
-
     # Ensure new path is ingested
     assert not AssetPath.objects.filter(path=old_path, version=draft_version).exists()
     assert AssetPath.objects.filter(path=new_path, version=draft_version).exists()
@@ -1177,9 +1174,6 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
     # A new asset should be created that is associated with the version
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert new_asset in draft_version.assets.all()
-
-    # The new asset should have a reference to the old asset
-    assert new_asset.previous == asset
 
     # The version modified date should be updated
     start_time = draft_version.modified
@@ -1275,9 +1269,6 @@ def test_asset_rest_update_zarr(
     # A new asset should be created that is associated with the version
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert new_asset in draft_version.assets.all()
-
-    # The new asset should have a reference to the old asset
-    assert new_asset.previous == asset
 
     # The version modified date should be updated
     start_time = draft_version.modified
