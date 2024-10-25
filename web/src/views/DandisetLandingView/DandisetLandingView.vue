@@ -9,8 +9,30 @@
         :total-visible="0"
       />
     </v-toolbar>
+    <v-container v-if="embargoedOrUnauthenticated" class="d-flex justify-center align-center" style="height: 50vh;">
+      <div class="d-block blue-grey lighten-5 pa-4 rounded-lg">
+        <span class="text-h5">
+          <v-icon class="mb-1">
+            mdi-alert-circle
+          </v-icon>
+          This Dandiset is Embargoed
+        </span>
+        <br><br>
+        <span class="text-body-2">
+          If you are an owner of this Dandiset, please log in to enable access.
+        </span>
+        <br>
+        <span class="text-body-2">
+          If you are a member of this project, contact the Dandiset owners to enable access.
+        </span>
+        <br><br>
+        <span class="text-body-2">
+          For further assistance, please contact <a href="mailto:help@dandiarchive.org">help@dandiarchive.org</a>.
+        </span>
+      </div>
+    </v-container>
     <v-container
-      v-if="dandisetDoesNotExist"
+      v-else-if="dandisetDoesNotExist"
       class="d-flex justify-center align-center"
       style="height: 50vh;"
     >
@@ -92,6 +114,7 @@ import {
 import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
 import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import axios from 'axios';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
@@ -121,7 +144,7 @@ const props = defineProps({
 onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
   // Prompt user if they try to leave the DLP with unsaved changes in the meditor
   if (!editorInterface.value?.transactionTracker?.isModified()
-  // eslint-disable-next-line no-alert
+    // eslint-disable-next-line no-alert
     || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
     next();
     return true;
@@ -138,6 +161,10 @@ const loading = ref(false);
 
 // If loading is finished and currentDandiset is still null, the dandiset doesn't exist.
 const dandisetDoesNotExist = computed(() => !loading.value && !currentDandiset.value);
+
+// This is set if the request to retrieve the dandiset fails
+// due to it being embargoed, or the user being unauthenticated
+const embargoedOrUnauthenticated = ref(false);
 
 const schema = computed(() => store.schema);
 const userCanModifyDandiset = computed(() => store.userCanModifyDandiset);
@@ -161,11 +188,27 @@ function navigateToVersion(versionToNavigateTo: string) {
 // https://stackoverflow.com/a/59127059
 watch(() => props.identifier, async () => {
   const { identifier, version } = props;
-  if (identifier) {
-    loading.value = true;
-    await store.initializeDandisets({ identifier, version });
-    loading.value = false;
+  if (!identifier) {
+    return;
   }
+
+  // Set default values
+  embargoedOrUnauthenticated.value = false;
+  loading.value = true;
+
+  // Catch error to check if response is 401, for embargoed dandisets
+  try {
+    await store.initializeDandisets({ identifier, version });
+
+  } catch (e) {
+    if (axios.isAxiosError(e) && (e.response?.status === 401 || e.response?.status === 403)) {
+      embargoedOrUnauthenticated.value = true
+    } else {
+      throw e
+    }
+  }
+
+  loading.value = false;
 }, { immediate: true });
 
 watch([() => props.identifier, () => props.version], async () => {
@@ -194,7 +237,7 @@ watch([() => props.identifier, () => props.version], async () => {
 
 const page = ref(Number(route.query.pos) || 1);
 const pages = ref(1);
-const nextDandiset : Ref<any[]> = ref([]);
+const nextDandiset: Ref<any[]> = ref([]);
 
 async function fetchNextPage() {
   const sortOption = Number(route.query.sortOption) || 0;
