@@ -241,6 +241,21 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
     }
 
 
+@pytest.mark.django_db
+def test_dandiset_rest_retrieve_embargoed(api_client, dandiset_factory, user):
+    dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert resp.status_code == 401
+
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert resp.status_code == 403
+
+    dandiset.set_owners([user])
+    resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert resp.status_code == 200
+
+
 @pytest.mark.parametrize(
     ('embargo_status'),
     [choice[0] for choice in Dandiset.EmbargoStatus.choices],
