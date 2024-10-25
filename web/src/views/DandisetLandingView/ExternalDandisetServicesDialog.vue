@@ -39,6 +39,7 @@
             >
               <v-list-item
                 :href="openInNeurosift()"
+                target="_blank"
               >
                 <v-icon
                   color="primary"
