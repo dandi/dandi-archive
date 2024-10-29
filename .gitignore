@@ -125,9 +125,6 @@ dmypy.json
 
 # Editor settings
 .vscode
-<<<<<<< HEAD
 .idea
-=======
 
 .DS_Store
->>>>>>> master

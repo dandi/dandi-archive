@@ -417,7 +417,6 @@ def test_version_aggregate_assets_summary_metadata_modified(
 
 
 @pytest.mark.django_db
->>>>>>> master
 def test_version_size(
     version,
     asset_factory,
