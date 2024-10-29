@@ -18,11 +18,16 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Heroku
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch history for all branches and tags
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
@@ -31,10 +36,12 @@ jobs:
         run: heroku plugins:install heroku-builds
 
       - name: Build app into tarball
-        run: python setup.py sdist --formats=gztar
+        run: |
+          pip install build
+          python -m build --sdist
 
       - name: Create Heroku Build
-        run: heroku builds:create -a dandi-api-staging --source-tar=dist/$(python setup.py --fullname).tar.gz
+        run: heroku builds:create -a dandi-api-staging --source-tar dist/*.tar.gz
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY  }}
           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL  }}

@@ -118,7 +118,7 @@
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
-            File Size <strong>{{ transformFilesize(stats.size) }}</strong>
+            Size <strong>{{ transformFilesize(stats.size) }}</strong>
           </span>
         </v-col>
       </v-row>

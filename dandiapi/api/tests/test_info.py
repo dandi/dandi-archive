@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.conf import settings
 
 from dandiapi import __version__
@@ -11,7 +13,7 @@ def test_rest_info(api_client):
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,
         'version': __version__,
-        'cli-minimal-version': '0.51.0',
+        'cli-minimal-version': '0.60.0',
         'cli-bad-versions': [],
         'services': {
             'api': {'url': f'{settings.DANDI_API_URL}/api'},

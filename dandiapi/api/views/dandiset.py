@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Count, Max, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
@@ -13,7 +18,6 @@ from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -21,10 +25,15 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
-from dandiapi.api.services.dandiset.exceptions import UnauthorizedEmbargoAccess
-from dandiapi.api.services.embargo import unembargo_dandiset
-from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
+from dandiapi.api.services.embargo import kickoff_dandiset_unembargo
+from dandiapi.api.services.embargo.exceptions import (
+    DandisetUnembargoInProgressError,
+    UnauthorizedEmbargoAccessError,
+)
+from dandiapi.api.views.common import DANDISET_PK_PARAM
+from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
@@ -36,6 +45,9 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
 )
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
@@ -79,7 +91,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     size=Subquery(
                         latest_version.annotate(
                             size=Coalesce(Sum('assets__blob__size'), 0)
-                            + Coalesce(Sum('assets__embargoed_blob__size'), 0)
                             + Coalesce(Sum('assets__zarr__size'), 0)
                         ).values('size')
                     )
@@ -122,7 +133,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             # Return early if attempting to access embargoed data without authentication
             if show_embargoed and not self.request.user.is_authenticated:
-                raise UnauthorizedEmbargoAccess()
+                raise UnauthorizedEmbargoAccessError
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
@@ -133,13 +144,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 # Only include dandisets that have assets in their most recent version.
                 most_recent_version = (
                     Version.objects.filter(dandiset=OuterRef('pk'))
-                    .order_by('created')
+                    .order_by('-created')
                     .annotate(asset_count=Count('assets'))[:1]
                 )
                 queryset = queryset.annotate(
-                    draft_asset_count=Subquery(most_recent_version.values('asset_count'))
+                    asset_count=Subquery(most_recent_version.values('asset_count'))
                 )
-                queryset = queryset.filter(draft_asset_count__gt=0)
+                queryset = queryset.filter(asset_count__gt=0)
             if not show_embargoed:
                 queryset = queryset.filter(embargo_status='OPEN')
         return queryset
@@ -340,7 +351,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
-        unembargo_dandiset(user=request.user, dandiset=dandiset)
+        kickoff_dandiset_unembargo(user=request.user, dandiset=dandiset)
 
         return Response(None, status=status.HTTP_200_OK)
 
@@ -365,9 +376,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
-    def users(self, request, dandiset__pk):
+    def users(self, request, dandiset__pk):  # noqa: C901
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
+            if dandiset.unembargo_in_progress:
+                raise DandisetUnembargoInProgressError
+
             # Verify that the user is currently an owner
             response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
             if response:
@@ -400,9 +414,18 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                         raise ValidationError(f'User {username} not found')
 
             # All owners found
-            owners = user_owners + [acc.user for acc in socialaccount_owners]
-            removed_owners, added_owners = dandiset.set_owners(owners)
-            dandiset.save()
+            with transaction.atomic():
+                owners = user_owners + [acc.user for acc in socialaccount_owners]
+                removed_owners, added_owners = dandiset.set_owners(owners)
+                dandiset.save()
+
+                if removed_owners or added_owners:
+                    audit.change_owners(
+                        dandiset=dandiset,
+                        user=request.user,
+                        removed_owners=removed_owners,
+                        added_owners=added_owners,
+                    )
 
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
@@ -411,8 +434,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
-                if 'name' in owner_account.extra_data:
-                    owner_dict['name'] = owner_account.extra_data['name']
+                owner_dict['name'] = owner_account.extra_data.get('name', None)
+                owner_dict['email'] = (
+                    owner_account.extra_data['email']
+                    # Only logged-in users can see owners' email addresses
+                    if request.user.is_authenticated and 'email' in owner_account.extra_data
+                    else None
+                )
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
@@ -420,6 +448,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     {
                         'username': owner_user.username,
                         'name': f'{owner_user.first_name} {owner_user.last_name}',
+                        'email': owner_user.email if request.user.is_authenticated else None,
                     }
                 )
+
         return Response(owners, status=status.HTTP_200_OK)

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from datetime import timedelta
 import hashlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
@@ -15,9 +14,13 @@ from django.core.files.storage import Storage, get_storage_class
 from minio import S3Error
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
+from s3_file_field._multipart import PresignedPartTransfer, PresignedTransfer, UploadTooLargeError
 from s3_file_field._multipart_minio import MinioMultipartManager
 from s3_file_field._multipart_s3 import S3MultipartManager
 from storages.backends.s3 import S3Storage
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class ChecksumCalculatorFile:
@@ -45,14 +48,45 @@ class DandiMultipartMixin:
 
 
 class DandiS3MultipartManager(DandiMultipartMixin, S3MultipartManager):
-    """A custom multipart manager for passing ACL information."""
+    """
+    A custom multipart manager.
 
-    def _create_upload_id(self, object_key: str, content_type: str) -> str:
+    This custom multipart manager does the following:
+        1. Passes ACL information to multipart upload creation
+        2. Allows for passing tags to multipart uploads
+    """
+
+    def initialize_upload(
+        self,
+        object_key: str,
+        file_size: int,
+        content_type: str,
+        tagging: str | None = None,
+    ) -> PresignedTransfer:
+        if file_size > self.max_object_size:
+            raise UploadTooLargeError('File is larger than the S3 maximum object size.')
+
+        upload_id = self._create_upload_id(object_key, content_type, tagging)
+        parts = [
+            PresignedPartTransfer(
+                part_number=part_number,
+                size=part_size,
+                upload_url=self._generate_presigned_part_url(
+                    object_key, upload_id, part_number, part_size
+                ),
+            )
+            for part_number, part_size in self._iter_part_sizes(file_size)
+        ]
+        return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
+
+    def _create_upload_id(self, object_key: str, content_type: str, tagging: str | None) -> str:
         resp = self._client.create_multipart_upload(
             Bucket=self._bucket_name,
             Key=object_key,
             ContentType=content_type,
             ACL='bucket-owner-full-control',
+            # The param to create_multipart_upload must be a string
+            Tagging=tagging or '',
         )
         return resp['UploadId']
 
@@ -60,8 +94,19 @@ class DandiS3MultipartManager(DandiMultipartMixin, S3MultipartManager):
 class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
     """A custom multipart manager for passing ACL information."""
 
+    # Override this method for interoperability with DandiS3MultipartManager
+    def initialize_upload(
+        self,
+        object_key: str,
+        file_size: int,
+        content_type: str,
+        *args,
+        **kwargs,
+    ) -> PresignedTransfer:
+        return super().initialize_upload(object_key, file_size, content_type)
+
     def _create_upload_id(self, object_key: str, content_type: str) -> str:
-        return self._client._create_multipart_upload(
+        return self._client._create_multipart_upload(  # noqa: SLF001
             bucket_name=self._bucket_name,
             object_name=object_key,
             headers={
@@ -110,7 +155,7 @@ class TimeoutS3Storage(S3Storage):
     def __init__(self, **settings):
         super().__init__(**settings)
 
-        self.config = self.config.merge(
+        self.client_config = self.client_config.merge(
             Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 2})
         )
 
@@ -293,28 +338,27 @@ def create_s3_storage(bucket_name: str) -> Storage:
     return storage
 
 
-def get_boto_client(storage: Storage | None = None):
+def get_boto_client(storage: Storage | None = None, config: Config | None = None):
     """Return an s3 client from the current storage."""
     storage = storage if storage else get_storage()
-    if isinstance(storage, MinioStorage):
-        storage_params = get_storage_params(storage)
-        return boto3.client(
-            's3',
-            endpoint_url=storage_params['endpoint_url'],
-            aws_access_key_id=storage_params['access_key'],
-            aws_secret_access_key=storage_params['secret_key'],
-            region_name='us-east-1',
-        )
-
-    return storage.connection.meta.client
+    storage_params = get_storage_params(storage)
+    region_name = 'us-east-1' if isinstance(storage, MinioStorage) else 'us-east-2'
+    return boto3.client(
+        's3',
+        endpoint_url=storage_params['endpoint_url'],
+        aws_access_key_id=storage_params['access_key'],
+        aws_secret_access_key=storage_params['secret_key'],
+        region_name=region_name,
+        config=config,
+    )
 
 
 def get_storage_params(storage: Storage):
     if isinstance(storage, MinioStorage):
         return {
-            'endpoint_url': storage.client._base_url._url.geturl(),
-            'access_key': storage.client._provider.retrieve().access_key,
-            'secret_key': storage.client._provider.retrieve().secret_key,
+            'endpoint_url': storage.client._base_url._url.geturl(),  # noqa: SLF001
+            'access_key': storage.client._provider.retrieve().access_key,  # noqa: SLF001
+            'secret_key': storage.client._provider.retrieve().secret_key,  # noqa: SLF001
         }
 
     return {
@@ -330,11 +374,3 @@ def get_storage() -> Storage:
 
 def get_storage_prefix(instance: Any, filename: str) -> str:
     return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{filename}'
-
-
-def get_embargo_storage() -> Storage:
-    return create_s3_storage(settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME)
-
-
-def get_embargo_storage_prefix(instance: Any, filename: str) -> str:
-    return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{filename}'

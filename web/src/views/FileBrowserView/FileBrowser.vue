@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentDandiset && currentDandiset.dandiset.embargo_status !== 'UNEMBARGOING'">
+  <div v-if="!unembargo_in_progress">
     <v-progress-linear
       v-if="!currentDandiset"
       indeterminate
@@ -116,7 +116,7 @@
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click="selectPath(item)"
+                @click.self="openItem(item)"
               >
                 <v-icon
                   class="mr-2"
@@ -145,39 +145,59 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-btn
-                    icon
-                    :href="inlineURI(item.asset.asset_id)"
-                    target="_blank"
-                  >
-                    <v-icon color="primary">
-                      mdi-eye
-                    </v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :href="inlineURI(item.asset.asset_id)"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon color="primary">
+                          mdi-open-in-app
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span>Open asset in browser (you can also click on the item itself)</span>
+                  </v-tooltip>
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-btn
-                    icon
-                    :href="downloadURI(item.asset.asset_id)"
-                  >
-                    <v-icon color="primary">
-                      mdi-download
-                    </v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :href="downloadURI(item.asset.asset_id)"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon color="primary">
+                          mdi-download
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span>Download asset</span>
+                  </v-tooltip>
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-btn
-                    icon
-                    :href="assetMetadataURI(item.asset.asset_id)"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <v-icon color="primary">
-                      mdi-information
-                    </v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        :href="assetMetadataURI(item.asset.asset_id)"
+                        target="_blank"
+                        rel="noreferrer"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        <v-icon color="primary">
+                          mdi-information
+                        </v-icon>
+                      </v-btn>
+                    </template>
+                    <span>View asset metadata</span>
+                  </v-tooltip>
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
@@ -187,21 +207,13 @@
                   >
                     <template #activator="{ on, attrs }">
                       <v-btn
-                        v-if="item.services && item.services.length"
                         color="primary"
-                        icon
+                        x-small
+                        :disabled="!item.services || !item.services.length"
                         v-bind="attrs"
                         v-on="on"
                       >
-                        <v-icon>mdi-dots-vertical</v-icon>
-                      </v-btn>
-                      <v-btn
-                        v-else
-                        color="primary"
-                        disabled
-                        icon
-                      >
-                        <v-icon>mdi-dots-vertical</v-icon>
+                        Open With <v-icon small>mdi-menu-down</v-icon>
                       </v-btn>
                     </template>
                     <v-list
@@ -220,7 +232,7 @@
                         :key="el.name"
                         :href="el.url"
                         target="_blank"
-                        rel="noopener"
+                        rel="noreferrer"
                       >
                         <v-list-item-title class="font-weight-light">
                           {{ el.name }}
@@ -337,8 +349,22 @@ const EXTERNAL_SERVICES = [
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://flatironinstitute.github.io/neurosift?p=/nwb&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   },
+
+  {
+    name: 'Neurosift',
+    regex: /\.nwb\.lindi\.(json|tar)$/,
+    maxsize: Infinity,
+    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+  },
+
+  {
+    name: 'Neurosift',
+    regex: /\.avi$/,
+    maxsize: Infinity,
+    endpoint: 'https://neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+  }
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
 
@@ -371,6 +397,7 @@ const updating = ref(false);
 const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
 const embargoed = computed(() => currentDandiset.value?.dandiset.embargo_status === 'EMBARGOED');
+const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING')
 const splitLocation = computed(() => location.value.split('/'));
 const isAdmin = computed(() => user.value?.admin || false);
 const isOwner = computed(() => !!(
@@ -433,12 +460,16 @@ function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
 }
 
-function selectPath(item: AssetPath) {
+function openItem(item: AssetPath) {
   const { asset, path } = item;
 
-  // Return early if path is a file
-  if (asset) { return; }
-  location.value = path;
+  if (asset) {
+    // If the item is an asset, open it in the browser.
+    window.open(inlineURI(asset.asset_id), "_self");
+  } else {
+    // If it's a directory, move into it.
+    location.value = path;
+  }
 }
 
 function navigateToParent() {

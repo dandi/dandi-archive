@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
 
 from dandiapi.api.models.user import UserMetadata

@@ -1,7 +1,7 @@
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 import { ref } from 'vue';
-import OAuthClient from '@girder/oauth-client';
+import OAuthClient from '@resonant/oauth-client';
 import type {
   Asset,
   Dandiset,

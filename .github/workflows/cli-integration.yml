@@ -12,17 +12,21 @@ on:
 
 jobs:
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out this repository
         uses: actions/checkout@v4
 
       - name: Build Docker image
         run: |
+          docker login -u "$DOCKER_LOGIN" --password-stdin <<<"$DOCKER_TOKEN"
           docker build \
             -t dandiarchive/dandiarchive-api \
             -f dev/django-public.Dockerfile \
             .
+        env:
+          DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Export Docker image
         run: |
@@ -35,7 +39,7 @@ jobs:
           path: dandiarchive-api.tgz
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build-image
     strategy:
       fail-fast: false
@@ -84,12 +88,12 @@ jobs:
       - name: Dump Docker Compose logs
         if: failure()
         run: |
-          docker-compose \
+          docker compose \
             -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
             logs --timestamps
 
       - name: Shut down Docker Compose
         run: |
-          docker-compose \
+          docker compose \
             -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
             down -v

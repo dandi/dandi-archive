@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import re
 
@@ -14,7 +16,7 @@ class PublishConfig(AppConfig):
     verbose_name = 'DANDI: Publish'
 
     @staticmethod
-    def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:
+    def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:  # noqa: ARG004
         from dandiapi.api.models.asset import Asset
         from dandiapi.api.models.dandiset import Dandiset
         from dandiapi.api.models.version import Version
@@ -44,7 +46,8 @@ class PublishConfig(AppConfig):
         return 0.001 if is_noisy() else 0.01
 
     def ready(self):
-        import dandiapi.api.checks  # noqa: F401
+        # RUF100 is caused by https://github.com/astral-sh/ruff/issues/60
+        import dandiapi.api.checks  # noqa: F401, RUF100
         import dandiapi.api.signals  # noqa: F401
 
         if hasattr(settings, 'SENTRY_DSN'):

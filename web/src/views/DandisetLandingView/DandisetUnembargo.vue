@@ -21,10 +21,10 @@
             <span class="font-weight-bold">
               permanent
             </span>
-            action and is not undoable. Once a dandiset has been unembargoed,
+            action and cannot be undone. Once a dandiset has been unembargoed,
             it cannot be re-embargoed.
             <br><br>
-            Note: this may take a while if your dandiset is large.
+            Note: this may take several days to complete.
           </span>
         </v-card-text>
         <v-card-text>
@@ -65,7 +65,7 @@
     >
       <v-tooltip
         left
-        :disabled="!unembargoing"
+        :disabled="!unembargoDisabled"
       >
         <template #activator="{ on }">
           <div
@@ -77,16 +77,17 @@
               block
               color="info"
               depressed
-              :disabled="unembargoing"
+              :disabled="unembargoDisabled"
               @click="unembargo()"
             >
-              {{ unembargoing ? 'Unembargoing' : 'Unembargo' }}
+              {{ unembargo_in_progress ? 'Unembargoing' : 'Unembargo' }}
               <v-spacer />
               <v-icon>mdi-lock-open</v-icon>
             </v-btn>
           </div>
         </template>
-        <span v-if="unembargoing">This dandiset is being unembargoed, please wait.</span>
+        <span v-if="unembargo_in_progress">This dandiset is being unembargoed, please wait.</span>
+        <span v-else-if="currentDandiset.active_uploads">This dandiset has active uploads. Please complete or clear these uploads before proceeding.</span>
       </v-tooltip>
     </v-row>
     <v-row>
@@ -126,7 +127,8 @@ function formatDate(date: string): string {
 const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
-const unembargoing = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
+const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
+const unembargoDisabled = computed(() => !!(unembargo_in_progress.value || currentDandiset.value === null || currentDandiset.value.active_uploads));
 const showWarningDialog = ref(false);
 const confirmationPhrase = ref('');
 

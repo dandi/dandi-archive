@@ -1,5 +1,6 @@
-from collections import OrderedDict
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -9,6 +10,9 @@ from rest_framework import serializers
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Version
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from collections import OrderedDict
 
 
 def extract_contact_person(version: Version) -> str:
@@ -84,6 +88,7 @@ class VersionSerializer(serializers.ModelSerializer):
             'version',
             'name',
             'asset_count',
+            'active_uploads',
             'size',
             'status',
             'created',
@@ -174,10 +179,20 @@ class DandisetDetailSerializer(DandisetSerializer):
 
 
 class DandisetQueryParameterSerializer(serializers.Serializer):
-    draft = serializers.BooleanField(default=True)
-    empty = serializers.BooleanField(default=True)
-    embargoed = serializers.BooleanField(default=False)
-    user = serializers.CharField(required=False)
+    draft = serializers.BooleanField(
+        default=True,
+        help_text='Whether to include dandisets that only have draft '
+        "versions (i.e., haven't been published yet).",
+    )
+    empty = serializers.BooleanField(default=True, help_text='Whether to include empty dandisets.')
+    embargoed = serializers.BooleanField(
+        default=False, help_text='Whether to include embargoed dandisets.'
+    )
+    user = serializers.ChoiceField(
+        choices=['me'],
+        required=False,
+        help_text='Set this value to "me" to only return dandisets owned by the current user.',
+    )
 
 
 class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
@@ -305,26 +320,6 @@ class AssetDownloadQueryParameterSerializer(serializers.Serializer):
     content_disposition = serializers.ChoiceField(['attachment', 'inline'], default='attachment')
 
 
-class EmbargoedSlugRelatedField(serializers.SlugRelatedField):
-    """
-    A Field for cleanly serializing embargoed model fields.
-
-    Embargoed fields are paired with their non-embargoed equivalents, like "blob" and
-    "embargoed_blob", or "zarr" and "embargoed_zarr". There are DB constraints in place to ensure
-    that only one field is defined at a time. When serializing one of those pairs, we would like to
-    conceal the fact that the field might be embargoed by silently using the embargoed model field
-    in place of the normal field if it is defined.
-    """
-
-    def get_attribute(self, instance: Asset):
-        attr = super().get_attribute(instance)
-        if attr is None:
-            # The normal field was not defined on the model, try the embargoed_ variant instead
-            embargoed_source = f'embargoed_{self.source}'
-            attr = getattr(instance, embargoed_source, None)
-        return attr
-
-
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
@@ -340,7 +335,7 @@ class AssetSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created']
 
-    blob = EmbargoedSlugRelatedField(slug_field='blob_id', read_only=True)
+    blob = serializers.SlugRelatedField(slug_field='blob_id', read_only=True)
     zarr = serializers.SlugRelatedField(slug_field='zarr_id', read_only=True)
     metadata = serializers.JSONField(source='full_metadata')
 

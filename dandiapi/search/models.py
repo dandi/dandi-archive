@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from django.contrib.auth.models import User
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.db.models import OuterRef, Q, Subquery
 from guardian.shortcuts import get_objects_for_user
 
 from dandiapi.api.models import Dandiset
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
 class AssetSearchManager(models.Manager):

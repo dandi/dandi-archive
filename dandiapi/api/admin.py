@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import csv
+from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib import admin, messages
@@ -8,7 +11,6 @@ from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
 from django.db.models.query import Prefetch, QuerySet
 from django.forms.models import BaseInlineFormSet
-from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import reverse
 from django.utils.html import format_html
@@ -17,14 +19,17 @@ from guardian.admin import GuardedModelAdmin
 from dandiapi.api.models import (
     Asset,
     AssetBlob,
+    AuditRecord,
     Dandiset,
-    EmbargoedAssetBlob,
     Upload,
     UserMetadata,
     Version,
 )
 from dandiapi.api.views.users import social_account_to_dict
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs
+
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
 
 admin.site.site_header = 'DANDI Admin'
 admin.site.site_title = 'DANDI Admin'
@@ -131,12 +136,17 @@ class VersionStatusFilter(admin.SimpleListFilter):
     title = 'status'
     parameter_name = 'status'
 
-    def lookups(self, request, model_admin):
-        qs = model_admin.get_queryset(request)
-        for status in qs.values_list('status', flat=True).distinct():
-            count = qs.filter(status=status).count()
-            if count:
-                yield (status, f'{status} ({count})')
+    def lookups(self, *args, **kwargs):
+        # The queryset for VersionAdmin contains unnecessary data,
+        # so just use base queryset from Version.objects
+        qs = (
+            Version.objects.values_list('status')
+            .distinct()
+            .annotate(total=Count('status'))
+            .order_by()
+        )
+        for status, count in qs:
+            yield (status, f'{status} ({count})')
 
     def queryset(self, request, queryset):
         status = self.value()
@@ -183,33 +193,17 @@ class AssetBlobAdmin(admin.ModelAdmin):
         return super().get_queryset(request).prefetch_related('assets')
 
 
-@admin.register(EmbargoedAssetBlob)
-class EmbargoedAssetBlobAdmin(AssetBlobAdmin):
-    list_display = [
-        'id',
-        'blob_id',
-        'dandiset',
-        'blob',
-        'references',
-        'size',
-        'sha256',
-        'modified',
-        'created',
-    ]
-
-
 class AssetBlobInline(LimitedTabularInline):
     model = AssetBlob
 
 
 @admin.register(Asset)
 class AssetAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['blob', 'embargoed_blob', 'zarr', 'versions']
+    autocomplete_fields = ['blob', 'zarr', 'versions']
     fields = [
         'asset_id',
         'path',
         'blob',
-        'embargoed_blob',
         'zarr',
         'metadata',
         'versions',
@@ -222,6 +216,7 @@ class AssetAdmin(admin.ModelAdmin):
         'asset_id',
         'path',
         'blob',
+        'zarr',
         'status',
         'size',
         'modified',
@@ -235,3 +230,39 @@ class AssetAdmin(admin.ModelAdmin):
 class UploadAdmin(admin.ModelAdmin):
     list_display = ['id', 'upload_id', 'blob', 'etag', 'upload_id', 'size', 'created']
     list_display_links = ['id', 'upload_id']
+
+
+@admin.register(AuditRecord)
+class AuditRecordAdmin(admin.ModelAdmin):
+    actions = None
+    date_hierarchy = 'timestamp'
+    search_fields = [
+        'dandiset_id',
+        'username',
+        'record_type',
+    ]
+    list_display = [
+        'id',
+        'timestamp',
+        'dandiset',
+        'record_type',
+        'details',
+        'username',
+    ]
+
+    @admin.display(description='Dandiset', ordering='dandiset_id')
+    def dandiset(self, obj):
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('admin:api_dandiset_change', args=(obj.dandiset_id,)),
+            f'{obj.dandiset_id:06}',
+        )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

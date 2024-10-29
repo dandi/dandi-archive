@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
@@ -11,9 +10,9 @@ from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.storage import get_embargo_storage, get_storage
+from dandiapi.api.storage import get_storage
 
-logger = logging.Logger(name=__name__)
+logger = logging.getLogger(name=__name__)
 
 
 # The status of the zarr ingestion (checksums, size, file count)
@@ -29,6 +28,7 @@ class BaseZarrArchive(TimeStampedModel):
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
 
     class Meta:
+        ordering = ['created']
         get_latest_by = 'modified'
         abstract = True
         constraints = [
@@ -54,7 +54,7 @@ class BaseZarrArchive(TimeStampedModel):
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
-    checksum = models.CharField(max_length=512, null=True, default=None)
+    checksum = models.CharField(max_length=512, null=True, default=None, blank=True)  # noqa: DJ001
     status = models.CharField(
         max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
         choices=ZarrArchiveStatus.choices,
@@ -100,17 +100,23 @@ class ZarrArchive(BaseZarrArchive):
     storage = get_storage()
     dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
 
-    def s3_path(self, zarr_path: str | Path):
+    def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.zarr_id}/{zarr_path}'  # noqa: E501
+        return (
+            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
+            f'{self.zarr_id}/{zarr_path}'
+        )
 
 
 class EmbargoedZarrArchive(BaseZarrArchive):
-    storage = get_embargo_storage()
+    storage = get_storage()
     dandiset = models.ForeignKey(
         Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
     )
 
-    def s3_path(self, zarr_path: str | Path):
+    def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return f'{settings.DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'  # noqa: E501
+        return (
+            f'{settings.DANDI_ZARR_PREFIX_NAME}/'
+            f'{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'
+        )
