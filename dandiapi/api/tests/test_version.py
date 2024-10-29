@@ -357,7 +357,6 @@ def test_version_publish_version(draft_version, asset):
     }
 
 
-<<<<<<< HEAD
 @pytest.mark.parametrize(
     'asset_type',
     ["blob", "embargoed_blob", "zarr"],
