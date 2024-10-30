@@ -19,7 +19,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker login -u "$DOCKER_LOGIN" --password-stdin <<<"$DOCKER_TOKEN"
+          echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_LOGIN" --password-stdin > /dev/null 2>&1
           docker build \
             -t dandiarchive/dandiarchive-api \
             -f dev/django-public.Dockerfile \
