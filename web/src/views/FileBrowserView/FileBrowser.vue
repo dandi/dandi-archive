@@ -289,6 +289,7 @@ const FILES_PER_PAGE = 15;
 interface AssetService {
   name: string,
   url: string,
+  isPublicNeuroglancer: boolean,
 }
 
 interface ExtendedAssetPath extends AssetPath {
@@ -445,7 +446,7 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
   // used, but we're forced to supply the internal DANDI URL for embargoed
   // dandisets (since the ready-made S3 URL will prevent access in that case).
   const assetUrl = embargoed.value ? assetDandiUrl : assetS3Url;
-  
+
   return EXTERNAL_SERVICES
     .filter((service) => servicePredicate(service, path))
     .map((service) => ({
@@ -569,7 +570,8 @@ function redirectNeuroglancerUrl(item: any) {
         layers: [
             {
                 type: "new",
-                source: assetS3Url.includes("zarr") ? `zarr://${assetS3Url}` : `nifti://${assetS3Url}`,
+                source: assetS3Url.includes("zarr") ? `zarr://${assetS3Url}`
+                  : `nifti://${assetS3Url}`,
                 tab: "source",
                 name: item.asset.asset_id
             }
