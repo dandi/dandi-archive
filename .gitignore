@@ -127,4 +127,7 @@ dmypy.json
 .vscode
 .idea
 
+# Local env
+venv
+
 .DS_Store
