@@ -129,9 +129,7 @@ def validate_version_metadata(*, version: Version) -> None:
         metadata_for_validation['assetsSummary'] = {
             'schemaKey': 'AssetsSummary',
             'numberOfBytes': 1
-            if version.assets.filter(
-                Q(blob__size__gt=0) | Q(zarr__size__gt=0) | Q(embargoed_blob__size__gt=0)
-            ).exists()
+            if version.assets.filter(Q(blob__size__gt=0) | Q(zarr__size__gt=0)).exists()
             else 0,
             'numberOfFiles': 1 if version.assets.exists() else 0,
         }
