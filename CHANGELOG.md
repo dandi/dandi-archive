@@ -1,3 +1,18 @@
+# v0.3.109 (Thu Oct 31 2024)
+
+#### 🐛 Bug Fix
+
+- Add neurosift external service for dandisets [#2041](https://github.com/dandi/dandi-archive/pull/2041) ([@magland](https://github.com/magland) [@waxlamp](https://github.com/waxlamp))
+- Display message in GUI when accessing embargoed dandiset [#2060](https://github.com/dandi/dandi-archive/pull/2060) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Jeremy Magland ([@magland](https://github.com/magland))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.3.108 (Thu Oct 24 2024)
 
 #### 🐛 Bug Fix
