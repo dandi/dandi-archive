@@ -76,18 +76,11 @@ const openInNeurosift = () => {
   }
 
   const metadata = currentDandiset.value.metadata;
-
-  const dandisetUrl = metadata.url;
-  const staging = dandisetUrl.startsWith('https://gui-staging.dandiarchive.org/');
-
   const dandisetId = metadata.identifier.split(':')[1];
   const dandisetVersion = metadata.version;
+  const stagingParam = metadata.url.startsWith('https://gui-staging.dandiarchive.org/') ? '&staging=1' : '';
 
-  let href = `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}`;
-  if (staging) {
-    href += '&staging=1';
-  }
-  return href;
+  return `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}${stagingParam}`;
 };
 
 </script>
