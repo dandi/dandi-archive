@@ -71,17 +71,17 @@ const openInNeurosift = () => {
     throw new Error('Dandiset is undefined');
   }
 
-  const dandiset = currentDandiset.value;
-
-  if (!dandiset.metadata) {
+  if (!currentDandiset.value.metadata) {
     throw new Error('Dandiset metadata is undefined');
   }
 
-  const dandisetUrl = dandiset.metadata.url;
+  const metadata = currentDandiset.value.metadata;
+
+  const dandisetUrl = metadata.url;
   const staging = dandisetUrl.startsWith('https://gui-staging.dandiarchive.org/');
 
-  const dandisetId = dandiset.metadata.identifier.split(':')[1];
-  const dandisetVersion = dandiset.metadata.version;
+  const dandisetId = metadata.identifier.split(':')[1];
+  const dandisetVersion = metadata.version;
 
   let href = `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}`;
   if (staging) {
