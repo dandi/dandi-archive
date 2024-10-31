@@ -38,7 +38,7 @@
             v-on="on"
             >
               <v-list-item
-                :href="neurosiftURL()"
+                :href="neurosiftURL"
                 target="_blank"
               >
                 <v-icon
@@ -66,7 +66,7 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 
-const neurosiftURL = () => {
+const neurosiftURL = computed(() => {
   if (!currentDandiset.value) {
     throw new Error('Dandiset is undefined');
   }
@@ -81,7 +81,7 @@ const neurosiftURL = () => {
   const stagingParam = metadata.url.startsWith('https://gui-staging.dandiarchive.org/') ? '&staging=1' : '';
 
   return `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}${stagingParam}`;
-};
+});
 
 </script>
 <style scoped>
