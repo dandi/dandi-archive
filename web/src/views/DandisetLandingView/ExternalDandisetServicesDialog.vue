@@ -67,18 +67,20 @@ const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
 
 const openInNeurosift = () => {
-  const dandisetUrl = currentDandiset.value?.metadata?.url;
-  if (!dandisetUrl) {
-    alert('Unexpected: No url field found in the metadata of the dandiset');
-    return;
+  if (!currentDandiset.value) {
+    throw new Error('Dandiset is undefined');
   }
+
+  const dandiset = currentDandiset.value;
+
+  if (!dandiset.metadata) {
+    throw new Error('Dandiset metadata is undefined');
+  }
+
+  const dandisetUrl = dandiset.metadata.url;
   const staging = dandisetUrl.startsWith('https://gui-staging.dandiarchive.org/');
-  const fullId = currentDandiset.value?.metadata?.id;
+  const fullId = dandiset.metadata.id;
   // e.g., DANDI:000776/0.241009.1509
-  if (!fullId) {
-    alert('Unexpected: No id field found in the metadata');
-    return;
-  }
   const dandisetId = fullId.split('/')[0].split(':')[1];
   const dandisetVersion = fullId.split('/')[1];
   if (!dandisetId || !dandisetVersion) {
