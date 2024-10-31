@@ -79,14 +79,10 @@ const openInNeurosift = () => {
 
   const dandisetUrl = dandiset.metadata.url;
   const staging = dandisetUrl.startsWith('https://gui-staging.dandiarchive.org/');
-  const fullId = dandiset.metadata.id;
-  // e.g., DANDI:000776/0.241009.1509
-  const dandisetId = fullId.split('/')[0].split(':')[1];
-  const dandisetVersion = fullId.split('/')[1];
-  if (!dandisetId || !dandisetVersion) {
-    alert(`Unexpected: Invalid id field found in the metadata: ${fullId}`);
-    return;
-  }
+
+  const dandisetId = dandiset.metadata.identifier.split(':')[1];
+  const dandisetVersion = dandiset.metadata.version;
+
   let href = `https://neurosift.app/?p=/dandiset&dandisetId=${dandisetId}&dandisetVersion=${dandisetVersion}`;
   if (staging) {
     href += '&staging=1';
