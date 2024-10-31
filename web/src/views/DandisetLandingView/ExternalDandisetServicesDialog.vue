@@ -38,7 +38,7 @@
             v-on="on"
             >
               <v-list-item
-                :href="openInNeurosift()"
+                :href="neurosiftURL()"
                 target="_blank"
               >
                 <v-icon
@@ -66,7 +66,7 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 
-const openInNeurosift = () => {
+const neurosiftURL = () => {
   if (!currentDandiset.value) {
     throw new Error('Dandiset is undefined');
   }
