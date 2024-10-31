@@ -80,7 +80,7 @@ const neurosiftURL = computed(() => {
   }
 
   const metadata = currentDandiset.value.metadata;
-  const dandisetId = metadata.identifier.split(':')[1];
+  const dandisetId = currentDandiset.value.dandiset.identifier;
   const dandisetVersion = metadata.version;
   const stagingParam = metadata.url!.startsWith('https://gui-staging.dandiarchive.org/') ? '&staging=1' : '';
 
