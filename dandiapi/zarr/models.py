@@ -15,6 +15,14 @@ from dandiapi.api.storage import get_storage
 logger = logging.getLogger(name=__name__)
 
 
+# TODO: Move this somewhere better?
+def zarr_s3_path(zarr_id: str, zarr_path: str = ''):
+    return (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
+        f'{zarr_id}/{zarr_path}'
+    )
+
+
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'
@@ -76,10 +84,7 @@ class ZarrArchive(TimeStampedModel):
 
     def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
-            f'{self.zarr_id}/{zarr_path}'
-        )
+        return zarr_s3_path(str(self.zarr_id), zarr_path)
 
     def generate_upload_urls(self, path_md5s: list[dict]):
         return [
