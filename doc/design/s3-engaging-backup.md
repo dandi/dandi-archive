@@ -9,7 +9,8 @@ Use s5cmd or Globus to perform a full sync from S3 to the storage server.
 
 ## Proposed Solutions for Incremental Sync from S3 to Server 
 
-### s5cmd sync `s5cmd sync [source] [destination]
+### s5cmd sync <br>
+`s5cmd sync [source] [destination]`
 **How the `sync` Command Works:** <br>
 `sync` command synchronizes S3 buckets, prefixes, directories and files between S3 buckets and prefixes as well. It compares files between source and destination, taking source files as source-of-truth. It makes a one way synchronization from source to destination without modifying any of the source files and deleting any of the destination files (unless `--delete flag` has passed).
 
@@ -24,13 +25,27 @@ It *only* copies files that:
 Can automate S3 to Engaging sync with a cron job on the server to run the s5cmd sync command at regular intervals (e.g., daily or hourly).
 
 
-## Globus 
-[WIP]
-
-## Proposed Solution for Tracking Changes on the Server
+### Globus 
 [WIP]
 
 ## Proposed Solution for Incremental Sync from Server to S3 
+### `rsync` with Mirror Directory Before s5cmd sync <br>
+```
+rsync -av --delete /data/ /backup/s3mirror/
+s5cmd sync /backup/s3mirror/ s3://dandi-bucket/
+```
+**Pros and Cons of `rsync`**
+- Pros:
+
+    - Efficient Local Comparison with rsync: rsync is highly optimized for local file comparisons, so it can quickly check which files in /data are new or modified and only update those in s3mirror. This makes the sync step more lightweight, as /s3mirror will already contain only the files that need to be checked by s5cmd.
+    - Reduced S3 API Calls: Since s5cmd is only syncing the files in s3mirror, it’s making fewer API calls and checks to S3, which can save on costs and bandwidth if you’re running frequent backups.
+    - Works Well for Large Datasets: For extremely large directories, this approach minimizes the scope of files s5cmd needs to process, since rsync has already filtered out unchanged files locally.
+
+- Cons:
+    - Additional Complexity: You have to manage an extra directory (s3mirror) and an extra rsync step in your workflow.
+    - Extra Storage Required: You need enough storage on your server to hold the s3mirror directory, which mirrors the contents of /data.
+
+### Globus 
 [WIP]
 
 ## Version Tracking on S3 
