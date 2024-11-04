@@ -1,16 +1,15 @@
 # S3 Backup to MIT Engaging 
 
-## Proposed Solution For Initial Backup from S3 to Server 
+## Proposed Solutions For Initial Backup from S3 to Server 
 Use s5cmd or Globus to perform a full sync from S3 to the storage server.
 ### s5cmd 
 
 ### Globus 
+[WIP]
 
+## Proposed Solutions for Incremental Sync from S3 to Server 
 
-
-## Proposed Solution for Incremental Sync from S3 to Server 
-
-### s5cmd sync
+### s5cmd sync `s5cmd sync [source] [destination]
 **How the `sync` Command Works:** <br>
 `sync` command synchronizes S3 buckets, prefixes, directories and files between S3 buckets and prefixes as well. It compares files between source and destination, taking source files as source-of-truth. It makes a one way synchronization from source to destination without modifying any of the source files and deleting any of the destination files (unless `--delete flag` has passed).
 
@@ -24,5 +23,15 @@ It *only* copies files that:
 **Scheduling the Sync** <br>
 Can automate S3 to Engaging sync with a cron job on the server to run the s5cmd sync command at regular intervals (e.g., daily or hourly).
 
-**Limitations** <br>
-s5cmd does not natively support bidirectional sync. However, it is very efficient for one-way sync from S3 to server.
+
+## Globus 
+[WIP]
+
+## Proposed Solution for Tracking Changes on the Server
+[WIP]
+
+## Proposed Solution for Incremental Sync from Server to S3 
+[WIP]
+
+## Version Tracking on S3 
+[WIP]
