@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
@@ -14,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
 from dandiapi.api.services import audit
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
@@ -97,6 +98,22 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
 
+    def get_queryset(self) -> QuerySet:
+        qs = super().get_queryset()
+
+        # Start with just public zarrs, in case user is not authenticated
+        queryset_filter = Q(embargoed=False)
+
+        # Filter zarrs to either open access or owned
+        if self.request.user.is_authenticated:
+            user_owned_dandiset_ids = DandisetUserObjectPermission.objects.filter(
+                user=self.request.user, permission__codename='owner'
+            ).values_list('content_object_id', flat=True)
+            queryset_filter |= Q(dandiset_id__in=user_owned_dandiset_ids)
+
+        # Apply filter
+        return qs.filter(queryset_filter)
+
     @swagger_auto_schema(
         query_serializer=ZarrListQuerySerializer,
         responses={200: ZarrListSerializer(many=True)},
@@ -105,10 +122,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         query_serializer = ZarrListQuerySerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
-
-        # Add filters from query parameters
         data = query_serializer.validated_data
         queryset: QuerySet[ZarrArchive] = self.get_queryset()
+
+        # Add filters from query parameters
         if 'dandiset' in data:
             queryset = queryset.filter(dandiset=int(data['dandiset'].lstrip('0')))
         if 'name' in data:
@@ -136,8 +153,6 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         )
         if not self.request.user.has_perm('owner', dandiset):
             raise PermissionDenied
-        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():
             # Use nested transaction block to prevent zarr creation race condition
