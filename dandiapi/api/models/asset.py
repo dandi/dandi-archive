@@ -163,6 +163,13 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         return self.zarr is not None
 
     @property
+    def is_embargoed(self) -> bool:
+        if self.blob is not None:
+            return self.blob.embargoed
+
+        return self.zarr.embargoed  # type: ignore  # noqa: PGH003
+
+    @property
     def size(self):
         if self.is_blob:
             return self.blob.size
@@ -207,8 +214,6 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         ):
             return True
 
-        # TODO: Check embargoed zarrs
-
         if self.path != path:
             return True
 
@@ -233,9 +238,8 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'access': [
                 {
                     'schemaKey': 'AccessRequirements',
-                    # TODO: When embargoed zarrs land, include that logic here
                     'status': AccessType.EmbargoedAccess.value
-                    if self.blob and self.blob.embargoed
+                    if self.is_embargoed
                     else AccessType.OpenAccess.value,
                 }
             ],
@@ -282,7 +286,4 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             .aggregate(size=models.Sum('size'))['size']
             or 0
             for cls in (AssetBlob, ZarrArchive)
-            # adding of Zarrs to embargoed dandisets is not supported
-            # so no point of adding EmbargoedZarr here since would also result in error
-            # TODO: add EmbagoedZarr whenever supported
         )
