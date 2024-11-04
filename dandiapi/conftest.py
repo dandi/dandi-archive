@@ -23,7 +23,7 @@ from dandiapi.api.tests.factories import (
     UploadFactory,
     UserFactory,
 )
-from dandiapi.zarr.tests.factories import ZarrArchiveFactory
+from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 from dandiapi.zarr.tests.utils import upload_zarr_file
 
 if TYPE_CHECKING:
@@ -47,6 +47,7 @@ register(UploadFactory)
 
 # zarr app
 register(ZarrArchiveFactory)
+register(EmbargoedZarrArchiveFactory, _name='embargoed_zarr_archive')
 
 
 # Register zarr file/directory factories
