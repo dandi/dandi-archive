@@ -4,13 +4,14 @@
 This is the simplest configuration for developers to start with.
 
 ### Initial Setup
-1. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
-2. Run `docker compose run --rm django ./manage.py migrate`
-3. Run `docker compose run --rm django ./manage.py createcachetable`
-4. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
+1. Run `docker compose pull` to ensure you have the latest versions of the service container images.
+2. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
+3. Run `docker compose run --rm django ./manage.py migrate`
+4. Run `docker compose run --rm django ./manage.py createcachetable`
+5. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
    This sets your username to your git email to ensure parity with how GitHub logins work. You can also replace the command substitution expression with a literal email address, or omit the `--email` option entirely to run the command in interactive mode.
-5. Run `docker compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
+6. Run `docker compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
 
 ### Run Application
