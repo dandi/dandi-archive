@@ -5,7 +5,7 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Run `docker compose pull` to ensure you have the latest versions of the service container images.
-2. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
+2. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
 3. Run `docker compose run --rm django ./manage.py migrate`
 4. Run `docker compose run --rm django ./manage.py createcachetable`
 5. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`

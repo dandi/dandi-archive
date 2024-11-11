@@ -15,8 +15,10 @@ ENV PYTHONUNBUFFERED 1
 # back to root; if the root user is specified, don't actually run the `adduser`
 # command.
 ARG USERID=0
-ARG GROUPID=0
 ARG LOGIN=root
+ARG GROUPID=0
+ARG GROUPNAME=root
+RUN getent group ${GROUPID} || addgroup --gid ${GROUPID} ${GROUPNAME}
 RUN if [ "${USERID}" != 0 ]; then adduser --uid ${USERID} --gid ${GROUPID} --home /home/${LOGIN} $LOGIN; fi
 
 # Create the project folder and make the user its owner.
