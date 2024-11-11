@@ -19,7 +19,7 @@ ARG LOGIN=root
 ARG GROUPID=0
 ARG GROUPNAME=root
 RUN getent group ${GROUPID} || addgroup --gid ${GROUPID} ${GROUPNAME}
-RUN if [ "${USERID}" != 0 ]; then adduser --allow-bad-names --uid ${USERID} --gid ${GROUPID} --home /home/${LOGIN} $LOGIN; fi
+RUN getent passwd ${USERID} || adduser --allow-bad-names --uid ${USERID} --gid ${GROUPID} --home /home/${LOGIN} $LOGIN
 
 # Create the project folder and make the user its owner.
 RUN mkdir -p /opt/django-project
