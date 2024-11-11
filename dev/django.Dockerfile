@@ -11,10 +11,6 @@ RUN apt-get update && \
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Install pre-commit. Use `pip` instead of `apt` in order to get a recent
-# version instead of whatever is in the image's package lists.
-RUN pip install pre-commit
-
 # Create a normal user (that can be made to match the dev's user stats), falling
 # back to root; if the root user is specified, don't actually run the `adduser`
 # command.
