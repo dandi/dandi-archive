@@ -1,15 +1,15 @@
 FROM python:3.11-slim
 
-# Set some behaviors for Python.
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
 # Install system librarires for Python packages:
 # * psycopg2
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
     libpq-dev gcc libc6-dev git && \
     rm -rf /var/lib/apt/lists/*
+
+# Set some behaviors for Python.
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # Install pre-commit. Use `pip` instead of `apt` in order to get a recent
 # version instead of whatever is in the image's package lists.
