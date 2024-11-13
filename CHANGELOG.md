@@ -1,3 +1,15 @@
+# v0.3.110 (Wed Nov 13 2024)
+
+#### 🐛 Bug Fix
+
+- Fix display of embargoed dandiset error page in GUI [#2073](https://github.com/dandi/dandi-archive/pull/2073) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.109 (Thu Oct 31 2024)
 
 #### 🐛 Bug Fix
