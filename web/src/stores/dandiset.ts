@@ -8,7 +8,15 @@ import { dandiRest, user } from '@/rest';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
 
+
+function isUnauthenticatedOrForbidden(err: unknown) {
+  return axios.isAxiosError(err) && err.response && [401, 403].includes(err.response.status);
+}
+
 interface State {
+  meta: {
+    dandisetExistsAndEmbargoed: boolean,
+  };
   dandiset: Version | null;
   versions: Version[] | null,
   owners: User[] | null,
@@ -17,6 +25,7 @@ interface State {
 
 export const useDandisetStore = defineStore('dandiset', {
   state: (): State => ({
+    meta: { dandisetExistsAndEmbargoed: false },
     dandiset: null,
     versions: null,
     owners: null,
@@ -40,6 +49,7 @@ export const useDandisetStore = defineStore('dandiset', {
   },
   actions: {
     async uninitializeDandisets() {
+      this.meta.dandisetExistsAndEmbargoed = false;
       this.dandiset = null;
       this.versions = null;
       this.owners = null;
@@ -60,10 +70,11 @@ export const useDandisetStore = defineStore('dandiset', {
       try {
         res = await dandiRest.versions(identifier);
       } catch (err) {
-        // 401 errors are normal, and indicate that this dandiset is embargoed
+        // 401/403 errors are normal, and indicate that this dandiset is embargoed
         // and the user doesn't have permission to view it.
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
+        if (isUnauthenticatedOrForbidden(err)) {
           res = null;
+          this.meta.dandisetExistsAndEmbargoed = true;
         } else {
           throw err;
         }
@@ -74,19 +85,23 @@ export const useDandisetStore = defineStore('dandiset', {
       }
     },
     async fetchDandiset({ identifier, version }: Record<string, string>) {
-      const sanitizedVersion = version || (await dandiRest.mostRecentVersion(identifier))?.version;
-
-      if (!sanitizedVersion) {
-        this.dandiset = null;
-        return;
-      }
-
       try {
+        const sanitizedVersion = version || (await dandiRest.mostRecentVersion(identifier))?.version;
+        if (!sanitizedVersion) {
+          this.dandiset = null;
+          return;
+        }
+
         const data = await dandiRest.specificVersion(identifier, sanitizedVersion);
         this.dandiset = data;
       } catch (err) {
         if (axios.isAxiosError(err) && err.response && err.response.status < 500) {
           this.dandiset = null;
+
+          if (isUnauthenticatedOrForbidden(err)) {
+            this.meta.dandisetExistsAndEmbargoed = true;
+          }
+
         } else {
           throw err;
         }

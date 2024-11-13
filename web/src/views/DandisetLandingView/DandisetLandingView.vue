@@ -193,20 +193,11 @@ watch(() => props.identifier, async () => {
   }
 
   // Set default values
-  embargoedOrUnauthenticated.value = false;
   loading.value = true;
 
-  // Catch error to check if response is 401, for embargoed dandisets
-  try {
-    await store.initializeDandisets({ identifier, version });
-
-  } catch (e) {
-    if (axios.isAxiosError(e) && (e.response?.status === 401 || e.response?.status === 403)) {
-      embargoedOrUnauthenticated.value = true
-    } else {
-      throw e
-    }
-  }
+  // Check if response is 401 or 403, for embargoed dandisets
+  await store.initializeDandisets({ identifier, version });
+  embargoedOrUnauthenticated.value = store.meta.dandisetExistsAndEmbargoed;
 
   loading.value = false;
 }, { immediate: true });
