@@ -15,6 +15,14 @@ from dandiapi.api.storage import get_storage
 logger = logging.getLogger(name=__name__)
 
 
+# TODO: Move this somewhere better?
+def zarr_s3_path(zarr_id: str, zarr_path: str = ''):
+    return (
+        f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
+        f'{zarr_id}/{zarr_path}'
+    )
+
+
 # The status of the zarr ingestion (checksums, size, file count)
 class ZarrArchiveStatus(models.TextChoices):
     PENDING = 'Pending'
@@ -23,14 +31,14 @@ class ZarrArchiveStatus(models.TextChoices):
     COMPLETE = 'Complete'
 
 
-class BaseZarrArchive(TimeStampedModel):
+class ZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
+    storage = get_storage()
 
     class Meta:
         ordering = ['created']
         get_latest_by = 'modified'
-        abstract = True
         constraints = [
             models.UniqueConstraint(
                 name='%(app_label)s-%(class)s-unique-name',
@@ -50,7 +58,9 @@ class BaseZarrArchive(TimeStampedModel):
             ),
         ]
 
+    dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
+    embargoed = models.BooleanField(default=False)
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
@@ -71,6 +81,10 @@ class BaseZarrArchive(TimeStampedModel):
         # Strip off the query parameters from the presigning, as they are different every time
         parsed = urlparse(signed_url)
         return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
+
+    def s3_path(self, zarr_path: str) -> str:
+        """Generate a full S3 object path from a path in this zarr_archive."""
+        return zarr_s3_path(str(self.zarr_id), zarr_path)
 
     def generate_upload_urls(self, path_md5s: list[dict]):
         return [
@@ -94,29 +108,3 @@ class BaseZarrArchive(TimeStampedModel):
         # Files deleted, mark pending
         self.mark_pending()
         self.save()
-
-
-class ZarrArchive(BaseZarrArchive):
-    storage = get_storage()
-    dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
-
-    def s3_path(self, zarr_path: str) -> str:
-        """Generate a full S3 object path from a path in this zarr_archive."""
-        return (
-            f'{settings.DANDI_DANDISETS_BUCKET_PREFIX}{settings.DANDI_ZARR_PREFIX_NAME}/'
-            f'{self.zarr_id}/{zarr_path}'
-        )
-
-
-class EmbargoedZarrArchive(BaseZarrArchive):
-    storage = get_storage()
-    dandiset = models.ForeignKey(
-        Dandiset, related_name='embargoed_zarr_archives', on_delete=models.CASCADE
-    )
-
-    def s3_path(self, zarr_path: str) -> str:
-        """Generate a full S3 object path from a path in this zarr_archive."""
-        return (
-            f'{settings.DANDI_ZARR_PREFIX_NAME}/'
-            f'{self.dandiset.identifier}/{self.zarr_id}/{zarr_path}'
-        )

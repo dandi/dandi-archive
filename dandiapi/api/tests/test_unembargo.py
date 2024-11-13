@@ -10,7 +10,6 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.embargo import (
     AssetBlobEmbargoedError,
-    _remove_dandiset_asset_blob_embargo_tags,
     remove_asset_blob_embargoed_tag,
     unembargo_dandiset,
 )
@@ -18,20 +17,18 @@ from dandiapi.api.services.embargo.exceptions import (
     AssetTagRemovalError,
     DandisetActiveUploadsError,
 )
+from dandiapi.api.services.embargo.utils import (
+    _delete_zarr_object_tags,
+    remove_dandiset_embargo_tags,
+)
 from dandiapi.api.services.exceptions import DandiError
+from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, zarr_s3_path
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
     from dandiapi.api.models.asset import AssetBlob
-
-
-@pytest.mark.django_db
-def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
-    with pytest.raises(AssetBlobEmbargoedError):
-        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
-
-    # Test that error not raised on non-embargoed asset blob
-    remove_asset_blob_embargoed_tag(asset_blob)
 
 
 @pytest.mark.django_db
@@ -125,16 +122,16 @@ def test_unembargo_dandiset_uploads_exist(draft_version_factory, upload_factory,
 
 
 @pytest.mark.django_db
-def test_remove_dandiset_asset_blob_embargo_tags_chunks(
+def test_remove_dandiset_embargo_tags_chunks(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     mocker,
 ):
     delete_asset_blob_tags_mock = mocker.patch(
-        'dandiapi.api.services.embargo._delete_asset_blob_tags'
+        'dandiapi.api.services.embargo.utils._delete_object_tags'
     )
-    chunk_size = mocker.patch('dandiapi.api.services.embargo.ASSET_BLOB_TAG_REMOVAL_CHUNK_SIZE', 2)
+    chunk_size = mocker.patch('dandiapi.api.services.embargo.utils.TAG_REMOVAL_CHUNK_SIZE', 2)
 
     draft_version: Version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
@@ -144,32 +141,92 @@ def test_remove_dandiset_asset_blob_embargo_tags_chunks(
         asset = asset_factory(blob=embargoed_asset_blob_factory())
         draft_version.assets.add(asset)
 
-    _remove_dandiset_asset_blob_embargo_tags(dandiset=ds)
+    remove_dandiset_embargo_tags(dandiset=ds)
 
-    # Assert that _delete_asset_blob_tags was called chunk_size +1 times, to ensure that it works
+    # Assert that _delete_object_tags was called chunk_size +1 times, to ensure that it works
     # correctly across chunks
     assert len(delete_asset_blob_tags_mock.mock_calls) == chunk_size + 1
 
 
 @pytest.mark.django_db
-def test_delete_asset_blob_tags_fails(
+def test_remove_dandiset_embargo_tags_fails_remove_tags(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     mocker,
 ):
-    mocker.patch('dandiapi.api.services.embargo._delete_asset_blob_tags', side_effect=ValueError)
+    # Patch function to raise error when called
+    mocker.patch('dandiapi.api.services.embargo.utils._delete_object_tags', side_effect=ValueError)
+
+    # Create dandiset/version and add assets
     draft_version: Version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     ds: Dandiset = draft_version.dandiset
-    asset = asset_factory(blob=embargoed_asset_blob_factory())
-    draft_version.assets.add(asset)
+    for _ in range(2):
+        asset = asset_factory(blob=embargoed_asset_blob_factory())
+        draft_version.assets.add(asset)
 
-    # Check that if an exception within `_delete_asset_blob_tags` is raised, it's propagated upwards
-    # as an AssetTagRemovalError
+    # Remove tags
     with pytest.raises(AssetTagRemovalError):
-        _remove_dandiset_asset_blob_embargo_tags(dandiset=ds)
+        remove_dandiset_embargo_tags(dandiset=ds)
+
+
+@pytest.mark.django_db
+def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
+    with pytest.raises(AssetBlobEmbargoedError):
+        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
+
+    # Test that error not raised on non-embargoed asset blob
+    remove_asset_blob_embargoed_tag(asset_blob)
+
+
+@pytest.mark.django_db
+def test_remove_asset_blob_embargoed_tag(asset_blob, mocker):
+    mocked_func = mocker.patch('dandiapi.api.services.embargo._delete_object_tags')
+    remove_asset_blob_embargoed_tag(asset_blob)
+    mocked_func.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_delete_zarr_object_tags_fails_remove_tags(zarr_archive, zarr_file_factory, mocker):
+    mocked = mocker.patch(
+        'dandiapi.api.services.embargo.utils._delete_object_tags', side_effect=ValueError
+    )
+    files = [zarr_file_factory(zarr_archive) for _ in range(2)]
+
+    with pytest.raises(AssetTagRemovalError):
+        _delete_zarr_object_tags(client=get_boto_client(), zarr=zarr_archive.zarr_id)
+
+    # Check that each file was called 4 times total. Once initially, and 3 retries
+    assert mocked.call_count == 4 * len(files)
+    for file in files:
+        calls = [
+            c
+            for c in mocked.mock_calls
+            if c.kwargs['blob']
+            == zarr_s3_path(zarr_id=zarr_archive.zarr_id, zarr_path=str(file.path))
+        ]
+        assert len(calls) == 4
+
+
+@pytest.mark.django_db
+def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
+    mocked_delete_object_tags = mocker.patch(
+        'dandiapi.api.services.embargo.utils._delete_object_tags'
+    )
+
+    # Create files
+    files = [zarr_file_factory(zarr_archive) for _ in range(10)]
+
+    # This should call the mocked function for each file
+    _delete_zarr_object_tags(client=get_boto_client(), zarr=zarr_archive.zarr_id)
+
+    assert mocked_delete_object_tags.call_count == len(files)
+
+    called_blobs = sorted([call.kwargs['blob'] for call in mocked_delete_object_tags.mock_calls])
+    file_bucket_paths = sorted([zarr_archive.s3_path(str(file.path)) for file in files])
+    assert called_blobs == file_bucket_paths
 
 
 @pytest.mark.django_db
@@ -177,6 +234,8 @@ def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
+    embargoed_zarr_archive_factory,
+    zarr_file_factory,
     mocker,
     mailoutbox,
     user_factory,
@@ -190,20 +249,29 @@ def test_unembargo_dandiset(
         assign_perm('owner', user, ds)
 
     embargoed_blob: AssetBlob = embargoed_asset_blob_factory()
-    asset = asset_factory(blob=embargoed_blob)
-    draft_version.assets.add(asset)
-    assert embargoed_blob.embargoed
+    draft_version.assets.add(asset_factory(blob=embargoed_blob))
+
+    zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
+        dandiset=ds, status=ZarrArchiveStatus.UPLOADED
+    )
+    for _ in range(5):
+        zarr_file_factory(zarr_archive)
+    ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+    draft_version.assets.add(asset_factory(zarr=zarr_archive, blob=None))
+
+    assert all(asset.is_embargoed for asset in draft_version.assets.all())
 
     # Patch this function to check if it's been called, since we can't test the tagging directly
-    patched = mocker.patch('dandiapi.api.services.embargo._delete_asset_blob_tags')
+    patched = mocker.patch('dandiapi.api.services.embargo.utils._delete_object_tags')
 
     unembargo_dandiset(ds, owners[0])
-    patched.assert_called_once()
 
-    embargoed_blob.refresh_from_db()
+    assert patched.call_count == 1 + zarr_archive.file_count
+    assert not any(asset.is_embargoed for asset in draft_version.assets.all())
+
     ds.refresh_from_db()
     draft_version.refresh_from_db()
-    assert not embargoed_blob.embargoed
     assert ds.embargo_status == Dandiset.EmbargoStatus.OPEN
     assert (
         draft_version.metadata['access'][0]['status']

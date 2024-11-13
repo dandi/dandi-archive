@@ -173,9 +173,6 @@ def test_asset_total_size(
 
     assert Asset.total_size() == asset_blob.size + zarr_archive.size
 
-    # TODO: add testing for embargoed zarr added, whenever embargoed zarrs
-    # supported, ATM they are not and tested by test_zarr_rest_create_embargoed_dandiset
-
 
 @pytest.mark.django_db
 def test_asset_full_metadata(draft_asset_factory):
@@ -231,6 +228,42 @@ def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
         'encodingFormat': 'application/x-zarr',
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
     }
+
+
+@pytest.mark.django_db
+def test_asset_full_metadata_access(draft_asset_factory, asset_blob_factory, zarr_archive_factory):
+    raw_metadata = {
+        'foo': 'bar',
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+    }
+    embargoed_zarr_asset: Asset = draft_asset_factory(
+        metadata=raw_metadata, blob=None, zarr=zarr_archive_factory(embargoed=True)
+    )
+    open_zarr_asset: Asset = draft_asset_factory(
+        metadata=raw_metadata, blob=None, zarr=zarr_archive_factory(embargoed=False)
+    )
+
+    embargoed_blob_asset: Asset = draft_asset_factory(
+        metadata=raw_metadata, blob=asset_blob_factory(embargoed=True), zarr=None
+    )
+    open_blob_asset: Asset = draft_asset_factory(
+        metadata=raw_metadata, blob=asset_blob_factory(embargoed=False), zarr=None
+    )
+
+    # Test that access is correctly inferred from embargo status
+    assert embargoed_zarr_asset.full_metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': AccessType.EmbargoedAccess.value}
+    ]
+    assert embargoed_blob_asset.full_metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': AccessType.EmbargoedAccess.value}
+    ]
+
+    assert open_zarr_asset.full_metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
+    ]
+    assert open_blob_asset.full_metadata['access'] == [
+        {'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}
+    ]
 
 
 # API Tests
@@ -1046,6 +1079,40 @@ def test_asset_create_existing_path(api_client, user, draft_version, asset_blob,
         format='json',
     )
     assert resp.status_code == 409
+
+
+# Must use transaction=True as the tested function uses a transaction on_commit hook
+@pytest.mark.django_db(transaction=True)
+def test_asset_create_on_open_dandiset_embargoed_asset_blob(
+    api_client, user, draft_version, embargoed_asset_blob, mocker
+):
+    mocked = mocker.patch('dandiapi.api.services.asset.remove_asset_blob_embargoed_tag_task.delay')
+
+    assert embargoed_asset_blob.embargoed
+
+    assign_perm('owner', user, draft_version.dandiset)
+    api_client.force_authenticate(user)
+
+    path = 'test/create/asset.txt'
+    metadata = {
+        'encodingFormat': 'application/x-nwb',
+        'path': path,
+    }
+
+    resp = api_client.post(
+        f'/api/dandisets/{draft_version.dandiset.identifier}'
+        f'/versions/{draft_version.version}/assets/',
+        {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
+        format='json',
+    )
+    assert resp.status_code == 200
+
+    # Check that asset blob is no longer embargoed
+    embargoed_asset_blob.refresh_from_db()
+    assert not embargoed_asset_blob.embargoed
+
+    # Check that tag removal function called
+    mocked.assert_called_once()
 
 
 @pytest.mark.django_db

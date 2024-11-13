@@ -13,3 +13,7 @@ class ZarrArchiveFactory(factory.django.DjangoModelFactory):
     zarr_id = factory.Faker('uuid4')
     name = factory.Faker('catch_phrase')
     dandiset = factory.SubFactory(DandisetFactory)
+
+
+class EmbargoedZarrArchiveFactory(ZarrArchiveFactory):
+    embargoed = True
