@@ -84,3 +84,15 @@ Although sounded like a good idea at first, cumbersome to implement with consist
   - A possible mitigation: I guess we could collect mirror issues/comments etc from GitHub internally in the archive. There are tools which could even be used to help. E.g. @yarikoptic has experience with using https://github.com/MichaelMure/git-bug to sync all issues from GitHub locally to collect all contributors to the project. E.g. [this script](https://github.com/nipy/heudiconv-joss-paper/blob/main/authors/tools/make-summaries#L92) processes a JSON dump of all issues from `git bug`  mirror.
 
 [bot]: https://github.com/dandi/dandisets/issues/360
+
+### Miscellaneous other possible future integrations with GitHub
+
+- 2i2c uses github teams for resources management on the hub (ref: 1.1 within https://github.com/dandi/dandi-hub/pull/90/files#diff-82655098d9fb488babf6a5ce10d3d5f6a98d17b2f69de5ca28315e54e020bdf9R29)
+
+- Provide facility to propose changes to dandiset metadata:
+   - meditor would allow "Edit" operation on draft for any registered user
+   - upon edition, 
+     - fork would be created (if does not exist),
+     - PR would be submitted with changes
+     - author notified/review and potentially merge
+     - CI or some bot should fold those changes into actual metadata and remove the merge commit?
