@@ -1116,3 +1116,81 @@ def test_dandiset_contact_person_malformed_contributors(api_client, draft_versio
     )
 
     assert results.data['draft_version']['dandiset']['contact_person'] == ''
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('embargoed', [False, True])
+def test_dandiset_rest_list_active_uploads_not_owner(api_client, user, dandiset_factory, embargoed):
+    ds = dandiset_factory(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+        if embargoed
+        else Dandiset.EmbargoStatus.OPEN
+    )
+
+    # Test unauthenticated
+    response = api_client.get(f'/api/dandisets/{ds.identifier}/uploads/')
+    assert response.status_code == 401
+
+    # Test unauthorized
+    api_client.force_authenticate(user=user)
+    response = api_client.get(f'/api/dandisets/{ds.identifier}/uploads/')
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_list_active_uploads(
+    authenticated_api_client, user, draft_version, upload_factory
+):
+    ds = draft_version.dandiset
+
+    assign_perm('owner', user, ds)
+    upload = upload_factory(dandiset=ds)
+
+    response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/')
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['upload_id'] == upload.upload_id
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('embargoed', [False, True])
+def test_dandiset_rest_clear_active_uploads_not_owner(
+    api_client, user, dandiset_factory, upload_factory, embargoed
+):
+    ds = dandiset_factory(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+        if embargoed
+        else Dandiset.EmbargoStatus.OPEN
+    )
+
+    upload_factory(dandiset=ds)
+
+    # Test unauthenticated
+    response = api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
+    assert response.status_code == 401
+
+    # Test unauthorized
+    api_client.force_authenticate(user=user)
+    response = api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
+    assert response.status_code == 403
+
+    assert ds.uploads.count() == 1
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_clear_active_uploads(
+    authenticated_api_client, user, draft_version, upload_factory
+):
+    ds = draft_version.dandiset
+
+    assign_perm('owner', user, ds)
+    upload_factory(dandiset=ds)
+
+    assert len(authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()) == 1
+
+    response = authenticated_api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
+    assert response.status_code == 204
+
+    assert ds.uploads.count() == 0
+    assert len(authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()) == 0
