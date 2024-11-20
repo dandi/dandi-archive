@@ -129,6 +129,11 @@ def refresh_materialized_view_search() -> None:
 
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
+    logger.info(
+        'Registering scheduled tasks for %s. ' 'DANDI_VALIDATION_JOB_INTERVAL is %s seconds.',
+        sender,
+        settings.DANDI_VALIDATION_JOB_INTERVAL,
+    )
     # Check for any draft versions that need validation every minute
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
