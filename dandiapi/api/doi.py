@@ -17,6 +17,8 @@ DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
 
+logger = logging.getLogger(__name__)
+
 
 def doi_configured() -> bool:
     return any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
@@ -80,3 +82,5 @@ def delete_doi(doi: str) -> None:
                 except requests.exceptions.HTTPError:
                     logging.exception('Failed to delete DOI %s', doi)
                     raise
+    else:
+        logger.debug('Skipping DOI deletion for %s since not configured', doi)

@@ -81,6 +81,8 @@ def validate_pending_asset_metadata():
         logger.info('Found %s assets to validate', validatable_assets_count)
         for asset_id in throttled_iterator(validatable_assets.iterator()):
             validate_asset_metadata_task.delay(asset_id)
+    else:
+        logger.debug('Found no assets to validate')
 
 
 @shared_task(soft_time_limit=20)
@@ -101,6 +103,8 @@ def validate_draft_version_metadata():
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
             write_manifest_files.delay(draft_version_id)
+    else:
+        logger.debug('Found no versions to validate')
 
 
 @shared_task(soft_time_limit=20)
