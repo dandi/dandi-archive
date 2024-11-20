@@ -4,7 +4,7 @@ This document presents a design for garbage collection of uploads and asset blob
 
 ## Background
 
-Now that the [design for S3 trailing delete](https://github.com/dandi/dandi-archive/blob/master/doc/design/s3-trailing-delete.md) is deployed, we are ready to implement garbage collection. [This older design document](https://github.com/dandi/dandi-archive/blob/master/doc/design/garbage-collection-1.md#uploads) is still relevant, and summarizes the various types of garbage collection we want to implement. This document will present a design for garbage collection of uploads and asset blobs, i.e. garbage that accumulates due to improper uploads done by users. A design for garbage collection of orphaned "Assets" (i.e. files that have been properly uploaded, have metadata, etc. but are not associated with any Dandisets) is more complex and is left for a future design document.
+Now that the [design for S3 trailing delete](https://github.com/dandi/dandi-archive/blob/master/doc/design/s3-trailing-delete.md) is deployed, we are ready to implement next stages in garbage collection. [This older design document](https://github.com/dandi/dandi-archive/blob/master/doc/design/garbage-collection-1.md#uploads) is still relevant, and summarizes the various types of garbage collection we want to implement. This document will present a design for garbage collection of `Upload`s and `AssetBlob`s, i.e. garbage that accumulates due to improper uploads done by users. A design for garbage collection of orphaned `Asset`s (i.e. files that have been properly uploaded, have metadata, etc. but are not associated with any Dandisets) is more complex and is left for a future design document.
 
 ## Why do we need garbage collection?
 
