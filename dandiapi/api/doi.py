@@ -17,6 +17,8 @@ DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
 
+logger = logging.getLogger(__name__)
+
 
 def doi_configured() -> bool:
     return any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
@@ -51,10 +53,10 @@ def create_doi(version: Version) -> str:
                 timeout=30,
             ).raise_for_status()
         except requests.exceptions.HTTPError as e:
-            logging.exception('Failed to create DOI %s', doi)
-            logging.exception(request_body)
+            logger.exception('Failed to create DOI %s', doi)
+            logger.exception(request_body)
             if e.response:
-                logging.exception(e.response.text)
+                logger.exception(e.response.text)
             raise
     return doi
 
@@ -70,13 +72,13 @@ def delete_doi(doi: str) -> None:
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
                 if e.response and e.response.status_code == requests.codes.not_found:
-                    logging.warning('Tried to get data for nonexistent DOI %s', doi)
+                    logger.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
-                logging.exception('Failed to fetch data for DOI %s', doi)
+                logger.exception('Failed to fetch data for DOI %s', doi)
                 raise
             if r.json()['data']['attributes']['state'] == 'draft':
                 try:
                     s.delete(doi_url).raise_for_status()
                 except requests.exceptions.HTTPError:
-                    logging.exception('Failed to delete DOI %s', doi)
+                    logger.exception('Failed to delete DOI %s', doi)
                     raise

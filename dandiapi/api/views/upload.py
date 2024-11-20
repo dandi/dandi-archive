@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
 supported_digests = {'dandi:dandi-etag': 'etag', 'dandi:sha2-256': 'sha256'}
 
+logger = logging.getLogger(__name__)
+
 
 class DigestSerializer(serializers.Serializer):
     algorithm = serializers.CharField()
@@ -140,7 +142,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
-    logging.info(
+    logger.info(
         'Starting upload initialization of size %s, ETag %s to dandiset %s',
         content_size,
         etag,
@@ -155,15 +157,15 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
             headers={'Location': asset_blobs.first().blob_id},
         )
 
-    logging.info('Blob with ETag %s does not yet exist', etag)
+    logger.info('Blob with ETag %s does not yet exist', etag)
 
     upload, initialization = Upload.initialize_multipart_upload(etag, content_size, dandiset)
-    logging.info('Upload of ETag %s initialized', etag)
+    logger.info('Upload of ETag %s initialized', etag)
     upload.save()
-    logging.info('Upload of ETag %s saved', etag)
+    logger.info('Upload of ETag %s saved', etag)
 
     response_serializer = UploadInitializationResponseSerializer(initialization)
-    logging.info('Upload of ETag %s serialized', etag)
+    logger.info('Upload of ETag %s serialized', etag)
     return Response(response_serializer.data)
 
 
