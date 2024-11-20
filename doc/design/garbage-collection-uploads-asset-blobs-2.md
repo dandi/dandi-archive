@@ -16,7 +16,7 @@ If the user cancels a multipart upload partway through, or completes the multipa
 
 ### Orphaned AssetBlobs
 
-In this case, assume that the user properly completes the multipart upload flow and "finalizes" the `Upload` record such that it is now an `AssetBlob`, but they do not send a request to associate the new blob with an `Asset`. That `AssetBlob` record and associated S3 object will remain in the database/bucket indefinitely.
+For this case there are two scenarios - (1)  the user properly completes the multipart upload flow and "finalizes" the `Upload` record such that it is now an `AssetBlob`, but they do not send a request to associate the new blob with an `Asset`, or (2) an `Asset` is garbage collected (yet to be implemented), leaving its corresponding `AssetBlob` "orphaned". In both cases, the `AssetBlob` record and associated S3 object will remain in the database/bucket indefinitely.
 
 ## Implementation Details
 
