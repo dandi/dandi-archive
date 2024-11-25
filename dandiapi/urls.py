@@ -85,7 +85,6 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
-    path('api/stats/', stats_view),
     path('api/info/', info_view),
     path('api/blobs/digest/', blob_read_view, name='blob-read'),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
