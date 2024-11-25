@@ -37,5 +37,5 @@ __all__ = [
     'stats_view',
     'info_view',
     'root_content_view',
-    'robots_txt_view'
+    'robots_txt_view',
 ]
