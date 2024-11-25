@@ -81,7 +81,7 @@ class DandisetIDConverter:
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
-    path("robots.txt", robots_txt_view),
+    path('robots.txt', robots_txt_view),
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
