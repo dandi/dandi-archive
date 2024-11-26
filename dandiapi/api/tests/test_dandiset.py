@@ -1149,8 +1149,9 @@ def test_dandiset_rest_list_active_uploads(
     response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/')
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]['upload_id'] == upload.upload_id
+    assert data['count'] == 1
+    assert len(data['results']) == 1
+    assert data['results'][0]['upload_id'] == upload.upload_id
 
 
 @pytest.mark.django_db
@@ -1187,10 +1188,14 @@ def test_dandiset_rest_clear_active_uploads(
     assign_perm('owner', user, ds)
     upload_factory(dandiset=ds)
 
-    assert len(authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()) == 1
+    response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()
+    assert response['count'] == 1
+    assert len(response['results']) == 1
 
     response = authenticated_api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
     assert response.status_code == 204
 
     assert ds.uploads.count() == 0
-    assert len(authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()) == 0
+    response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()
+    assert response['count'] == 0
+    assert len(response['results']) == 0

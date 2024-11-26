@@ -108,8 +108,22 @@ const dandiRest = {
     }
   },
   async uploads(identifier: string): Promise<IncompleteUpload[]> {
-    const res = await client.get(`dandisets/${identifier}/uploads/`);
-    return res.data;
+    const uploads = []
+    let page = 1;
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const res = await client.get(`dandisets/${identifier}/uploads/`, {params: { page }});
+
+      uploads.push(...res.data.results);
+      if (res.data.next === null) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return uploads;
   },
   async clearUploads(identifier: string) {
     await client.delete(`dandisets/${identifier}/uploads/`);

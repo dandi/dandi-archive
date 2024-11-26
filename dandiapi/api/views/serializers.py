@@ -373,6 +373,11 @@ class AssetPathsQueryParameterSerializer(serializers.Serializer):
     path_prefix = serializers.CharField(default='')
 
 
+class PaginationQuerySerializer(serializers.Serializer):
+    page = serializers.IntegerField(default=1)
+    page_size = serializers.IntegerField(default=100)
+
+
 class AssetFileSerializer(AssetSerializer):
     class Meta(AssetSerializer.Meta):
         fields = ['asset_id', 'url']

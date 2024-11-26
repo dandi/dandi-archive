@@ -43,6 +43,7 @@ from dandiapi.api.views.serializers import (
     DandisetSearchQueryParameterSerializer,
     DandisetSearchResultListSerializer,
     DandisetUploadSerializer,
+    PaginationQuerySerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
@@ -467,6 +468,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(
         methods=['GET'],
         manual_parameters=[DANDISET_PK_PARAM],
+        query_serializer=PaginationQuerySerializer,
         request_body=no_body,
         operation_summary='List active/incomplete uploads in this dandiset.',
     )
@@ -478,8 +480,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         self.require_owner_perm(dandiset)
 
         uploads: QuerySet[Upload] = dandiset.uploads.all()
-        serializer = DandisetUploadSerializer(instance=uploads, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Paginate and return
+        page = self.paginate_queryset(uploads)
+        if page is not None:
+            serializer = DandisetUploadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = DandisetUploadSerializer(uploads, many=True)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         manual_parameters=[DANDISET_PK_PARAM],
