@@ -102,3 +102,11 @@ export interface AssetPath {
   aggregate_size: number;
   asset: AssetFile | null;
 }
+
+export interface IncompleteUpload {
+  created: string;
+  blob: string;
+  upload_id: string;
+  etag: string;
+  size: number;
+}
