@@ -1,6 +1,6 @@
 # Upload and Asset Blob Garbage Collection
 
-This document presents a design for garbage collection of uploads and asset blobs in the context of the S3 trailing delete feature. It explains the need for garbage collection and describes the scenarios of orphaned uploads and orphaned asset blobs. The implementation involves introducing a new daily task to query and delete uploads and asset blobs that meet certain criteria. The document also mentions the recoverability of uploaded data and provides a GitHub branch for the implementation.
+This document presents a design for garbage collection of uploads and asset blobs in the context of the S3 trailing delete feature. It explains the need for garbage collection and describes the scenarios of orphaned uploads and orphaned asset blobs. The implementation involves introducing a new daily task to query and delete uploads and asset blobs that meet certain criteria. The document also mentions the recoverability of uploaded data and provides a link to a GitHub PR providing the implementation.
 
 ## Background
 
@@ -41,3 +41,6 @@ class GarbageCollectionEvent(models.Model):
 ```
 
 Note: the `records` field is a JSON serialization of the garbage-collected QuerySet, generated using [Django’s JSON model serializer](https://docs.djangoproject.com/en/5.1/topics/serialization/#serialization-formats-json)). This gives us the minimum information needed to restore a blob. The idea is that this can be reused for garbage collection of `Assets` as well.
+
+## Implementation
+See [PR #2087](https://github.com/dandi/dandi-archive/pull/2087) for the implementation.
