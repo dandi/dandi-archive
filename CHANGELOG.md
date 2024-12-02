@@ -1,3 +1,25 @@
+# v0.3.111 (Mon Dec 02 2024)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, null[@aaronkanzer](https://github.com/aaronkanzer), for all your work!
+
+#### 🐛 Bug Fix
+
+- Empty PR to trigger release [#2086](https://github.com/dandi/dandi-archive/pull/2086) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Include robots.txt in UI and API for handling of web crawlers [#2084](https://github.com/dandi/dandi-archive/pull/2084) (aaronkanzer@Aarons-MacBook-Pro.local [@jjnesbitt](https://github.com/jjnesbitt) [@aaronkanzer](https://github.com/aaronkanzer))
+- Use a dedicated logger. not top level logging. module [#2077](https://github.com/dandi/dandi-archive/pull/2077) ([@yarikoptic](https://github.com/yarikoptic))
+- Add API support for Embargoed Zarrs [#2069](https://github.com/dandi/dandi-archive/pull/2069) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.110 (Wed Nov 13 2024)
 
 #### 🐛 Bug Fix
