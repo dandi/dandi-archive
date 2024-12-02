@@ -1,3 +1,15 @@
+# v0.3.112 (Mon Dec 02 2024)
+
+#### 🐛 Bug Fix
+
+- Add incomplete upload dialog to DLP when unembargo is blocked [#2082](https://github.com/dandi/dandi-archive/pull/2082) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.111 (Mon Dec 02 2024)
 
 :tada: This release contains work from a new contributor! :tada:
