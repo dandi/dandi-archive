@@ -114,7 +114,6 @@ import {
 import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
 import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
-import axios from 'axios';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
