@@ -1,3 +1,16 @@
+# v0.3.113 (Wed Dec 04 2024)
+
+#### 🐛 Bug Fix
+
+- Fix validation error when only Zarr assets are uploaded [#2062](https://github.com/dandi/dandi-archive/pull/2062) ([@jjnesbitt](https://github.com/jjnesbitt) [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 2
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.3.112 (Mon Dec 02 2024)
 
 #### 🐛 Bug Fix
