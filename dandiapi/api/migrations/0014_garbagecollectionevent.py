@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                         auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
                     ),
                 ),
-                ('created', models.DateTimeField(auto_now_add=True)),
+                ('timestamp', models.DateTimeField(auto_now_add=True)),
                 (
                     'type',
                     models.CharField(
@@ -37,8 +37,8 @@ class Migration(migrations.Migration):
                     'garbage_collection_event_id',
                     models.UUIDField(
                         editable=False,
-                        help_text='Unique identifier for the garbage collection event.'
-                        ' Used to associate multiple records that are part of the same GC event.',
+                        help_text='Unique identifier for the garbage collection event. Used to '
+                        'associate multiple records that are part of the same GC event.',
                     ),
                 ),
             ],

@@ -91,7 +91,7 @@ def garbage_collect():
         garbage_collected_asset_blobs = _garbage_collect_asset_blobs()
 
         GarbageCollectionEvent.objects.filter(
-            created__lt=timezone.now() - RESTORATION_WINDOW
+            timestamp__lt=timezone.now() - RESTORATION_WINDOW
         ).delete()
 
     logger.info('Garbage collected %s Uploads.', garbage_collected_uploads)

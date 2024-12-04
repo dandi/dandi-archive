@@ -4,7 +4,7 @@ from django.db import models
 
 
 class GarbageCollectionEvent(models.Model):
-    created = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(
         max_length=255, help_text='The model name of the records that were garbage collected.'
     )
