@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import typing
+
+from django.contrib.auth.models import User
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
-from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms, remove_perm
+from guardian.shortcuts import get_objects_for_user
+
+from dandiapi.api.services.permissions.dandiset import get_dandiset_owners, replace_dandiset_owners
 
 
 class DandisetManager(models.Manager):
@@ -76,25 +81,18 @@ class Dandiset(TimeStampedModel):
 
     @property
     def owners(self):
-        return get_users_with_perms(self, only_with_perms_in=['owner']).order_by('date_joined')
+        return get_dandiset_owners(self)
 
-    def set_owners(self, new_owners):
-        old_owners = get_users_with_perms(self, only_with_perms_in=['owner'])
+    def set_owners(self, new_owners: list[User]):
+        old_owners = get_dandiset_owners(self)
+        replace_dandiset_owners(self, new_owners)
 
-        removed_owners = []
-        added_owners = []
-
-        # Remove old owners
-        for old_owner in old_owners:
-            if old_owner not in new_owners:
-                remove_perm('owner', old_owner, self)
-                removed_owners.append(old_owner)
-
-        # Add new owners
-        for new_owner in new_owners:
-            if new_owner not in old_owners:
-                assign_perm('owner', new_owner, self)
-                added_owners.append(new_owner)
+        # Removed owners are users that are in old_owners, but not in new_owners
+        # Added owers are users that are in new_owners, but not old_owners
+        old_owner_set = typing.cast(set[User], set(old_owners))
+        new_owner_set = set(new_owners)
+        removed_owners = old_owner_set - new_owner_set
+        added_owners = new_owner_set - old_owner_set
 
         # Return the owners added/removed so they can be emailed
         return removed_owners, added_owners
