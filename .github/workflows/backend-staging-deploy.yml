@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - test-staging-allauth-breakage
     paths-ignore:
       - "web/**"
       - "CHANGELOG.md"
