@@ -45,9 +45,8 @@ setup(
         'dandischema==0.10.2',  # schema version 0.6.8
         'django~=4.1.0',
         'django-admin-display',
-        # Require 0.58.0 as it is the first version to support postgres' native
-        # JSONField for SocialAccount.extra_data
-        'django-allauth>=0.58.0',
+        # Pin to 0.61.1 to test user signup
+        'django-allauth==0.61.1',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
