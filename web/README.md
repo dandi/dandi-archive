@@ -3,7 +3,7 @@ The DANDI Archive web application (i.e. the dandi-archive frontend).
 
 ## Develop
 
-### Build and Run
+### Serve App in Development Server (requires [yarn](https://yarnpkg.com/))
 
 ```bash
 git clone https://github.com/dandi/dandi-archive
