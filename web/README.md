@@ -7,7 +7,7 @@ The DANDI Archive web application (i.e. the dandi-archive frontend).
 
 ```bash
 git clone https://github.com/dandi/dandi-archive
-cd web
+cd dandi-archive/web
 yarn install
 yarn run serve
 ```
