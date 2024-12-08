@@ -9,7 +9,7 @@ The DANDI Archive web application (i.e. the dandi-archive frontend).
 git clone https://github.com/dandi/dandi-archive
 cd dandi-archive/web
 yarn install
-yarn run serve
+yarn run dev
 ```
 
 **Note**: On Debian systems, the `yarn` command is from the unrelated `cmdtest` package.
