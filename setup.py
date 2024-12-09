@@ -68,7 +68,7 @@ setup(
         's3-log-parse',
         'zarr-checksum>=0.2.8',
         # Production-only
-        'django-composed-configuration[prod]>=0.23.0',
+        'django-composed-configuration[prod]>=0.25.0',
         'django-s3-file-field[s3]>=1.0.0',
         'django-storages[s3]==1.14.3',
         'gunicorn',
@@ -79,7 +79,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.23.0',
+            'django-composed-configuration[dev]>=0.25.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',
