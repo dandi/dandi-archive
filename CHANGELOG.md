@@ -1,3 +1,16 @@
+# v0.3.114 (Mon Dec 09 2024)
+
+#### 🐛 Bug Fix
+
+- Pin `django-allauth` to 0.61.1 [#2098](https://github.com/dandi/dandi-archive/pull/2098) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Set `--max-warnings` to zero for `eslint` [#2088](https://github.com/dandi/dandi-archive/pull/2088) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.113 (Wed Dec 04 2024)
 
 #### 🐛 Bug Fix
