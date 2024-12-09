@@ -68,6 +68,30 @@
     </MetadataCard>
 
     <MetadataCard
+      :items="protocols"
+      v-if="protocols && protocols.length"
+      name="Protocols"
+      icon="mdi-protocol"
+    >
+      <template #content="slotProps">
+        <div class="text-caption grey--text text--darken-1">
+          <span class="pl-2">
+            - {{ slotProps.item }}
+               <v-btn
+                      v-if="isURL(slotProps.item)"
+                      icon
+                      :href="slotProps.item"
+                      target="_blank"
+                      rel="noopener"
+               >
+                   <v-icon>mdi-link</v-icon>
+               </v-btn>
+          </span>
+        </div>
+      </template>
+    </MetadataCard>
+
+    <MetadataCard
       v-if="relatedResources && relatedResources.length"
       :items="relatedResources"
       name="Related resources"
@@ -232,7 +256,7 @@ import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
 import type { ComputedRef, PropType } from 'vue';
-import type { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
+import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
 
 // Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
@@ -286,6 +310,10 @@ const fundingInformation = computed(
 
 const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
   () => props.meta.relatedResource,
+);
+
+const protocols: ComputedRef<Protocol|undefined> = computed(
+  () => props.meta.protocol,
 );
 
 const associatedProjects: ComputedRef<AssociatedProjects|undefined> = computed(
