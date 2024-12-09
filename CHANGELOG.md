@@ -1,3 +1,15 @@
+# v0.3.115 (Mon Dec 09 2024)
+
+#### 🐛 Bug Fix
+
+- Bump `django-allauth` to latest version [#2099](https://github.com/dandi/dandi-archive/pull/2099) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.3.114 (Mon Dec 09 2024)
 
 #### 🐛 Bug Fix
