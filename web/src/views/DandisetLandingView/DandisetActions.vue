@@ -38,6 +38,7 @@
         </DownloadDialog>
       </v-row>
       <v-row
+        v-if="currentDandiset.dandiset.embargo_status === 'OPEN'"
         no-gutters
       >
         <CiteAsDialog>
