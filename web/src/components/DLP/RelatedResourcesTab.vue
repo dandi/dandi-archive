@@ -5,12 +5,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'RelatedResourcesTab',
-  components: {
-  },
+  name: "RelatedResourcesTab",
+  components: {},
   props: {
     schema: {
       type: Object,
@@ -22,8 +21,7 @@ export default defineComponent({
     },
   },
   setup() {
-    return {
-    };
+    return {};
   },
 });
 </script>

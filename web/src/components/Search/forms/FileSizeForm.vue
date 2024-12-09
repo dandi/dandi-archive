@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { searchParameters } from '../store';
-
+import { searchParameters } from "../store";
 </script>
 
 <template>
@@ -13,7 +12,7 @@ import { searchParameters } from '../store';
         dense
         type="number"
         outlined
-        style="min-width: 4ch;"
+        style="min-width: 4ch"
       />
     </v-col>
     <v-spacer />
@@ -24,7 +23,7 @@ import { searchParameters } from '../store';
         dense
         type="number"
         outlined
-        style="min-width: 4ch;"
+        style="min-width: 4ch"
       />
     </v-col>
     <v-spacer />

@@ -1,27 +1,14 @@
 <template>
-  <v-sheet
-    v-if="dandisetIdentifier"
-    class="d-flex"
-    height="70vh"
-  >
-    <v-row
-      class="d-flex flex-column justify-center text-center"
-    >
+  <v-sheet v-if="dandisetIdentifier" class="d-flex" height="70vh">
+    <v-row class="d-flex flex-column justify-center text-center">
       <div class="text-h6 font-weight-light">
-        This Dandiset does not currently have any files associated with it,
-        but this is where they will appear once they're added.
+        This Dandiset does not currently have any files associated with it, but this is where they
+        will appear once they're added.
       </div>
       <div class="my-7">
         <span class="text-subtitle-1">Use the DANDI CLI on the command line:</span>
-        <div
-          class="d-flex justify-center"
-          style="font-family: monospace;"
-        >
-          <v-sheet
-            color="black"
-            width="60%"
-            class="white--text pl-2 py-1 text-left"
-          >
+        <div class="d-flex justify-center" style="font-family: monospace">
+          <v-sheet color="black" width="60%" class="white--text pl-2 py-1 text-left">
             <div>> {{ downloadCommand }}</div>
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
@@ -38,7 +25,8 @@
               Follow the installation instructions in the
               <a href="https://www.dandiarchive.org/handbook/10_using_dandi/#dandi-python-client">
                 DANDI handbook
-              </a> .
+              </a>
+              .
             </span>
           </span>
         </div>
@@ -48,17 +36,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useDandisetStore } from '@/stores/dandiset';
+import { computed } from "vue";
+import { useDandisetStore } from "@/stores/dandiset";
 
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
 
 if (dandisetIdentifier.value === undefined) {
-  throw new Error('store.dandiset must be defined');
+  throw new Error("store.dandiset must be defined");
 }
 
 const downloadCommand = computed(() => {
-  return `dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
+  return `dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`;
 });
 </script>

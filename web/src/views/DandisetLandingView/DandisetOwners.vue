@@ -1,19 +1,8 @@
 <template>
-  <v-card
-    outlined
-    class="mt-4 px-3 pb-5"
-  >
-    <v-row
-      no-gutters
-      class="my-1"
-    >
-      <v-row
-        no-gutters
-        class="my-1 ml-1"
-      >
-        <div class="black--text text-h5">
-          Owners
-        </div>
+  <v-card outlined class="mt-4 px-3 pb-5">
+    <v-row no-gutters class="my-1">
+      <v-row no-gutters class="my-1 ml-1">
+        <div class="black--text text-h5">Owners</div>
       </v-row>
     </v-row>
 
@@ -25,38 +14,22 @@
           color="grey lighten-4"
           text-color="grey darken-2"
           class="font-weight-medium ma-1"
-          style="border: 1px solid #E0E0E0 !important;"
+          style="border: 1px solid #e0e0e0 !important"
         >
           {{ owner.name || owner.username }}
         </v-chip>
-        <span
-          v-if="numExtraOwners"
-          class="ml-1 text--secondary"
-        >
+        <span v-if="numExtraOwners" class="ml-1 text--secondary">
           +{{ numExtraOwners }} more...
         </span>
       </v-col>
     </v-row>
 
-    <v-row
-      class="justify-center"
-      no-gutters
-    >
-      <v-dialog
-        v-model="ownerDialog"
-        width="80%"
-        persistent
-      >
+    <v-row class="justify-center" no-gutters>
+      <v-dialog v-model="ownerDialog" width="80%" persistent>
         <template #activator="{ on }">
-          <v-tooltip
-            :disabled="!manageOwnersDisabled"
-            left
-          >
+          <v-tooltip :disabled="!manageOwnersDisabled" left>
             <template #activator="{ on: tooltipOn }">
-              <div
-                style="width: 100%;"
-                v-on="tooltipOn"
-              >
+              <div style="width: 100%" v-on="tooltipOn">
                 <v-btn
                   id="manage"
                   depressed
@@ -66,38 +39,26 @@
                   block
                   v-on="on"
                 >
-                  <v-icon
-                    class="pr-2"
-                  >
-                    mdi-account-plus
-                  </v-icon>
+                  <v-icon class="pr-2"> mdi-account-plus </v-icon>
                   Manage Owners
                 </v-btn>
               </div>
             </template>
-            <template v-if="loggedIn()">
-              You must be an owner to manage ownership.
-            </template>
-            <template v-else>
-              You must be logged in to manage ownership.
-            </template>
+            <template v-if="loggedIn()"> You must be an owner to manage ownership. </template>
+            <template v-else> You must be logged in to manage ownership. </template>
           </v-tooltip>
         </template>
-        <DandisetOwnersDialog
-          v-if="owners"
-          :owners="owners"
-          @close="ownerDialog = false"
-        />
+        <DandisetOwnersDialog v-if="owners" :owners="owners" @close="ownerDialog = false" />
       </v-dialog>
     </v-row>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { loggedIn, user } from '@/rest';
-import { useDandisetStore } from '@/stores/dandiset';
-import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
-import { computed, ref } from 'vue';
+import { loggedIn, user } from "@/rest";
+import { useDandisetStore } from "@/stores/dandiset";
+import DandisetOwnersDialog from "@/components/DLP/DandisetOwnersDialog.vue";
+import { computed, ref } from "vue";
 
 const store = useDandisetStore();
 

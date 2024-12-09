@@ -1,16 +1,7 @@
 <template>
-  <v-menu
-    offset-y
-    :close-on-content-click="false"
-    left
-    min-width="500"
-    max-width="500"
-  >
+  <v-menu offset-y :close-on-content-click="false" left min-width="500" max-width="500">
     <template #activator="{ on }">
-      <slot
-        name="activator"
-        :on="on"
-      />
+      <slot name="activator" :on="on" />
     </template>
     <v-card>
       <v-card-title>
@@ -25,22 +16,14 @@
               text
             >
               Help
-              <v-icon
-                color="primary"
-                small
-                v-on="on"
-              >
-                mdi-help-circle
-              </v-icon>
+              <v-icon color="primary" small v-on="on"> mdi-help-circle </v-icon>
             </v-btn>
           </template>
           More help on download
         </v-tooltip>
       </v-card-title>
       <v-list class="pa-0">
-        <v-list-item dense>
-          Use this command in your DANDI CLI
-        </v-list-item>
+        <v-list-item dense> Use this command in your DANDI CLI </v-list-item>
         <v-list-item dense>
           <CopyText
             :text="defaultDownloadText"
@@ -52,25 +35,14 @@
         </v-list-item>
         <v-expansion-panels>
           <v-expansion-panel v-if="availableVersions.length > 0">
-            <v-expansion-panel-header>
-              Download a different version?
-            </v-expansion-panel-header>
+            <v-expansion-panel-header> Download a different version? </v-expansion-panel-header>
             <v-expansion-panel-content>
               <v-list class="pa-0">
                 <v-list-item dense>
                   <v-radio-group v-model="selectedDownloadOption">
-                    <v-radio
-                      label="Draft"
-                      value="draft"
-                    />
-                    <v-radio
-                      label="Latest version"
-                      value="latest"
-                    />
-                    <v-radio
-                      label="Other version"
-                      value="other"
-                    />
+                    <v-radio label="Draft" value="draft" />
+                    <v-radio label="Latest version" value="latest" />
+                    <v-radio label="Other version" value="other" />
                     <v-select
                       v-if="selectedDownloadOption == 'other'"
                       v-model="selectedVersion"
@@ -95,14 +67,11 @@
             </v-expansion-panel-content>
           </v-expansion-panel>
           <v-expansion-panel>
-            <v-expansion-panel-header>
-              Don't have DANDI CLI?
-            </v-expansion-panel-header>
+            <v-expansion-panel-header> Don't have DANDI CLI? </v-expansion-panel-header>
             <v-expansion-panel-content>
               <v-list>
                 <v-list-item>
-                  Install the Python client (DANDI CLI)
-                  in a Python 3.8+ environment using command:
+                  Install the Python client (DANDI CLI) in a Python 3.8+ environment using command:
                 </v-list-item>
                 <v-list-item>
                   <kbd>pip install "dandi>=0.60.0"</kbd>
@@ -116,18 +85,18 @@
   </v-menu>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useDandisetStore } from '@/stores/dandiset';
-import CopyText from '@/components/CopyText.vue';
+import { computed, ref } from "vue";
+import { useDandisetStore } from "@/stores/dandiset";
+import CopyText from "@/components/CopyText.vue";
 
 function downloadCommand(identifier: string, version: string): string {
   // Use the special 'DANDI:' url prefix if appropriate.
   const generalUrl = `${window.location.origin}/dandiset/${identifier}`;
   const dandiUrl = `DANDI:${identifier}`;
-  const url = window.location.origin == 'https://dandiarchive.org' ? dandiUrl : generalUrl;
+  const url = window.location.origin == "https://dandiarchive.org" ? dandiUrl : generalUrl;
 
   // Prepare a url suffix to specify a specific version (or not).
-  const versionPath = version ? `/${version}` : '';
+  const versionPath = version ? `/${version}` : "";
 
   return `dandi download ${url}${versionPath}`;
 }
@@ -138,34 +107,35 @@ const currentDandiset = computed(() => store.dandiset);
 const publishedVersions = computed(() => store.versions);
 const currentVersion = computed(() => store.version);
 
-const selectedDownloadOption = ref('draft');
+const selectedDownloadOption = ref("draft");
 const selectedVersion = ref(0);
 
 const identifier = computed(() => currentDandiset.value?.dandiset.identifier);
 
-const availableVersions = computed(
-  () => (publishedVersions.value || [])
-    .map((version, index) => ({ version: version.version, index })),
+const availableVersions = computed(() =>
+  (publishedVersions.value || []).map((version, index) => ({ version: version.version, index })),
 );
 
-const defaultDownloadText = computed(
-  () => (identifier.value ? downloadCommand(identifier.value, currentVersion.value) : ''),
+const defaultDownloadText = computed(() =>
+  identifier.value ? downloadCommand(identifier.value, currentVersion.value) : "",
 );
 
 const customDownloadText = computed(() => {
   if (!identifier.value) {
-    return '';
+    return "";
   }
-  if (selectedDownloadOption.value === 'draft') {
-    return downloadCommand(identifier.value, 'draft');
-  } if (selectedDownloadOption.value === 'latest') {
-    return downloadCommand(identifier.value, '');
-  } if (selectedDownloadOption.value === 'other') {
+  if (selectedDownloadOption.value === "draft") {
+    return downloadCommand(identifier.value, "draft");
+  }
+  if (selectedDownloadOption.value === "latest") {
+    return downloadCommand(identifier.value, "");
+  }
+  if (selectedDownloadOption.value === "other") {
     return downloadCommand(
       identifier.value,
       availableVersions.value[selectedVersion.value].version,
     );
   }
-  return '';
+  return "";
 });
 </script>

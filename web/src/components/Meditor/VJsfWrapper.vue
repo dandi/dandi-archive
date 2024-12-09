@@ -2,10 +2,7 @@
   <div v-if="editorInterface && editorInterface.complexSchema">
     <v-row class="d-flex justify-space-between">
       <v-col cols="6">
-        <div
-          style="height: 60vh;"
-          class="overflow-y-auto"
-        >
+        <div style="height: 60vh" class="overflow-y-auto">
           <v-form v-model="formValid">
             <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
             <v-jsf
@@ -17,12 +14,12 @@
               :value="currentItem"
               :schema="schema"
               :options="options"
-              @input="currentItem=$event"
+              @input="currentItem = $event"
               @change="formListener"
             />
           </v-form>
         </div>
-        <div style="height: 10vh;">
+        <div style="height: 10vh">
           <v-divider class="my-2" />
           <div class="d-flex align-center justify-space-between mx-2">
             <v-btn
@@ -64,10 +61,7 @@
         class="overflow-y-auto"
         cols="6"
       >
-        <v-sheet
-          v-if="editorInterface.complexSchema.properties"
-          class="ma-4"
-        >
+        <v-sheet v-if="editorInterface.complexSchema.properties" class="ma-4">
           <v-jsf
             :key="JSON.stringify(currentModel)"
             :value="currentModel"
@@ -76,60 +70,31 @@
             @input="setComplexModelProp($event)"
           >
             <template #default="slotProps">
-              <v-card
-                outlined
-                class="d-flex flex-column"
-              >
-                <draggable
-                  :disabled="readonly"
-                  @update="reorderItem($event)"
-                >
-                  <v-card
-                    v-for="(item, i) in slotProps.value"
-                    :key="i"
-                    outlined
-                  >
+              <v-card outlined class="d-flex flex-column">
+                <draggable :disabled="readonly" @update="reorderItem($event)">
+                  <v-card v-for="(item, i) in slotProps.value" :key="i" outlined>
                     <div class="pa-3 d-flex align-center justify-space-between">
                       <span class="d-inline text-truncate text-subtitle-1">
                         <v-icon>mdi-drag-horizontal-variant</v-icon>
                         <span :class="index === i ? 'accent--text' : undefined">
                           {{ item.name || item.identifier || item.id }}
-                          {{ index === i && isModified ? '*' : undefined }}
+                          {{ index === i && isModified ? "*" : undefined }}
                         </span>
                       </span>
-                      <span style="min-width: 31%;">
+                      <span style="min-width: 31%">
                         <span v-if="!readonly">
-                          <v-btn
-                            text
-                            small
-                            @click="removeItem(i)"
-                          >
-                            <v-icon
-                              color="error"
-                              left
-                            >
-                              mdi-minus-circle
-                            </v-icon>
-                            <span class="font-weight-regular">
-                              Remove
-                            </span>
+                          <v-btn text small @click="removeItem(i)">
+                            <v-icon color="error" left> mdi-minus-circle </v-icon>
+                            <span class="font-weight-regular"> Remove </span>
                           </v-btn>
                         </span>
                         <span>
-                          <v-btn
-                            :disabled="index === i"
-                            text
-                            small
-                            @click="selectExistingItem(i)"
-                          >
-                            <v-icon
-                              color="info"
-                              left
-                            >
-                              mdi-{{ readonly ? 'eye' : 'pencil' }}
+                          <v-btn :disabled="index === i" text small @click="selectExistingItem(i)">
+                            <v-icon color="info" left>
+                              mdi-{{ readonly ? "eye" : "pencil" }}
                             </v-icon>
                             <span class="font-weight-regular">
-                              {{ readonly ? 'View' : 'Edit' }}
+                              {{ readonly ? "View" : "Edit" }}
                             </span>
                           </v-btn>
                         </span>
@@ -147,15 +112,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch } from "vue";
 
-import VJsf from '@koumoul/vjsf/lib/VJsf';
-import '@koumoul/vjsf/lib/deps/third-party';
-import '@koumoul/vjsf/lib/VJsf.css';
-import { isEqual } from 'lodash';
+import VJsf from "@koumoul/vjsf/lib/VJsf";
+import "@koumoul/vjsf/lib/deps/third-party";
+import "@koumoul/vjsf/lib/VJsf.css";
+import { isEqual } from "lodash";
 
-import type { DandiModel } from './types';
-import { editorInterface } from './state';
+import type { DandiModel } from "./types";
+import { editorInterface } from "./state";
 
 const props = defineProps({
   propKey: {
@@ -197,10 +162,7 @@ watch(currentModel, (val) => {
 });
 
 // whether the current form has been edited and requires saving
-const isModified = computed(() => !isEqual(
-  currentItem.value,
-  currentModel.value[index.value],
-));
+const isModified = computed(() => !isEqual(currentItem.value, currentModel.value[index.value]));
 
 function setComplexModelProp(event: DandiModel): void {
   const currentValue = [...currentModel.value];
@@ -247,9 +209,7 @@ function removeItem(index_to_remove: number) {
 function selectExistingItem(new_index: number) {
   index.value = new_index;
   // make a deep copy so the schema model isn't modified until this is saved
-  currentItem.value = JSON.parse(JSON.stringify(
-    currentModel.value,
-  ))[new_index];
+  currentItem.value = JSON.parse(JSON.stringify(currentModel.value))[new_index];
 }
 
 function reorderItem(event: any) {
@@ -261,9 +221,7 @@ function reorderItem(event: any) {
   }
 
   // make a deep clone of the model
-  const newModel = JSON.parse(
-    JSON.stringify(currentModel.value),
-  );
+  const newModel = JSON.parse(JSON.stringify(currentModel.value));
 
   // Switch items
   const b = newModel[newIndex];

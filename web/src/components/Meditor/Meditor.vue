@@ -1,9 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <v-dialog
-    v-model="open"
-    max-width="85vw"
-  >
+  <v-dialog v-model="open" max-width="85vw">
     <v-card
       v-if="schema && model && editorInterface"
       v-page-title="model.name"
@@ -50,32 +47,17 @@
       </v-dialog> -->
       <v-row>
         <v-col>
-          <v-card
-            class="mb-2"
-            outlined
-          >
+          <v-card class="mb-2" outlined>
             <v-card-actions class="pt-0">
               <v-tooltip top>
                 <template #activator="{ on }">
-                  <v-icon
-                    left
-                    :color="modelValid ? 'success' : 'error'"
-                    v-on="on"
-                  >
-                    <template v-if="modelValid">
-                      mdi-checkbox-marked-circle
-                    </template>
-                    <template v-else>
-                      mdi-alert-circle
-                    </template>
+                  <v-icon left :color="modelValid ? 'success' : 'error'" v-on="on">
+                    <template v-if="modelValid"> mdi-checkbox-marked-circle </template>
+                    <template v-else> mdi-alert-circle </template>
                   </v-icon>
                 </template>
-                <template v-if="modelValid">
-                  All metadata for this dandiset is valid.
-                </template>
-                <template v-else>
-                  There are errors in the metadata for this Dandiset.
-                </template>
+                <template v-if="modelValid"> All metadata for this dandiset is valid. </template>
+                <template v-else> There are errors in the metadata for this Dandiset. </template>
               </v-tooltip>
               <v-tooltip bottom>
                 <template #activator="{ on }">
@@ -86,7 +68,7 @@
                     v-on="on"
                     @click="save"
                   >
-                    <v-icon>{{ modified ? 'mdi-content-save-alert' : 'mdi-content-save' }}</v-icon>
+                    <v-icon>{{ modified ? "mdi-content-save-alert" : "mdi-content-save" }}</v-icon>
                   </v-btn>
                 </template>
                 <span>Save</span>
@@ -100,9 +82,7 @@
                     v-on="on"
                     @click="undoChange"
                   >
-                    <v-icon>
-                      mdi-undo
-                    </v-icon>
+                    <v-icon> mdi-undo </v-icon>
                   </v-btn>
                 </template>
                 <span>Undo</span>
@@ -116,9 +96,7 @@
                     v-on="on"
                     @click="redoChange"
                   >
-                    <v-icon>
-                      mdi-redo
-                    </v-icon>
+                    <v-icon> mdi-redo </v-icon>
                   </v-btn>
                 </template>
                 <span>Redo</span>
@@ -126,14 +104,8 @@
               <v-spacer />
               <v-tooltip bottom>
                 <template #activator="{ on }">
-                  <v-btn
-                    icon
-                    v-on="on"
-                    @click="download"
-                  >
-                    <v-icon>
-                      mdi-download
-                    </v-icon>
+                  <v-btn icon v-on="on" @click="download">
+                    <v-icon> mdi-download </v-icon>
                   </v-btn>
                 </template>
                 <span>Download Metadata</span>
@@ -151,65 +123,39 @@
           show-arrows
           align-with-title
         >
-          <v-tab
-            key="tab-0"
-            class="font-weight-medium text-caption ml-2"
-          >
-            <v-badge
-              color="error"
-              dot
-              :value="!basicModelValid"
-            >
-              General
-            </v-badge>
+          <v-tab key="tab-0" class="font-weight-medium text-caption ml-2">
+            <v-badge color="error" dot :value="!basicModelValid"> General </v-badge>
           </v-tab>
           <v-tab
             v-for="(propKey, i) in fieldsToRender"
-            :key="`tab-${i+1}`"
+            :key="`tab-${i + 1}`"
             class="font-weight-medium text-caption"
           >
-            <v-badge
-              color="error"
-              dot
-              :value="!complexModelValidation[propKey]"
-            >
+            <v-badge color="error" dot :value="!complexModelValidation[propKey]">
               {{ getSchemaTitle(propKey) }}
             </v-badge>
           </v-tab>
         </v-tabs>
       </v-row>
       <v-row>
-        <v-tabs-items
-          v-model="tab"
-          style="width: 100%;"
-        >
-          <v-tab-item
-            key="tab-0"
-            eager
-          >
+        <v-tabs-items v-model="tab" style="width: 100%">
+          <v-tab-item key="tab-0" eager>
             <v-form
               v-model="basicModelValid"
-              style="height: 70vh;"
+              style="height: 70vh"
               class="px-7 py-5 overflow-y-auto"
             >
               <v-jsf
                 v-model="basicModel"
                 :schema="basicSchema"
-                :options="{...CommonVJSFOptions, hideReadOnly: true}"
+                :options="{ ...CommonVJSFOptions, hideReadOnly: true }"
                 @change="vjsfListener"
               />
             </v-form>
           </v-tab-item>
-          <v-tab-item
-            v-for="(propKey, i) in fieldsToRender"
-            :key="`tab-${i+1}`"
-            eager
-          >
+          <v-tab-item v-for="(propKey, i) in fieldsToRender" :key="`tab-${i + 1}`" eager>
             <v-card class="pa-2 px-1">
-              <v-form
-                v-model="complexModelValidation[propKey]"
-                class="px-7"
-              >
+              <v-form v-model="complexModelValidation[propKey]" class="px-7">
                 <v-jsf-wrapper
                   :prop-key="propKey"
                   :options="CommonVJSFOptions"
@@ -225,23 +171,23 @@
 </template>
 
 <script setup lang="ts">
-import type { JSONSchema7 } from 'json-schema';
+import type { JSONSchema7 } from "json-schema";
 
-import type { ComputedRef } from 'vue';
-import { ref, computed } from 'vue';
+import type { ComputedRef } from "vue";
+import { ref, computed } from "vue";
 
-import jsYaml from 'js-yaml';
-import axios from 'axios';
+import jsYaml from "js-yaml";
+import axios from "axios";
 
-import VJsf from '@koumoul/vjsf/lib/VJsf';
-import '@koumoul/vjsf/lib/deps/third-party';
-import '@koumoul/vjsf/lib/VJsf.css';
+import VJsf from "@koumoul/vjsf/lib/VJsf";
+import "@koumoul/vjsf/lib/deps/third-party";
+import "@koumoul/vjsf/lib/VJsf.css";
 
-import { dandiRest } from '@/rest';
-import { useDandisetStore } from '@/stores/dandiset';
-import type { DandiModel } from './types';
-import { isJSONSchema } from './types';
-import { EditorInterface } from './editor';
+import { dandiRest } from "@/rest";
+import { useDandisetStore } from "@/stores/dandiset";
+import type { DandiModel } from "./types";
+import { isJSONSchema } from "./types";
+import { EditorInterface } from "./editor";
 
 import {
   clearLocalStorage,
@@ -249,22 +195,26 @@ import {
   // getModelLocalStorage,
   // getTransactionPointerLocalStorage,
   // getTransactionsLocalStorage,
-} from './localStorage';
-import VJsfWrapper from './VJsfWrapper.vue';
-import { editorInterface, open } from './state';
+} from "./localStorage";
+import VJsfWrapper from "./VJsfWrapper.vue";
+import { editorInterface, open } from "./state";
 
 function renderField(fieldSchema: JSONSchema7) {
   const { properties } = fieldSchema;
 
-  if (fieldSchema.readOnly) { return false; }
-  const allSubPropsReadOnly = properties !== undefined && Object.keys(properties).every(
-    (key) => {
+  if (fieldSchema.readOnly) {
+    return false;
+  }
+  const allSubPropsReadOnly =
+    properties !== undefined &&
+    Object.keys(properties).every((key) => {
       const subProp = properties[key];
       return isJSONSchema(subProp) && subProp.readOnly;
-    },
-  );
+    });
 
-  if (allSubPropsReadOnly) { return false; }
+  if (allSubPropsReadOnly) {
+    return false;
+  }
   return true;
 }
 
@@ -294,10 +244,10 @@ const {
   transactionTracker,
 } = editorInterface.value;
 const CommonVJSFOptions = computed(() => ({
-  initialValidation: 'all',
+  initialValidation: "all",
   disableAll: readonly.value,
   autoFixArrayItems: false,
-  childrenClass: 'px-2',
+  childrenClass: "px-2",
   fieldProps: {
     outlined: true,
     dense: true,
@@ -306,7 +256,7 @@ const CommonVJSFOptions = computed(() => ({
     outlined: true,
     dense: true,
   },
-  editMode: 'inline',
+  editMode: "inline",
   hideReadOnly: true,
 }));
 
@@ -317,12 +267,8 @@ function undoChange() {
 function redoChange() {
   transactionTracker.redo();
 }
-const disableUndo = computed(
-  () => readonly.value || !transactionTracker.areTransactionsBehind(),
-);
-const disableRedo = computed(
-  () => readonly.value || !transactionTracker.areTransactionsAhead(),
-);
+const disableUndo = computed(() => readonly.value || !transactionTracker.areTransactionsBehind());
+const disableRedo = computed(() => readonly.value || !transactionTracker.areTransactionsAhead());
 const vjsfListener = () => transactionTracker.add(basicModel.value, false);
 const modified = computed(() => transactionTracker.isModified());
 
@@ -334,7 +280,9 @@ async function save() {
 
   try {
     const { status, data } = await dandiRest.saveDandiset(
-      id.value, currentDandiset.value.version, dandiset,
+      id.value,
+      currentDandiset.value.version,
+      dandiset,
     );
 
     if (status === 200) {
@@ -359,7 +307,7 @@ async function save() {
 
 // TODO: Add back UI to toggle YAML vs JSON
 const yamlOutput = ref(false);
-const contentType = computed(() => (yamlOutput.value ? 'text/yaml' : 'application/json'));
+const contentType = computed(() => (yamlOutput.value ? "text/yaml" : "application/json"));
 const output = computed(() => {
   const currentModel = editorInterface.value?.getModel();
   return yamlOutput.value ? jsYaml.dump(currentModel) : JSON.stringify(currentModel, null, 2);
@@ -368,9 +316,9 @@ const output = computed(() => {
 function download() {
   const blob = new Blob([output.value], { type: contentType.value });
 
-  const extension = contentType.value.split('/')[1];
+  const extension = contentType.value.split("/")[1];
   const filename = `dandiset.${extension}`;
-  const link = document.createElement('a');
+  const link = document.createElement("a");
 
   link.href = URL.createObjectURL(blob);
   link.download = filename;
@@ -383,8 +331,8 @@ function getSchemaTitle(propKey: string) {
   return properties ? properties[propKey].title || propKey : propKey;
 }
 
-const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
-  (p) => renderField((complexSchema as any).properties[p]),
+const fieldsToRender = Object.keys(complexSchema.properties as any).filter((p) =>
+  renderField((complexSchema as any).properties[p]),
 );
 
 // TODO: fix and re-enable this
@@ -416,5 +364,4 @@ const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
 //     loadFromLocalStoragePrompt.value = true;
 //   }
 // });
-
 </script>
