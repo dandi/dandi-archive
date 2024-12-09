@@ -1,8 +1,5 @@
 <template>
-  <v-form
-    style="width: 100%;"
-    @submit="performSearch"
-  >
+  <v-form style="width: 100%" @submit="performSearch">
     <v-text-field
       :value="$route.query.search"
       label="Search Dandisets by name, description, identifier, or contributor name"
@@ -15,22 +12,20 @@
       @input="updateSearch"
     >
       <template #prepend-inner>
-        <v-icon @click="performSearch">
-          mdi-magnify
-        </v-icon>
+        <v-icon @click="performSearch"> mdi-magnify </v-icon>
       </template>
     </v-text-field>
   </v-form>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import type { RawLocation } from 'vue-router';
-import { useRoute } from 'vue-router/composables';
-import router from '@/router';
+import { defineComponent, ref } from "vue";
+import type { RawLocation } from "vue-router";
+import { useRoute } from "vue-router/composables";
+import router from "@/router";
 
 export default defineComponent({
-  name: 'DandisetSearchField',
+  name: "DandisetSearchField",
   props: {
     dense: {
       type: Boolean,
@@ -40,7 +35,7 @@ export default defineComponent({
   },
   setup() {
     const route = useRoute();
-    const currentSearch = ref(route.query.search || '');
+    const currentSearch = ref(route.query.search || "");
 
     function updateSearch(search: string) {
       currentSearch.value = search;
@@ -53,9 +48,9 @@ export default defineComponent({
         // nothing has changed, do nothing
         return;
       }
-      if (route.name !== 'searchDandisets') {
+      if (route.name !== "searchDandisets") {
         router.push({
-          name: 'searchDandisets',
+          name: "searchDandisets",
           query: {
             search: currentSearch.value,
           },

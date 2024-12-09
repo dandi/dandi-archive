@@ -6,46 +6,32 @@
     <v-card-text class="my-3">
       <v-form>
         <div>
-          <v-switch
-            v-model="embargoed"
-          >
+          <v-switch v-model="embargoed">
             <template #label>
               Embargo this Dandiset
-              <v-tooltip
-                right
-                max-width="25%"
-              >
+              <v-tooltip right max-width="25%">
                 <template #activator="{ on, attrs }">
-                  <div
-                    v-bind="attrs"
-                    style="cursor: help"
-                    v-on="on"
-                  >
+                  <div v-bind="attrs" style="cursor: help" v-on="on">
                     <small class="ml-3 d-flex align-center">
                       (What is this?)
-                      <v-icon small>
-                        mdi-information
-                      </v-icon>
+                      <v-icon small> mdi-information </v-icon>
                     </small>
                   </div>
                 </template>
                 <span>
                   Embargoed Dandisets are hidden from public access until a specific time period has
-                  elapsed. Uploading data to the DANDI archive under embargo requires a relevant
-                  NIH award number, and the data will be automatically published when the embargo
-                  period expires.
+                  elapsed. Uploading data to the DANDI archive under embargo requires a relevant NIH
+                  award number, and the data will be automatically published when the embargo period
+                  expires.
                 </span>
               </v-tooltip>
             </template>
           </v-switch>
         </div>
-        <div class="text-h4">
-          Title
-        </div>
+        <div class="text-h4">Title</div>
         <div>
-          Provide a title for this Dandiset. The title will appear in search
-          results and at the top of the home page for this Dandiset, so make it
-          concise and descriptive.
+          Provide a title for this Dandiset. The title will appear in search results and at the top
+          of the home page for this Dandiset, so make it concise and descriptive.
         </div>
         <v-text-field
           v-model="name"
@@ -57,12 +43,10 @@
           class="my-4"
         />
 
-        <div class="text-h4">
-          Description
-        </div>
+        <div class="text-h4">Description</div>
         <div>
-          Provide a description for this Dandiset. This will appear prominently
-          under the title in the home page for this Dandiset.
+          Provide a description for this Dandiset. This will appear prominently under the title in
+          the home page for this Dandiset.
         </div>
         <v-textarea
           v-model="description"
@@ -74,18 +58,17 @@
           class="my-4"
         />
         <div v-if="!embargoed">
-          <div class="text-h4">
-            License
-          </div>
+          <div class="text-h4">License</div>
           <div>
-            Select a license under which to share the contents of this Dandiset.
-            You can learn more about <a
+            Select a license under which to share the contents of this Dandiset. You can learn more
+            about
+            <a
               href="https://www.dandiarchive.org/handbook/35_data_licenses/"
               target="_blank"
               rel="noopener"
             >
-              licenses for Dandisets
-            </a>.
+              licenses for Dandisets </a
+            >.
           </div>
           <v-select
             v-model="license"
@@ -97,13 +80,10 @@
           />
         </div>
         <div v-else>
-          <div class="text-h4">
-            NIH Award Number
-          </div>
+          <div class="text-h4">NIH Award Number</div>
           <div>
-            Provide an NIH award number for this embargoed Dandiset. Note: this
-            can be changed at any time and additional award numbers can be added
-            later.
+            Provide an NIH award number for this embargoed Dandiset. Note: this can be changed at
+            any time and additional award numbers can be added later.
           </div>
           <v-text-field
             v-model="awardNumber"
@@ -138,13 +118,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router/composables';
-import type { ComputedRef } from 'vue';
-import { dandiRest, loggedIn } from '@/rest';
-import { useDandisetStore } from '@/stores/dandiset';
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router/composables";
+import type { ComputedRef } from "vue";
+import { dandiRest, loggedIn } from "@/rest";
+import { useDandisetStore } from "@/stores/dandiset";
 
-import type { IdentifierForAnAward, LicenseType, License } from '@/types';
+import type { IdentifierForAnAward, LicenseType, License } from "@/types";
 
 // Regular expression to validate an NIH award number.
 // Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
@@ -155,26 +135,28 @@ function awardNumberValidator(awardNumber: IdentifierForAnAward): boolean {
   return NIH_AWARD_REGEX.test(awardNumber);
 }
 
-const VALIDATION_FAIL_MESSAGE = 'Award number must be properly space-delimited.\n\nExample (exclude quotes):\n"1 R01 CA 123456-01A1"';
+const VALIDATION_FAIL_MESSAGE =
+  'Award number must be properly space-delimited.\n\nExample (exclude quotes):\n"1 R01 CA 123456-01A1"';
 
 const router = useRouter();
 const store = useDandisetStore();
 
-const name = ref('');
-const description = ref('');
+const name = ref("");
+const description = ref("");
 const license = ref<LicenseType>();
 const embargoed = ref(false);
-const awardNumber = ref('');
+const awardNumber = ref("");
 const saveDisabled = computed(
-  () => !name.value
-      || !description.value
-      || (embargoed.value && !awardNumberValidator(awardNumber.value))
-      || (!embargoed.value && !license.value),
+  () =>
+    !name.value ||
+    !description.value ||
+    (embargoed.value && !awardNumberValidator(awardNumber.value)) ||
+    (!embargoed.value && !license.value),
 );
 
-const awardNumberRules = computed(
-  () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
-);
+const awardNumberRules = computed(() => [
+  (v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE,
+]);
 
 const nameMaxLength: ComputedRef<number> = computed(() => store.schema.properties.name.maxLength);
 const descriptionMaxLength: ComputedRef<number> = computed(
@@ -185,11 +167,11 @@ const dandiLicenses: ComputedRef<LicenseType[]> = computed(
 );
 
 if (!loggedIn()) {
-  router.push({ name: 'home' });
+  router.push({ name: "home" });
 }
 
 async function registerDandiset() {
-  const metadata: {name: string, description: string, license?: License} = {
+  const metadata: { name: string; description: string; license?: License } = {
     name: name.value,
     description: description.value,
   };
@@ -202,7 +184,6 @@ async function registerDandiset() {
     ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
     : await dandiRest.createDandiset(name.value, metadata);
   const { identifier } = data;
-  router.push({ name: 'dandisetLanding', params: { identifier } });
+  router.push({ name: "dandisetLanding", params: { identifier } });
 }
-
 </script>

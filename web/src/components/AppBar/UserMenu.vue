@@ -4,10 +4,7 @@
   -->
   <v-menu offset-y>
     <template #activator="{ on }">
-      <v-btn
-        icon
-        v-on="on"
-      >
+      <v-btn icon v-on="on">
         <v-avatar color="light-blue lighten-4">
           <span class="primary--text">
             {{ userInitials }}
@@ -15,14 +12,12 @@
         </v-avatar>
       </v-btn>
     </template>
-    <v-list
-      id="user-menu"
-      dense
-    >
+    <v-list id="user-menu" dense>
       <v-list-item>
         <v-list-item-content>
           <span v-if="user">
-            You are logged in as <a
+            You are logged in as
+            <a
               :href="`https://github.com/${user.username}`"
               target="_blank"
               rel="noopener"
@@ -33,9 +28,7 @@
       </v-list-item>
       <ApiKeyItem v-if="user?.approved" />
       <v-list-item @click="logout">
-        <v-list-item-content>
-          Logout
-        </v-list-item-content>
+        <v-list-item-content> Logout </v-list-item-content>
         <v-list-item-action>
           <v-icon>mdi-logout</v-icon>
         </v-list-item-action>
@@ -45,30 +38,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
-import { user, dandiRest } from '@/rest';
-import ApiKeyItem from '@/components/AppBar/ApiKeyItem.vue';
+import { user, dandiRest } from "@/rest";
+import ApiKeyItem from "@/components/AppBar/ApiKeyItem.vue";
 
 const userInitials = computed(() => {
   if (user.value) {
     const { name } = user.value;
     if (name) {
-      const name_parts = name.split(' ');
+      const name_parts = name.split(" ");
       if (name_parts.length >= 2) {
         const first_name = name_parts[0];
         const last_name = name_parts[name_parts.length - 1];
-        return (
-          first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase()
-        );
+        return first_name.charAt(0).toLocaleUpperCase() + last_name.charAt(0).toLocaleUpperCase();
       }
     }
   }
-  return '??';
+  return "??";
 });
 
 async function logout() {
   await dandiRest.logout();
 }
-
 </script>

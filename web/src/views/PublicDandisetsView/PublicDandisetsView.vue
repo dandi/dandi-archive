@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import DandisetsPage from '@/components/DandisetsPage.vue';
+import DandisetsPage from "@/components/DandisetsPage.vue";
 </script>

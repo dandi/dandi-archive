@@ -1,8 +1,5 @@
 <template>
-  <v-app
-    v-if="verifiedServerConnection"
-    class="dandi-app"
-  >
+  <v-app v-if="verifiedServerConnection" class="dandi-app">
     <AppBar />
     <v-main v-if="connectedToServer">
       <UserStatusBanner />
@@ -10,49 +7,34 @@
       <DandiFooter />
     </v-main>
 
-    <v-main
-      v-else
-      class="d-flex align-center text-center"
-    >
+    <v-main v-else class="d-flex align-center text-center">
       {{ SERVER_DOWNTIME_MESSAGE }}
     </v-main>
-    <v-snackbar
-      :value="showError"
-      :timeout="-1"
-      top
-      right
-      color="error"
-    >
+    <v-snackbar :value="showError" :timeout="-1" top right color="error">
       <span>
-        Sorry, something went wrong on our side (the developers have been notified).
-        Please try that operation again later.
+        Sorry, something went wrong on our side (the developers have been notified). Please try that
+        operation again later.
       </span>
       <template #action="{ attrs }">
-        <v-btn
-          color="white"
-          text
-          v-bind="attrs"
-          @click="showError = false"
-        >
-          Close
-        </v-btn>
+        <v-btn color="white" text v-bind="attrs" @click="showError = false"> Close </v-btn>
       </template>
     </v-snackbar>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import Vue, { onMounted, ref } from 'vue';
+import Vue, { onMounted, ref } from "vue";
 
-import { dandiRest } from '@/rest';
-import { useDandisetStore } from '@/stores/dandiset';
-import AppBar from '@/components/AppBar/AppBar.vue';
-import DandiFooter from '@/components/DandiFooter.vue';
-import UserStatusBanner from '@/components/UserStatusBanner.vue';
+import { dandiRest } from "@/rest";
+import { useDandisetStore } from "@/stores/dandiset";
+import AppBar from "@/components/AppBar/AppBar.vue";
+import DandiFooter from "@/components/DandiFooter.vue";
+import UserStatusBanner from "@/components/UserStatusBanner.vue";
 
 const store = useDandisetStore();
 
-const SERVER_DOWNTIME_MESSAGE = import.meta.env.VITE_APP_SERVER_DOWNTIME_MESSAGE || 'Connection to server failed.';
+const SERVER_DOWNTIME_MESSAGE =
+  import.meta.env.VITE_APP_SERVER_DOWNTIME_MESSAGE || "Connection to server failed.";
 
 const verifiedServerConnection = ref(false);
 const connectedToServer = ref(true);
@@ -65,16 +47,16 @@ Vue.config.errorHandler = (err: Error) => {
 };
 
 onMounted(() => {
-  Promise.all([
-    store.fetchSchema(),
-    dandiRest.restoreLogin(),
-  ]).then(() => {
-    connectedToServer.value = true;
-  }).catch(() => {
-    connectedToServer.value = false;
-  }).finally(() => {
-    verifiedServerConnection.value = true;
-  });
+  Promise.all([store.fetchSchema(), dandiRest.restoreLogin()])
+    .then(() => {
+      connectedToServer.value = true;
+    })
+    .catch(() => {
+      connectedToServer.value = false;
+    })
+    .finally(() => {
+      verifiedServerConnection.value = true;
+    });
 });
 </script>
 

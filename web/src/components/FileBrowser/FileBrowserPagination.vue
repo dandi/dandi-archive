@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="d-flex justify-center align-center text-center"
-  >
+  <div class="d-flex justify-center align-center text-center">
     <v-btn
       class="mx-2"
       color="white"
@@ -23,7 +21,7 @@
       hide-details
       single-line
       dense
-      style="max-width: 5%;"
+      style="max-width: 5%"
       class="pa-0 mx-2 my-0"
       filled
       min="1"
@@ -54,8 +52,8 @@
 </template>
 
 <script setup lang="ts">
-import { toRef } from 'vue';
-import { useRoute } from 'vue-router/composables';
+import { toRef } from "vue";
+import { useRoute } from "vue-router/composables";
 
 const props = defineProps({
   page: {
@@ -74,8 +72,7 @@ function pageIsValid(page: number): boolean {
   return page > 0 && page <= props.pageCount;
 }
 
-const emit = defineEmits(['changePage']);
+const emit = defineEmits(["changePage"]);
 
-const pageInput = Number(route.query.page) || toRef(props, 'page');
-
+const pageInput = Number(route.query.page) || toRef(props, "page");
 </script>

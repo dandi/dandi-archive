@@ -1,8 +1,5 @@
 <template>
-  <v-list
-    three-line
-    subheader
-  >
+  <v-list three-line subheader>
     <v-list-item
       v-for="(item, index) in dandisets"
       :key="item.dandiset.identifier"
@@ -42,35 +39,21 @@
             x-small
             class="mr-1 px-2"
             :color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4`"
-            :text-color="
-              `${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} darken-3`
-            "
+            :text-color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} darken-3`"
           >
             <b>{{ item.dandiset.embargo_status }}</b>
           </v-chip>
 
-          DANDI:<b>{{ item.dandiset.identifier }}</b>
-          ·
-          Contact <b>{{ item.dandiset.contact_person }}</b>
-          ·
-          Updated on <b>{{ formatDate(item.modified) }}</b>
+          DANDI:<b>{{ item.dandiset.identifier }}</b> · Contact
+          <b>{{ item.dandiset.contact_person }}</b> · Updated on
+          <b>{{ formatDate(item.modified) }}</b>
           ·
           <template v-if="dandisets">
-            <v-icon
-              small
-              class="pb-1"
-            >
-              mdi-file
-            </v-icon>
+            <v-icon small class="pb-1"> mdi-file </v-icon>
             {{ item.asset_count }}
             ·
-            <v-icon
-              small
-              class="pb-1"
-            >
-              mdi-database
-            </v-icon>
-            {{ filesize(item.size, { round: 1, base: 10, standard: 'iec' }) }}
+            <v-icon small class="pb-1"> mdi-database </v-icon>
+            {{ filesize(item.size, { round: 1, base: 10, standard: "iec" }) }}
           </template>
         </v-list-item-subtitle>
       </v-list-item-content>
@@ -80,17 +63,17 @@
 </template>
 
 <script lang="ts">
-import type { PropType } from 'vue';
-import { defineComponent, computed } from 'vue';
-import { useRoute } from 'vue-router/composables';
-import moment from 'moment';
-import filesize from 'filesize';
+import type { PropType } from "vue";
+import { defineComponent, computed } from "vue";
+import { useRoute } from "vue-router/composables";
+import moment from "moment";
+import filesize from "filesize";
 
-import type { Version } from '@/types';
-import { DANDISETS_PER_PAGE } from '@/utils/constants';
+import type { Version } from "@/types";
+import { DANDISETS_PER_PAGE } from "@/utils/constants";
 
 export default defineComponent({
-  name: 'DandisetList',
+  name: "DandisetList",
   props: {
     dandisets: {
       type: Array as PropType<Version[]>,
@@ -109,7 +92,7 @@ export default defineComponent({
       return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
     }
     function formatDate(date: string) {
-      return moment(date).format('LL');
+      return moment(date).format("LL");
     }
 
     return {

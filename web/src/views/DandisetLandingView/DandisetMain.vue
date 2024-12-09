@@ -1,26 +1,14 @@
 <template>
   <div v-if="currentDandiset && meta && stats">
-    <v-card
-      class="px-3"
-      color="grey lighten-5"
-      outlined
-    >
+    <v-card class="px-3" color="grey lighten-5" outlined>
       <v-row class="mx-2 my-2 mb-0">
-        <v-col
-          class="d-flex align-center"
-        >
+        <v-col class="d-flex align-center">
           <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
             <ShareDialog />
             {{ meta.name }}
           </h1>
-          <v-chip
-            v-if="currentDandiset.version != 'draft'"
-            outlined
-            class="mx-2 pl-1"
-          >
-            <v-tooltip
-              top
-            >
+          <v-chip v-if="currentDandiset.version != 'draft'" outlined class="mx-2 pl-1">
+            <v-tooltip top>
               <template #activator="{ on, attrs }">
                 <v-btn
                   v-if="currentDandiset !== null"
@@ -30,36 +18,21 @@
                   v-on="on"
                   @click="copy('DOI')"
                 >
-                  <v-icon
-                    small
-                  >
-                    mdi-content-copy
-                  </v-icon>
+                  <v-icon small> mdi-content-copy </v-icon>
                 </v-btn>
               </template>
               <span>Copy DOI URL to clipboard</span>
             </v-tooltip>
-            <span>
-              DOI:
-            </span>
-            <v-divider
-              vertical
-              class="mx-2"
-            />
+            <span> DOI: </span>
+            <v-divider vertical class="mx-2" />
             {{ meta.doi }}
           </v-chip>
         </v-col>
       </v-row>
       <v-row class="mx-1">
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
-          <v-chip
-            class="text-wrap py-1 pl-1"
-            style="text-align: center;"
-            outlined
-          >
-            <v-tooltip
-              top
-            >
+          <v-chip class="text-wrap py-1 pl-1" style="text-align: center" outlined>
+            <v-tooltip top>
               <template #activator="{ on, attrs }">
                 <v-btn
                   v-if="currentDandiset !== null"
@@ -69,11 +42,7 @@
                   v-on="on"
                   @click="copy('dandiID')"
                 >
-                  <v-icon
-                    small
-                  >
-                    mdi-content-copy
-                  </v-icon>
+                  <v-icon small> mdi-content-copy </v-icon>
                 </v-btn>
               </template>
               <span>Copy ID to clipboard</span>
@@ -82,10 +51,7 @@
               ID: <span class="font-weight-bold">{{ currentDandiset.dandiset.identifier }}</span>
             </span>
 
-            <v-divider
-              vertical
-              class="mx-2"
-            />
+            <v-divider vertical class="mx-2" />
             <span
               :class="`
                 font-weight-bold
@@ -99,11 +65,7 @@
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
-            <template
-              v-if="!currentDandiset.contact_person"
-            >
-              No contact information
-            </template>
+            <template v-if="!currentDandiset.contact_person"> No contact information </template>
             <template v-else>
               Contact <strong>{{ currentDandiset.contact_person }}</strong>
             </template>
@@ -122,9 +84,7 @@
           </span>
         </v-col>
       </v-row>
-      <v-row
-        class="mx-1"
-      >
+      <v-row class="mx-1">
         <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
@@ -142,11 +102,7 @@
             <v-icon class="grey--text text--lighten-1">mdi-gavel</v-icon>
             Licenses:
             <strong v-if="!meta.license.length">(none)</strong>
-            <span
-              v-for="(license, i) in meta.license"
-              v-else
-              :key="i"
-            >
+            <span v-for="(license, i) in meta.license" v-else :key="i">
               <strong>{{ license }}</strong>
               <span v-text="meta && i === meta.license.length - 1 ? '' : ', '" />
             </span>
@@ -156,10 +112,7 @@
           <span v-if="accessInformation && accessInformation.length">
             <v-icon class="grey--text text--lighten-1">mdi-account-question</v-icon>
             Access Information:
-            <span
-              v-for="(item, i) in accessInformation"
-              :key="i"
-            >
+            <span v-for="(item, i) in accessInformation" :key="i">
               <strong>{{ item.status }}</strong>
               <span v-text="accessInformation && i === accessInformation.length - 1 ? '' : ', '" />
             </span>
@@ -176,16 +129,15 @@
 
         <!-- Truncate text if necessary -->
         <a
-          v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
+          v-if="meta.description && meta.description.length > MAX_DESCRIPTION_LENGTH"
           @click="showFullDescription = !showFullDescription"
-        > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
+        >
+          {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a
+        >
       </v-row>
 
       <v-row class="justify-center">
-        <v-col
-          cols="11"
-          class="pb-0"
-        >
+        <v-col cols="11" class="pb-0">
           <v-card
             v-if="(meta.keywords && meta.keywords.length) || (meta.license && meta.license.length)"
             outlined
@@ -193,29 +145,19 @@
           >
             <v-card-text
               v-if="meta.keywords && meta.keywords.length"
-              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+              style="border-bottom: thin solid rgba(0, 0, 0, 0.12)"
             >
               Keywords:
-              <v-chip
-                v-for="(keyword, i) in meta.keywords"
-                :key="i"
-                small
-                style="margin: 5px;"
-              >
+              <v-chip v-for="(keyword, i) in meta.keywords" :key="i" small style="margin: 5px">
                 {{ keyword }}
               </v-chip>
             </v-card-text>
             <v-card-text
               v-if="subjectMatter && subjectMatter.length"
-              style="border-bottom: thin solid rgba(0, 0, 0, 0.12);"
+              style="border-bottom: thin solid rgba(0, 0, 0, 0.12)"
             >
               Subject matter:
-              <v-chip
-                v-for="(item, i) in subjectMatter"
-                :key="i"
-                small
-                style="margin: 5px;"
-              >
+              <v-chip v-for="(item, i) in subjectMatter" :key="i" small style="margin: 5px">
                 {{ item.name }}
               </v-chip>
             </v-card-text>
@@ -258,64 +200,62 @@
 </template>
 
 <script lang="ts">
-import type { ComputedRef } from 'vue';
-import {
-  defineComponent, computed, ref,
-} from 'vue';
+import type { ComputedRef } from "vue";
+import { defineComponent, computed, ref } from "vue";
 
-import filesize from 'filesize';
-import { marked } from 'marked';
-import moment from 'moment';
-import DOMPurify from 'dompurify';
+import filesize from "filesize";
+import { marked } from "marked";
+import moment from "moment";
+import DOMPurify from "dompurify";
 
-import { useDandisetStore } from '@/stores/dandiset';
-import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
+import { useDandisetStore } from "@/stores/dandiset";
+import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from "@/types";
 
-import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
-import AssetSummaryTab from '@/components/DLP/AssetSummaryTab.vue';
-import ContributorsTab from '@/components/DLP/ContributorsTab.vue';
-import OverviewTab from '@/components/DLP/OverviewTab.vue';
-import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
-import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
-import ShareDialog from './ShareDialog.vue';
+import AccessInformationTab from "@/components/DLP/AccessInformationTab.vue";
+import AssetSummaryTab from "@/components/DLP/AssetSummaryTab.vue";
+import ContributorsTab from "@/components/DLP/ContributorsTab.vue";
+import OverviewTab from "@/components/DLP/OverviewTab.vue";
+import RelatedResourcesTab from "@/components/DLP/RelatedResourcesTab.vue";
+import SubjectMatterTab from "@/components/DLP/SubjectMatterTab.vue";
+import ShareDialog from "./ShareDialog.vue";
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
 
 const tabs = [
   {
-    name: 'Overview',
+    name: "Overview",
     component: OverviewTab,
   },
   {
-    name: 'Contributors',
+    name: "Contributors",
     component: ContributorsTab,
-    icon: 'mdi-account',
+    icon: "mdi-account",
   },
   {
-    name: 'Subject Matter',
+    name: "Subject Matter",
     component: SubjectMatterTab,
-    icon: 'mdi-notebook-outline',
+    icon: "mdi-notebook-outline",
   },
   {
-    name: 'Access Information',
+    name: "Access Information",
     component: AccessInformationTab,
-    icon: 'mdi-account-question',
+    icon: "mdi-account-question",
   },
   {
-    name: 'Asset Summary',
+    name: "Asset Summary",
     component: AssetSummaryTab,
-    icon: 'mdi-clipboard-list',
+    icon: "mdi-clipboard-list",
   },
   {
-    name: 'Related Resources',
+    name: "Related Resources",
     component: RelatedResourcesTab,
-    icon: 'mdi-book',
+    icon: "mdi-book",
   },
 ];
 
 export default defineComponent({
-  name: 'DandisetMain',
+  name: "DandisetMain",
   components: {
     ShareDialog,
     AccessInformationTab,
@@ -336,9 +276,10 @@ export default defineComponent({
 
     const currentDandiset = computed(() => store.dandiset);
 
-    const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
+    const transformFilesize = (size: number) =>
+      filesize(size, { round: 1, base: 10, standard: "iec" });
 
-    const stats: ComputedRef<DandisetStats|null> = computed(() => {
+    const stats: ComputedRef<DandisetStats | null> = computed(() => {
       if (!currentDandiset.value) {
         return null;
       }
@@ -351,45 +292,50 @@ export default defineComponent({
     const showFullDescription = ref(false);
     const description: ComputedRef<string> = computed(() => {
       if (!currentDandiset.value) {
-        return '';
+        return "";
       }
       const fullDescription = currentDandiset.value.metadata?.description;
       if (!fullDescription) {
-        return '';
+        return "";
       }
       if (fullDescription.length <= MAX_DESCRIPTION_LENGTH) {
         return fullDescription;
       }
       if (showFullDescription.value) {
-        return currentDandiset.value.metadata?.description || '';
+        return currentDandiset.value.metadata?.description || "";
       }
       let shortenedDescription = fullDescription.substring(0, MAX_DESCRIPTION_LENGTH);
-      shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
+      shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(" "))}...`;
       return shortenedDescription;
     });
-    const htmlDescription: ComputedRef<string> = computed(
-      () => DOMPurify.sanitize(marked.parse(description.value)),
+    const htmlDescription: ComputedRef<string> = computed(() =>
+      DOMPurify.sanitize(marked.parse(description.value)),
     );
     const meta = computed(() => currentDandiset.value?.metadata);
 
-    const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
+    const accessInformation: ComputedRef<AccessInformation | undefined> = computed(
       () => meta.value?.access,
     );
-    const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
+    const subjectMatter: ComputedRef<SubjectMatterOfTheDataset | undefined> = computed(
       () => meta.value?.about,
     );
 
     const currentTab = ref(0);
 
     function formatDate(date: string): string {
-      return moment(date).format('LL');
+      return moment(date).format("LL");
     }
-    function copy(value:string) {
+    function copy(value: string) {
       if (!meta.value) {
-        throw new Error('metadata is undefined!');
+        throw new Error("metadata is undefined!");
       }
-      const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
-      navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+      const version =
+        meta.value?.version === "draft"
+          ? (meta.value?.identifier as string)
+          : (meta.value?.id as string);
+      navigator.clipboard.writeText(
+        value === "dandiID" ? version : `https://doi.org/${meta.value?.doi}`,
+      );
     }
 
     return {

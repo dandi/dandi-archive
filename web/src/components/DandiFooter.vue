@@ -3,81 +3,54 @@
     <v-container>
       <cookie-law theme="blood-orange">
         <div slot="message">
-          <span
-            v-if="cookiesEnabled()"
-          >We use cookies to ensure you get the best experience on
-            DANDI.</span>
-          <span
-            v-else
-          >We noticed you're blocking cookies - note that certain aspects of
-            the site may not work.</span>
+          <span v-if="cookiesEnabled()"
+            >We use cookies to ensure you get the best experience on DANDI.</span
+          >
+          <span v-else
+            >We noticed you're blocking cookies - note that certain aspects of the site may not
+            work.</span
+          >
         </div>
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2024 The DANDI Team<br>
+          &copy; 2019 - 2024 The DANDI Team<br />
           version
-          <a
-            class="version-link"
-            :href="githubLink"
-            target="_blank"
-            rel="noopener"
-          >{{ version }}</a>
+          <a class="version-link" :href="githubLink" target="_blank" rel="noopener">{{
+            version
+          }}</a>
         </v-col>
         <v-col>
-          Funding / In-Kind Support:<br>
-          - <a
-            target="_blank"
-            rel="noopener"
-            href="https://braininitiative.nih.gov/"
-          >BRAIN Initiative</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon> / <a
-            target="_blank"
-            rel="noopener"
-            href="https://www.nimh.nih.gov/index.shtml"
-          >NIMH</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon>
-          <br>
-          - <a
-            target="_blank"
-            rel="noopener"
-            href="https://registry.opendata.aws/dandiarchive/"
-          >AWS Open Dataset</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon>
-          <br>
+          Funding / In-Kind Support:<br />
+          -
+          <a target="_blank" rel="noopener" href="https://braininitiative.nih.gov/"
+            >BRAIN Initiative</a
+          >
+          <v-icon x-small> mdi-open-in-new </v-icon> /
+          <a target="_blank" rel="noopener" href="https://www.nimh.nih.gov/index.shtml">NIMH</a>
+          <v-icon x-small> mdi-open-in-new </v-icon>
+          <br />
+          -
+          <a target="_blank" rel="noopener" href="https://registry.opendata.aws/dandiarchive/"
+            >AWS Open Dataset</a
+          >
+          <v-icon x-small> mdi-open-in-new </v-icon>
+          <br />
         </v-col>
         <v-col>
-          Support:<br>
-          - <a
-            target="_blank"
-            rel="noopener"
-            :href="dandiAboutUrl"
-          >DANDI Project Homepage</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon>
-          <br>
-          - <a
-            target="_blank"
-            rel="noopener"
-            href="https://github.com/dandi/dandi-archive"
-          >Project GitHub</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon> / <a
-            target="_blank"
-            rel="noopener"
-            href="https://github.com/dandi/dandi-archive/issues"
-          >Issues</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon>
+          Support:<br />
+          - <a target="_blank" rel="noopener" :href="dandiAboutUrl">DANDI Project Homepage</a>
+          <v-icon x-small> mdi-open-in-new </v-icon>
+          <br />
+          -
+          <a target="_blank" rel="noopener" href="https://github.com/dandi/dandi-archive"
+            >Project GitHub</a
+          >
+          <v-icon x-small> mdi-open-in-new </v-icon> /
+          <a target="_blank" rel="noopener" href="https://github.com/dandi/dandi-archive/issues"
+            >Issues</a
+          >
+          <v-icon x-small> mdi-open-in-new </v-icon>
         </v-col>
       </v-row>
     </v-container>
@@ -85,17 +58,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import CookieLaw from 'vue-cookie-law';
+import { defineComponent } from "vue";
+import CookieLaw from "vue-cookie-law";
 
-import { dandiAboutUrl } from '@/utils/constants';
-import { cookiesEnabled } from '@/rest';
+import { dandiAboutUrl } from "@/utils/constants";
+import { cookiesEnabled } from "@/rest";
 
 const version = import.meta.env.VITE_APP_VERSION;
-const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/dandi/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandi-archive';
+const githubLink = import.meta.env.VITE_APP_GIT_REVISION
+  ? `https://github.com/dandi/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}`
+  : "https://github.com/dandi/dandi-archive";
 
 export default defineComponent({
-  name: 'DandiFooter',
+  name: "DandiFooter",
   components: { CookieLaw },
   setup() {
     return {

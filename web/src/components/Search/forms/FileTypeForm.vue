@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { searchParameters } from '../store';
+import { searchParameters } from "../store";
 
-const FILE_TYPES = ['application/x-nwb', 'image/', 'video/', 'text/'];
+const FILE_TYPES = ["application/x-nwb", "image/", "video/", "text/"];
 </script>
 
 <template>

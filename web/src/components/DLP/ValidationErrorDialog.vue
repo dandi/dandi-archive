@@ -1,47 +1,17 @@
 <template>
-  <v-card
-    min-height="90vh"
-    class="pa-2"
-  >
+  <v-card min-height="90vh" class="pa-2">
     <v-tabs v-model="tab">
-      <v-tab
-        v-if="showMetadataTab"
-        key="metadata"
-        href="#metadata"
-      >
-        Metadata
-      </v-tab>
-      <v-tab
-        v-if="showAssetsTab"
-        key="assets"
-        href="#assets"
-      >
-        Assets
-      </v-tab>
+      <v-tab v-if="showMetadataTab" key="metadata" href="#metadata"> Metadata </v-tab>
+      <v-tab v-if="showAssetsTab" key="assets" href="#assets"> Assets </v-tab>
     </v-tabs>
     <v-tabs-items v-model="tab">
       <!-- Metadata -->
-      <v-tab-item
-        v-if="showMetadataTab"
-        key="metadata"
-        value="metadata"
-        :transition="false"
-      >
-        <v-btn
-          v-if="owner"
-          class="mt-1"
-          color="primary"
-          @click="$emit('openMeditor')"
-        >
+      <v-tab-item v-if="showMetadataTab" key="metadata" value="metadata" :transition="false">
+        <v-btn v-if="owner" class="mt-1" color="primary" @click="$emit('openMeditor')">
           Fix issues
         </v-btn>
-        <v-list
-          class="overflow-y-auto"
-        >
-          <div
-            v-for="(error, index) in versionValidationErrors"
-            :key="index"
-          >
+        <v-list class="overflow-y-auto">
+          <div v-for="(error, index) in versionValidationErrors" :key="index">
             <v-list-item>
               <v-list-item-icon>
                 <v-icon>
@@ -50,9 +20,7 @@
               </v-list-item-icon>
 
               <v-list-item-content>
-                <template v-if="error.field">
-                  {{ error.field }}:
-                </template>
+                <template v-if="error.field"> {{ error.field }}: </template>
                 {{ error.message }}
               </v-list-item-content>
             </v-list-item>
@@ -62,25 +30,14 @@
       </v-tab-item>
 
       <!-- Assets -->
-      <v-tab-item
-        v-if="showAssetsTab"
-        key="assets"
-        value="assets"
-        :transition="false"
-      >
-        <v-list
-          class="overflow-y-auto"
-        >
+      <v-tab-item v-if="showAssetsTab" key="assets" value="assets" :transition="false">
+        <v-list class="overflow-y-auto">
           <v-expansion-panels multiple>
             <template v-for="(errors, path) in groupedAssetValidationErrors">
-              <v-list-item
-                :key="path"
-              >
+              <v-list-item :key="path">
                 <v-list-item-icon>
                   <v-icon>
-                    <template v-if="errors.length > 1">
-                      mdi-alert-plus
-                    </template>
+                    <template v-if="errors.length > 1"> mdi-alert-plus </template>
                     <template v-else>
                       {{ getValidationErrorIcon(errors[0].field) }}
                     </template>
@@ -91,9 +48,7 @@
                 <template v-if="errors.length === 1">
                   <v-list-item-content>
                     <strong>{{ path }}</strong>
-                    <template v-if="errors[0].field">
-                      {{ errors[0].field }} -
-                    </template>
+                    <template v-if="errors[0].field"> {{ errors[0].field }} - </template>
                     {{ errors[0].message }}
                   </v-list-item-content>
                 </template>
@@ -108,19 +63,14 @@
                       </v-list-item-content>
                     </template>
 
-                    <v-list-item
-                      v-for="error in errors"
-                      :key="`${error.field}-${error.message}`"
-                    >
+                    <v-list-item v-for="error in errors" :key="`${error.field}-${error.message}`">
                       <v-list-item-icon>
                         <v-icon>
                           {{ getValidationErrorIcon(error.field) }}
                         </v-icon>
                       </v-list-item-icon>
                       <v-list-item-content>
-                        <template v-if="error.field">
-                          {{ error.field }}:
-                        </template>
+                        <template v-if="error.field"> {{ error.field }}: </template>
                         {{ error.message }}
                       </v-list-item-content>
                     </v-list-item>
@@ -136,11 +86,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ValidationError } from '@/types';
-import type { PropType } from 'vue';
-import { watch, computed, ref } from 'vue';
+import type { ValidationError } from "@/types";
+import type { PropType } from "vue";
+import { watch, computed, ref } from "vue";
 
-import { VALIDATION_ICONS } from '@/utils/constants';
+import { VALIDATION_ICONS } from "@/utils/constants";
 
 const props = defineProps({
   assetValidationErrors: {
@@ -152,9 +102,9 @@ const props = defineProps({
     required: true,
   },
   selectedTab: {
-    type: String as PropType<'metadata' | 'assets'>,
+    type: String as PropType<"metadata" | "assets">,
     required: false,
-    default: 'metadata',
+    default: "metadata",
   },
   owner: {
     type: Boolean,
@@ -164,9 +114,12 @@ const props = defineProps({
 });
 
 const tab = ref(props.selectedTab);
-watch(() => props.selectedTab, (val) => {
-  tab.value = val;
-});
+watch(
+  () => props.selectedTab,
+  (val) => {
+    tab.value = val;
+  },
+);
 
 const showMetadataTab = computed(() => !!props.versionValidationErrors.length);
 const showAssetsTab = computed(() => !!Object.keys(props.assetValidationErrors).length);
@@ -189,7 +142,6 @@ function getValidationErrorIcon(errorField: string): string {
   }
   return VALIDATION_ICONS.DEFAULT;
 }
-
 </script>
 <style>
 .multi-error-list-group .v-list-group__header {
