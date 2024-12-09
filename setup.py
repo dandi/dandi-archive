@@ -45,8 +45,9 @@ setup(
         'dandischema==0.10.2',  # schema version 0.6.8
         'django~=4.2.0',
         'django-admin-display',
-        # Pin to 0.61.1 to test user signup
-        'django-allauth==0.61.1',
+        # Pin to version where this bug is fixed
+        # https://codeberg.org/allauth/django-allauth/issues/4072
+        'django-allauth>=65.3.0',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
