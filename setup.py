@@ -43,7 +43,7 @@ setup(
         'dandi',
         # Pin dandischema to exact version to make explicit which schema version is being used
         'dandischema==0.10.2',  # schema version 0.6.8
-        'django~=4.1.0',
+        'django~=4.2.0',
         'django-admin-display',
         # Pin to 0.61.1 to test user signup
         'django-allauth==0.61.1',
