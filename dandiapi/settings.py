@@ -137,6 +137,9 @@ class DandiMixin(ConfigMixin):
     # Disable github oauth by default
     ENABLE_GITHUB_OAUTH = False
 
+    ACCOUNT_ADAPTER = 'dandiapi.allauth.DandiAccountAdapter'
+    SOCIALACCOUNT_ADAPTER = 'dandiapi.allauth.DandiSocialAccountAdapter'
+
 
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
