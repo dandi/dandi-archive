@@ -56,7 +56,7 @@ but allows developers to run Python code on their native system.
    2. `./manage.py runserver`
 3. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
-   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive -B`
+   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 4. When finished, run `docker compose stop`
 
 ## Remap Service Ports (optional)
