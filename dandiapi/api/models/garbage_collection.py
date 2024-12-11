@@ -8,15 +8,19 @@ class GarbageCollectionEvent(models.Model):
     type = models.CharField(
         max_length=255, help_text='The model name of the records that were garbage collected.'
     )
-    records = models.JSONField(
-        help_text='JSON serialization of the queryset of records that were garbage collected.'
-    )
-
-    garbage_collection_event_id = models.UUIDField(
-        editable=False,
-        help_text='Unique identifier for the garbage collection event. '
-        'Used to associate multiple records that are part of the same GC event.',
-    )
 
     def __str__(self) -> str:
         return f'{self.type} ({self.created})'
+
+
+class GarbageCollectionEventRecord(models.Model):
+    event = models.ForeignKey(
+        GarbageCollectionEvent, on_delete=models.CASCADE, related_name='records'
+    )
+
+    record = models.JSONField(
+        help_text='JSON serialization of the record that was garbage collected.'
+    )
+
+    def __str__(self) -> str:
+        return f'{self.event.type} record'

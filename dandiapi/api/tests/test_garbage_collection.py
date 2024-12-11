@@ -4,7 +4,12 @@ from django.utils import timezone
 from freezegun import freeze_time
 import pytest
 
-from dandiapi.api.models import AssetBlob, GarbageCollectionEvent, Upload
+from dandiapi.api.models import (
+    AssetBlob,
+    GarbageCollectionEvent,
+    GarbageCollectionEventRecord,
+    Upload,
+)
 from dandiapi.api.services import garbage_collection
 
 
@@ -61,16 +66,18 @@ def test_garbage_collect_asset_blobs(asset_factory, asset_blob_factory):
 @pytest.mark.django_db
 def test_garbage_collection_event_records(asset_blob_factory, upload_factory):
     # Create enough asset blobs to create 3 GarbageCollectionEvents
+    asset_blob_count = garbage_collection.GARBAGE_COLLECTION_EVENT_CHUNK_SIZE * 2 + 1
     garbage_collected_asset_blobs: list[AssetBlob] = []
-    for _ in range(garbage_collection.GARBAGE_COLLECTION_EVENT_CHUNK_SIZE * 2 + 1):
+    for _ in range(asset_blob_count):
         asset_blob: AssetBlob = asset_blob_factory()
         asset_blob.created = timezone.now() - garbage_collection.ASSET_BLOB_EXPIRATION_TIME
         asset_blob.save()
         garbage_collected_asset_blobs.append(asset_blob)
 
     # Create enough uploads to create 3 GarbageCollectionEvents
+    upload_count = garbage_collection.GARBAGE_COLLECTION_EVENT_CHUNK_SIZE * 2 + 1
     garbage_collected_uploads: list[Upload] = []
-    for _ in range(garbage_collection.GARBAGE_COLLECTION_EVENT_CHUNK_SIZE * 2 + 1):
+    for _ in range(upload_count):
         upload: Upload = upload_factory()
         upload.created = timezone.now() - garbage_collection.UPLOAD_EXPIRATION_TIME
         upload.save()
@@ -97,17 +104,29 @@ def test_garbage_collection_event_records(asset_blob_factory, upload_factory):
     )
 
     # Make sure the GarbageCollectionEvent records are created
-    assert GarbageCollectionEvent.objects.count() == 6
-    assert GarbageCollectionEvent.objects.filter(type=AssetBlob.__name__).count() == 3
-    assert GarbageCollectionEvent.objects.filter(type=Upload.__name__).count() == 3
+    assert GarbageCollectionEvent.objects.count() == 2
+    assert GarbageCollectionEvent.objects.filter(type=AssetBlob.__name__).count() == 1
+    assert GarbageCollectionEvent.objects.filter(type=Upload.__name__).count() == 1
+
+    assert GarbageCollectionEventRecord.objects.count() == asset_blob_count + upload_count
+    assert (
+        GarbageCollectionEventRecord.objects.filter(event__type=AssetBlob.__name__).count()
+        == asset_blob_count
+    )
+    assert (
+        GarbageCollectionEventRecord.objects.filter(event__type=Upload.__name__).count()
+        == upload_count
+    )
 
     # Make sure running garbage_collect() again doesn't delete the GarbageCollectionEvent
     # records yet
     with freeze_time(time_to_freeze=timezone.now()):
         garbage_collection.garbage_collect()
-        assert GarbageCollectionEvent.objects.count() == 6
+        assert GarbageCollectionEvent.objects.count() == 2
+        assert GarbageCollectionEventRecord.objects.count() == asset_blob_count + upload_count
 
     # Make sure the GarbageCollectionEvent records are deleted after the RESTORATION_WINDOW
     with freeze_time(time_to_freeze=timezone.now() + garbage_collection.RESTORATION_WINDOW):
         garbage_collection.garbage_collect()
         assert GarbageCollectionEvent.objects.count() == 0
+        assert GarbageCollectionEventRecord.objects.count() == 0
