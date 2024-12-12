@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import hashlib
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -10,9 +11,13 @@ from django.utils import timezone
 from guardian.shortcuts import assign_perm
 import pytest
 from rest_framework.test import APIClient
+from zarr_checksum import compute_zarr_checksum
+from zarr_checksum.checksum import EMPTY_CHECKSUM
+from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
 
@@ -319,6 +324,58 @@ def test_validate_version_metadata_no_assets(
             'A Dandiset containing no files or zero bytes is not publishable',
         }
     ]
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_empty_zarr_asset(
+    draft_version: Version, zarr_archive_factory, draft_asset_factory
+):
+    asset = draft_asset_factory(
+        blob=None,
+        zarr=zarr_archive_factory(
+            status=ZarrArchiveStatus.COMPLETE, checksum=EMPTY_CHECKSUM, size=0, file_count=0
+        ),
+        status=Asset.Status.VALID,
+    )
+    assert asset.size == 0
+    draft_version.assets.add(asset)
+
+    # Since the zarr asset has zero size, a validation error should be produced
+    tasks.validate_version_metadata_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.INVALID
+    assert draft_version.validation_errors == [
+        {
+            'field': 'assetsSummary',
+            'message': 'Value error, '
+            'A Dandiset containing no files or zero bytes is not publishable',
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_validate_version_metadata_only_zarr_assets(
+    draft_version: Version, zarr_archive_factory, draft_asset_factory
+):
+    asset = draft_asset_factory(
+        blob=None,
+        zarr=zarr_archive_factory(
+            status=ZarrArchiveStatus.COMPLETE,
+            checksum=compute_zarr_checksum(
+                [ZarrArchiveFile(path=Path('foo/bar'), size=100, digest=hashlib.md5().hexdigest())]
+            ),
+            size=100,
+            file_count=1,
+        ),
+        status=Asset.Status.VALID,
+    )
+    assert asset.size > 0
+    draft_version.assets.add(asset)
+
+    tasks.validate_version_metadata_task(draft_version.id)
+    draft_version.refresh_from_db()
+    assert draft_version.status == Version.Status.VALID
+    assert not draft_version.validation_errors
 
 
 @pytest.mark.django_db

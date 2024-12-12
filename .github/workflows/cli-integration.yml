@@ -80,7 +80,7 @@ jobs:
 
       - name: Run dandi-api tests in dandi-cli
         run: |
-          python -m pytest --dandi-api \
+          python -m pytest --dandi-api -v \
             "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"

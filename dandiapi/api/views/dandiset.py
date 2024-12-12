@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import typing
 from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Count, Max, OuterRef, Subquery, Sum
+from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
@@ -41,6 +42,8 @@ from dandiapi.api.views.serializers import (
     DandisetQueryParameterSerializer,
     DandisetSearchQueryParameterSerializer,
     DandisetSearchResultListSerializer,
+    DandisetUploadSerializer,
+    PaginationQuerySerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
@@ -48,6 +51,8 @@ from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
+
+    from dandiapi.api.models.upload import Upload
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
@@ -155,6 +160,16 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 queryset = queryset.filter(embargo_status='OPEN')
         return queryset
 
+    def require_owner_perm(self, dandiset: Dandiset):
+        # Raise 401 if unauthenticated
+        if not self.request.user.is_authenticated:
+            raise NotAuthenticated
+
+        # Raise 403 if unauthorized
+        self.request.user = typing.cast(User, self.request.user)
+        if not self.request.user.has_perm('owner', dandiset):
+            raise PermissionDenied
+
     def get_object(self):
         # Alternative to path converters, which DRF doesn't support
         # https://docs.djangoproject.com/en/3.0/topics/http/urls/#registering-custom-path-converters
@@ -168,12 +183,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset = super().get_object()
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            if not self.request.user.is_authenticated:
-                # Clients must be authenticated to access it
-                raise NotAuthenticated
-            if not self.request.user.has_perm('owner', dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied
+            self.require_owner_perm(dandiset)
+
         return dandiset
 
     @staticmethod
@@ -453,3 +464,41 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 )
 
         return Response(owners, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        methods=['GET'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        query_serializer=PaginationQuerySerializer,
+        request_body=no_body,
+        operation_summary='List active/incomplete uploads in this dandiset.',
+    )
+    @action(methods=['GET'], detail=True)
+    def uploads(self, request, dandiset__pk):
+        dandiset: Dandiset = self.get_object()
+
+        # Special case where a "safe" method is access restricted, due to the nature of uploads
+        self.require_owner_perm(dandiset)
+
+        uploads: QuerySet[Upload] = dandiset.uploads.all()
+
+        # Paginate and return
+        page = self.paginate_queryset(uploads)
+        if page is not None:
+            serializer = DandisetUploadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = DandisetUploadSerializer(uploads, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        operation_summary='Delete all active/incomplete uploads in this dandiset.',
+    )
+    @uploads.mapping.delete
+    def clear_uploads(self, request, dandiset__pk):
+        dandiset: Dandiset = self.get_object()
+        self.require_owner_perm(dandiset)
+
+        dandiset.uploads.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

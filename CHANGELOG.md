@@ -1,3 +1,75 @@
+# v0.3.115 (Mon Dec 09 2024)
+
+#### 🐛 Bug Fix
+
+- Bump `django-allauth` to latest version [#2099](https://github.com/dandi/dandi-archive/pull/2099) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.114 (Mon Dec 09 2024)
+
+#### 🐛 Bug Fix
+
+- Pin `django-allauth` to 0.61.1 [#2098](https://github.com/dandi/dandi-archive/pull/2098) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Set `--max-warnings` to zero for `eslint` [#2088](https://github.com/dandi/dandi-archive/pull/2088) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.3.113 (Wed Dec 04 2024)
+
+#### 🐛 Bug Fix
+
+- Fix validation error when only Zarr assets are uploaded [#2062](https://github.com/dandi/dandi-archive/pull/2062) ([@jjnesbitt](https://github.com/jjnesbitt) [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 2
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.3.112 (Mon Dec 02 2024)
+
+#### 🐛 Bug Fix
+
+- Add incomplete upload dialog to DLP when unembargo is blocked [#2082](https://github.com/dandi/dandi-archive/pull/2082) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.3.111 (Mon Dec 02 2024)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, null[@aaronkanzer](https://github.com/aaronkanzer), for all your work!
+
+#### 🐛 Bug Fix
+
+- Empty PR to trigger release [#2086](https://github.com/dandi/dandi-archive/pull/2086) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Include robots.txt in UI and API for handling of web crawlers [#2084](https://github.com/dandi/dandi-archive/pull/2084) (aaronkanzer@Aarons-MacBook-Pro.local [@jjnesbitt](https://github.com/jjnesbitt) [@aaronkanzer](https://github.com/aaronkanzer))
+- Use a dedicated logger. not top level logging. module [#2077](https://github.com/dandi/dandi-archive/pull/2077) ([@yarikoptic](https://github.com/yarikoptic))
+- Add API support for Embargoed Zarrs [#2069](https://github.com/dandi/dandi-archive/pull/2069) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.110 (Wed Nov 13 2024)
 
 #### 🐛 Bug Fix

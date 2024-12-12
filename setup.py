@@ -43,11 +43,11 @@ setup(
         'dandi',
         # Pin dandischema to exact version to make explicit which schema version is being used
         'dandischema==0.10.2',  # schema version 0.6.8
-        'django~=4.1.0',
+        'django~=4.2.0',
         'django-admin-display',
-        # Require 0.58.0 as it is the first version to support postgres' native
-        # JSONField for SocialAccount.extra_data
-        'django-allauth>=0.58.0',
+        # Pin to version where this bug is fixed
+        # https://codeberg.org/allauth/django-allauth/issues/4072
+        'django-allauth>=65.3.0',
         'django-click',
         'django-configurations[database,email]',
         'django-extensions',
@@ -68,7 +68,7 @@ setup(
         's3-log-parse',
         'zarr-checksum>=0.2.8',
         # Production-only
-        'django-composed-configuration[prod]>=0.23.0',
+        'django-composed-configuration[prod]>=0.25.0',
         'django-s3-file-field[s3]>=1.0.0',
         'django-storages[s3]==1.14.3',
         'gunicorn',
@@ -79,7 +79,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.23.0',
+            'django-composed-configuration[dev]>=0.25.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
             'ipython',

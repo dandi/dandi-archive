@@ -19,6 +19,7 @@ from dandiapi.api.views import (
     blob_read_view,
     info_view,
     mailchimp_csv_view,
+    robots_txt_view,
     root_content_view,
     stats_view,
     upload_complete_view,
@@ -80,6 +81,7 @@ class DandisetIDConverter:
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
+    path('robots.txt', robots_txt_view, name='robots_txt'),
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
