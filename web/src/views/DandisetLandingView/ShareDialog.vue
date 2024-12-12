@@ -114,7 +114,7 @@ export default defineComponent({
     const meta = computed(() => currentDandiset.value?.metadata);
     const permalink = computed(() => {
       if (currentDandiset.value?.dandiset && currentVersion.value) {
-        return `${dandiUrl}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
+        return `${window.location.origin}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
       }
       return '';
     });
