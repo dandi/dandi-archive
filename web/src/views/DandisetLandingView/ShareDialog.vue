@@ -92,7 +92,6 @@ import { defineComponent, computed, ref } from 'vue';
 
 import CopyText from '@/components/CopyText.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { dandiUrl } from '@/utils/constants';
 
 // Twitter user to mention
 const twitterUser = 'DANDIarchive';
