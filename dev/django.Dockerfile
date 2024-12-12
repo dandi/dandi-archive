@@ -18,7 +18,7 @@ ARG USERID=0
 ARG LOGIN=root
 ARG GROUPID=0
 ARG GROUPNAME=root
-RUN getent group ${GROUPID} || addgroup --gid ${GROUPID} ${GROUPNAME}
+RUN getent group ${GROUPID} || addgroup --allow-all-names --gid ${GROUPID} ${GROUPNAME}
 RUN getent passwd ${USERID} || adduser --allow-bad-names --uid ${USERID} --gid ${GROUPID} --home /home/${LOGIN} $LOGIN
 
 # Create the project folder and make the user its owner.
