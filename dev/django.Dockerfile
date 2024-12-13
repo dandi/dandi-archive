@@ -55,6 +55,4 @@ WORKDIR /opt/django-project
 
 # Run the pre-commit hooks (without --all-files, so that it won't actually run
 # on any files) to create a reusable package cache.
-RUN pre-commit run ruff-fix-only --hook-stage manual
-RUN pre-commit run ruff-format-check --hook-stage manual
-RUN pre-commit run codespell
+RUN pre-commit
