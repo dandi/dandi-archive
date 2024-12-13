@@ -58,7 +58,7 @@ class PublishConfig(AppConfig):
                 environment=settings.SENTRY_ENVIRONMENT,
                 release=settings.SENTRY_RELEASE,
                 integrations=[
-                    LoggingIntegration(level=settings.DANDI_LOG_LEVEL, event_level=logging.WARNING),
+                    LoggingIntegration(level=logging.INFO, event_level=logging.WARNING),
                     DjangoIntegration(),
                     CeleryIntegration(),
                 ],
