@@ -50,8 +50,7 @@ class PublishConfig(AppConfig):
         import dandiapi.api.checks  # noqa: F401, RUF100
         import dandiapi.api.signals  # noqa: F401
 
-        logging_level = getattr(logging, settings.DANDI_LOG_LEVEL.upper())
-        logging.getLogger(__name__.split('.')[0]).setLevel(logging_level)
+        logging.getLogger(__name__.split('.')[0]).setLevel(settings.DANDI_LOG_LEVEL)
 
         if hasattr(settings, 'SENTRY_DSN'):
             sentry_sdk.init(
@@ -59,7 +58,7 @@ class PublishConfig(AppConfig):
                 environment=settings.SENTRY_ENVIRONMENT,
                 release=settings.SENTRY_RELEASE,
                 integrations=[
-                    LoggingIntegration(level=logging_level, event_level=logging.WARNING),
+                    LoggingIntegration(level=settings.DANDI_LOG_LEVEL, event_level=logging.WARNING),
                     DjangoIntegration(),
                     CeleryIntegration(),
                 ],
