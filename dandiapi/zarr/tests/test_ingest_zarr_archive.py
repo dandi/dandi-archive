@@ -6,6 +6,7 @@ import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models import AssetPath
+from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
@@ -142,6 +143,29 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory,
     # Ingest zarr
     asset.refresh_from_db()
     ingest_zarr_archive(zarr_archive.zarr_id)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_sets_version_pending(
+    draft_version_factory, zarr_archive_factory, zarr_file_factory
+):
+    """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
+    draft_version = draft_version_factory(status=Version.Status.VALID)
+    assert draft_version.status == Version.Status.VALID
+
+    # Ensure zarr has non-zero size
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
+    )
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+
+    # Kick off ingest
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+    draft_version.refresh_from_db()
+
+    # Check that version is now `PENDING`, instead of VALID
+    assert draft_version.status == Version.Status.PENDING
 
 
 @pytest.mark.django_db(transaction=True)
