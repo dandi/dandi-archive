@@ -1,3 +1,32 @@
+# v0.4.0 (Mon Dec 16 2024)
+
+#### 🚀 Enhancement
+
+- Add some .debug level messages in tasks upon no action to be performed [#2079](https://github.com/dandi/dandi-archive/pull/2079) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🐛 Bug Fix
+
+- Update shareable link to reflect window.location.origin [#2108](https://github.com/dandi/dandi-archive/pull/2108) (aaronkanzer@Aarons-MacBook-Pro.local [@aaronkanzer](https://github.com/aaronkanzer))
+- Update instructions for serving the web app through a development server [#2095](https://github.com/dandi/dandi-archive/pull/2095) ([@candleindark](https://github.com/candleindark))
+- Use pre-commit hooks in tox configuration [#2057](https://github.com/dandi/dandi-archive/pull/2057) ([@waxlamp](https://github.com/waxlamp))
+- doc: update instruction to natively(locally) run Celery service [#2106](https://github.com/dandi/dandi-archive/pull/2106) ([@candleindark](https://github.com/candleindark) [@mvandenburgh](https://github.com/mvandenburgh))
+- DLP: Have "Cite as" only for OPEN (non embargoed) dandisets [#2102](https://github.com/dandi/dandi-archive/pull/2102) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🧪 Tests
+
+- ENH: run pytest  against dandi-cli with -v to see which tests ran [#2076](https://github.com/dandi/dandi-archive/pull/2076) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 6
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.115 (Mon Dec 09 2024)
 
 #### 🐛 Bug Fix
