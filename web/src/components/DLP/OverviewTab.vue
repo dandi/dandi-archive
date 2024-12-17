@@ -71,7 +71,7 @@
       :items="protocols"
       v-if="protocols && protocols.length"
       name="Protocols"
-      icon="mdi-protocol"
+      icon="mdi-file-document-check"
     >
       <template #content="slotProps">
         <div class="text-caption grey--text text--darken-1">
