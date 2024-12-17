@@ -137,101 +137,101 @@
 
     <v-row>
       <v-col>
-    <v-card
-      v-if="assetSummary"
-      outlined
-    >
-      <v-card-title class="font-weight-regular">
-        <v-progress-circular
-          v-if="assetSummaryBeingComputed"
-          class="mr-3"
-          size="20"
-          indeterminate
-        />
-        <v-icon
-          v-else
-          class="mr-3 grey--text text--lighten-1"
+        <v-card
+          v-if="assetSummary"
+          outlined
         >
-          mdi-clipboard-list
-        </v-icon>
-        Assets Summary
-      </v-card-title>
-      <v-list
-        :style="`column-count: ${assetSummaryColumnCount};`"
-        class="px-3 ml-2"
-      >
-        <div
-          v-if="assetSummaryBeingComputed"
-          class="text-subtitle-2"
-        >
-          The assets summary is being computed, please wait.
-        </div>
-        <div
-          v-else-if="!assetSummary || !Object.keys(assetSummary).length"
-          class="font-italic font-weight-bold"
-        >
-          This Dandiset does not contain any assets.
-        </div>
-        <div
-          v-for="([type, items], i) in Object.entries(assetSummary)"
-          v-else
-          :key="i"
-        >
-          <div
-            v-if="items && items.length"
-            class="d-inline-block"
-            style="width: 100%;"
+          <v-card-title class="font-weight-regular">
+            <v-progress-circular
+              v-if="assetSummaryBeingComputed"
+              class="mr-3"
+              size="20"
+              indeterminate
+            />
+            <v-icon
+              v-else
+              class="mr-3 grey--text text--lighten-1"
+            >
+              mdi-clipboard-list
+            </v-icon>
+            Assets Summary
+          </v-card-title>
+          <v-list
+            :style="`column-count: ${assetSummaryColumnCount};`"
+            class="px-3 ml-2"
           >
-            <span class="font-weight-bold">
-              {{ type }}
-            </span>
             <div
-              v-for="(item, ii) in items"
-              :key="ii"
-              :title="type"
-              background-color="grey lighten-4"
-              class="grey lighten-4"
-              style="width: 100%;"
+              v-if="assetSummaryBeingComputed"
+              class="text-subtitle-2"
+            >
+              The assets summary is being computed, please wait.
+            </div>
+            <div
+              v-else-if="!assetSummary || !Object.keys(assetSummary).length"
+              class="font-italic font-weight-bold"
+            >
+              This Dandiset does not contain any assets.
+            </div>
+            <div
+              v-for="([type, items], i) in Object.entries(assetSummary)"
+              v-else
+              :key="i"
             >
               <div
-                class="pl-2 my-1 py-1"
-                :style="`border-left: medium solid ${$vuetify.theme.themes.light.primary};
-                         line-height: 1.25`"
+                v-if="items && items.length"
+                class="d-inline-block"
+                style="width: 100%;"
               >
-                <v-row
-                  no-gutters
-                  class="align-center py-0"
-                  style="min-height: 2em;"
-                >
-                  <v-col
-                    cols="10"
-                  >
-                    <span>{{ item.name || item.identifier || item.id || item }}</span>
-                  </v-col>
-                  <v-col>
-                    <v-btn
-                      v-if="isURL(item.identifier)"
-                      icon
-                      :href="item.identifier"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <v-icon>mdi-link</v-icon>
-                    </v-btn>
-                  </v-col>
-                </v-row>
-                <span
-                  v-if="!isURL(item.identifier)"
-                  class="text-caption grey--text text--darken-1"
-                >
-                  {{ item.identifier }}
+                <span class="font-weight-bold">
+                  {{ type }}
                 </span>
+                <div
+                  v-for="(item, ii) in items"
+                  :key="ii"
+                  :title="type"
+                  background-color="grey lighten-4"
+                  class="grey lighten-4"
+                  style="width: 100%;"
+                >
+                  <div
+                    class="pl-2 my-1 py-1"
+                    :style="`border-left: medium solid ${$vuetify.theme.themes.light.primary};
+                            line-height: 1.25`"
+                  >
+                    <v-row
+                      no-gutters
+                      class="align-center py-0"
+                      style="min-height: 2em;"
+                    >
+                      <v-col
+                        cols="10"
+                      >
+                        <span>{{ item.name || item.identifier || item.id || item }}</span>
+                      </v-col>
+                      <v-col>
+                        <v-btn
+                          v-if="isURL(item.identifier)"
+                          icon
+                          :href="item.identifier"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          <v-icon>mdi-link</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                    <span
+                      v-if="!isURL(item.identifier)"
+                      class="text-caption grey--text text--darken-1"
+                    >
+                      {{ item.identifier }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </v-list>
-    </v-card>
+          </v-list>
+        </v-card>
       </v-col>
     </v-row>
 
