@@ -17,6 +17,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
 from dandiapi.api.services import audit
+from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -149,9 +150,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         name = serializer.validated_data['name']
         dandiset = get_object_or_404(
-            Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
+            get_visible_dandisets(request.user), id=serializer.validated_data['dandiset']
         )
-        if not self.request.user.has_perm('owner', dandiset):
+        if not is_dandiset_owner(dandiset, request.user):
             raise PermissionDenied
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():

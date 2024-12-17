@@ -9,6 +9,10 @@ import pytest
 
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services.permissions.dandiset import (
+    get_visible_dandisets,
+    replace_dandiset_owners,
+)
 
 from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE, UTC_ISO_TIMESTAMP_RE
 
@@ -53,15 +57,15 @@ def test_dandiset_published_count(
     ],
 )
 @pytest.mark.django_db
-def test_dandiset_manager_visible_to(
+def test_dandiset_get_visible_dandisets(
     dandiset_factory, user_factory, embargo_status, user_status, visible
 ):
     dandiset = dandiset_factory(embargo_status=embargo_status)
-    user = AnonymousUser if user_status == 'anonymous' else user_factory()
+    user = AnonymousUser() if user_status == 'anonymous' else user_factory()
     if user_status == 'owner':
         assign_perm('owner', user, dandiset)
 
-    assert list(Dandiset.objects.visible_to(user)) == ([dandiset] if visible else [])
+    assert list(get_visible_dandisets(user)) == ([dandiset] if visible else [])
 
 
 @pytest.mark.django_db
@@ -251,7 +255,7 @@ def test_dandiset_rest_retrieve_embargoed(api_client, dandiset_factory, user):
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert resp.status_code == 403
 
-    dandiset.set_owners([user])
+    replace_dandiset_owners(dandiset, [user])
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert resp.status_code == 200
 

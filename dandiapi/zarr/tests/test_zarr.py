@@ -6,6 +6,7 @@ import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.permissions.dandiset import replace_dandiset_owners
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
@@ -134,7 +135,7 @@ def test_zarr_rest_get_embargoed(authenticated_api_client, user, embargoed_zarr_
     resp = authenticated_api_client.get(f'/api/zarr/{embargoed_zarr_archive.zarr_id}/')
     assert resp.status_code == 404
 
-    embargoed_zarr_archive.dandiset.set_owners([user])
+    replace_dandiset_owners(embargoed_zarr_archive.dandiset, [user])
     resp = authenticated_api_client.get(f'/api/zarr/{embargoed_zarr_archive.zarr_id}/')
     assert resp.status_code == 200
 
@@ -150,7 +151,7 @@ def test_zarr_rest_list_embargoed(authenticated_api_client, user, dandiset, zarr
     assert sorted(z['zarr_id'] for z in zarrs) == sorted(z.zarr_id for z in open_zarrs)
 
     # Assert that all zarrs returned when user has access to embargoed zarrs
-    dandiset.set_owners([user])
+    replace_dandiset_owners(dandiset, [user])
     zarrs = authenticated_api_client.get('/api/zarr/').json()['results']
     assert len(zarrs) == len(open_zarrs + embargoed_zarrs)
     assert sorted(z['zarr_id'] for z in zarrs) == sorted(

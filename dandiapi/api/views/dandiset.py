@@ -33,6 +33,10 @@ from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
 )
+from dandiapi.api.services.permissions.dandiset import (
+    get_visible_dandisets,
+    replace_dandiset_owners,
+)
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -118,7 +122,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Only include embargoed dandisets which belong to the current user
         queryset = Dandiset.objects
         if self.action in ['list', 'search']:
-            queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+            queryset = get_visible_dandisets(self.request.user).order_by('created')
 
             query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
             query_serializer.is_valid(raise_exception=True)
@@ -427,7 +431,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             # All owners found
             with transaction.atomic():
                 owners = user_owners + [acc.user for acc in socialaccount_owners]
-                removed_owners, added_owners = dandiset.set_owners(owners)
+                removed_owners, added_owners = replace_dandiset_owners(dandiset, owners)
                 dandiset.save()
 
                 if removed_owners or added_owners:

@@ -18,6 +18,7 @@ from s3_file_field._multipart import TransferredPart, TransferredParts
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.permissions.dandiset import get_visible_dandisets
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
@@ -131,7 +132,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
     etag = digest['value']
     dandiset_id = request_serializer.validated_data['dandiset']
     dandiset = get_object_or_404(
-        Dandiset.objects.visible_to(request.user),
+        get_visible_dandisets(request.user),
         id=dandiset_id,
     )
     response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
