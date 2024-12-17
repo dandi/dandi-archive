@@ -2,48 +2,48 @@
   <div>
     <v-row>
       <v-col>
-    <v-card
-      v-if="contributors && contributors.length"
-      outlined
-      height="100%"
-    >
-      <v-card-title class="font-weight-regular">
-        <v-icon class="mr-3 grey--text text--lighten-1">
-          mdi-account-multiple
-        </v-icon>
-        Contributors
-      </v-card-title>
-      <div class="px-2 mb-2">
-        <v-chip
-          v-for="(contributor, i) in contributors"
-          :key="i"
-          style="margin: 5px;"
+        <v-card
+          v-if="contributors && contributors.length"
           outlined
+          height="100%"
         >
-          {{ contributor.name }}
-          <a
-            v-if="contributor.identifier && contributor.schemaKey === 'Person'"
-            :href="`https://orcid.org/${contributor.identifier}`"
-            target="_blank"
-            class="mx-1 d-flex align-center"
-          >
-            <img
-              alt="ORCID logo"
-              src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
-              width="16"
-              height="16"
+          <v-card-title class="font-weight-regular">
+            <v-icon class="mr-3 grey--text text--lighten-1">
+              mdi-account-multiple
+            </v-icon>
+            Contributors
+          </v-card-title>
+          <div class="px-2 mb-2">
+            <v-chip
+              v-for="(contributor, i) in contributors"
+              :key="i"
+              style="margin: 5px;"
+              outlined
             >
-          </a>
-          <a
-            v-if="contactPeople.has(contributor.name)"
-            :href="contributor.email ? `mailto:${contributor.email}` : undefined"
-            class="mx-1 text-decoration-none"
-          >
-            <v-icon color="info">mdi-card-account-mail</v-icon>
-          </a>
-        </v-chip>
-      </div>
-    </v-card>
+              {{ contributor.name }}
+              <a
+                v-if="contributor.identifier && contributor.schemaKey === 'Person'"
+                :href="`https://orcid.org/${contributor.identifier}`"
+                target="_blank"
+                class="mx-1 d-flex align-center"
+              >
+                <img
+                  alt="ORCID logo"
+                  src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+                  width="16"
+                  height="16"
+                >
+              </a>
+              <a
+                v-if="contactPeople.has(contributor.name)"
+                :href="contributor.email ? `mailto:${contributor.email}` : undefined"
+                class="mx-1 text-decoration-none"
+              >
+                <v-icon color="info">mdi-card-account-mail</v-icon>
+              </a>
+            </v-chip>
+          </div>
+        </v-card>
       </v-col>
     </v-row>
     <MetadataCard
