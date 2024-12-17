@@ -10,6 +10,7 @@ from dandiapi.api.services.asset import (
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -243,7 +244,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
-            if not self.request.user.has_perm('owner', version.dandiset):
+            if not is_dandiset_owner(version.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
 

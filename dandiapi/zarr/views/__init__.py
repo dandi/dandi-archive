@@ -186,7 +186,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
 
@@ -301,7 +301,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 raise PermissionDenied
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
@@ -346,7 +346,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)

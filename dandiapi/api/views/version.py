@@ -16,6 +16,7 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
@@ -56,7 +57,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
-            if not self.request.user.has_perm('owner', dandiset):
+            if not is_dandiset_owner(dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
         return super().get_queryset()

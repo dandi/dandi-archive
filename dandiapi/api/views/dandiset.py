@@ -35,6 +35,7 @@ from dandiapi.api.services.embargo.exceptions import (
 )
 from dandiapi.api.services.permissions.dandiset import (
     get_visible_dandisets,
+    is_dandiset_owner,
     replace_dandiset_owners,
 )
 from dandiapi.api.views.common import DANDISET_PK_PARAM
@@ -171,7 +172,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         # Raise 403 if unauthorized
         self.request.user = typing.cast(User, self.request.user)
-        if not self.request.user.has_perm('owner', dandiset):
+        if not is_dandiset_owner(dandiset, self.request.user):
             raise PermissionDenied
 
     def get_object(self):
