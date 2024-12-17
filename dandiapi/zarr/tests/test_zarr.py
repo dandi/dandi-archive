@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from django.conf import settings
-from guardian.shortcuts import assign_perm
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.permissions.dandiset import replace_dandiset_owners
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, replace_dandiset_owners
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
@@ -14,7 +13,7 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 
 @pytest.mark.django_db
 def test_zarr_rest_create(authenticated_api_client, user, dandiset):
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     name = 'My Zarr File!'
 
     resp = authenticated_api_client.post(
@@ -42,7 +41,7 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
 
 @pytest.mark.django_db
 def test_zarr_rest_dandiset_malformed(authenticated_api_client, user, dandiset):
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
@@ -70,7 +69,7 @@ def test_zarr_rest_create_not_an_owner(authenticated_api_client, zarr_archive):
 
 @pytest.mark.django_db
 def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive):
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
@@ -91,7 +90,7 @@ def test_zarr_rest_create_embargoed_dandiset(
     dandiset_factory,
 ):
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
@@ -252,7 +251,7 @@ def test_zarr_rest_delete_file(
 
     # Create zarr and assign user perms
     zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Upload file and ingest
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
@@ -301,7 +300,7 @@ def test_zarr_rest_delete_file_asset_metadata(
     ZarrArchive.storage = storage
 
     zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
 
     asset = asset_factory(zarr=zarr_archive, blob=None)
 
@@ -352,7 +351,7 @@ def test_zarr_rest_delete_multiple_files(
     zarr_archive: ZarrArchive,
     zarr_file_factory,
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
 
@@ -383,7 +382,7 @@ def test_zarr_rest_delete_missing_file(
     zarr_archive: ZarrArchive,
     zarr_file_factory,
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage

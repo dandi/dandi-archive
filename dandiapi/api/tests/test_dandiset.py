@@ -4,12 +4,12 @@ import datetime
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.permissions.dandiset import (
+    add_dandiset_owner,
     get_visible_dandisets,
     replace_dandiset_owners,
 )
@@ -63,7 +63,7 @@ def test_dandiset_get_visible_dandisets(
     dandiset = dandiset_factory(embargo_status=embargo_status)
     user = AnonymousUser() if user_status == 'anonymous' else user_factory()
     if user_status == 'owner':
-        assign_perm('owner', user, dandiset)
+        add_dandiset_owner(dandiset, user)
 
     assert list(get_visible_dandisets(user)) == ([dandiset] if visible else [])
 
@@ -213,7 +213,7 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
     # Create an extra dandiset that should not be included in the response
     dandiset_factory()
     api_client.force_authenticate(user=user)
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     assert api_client.get('/api/dandisets/?user=me&draft=true&empty=true').data == {
         'count': 1,
         'next': None,
@@ -272,7 +272,7 @@ def test_dandiset_rest_embargo_access(
     owner = user_factory()
     unauthorized_user = user_factory()
     dandiset = dandiset_factory(embargo_status=embargo_status)
-    assign_perm('owner', owner, dandiset)
+    add_dandiset_owner(dandiset, owner)
 
     # This is what authorized users should get from the retrieve endpoint
     expected_dandiset_serialization = {
@@ -771,7 +771,7 @@ def test_dandiset_rest_delete(api_client, draft_version_factory, user, embargo_s
 
     # Ensure that open or embargoed dandisets can be deleted
     draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
 
     if success:
@@ -791,7 +791,7 @@ def test_dandiset_rest_delete_with_zarrs(
     draft_asset_factory,
 ):
     api_client.force_authenticate(user=user)
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr)
 
@@ -817,7 +817,7 @@ def test_dandiset_rest_delete_not_an_owner(api_client, draft_version, user):
 @pytest.mark.django_db
 def test_dandiset_rest_delete_published(api_client, published_version, user):
     api_client.force_authenticate(user=user)
-    assign_perm('owner', user, published_version.dandiset)
+    add_dandiset_owner(published_version.dandiset, user)
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
     assert response.status_code == 403
@@ -839,7 +839,7 @@ def test_dandiset_rest_delete_published_admin(api_client, published_version, adm
 
 @pytest.mark.django_db
 def test_dandiset_rest_get_owners(api_client, dandiset, social_account):
-    assign_perm('owner', social_account.user, dandiset)
+    add_dandiset_owner(dandiset, social_account.user)
 
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
@@ -855,7 +855,7 @@ def test_dandiset_rest_get_owners(api_client, dandiset, social_account):
 
 @pytest.mark.django_db
 def test_dandiset_rest_get_owners_no_social_account(api_client, dandiset, user):
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
 
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
@@ -887,7 +887,7 @@ def test_dandiset_rest_change_owner(
     user1 = user_factory()
     user2 = user_factory()
     social_account2 = social_account_factory(user=user2)
-    assign_perm('owner', user1, dandiset)
+    add_dandiset_owner(dandiset, user1)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
@@ -929,7 +929,7 @@ def test_dandiset_rest_change_owners_unembargo_in_progress(
     user2 = user_factory()
     social_account1 = social_account_factory(user=user1)
     social_account2 = social_account_factory(user=user2)
-    assign_perm('owner', user1, dandiset)
+    add_dandiset_owner(dandiset, user1)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
@@ -957,7 +957,7 @@ def test_dandiset_rest_add_owner(
     user2 = user_factory()
     social_account1 = social_account_factory(user=user1)
     social_account2 = social_account_factory(user=user2)
-    assign_perm('owner', user1, dandiset)
+    add_dandiset_owner(dandiset, user1)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
@@ -1001,8 +1001,8 @@ def test_dandiset_rest_remove_owner(
     user1 = user_factory()
     user2 = user_factory()
     social_account1 = social_account_factory(user=user1)
-    assign_perm('owner', user1, dandiset)
-    assign_perm('owner', user2, dandiset)
+    add_dandiset_owner(dandiset, user1)
+    add_dandiset_owner(dandiset, user2)
     api_client.force_authenticate(user=user1)
 
     resp = api_client.put(
@@ -1040,7 +1040,7 @@ def test_dandiset_rest_not_an_owner(api_client, dandiset, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_delete_all_owners_fails(api_client, dandiset, user):
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(
@@ -1054,7 +1054,7 @@ def test_dandiset_rest_delete_all_owners_fails(api_client, dandiset, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_add_owner_does_not_exist(api_client, dandiset, user):
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
     fake_name = user.username + 'butnotreally'
 
@@ -1069,7 +1069,7 @@ def test_dandiset_rest_add_owner_does_not_exist(api_client, dandiset, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_add_malformed(api_client, dandiset, user):
-    assign_perm('owner', user, dandiset)
+    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(
@@ -1147,7 +1147,7 @@ def test_dandiset_rest_list_active_uploads(
 ):
     ds = draft_version.dandiset
 
-    assign_perm('owner', user, ds)
+    add_dandiset_owner(ds, user)
     upload = upload_factory(dandiset=ds)
 
     response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/')
@@ -1189,7 +1189,7 @@ def test_dandiset_rest_clear_active_uploads(
 ):
     ds = draft_version.dandiset
 
-    assign_perm('owner', user, ds)
+    add_dandiset_owner(ds, user)
     upload_factory(dandiset=ds)
 
     response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()

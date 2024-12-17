@@ -20,6 +20,10 @@ def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
     return qs.order_by('date_joined')
 
 
+def add_dandiset_owner(dandiset: Dandiset, user: User):
+    assign_perm('owner', user, dandiset)
+
+
 @transaction.atomic
 def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
     existing_owners = get_dandiset_owners(dandiset)
@@ -33,7 +37,7 @@ def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
 
     # Set owners to new list
     for user in users:
-        assign_perm('owner', user, dandiset)
+        add_dandiset_owner(dandiset, user)
 
     # Return the owners added/removed so they can be emailed
     removed_owners = existing_owner_set - new_owner_set
