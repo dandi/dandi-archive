@@ -388,7 +388,7 @@ def test_dandiset_rest_create(api_client, user):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
             f'{user.last_name}, {user.first_name} ({year}) {name} '
-            f'(Version draft) [Data set]. DANDI archive. {url}'
+            f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
@@ -482,7 +482,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
             f'{admin_user.last_name}, {admin_user.first_name} ({year}) {name} '
-            f'(Version draft) [Data set]. DANDI archive. {url}'
+            f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
@@ -589,7 +589,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
-            f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI archive. {url}'
+            f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
@@ -681,7 +681,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'citation': (
             f'{user.last_name}, {user.first_name} ({year}) {name} '
-            f'(Version draft) [Data set]. DANDI archive. {url}'
+            f'(Version draft) [Data set]. DANDI Archive. {url}'
         ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,

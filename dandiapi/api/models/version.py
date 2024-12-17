@@ -142,14 +142,14 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         url = f'https://doi.org/{metadata["doi"]}' if 'doi' in metadata else metadata['url']
         version = metadata['version']
         # If we can't find any contributors, use this citation format
-        citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI archive. {url}'
+        citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI Archive. {url}'
         if 'contributor' in metadata and isinstance(metadata['contributor'], list):
             cl = '; '.join(
                 [val['name'] for val in metadata['contributor'] if val.get('includeInCitation')]
             )
             if cl:
                 citation = (
-                    f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI archive. {url}'
+                    f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI Archive. {url}'
                 )
         return citation
 
