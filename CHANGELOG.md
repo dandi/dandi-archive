@@ -1,3 +1,15 @@
+# v0.4.1 (Tue Dec 17 2024)
+
+#### 🐛 Bug Fix
+
+- Set version status to PENDING in ingest_zarr_archive [#2111](https://github.com/dandi/dandi-archive/pull/2111) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.0 (Mon Dec 16 2024)
 
 #### 🚀 Enhancement
