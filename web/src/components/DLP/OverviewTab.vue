@@ -1,5 +1,7 @@
 <template>
   <div>
+    <v-row>
+      <v-col>
     <v-card
       v-if="contributors && contributors.length"
       outlined
@@ -42,7 +44,8 @@
         </v-chip>
       </div>
     </v-card>
-
+      </v-col>
+    </v-row>
     <MetadataCard
       :items="fundingInformation"
       name="Funding information"
