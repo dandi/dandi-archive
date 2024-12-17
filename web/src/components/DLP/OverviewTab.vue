@@ -135,6 +135,8 @@
       </template>
     </MetadataCard>
 
+    <v-row>
+      <v-col>
     <v-card
       v-if="assetSummary"
       outlined
@@ -230,6 +232,8 @@
         </div>
       </v-list>
     </v-card>
+      </v-col>
+    </v-row>
 
     <MetadataCard
       v-if="associatedProjects && associatedProjects.length"
