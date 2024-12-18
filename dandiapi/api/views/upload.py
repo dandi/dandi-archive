@@ -7,7 +7,6 @@ from django.db import transaction
 from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
-from guardian.utils import get_40x_or_None
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
@@ -18,6 +17,7 @@ from s3_file_field._multipart import TransferredPart, TransferredParts
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
@@ -135,9 +135,8 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         get_visible_dandisets(request.user),
         id=dandiset_id,
     )
-    response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
-    if response:
-        return response
+    if not is_dandiset_owner(dandiset, request.user):
+        raise NotAllowedError
 
     # Ensure dandiset not in the process of unembargo
     if dandiset.unembargo_in_progress:

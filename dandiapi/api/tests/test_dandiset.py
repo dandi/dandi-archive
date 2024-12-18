@@ -990,6 +990,28 @@ def test_dandiset_rest_add_owner(
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_add_owner_not_allowed(
+    api_client, draft_version, user_factory, social_account_factory
+):
+    dandiset = draft_version.dandiset
+    user1 = user_factory()
+    user2 = user_factory()
+    social_account1 = social_account_factory(user=user1)
+    social_account2 = social_account_factory(user=user2)
+    api_client.force_authenticate(user=user1)
+
+    resp = api_client.put(
+        f'/api/dandisets/{dandiset.identifier}/users/',
+        [
+            {'username': social_account1.extra_data['login']},
+            {'username': social_account2.extra_data['login']},
+        ],
+        format='json',
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
 def test_dandiset_rest_remove_owner(
     api_client,
     draft_version,

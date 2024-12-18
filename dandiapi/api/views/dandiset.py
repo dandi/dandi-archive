@@ -13,7 +13,6 @@ from django.http import Http404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -32,6 +31,7 @@ from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
 )
+from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import (
     get_owned_dandisets,
     get_visible_dandisets,
@@ -399,9 +399,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 raise DandisetUnembargoInProgressError
 
             # Verify that the user is currently an owner
-            response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
-            if response:
-                return response
+            if not is_dandiset_owner(dandiset, request.user):
+                raise NotAllowedError
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
