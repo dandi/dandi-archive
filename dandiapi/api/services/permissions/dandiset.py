@@ -14,6 +14,8 @@ from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
 if typing.TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
 
+    from dandiapi.api.models.asset import Asset
+
 
 def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
     qs = typing.cast(QuerySet[User], get_users_with_perms(dandiset, only_with_perms_in=['owner']))
@@ -51,6 +53,22 @@ def is_dandiset_owner(dandiset: Dandiset, user: AbstractBaseUser | AnonymousUser
 
     user = typing.cast(User, user)
     return user.has_perm('owner', dandiset)
+
+
+def is_owned_asset(asset: Asset, user: AbstractBaseUser | AnonymousUser) -> bool:
+    """Return `True` if this asset belongs to a dandiset that the user is an owner of."""
+    if user.is_anonymous:
+        return False
+
+    user = typing.cast(User, user)
+    asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
+    asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
+        content_object__in=asset_dandisets,
+        user=user,
+        permission__codename='owner',
+    )
+
+    return asset_dandisets_owned_by_user.exists()
 
 
 def get_owned_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Dandiset]:

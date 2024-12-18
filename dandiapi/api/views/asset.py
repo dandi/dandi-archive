@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+import typing
+
+from django.contrib.auth.models import User
 
 from dandiapi.api.asset_paths import search_asset_paths
 from dandiapi.api.services.asset import (
@@ -10,7 +13,7 @@ from dandiapi.api.services.asset import (
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner, is_owned_asset
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -42,7 +45,6 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import validate_asset_path
-from dandiapi.api.models.dandiset import DandisetUserObjectPermission
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -95,19 +97,15 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         # Clients must be authenticated to access it
         if not self.request.user.is_authenticated:
             raise NotAuthenticated
+        self.request.user = typing.cast(User, self.request.user)
 
         # Admins are allowed to access any embargoed asset blob
         if self.request.user.is_superuser:
             return
 
         # User must be an owner on any of the dandisets this asset belongs to
-        asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
-        asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
-            content_object__in=asset_dandisets,
-            user=self.request.user,
-            permission__codename='owner',
-        )
-        if not asset_dandisets_owned_by_user.exists():
+        is_owned = is_owned_asset(asset, self.request.user)
+        if not is_owned:
             raise PermissionDenied
 
     def get_queryset(self):
