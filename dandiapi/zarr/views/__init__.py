@@ -15,9 +15,13 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
-from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
+from dandiapi.api.services.permissions.dandiset import (
+    get_owned_dandisets,
+    get_visible_dandisets,
+    is_dandiset_owner,
+)
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -107,9 +111,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         # Filter zarrs to either open access or owned
         if self.request.user.is_authenticated:
-            user_owned_dandiset_ids = DandisetUserObjectPermission.objects.filter(
-                user=self.request.user, permission__codename='owner'
-            ).values_list('content_object_id', flat=True)
+            user_owned_dandiset_ids = get_owned_dandisets(self.request.user).values_list(
+                'id', flat=True
+            )
             queryset_filter |= Q(dandiset_id__in=user_owned_dandiset_ids)
 
         # Apply filter
