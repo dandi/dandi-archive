@@ -10,9 +10,7 @@ from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
-from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
-from guardian.decorators import permission_required_or_403
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -37,6 +35,7 @@ from dandiapi.api.services.permissions.dandiset import (
     get_visible_dandisets,
     is_dandiset_owner,
     replace_dandiset_owners,
+    require_dandiset_owner_or_403,
 )
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -364,7 +363,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         ),
     )
     @action(methods=['POST'], detail=True)
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    @require_dandiset_owner_or_403('dandiset__pk')
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
         kickoff_dandiset_unembargo(user=request.user, dandiset=dandiset)

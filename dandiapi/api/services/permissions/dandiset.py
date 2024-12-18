@@ -7,6 +7,8 @@ import typing
 from django.contrib.auth.models import AnonymousUser, User
 from django.db import transaction
 from django.db.models import Q, QuerySet
+from django.utils.decorators import method_decorator
+from guardian.decorators import permission_required
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms
 
 from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
@@ -101,3 +103,16 @@ def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Da
     return Dandiset.objects.filter(
         Q(embargo_status=Dandiset.EmbargoStatus.OPEN) | Q(pk__in=owned_dandiset_pks)
     ).order_by('created')
+
+
+def require_dandiset_owner_or_403(pk_path: str):
+    """
+    Decorate viewset methods to only allow access to dandiset owners.
+
+    The `pk_path` argument is the Dandiset ID URL path variable that DRF passes into the request.
+    """
+    return method_decorator(
+        permission_required(
+            perm='owner', lookup_variables=(Dandiset, 'pk', pk_path), return_403=True
+        )
+    )

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from django.db import transaction
-from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
-from guardian.decorators import permission_required_or_403
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -16,7 +14,10 @@ from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSe
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
+from dandiapi.api.services.permissions.dandiset import (
+    is_dandiset_owner,
+    require_dandiset_owner_or_403,
+)
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
@@ -88,7 +89,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={200: VersionDetailSerializer},
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    @require_dandiset_owner_or_403('dandiset__pk')
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
         version: Version = self.get_object()
@@ -137,7 +138,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={200: VersionSerializer},
     )
     @action(detail=True, methods=['POST'])
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    @require_dandiset_owner_or_403('dandiset__pk')
     def publish(self, request, **kwargs):
         """Publish a version."""
         if kwargs['version'] != 'draft':
