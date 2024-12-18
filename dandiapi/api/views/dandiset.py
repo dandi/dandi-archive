@@ -13,7 +13,6 @@ from django.http import Http404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
 from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
@@ -34,6 +33,7 @@ from dandiapi.api.services.embargo.exceptions import (
     UnauthorizedEmbargoAccessError,
 )
 from dandiapi.api.services.permissions.dandiset import (
+    get_owned_dandisets,
     get_visible_dandisets,
     is_dandiset_owner,
     replace_dandiset_owners,
@@ -133,8 +133,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             user_kwarg = query_serializer.validated_data.get('user')
             if user_kwarg == 'me':
                 # Replace the original, rather inefficient queryset with a more specific one
-                queryset = get_objects_for_user(
-                    self.request.user, 'owner', Dandiset, with_superuser=False
+                queryset = get_owned_dandisets(
+                    self.request.user, include_superusers=False
                 ).order_by('created')
 
             show_draft: bool = query_serializer.validated_data['draft']

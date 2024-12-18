@@ -71,8 +71,11 @@ def is_owned_asset(asset: Asset, user: AbstractBaseUser | AnonymousUser) -> bool
     return asset_dandisets_owned_by_user.exists()
 
 
-def get_owned_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Dandiset]:
-    return get_objects_for_user(user, 'owner', Dandiset)
+def get_owned_dandisets(
+    user: AbstractBaseUser | AnonymousUser,
+    include_superusers=True,  # noqa: FBT002
+) -> QuerySet[Dandiset]:
+    return get_objects_for_user(user, 'owner', Dandiset, with_superuser=include_superusers)
 
 
 def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Dandiset]:
