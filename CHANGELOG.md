@@ -1,3 +1,23 @@
+# v0.4.2 (Thu Dec 19 2024)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger release [#2120](https://github.com/dandi/dandi-archive/pull/2120) ([@waxlamp](https://github.com/waxlamp))
+- Enable User search by GitHub username [#2119](https://github.com/dandi/dandi-archive/pull/2119) ([@waxlamp](https://github.com/waxlamp))
+- DLP: Add "Protocols" card [#2103](https://github.com/dandi/dandi-archive/pull/2103) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp) [@mvandenburgh](https://github.com/mvandenburgh))
+- Login to docker hub only if credentials were provided [#2118](https://github.com/dandi/dandi-archive/pull/2118) ([@yarikoptic](https://github.com/yarikoptic))
+- Capitalize `Archive` when it follows `DANDI` [#2114](https://github.com/dandi/dandi-archive/pull/2114) ([@kabilar](https://github.com/kabilar))
+- Format template [#2112](https://github.com/dandi/dandi-archive/pull/2112) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.4.1 (Tue Dec 17 2024)
 
 #### 🐛 Bug Fix
