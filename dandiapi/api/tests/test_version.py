@@ -153,7 +153,7 @@ def test_version_metadata_citation_draft(draft_version):
     )
     assert (
         draft_version.metadata['citation']
-        == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI archive. {url}'
+        == f'{name} ({year}). (Version {draft_version.version}) [Data set]. DANDI Archive. {url}'
     )
 
 
@@ -164,7 +164,7 @@ def test_version_metadata_citation_published(published_version):
     url = f'https://doi.org/{published_version.doi}'
     assert published_version.metadata['citation'] == (
         f'{name} ({year}). (Version {published_version.version}) [Data set]. '
-        f'DANDI archive. {url}'
+        f'DANDI Archive. {url}'
     )
 
 
@@ -176,7 +176,7 @@ def test_version_metadata_citation_no_contributors(version):
     name = version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
-        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
+        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI Archive. '
     )
 
 
@@ -191,7 +191,7 @@ def test_version_metadata_citation_contributor_not_in_citation(version):
     name = version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
-        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI archive. '
+        f'{name} ({year}). (Version {version.version}) [Data set]. DANDI Archive. '
     )
 
 
@@ -203,7 +203,7 @@ def test_version_metadata_citation_contributor(version):
     name = version.metadata['name'].rstrip('.')
     year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
-        f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI archive. '
+        f'Doe, Jane ({year}) {name} (Version {version.version}) [Data set]. DANDI Archive. '
     )
 
 
@@ -219,7 +219,7 @@ def test_version_metadata_citation_multiple_contributors(version):
     year = datetime.datetime.now(datetime.UTC).year
     assert version.metadata['citation'].startswith(
         f'John Doe; Jane Doe ({year}) {name} (Version {version.version}) [Data set]. '
-        f'DANDI archive. '
+        f'DANDI Archive. '
     )
 
 
@@ -564,7 +564,7 @@ def test_version_rest_update(api_client, user, draft_version):
         'repository': settings.DANDI_WEB_APP_URL,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
         'access': [{'schemaKey': 'AccessRequirements', 'status': AccessType.OpenAccess.value}],
-        'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI archive. {url}',
+        'citation': f'{new_name} ({year}). (Version draft) [Data set]. DANDI Archive. {url}',
         'assetsSummary': {
             'numberOfBytes': 0,
             'numberOfFiles': 0,

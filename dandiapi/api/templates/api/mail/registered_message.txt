@@ -4,7 +4,7 @@ Dear {{ greeting_name }},
 Welcome to DANDI.
 
 
-Thank you for registering on the DANDI archive. Your account is now pending approval by
+Thank you for registering on the DANDI Archive. Your account is now pending approval by
 a DANDI admin. Once approved, you will be able to create Dandisets and upload data right
 away. You will also be able to use the Jupyterhub (https://hub.dandiarchive.org) for
 computing on dandisets in the cloud.
