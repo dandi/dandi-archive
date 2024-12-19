@@ -15,8 +15,13 @@ from rest_framework.response import Response
 from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
+from dandiapi.api.services.permissions.dandiset import (
+    get_owned_dandisets,
+    get_visible_dandisets,
+    is_dandiset_owner,
+)
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -106,9 +111,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         # Filter zarrs to either open access or owned
         if self.request.user.is_authenticated:
-            user_owned_dandiset_ids = DandisetUserObjectPermission.objects.filter(
-                user=self.request.user, permission__codename='owner'
-            ).values_list('content_object_id', flat=True)
+            user_owned_dandiset_ids = get_owned_dandisets(self.request.user).values_list(
+                'id', flat=True
+            )
             queryset_filter |= Q(dandiset_id__in=user_owned_dandiset_ids)
 
         # Apply filter
@@ -149,9 +154,9 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         name = serializer.validated_data['name']
         dandiset = get_object_or_404(
-            Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
+            get_visible_dandisets(request.user), id=serializer.validated_data['dandiset']
         )
-        if not self.request.user.has_perm('owner', dandiset):
+        if not is_dandiset_owner(dandiset, request.user):
             raise PermissionDenied
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():
@@ -185,7 +190,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
 
@@ -300,7 +305,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 raise PermissionDenied
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
@@ -345,7 +350,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)

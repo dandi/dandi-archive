@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.forms.models import model_to_dict
 from django.utils import timezone
-from guardian.shortcuts import assign_perm
 import pytest
 from rest_framework.test import APIClient
 from zarr_checksum import compute_zarr_checksum
@@ -17,6 +16,7 @@ from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
 from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
 from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
@@ -390,7 +390,7 @@ def test_publish_task(
     # Create a draft_version in PUBLISHING state
     draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
 
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     old_draft_asset: Asset = draft_asset_factory(status=Asset.Status.VALID)

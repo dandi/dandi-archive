@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from django.conf import settings
-from guardian.shortcuts import assign_perm
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models import AssetPath
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset import add_asset_to_version
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
@@ -109,7 +109,7 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, dra
 @pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory, zarr_file_factory):
     """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
 
     # Ensure zarr is ingested with non-zero size
     zarr_archive = zarr_archive_factory(
