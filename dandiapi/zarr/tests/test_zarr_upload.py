@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from guardian.shortcuts import assign_perm
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
@@ -12,7 +12,7 @@ from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 def test_zarr_rest_upload_start(
     authenticated_api_client, user, zarr_archive: ZarrArchive, storage, monkeypatch
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Pretend like our zarr was defined with the given storage
     monkeypatch.setattr(ZarrArchive, 'storage', storage)
@@ -69,7 +69,7 @@ def test_zarr_rest_finalize(
     zarr_file_factory,
     monkeypatch,
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Pretend like our zarr was defined with the given storage
     monkeypatch.setattr(ZarrArchive, 'storage', storage)
@@ -97,7 +97,7 @@ def test_zarr_rest_finalize_not_an_owner(authenticated_api_client, zarr_archive:
 def test_zarr_rest_finalize_already_ingested(
     authenticated_api_client, user, zarr_archive: ZarrArchive
 ):
-    assign_perm('owner', user, zarr_archive.dandiset)
+    add_dandiset_owner(zarr_archive.dandiset, user)
     authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 400
