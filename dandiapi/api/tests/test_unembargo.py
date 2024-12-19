@@ -6,6 +6,7 @@ import dandischema
 from guardian.shortcuts import assign_perm
 import pytest
 
+from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.embargo import (
@@ -249,7 +250,8 @@ def test_unembargo_dandiset(
         assign_perm('owner', user, ds)
 
     embargoed_blob: AssetBlob = embargoed_asset_blob_factory()
-    draft_version.assets.add(asset_factory(blob=embargoed_blob))
+    blob_asset = asset_factory(blob=embargoed_blob, status=Asset.Status.VALID)
+    draft_version.assets.add(blob_asset)
 
     zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
         dandiset=ds, status=ZarrArchiveStatus.UPLOADED
@@ -258,9 +260,11 @@ def test_unembargo_dandiset(
         zarr_file_factory(zarr_archive)
     ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
-    draft_version.assets.add(asset_factory(zarr=zarr_archive, blob=None))
+    zarr_asset = asset_factory(zarr=zarr_archive, blob=None, status=Asset.Status.VALID)
+    draft_version.assets.add(zarr_asset)
 
     assert all(asset.is_embargoed for asset in draft_version.assets.all())
+    assert all(asset.status == Asset.Status.VALID for asset in draft_version.assets.all())
 
     # Patch this function to check if it's been called, since we can't test the tagging directly
     patched = mocker.patch('dandiapi.api.services.embargo.utils._delete_object_tags')
@@ -269,6 +273,7 @@ def test_unembargo_dandiset(
 
     assert patched.call_count == 1 + zarr_archive.file_count
     assert not any(asset.is_embargoed for asset in draft_version.assets.all())
+    assert all(asset.status == Asset.Status.PENDING for asset in draft_version.assets.all())
 
     ds.refresh_from_db()
     draft_version.refresh_from_db()
