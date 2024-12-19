@@ -1,48 +1,51 @@
 <template>
   <div>
-    <v-card
-      v-if="contributors && contributors.length"
-      outlined
-      height="100%"
-    >
-      <v-card-title class="font-weight-regular">
-        <v-icon class="mr-3 grey--text text--lighten-1">
-          mdi-account-multiple
-        </v-icon>
-        Contributors
-      </v-card-title>
-      <div class="px-2 mb-2">
-        <v-chip
-          v-for="(contributor, i) in contributors"
-          :key="i"
-          style="margin: 5px;"
+    <v-row>
+      <v-col>
+        <v-card
+          v-if="contributors && contributors.length"
           outlined
+          height="100%"
         >
-          {{ contributor.name }}
-          <a
-            v-if="contributor.identifier && contributor.schemaKey === 'Person'"
-            :href="`https://orcid.org/${contributor.identifier}`"
-            target="_blank"
-            class="mx-1 d-flex align-center"
-          >
-            <img
-              alt="ORCID logo"
-              src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
-              width="16"
-              height="16"
+          <v-card-title class="font-weight-regular">
+            <v-icon class="mr-3 grey--text text--lighten-1">
+              mdi-account-multiple
+            </v-icon>
+            Contributors
+          </v-card-title>
+          <div class="px-2 mb-2">
+            <v-chip
+              v-for="(contributor, i) in contributors"
+              :key="i"
+              style="margin: 5px;"
+              outlined
             >
-          </a>
-          <a
-            v-if="contactPeople.has(contributor.name)"
-            :href="contributor.email ? `mailto:${contributor.email}` : undefined"
-            class="mx-1 text-decoration-none"
-          >
-            <v-icon color="info">mdi-card-account-mail</v-icon>
-          </a>
-        </v-chip>
-      </div>
-    </v-card>
-
+              {{ contributor.name }}
+              <a
+                v-if="contributor.identifier && contributor.schemaKey === 'Person'"
+                :href="`https://orcid.org/${contributor.identifier}`"
+                target="_blank"
+                class="mx-1 d-flex align-center"
+              >
+                <img
+                  alt="ORCID logo"
+                  src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+                  width="16"
+                  height="16"
+                >
+              </a>
+              <a
+                v-if="contactPeople.has(contributor.name)"
+                :href="contributor.email ? `mailto:${contributor.email}` : undefined"
+                class="mx-1 text-decoration-none"
+              >
+                <v-icon color="info">mdi-card-account-mail</v-icon>
+              </a>
+            </v-chip>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
     <MetadataCard
       :items="fundingInformation"
       name="Funding information"
@@ -64,6 +67,25 @@
         <span class="font-italic font-weight-bold">
           No funding information available.
         </span>
+      </template>
+    </MetadataCard>
+
+    <MetadataCard
+      :items="protocols"
+      v-if="protocols && protocols.length"
+      name="Protocols"
+      icon="mdi-file-document-check"
+    >
+      <template #content="slotProps">
+        <div class="text-caption grey--text text--darken-1">
+            <a
+                :href="slotProps.item"
+                target="_blank"
+                rel="noopener"
+            >
+                {{ slotProps.item }}
+            </a>
+        </div>
       </template>
     </MetadataCard>
 
@@ -108,101 +130,105 @@
       </template>
     </MetadataCard>
 
-    <v-card
-      v-if="assetSummary"
-      outlined
-    >
-      <v-card-title class="font-weight-regular">
-        <v-progress-circular
-          v-if="assetSummaryBeingComputed"
-          class="mr-3"
-          size="20"
-          indeterminate
-        />
-        <v-icon
-          v-else
-          class="mr-3 grey--text text--lighten-1"
+    <v-row>
+      <v-col>
+        <v-card
+          v-if="assetSummary"
+          outlined
         >
-          mdi-clipboard-list
-        </v-icon>
-        Assets Summary
-      </v-card-title>
-      <v-list
-        :style="`column-count: ${assetSummaryColumnCount};`"
-        class="px-3 ml-2"
-      >
-        <div
-          v-if="assetSummaryBeingComputed"
-          class="text-subtitle-2"
-        >
-          The assets summary is being computed, please wait.
-        </div>
-        <div
-          v-else-if="!assetSummary || !Object.keys(assetSummary).length"
-          class="font-italic font-weight-bold"
-        >
-          This Dandiset does not contain any assets.
-        </div>
-        <div
-          v-for="([type, items], i) in Object.entries(assetSummary)"
-          v-else
-          :key="i"
-        >
-          <div
-            v-if="items && items.length"
-            class="d-inline-block"
-            style="width: 100%;"
+          <v-card-title class="font-weight-regular">
+            <v-progress-circular
+              v-if="assetSummaryBeingComputed"
+              class="mr-3"
+              size="20"
+              indeterminate
+            />
+            <v-icon
+              v-else
+              class="mr-3 grey--text text--lighten-1"
+            >
+              mdi-clipboard-list
+            </v-icon>
+            Assets Summary
+          </v-card-title>
+          <v-list
+            :style="`column-count: ${assetSummaryColumnCount};`"
+            class="px-3 ml-2"
           >
-            <span class="font-weight-bold">
-              {{ type }}
-            </span>
             <div
-              v-for="(item, ii) in items"
-              :key="ii"
-              :title="type"
-              background-color="grey lighten-4"
-              class="grey lighten-4"
-              style="width: 100%;"
+              v-if="assetSummaryBeingComputed"
+              class="text-subtitle-2"
+            >
+              The assets summary is being computed, please wait.
+            </div>
+            <div
+              v-else-if="!assetSummary || !Object.keys(assetSummary).length"
+              class="font-italic font-weight-bold"
+            >
+              This Dandiset does not contain any assets.
+            </div>
+            <div
+              v-for="([type, items], i) in Object.entries(assetSummary)"
+              v-else
+              :key="i"
             >
               <div
-                class="pl-2 my-1 py-1"
-                :style="`border-left: medium solid ${$vuetify.theme.themes.light.primary};
-                         line-height: 1.25`"
+                v-if="items && items.length"
+                class="d-inline-block"
+                style="width: 100%;"
               >
-                <v-row
-                  no-gutters
-                  class="align-center py-0"
-                  style="min-height: 2em;"
-                >
-                  <v-col
-                    cols="10"
-                  >
-                    <span>{{ item.name || item.identifier || item.id || item }}</span>
-                  </v-col>
-                  <v-col>
-                    <v-btn
-                      v-if="isURL(item.identifier)"
-                      icon
-                      :href="item.identifier"
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      <v-icon>mdi-link</v-icon>
-                    </v-btn>
-                  </v-col>
-                </v-row>
-                <span
-                  v-if="!isURL(item.identifier)"
-                  class="text-caption grey--text text--darken-1"
-                >
-                  {{ item.identifier }}
+                <span class="font-weight-bold">
+                  {{ type }}
                 </span>
+                <div
+                  v-for="(item, ii) in items"
+                  :key="ii"
+                  :title="type"
+                  background-color="grey lighten-4"
+                  class="grey lighten-4"
+                  style="width: 100%;"
+                >
+                  <div
+                    class="pl-2 my-1 py-1"
+                    :style="`border-left: medium solid ${$vuetify.theme.themes.light.primary};
+                            line-height: 1.25`"
+                  >
+                    <v-row
+                      no-gutters
+                      class="align-center py-0"
+                      style="min-height: 2em;"
+                    >
+                      <v-col
+                        cols="10"
+                      >
+                        <span>{{ item.name || item.identifier || item.id || item }}</span>
+                      </v-col>
+                      <v-col>
+                        <v-btn
+                          v-if="isURL(item.identifier)"
+                          icon
+                          :href="item.identifier"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          <v-icon>mdi-link</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                    <span
+                      v-if="!isURL(item.identifier)"
+                      class="text-caption grey--text text--darken-1"
+                    >
+                      {{ item.identifier }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </v-list>
-    </v-card>
+          </v-list>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <MetadataCard
       v-if="associatedProjects && associatedProjects.length"
@@ -232,7 +258,7 @@ import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 
 import type { ComputedRef, PropType } from 'vue';
-import type { AssociatedProjects, DandisetMetadata, RelatedResource } from '@/types';
+import type { AssociatedProjects, DandisetMetadata, RelatedResource, Protocol } from '@/types';
 
 // Asset summary fields to hide
 const ASSET_SUMMARY_BLACKLIST = new Set([
@@ -286,6 +312,10 @@ const fundingInformation = computed(
 
 const relatedResources: ComputedRef<RelatedResource|undefined> = computed(
   () => props.meta.relatedResource,
+);
+
+const protocols: ComputedRef<Protocol|undefined> = computed(
+  () => props.meta.protocol,
 );
 
 const associatedProjects: ComputedRef<AssociatedProjects|undefined> = computed(
