@@ -78,18 +78,13 @@
     >
       <template #content="slotProps">
         <div class="text-caption grey--text text--darken-1">
-          <span class="pl-2">
-            - {{ slotProps.item }}
-               <v-btn
-                      v-if="isURL(slotProps.item)"
-                      icon
-                      :href="slotProps.item"
-                      target="_blank"
-                      rel="noopener"
-               >
-                   <v-icon>mdi-link</v-icon>
-               </v-btn>
-          </span>
+            <a
+                :href="slotProps.item"
+                target="_blank"
+                rel="noopener"
+            >
+                {{ slotProps.item }}
+            </a>
         </div>
       </template>
     </MetadataCard>
