@@ -22,7 +22,7 @@ jobs:
           if [ -n "$DOCKER_LOGIN$DOCKER_TOKEN" ]; then
               docker login -u "$DOCKER_LOGIN" --password-stdin <<<"$DOCKER_TOKEN"
           else
-              echo "Not login-in to docker since no credentials were provided, might hit limits below"
+              echo "Not logging in to docker since no credentials were provided, might hit limits below"
           fi
           docker build \
             -t dandiarchive/dandiarchive-api \
