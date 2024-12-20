@@ -12,6 +12,7 @@ from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
 from dandiapi.api.services.embargo.utils import _delete_object_tags, remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task
 from dandiapi.zarr.models import ZarrArchive
@@ -95,7 +96,7 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
     if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
         raise DandisetNotEmbargoedError
 
-    if not user.has_perm('owner', dandiset):
+    if not is_dandiset_owner(dandiset, user):
         raise DandisetOwnerRequiredError
 
     if dandiset.uploads.count():
