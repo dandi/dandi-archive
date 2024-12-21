@@ -146,6 +146,9 @@
         <span>This dandiset is being unembargoed, please wait.</span>
       </v-tooltip>
     </v-row>
+
+    <DandisetValidationErrors :dandiset="currentDandiset" :isOwner="true" />
+
     <v-row>
       <v-subheader class="mb-2 black--text text-h5">
         This Version
@@ -176,6 +179,7 @@ import moment from 'moment';
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { IncompleteUpload } from '@/types';
+import DandisetValidationErrors from './DandisetValidationErrors.vue';
 import filesize from 'filesize';
 
 function formatDate(date: string, format: string = 'll'): string {
