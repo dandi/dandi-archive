@@ -24,7 +24,7 @@ import { defineComponent, ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router/composables';
 import DandisetsPage from '@/components/DandisetsPage.vue';
 import { dandiRest } from '@/rest';
-import type { Version } from '@/types';
+import type { Version, Dandiset } from '@/types';
 import { DANDISETS_PER_PAGE } from '@/utils/constants';
 
 export default defineComponent({
@@ -47,7 +47,18 @@ export default defineComponent({
           page: page.value,
           page_size: pageSize.value,
         });
-        dandisets.value = data.results;
+        const processedDandisets = data.results
+          .map((dandiset: Dandiset) => {
+            const version = dandiset.most_recent_published_version || dandiset.draft_version;
+            if (!version) return null;
+            const { most_recent_published_version, draft_version, ...rest } = dandiset;
+            return {
+              ...version,
+              dandiset: rest,
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => item !== null);
+        dandisets.value = processedDandisets;
         total.value = data.count;
       } catch (error) {
         console.error('Error fetching starred Dandisets:', error);
@@ -75,4 +86,4 @@ export default defineComponent({
     };
   },
 });
-</script> 
+</script>
