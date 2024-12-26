@@ -4,6 +4,8 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms, remove_perm
+from django.contrib.auth.models import User
+from django.db.models import Count
 
 
 class DandisetManager(models.Manager):
@@ -112,6 +114,23 @@ class Dandiset(TimeStampedModel):
     def __str__(self) -> str:
         return self.identifier
 
+    @property
+    def star_count(self):
+        return self.stars.count()
+
+    def is_starred_by(self, user):
+        if not user.is_authenticated:
+            return False
+        return self.stars.filter(user=user).exists()
+
+    def star(self, user):
+        if user.is_authenticated:
+            self.stars.get_or_create(user=user)
+
+    def unstar(self, user):
+        if user.is_authenticated:
+            self.stars.filter(user=user).delete()
+
 
 class DandisetUserObjectPermission(UserObjectPermissionBase):
     content_object = models.ForeignKey(Dandiset, on_delete=models.CASCADE)
@@ -119,3 +138,12 @@ class DandisetUserObjectPermission(UserObjectPermissionBase):
 
 class DandisetGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Dandiset, on_delete=models.CASCADE)
+
+
+class DandisetStar(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='starred_dandisets')
+    dandiset = models.ForeignKey(Dandiset, on_delete=models.CASCADE, related_name='stars')
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'dandiset')

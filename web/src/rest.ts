@@ -302,6 +302,16 @@ const dandiRest = {
       `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`
     );
   },
+  async starDandiset(identifier: string): Promise<void> {
+    await client.post(`dandisets/${identifier}/star/`);
+  },
+  async unstarDandiset(identifier: string): Promise<void> {
+    await client.post(`dandisets/${identifier}/unstar/`);
+  },
+  async getStarredDandisets(params?: any): Promise<AxiosResponse<Paginated<Dandiset>>> {
+    const response = await client.get('dandisets/starred/', { params });
+    return response;
+  },
 };
 
 // This is done with an interceptor because the value of

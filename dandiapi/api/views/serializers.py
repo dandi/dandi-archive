@@ -42,6 +42,8 @@ class UserDetailSerializer(serializers.Serializer):
 
 class DandisetSerializer(serializers.ModelSerializer):
     contact_person = serializers.SerializerMethodField(method_name='get_contact_person')
+    star_count = serializers.SerializerMethodField()
+    is_starred = serializers.SerializerMethodField()
 
     class Meta:
         model = Dandiset
@@ -51,6 +53,8 @@ class DandisetSerializer(serializers.ModelSerializer):
             'modified',
             'contact_person',
             'embargo_status',
+            'star_count',
+            'is_starred',
         ]
         read_only_fields = ['created']
 
@@ -61,6 +65,15 @@ class DandisetSerializer(serializers.ModelSerializer):
             return ''
 
         return extract_contact_person(latest_version)
+
+    def get_star_count(self, dandiset):
+        return dandiset.star_count
+
+    def get_is_starred(self, dandiset):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return dandiset.is_starred_by(request.user)
 
 
 class CreateDandisetQueryParameterSerializer(serializers.Serializer):

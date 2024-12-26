@@ -44,6 +44,10 @@ const sortingOptions = [
     name: 'Size',
     djangoField: 'size',
   },
+  {
+    name: 'Stars',
+    djangoField: 'stars',
+  },
 ];
 
 const DANDISETS_PER_PAGE = 8;

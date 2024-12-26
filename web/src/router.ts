@@ -10,6 +10,7 @@ import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView
 import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
 import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
 import SearchView from '@/views/SearchView/SearchView.vue';
+import StarredDandisetsView from '@/views/StarredDandisetsView/StarredDandisetsView.vue';
 
 Vue.use(Router);
 
@@ -55,6 +56,14 @@ const routes: RouteConfig[] = [
     path: '/search',
     name: 'search',
     component: SearchView,
+  },
+  {
+    path: '/dandiset/starred',
+    name: 'starredDandisets',
+    component: StarredDandisetsView,
+    meta: {
+      requiresAuth: true,
+    },
   },
 ];
 
