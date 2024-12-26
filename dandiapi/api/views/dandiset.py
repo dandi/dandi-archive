@@ -64,10 +64,10 @@ if TYPE_CHECKING:
 
 
 class DandisetOrderingFilter(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified', 'size']
+    ordering_fields = ['id', 'name', 'modified', 'size', 'stars']
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are id, -id, name, -name, modified, -modified, size and -size.'
+        'Options are id, -id, name, -name, modified, -modified, size, -size, stars, -stars.'
     )
 
     def filter_queryset(self, request, queryset, view):
@@ -114,6 +114,10 @@ class DandisetOrderingFilter(filters.OrderingFilter):
                 )
             )
             return queryset.order_by(ordering)
+
+        if ordering.endswith('stars'):
+            queryset = queryset.annotate(stars_count=Count('stars'))
+            return queryset.order_by(f"{'-' if ordering.startswith('-') else ''}stars_count")
 
         return queryset
 
@@ -538,3 +542,59 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset.uploads.all().delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        methods=['POST'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'Dandiset starred successfully',
+            401: 'Authentication required',
+        },
+        operation_summary='Star a dandiset.',
+        operation_description='Star a dandiset. User must be authenticated.',
+    )
+    @action(methods=['POST'], detail=True)
+    def star(self, request, dandiset__pk):
+        if not request.user.is_authenticated:
+            raise NotAuthenticated
+        dandiset = self.get_object()
+        dandiset.star(request.user)
+        return Response(None, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        methods=['POST'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'Dandiset unstarred successfully',
+            401: 'Authentication required',
+        },
+        operation_summary='Unstar a dandiset.',
+        operation_description='Unstar a dandiset. User must be authenticated.',
+    )
+    @action(methods=['POST'], detail=True)
+    def unstar(self, request, dandiset__pk):
+        if not request.user.is_authenticated:
+            raise NotAuthenticated
+        dandiset = self.get_object()
+        dandiset.unstar(request.user)
+        return Response(None, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        methods=['GET'],
+        responses={200: DandisetListSerializer(many=True)},
+        operation_summary='List starred dandisets.',
+        operation_description='List dandisets starred by the authenticated user.',
+    )
+    @action(methods=['GET'], detail=False)
+    def starred(self, request):
+        if not request.user.is_authenticated:
+            raise NotAuthenticated
+        dandisets = Dandiset.objects.filter(stars__user=request.user).order_by('-stars__created')
+        dandisets = self.paginate_queryset(dandisets)
+        dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
+        serializer = DandisetListSerializer(
+            dandisets, many=True, context={'dandisets': dandisets_to_versions}
+        )
+        return self.get_paginated_response(serializer.data)
