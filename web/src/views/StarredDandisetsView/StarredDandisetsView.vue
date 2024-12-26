@@ -51,12 +51,9 @@ export default defineComponent({
           .map((dandiset: Dandiset) => {
             const version = dandiset.most_recent_published_version || dandiset.draft_version;
             if (!version) return null;
-            const rest = { ...dandiset };
-            delete rest.most_recent_published_version;
-            delete rest.draft_version;
             return {
               ...version,
-              dandiset: rest,
+              dandiset,
             };
           })
           .filter((item): item is NonNullable<typeof item> => item !== null);
