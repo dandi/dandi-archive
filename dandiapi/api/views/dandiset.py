@@ -25,7 +25,12 @@ from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services import audit
-from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
+from dandiapi.api.services.dandiset import (
+    create_dandiset,
+    delete_dandiset,
+    star_dandiset,
+    unstar_dandiset,
+)
 from dandiapi.api.services.embargo import kickoff_dandiset_unembargo
 from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
@@ -423,8 +428,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             400: 'User not found, or cannot remove all owners',
         },
         operation_summary='Set owners of a dandiset.',
-        operation_description='Set the owners of a dandiset. The user performing this action must\
-                               be an owner of the dandiset themself.',
+        operation_description=(
+            'Set the owners of a dandiset. The user performing this action must '
+            'be an owner of the dandiset themself.'
+        ),
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
@@ -555,12 +562,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_description='Star a dandiset. User must be authenticated.',
     )
     @action(methods=['POST'], detail=True)
-    def star(self, request, dandiset__pk):
+    def star(self, request, dandiset__pk) -> Response:
         if not request.user.is_authenticated:
             raise NotAuthenticated
         dandiset = self.get_object()
-        dandiset.star(request.user)
-        return Response({'count': dandiset.star_count}, status=status.HTTP_200_OK)
+        star_count = star_dandiset(user=request.user, dandiset=dandiset)
+        return Response({'count': star_count}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         methods=['POST'],
@@ -574,12 +581,12 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_description='Unstar a dandiset. User must be authenticated.',
     )
     @action(methods=['POST'], detail=True)
-    def unstar(self, request, dandiset__pk):
+    def unstar(self, request, dandiset__pk) -> Response:
         if not request.user.is_authenticated:
             raise NotAuthenticated
         dandiset = self.get_object()
-        dandiset.unstar(request.user)
-        return Response({'count': dandiset.star_count}, status=status.HTTP_200_OK)
+        star_count = unstar_dandiset(user=request.user, dandiset=dandiset)
+        return Response({'count': star_count}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         methods=['GET'],
@@ -588,7 +595,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_description='List dandisets starred by the authenticated user.',
     )
     @action(methods=['GET'], detail=False)
-    def starred(self, request):
+    def starred(self, request) -> Response:
         if not request.user.is_authenticated:
             raise NotAuthenticated
         dandisets = Dandiset.objects.filter(stars__user=request.user).order_by('-stars__created')

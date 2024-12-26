@@ -68,14 +68,6 @@ class Dandiset(TimeStampedModel):
             return False
         return self.stars.filter(user=user).exists()
 
-    def star(self, user):
-        if user.is_authenticated:
-            self.stars.get_or_create(user=user)
-
-    def unstar(self, user):
-        if user.is_authenticated:
-            self.stars.filter(user=user).delete()
-
 
 class DandisetUserObjectPermission(UserObjectPermissionBase):
     content_object = models.ForeignKey(Dandiset, on_delete=models.CASCADE)

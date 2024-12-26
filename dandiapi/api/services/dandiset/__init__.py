@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 
-from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
@@ -74,3 +74,45 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
 
         dandiset.versions.all().delete()
         dandiset.delete()
+
+
+def star_dandiset(*, user, dandiset: Dandiset) -> int:
+    """
+    Star a Dandiset for a user.
+
+    Args:
+        user: The user starring the Dandiset.
+        dandiset: The Dandiset to star.
+
+    Returns:
+        The new star count for the Dandiset.
+    """
+    if not user.is_authenticated:
+        return dandiset.star_count
+
+    with transaction.atomic():
+        DandisetStar.objects.get_or_create(user=user, dandiset=dandiset)
+        # Refresh star count from database
+        dandiset.refresh_from_db()
+        return dandiset.star_count
+
+
+def unstar_dandiset(*, user, dandiset: Dandiset) -> int:
+    """
+    Unstar a Dandiset for a user.
+
+    Args:
+        user: The user unstarring the Dandiset.
+        dandiset: The Dandiset to unstar.
+
+    Returns:
+        The new star count for the Dandiset.
+    """
+    if not user.is_authenticated:
+        return dandiset.star_count
+
+    with transaction.atomic():
+        DandisetStar.objects.filter(user=user, dandiset=dandiset).delete()
+        # Refresh star count from database
+        dandiset.refresh_from_db()
+        return dandiset.star_count
