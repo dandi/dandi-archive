@@ -85,6 +85,8 @@ def test_dandiset_rest_list(api_client, user, dandiset):
                 'most_recent_published_version': None,
                 'contact_person': '',
                 'embargo_status': 'OPEN',
+                'star_count': 0,
+                'is_starred': False,
             }
         ],
     }
@@ -167,6 +169,8 @@ def test_dandiset_versions(
             'modified': TIMESTAMP_RE,
             'contact_person': contact_person,
             'embargo_status': 'OPEN',
+            'star_count': 0,
+            'is_starred': False,
             'draft_version': {
                 'version': draft_version.version,
                 'name': draft_version.name,
@@ -228,6 +232,8 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'most_recent_published_version': None,
                 'contact_person': '',
                 'embargo_status': 'OPEN',
+                'star_count': 0,
+                'is_starred': False,
             }
         ],
     }
@@ -243,6 +249,8 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'most_recent_published_version': None,
         'contact_person': '',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
     }
 
 
@@ -284,6 +292,8 @@ def test_dandiset_rest_embargo_access(
         'most_recent_published_version': None,
         'contact_person': '',
         'embargo_status': embargo_status,
+        'star_count': 0,
+        'is_starred': False,
     }
     # This is what unauthorized users should get from the retrieve endpoint
     expected_error_message = {'detail': 'Not found.'}
@@ -359,6 +369,8 @@ def test_dandiset_rest_create(api_client, user):
         'modified': TIMESTAMP_RE,
         'contact_person': 'Doe, John',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
         'draft_version': {
             'version': 'draft',
             'name': name,
@@ -458,6 +470,8 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         },
         'contact_person': 'Doe, John',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
     }
 
     # Creating a Dandiset has side affects.
@@ -559,6 +573,8 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         },
         'contact_person': 'Jane Doe',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
     }
 
     # Creating a Dandiset has side affects.
@@ -631,6 +647,8 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         'modified': TIMESTAMP_RE,
         'contact_person': 'Doe, John',
         'embargo_status': 'EMBARGOED',
+        'star_count': 0,
+        'is_starred': False,
         'draft_version': {
             'version': 'draft',
             'name': name,
