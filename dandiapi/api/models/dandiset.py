@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+from django.contrib.auth.models import User
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms, remove_perm
-from django.contrib.auth.models import User
-from django.db.models import Count
 
 
 class DandisetManager(models.Manager):
@@ -147,3 +146,6 @@ class DandisetStar(models.Model):
 
     class Meta:
         unique_together = ('user', 'dandiset')
+
+    def __str__(self) -> str:
+        return f'Star {self.user.username} ★ {self.dandiset.identifier}'

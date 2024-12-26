@@ -21,10 +21,10 @@ from dandiapi.api.models import (
     AssetBlob,
     AuditRecord,
     Dandiset,
+    DandisetStar,
     Upload,
     UserMetadata,
     Version,
-    DandisetStar,
 )
 from dandiapi.api.views.users import social_account_to_dict
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs
