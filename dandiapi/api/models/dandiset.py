@@ -92,3 +92,6 @@ class DandisetStar(models.Model):
 
     class Meta:
         unique_together = ('user', 'dandiset')
+
+    def __str__(self) -> str:
+        return f'Star {self.user.username} ★ {self.dandiset.identifier}'
