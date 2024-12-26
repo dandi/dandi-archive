@@ -560,7 +560,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise NotAuthenticated
         dandiset = self.get_object()
         dandiset.star(request.user)
-        return Response(None, status=status.HTTP_200_OK)
+        return Response({'count': dandiset.star_count}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         methods=['POST'],
@@ -579,7 +579,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise NotAuthenticated
         dandiset = self.get_object()
         dandiset.unstar(request.user)
-        return Response(None, status=status.HTTP_200_OK)
+        return Response({'count': dandiset.star_count}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         methods=['GET'],

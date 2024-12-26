@@ -1248,3 +1248,86 @@ def test_dandiset_rest_clear_active_uploads(
     response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()
     assert response['count'] == 0
     assert len(response['results']) == 0
+
+
+@pytest.mark.django_db
+def test_dandiset_star(api_client, user, dandiset):
+    api_client.force_authenticate(user=user)
+    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert response.status_code == 200
+    assert response.data == {'count': 1}
+    assert dandiset.stars.count() == 1
+    assert dandiset.stars.first().user == user
+
+
+@pytest.mark.django_db
+def test_dandiset_unstar(api_client, user, dandiset):
+    api_client.force_authenticate(user=user)
+    # First star it
+    api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert dandiset.stars.count() == 1
+
+    # Then unstar it
+    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/unstar/')
+    assert response.status_code == 200
+    assert response.data == {'count': 0}
+    assert dandiset.stars.count() == 0
+
+
+@pytest.mark.django_db
+def test_dandiset_star_unauthenticated(api_client, dandiset):
+    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_dandiset_star_count(api_client, user_factory, dandiset):
+    users = [user_factory() for _ in range(3)]
+    for user in users:
+        api_client.force_authenticate(user=user)
+        api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['star_count'] == 3
+
+
+@pytest.mark.django_db
+def test_dandiset_is_starred(api_client, user, dandiset):
+    # Test unauthenticated
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is False
+
+    # Test authenticated but not starred
+    api_client.force_authenticate(user=user)
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is False
+
+    # Test after starring
+    api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is True
+
+
+@pytest.mark.django_db
+def test_dandiset_list_starred(api_client, user, dandiset_factory):
+    api_client.force_authenticate(user=user)
+    dandisets = [dandiset_factory() for _ in range(3)]
+
+    # Star 2 out of 3 dandisets
+    api_client.post(f'/api/dandisets/{dandisets[0].identifier}/star/')
+    api_client.post(f'/api/dandisets/{dandisets[1].identifier}/star/')
+
+    # List starred dandisets
+    response = api_client.get('/api/dandisets/starred/')
+    assert response.status_code == 200
+    assert response.data['count'] == 2
+    assert {d['identifier'] for d in response.data['results']} == {
+        dandisets[0].identifier,
+        dandisets[1].identifier,
+    }
+
+
+@pytest.mark.django_db
+def test_dandiset_list_starred_unauthenticated(api_client):
+    response = api_client.get('/api/dandisets/starred/')
+    assert response.status_code == 401
