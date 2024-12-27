@@ -1,3 +1,15 @@
+# v0.4.3 (Fri Dec 27 2024)
+
+#### 🐛 Bug Fix
+
+- Enhance OverviewTab.vue to display Resource Type information for DLP items [#2124](https://github.com/dandi/dandi-archive/pull/2124) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
 # v0.4.2 (Thu Dec 19 2024)
 
 #### 🐛 Bug Fix
