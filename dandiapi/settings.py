@@ -193,6 +193,16 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     # manually approved by an admin.
     AUTO_APPROVE_USERS = False
 
+    if 'ALLOWED_HOSTS' not in globals():
+        ALLOWED_HOSTS = []
+
+    ALLOWED_HOSTS += [
+        'api-dandi.ember-archive.org',
+
+        # Example from Linc-Archive
+        # 'linc-staging-terraform-0b817cb1246b.herokuapp.com/',
+        # 'api.lincbrain.org'
+    ]
 
 # NOTE: The staging configuration uses a custom OAuth toolkit `Application` model
 # (`StagingApplication`) to allow for wildcards in OAuth redirect URIs (to support Netlify branch
