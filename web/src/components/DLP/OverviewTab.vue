@@ -104,6 +104,13 @@
           <br>
         </span>
         <span
+          v-if="slotProps.item.resourceType"
+          class="text-caption grey--text text--darken-1"
+        >
+          <strong>Resource Type: </strong>{{ slotProps.item.resourceType }}
+          <br>
+        </span>
+        <span
           v-if="slotProps.item.repository"
           class="text-caption grey--text text--darken-1"
         >
