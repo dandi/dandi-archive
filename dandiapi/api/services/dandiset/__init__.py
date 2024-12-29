@@ -108,8 +108,5 @@ def unstar_dandiset(*, user, dandiset: Dandiset) -> int:
     if not user.is_authenticated:
         return dandiset.star_count
 
-    with transaction.atomic():
-        DandisetStar.objects.filter(user=user, dandiset=dandiset).delete()
-        # Refresh star count from database
-        dandiset.refresh_from_db()
-        return dandiset.star_count
+    DandisetStar.objects.filter(user=user, dandiset=dandiset).delete()
+    return dandiset.star_count
