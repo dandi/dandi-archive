@@ -171,6 +171,12 @@ const navItems: NavigationItem[] = [
     if: loggedInFunc,
   },
   {
+    text: 'Starred Dandisets',
+    to: 'starredDandisets',
+    external: false,
+    if: loggedInFunc,
+  },
+  {
     text: 'About',
     to: dandiAboutUrl,
     external: true,
