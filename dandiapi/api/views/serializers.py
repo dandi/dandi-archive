@@ -175,6 +175,12 @@ class DandisetListSerializer(DandisetSerializer):
 
         return contact
 
+    def get_star_count(self, dandiset):
+        return self.context['stars'][dandiset.id]['total']
+
+    def get_is_starred(self, dandiset):
+        return self.context['stars'][dandiset.id]['starred_by_current_user']
+
     most_recent_published_version = serializers.SerializerMethodField()
     draft_version = serializers.SerializerMethodField()
 

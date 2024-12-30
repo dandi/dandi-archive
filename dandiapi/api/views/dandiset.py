@@ -24,6 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models.dandiset import DandisetStar
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import (
     create_dandiset,
@@ -233,6 +234,36 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         return dandiset
 
+    def _get_dandiset_star_context(self, dandisets):
+        # Default value for all relevant dandisets
+        dandisets_to_stars = {
+            d.id: {'total': 0, 'starred_by_current_user': False} for d in dandisets
+        }
+
+        # Group the stars for these dandisets by the dandiset ID,
+        # yielding pairs of (Dandiset ID, Star Count)
+        dandiset_stars = (
+            DandisetStar.objects.filter(dandiset__in=dandisets)
+            .values_list('dandiset')
+            .annotate(star_count=Count('id'))
+            .order_by()
+        )
+        for dandiset_id, star_count in dandiset_stars:
+            dandisets_to_stars[dandiset_id]['total'] = star_count
+
+        # Only annotate dandisets as starred by current user if user is logged in
+        user = self.request.user
+        if user.is_anonymous:
+            return dandisets_to_stars
+        user = typing.cast(User, user)
+
+        # Filter previous query to current user stars
+        user_starred_dandisets = dandiset_stars.filter(user=user)
+        for dandiset_id, _ in user_starred_dandisets:
+            dandisets_to_stars[dandiset_id]['starred_by_current_user'] = True
+
+        return dandisets_to_stars
+
     @staticmethod
     def _get_dandiset_to_version_map(dandisets):
         """Map Dandiset IDs to that dandiset's draft and most recently published version."""
@@ -303,6 +334,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         qs = self.get_queryset()
         dandisets = self.filter_queryset(qs).filter(id__in=relevant_assets.values('dandiset_id'))
         dandisets = self.paginate_queryset(dandisets)
+        dandiset_stars = self._get_dandiset_star_context(dandisets)
         dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
         dandisets_to_asset_counts = (
             AssetSearch.objects.values('dandiset_id')
@@ -324,7 +356,11 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = DandisetSearchResultListSerializer(
             dandisets,
             many=True,
-            context={'dandisets': dandisets_to_versions, 'asset_counts': dandisets_to_asset_counts},
+            context={
+                'dandisets': dandisets_to_versions,
+                'asset_counts': dandisets_to_asset_counts,
+                'stars': dandiset_stars,
+            },
         )
         return self.get_paginated_response(serializer.data)
 
@@ -336,8 +372,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         qs = self.get_queryset()
         dandisets = self.paginate_queryset(self.filter_queryset(qs))
         dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
+        dandiset_stars = self._get_dandiset_star_context(dandisets)
         serializer = DandisetListSerializer(
-            dandisets, many=True, context={'dandisets': dandisets_to_versions}
+            dandisets,
+            many=True,
+            context={
+                'dandisets': dandisets_to_versions,
+                'stars': dandiset_stars,
+            },
         )
         return self.get_paginated_response(serializer.data)
 
@@ -601,7 +643,13 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandisets = Dandiset.objects.filter(stars__user=request.user).order_by('-stars__created')
         dandisets = self.paginate_queryset(dandisets)
         dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
+        dandiset_stars = self._get_dandiset_star_context(dandisets)
         serializer = DandisetListSerializer(
-            dandisets, many=True, context={'dandisets': dandisets_to_versions}
+            dandisets,
+            many=True,
+            context={
+                'dandisets': dandisets_to_versions,
+                'stars': dandiset_stars,
+            },
         )
         return self.get_paginated_response(serializer.data)
