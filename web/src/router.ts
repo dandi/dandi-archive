@@ -31,6 +31,14 @@ const routes: RouteConfig[] = [
     component: MyDandisetsView,
   },
   {
+    path: '/dandiset/starred',
+    name: 'starredDandisets',
+    component: StarredDandisetsView,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/dandiset/search',
     name: 'searchDandisets',
     component: SearchDandisetsView,
@@ -56,14 +64,6 @@ const routes: RouteConfig[] = [
     path: '/search',
     name: 'search',
     component: SearchView,
-  },
-  {
-    path: '/dandiset/starred',
-    name: 'starredDandisets',
-    component: StarredDandisetsView,
-    meta: {
-      requiresAuth: true,
-    },
   },
 ];
 
