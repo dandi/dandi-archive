@@ -218,6 +218,11 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
         required=False,
         help_text='Set this value to "me" to only return dandisets owned by the current user.',
     )
+    starred = serializers.BooleanField(
+        default=False,
+        help_text='Whether to filter the result to only dandisets'
+        ' that have been starred by the current user.',
+    )
 
 
 class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):

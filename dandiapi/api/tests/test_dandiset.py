@@ -1318,7 +1318,7 @@ def test_dandiset_list_starred(api_client, user, dandiset_factory):
     api_client.post(f'/api/dandisets/{dandisets[1].identifier}/star/')
 
     # List starred dandisets
-    response = api_client.get('/api/dandisets/starred/')
+    response = api_client.get('/api/dandisets/', {'starred': True})
     assert response.status_code == 200
     assert response.data['count'] == 2
     assert {d['identifier'] for d in response.data['results']} == {
@@ -1329,5 +1329,5 @@ def test_dandiset_list_starred(api_client, user, dandiset_factory):
 
 @pytest.mark.django_db
 def test_dandiset_list_starred_unauthenticated(api_client):
-    response = api_client.get('/api/dandisets/starred/')
+    response = api_client.get('/api/dandisets/', {'starred': True})
     assert response.status_code == 401

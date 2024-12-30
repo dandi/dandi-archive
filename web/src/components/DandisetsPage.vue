@@ -125,6 +125,11 @@ export default defineComponent({
       required: false,
       default: false,
     },
+    starred: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   setup(props) {
     const route = useRoute();
@@ -149,6 +154,7 @@ export default defineComponent({
         ordering,
         user: props.user ? 'me' : null,
         search: props.search ? route.query.search : null,
+        starred: props.starred ? true : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
         embargoed: props.user,

@@ -308,10 +308,6 @@ const dandiRest = {
   async unstarDandiset(identifier: string): Promise<void> {
     await client.post(`dandisets/${identifier}/unstar/`);
   },
-  async getStarredDandisets(params?: any): Promise<AxiosResponse<Paginated<Dandiset>>> {
-    const response = await client.get('dandisets/starred/', { params });
-    return response;
-  },
 };
 
 // This is done with an interceptor because the value of
