@@ -110,7 +110,7 @@ class DandisetFilterBackend(filters.OrderingFilter):
             if ordering.endswith('stars'):
                 queryset = queryset.annotate(stars_count=Count('stars'))
                 prefix = '-' if ordering.startswith('-') else ''
-                return queryset.order_by(f"{prefix}stars_count")
+                return queryset.order_by(f'{prefix}stars_count')
         return queryset
 
 
