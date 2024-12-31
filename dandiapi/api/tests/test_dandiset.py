@@ -360,13 +360,6 @@ def test_dandiset_rest_create(api_client, user):
             'asset_count': 0,
             'active_uploads': 0,
             'size': 0,
-            'dandiset': {
-                'identifier': DANDISET_ID_RE,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': 'Doe, John',
-                'embargo_status': 'OPEN',
-            },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
@@ -454,13 +447,6 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
             'asset_count': 0,
             'active_uploads': 0,
             'size': 0,
-            'dandiset': {
-                'identifier': identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': 'Doe, John',
-                'embargo_status': 'OPEN',
-            },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
@@ -562,13 +548,6 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
             'asset_count': 0,
             'active_uploads': 0,
             'size': 0,
-            'dandiset': {
-                'identifier': identifier,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': 'Jane Doe',
-                'embargo_status': 'OPEN',
-            },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
@@ -653,13 +632,6 @@ def test_dandiset_rest_create_embargoed(api_client, user):
             'asset_count': 0,
             'active_uploads': 0,
             'size': 0,
-            'dandiset': {
-                'identifier': DANDISET_ID_RE,
-                'created': TIMESTAMP_RE,
-                'modified': TIMESTAMP_RE,
-                'contact_person': 'Doe, John',
-                'embargo_status': 'EMBARGOED',
-            },
             'status': 'Pending',
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
@@ -1115,7 +1087,7 @@ def test_dandiset_contact_person_malformed_contributors(api_client, draft_versio
         f'/api/dandisets/{draft_version.dandiset.identifier}/',
     )
 
-    assert results.data['draft_version']['dandiset']['contact_person'] == ''
+    assert results.data['contact_person'] == ''
 
 
 @pytest.mark.django_db
