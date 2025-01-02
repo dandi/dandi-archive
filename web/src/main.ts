@@ -47,7 +47,7 @@ Sentry.init({
 });
 
 Vue.use(VueGtag, {
-  config: { id: 'UA-146135810-2' },
+  config: { id: import.meta.env.VITE_APP_GOOGLE_ANALYTICS_TAG || '' },
 }, router);
 
 Vue.use(VueSocialSharing);
