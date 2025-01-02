@@ -171,8 +171,8 @@
             <div
               v-else-if="!assetSummary || !Object.keys(assetSummary).length"
               class="font-italic font-weight-bold"
+              v-text="`This Dandiset does not contain any valid assets.${currentDandiset?.asset_validation_errors.length ? ' Please check the asset validation errors on the right panel.' : ''}`"
             >
-              This Dandiset does not contain any valid assets.
             </div>
             <div
               v-for="([type, items], i) in Object.entries(assetSummary)"
