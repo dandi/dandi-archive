@@ -28,20 +28,20 @@ def add_dandiset_owner(dandiset: Dandiset, user: User):
     assign_perm('owner', user, dandiset)
 
 
-@transaction.atomic
 def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
     existing_owners = get_dandiset_owners(dandiset)
     existing_owner_set = set(existing_owners)
     new_owner_set = set(users)
 
-    # Delete all existing owners
-    DandisetUserObjectPermission.objects.filter(
-        content_object=dandiset.pk, permission__codename='owner'
-    ).delete()
+    with transaction.atomic():
+        # Delete all existing owners
+        DandisetUserObjectPermission.objects.filter(
+            content_object=dandiset.pk, permission__codename='owner'
+        ).delete()
 
-    # Set owners to new list
-    for user in users:
-        add_dandiset_owner(dandiset, user)
+        # Set owners to new list
+        for user in users:
+            add_dandiset_owner(dandiset, user)
 
     # Return the owners added/removed so they can be emailed
     removed_owners = existing_owner_set - new_owner_set
