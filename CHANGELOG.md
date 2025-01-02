@@ -1,3 +1,15 @@
+# v0.4.4 (Thu Jan 02 2025)
+
+#### 🐛 Bug Fix
+
+- Set assets to pending during unembargo [#2117](https://github.com/dandi/dandi-archive/pull/2117) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.3 (Fri Dec 27 2024)
 
 #### 🐛 Bug Fix
