@@ -5,7 +5,11 @@ import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, replace_dandiset_owners
+from dandiapi.api.services.permissions.dandiset import (
+    add_dandiset_owner,
+    get_dandiset_owners,
+    replace_dandiset_owners,
+)
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
@@ -129,7 +133,7 @@ def test_zarr_rest_get(authenticated_api_client, storage, zarr_archive_factory, 
 
 @pytest.mark.django_db
 def test_zarr_rest_get_embargoed(authenticated_api_client, user, embargoed_zarr_archive):
-    assert user not in embargoed_zarr_archive.dandiset.owners
+    assert user not in get_dandiset_owners(embargoed_zarr_archive.dandiset)
 
     resp = authenticated_api_client.get(f'/api/zarr/{embargoed_zarr_archive.zarr_id}/')
     assert resp.status_code == 404

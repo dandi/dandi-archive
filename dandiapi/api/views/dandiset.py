@@ -31,6 +31,7 @@ from dandiapi.api.services.embargo.exceptions import (
 )
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import (
+    get_dandiset_owners,
     get_owned_dandisets,
     get_visible_dandisets,
     is_dandiset_owner,
@@ -444,7 +445,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-        for owner_user in dandiset.owners:
+        for owner_user in get_dandiset_owners(dandiset):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}

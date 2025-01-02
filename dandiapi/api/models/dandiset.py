@@ -45,12 +45,6 @@ class Dandiset(TimeStampedModel):
     def draft_version(self):
         return self.versions.filter(version='draft').get()
 
-    @property
-    def owners(self):
-        from dandiapi.api.services.permissions.dandiset import get_dandiset_owners
-
-        return get_dandiset_owners(self)
-
     @classmethod
     def published_count(cls):
         """Return the number of Dandisets with published Versions."""

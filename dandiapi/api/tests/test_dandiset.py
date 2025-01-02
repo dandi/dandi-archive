@@ -10,6 +10,7 @@ from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.services.permissions.dandiset import (
     add_dandiset_owner,
+    get_dandiset_owners,
     get_visible_dandisets,
     replace_dandiset_owners,
 )
@@ -382,7 +383,7 @@ def test_dandiset_rest_create(api_client, user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    assert list(dandiset.owners.all()) == [user]
+    assert list(get_dandiset_owners(dandiset).all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -476,7 +477,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=identifier)
-    assert list(dandiset.owners.all()) == [admin_user]
+    assert list(get_dandiset_owners(dandiset).all()) == [admin_user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -584,7 +585,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=identifier)
-    assert list(dandiset.owners.all()) == [admin_user]
+    assert list(get_dandiset_owners(dandiset).all()) == [admin_user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -675,7 +676,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     # Creating a Dandiset has side affects.
     # Verify that the user is the only owner.
     dandiset = Dandiset.objects.get(id=dandiset_id)
-    assert list(dandiset.owners.all()) == [user]
+    assert list(get_dandiset_owners(dandiset).all()) == [user]
 
     # Verify that a draft Version and VersionMetadata were also created.
     assert dandiset.versions.count() == 1
@@ -904,7 +905,7 @@ def test_dandiset_rest_change_owner(
             'email': social_account2.extra_data['email'],
         }
     ]
-    assert list(dandiset.owners) == [user2]
+    assert list(get_dandiset_owners(dandiset)) == [user2]
 
     assert len(mailoutbox) == 2
     assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.draft_version.name}"'
@@ -982,7 +983,7 @@ def test_dandiset_rest_add_owner(
             'email': social_account2.extra_data['email'],
         },
     ]
-    assert list(dandiset.owners) == [user1, user2]
+    assert list(get_dandiset_owners(dandiset)) == [user1, user2]
 
     assert len(mailoutbox) == 1
     assert mailoutbox[0].subject == f'Added to Dandiset "{dandiset.draft_version.name}"'
@@ -1041,7 +1042,7 @@ def test_dandiset_rest_remove_owner(
             'email': social_account1.extra_data['email'],
         }
     ]
-    assert list(dandiset.owners) == [user1]
+    assert list(get_dandiset_owners(dandiset)) == [user1]
 
     assert len(mailoutbox) == 1
     assert mailoutbox[0].subject == f'Removed from Dandiset "{dandiset.draft_version.name}"'
