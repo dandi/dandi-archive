@@ -50,9 +50,6 @@ class PublishConfig(AppConfig):
         import dandiapi.api.checks  # noqa: F401, RUF100
         import dandiapi.api.signals  # noqa: F401
 
-        # Configure the logging level on just DANDI loggers.
-        logging.getLogger(__name__.split('.')[0]).setLevel(settings.DANDI_LOG_LEVEL)
-
         if hasattr(settings, 'SENTRY_DSN'):
             sentry_sdk.init(
                 dsn=settings.SENTRY_DSN,
