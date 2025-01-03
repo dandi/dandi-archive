@@ -21,6 +21,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AuditRecord,
     Dandiset,
+    DandisetStar,
     Upload,
     UserMetadata,
     Version,
@@ -266,3 +267,12 @@ class AuditRecordAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(DandisetStar)
+class DandisetStarAdmin(admin.ModelAdmin):
+    list_display = ('user', 'dandiset', 'created')
+    list_filter = ('created',)
+    search_fields = ('user__username', 'dandiset__id')
+    raw_id_fields = ('user', 'dandiset')
+    date_hierarchy = 'created'

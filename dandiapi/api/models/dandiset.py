@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.contrib.auth.models import User
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
@@ -112,6 +113,15 @@ class Dandiset(TimeStampedModel):
     def __str__(self) -> str:
         return self.identifier
 
+    @property
+    def star_count(self):
+        return self.stars.count()
+
+    def is_starred_by(self, user):
+        if not user.is_authenticated:
+            return False
+        return self.stars.filter(user=user).exists()
+
 
 class DandisetUserObjectPermission(UserObjectPermissionBase):
     content_object = models.ForeignKey(Dandiset, on_delete=models.CASCADE)
@@ -119,3 +129,17 @@ class DandisetUserObjectPermission(UserObjectPermissionBase):
 
 class DandisetGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Dandiset, on_delete=models.CASCADE)
+
+
+class DandisetStar(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='starred_dandisets')
+    dandiset = models.ForeignKey(Dandiset, on_delete=models.CASCADE, related_name='stars')
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(name='unique-user-dandiset-star', fields=['user', 'dandiset'])
+        ]
+
+    def __str__(self) -> str:
+        return f'Star {self.user.username} ★ {self.dandiset.identifier}'

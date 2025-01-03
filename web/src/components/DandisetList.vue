@@ -17,6 +17,12 @@
       <v-list-item-content>
         <v-list-item-title class="wrap-text text-h6 grey--text text--darken-3 pb-1">
           {{ item.name }}
+          <StarButton
+            :identifier="item.dandiset.identifier"
+            :initial-star-count="item.dandiset.star_count"
+            :initial-is-starred="item.dandiset.is_starred"
+            class="float-right"
+          />
         </v-list-item-title>
         <v-list-item-subtitle>
           <v-chip
@@ -85,12 +91,16 @@ import { defineComponent, computed } from 'vue';
 import { useRoute } from 'vue-router/composables';
 import moment from 'moment';
 import filesize from 'filesize';
+import StarButton from '@/components/StarButton.vue';
 
 import type { Version } from '@/types';
 import { DANDISETS_PER_PAGE } from '@/utils/constants';
 
 export default defineComponent({
   name: 'DandisetList',
+  components: {
+    StarButton,
+  },
   props: {
     dandisets: {
       type: Array as PropType<Version[]>,

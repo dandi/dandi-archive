@@ -3,7 +3,7 @@ from __future__ import annotations
 from .asset import Asset, AssetBlob
 from .asset_paths import AssetPath, AssetPathRelation
 from .audit import AuditRecord
-from .dandiset import Dandiset
+from .dandiset import Dandiset, DandisetStar
 from .oauth import StagingApplication
 from .upload import Upload
 from .user import UserMetadata
@@ -16,6 +16,7 @@ __all__ = [
     'AssetPathRelation',
     'AuditRecord',
     'Dandiset',
+    'DandisetStar',
     'StagingApplication',
     'Upload',
     'UserMetadata',
