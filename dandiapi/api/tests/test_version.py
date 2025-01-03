@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING
 from dandischema.models import AccessType
 from django.conf import settings
 from freezegun import freeze_time
-from guardian.shortcuts import assign_perm
 import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -524,7 +524,7 @@ def test_version_rest_info_with_asset(
 
 @pytest.mark.django_db
 def test_version_rest_update(api_client, user, draft_version):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
@@ -614,7 +614,7 @@ def test_version_rest_update_unembargo_in_progress(api_client, user, draft_versi
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
@@ -637,7 +637,7 @@ def test_version_rest_update_unembargo_in_progress(api_client, user, draft_versi
 
 @pytest.mark.django_db
 def test_version_rest_update_published_version(api_client, user, published_version):
-    assign_perm('owner', user, published_version.dandiset)
+    add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
@@ -684,7 +684,7 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
 )
 @pytest.mark.django_db
 def test_version_rest_update_access_values(api_client, user, draft_version, access):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     new_metadata = {**draft_version.metadata, 'access': access}
@@ -708,7 +708,7 @@ def test_version_rest_update_access_values(api_client, user, draft_version, acce
 
 @pytest.mark.django_db
 def test_version_rest_update_access_missing(api_client, user, draft_version):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     # Check that the field missing entirely is also okay
@@ -734,7 +734,7 @@ def test_version_rest_update_access_missing(api_client, user, draft_version):
 
 @pytest.mark.django_db
 def test_version_rest_update_access_valid(api_client, user, draft_version):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     # Check that extra fields persist
@@ -766,7 +766,7 @@ def test_version_rest_publish(
     draft_asset_factory,
     published_asset_factory,
 ):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     old_draft_asset: Asset = draft_asset_factory()
@@ -795,7 +795,7 @@ def test_version_rest_publish(
 @pytest.mark.django_db
 def test_version_rest_publish_embargo(api_client: APIClient, user: User, draft_version_factory):
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(
@@ -812,7 +812,7 @@ def test_version_rest_publish_unembargo_in_progress(
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(
@@ -831,7 +831,7 @@ def test_version_rest_publish_zarr(
     zarr_archive_factory,
     zarr_file_factory,
 ):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
     # create and ingest zarr archive
@@ -873,7 +873,7 @@ def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
 
 @pytest.mark.django_db
 def test_version_rest_publish_not_a_draft(api_client, user, published_version, asset):
-    assign_perm('owner', user, published_version.dandiset)
+    add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
 
@@ -912,7 +912,7 @@ def test_version_rest_publish_invalid(
     expected_data: str,
     expected_status_code: int,
 ):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
 
@@ -951,7 +951,7 @@ def test_version_rest_update_no_changed_metadata(
 
 @pytest.mark.django_db
 def test_version_rest_delete_published_not_admin(api_client, user, published_version):
-    assign_perm('owner', user, published_version.dandiset)
+    add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     response = api_client.delete(
         f'/api/dandisets/{published_version.dandiset.identifier}'
@@ -975,7 +975,7 @@ def test_version_rest_delete_published_admin(api_client, admin_user, published_v
 
 @pytest.mark.django_db
 def test_version_rest_delete_draft_not_admin(api_client, user, draft_version):
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
     response = api_client.delete(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'

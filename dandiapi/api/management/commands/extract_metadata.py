@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services.asset import change_asset
+from dandiapi.api.services.permissions.dandiset import get_dandiset_owners
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -55,7 +56,7 @@ def extract_asset_metadata(asset: Asset, draft_version: Version):
 
     # Use dandiset owner, default to some admin user
     user = (
-        draft_version.dandiset.owners.first()
+        get_dandiset_owners(draft_version.dandiset).first()
         or User.objects.filter(is_superuser=True, is_staff=True).first()
     )
 

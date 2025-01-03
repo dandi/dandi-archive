@@ -4,6 +4,7 @@ import pytest
 
 from dandiapi.api.management.commands.create_dev_dandiset import create_dev_dandiset
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
+from dandiapi.api.services.permissions.dandiset import get_dandiset_owners
 
 
 @pytest.mark.django_db
@@ -12,7 +13,7 @@ def test_create_dev_dandiset(user):
 
     assert Dandiset.objects.count() == 1
     dandiset = Dandiset.objects.get()
-    assert user in dandiset.owners
+    assert user in get_dandiset_owners(dandiset)
 
     assert Version.objects.count() == 1
     version = Version.objects.get()

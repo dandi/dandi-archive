@@ -17,6 +17,7 @@ from dandiapi.api.services.asset.exceptions import (
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
 )
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.tasks import remove_asset_blob_embargoed_tag_task
 
 if TYPE_CHECKING:
@@ -98,7 +99,7 @@ def change_asset(  # noqa: PLR0913
     if 'path' not in new_metadata:
         raise ValueError('Path must be present in new_metadata')
 
-    if not user.has_perm('owner', version.dandiset):
+    if not is_dandiset_owner(version.dandiset, user):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
@@ -148,7 +149,7 @@ def add_asset_to_version(
     if 'path' not in metadata:
         raise RuntimeError('Path must be present in metadata')
 
-    if not user.has_perm('owner', version.dandiset):
+    if not is_dandiset_owner(version.dandiset, user):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
@@ -194,7 +195,7 @@ def add_asset_to_version(
 
 
 def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Version:
-    if not user.has_perm('owner', version.dandiset):
+    if not is_dandiset_owner(version.dandiset, user):
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError

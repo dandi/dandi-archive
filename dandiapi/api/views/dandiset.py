@@ -10,11 +10,7 @@ from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
-from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
-from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import get_objects_for_user
-from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -32,6 +28,15 @@ from dandiapi.api.services.embargo import kickoff_dandiset_unembargo
 from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
+)
+from dandiapi.api.services.exceptions import NotAllowedError
+from dandiapi.api.services.permissions.dandiset import (
+    get_dandiset_owners,
+    get_owned_dandisets,
+    get_visible_dandisets,
+    is_dandiset_owner,
+    replace_dandiset_owners,
+    require_dandiset_owner_or_403,
 )
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -118,7 +123,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Only include embargoed dandisets which belong to the current user
         queryset = Dandiset.objects
         if self.action in ['list', 'search']:
-            queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+            queryset = get_visible_dandisets(self.request.user).order_by('created')
 
             query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
             query_serializer.is_valid(raise_exception=True)
@@ -128,8 +133,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             user_kwarg = query_serializer.validated_data.get('user')
             if user_kwarg == 'me':
                 # Replace the original, rather inefficient queryset with a more specific one
-                queryset = get_objects_for_user(
-                    self.request.user, 'owner', Dandiset, with_superuser=False
+                queryset = get_owned_dandisets(
+                    self.request.user, include_superusers=False
                 ).order_by('created')
 
             show_draft: bool = query_serializer.validated_data['draft']
@@ -167,7 +172,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         # Raise 403 if unauthorized
         self.request.user = typing.cast(User, self.request.user)
-        if not self.request.user.has_perm('owner', dandiset):
+        if not is_dandiset_owner(dandiset, self.request.user):
             raise PermissionDenied
 
     def get_object(self):
@@ -359,7 +364,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         ),
     )
     @action(methods=['POST'], detail=True)
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    @require_dandiset_owner_or_403('dandiset__pk')
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
         kickoff_dandiset_unembargo(user=request.user, dandiset=dandiset)
@@ -394,9 +399,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 raise DandisetUnembargoInProgressError
 
             # Verify that the user is currently an owner
-            response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
-            if response:
-                return response
+            if not is_dandiset_owner(dandiset, request.user):
+                raise NotAllowedError
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -427,7 +431,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             # All owners found
             with transaction.atomic():
                 owners = user_owners + [acc.user for acc in socialaccount_owners]
-                removed_owners, added_owners = dandiset.set_owners(owners)
+                removed_owners, added_owners = replace_dandiset_owners(dandiset, owners)
                 dandiset.save()
 
                 if removed_owners or added_owners:
@@ -441,7 +445,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-        for owner_user in dandiset.owners:
+        for owner_user in get_dandiset_owners(dandiset):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
