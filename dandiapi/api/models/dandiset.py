@@ -83,7 +83,9 @@ class DandisetStar(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'dandiset')
+        constraints = [
+            models.UniqueConstraint(name='unique-user-dandiset-star', fields=['user', 'dandiset'])
+        ]
 
     def __str__(self) -> str:
         return f'Star {self.user.username} ★ {self.dandiset.identifier}'
