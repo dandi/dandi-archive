@@ -582,8 +582,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     @action(methods=['POST'], detail=True)
     def star(self, request, dandiset__pk) -> Response:
-        if not request.user.is_authenticated:
-            raise NotAuthenticated
         dandiset = self.get_object()
         star_count = star_dandiset(user=request.user, dandiset=dandiset)
         return Response({'count': star_count}, status=status.HTTP_200_OK)
@@ -601,8 +599,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     @action(methods=['POST'], detail=True)
     def unstar(self, request, dandiset__pk) -> Response:
-        if not request.user.is_authenticated:
-            raise NotAuthenticated
         dandiset = self.get_object()
         star_count = unstar_dandiset(user=request.user, dandiset=dandiset)
         return Response({'count': star_count}, status=status.HTTP_200_OK)
