@@ -1,3 +1,21 @@
+# v0.4.5 (Fri Jan 03 2025)
+
+#### 🐛 Bug Fix
+
+- Display validation errors on DLP for embargoed dandisets [#2122](https://github.com/dandi/dandi-archive/pull/2122) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Make logging level of the django app configurable [#2078](https://github.com/dandi/dandi-archive/pull/2078) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 3
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.4.4 (Thu Jan 02 2025)
 
 #### 🐛 Bug Fix
