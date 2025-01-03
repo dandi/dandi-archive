@@ -59,10 +59,10 @@
                 <template #activator="{ on }">
                   <v-icon
                     left
-                    :color="modelValid ? 'success' : 'error'"
+                    :color="editorInterface.modelValid ? 'success' : 'error'"
                     v-on="on"
                   >
-                    <template v-if="modelValid">
+                    <template v-if="editorInterface.modelValid">
                       mdi-checkbox-marked-circle
                     </template>
                     <template v-else>
@@ -70,7 +70,7 @@
                     </template>
                   </v-icon>
                 </template>
-                <template v-if="modelValid">
+                <template v-if="editorInterface.modelValid">
                   All metadata for this dandiset is valid.
                 </template>
                 <template v-else>
@@ -158,7 +158,7 @@
             <v-badge
               color="error"
               dot
-              :value="!basicModelValid"
+              :value="!editorInterface.basicModelValid.value"
             >
               General
             </v-badge>
@@ -171,7 +171,7 @@
             <v-badge
               color="error"
               dot
-              :value="!complexModelValidation[propKey]"
+              :value="!editorInterface.complexModelValidation[propKey]"
             >
               {{ getSchemaTitle(propKey) }}
             </v-badge>
@@ -188,13 +188,13 @@
             eager
           >
             <v-form
-              v-model="basicModelValid"
+              v-model="editorInterface.basicModelValid.value"
               style="height: 70vh;"
               class="px-7 py-5 overflow-y-auto"
             >
               <v-jsf
-                v-model="basicModel"
-                :schema="basicSchema"
+                v-model="editorInterface.basicModel"
+                :schema="editorInterface.basicSchema"
                 :options="{...CommonVJSFOptions, hideReadOnly: true}"
                 @change="vjsfListener"
               />
@@ -207,7 +207,7 @@
           >
             <v-card class="pa-2 px-1">
               <v-form
-                v-model="complexModelValidation[propKey]"
+                v-model="editorInterface.complexModelValidation[propKey]"
                 class="px-7"
               >
                 <v-jsf-wrapper
@@ -228,7 +228,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
-import { ref, computed } from 'vue';
+import { computed, ref, watchEffect } from 'vue';
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
@@ -283,16 +283,10 @@ const invalidPermissionSnackbar = ref(false);
 const tab = ref(null);
 // const loadFromLocalStoragePrompt = ref(false);
 
-editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
-const {
-  modelValid,
-  basicSchema,
-  basicModel,
-  basicModelValid,
-  complexSchema,
-  complexModelValidation,
-  transactionTracker,
-} = editorInterface.value;
+watchEffect(() => {
+  editorInterface.value = new EditorInterface(schema.value, model.value as DandiModel);
+});
+
 const CommonVJSFOptions = computed(() => ({
   initialValidation: 'all',
   disableAll: readonly.value,
@@ -312,19 +306,19 @@ const CommonVJSFOptions = computed(() => ({
 
 // undo/redo functionality
 function undoChange() {
-  transactionTracker.undo();
+  editorInterface.value?.transactionTracker.undo();
 }
 function redoChange() {
-  transactionTracker.redo();
+  editorInterface.value?.transactionTracker.redo();
 }
 const disableUndo = computed(
-  () => readonly.value || !transactionTracker.areTransactionsBehind(),
+  () => readonly.value || !editorInterface.value?.transactionTracker.areTransactionsBehind(),
 );
 const disableRedo = computed(
-  () => readonly.value || !transactionTracker.areTransactionsAhead(),
+  () => readonly.value || !editorInterface.value?.transactionTracker.areTransactionsAhead(),
 );
-const vjsfListener = () => transactionTracker.add(basicModel.value, false);
-const modified = computed(() => transactionTracker.isModified());
+const vjsfListener = () => editorInterface.value?.transactionTracker.add(editorInterface.value?.basicModel.value, false);
+const modified = computed(() => editorInterface.value?.transactionTracker.isModified());
 
 async function save() {
   if (!id.value || !model.value || !currentDandiset.value?.version) {
@@ -345,7 +339,7 @@ async function save() {
           identifier: data.dandiset.identifier,
           version: data.version,
         });
-        transactionTracker.reset();
+        editorInterface.value?.transactionTracker.reset();
       }, 500);
     }
   } catch (error) {
@@ -379,13 +373,13 @@ function download() {
 }
 
 function getSchemaTitle(propKey: string) {
-  const properties = complexSchema?.properties as any;
+  const properties = editorInterface.value?.complexSchema?.properties as any;
   return properties ? properties[propKey].title || propKey : propKey;
 }
 
-const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
-  (p) => renderField((complexSchema as any).properties[p]),
-);
+const fieldsToRender = computed(() => Object.keys(editorInterface.value?.complexSchema.properties as any).filter(
+  (p) => renderField((editorInterface.value?.complexSchema as any).properties[p]),
+));
 
 // TODO: fix and re-enable this
 // function loadDataFromLocalStorage() {
