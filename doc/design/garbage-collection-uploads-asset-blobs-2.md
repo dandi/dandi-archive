@@ -27,7 +27,7 @@ We will introduce a new celery-beat task that runs daily. This task will
 
 Due to the trailing delete lifecycle rule, the actual uploaded data will remain recoverable for up to 30 days after this deletion, after which the lifecycle rule will clear it out of the bucket permanently.
 
-In order to facilitate restoration of deleted data, as well as for general auditability of the garbage collection feature, a new database table will be created to store information on garbage-collection events. Rows in this new table will be garbage-collected themselves every 30 days, since that is the number of days that the trailing delete feature waits before deleting expired object versions. In other words, once the blob is no longer recoverable via trailing delete in S3, the corresponding `GarbageCollectionEvent` should be deleted as well.
+In order to facilitate restoration of deleted data, as well as for general auditability of the garbage collection feature, two new database tables will be created to store information on garbage-collection events. Rows in this new table will be garbage-collected themselves every 30 days, since that is the number of days that the trailing delete feature waits before deleting expired object versions. In other words, once the blob is no longer recoverable via trailing delete in S3, the corresponding `GarbageCollectionEvent` and its associated `GarbageCollectionEventRecords` should be deleted as well.
 
 ### Garbage collection event table
 
@@ -35,9 +35,12 @@ In order to facilitate restoration of deleted data, as well as for general audit
 from django.db import models
 
 class GarbageCollectionEvent(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=255)
-    created = models.DateTimeField(auto_now_add=True)
-    records = models.JSONField()
+
+class GarbageCollectionEventRecord(models.Model):
+    event = models.ForeignKey(GarbageCollectionEvent)
+    record = models.JSONField()
 ```
 
 Note: the `records` field is a JSON serialization of the garbage-collected QuerySet, generated using [Django’s JSON model serializer](https://docs.djangoproject.com/en/5.1/topics/serialization/#serialization-formats-json)). This gives us the minimum information needed to restore a blob. The idea is that this can be reused for garbage collection of `Assets` as well.
