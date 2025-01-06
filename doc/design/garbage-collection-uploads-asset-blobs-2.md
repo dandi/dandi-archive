@@ -43,7 +43,7 @@ class GarbageCollectionEventRecord(models.Model):
     record = models.JSONField()
 ```
 
-Note: the `records` field is a JSON serialization of the garbage-collected QuerySet, generated using [Django’s JSON model serializer](https://docs.djangoproject.com/en/5.1/topics/serialization/#serialization-formats-json)). This gives us the minimum information needed to restore a blob. The idea is that this can be reused for garbage collection of `Assets` as well.
+Note: the `record` field is a JSON serialization of the garbage-collected QuerySet, generated using [Django’s JSON model serializer](https://docs.djangoproject.com/en/5.1/topics/serialization/#serialization-formats-json)). This gives us the minimum information needed to restore a blob. The idea is that this can be reused for garbage collection of `Assets` as well.
 
 ## Implementation
 See [PR #2087](https://github.com/dandi/dandi-archive/pull/2087) for the implementation.
