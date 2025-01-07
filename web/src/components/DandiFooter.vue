@@ -85,7 +85,7 @@
           >Issues</a>
           <v-icon x-small>
             mdi-open-in-new
-          </v-icon>        
+          </v-icon>
         </v-col>
       </v-row>
     </v-container>
