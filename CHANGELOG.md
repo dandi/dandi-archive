@@ -1,3 +1,17 @@
+# v0.4.6 (Wed Jan 08 2025)
+
+#### 🐛 Bug Fix
+
+- Create permissions service layer [#2115](https://github.com/dandi/dandi-archive/pull/2115) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Design doc for Upload/AssetBlob garbage collection [#2068](https://github.com/dandi/dandi-archive/pull/2068) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.4.5 (Fri Jan 03 2025)
 
 #### 🐛 Bug Fix
