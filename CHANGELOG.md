@@ -1,3 +1,17 @@
+# v0.4.7 (Wed Jan 08 2025)
+
+#### 🐛 Bug Fix
+
+- Prevent duplicate serialization of dandiset in detail view [#2125](https://github.com/dandi/dandi-archive/pull/2125) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix reactivity bug in meditor [#2127](https://github.com/dandi/dandi-archive/pull/2127) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.4.6 (Wed Jan 08 2025)
 
 #### 🐛 Bug Fix
