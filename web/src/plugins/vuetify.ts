@@ -15,18 +15,18 @@ export default new Vuetify({
     },
     themes: {
       light: {
-        primary: colors.lightBlue.darken1,
-        secondary: colors.blueGrey.base,
-        accent: colors.lightBlue.darken1,
+        primary: '#950f1a', // colors.lightBlue.darken1,
+        secondary: '#f18029', // colors.blueGrey.base,
+        accent: '#f5e031', // colors.lightBlue.darken1,
         error: colors.red.base,
         info: colors.lightBlue.lighten1,
         dropzone: colors.grey.lighten3,
         highlight: colors.yellow.lighten4,
       },
       dark: {
-        primary: colors.lightBlue.darken3,
-        secondary: colors.grey.base,
-        accent: colors.lightBlue.lighten1,
+        primary: colors.lightBlue.darken3, // TODO - dark theme?
+        secondary: colors.grey.base, // TODO - dark theme?
+        accent: colors.lightBlue.lighten1, // TODO - dark theme?
         dropzone: colors.grey.darken2,
         highlight: colors.grey.darken2,
       },

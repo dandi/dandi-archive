@@ -50,14 +50,16 @@
         </v-list-item-group>
       </v-list>
     </v-menu>
-    <router-link to="/">
+    <router-link to="/" class="d-flex align-center text-decoration-none">
       <v-img
-        alt="DANDI logo"
+        alt="EMBER logo"
         contain
-        width="100px"
+        height="40px"
+        width="30px"
         :src="logo"
         class="mr-3"
       />
+      <span class="flex-grow-1 font-weight-bold">EMBER-DANDI</span>
     </router-link>
     <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
       <template v-for="navItem in navItems">
@@ -145,7 +147,7 @@ import {
   dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
-import logo from '@/assets/logo.svg';
+import logo from '@/assets/ember-logo.png';
 
 interface NavigationItem {
   text: string,
