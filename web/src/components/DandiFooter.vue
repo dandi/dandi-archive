@@ -16,6 +16,29 @@
       <v-row>
         <v-col offset="2">
           &copy; 2019 - 2024 The DANDI Team<br>
+          <a
+            target="_blank"
+            rel="noopener"
+            href="https://www.dandiarchive.org/handbook/about/terms/"
+          >Terms</a> 
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://www.dandiarchive.org/handbook/about/policies/"
+          >Policies</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://github.com/dandi/dandi-archive/blob/master/CODE_OF_CONDUCT.md"
+          >Code of Conduct</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+          <br>
           version
           <a
             class="version-link"
