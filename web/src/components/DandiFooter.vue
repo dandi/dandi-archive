@@ -67,14 +67,7 @@
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandi-archive"
-          >Project GitHub</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon> / <a
-            target="_blank"
-            rel="noopener"
-            href="https://github.com/dandi/dandi-archive/issues"
-          >Issues</a>
+          >GitHub repository</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
