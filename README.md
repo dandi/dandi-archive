@@ -1,6 +1,6 @@
 # DANDI Archive
 
-![](https://www.dandiarchive.org/assets/dandi_logo.svg)
+![](https://about.dandiarchive.org/assets/dandi_logo.svg)
 
 ## DANDI: Distributed Archives for Neurophysiology Data Integration
 
