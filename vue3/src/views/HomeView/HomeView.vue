@@ -14,7 +14,7 @@
         <v-container
           fluid
           class="d-flex flex-column py-0"
-          :class="[$vuetify.breakpoint.smAndUp ? 'brain-gradient' : 'hide-brain']"
+          :class="[display.smAndUp ? 'brain-gradient' : 'hide-brain']"
         >
           <v-row
             class="flex-grow-1"
@@ -48,9 +48,12 @@
 <script setup lang="ts">
 import { watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useDisplay } from 'vuetify';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import logo from '@/assets/logo.svg';
+
+const display = useDisplay();
 
 /**
 * Redirect old hash URLS to the correct one. This is only done on
