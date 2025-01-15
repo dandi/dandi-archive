@@ -51,7 +51,6 @@
         :asset-validation-errors="dandiset.asset_validation_errors"
         :version-validation-errors="dandiset.version_validation_errors"
         :owner="isOwner"
-        @openMeditor="openMeditor"
       />
     </v-dialog>
 
@@ -120,7 +119,7 @@ import { computed, defineProps, ref} from 'vue';
 import type { PropType } from 'vue';
 
 import ValidationErrorDialog from '@/components/DLP/ValidationErrorDialog.vue';
-import { open as meditorOpen } from '@/components/Meditor/state';
+// import { open as meditorOpen } from '@/components/Meditor/state';
 import type { Version } from '@/types';
 
 const props = defineProps({
@@ -147,6 +146,6 @@ function openErrorDialog(tab: ErrorCategory) {
 
 function openMeditor() {
   errorDialogOpen.value = false;
-  meditorOpen.value = true;
+  // meditorOpen.value = true;
 }
 </script>
