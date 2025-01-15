@@ -3,9 +3,9 @@
     v-if="currentDandiset"
     height="100%"
     class="px-3 py-1 mb-3"
-    outlined
+    border
   >
-    <div class="black--text text-h5 mt-2">
+    <div class="text-black text-h5 mt-2">
       Dandiset Actions
     </div>
 
@@ -18,19 +18,19 @@
           >
             <v-btn
               id="download"
-              outlined
+              variant="outlined"
               block
               v-on="on"
             >
               <v-icon
                 color="primary"
-                left
+                start
               >
                 mdi-download
               </v-icon>
               <span>Download</span>
               <v-spacer />
-              <v-icon right>
+              <v-icon end>
                 mdi-chevron-down
               </v-icon>
             </v-btn>
@@ -47,19 +47,19 @@
           >
             <v-btn
               id="cite_as"
-              outlined
+              variant="outlined"
               block
               v-on="on"
             >
               <v-icon
                 color="primary"
-                left
+                start
               >
                 mdi-format-quote-close
               </v-icon>
               <span>Cite As</span>
               <v-spacer />
-              <v-icon right>
+              <v-icon end>
                 mdi-chevron-down
               </v-icon>
             </v-btn>
@@ -83,14 +83,14 @@
       <v-row no-gutters>
         <v-btn
           id="view-data"
-          outlined
+          variant="outlined"
           block
           :disabled="unembargo_in_progress"
           :to="fileBrowserLink"
           exact
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-folder
@@ -101,12 +101,13 @@
       </v-row>
       <v-btn
         id="view-edit-metadata"
-        outlined
+        variant="outlined"
         block
-        @click="openMeditor = true"
       >
+        <!-- TODO: put this back in the v-btn when we have the meditor working -->
+        <!-- @click="openMeditor = true" -->
         <v-icon
-          left
+          start
           color="primary"
         >
           mdi-note-text
@@ -119,12 +120,12 @@
     <div class="my-4">
       <v-row no-gutters>
         <v-btn
-          outlined
+          variant="outlined"
           block
           :href="manifestLocation"
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-clipboard
@@ -142,7 +143,7 @@
         class="justify-center"
       >
         <v-btn
-          outlined
+          variant="outlined"
           class="justify-center"
         >
           <ShareDialog text="Share" />
@@ -160,7 +161,7 @@ import type { Location } from 'vue-router';
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 
-import { open as openMeditor } from '@/components/Meditor/state';
+// import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
