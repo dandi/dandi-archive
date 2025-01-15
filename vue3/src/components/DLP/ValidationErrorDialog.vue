@@ -72,10 +72,8 @@
           class="overflow-y-auto"
         >
           <v-expansion-panels multiple>
-            <template v-for="(errors, path) in groupedAssetValidationErrors">
-              <v-list-item
-                :key="path"
-              >
+            <template v-for="(errors, path) in groupedAssetValidationErrors" :key="path">
+              <v-list-item>
                 <v-list-item-icon>
                   <v-icon>
                     <template v-if="errors.length > 1">
