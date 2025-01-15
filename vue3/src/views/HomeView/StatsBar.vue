@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 import { dandiRest } from '@/rest';
 import SingleStat from '@/views/HomeView/SingleStat.vue';
 
