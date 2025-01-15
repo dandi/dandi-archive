@@ -150,9 +150,9 @@
     <DandisetValidationErrors :dandiset="currentDandiset" :isOwner="true" />
 
     <v-row>
-      <v-subheader class="mb-2 black--text text-h5">
+      <v-list-subheader class="mb-2 black--text text-h5">
         This Version
-      </v-subheader>
+      </v-list-subheader>
     </v-row>
     <v-row
       class="pa-2 mb-5 text-body-2 align-center"
