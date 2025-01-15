@@ -1,13 +1,13 @@
 <template>
   <v-card
     class="flex-grow-0"
-    :max-height="$vuetify.breakpoint.xs ? undefined : '90vh'"
-    :height="$vuetify.breakpoint.xs ? '100%' : undefined"
+    :max-height="isXsDisplay ? undefined : '90vh'"
+    :height="isXsDisplay ? '100%' : undefined"
   >
     <v-card-title class="justify-space-between">
       <span class="font-weight-light">Manage Owners</span>
       <v-btn
-        :small="$vuetify.breakpoint.xs"
+        :small="isXsDisplay"
         color="info"
         elevation="0"
         @click="save()"
@@ -20,7 +20,7 @@
 
     <v-row no-gutters>
       <v-col
-        :cols="$vuetify.breakpoint.xs ? 12 : 6"
+        :cols="isXsDisplay ? 12 : 6"
         class="d-flex flex-column"
       >
         <div class="mx-3 mt-4 mb-2">
@@ -220,6 +220,8 @@ import type { Ref } from 'vue';
 import {
   computed, defineComponent, ref, watch,
 } from 'vue';
+import { useDisplay } from 'vuetify';
+
 import type { User } from '@/types';
 
 export default defineComponent({
@@ -232,7 +234,9 @@ export default defineComponent({
   },
   setup(props, ctx) {
     const store = useDandisetStore();
-
+    const display = useDisplay();
+    
+    const isXsDisplay = computed(() => display.xs.value);
     const currentDandiset = computed(() => store.dandiset);
     const owners = computed(() => store.owners);
 
@@ -350,6 +354,7 @@ export default defineComponent({
     }
 
     return {
+      isXsDisplay,
       searchQuery,
       searchResults,
       newOwners,

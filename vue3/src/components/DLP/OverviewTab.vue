@@ -260,6 +260,7 @@
 import {
   computed, getCurrentInstance, onMounted, onUnmounted,
 } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -300,6 +301,7 @@ const props = defineProps({
 });
 
 const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
+const display = useDisplay();
 
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
@@ -346,7 +348,7 @@ const assetSummary = computed<Record<string, any>>(
 
 // Approximate a good column count for asset summary card
 const assetSummaryColumnCount = computed(
-  () => ($vuetify.value?.breakpoint.mdAndDown ? 1
+  () => (display.mdAndDown ? 1
     : Math.min(Object.keys(assetSummary.value).length, 3)),
 );
 
