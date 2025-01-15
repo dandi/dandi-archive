@@ -90,7 +90,7 @@ import type { PropType } from 'vue';
 import { defineComponent, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import moment from 'moment';
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 import StarButton from '@/components/StarButton.vue';
 
 import type { Version } from '@/types';
