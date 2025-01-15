@@ -4,9 +4,11 @@
     fluid
   >
     <v-row class="py-6 mt-2">
-      <template v-for="stat in stats">
+      <template
+        v-for="stat in stats"
+        :key="stat.name"
+      >
         <v-col
-          :key="stat.name"
           class="py-0 flex-grow-1"
           md="4"
           sm="4"
