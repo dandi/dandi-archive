@@ -112,7 +112,7 @@ import {
   computed, watch, onMounted, ref,
 } from 'vue';
 import type { Ref } from 'vue';
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
