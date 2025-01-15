@@ -1,7 +1,7 @@
 <template>
   <v-card
     v-if="currentDandiset && otherVersions"
-    outlined
+    border
     class="mt-4 px-3"
   >
     <v-dialog
@@ -26,13 +26,13 @@
         <v-card-actions>
           <v-btn
             color="error"
-            depressed
+            variant="flat"
             @click="publish()"
           >
             Yes
           </v-btn>
           <v-btn
-            depressed
+            variant="flat"
             @click="showPublishWarningDialog = false"
           >
             No, take me back
@@ -46,17 +46,17 @@
     >
       <v-tooltip
         :disabled="!publishDisabledMessage"
-        left
+        location="left"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props }">
           <div
             class="px-1 pt-3"
             style="width: 100%"
-            v-on="on"
+            v-bind="props"
           >
             <v-row
               v-if="showPublishWarning"
-              class="text-caption error--text align-center mb-3"
+              class="text-caption text-error align-center mb-3"
               no-gutters
             >
               <v-col
@@ -81,13 +81,13 @@
                 v-model="showPublishChecklistDialog"
                 width="900"
               >
-                <template #activator="{ on: onNested }">
+                <template #activator="{ props }">
                   <v-btn
                     block
                     :color="showPublishWarning ? 'error' : 'success'"
-                    depressed
+                    variant="flat"
                     :disabled="publishButtonDisabled"
-                    v-on="onNested"
+                    v-bind="props"
                   >
                     Publish
                     <v-spacer />
@@ -96,7 +96,7 @@
                 </template>
 
                 <v-card>
-                  <v-card-title class="text-h5 grey lighten-2">
+                  <v-card-title class="text-h5 bg-grey-lighten-2">
                     Publish Checklist
                   </v-card-title>
 
@@ -123,14 +123,14 @@
                   <v-card-actions class="justify-end">
                     <v-btn
                       color="dropzone"
-                      depressed
+                      variant="flat"
                       @click="showPublishChecklistDialog = false"
                     >
                       Cancel
                     </v-btn>
                     <v-btn
                       :color="showPublishWarning ? 'error' : 'success'"
-                      depressed
+                      variant="flat"
                       @click="publish"
                     >
                       Publish
@@ -153,10 +153,13 @@
       </v-tooltip>
     </v-row>
 
-    <DandisetValidationErrors :dandiset="currentDandiset" :isOwner="isOwner" />
+    <DandisetValidationErrors
+      :dandiset="currentDandiset"
+      :is-owner="isOwner"
+    />
 
     <v-row>
-      <v-subheader class="mb-2 black--text text-h5">
+      <v-subheader class="mb-2 text-black text-h5">
         This Version
       </v-subheader>
     </v-row>
@@ -177,7 +180,7 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-subheader class="mb-2 black--text text-h5">
+      <v-subheader class="mb-2 text-black text-h5">
         Other Versions
       </v-subheader>
     </v-row>
@@ -196,22 +199,22 @@
       </v-col>
       <v-col>
         <v-btn
-          outlined
+          variant="outlined"
           @click="setVersion(version)"
         >
           {{ version.version.toUpperCase() }}
         </v-btn>
       </v-col>
     </v-row>
-    <v-snackbar :value="!!alreadyBeingPublishedError">
+    <v-snackbar :model-value="!!alreadyBeingPublishedError">
       This dandiset is already being published. Please wait for publishing to complete.
     </v-snackbar>
-    <v-snackbar :value="!!publishedVersion">
+    <v-snackbar :model-value="!!publishedVersion">
       Publish complete.
       <template #action="{ attrs }">
         <v-btn
-          color="info lighten-2"
-          text
+          color="info-lighten-2"
+          variant="text"
           v-bind="attrs"
           @click="navigateToPublishedVersion"
         >
@@ -236,7 +239,7 @@ import axios from 'axios';
 import moment from 'moment';
 
 import type { RawLocation } from 'vue-router';
-import { useRoute } from 'vue-router/composables';
+import { useRoute } from 'vue-router';
 
 import { dandiRest, loggedIn as loggedInFunc, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
