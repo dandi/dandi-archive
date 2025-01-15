@@ -180,7 +180,7 @@ import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { IncompleteUpload } from '@/types';
 import DandisetValidationErrors from './DandisetValidationErrors.vue';
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 
 function formatDate(date: string, format: string = 'll'): string {
   return moment(date).format(format);
