@@ -5,6 +5,7 @@
  */
 
 import pluginVue from 'eslint-plugin-vue'
+import pluginVuetify from 'eslint-plugin-vuetify'
 import vueTsEslintConfig from '@vue/eslint-config-typescript'
 
 export default [
@@ -19,6 +20,7 @@ export default [
   },
 
   ...pluginVue.configs['flat/recommended'],
+  ...pluginVuetify.configs['flat/recommended'],
   ...vueTsEslintConfig(),
 
   {
