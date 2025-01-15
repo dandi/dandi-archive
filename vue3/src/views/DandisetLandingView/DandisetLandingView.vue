@@ -99,7 +99,7 @@
             v-if="!currentDandiset || loading"
             class="py-3"
           >
-            <v-skeleton-loader type="card-heading, list-item@5" />
+            <v-skeleton-loader type="card, list-item@5" />
           </v-sheet>
           <DandisetSidebar
             v-else
