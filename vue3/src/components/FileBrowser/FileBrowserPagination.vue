@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { toRef } from 'vue';
-import { useRoute } from 'vue-router/composables';
+import { useRoute } from 'vue-router';
 
 const props = defineProps({
   page: {
