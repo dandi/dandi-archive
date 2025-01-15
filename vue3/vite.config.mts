@@ -1,6 +1,7 @@
 // Plugins
 import Components from 'unplugin-vue-components/vite'
 import Vue from '@vitejs/plugin-vue'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import ViteFonts from 'unplugin-fonts/vite'
 import VueRouter from 'unplugin-vue-router/vite'
@@ -32,6 +33,7 @@ export default defineConfig({
         }],
       },
     }),
+    nodePolyfills(),
   ],
   define: { 'process.env': {} },
   resolve: {
