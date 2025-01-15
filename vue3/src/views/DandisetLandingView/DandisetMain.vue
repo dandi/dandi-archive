@@ -268,7 +268,7 @@ import {
   defineComponent, computed, ref,
 } from 'vue';
 
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 import { marked } from 'marked';
 import moment from 'moment';
 import DOMPurify from 'dompurify';
