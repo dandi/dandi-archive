@@ -88,7 +88,7 @@
 <script lang="ts">
 import type { PropType } from 'vue';
 import { defineComponent, computed } from 'vue';
-import { useRoute } from 'vue-router/composables';
+import { useRoute } from 'vue-router';
 import moment from 'moment';
 import filesize from 'filesize';
 import StarButton from '@/components/StarButton.vue';
