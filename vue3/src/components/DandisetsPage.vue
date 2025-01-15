@@ -1,16 +1,13 @@
 <template>
-  <div v-page-title="pageTitle">
-    <v-toolbar color="grey darken-2 white--text">
+  <div>
+    <v-toolbar color="grey-darken-2">
       <v-menu
         v-if="!user"
-        offset-y
         :close-on-content-click="false"
       >
-        <template #activator="{ on, attrs }">
+        <template #activator="{ props }">
           <v-icon
-            dark
-            v-bind="attrs"
-            v-on="on"
+            v-bind="props"
           >
             mdi-cog
           </v-icon>
@@ -23,14 +20,14 @@
             <v-switch
               v-model="showDrafts"
               label="Drafts"
-              dense
+              density="compact"
             />
           </v-list-item>
           <v-list-item>
             <v-switch
               v-model="showEmpty"
               label="Empty Dandisets"
-              dense
+              density="compact"
             />
           </v-list-item>
         </v-list>
@@ -39,8 +36,8 @@
         Sort By:
       </div>
       <v-chip-group
-        :value="sortOption"
-        active-class="white light-blue--text"
+        :model-value="sortOption"
+        selected-class="white light-blue--text"
         dark
         mandatory
       >
@@ -50,7 +47,7 @@
           @click="changeSort(i)"
         >
           {{ option.name }}
-          <v-icon right>
+          <v-icon end>
             <template v-if="sortDir === -1 || sortOption !== i">
               mdi-sort-variant
             </template>
@@ -69,7 +66,7 @@
     />
     <v-container v-else>
       <v-row
-        class="text-center ma-12 grey--text"
+        class="text-center ma-12 text-grey"
         align="center"
         justify="center"
       >
