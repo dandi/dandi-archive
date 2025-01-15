@@ -1,7 +1,7 @@
 <template>
   <v-app-bar app>
     <v-menu
-      v-if="$vuetify.breakpoint.mobile"
+      v-if="display.mobile"
       open-on-hover
       offset-y
       close-delay="300"
@@ -59,7 +59,7 @@
         class="mr-3"
       />
     </router-link>
-    <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
+    <v-toolbar-items v-if="!display.mobile">
       <template v-for="navItem in navItems">
         <v-btn
           v-if="!navItem.external && (!navItem.if || navItem.if())"
@@ -133,6 +133,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import {
   cookiesEnabled as cookiesEnabledFunc,
@@ -153,6 +154,8 @@ interface NavigationItem {
   if?(): boolean,
   external: boolean,
 }
+
+const display = useDisplay();
 
 const cookiesEnabled = computed(cookiesEnabledFunc);
 const loggedIn = computed(loggedInFunc);
