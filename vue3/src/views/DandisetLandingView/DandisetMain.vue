@@ -9,7 +9,7 @@
         <v-col
           class="d-flex align-center"
         >
-          <h1 :class="`font-weight-light ${$vuetify.breakpoint.xs ? 'text-h6' : ''}`">
+          <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
             <ShareDialog />
             {{ meta.name }}
           </h1>
@@ -57,7 +57,7 @@
         </v-col>
       </v-row>
       <v-row class="mx-1">
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <v-chip
             class="text-wrap py-1 pl-1"
             style="text-align: center;"
@@ -102,7 +102,7 @@
             </span>
           </v-chip>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
             <template
@@ -115,13 +115,13 @@
             </template>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-file</v-icon>
             File Count <strong>{{ stats.asset_count }}</strong>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
             Size <strong>{{ transformFilesize(stats.size) }}</strong>
@@ -131,19 +131,19 @@
       <v-row
         class="mx-1"
       >
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
             Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="grey--text text--lighten-1">mdi-history</v-icon>
             Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span v-if="meta && meta.license">
             <v-icon class="grey--text text--lighten-1">mdi-gavel</v-icon>
             Licenses:
@@ -157,7 +157,7 @@
             </span>
           </span>
         </v-col>
-        <v-col :cols="$vuetify.breakpoint.xs ? 12 : 3">
+        <v-col :cols="isXsDisplay ? 12 : 3">
           <span v-if="accessInformation && accessInformation.length">
             <v-icon class="grey--text text--lighten-1">mdi-account-question</v-icon>
             Access Information:
@@ -272,6 +272,7 @@ import { filesize } from 'filesize';
 import { marked } from 'marked';
 import moment from 'moment';
 import DOMPurify from 'dompurify';
+import { useDisplay } from 'vuetify';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
@@ -340,8 +341,10 @@ export default defineComponent({
   },
   setup() {
     const store = useDandisetStore();
-
+    const display = useDisplay();
+    
     const currentDandiset = computed(() => store.dandiset);
+    const isXsDisplay = computed(() => display.xs.value);
 
     const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
 
@@ -401,6 +404,7 @@ export default defineComponent({
 
     return {
       currentDandiset,
+      isXsDisplay,
       formatDate,
       stats,
       transformFilesize,
