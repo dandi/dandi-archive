@@ -271,7 +271,7 @@ import {
 } from 'vue';
 import type { RawLocation } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router';
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 import { trimEnd } from 'lodash';
 import axios from 'axios';
 
