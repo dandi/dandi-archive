@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { watchEffect } from 'vue';
-import { useRoute, useRouter } from 'vue-router/composables';
+import { useRoute, useRouter } from 'vue-router';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import logo from '@/assets/logo.svg';
