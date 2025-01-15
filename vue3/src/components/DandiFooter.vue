@@ -1,7 +1,7 @@
 <template>
   <v-footer class="text-body-2">
     <v-container>
-      <cookie-law theme="blood-orange">
+      <!-- <cookie-law theme="blood-orange">
         <div slot="message">
           <span
             v-if="cookiesEnabled()"
@@ -12,7 +12,7 @@
           >We noticed you're blocking cookies - note that certain aspects of
             the site may not work.</span>
         </div>
-      </cookie-law>
+      </cookie-law> -->
       <v-row>
         <v-col offset="2">
           &copy; 2019 - 2024 The DANDI Team<br>
@@ -110,7 +110,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import CookieLaw from 'vue-cookie-law';
 
 import { cookiesEnabled } from '@/rest';
 
@@ -119,7 +118,6 @@ const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/d
 
 export default defineComponent({
   name: 'DandiFooter',
-  components: { CookieLaw },
   setup() {
     return {
       version,
