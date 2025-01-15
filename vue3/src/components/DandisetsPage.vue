@@ -99,7 +99,7 @@ import {
 } from 'vue';
 
 import omit from 'lodash/omit';
-import { useRoute } from 'vue-router/composables';
+import { useRoute } from 'vue-router';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
