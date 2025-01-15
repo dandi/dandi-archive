@@ -14,11 +14,17 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@apidevtools/json-schema-ref-parser": "^11.7.3",
     "@mdi/font": "7.4.47",
+    "@resonant/oauth-client": "^0.9.2",
+    "axios": "^1.7.9",
     "core-js": "^3.37.1",
+    "filesize": "^10.1.6",
+    "moment": "^2.30.1",
     "pinia": "^2.3.0",
     "roboto-fontface": "*",
     "vue": "^3.4.31",
+    "vue-cookie-law": "^1.13.3",
     "vuetify": "^3.6.14"
   },
   "devDependencies": {
