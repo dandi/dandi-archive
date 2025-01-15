@@ -236,7 +236,7 @@ import axios from 'axios';
 import moment from 'moment';
 
 import type { RawLocation } from 'vue-router';
-import { useRoute } from 'vue-router/composables';
+import { useRoute } from 'vue-router';
 
 import { dandiRest, loggedIn as loggedInFunc, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
