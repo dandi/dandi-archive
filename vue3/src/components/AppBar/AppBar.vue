@@ -153,17 +153,17 @@ const loggedIn = computed(loggedInFunc);
 const insideIFrame = computed(insideIFrameFunc);
 
 const navItems: NavigationItem[] = [
-  {
-    text: 'Public Dandisets',
-    to: 'publicDandisets',
-    external: false,
-  },
-  {
-    text: 'My Dandisets',
-    to: 'myDandisets',
-    external: false,
-    if: loggedInFunc,
-  },
+  // {
+  //   text: 'Public Dandisets',
+  //   to: 'publicDandisets',
+  //   external: false,
+  // },
+  // {
+  //   text: 'My Dandisets',
+  //   to: 'myDandisets',
+  //   external: false,
+  //   if: loggedInFunc,
+  // },
   {
     text: 'Starred Dandisets',
     to: 'starredDandisets',
