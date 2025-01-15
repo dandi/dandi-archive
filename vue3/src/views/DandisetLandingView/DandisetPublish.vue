@@ -159,9 +159,9 @@
     />
 
     <v-row>
-      <v-subheader class="mb-2 text-black text-h5">
+      <v-list-subheader class="mb-2 text-black text-h5">
         This Version
-      </v-subheader>
+      </v-list-subheader>
     </v-row>
     <v-row
       class="pa-2 mb-5 text-body-2 align-center"
@@ -180,9 +180,9 @@
       </v-col>
     </v-row>
     <v-row>
-      <v-subheader class="mb-2 text-black text-h5">
+      <v-list-subheader class="mb-2 text-black text-h5">
         Other Versions
-      </v-subheader>
+      </v-list-subheader>
     </v-row>
     <v-row
       v-for="(version, i) in otherVersions"
