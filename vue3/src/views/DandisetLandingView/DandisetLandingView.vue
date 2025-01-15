@@ -58,7 +58,7 @@
         indeterminate
       />
       <v-row no-gutters>
-        <v-col :cols="$vuetify.breakpoint.smAndDown ? 12 : 10">
+        <v-col :cols="isSmDisplay ? 12 : 10">
           <v-sheet
             v-if="!currentDandiset || loading"
             class="py-8 px-7"
@@ -74,7 +74,7 @@
           />
         </v-col>
         <v-col
-          v-if="!$vuetify.breakpoint.smAndDown"
+          v-if="!isSmDisplay"
           cols="2"
         >
           <v-sheet
@@ -89,7 +89,7 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="$vuetify.breakpoint.smAndDown">
+      <v-row v-if="isSmDisplay">
         <v-col cols="12">
           <v-sheet
             v-if="!currentDandiset || loading"
@@ -114,6 +114,7 @@ import {
 import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 // import Meditor from '@/components/Meditor/Meditor.vue';
@@ -154,7 +155,9 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const store = useDandisetStore();
+const display = useDisplay();
 
+const isSmDisplay = computed(() => display.smAndDown.value);
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
 
