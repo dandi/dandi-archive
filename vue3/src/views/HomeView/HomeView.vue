@@ -14,7 +14,7 @@
         <v-container
           fluid
           class="d-flex flex-column py-0"
-          :class="[display.smAndUp ? 'brain-gradient' : 'hide-brain']"
+          :class="[isSmAndUpDisplay ? 'brain-gradient' : 'hide-brain']"
         >
           <v-row
             class="flex-grow-1"
@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect } from 'vue';
+import { computed, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
@@ -54,6 +54,7 @@ import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import logo from '@/assets/logo.svg';
 
 const display = useDisplay();
+const isSmAndUpDisplay = computed(() => display.smAndUp.value);
 
 /**
 * Redirect old hash URLS to the correct one. This is only done on

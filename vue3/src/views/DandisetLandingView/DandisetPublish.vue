@@ -167,7 +167,7 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="isMdDisplay ? 12 : 4"
         style=""
       >
         {{ formatDate(currentDandiset.modified) }}
@@ -190,7 +190,7 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="isMdDisplay ? 12 : 4"
       >
         {{ formatDate(version.modified) }}
       </v-col>
@@ -231,6 +231,7 @@ import {
   ref,
   watchEffect,
 } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import axios from 'axios';
 import moment from 'moment';
@@ -276,7 +277,9 @@ const props = defineProps({
 });
 const route = useRoute();
 const store = useDandisetStore();
+const display = useDisplay();
 
+const isMdDisplay = computed(() => display.md.value);
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.dandiset?.version);
 
