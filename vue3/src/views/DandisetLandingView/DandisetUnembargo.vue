@@ -161,7 +161,7 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="isMdDisplay ? 12 : 4"
         style=""
       >
         {{ formatDate(currentDandiset.modified) }}
@@ -181,6 +181,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import type { IncompleteUpload } from '@/types';
 import DandisetValidationErrors from './DandisetValidationErrors.vue';
 import { filesize } from 'filesize';
+import { useDisplay } from 'vuetify';
 
 function formatDate(date: string, format: string = 'll'): string {
   return moment(date).format(format);
@@ -202,6 +203,9 @@ const uploadHeaders = [
 ];
 
 const store = useDandisetStore();
+const display = useDisplay();
+
+const isMdDisplay = computed(() => display.md.value);
 const currentDandiset = computed(() => store.dandiset);
 const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING');
 const showWarningDialog = ref(false);
