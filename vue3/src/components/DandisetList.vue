@@ -9,7 +9,7 @@
       selectable
       :to="{
         name: 'dandisetLanding',
-        params: { identifier: item.dandiset.identifier, origin },
+        params: { identifier: item.dandiset.identifier },
         query: { ...$route.query, pos: getPos(index) },
       }"
       exact
