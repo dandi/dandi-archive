@@ -37,11 +37,10 @@ We propose to:
   - DLP URL `https://dandiarchive.org/dandiset/{dandiset.id}`
   - For embargoed dandiset, **do not** specify any metadata besides the DLP URL.
   - If minting a DOI fails, we need to raise exception to inform developers about the issue but proceed with the creation of the dandiset.
-- Upon changes to dandiset metadata record, for public (non-embargoed dandisets), try to update datacite metadata record while keeping the same target URL.
-  - For `Draft DOI` (dandiset was not published yet), there is no validation.
+- Upon changes to dandiset metadata record (so, of a draft version of dandiset), for public (non-embargoed dandisets):
+  - For `Draft DOI` (dandiset was not published yet), there is no validation, try to update datacite metadata record while keeping the same target URL
     - **Question to clear up**: what happens to Draft DOI if metadata record is invalid? Does it fail to update altogether? does it update only the fields it knows about?
-  - For `Findable DOI` (dandiset was published), metadata record must pass validation, so we might fail to update.
-    - That should be ok. Alternatively we could try to update only some most important metadata fields from the last released version of the dandiset (title, authors, ...).
+  - For `Findable DOI` (dandiset was published at least once), we do not update anything since DLP points to that published version.
   - **TODO: figure out how to annotate Draft version, so it always says that it is a draft version and thus potentially not used for citation if that could be avoided**
 - Upon changes to dandiset metadata record, for embargoed dandisets don't do anything.
 - Upon unembargoing dandiset: update `Draft DOI` metadata record with current metadata **after** unembargoing.
@@ -55,17 +54,19 @@ We propose to:
 ## Concerns to keep in mind/address
 
 - Draft dandiset might not have sufficient metadata to mint a proper DOI, or metadata might not be "proper" (fail validation) thus causing issues with minting a DOI
-  - **Solution**: start with Draft (not findable) DOI, and then upon publication mint a "findable" DOI
+  - **Solution**: start with Draft (not findable) DOI, and then upon publication mint a "findable" DOI.
   - **Follow up concern**: after dandiset and DOI publish, metadata of the Draft version of the dandiset could still be changed.
     This potentially making changed record again "invalid".
     Should be Ok'ish
 - Test site of datacite had different result of validation that the primary one
 
+- `Draft` DOI is not visible/usable by users. We might want to switch it to `Findable` as soon ASAP (when datacite validates record ok).
 - `Findable` DOI cannot be deleted, but in principle we allow for deletion of dandisets.
   - We might want a dedicated 404 page for deleted dandisets, or at least a message that the dandiset was deleted, and ideally describe the reason why it was deleted ("Upon request of maintainer", "Due to violation of terms of service", etc.)
   - Then we adjust DOI record to point to that page.
 
 - Should we do anything at dandischema level?
+  - yes, `to_datacite` and potentially model might need to change to accomodate for needed changes.
 
 - Should we do anything at DLP level?
 
