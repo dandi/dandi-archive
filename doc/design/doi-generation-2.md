@@ -33,10 +33,10 @@ DataCite allows for three types of DOIs ([DataCite](https://support.datacite.org
 We propose to:
 
 - Instead of a fake DOI, upon creation of a **public** dandiset, mint and use a legit `Draft DOI` `10.48324/dandi.{dandiset.id}` with
- - *minimal metadata* entered during creation request (title, description, license)
- - DLP URL `https://dandiarchive.org/dandiset/{dandiset.id}`
- - For embargoed dandiset, **do not** specify any metadata besides the DLP URL.
- - If minting a DOI fails, we need to raise exception to inform developers about the issue but proceed with the creation of the dandiset.
+  - *minimal metadata* entered during creation request (title, description, license)
+  - DLP URL `https://dandiarchive.org/dandiset/{dandiset.id}`
+  - For embargoed dandiset, **do not** specify any metadata besides the DLP URL.
+  - If minting a DOI fails, we need to raise exception to inform developers about the issue but proceed with the creation of the dandiset.
 - Upon changes to dandiset metadata record, for public (non-embargoed dandisets), try to update datacite metadata record while keeping the same target URL.
   - For `Draft DOI` (dandiset was not published yet), there is no validation.
     - **Question to clear up**: what happens to Draft DOI if metadata record is invalid? Does it fail to update altogether? does it update only the fields it knows about?
