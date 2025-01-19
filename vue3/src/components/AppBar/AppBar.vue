@@ -158,12 +158,12 @@ const navItems: NavigationItem[] = [
     to: 'publicDandisets',
     external: false,
   },
-  // {
-  //   text: 'My Dandisets',
-  //   to: 'myDandisets',
-  //   external: false,
-  //   if: loggedInFunc,
-  // },
+  {
+    text: 'My Dandisets',
+    to: 'myDandisets',
+    external: false,
+    if: loggedInFunc,
+  },
   {
     text: 'Starred Dandisets',
     to: 'starredDandisets',
