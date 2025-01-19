@@ -2,8 +2,8 @@
   <div v-if="currentDandiset && meta && stats">
     <v-card
       class="px-3"
-      color="grey lighten-5"
-      outlined
+      color="grey-lighten-5"
+      variant="outlined"
     >
       <v-row class="mx-2 my-2 mb-0">
         <v-col
@@ -21,23 +21,21 @@
           />
           <v-chip
             v-if="currentDandiset.version != 'draft'"
-            outlined
+            variant="outlined"
             class="mx-2 pl-1"
           >
-            <v-tooltip
-              top
-            >
-              <template #activator="{ on, attrs }">
+            <v-tooltip location="top">
+              <template #activator="{ props }">
                 <v-btn
                   v-if="currentDandiset !== null"
                   icon
-                  small
-                  v-bind="attrs"
-                  v-on="on"
+                  size="small"
+
+                  v-bind="props"
                   @click="copy('DOI')"
                 >
                   <v-icon
-                    small
+                    size="small"
                   >
                     mdi-content-copy
                   </v-icon>
@@ -61,22 +59,22 @@
           <v-chip
             class="text-wrap py-1 pl-1"
             style="text-align: center;"
-            outlined
+            variant="outlined"
           >
             <v-tooltip
-              top
+              location="top"
             >
-              <template #activator="{ on, attrs }">
+              <template #activator="{ props }">
                 <v-btn
                   v-if="currentDandiset !== null"
                   icon
-                  small
-                  v-bind="attrs"
-                  v-on="on"
+                  size="small"
+
+                  v-bind="props"
                   @click="copy('dandiID')"
                 >
                   <v-icon
-                    small
+                    size="small"
                   >
                     mdi-content-copy
                   </v-icon>
@@ -104,7 +102,7 @@
         </v-col>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
-            <v-icon class="grey--text text--lighten-1">mdi-account</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-account</v-icon>
             <template
               v-if="!currentDandiset.contact_person"
             >
@@ -117,13 +115,13 @@
         </v-col>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
-            <v-icon class="grey--text text--lighten-1">mdi-file</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-file</v-icon>
             File Count <strong>{{ stats.asset_count }}</strong>
           </span>
         </v-col>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
-            <v-icon class="grey--text text--lighten-1">mdi-server</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-server</v-icon>
             Size <strong>{{ transformFilesize(stats.size) }}</strong>
           </span>
         </v-col>
@@ -133,19 +131,19 @@
       >
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
-            <v-icon class="grey--text text--lighten-1">mdi-calendar-range</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-calendar-range</v-icon>
             Created <strong>{{ formatDate(currentDandiset.created) }}</strong>
           </span>
         </v-col>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
-            <v-icon class="grey--text text--lighten-1">mdi-history</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-history</v-icon>
             Last update <strong>{{ formatDate(currentDandiset.modified) }}</strong>
           </span>
         </v-col>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span v-if="meta && meta.license">
-            <v-icon class="grey--text text--lighten-1">mdi-gavel</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-gavel</v-icon>
             Licenses:
             <strong v-if="!meta.license.length">(none)</strong>
             <span
@@ -159,7 +157,7 @@
         </v-col>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span v-if="accessInformation && accessInformation.length">
-            <v-icon class="grey--text text--lighten-1">mdi-account-question</v-icon>
+            <v-icon class="text-grey-lighten-1">mdi-account-question</v-icon>
             Access Information:
             <span
               v-for="(item, i) in accessInformation"
@@ -193,7 +191,7 @@
         >
           <v-card
             v-if="(meta.keywords && meta.keywords.length) || (meta.license && meta.license.length)"
-            outlined
+            variant="outlined"
             class="mb-4"
           >
             <v-card-text
@@ -204,7 +202,7 @@
               <v-chip
                 v-for="(keyword, i) in meta.keywords"
                 :key="i"
-                small
+                size="small"
                 style="margin: 5px;"
               >
                 {{ keyword }}
@@ -218,7 +216,7 @@
               <v-chip
                 v-for="(item, i) in subjectMatter"
                 :key="i"
-                small
+                size="small"
                 style="margin: 5px;"
               >
                 {{ item.name }}
@@ -342,7 +340,7 @@ export default defineComponent({
   setup() {
     const store = useDandisetStore();
     const display = useDisplay();
-    
+
     const currentDandiset = computed(() => store.dandiset);
     const isXsDisplay = computed(() => display.xs.value);
 
