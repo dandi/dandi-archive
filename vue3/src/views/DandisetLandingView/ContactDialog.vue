@@ -1,45 +1,42 @@
 <template>
-  <v-menu
-    offset-y
-    left
-  >
-    <template
-      #activator="{ on, attrs }"
-    >
+  <v-menu location="left">
+    <template #activator="{ props }">
       <v-btn
         id="contact"
-        outlined
+        variant="outlined"
         block
-        v-bind="attrs"
-        v-on="on"
+
+        v-bind="props"
       >
         <v-icon
           color="primary"
-          left
+          start
         >
           mdi-card-account-mail
         </v-icon>
         <span>Contact</span>
         <v-spacer />
-        <v-icon right>
+        <v-icon end>
           mdi-chevron-down
         </v-icon>
       </v-btn>
     </template>
-    <v-card
-    >
-      <v-card-title class="pb-0" style="min-width: fit-content;">
+    <v-card>
+      <v-card-title
+        class="pb-0"
+        style="min-width: fit-content;"
+      >
         Select an e-mail recipient:
       </v-card-title>
       <v-list>
         <v-tooltip
           :disabled="!disableDandisetOwnersButton"
           open-on-hover
-          left
+          location="left"
         >
-          <template #activator="{ on }">
+          <template #activator="{ props }">
             <div
-            v-on="on"
+              v-bind="props"
             >
               <v-list-item
                 :disabled="disableDandisetOwnersButton"
@@ -47,8 +44,8 @@
               >
                 <v-icon
                   color="primary"
-                  left
-                  small
+                  start
+                  size="small"
                 >
                   mdi-card-account-mail
                 </v-icon>
@@ -59,30 +56,29 @@
           <span v-if="!loggedIn()"> You must be logged in to contact the owner </span>
           <span v-if="!dandisetOwnerEmails?.length"> No owner e-mail available </span>
         </v-tooltip>
-      <v-divider />
+        <v-divider />
         <v-tooltip
-            :disabled="!disableContactPersonButton"
-            open-on-hover
-            left
-          >
-
-          <template #activator="{ on }">
-            <div v-on="on">
+          :disabled="!disableContactPersonButton"
+          open-on-hover
+          location="left"
+        >
+          <template #activator="{ props }">
+            <div v-bind="props">
               <v-list-item
                 :disabled="disableContactPersonButton"
                 :href="makeTemplate(dandisetContactPersonEmails)"
               >
                 <v-icon
                   color="primary"
-                  left
-                  small
+                  start
+                  size="small"
                 >
                   mdi-card-account-mail
                 </v-icon>
                 Dandiset Contact Person
               </v-list-item>
             </div>
-            </template>
+          </template>
           <span> No contact e-mail available </span>
         </v-tooltip>
       </v-list>
