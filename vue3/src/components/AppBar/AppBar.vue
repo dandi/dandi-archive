@@ -55,7 +55,7 @@
           :key="navItem.text"
           :to="{name: navItem.to}"
           exact
-          text
+          variant="text"
         >
           {{ navItem.text }}
         </v-btn>
@@ -65,12 +65,12 @@
           :href="navItem.to"
           target="_blank"
           rel="noopener"
-          text
+          variant="text"
         >
           {{ navItem.text }}
           <v-icon
             class="ml-1"
-            small
+            size="small"
           >
             mdi-open-in-new
           </v-icon>
