@@ -1,35 +1,70 @@
-/**
- * router/index.ts
- *
- * Automatic routes for `./src/pages/*.vue`
- */
+import { createRouter, createWebHistory } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 
-// Composables
-import { createRouter, createWebHistory } from 'vue-router/auto'
-import { routes } from 'vue-router/auto-routes'
+import HomeView from '@/views/HomeView/HomeView.vue';
+import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
+import MyDandisetsView from '@/views/MyDandisetsView/MyDandisetsView.vue';
+import SearchDandisetsView from '@/views/SearchDandisetsView/SearchDandisetsView.vue';
+import DandisetLandingView from '@/views/DandisetLandingView/DandisetLandingView.vue';
+import CreateDandisetView from '@/views/CreateDandisetView/CreateDandisetView.vue';
+import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
+import SearchView from '@/views/SearchView/SearchView.vue';
+import StarredDandisetsView from '@/views/StarredDandisetsView/StarredDandisetsView.vue';
 
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    name: 'home',
+    component: HomeView,
+  },
+  {
+    path: '/dandiset',
+    name: 'publicDandisets',
+    component: PublicDandisetsView,
+  },
+  {
+    path: '/dandiset/my',
+    name: 'myDandisets',
+    component: MyDandisetsView,
+  },
+  {
+    path: '/dandiset/starred',
+    name: 'starredDandisets',
+    component: StarredDandisetsView,
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/dandiset/search',
+    name: 'searchDandisets',
+    component: SearchDandisetsView,
+  },
+  {
+    path: '/dandiset/create',
+    name: 'createDandiset',
+    component: CreateDandisetView,
+  },
+  {
+    path: '/dandiset/:identifier/:version/files',
+    name: 'fileBrowser',
+    props: true,
+    component: FileBrowser,
+  },
+  {
+    path: '/dandiset/:identifier/:version?',
+    name: 'dandisetLanding',
+    props: true,
+    component: DandisetLandingView,
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: SearchView,
+  },
+];
+
+export default createRouter({
+  history: createWebHistory(),
   routes,
-})
-
-// Workaround for https://github.com/vitejs/vite/issues/11804
-router.onError((err, to) => {
-  if (err?.message?.includes?.('Failed to fetch dynamically imported module')) {
-    if (!localStorage.getItem('vuetify:dynamic-reload')) {
-      console.log('Reloading page to fix dynamic import error')
-      localStorage.setItem('vuetify:dynamic-reload', 'true')
-      location.assign(to.fullPath)
-    } else {
-      console.error('Dynamic import error, reloading page did not fix it', err)
-    }
-  } else {
-    console.error(err)
-  }
-})
-
-router.isReady().then(() => {
-  localStorage.removeItem('vuetify:dynamic-reload')
-})
-
-export default router
+});
