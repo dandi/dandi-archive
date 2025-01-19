@@ -1,50 +1,42 @@
 <template>
-  <v-menu
-    offset-y
-    left
-  >
-    <template
-      #activator="{ on, attrs }"
-    >
+  <v-menu location="left">
+    <template #activator="{ props }">
       <v-btn
         id="external-dandiset-services"
-        outlined
+        variant="outlined"
         block
-        v-bind="attrs"
-        v-on="on"
+
+        v-bind="props"
       >
         <v-icon
           color="primary"
-          left
+          start
         >
           mdi-web
         </v-icon>
         <span>Open with</span>
         <v-spacer />
-        <v-icon right>
+        <v-icon end>
           mdi-chevron-down
         </v-icon>
       </v-btn>
     </template>
-    <v-card
-    >
+    <v-card>
       <v-list>
         <v-tooltip
           open-on-hover
-          left
+          location="left"
         >
-          <template #activator="{ on }">
-            <div
-            v-on="on"
-            >
+          <template #activator="{ props }">
+            <div v-bind="props">
               <v-list-item
                 :href="neurosiftURL"
                 target="_blank"
               >
                 <v-icon
                   color="primary"
-                  left
-                  small
+                  start
+                  size="small"
                 >
                   mdi-web
                 </v-icon>
