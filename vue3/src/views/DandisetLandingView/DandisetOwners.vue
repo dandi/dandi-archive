@@ -47,15 +47,15 @@
         width="80%"
         persistent
       >
-        <template #activator="{ on }">
+        <template #activator="{ props: dialogProps }">
           <v-tooltip
             :disabled="!manageOwnersDisabled"
             left
           >
-            <template #activator="{ on: tooltipOn }">
+            <template #activator="{ props: tooltipProps }">
               <div
                 style="width: 100%;"
-                v-on="tooltipOn"
+                v-bind="tooltipProps"
               >
                 <v-btn
                   id="manage"
@@ -64,7 +64,7 @@
                   color="light-blue lighten-5"
                   class="light-blue--text text--lighten-1 justify-start"
                   block
-                  v-on="on"
+                  v-bind="dialogProps"
                 >
                   <v-icon
                     class="pr-2"
