@@ -47,15 +47,15 @@
         width="80%"
         persistent
       >
-        <template #activator="{ on }">
+        <template #activator="{ props: dialogProps }">
           <v-tooltip
             :disabled="!manageOwnersDisabled"
             left
           >
-            <template #activator="{ on: tooltipOn }">
+            <template #activator="{ props: tooltipProps }">
               <div
                 style="width: 100%;"
-                v-on="tooltipOn"
+                v-bind="mergeProps(dialogProps, tooltipProps)"
               >
                 <v-btn
                   id="manage"
@@ -97,7 +97,7 @@
 import { loggedIn, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
-import { computed, ref } from 'vue';
+import { computed, ref, mergeProps } from 'vue';
 
 const store = useDandisetStore();
 
