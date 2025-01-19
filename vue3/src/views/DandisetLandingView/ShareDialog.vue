@@ -62,7 +62,8 @@
           <v-row
             align="center"
           >
-            <ShareNetwork
+            <!-- TODO: Add back in when Vue 3 equivalent is found -->
+            <!-- <ShareNetwork
               network="twitter"
               style="text-decoration: none;"
               :url="permalink"
@@ -76,7 +77,7 @@
               >
                 mdi-twitter
               </v-icon>
-            </ShareNetwork>
+            </ShareNetwork> -->
           </v-row>
         </v-list-item>
       </v-card-actions>
@@ -96,8 +97,8 @@ defineProps({
   },
 });
 
-// Twitter user to mention
-const twitterUser = 'DANDIarchive';
+// // Twitter user to mention
+// const twitterUser = 'DANDIarchive';
 
 const store = useDandisetStore();
 const dialog = ref(false);
