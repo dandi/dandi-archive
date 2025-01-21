@@ -46,9 +46,13 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
 });
 
-Vue.use(VueGtag, {
-  config: { id: import.meta.env.VITE_APP_GOOGLE_ANALYTICS_TAG || '' },
-}, router);
+const googleAnalyticsTag = import.meta.env.VITE_APP_GOOGLE_ANALYTICS_TAG;
+
+if (googleAnalyticsTag) {
+  Vue.use(VueGtag, {
+    config: { id: googleAnalyticsTag },
+  }, router);
+}
 
 Vue.use(VueSocialSharing);
 
