@@ -15,7 +15,30 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2025 The DANDI Team<br>
+          &copy; 2019 - 2024 The DANDI Team<br>
+          <a
+            target="_blank"
+            rel="noopener"
+            href="https://docs.dandiarchive.org/about/terms/"
+          >Terms</a> 
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://docs.dandiarchive.org/about/policies/"
+          >Policies</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://github.com/dandi/dandi-archive/blob/master/CODE_OF_CONDUCT.md"
+          >Code of Conduct</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+          <br>
           version
           <a
             class="version-link"
