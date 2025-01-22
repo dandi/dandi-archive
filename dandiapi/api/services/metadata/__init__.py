@@ -1,17 +1,25 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from celery.utils.log import get_task_logger
 import dandischema.exceptions
 from dandischema.metadata import aggregate_assets_summary, validate
 from django.conf import settings
 from django.db import transaction
+from django.db.models.query_utils import Q
 from django.utils import timezone
-import jsonschema.exceptions
 
 from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.metadata.exceptions import (
     AssetHasBeenPublishedError,
     VersionHasBeenPublishedError,
+    VersionMetadataConcurrentlyModifiedError,
 )
 from dandiapi.api.services.publish import _build_publishable_version_from_draft
+
+if TYPE_CHECKING:
+    import jsonschema.exceptions
 
 logger = get_task_logger(__name__)
 
@@ -95,6 +103,7 @@ def version_aggregate_assets_summary(version: Version) -> None:
     )
     if updated_count == 0:
         logger.info('Skipped updating assetsSummary for version %s', version.id)
+        raise VersionMetadataConcurrentlyModifiedError
 
 
 def validate_version_metadata(*, version: Version) -> None:
@@ -106,37 +115,26 @@ def validate_version_metadata(*, version: Version) -> None:
         publishable_version = _build_publishable_version_from_draft(version)
         metadata_for_validation = publishable_version.metadata
 
-        metadata_for_validation[
-            'id'
-        ] = f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'  # noqa
-        metadata_for_validation[
-            'url'
-        ] = f'{settings.DANDI_WEB_APP_URL}/dandiset/{publishable_version.dandiset.identifier}/{publishable_version.version}'  # noqa
+        metadata_for_validation['id'] = (
+            f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'
+        )
+        metadata_for_validation['url'] = (
+            f'{settings.DANDI_WEB_APP_URL}/dandiset/'
+            f'{publishable_version.dandiset.identifier}/{publishable_version.version}'
+        )
         metadata_for_validation['doi'] = '10.80507/dandi.123456/0.123456.1234'
         metadata_for_validation['assetsSummary'] = {
             'schemaKey': 'AssetsSummary',
-            'numberOfBytes': 1 if version.assets.filter(blob__size__gt=0).exists() else 0,
+            'numberOfBytes': 1
+            if version.assets.filter(Q(blob__size__gt=0) | Q(zarr__size__gt=0)).exists()
+            else 0,
             'numberOfFiles': 1 if version.assets.exists() else 0,
         }
         return metadata_for_validation
 
-    logger.info('Validating dandiset metadata for version %s', version.id)
-
-    # Published versions are immutable
-    if version.version != 'draft':
-        raise VersionHasBeenPublishedError
-
-    with transaction.atomic():
-        # validating version metadata needs to lock the version to avoid racing with
-        # other modifications e.g. aggregate_assets_summary.
-        version = (
-            Version.objects.filter(id=version.id, status=Version.Status.PENDING)
-            .select_for_update()
-            .first()
-        )
-        version.status = Version.Status.VALIDATING
-        version.save()
-
+    def _get_version_validation_result(
+        version: Version,
+    ) -> tuple[Version.Status, list[dict[str, str]]]:
         try:
             validate(
                 _build_validatable_version_metadata(version),
@@ -145,20 +143,43 @@ def validate_version_metadata(*, version: Version) -> None:
             )
         except dandischema.exceptions.ValidationError as e:
             logger.info('Error while validating version %s', version.id)
-            version.status = Version.Status.INVALID
-
-            validation_errors = _collect_validation_errors(e)
-            version.validation_errors = validation_errors
-            version.save()
-            return
+            return (Version.Status.INVALID, _collect_validation_errors(e))
         except ValueError as e:
             # A bare ValueError is thrown when dandischema generates its own exceptions, like a
             # mismatched schemaVersion.
-            version.status = Version.Status.INVALID
-            version.validation_errors = [{'field': '', 'message': str(e)}]
-            version.save()
-            return
+            logger.info('Error while validating version %s', version.id)
+            return (Version.Status.INVALID, [{'field': '', 'message': str(e)}])
+
         logger.info('Successfully validated version %s', version.id)
-        version.status = Version.Status.VALID
-        version.validation_errors = []
-        version.save()
+        return (Version.Status.VALID, [])
+
+    version_id = version.id
+    logger.info('Validating dandiset metadata for version %s', version_id)
+
+    # Published versions are immutable
+    if version.version != 'draft':
+        raise VersionHasBeenPublishedError
+
+    with transaction.atomic():
+        # validating version metadata needs to lock the version to avoid racing with
+        # other modifications e.g. aggregate_assets_summary.
+        version_qs = Version.objects.filter(id=version_id).select_for_update()
+        current_version = version_qs.first()
+
+        # It's possible for this version to get deleted during execution of this function.
+        # If that happens *before* the select_for_update query, return early.
+        if current_version is None:
+            logger.info('Version %s no longer exists, skipping validation', version_id)
+            return
+
+        # If the version has since been modified, return early
+        if current_version.status != Version.Status.PENDING:
+            logger.info(
+                'Skipping validation for version with a status of %s', current_version.status
+            )
+            return
+
+        # Set to validating and continue
+        version_qs.update(status=Version.Status.VALIDATING)
+        status, errors = _get_version_validation_result(current_version)
+        version_qs.update(status=status, validation_errors=errors, modified=timezone.now())

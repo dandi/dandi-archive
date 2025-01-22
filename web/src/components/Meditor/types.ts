@@ -65,7 +65,7 @@ export const isJSONSchema = (schema: JSONSchemaUnionType): schema is JSONSchema7
 
 export const isBasicSchema = (schema: JSONSchemaUnionType): schema is BasicSchema => (
   isJSONSchema(schema)
-  && isBasicType(schema.type)
+  && (isBasicType(schema.type))
 );
 
 export const isObjectSchema = (schema: JSONSchemaUnionType): schema is ObjectSchema => (

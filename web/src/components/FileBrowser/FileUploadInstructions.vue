@@ -22,7 +22,7 @@
             width="60%"
             class="white--text pl-2 py-1 text-left"
           >
-            <div>> dandi download https://dandiarchive.org/dandiset/{{ dandisetIdentifier }}/draft</div>
+            <div>> {{ downloadCommand }}</div>
             <div>> cd {{ dandisetIdentifier }}</div>
             <div>> dandi organize &lt;source_folder&gt; -f dry</div>
             <div>> dandi organize &lt;source_folder&gt;</div>
@@ -42,8 +42,8 @@
           <span class="text-body-2 grey--text text--darken-1">
             <span class="text-body-2 grey--text text--darken-1">
               Follow the installation instructions in the
-              <a href="https://www.dandiarchive.org/handbook/10_using_dandi/#dandi-python-client">
-                DANDI handbook
+              <a href="https://docs.dandiarchive.org/10_using_dandi/#dandi-python-client">
+                DANDI Docs
               </a> .
             </span>
           </span>
@@ -59,4 +59,12 @@ import { useDandisetStore } from '@/stores/dandiset';
 
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
+
+if (dandisetIdentifier.value === undefined) {
+  throw new Error('store.dandiset must be defined');
+}
+
+const downloadCommand = computed(() => {
+  return `dandi download ${window.location.origin}/dandiset/${dandisetIdentifier.value}/draft`
+});
 </script>

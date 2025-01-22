@@ -7,6 +7,7 @@ export interface User {
   username: string,
   name: string,
   admin?: boolean,
+  email: string,
   status: 'INCOMPLETE' | 'PENDING' | 'APPROVED' | 'REJECTED',
   approved: boolean,
 }
@@ -37,6 +38,7 @@ export interface Version {
   version: string,
   name: string,
   asset_count: number,
+  active_uploads: number
   size: number,
   status: 'Pending' | 'Validating' | 'Valid' | 'Invalid' | 'Published',
   validation_error?: string,
@@ -99,4 +101,12 @@ export interface AssetPath {
   aggregate_files: number;
   aggregate_size: number;
   asset: AssetFile | null;
+}
+
+export interface IncompleteUpload {
+  created: string;
+  blob: string;
+  upload_id: string;
+  etag: string;
+  size: number;
 }

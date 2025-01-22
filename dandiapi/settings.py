@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
 
@@ -52,8 +54,6 @@ class DandiMixin(ConfigMixin):
         # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            # TODO: remove TokenAuthentication, it is only here to support
-            # the setTokenHack login workaround
             'rest_framework.authentication.TokenAuthentication',
         ]
 
@@ -71,13 +71,13 @@ class DandiMixin(ConfigMixin):
         ]
 
         # Pagination
-        configuration.REST_FRAMEWORK[
-            'DEFAULT_PAGINATION_CLASS'
-        ] = 'dandiapi.api.views.common.DandiPagination'
+        configuration.REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = (
+            'dandiapi.api.views.pagination.DandiPagination'
+        )
 
-        configuration.REST_FRAMEWORK[
-            'EXCEPTION_HANDLER'
-        ] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
+        configuration.REST_FRAMEWORK['EXCEPTION_HANDLER'] = (
+            'dandiapi.drf_utils.rewrap_django_core_exceptions'
+        )
 
         # If this environment variable is set, the pydantic model will allow URLs with localhost
         # in them. This is important for development and testing environments, where URLs will
@@ -88,9 +88,8 @@ class DandiMixin(ConfigMixin):
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_DANDISETS_LOG_BUCKET_NAME = values.Value(environ_required=True)
-    DANDI_DANDISETS_EMBARGO_BUCKET_NAME = values.Value(environ_required=True)
-    DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME = values.Value(environ_required=True)
+    DANDI_LOG_LEVEL = values.Value(default='INFO', environ=True)
     DANDI_ZARR_PREFIX_NAME = values.Value(default='zarr', environ=True)
 
     # Mainly applies to unembargo
@@ -109,11 +108,14 @@ class DandiMixin(ConfigMixin):
     DANDI_WEB_APP_URL = values.URLValue(environ_required=True)
     DANDI_API_URL = values.URLValue(environ_required=True)
     DANDI_JUPYTERHUB_URL = values.URLValue(environ_required=True)
+    DANDI_DEV_EMAIL = values.EmailValue(environ_required=True)
 
     DANDI_VALIDATION_JOB_INTERVAL = values.IntegerValue(environ=True, default=60)
 
     # The CloudAMQP connection was dying, using the heartbeat should keep it alive
     CELERY_BROKER_HEARTBEAT = 20
+    # Retry connections in case rabbit isn't immediately running
+    CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
     # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
     # button to appear in Swagger, along with a spurious "authorize" button that
@@ -150,8 +152,6 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
     DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
     DANDI_DANDISETS_LOG_BUCKET_NAME = 'test-dandiapi-dandisets-logs'
-    DANDI_DANDISETS_EMBARGO_BUCKET_NAME = 'test--embargo-dandiapi-dandisets'
-    DANDI_DANDISETS_EMBARGO_BUCKET_PREFIX = 'test-embargo-prefix/'
     DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME = 'test-embargo-dandiapi-dandisets-logs'
     DANDI_ZARR_PREFIX_NAME = 'test-zarr'
     DANDI_JUPYTERHUB_URL = 'https://hub.dandiarchive.org/'

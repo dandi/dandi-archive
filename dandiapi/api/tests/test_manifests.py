@@ -1,6 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.files.storage import Storage
 import pytest
 from rest_framework.renderers import JSONRenderer
 from rest_framework_yaml.renderers import YAMLRenderer
@@ -14,8 +17,11 @@ from dandiapi.api.manifests import (
 )
 from dandiapi.api.models import AssetBlob, Version
 
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
 
-@pytest.mark.django_db()
+
+@pytest.mark.django_db
 def test_write_dandiset_jsonld(storage: Storage, version: Version):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -32,7 +38,7 @@ def test_write_dandiset_jsonld(storage: Storage, version: Version):
         assert f.read() == expected
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_assets_jsonld(storage: Storage, version: Version, asset_factory):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -52,7 +58,7 @@ def test_write_assets_jsonld(storage: Storage, version: Version, asset_factory):
         assert f.read() == expected
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_collection_jsonld(storage: Storage, version: Version, asset):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -79,7 +85,7 @@ def test_write_collection_jsonld(storage: Storage, version: Version, asset):
         assert f.read() == expected
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_dandiset_yaml(storage: Storage, version: Version):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -96,7 +102,7 @@ def test_write_dandiset_yaml(storage: Storage, version: Version):
         assert f.read() == expected
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -116,7 +122,7 @@ def test_write_assets_yaml(storage: Storage, version: Version, asset_factory):
         assert f.read() == expected
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls
@@ -136,7 +142,7 @@ def test_write_dandiset_yaml_already_exists(storage: Storage, version: Version):
         assert f.read() == expected
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_write_assets_yaml_already_exists(storage: Storage, version: Version, asset_factory):
     # Pretend like AssetBlob was defined with the given storage
     # The task piggybacks off of the AssetBlob storage to write the yamls

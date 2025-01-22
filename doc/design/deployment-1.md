@@ -7,7 +7,7 @@ The staging Netlify site is deployed automatically from `master`. The production
 
 The staging and production Heroku apps are deployed manually from a GitHub CI workflow using a GitHub action.
 
-Netlify and Heroku can deploy themselves automatically from a branch, but not from a release tag. This means we need to deploy manually from GitHub CI, which is quite complex and not ideal. Additionally, Netlify does not support multiple `netlify.toml` configuration files in a single project directory, which means the deployment CI step deletes the `netlify.toml` in the production deployment and specifies the environment with the Netlify CLI instead. 
+Netlify and Heroku can deploy themselves automatically from a branch, but not from a release tag. This means we need to deploy manually from GitHub CI, which is quite complex and not ideal. Additionally, Netlify does not support multiple `netlify.toml` configuration files in a single project directory, which means the deployment CI step deletes the `netlify.toml` in the production deployment and specifies the environment with the Netlify CLI instead.
 
 This proposed solution is to use a second `release` branch which tracks the released code. This allows us to use the automatic Netlify and Heroku deployments rather than pushing manually from GitHub CI.
 
@@ -26,7 +26,7 @@ The `release` branch is kept up to date using a GitHub CI workflow. Whenever a r
 The staging and production Netlify sites are now both managed using a single `netlify.toml`. [Deploy contexts](https://docs.netlify.com/configure-builds/file-based-configuration/#deploy-contexts) allow us to differentiate between the production and staging sites. Production uses the default configuration, while staging uses a `branch-deploy` configuration.
 
 ## Heroku deployment
-Heroku is configured to automatically deploy from `master` for the staging app and from `release` for the production app.
+GitHub CI workflows [backend-staging-deploy.yml](../../.github/workflows/backend-staging-deploy.yml) and [backend-production-deploy.yml](../../.github/workflows/backend-production-deploy.yml) are used to deploy the staging and production Heroku apps respectively.
 
 ## Development process
 To make changes to production, developers should:

@@ -12,30 +12,38 @@ on:
 
 jobs:
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out this repository
         uses: actions/checkout@v4
 
       - name: Build Docker image
         run: |
+          if [ -n "$DOCKER_LOGIN$DOCKER_TOKEN" ]; then
+              docker login -u "$DOCKER_LOGIN" --password-stdin <<<"$DOCKER_TOKEN"
+          else
+              echo "Not logging in to docker since no credentials were provided, might hit limits below"
+          fi
           docker build \
             -t dandiarchive/dandiarchive-api \
             -f dev/django-public.Dockerfile \
             .
+        env:
+          DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Export Docker image
         run: |
           docker image save -o dandiarchive-api.tgz dandiarchive/dandiarchive-api
 
       - name: Upload Docker image tarball
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dandiarchive-api.tgz
           path: dandiarchive-api.tgz
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build-image
     strategy:
       fail-fast: false
@@ -50,7 +58,7 @@ jobs:
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
     steps:
       - name: Download Docker image tarball
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dandiarchive-api.tgz
 
@@ -76,7 +84,7 @@ jobs:
 
       - name: Run dandi-api tests in dandi-cli
         run: |
-          python -m pytest --dandi-api \
+          python -m pytest --dandi-api -v \
             "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
@@ -84,12 +92,12 @@ jobs:
       - name: Dump Docker Compose logs
         if: failure()
         run: |
-          docker-compose \
+          docker compose \
             -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
             logs --timestamps
 
       - name: Shut down Docker Compose
         run: |
-          docker-compose \
+          docker compose \
             -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
             down -v

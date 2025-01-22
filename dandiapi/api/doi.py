@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 import requests
 
-from dandiapi.api.models import Version
+if TYPE_CHECKING:
+    from dandiapi.api.models import Version
 
 # All of the required DOI configuration settings
 DANDI_DOI_SETTINGS = [
@@ -12,6 +16,8 @@ DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def doi_configured() -> bool:
@@ -47,10 +53,10 @@ def create_doi(version: Version) -> str:
                 timeout=30,
             ).raise_for_status()
         except requests.exceptions.HTTPError as e:
-            logging.exception('Failed to create DOI %s', doi)
-            logging.exception(request_body)
+            logger.exception('Failed to create DOI %s', doi)
+            logger.exception(request_body)
             if e.response:
-                logging.exception(e.response.text)
+                logger.exception(e.response.text)
             raise
     return doi
 
@@ -66,13 +72,15 @@ def delete_doi(doi: str) -> None:
                 r.raise_for_status()
             except requests.exceptions.HTTPError as e:
                 if e.response and e.response.status_code == requests.codes.not_found:
-                    logging.warning('Tried to get data for nonexistent DOI %s', doi)
+                    logger.warning('Tried to get data for nonexistent DOI %s', doi)
                     return
-                logging.exception('Failed to fetch data for DOI %s', doi)
+                logger.exception('Failed to fetch data for DOI %s', doi)
                 raise
             if r.json()['data']['attributes']['state'] == 'draft':
                 try:
                     s.delete(doi_url).raise_for_status()
                 except requests.exceptions.HTTPError:
-                    logging.exception('Failed to delete DOI %s', doi)
+                    logger.exception('Failed to delete DOI %s', doi)
                     raise
+    else:
+        logger.debug('Skipping DOI deletion for %s since not configured', doi)

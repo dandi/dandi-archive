@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
-from django.db.models.query import QuerySet
+from django.db.models import Q
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
@@ -16,10 +16,19 @@ from rest_framework.utils.urls import replace_query_param
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services import audit
+from dandiapi.api.services.permissions.dandiset import (
+    get_owned_dandisets,
+    get_visible_dandisets,
+    is_dandiset_owner,
+)
 from dandiapi.api.storage import get_boto_client
-from dandiapi.api.views.common import DandiPagination
+from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +103,22 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     lookup_field = 'zarr_id'
     lookup_value_regex = ZarrArchive.UUID_REGEX
 
+    def get_queryset(self) -> QuerySet:
+        qs = super().get_queryset()
+
+        # Start with just public zarrs, in case user is not authenticated
+        queryset_filter = Q(embargoed=False)
+
+        # Filter zarrs to either open access or owned
+        if self.request.user.is_authenticated:
+            user_owned_dandiset_ids = get_owned_dandisets(self.request.user).values_list(
+                'id', flat=True
+            )
+            queryset_filter |= Q(dandiset_id__in=user_owned_dandiset_ids)
+
+        # Apply filter
+        return qs.filter(queryset_filter)
+
     @swagger_auto_schema(
         query_serializer=ZarrListQuerySerializer,
         responses={200: ZarrListSerializer(many=True)},
@@ -102,10 +127,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     def list(self, request, *args, **kwargs):
         query_serializer = ZarrListQuerySerializer(data=self.request.query_params)
         query_serializer.is_valid(raise_exception=True)
-
-        # Add filters from query parameters
         data = query_serializer.validated_data
         queryset: QuerySet[ZarrArchive] = self.get_queryset()
+
+        # Add filters from query parameters
         if 'dandiset' in data:
             queryset = queryset.filter(dandiset=int(data['dandiset'].lstrip('0')))
         if 'name' in data:
@@ -129,17 +154,20 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
         name = serializer.validated_data['name']
         dandiset = get_object_or_404(
-            Dandiset.objects.visible_to(request.user), id=serializer.validated_data['dandiset']
+            get_visible_dandisets(request.user), id=serializer.validated_data['dandiset']
         )
-        if not self.request.user.has_perm('owner', dandiset):
+        if not is_dandiset_owner(dandiset, request.user):
             raise PermissionDenied
-        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            raise ValidationError('Cannot add zarr to embargoed dandiset')
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
-        try:
-            zarr_archive.save()
-        except IntegrityError as e:
-            raise ValidationError('Zarr already exists') from e
+        with transaction.atomic():
+            # Use nested transaction block to prevent zarr creation race condition
+            try:
+                with transaction.atomic():
+                    zarr_archive.save()
+            except IntegrityError as e:
+                raise ValidationError('Zarr already exists') from e
+
+            audit.create_zarr(dandiset=dandiset, user=request.user, zarr_archive=zarr_archive)
 
         serializer = ZarrSerializer(instance=zarr_archive)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -162,7 +190,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
 
@@ -172,6 +200,10 @@ class ZarrViewSet(ReadOnlyModelViewSet):
 
             zarr_archive.status = ZarrArchiveStatus.UPLOADED
             zarr_archive.save()
+
+            audit.finalize_zarr(
+                dandiset=zarr_archive.dandiset, user=request.user, zarr_archive=zarr_archive
+            )
 
         # Dispatch task
         ingest_zarr_archive.delay(zarr_id=zarr_archive.zarr_id)
@@ -193,17 +225,18 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         # The root path for this zarr in s3
-        base_path = Path(zarr_archive.s3_path(''))
+        # This will contain a trailing slash, due to the empty string argument
+        base_path = zarr_archive.s3_path('')
 
         # Retrieve and join query params
         limit = serializer.validated_data['limit']
         download = serializer.validated_data['download']
 
-        raw_prefix = serializer.validated_data['prefix']
-        full_prefix = str(base_path / raw_prefix)
+        raw_prefix = serializer.validated_data['prefix'].lstrip('/')
+        full_prefix = (base_path + raw_prefix).rstrip('/')
 
-        _after = serializer.validated_data['after']
-        after = str(base_path / _after) if _after else ''
+        raw_after = serializer.validated_data['after'].lstrip('/')
+        after = (base_path + raw_after).rstrip('/') if raw_after else ''
 
         # Handle head request redirects
         if request.method == 'HEAD':
@@ -229,7 +262,7 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         # Map/filter listing
         results = [
             {
-                'Key': str(Path(obj['Key']).relative_to(base_path)),
+                'Key': obj['Key'].removeprefix(base_path),
                 'LastModified': obj['LastModified'],
                 'ETag': obj['ETag'].strip('"'),
                 'Size': obj['Size'],
@@ -272,19 +305,27 @@ class ZarrViewSet(ReadOnlyModelViewSet):
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
             # Deny if the user doesn't have ownership permission
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 raise PermissionDenied
 
             serializer = ZarrFileCreationSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
+            paths = serializer.validated_data
 
             # Generate presigned urls
             logger.info('Beginning upload to zarr archive %s', zarr_archive.zarr_id)
-            urls = zarr_archive.generate_upload_urls(serializer.validated_data)
+            urls = zarr_archive.generate_upload_urls(paths)
 
             # Set status back to pending, since with these URLs the zarr could have been changed
             zarr_archive.mark_pending()
             zarr_archive.save()
+
+            audit.upload_zarr_chunks(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=[p['path'] for p in paths],
+            )
 
         # Return presigned urls
         logger.info(
@@ -309,12 +350,19 @@ class ZarrViewSet(ReadOnlyModelViewSet):
             if zarr_archive.status in [ZarrArchiveStatus.UPLOADED, ZarrArchiveStatus.INGESTING]:
                 return Response(ZarrArchive.INGEST_ERROR_MSG, status=status.HTTP_400_BAD_REQUEST)
 
-            if not self.request.user.has_perm('owner', zarr_archive.dandiset):
+            if not is_dandiset_owner(zarr_archive.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
             serializer = ZarrDeleteFileRequestSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
             paths = [file['path'] for file in serializer.validated_data]
             zarr_archive.delete_files(paths)
+
+            audit.delete_zarr_chunks(
+                dandiset=zarr_archive.dandiset,
+                user=request.user,
+                zarr_archive=zarr_archive,
+                paths=paths,
+            )
 
         return Response(None, status=status.HTTP_204_NO_CONTENT)

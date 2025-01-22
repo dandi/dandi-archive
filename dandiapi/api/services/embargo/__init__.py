@@ -1,80 +1,113 @@
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.db.models import QuerySet
+from __future__ import annotations
 
-from dandiapi.api.copy import copy_object_multipart
-from dandiapi.api.models import Asset, AssetBlob, Dandiset, Upload, Version
+import logging
+from typing import TYPE_CHECKING
+
+from django.db import transaction
+
+from dandiapi.api.mail import send_dandiset_unembargoed_message
+from dandiapi.api.models import AssetBlob, Dandiset, Version
+from dandiapi.api.models.asset import Asset
+from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
+from dandiapi.api.services.embargo.utils import _delete_object_tags, remove_dandiset_embargo_tags
+from dandiapi.api.services.exceptions import DandiError
+from dandiapi.api.services.metadata import validate_version_metadata
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
+from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.zarr.models import ZarrArchive
 
-from .exceptions import AssetNotEmbargoedError, DandisetNotEmbargoedError
+from .exceptions import (
+    AssetBlobEmbargoedError,
+    DandisetActiveUploadsError,
+    DandisetNotEmbargoedError,
+)
 
-
-def _unembargo_asset(asset: Asset):
-    """Unembargo an asset by copying its blob to the public bucket."""
-    if asset.embargoed_blob is None:
-        raise AssetNotEmbargoedError
-
-    # Use existing AssetBlob if possible
-    etag = asset.embargoed_blob.etag
-    matching_blob = AssetBlob.objects.filter(etag=etag).first()
-    if matching_blob is not None:
-        asset.blob = matching_blob
-    else:
-        # Matching AssetBlob doesn't exist, copy blob to public bucket
-        resp = copy_object_multipart(
-            asset.embargoed_blob.blob.storage,
-            source_bucket=settings.DANDI_DANDISETS_EMBARGO_BUCKET_NAME,
-            source_key=asset.embargoed_blob.blob.name,
-            dest_bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-            dest_key=Upload.object_key(
-                asset.embargoed_blob.blob_id, dandiset=asset.embargoed_blob.dandiset
-            ),
-        )
-
-        if resp.etag != asset.embargoed_blob.etag:
-            raise RuntimeError('ETag mismatch between copied object and original embargoed object')
-
-        # Assign blob (changing only blob)
-        asset.blob = AssetBlob(
-            blob=resp.key,
-            blob_id=asset.embargoed_blob.blob_id,
-            sha256=asset.embargoed_blob.sha256,
-            etag=asset.embargoed_blob.etag,
-            size=asset.embargoed_blob.size,
-        )
-        asset.blob.save()
-
-    # Save updated blob field
-    asset.embargoed_blob = None
-    asset.save()
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
-def _unembargo_dandiset(dandiset: Dandiset):
-    draft_version: Version = dandiset.draft_version
-    embargoed_assets: QuerySet[Asset] = draft_version.assets.filter(embargoed_blob__isnull=False)
-
-    # Unembargo all assets
-    for asset in embargoed_assets.iterator():
-        _unembargo_asset(asset)
-
-    # Update draft version metadata
-    draft_version.metadata['access'] = [
-        {'schemaKey': 'AccessRequirements', 'status': 'dandi:OpenAccess'}
-    ]
-    draft_version.save()
-
-    # Set access on dandiset
-    dandiset.embargo_status = Dandiset.EmbargoStatus.OPEN
-    dandiset.save()
+logger = logging.getLogger(__name__)
 
 
-def unembargo_dandiset(*, user: User, dandiset: Dandiset):
+@transaction.atomic()
+def unembargo_dandiset(ds: Dandiset, user: User):
     """Unembargo a dandiset by copying all embargoed asset blobs to the public bucket."""
+    logger.info('Unembargoing Dandiset %s', ds.identifier)
+    logger.info('\t%s assets', ds.draft_version.assets.count())
+
+    if ds.embargo_status != Dandiset.EmbargoStatus.UNEMBARGOING:
+        raise DandiError(
+            message=f'Expected dandiset state {Dandiset.EmbargoStatus.UNEMBARGOING}, found {ds.embargo_status}',  # noqa: E501
+            http_status_code=500,
+        )
+    if ds.uploads.all().exists():
+        raise DandisetActiveUploadsError(http_status_code=500)
+
+    # Remove tags in S3
+    logger.info('Removing tags...')
+    remove_dandiset_embargo_tags(ds)
+
+    # Set all assets to pending
+    updated_assets = Asset.objects.filter(versions__dandiset=ds).update(status=Asset.Status.PENDING)
+    # Update embargoed flag on asset blobs and zarrs
+    updated_blobs = AssetBlob.objects.filter(embargoed=True, assets__versions__dandiset=ds).update(
+        embargoed=False
+    )
+    updated_zarrs = ZarrArchive.objects.filter(
+        embargoed=True, assets__versions__dandiset=ds
+    ).update(embargoed=False)
+    logger.info('Set %s assets to PENDING', updated_assets)
+    logger.info('Updated %s asset blobs', updated_blobs)
+    logger.info('Updated %s zarrs', updated_zarrs)
+
+    # Set status to OPEN
+    Dandiset.objects.filter(pk=ds.pk).update(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    logger.info('Dandiset embargo status updated')
+
+    # Fetch version to ensure changed embargo_status is included
+    # Save version to update metadata through populate_metadata
+    v = Version.objects.select_for_update().get(dandiset=ds, version='draft')
+    v.status = Version.Status.PENDING
+    v.save()
+    logger.info('Version metadata updated')
+
+    # Pre-emptively validate version metadata, so that old validation
+    # errors don't show up once un-embargo is finished
+    validate_version_metadata(version=v)
+    logger.info('Version metadata validated')
+
+    # Notify owners of completed unembargo
+    send_dandiset_unembargoed_message(ds)
+    logger.info('Dandiset owners notified.')
+
+    logger.info('...Done')
+
+    audit.unembargo_dandiset(dandiset=ds, user=user)
+
+
+def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
+    """Remove the embargoed tag of an asset blob."""
+    if asset_blob.embargoed:
+        raise AssetBlobEmbargoedError
+
+    _delete_object_tags(client=get_boto_client(), blob=asset_blob.blob.name)
+
+
+def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
+    """Set dandiset status to kickoff unembargo."""
     if dandiset.embargo_status != Dandiset.EmbargoStatus.EMBARGOED:
         raise DandisetNotEmbargoedError
 
-    if not user.has_perm('owner', dandiset):
+    if not is_dandiset_owner(dandiset, user):
         raise DandisetOwnerRequiredError
 
-    unembargo_dandiset_task.delay(dandiset.id)
+    if dandiset.uploads.count():
+        raise DandisetActiveUploadsError
+
+    with transaction.atomic():
+        Dandiset.objects.filter(pk=dandiset.pk).update(
+            embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
+        )
+        transaction.on_commit(lambda: unembargo_dandiset_task.delay(dandiset.pk, user.id))

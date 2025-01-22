@@ -19,7 +19,7 @@
         <v-tooltip right>
           <template #activator="{ on }">
             <v-btn
-              href="https://www.dandiarchive.org/handbook/12_download/"
+              href="https://docs.dandiarchive.org/12_download/"
               target="_blank"
               rel="noopener"
               text
@@ -102,10 +102,10 @@
               <v-list>
                 <v-list-item>
                   Install the Python client (DANDI CLI)
-                  in a Python 3.7+ environment using command:
+                  in a Python 3.8+ environment using command:
                 </v-list-item>
                 <v-list-item>
-                  <kbd>pip install "dandi>=0.13.0"</kbd>
+                  <kbd>pip install "dandi>=0.60.0"</kbd>
                 </v-list-item>
               </v-list>
             </v-expansion-panel-content>
@@ -120,14 +120,16 @@ import { computed, ref } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import CopyText from '@/components/CopyText.vue';
 
-function formatDownloadCommand(identifier: string, version: string): string {
-  if (version === 'draft') {
-    return `dandi download https://dandiarchive.org/dandiset/${identifier}/draft`;
-  }
-  if (!version) {
-    return `dandi download DANDI:${identifier}`;
-  }
-  return `dandi download DANDI:${identifier}/${version}`;
+function downloadCommand(identifier: string, version: string): string {
+  // Use the special 'DANDI:' url prefix if appropriate.
+  const generalUrl = `${window.location.origin}/dandiset/${identifier}`;
+  const dandiUrl = `DANDI:${identifier}`;
+  const url = window.location.origin == 'https://dandiarchive.org' ? dandiUrl : generalUrl;
+
+  // Prepare a url suffix to specify a specific version (or not).
+  const versionPath = version ? `/${version}` : '';
+
+  return `dandi download ${url}${versionPath}`;
 }
 
 const store = useDandisetStore();
@@ -147,7 +149,7 @@ const availableVersions = computed(
 );
 
 const defaultDownloadText = computed(
-  () => (identifier.value ? formatDownloadCommand(identifier.value, currentVersion.value) : ''),
+  () => (identifier.value ? downloadCommand(identifier.value, currentVersion.value) : ''),
 );
 
 const customDownloadText = computed(() => {
@@ -155,11 +157,11 @@ const customDownloadText = computed(() => {
     return '';
   }
   if (selectedDownloadOption.value === 'draft') {
-    return formatDownloadCommand(identifier.value, 'draft');
+    return downloadCommand(identifier.value, 'draft');
   } if (selectedDownloadOption.value === 'latest') {
-    return formatDownloadCommand(identifier.value, '');
+    return downloadCommand(identifier.value, '');
   } if (selectedDownloadOption.value === 'other') {
-    return formatDownloadCommand(
+    return downloadCommand(
       identifier.value,
       availableVersions.value[selectedVersion.value].version,
     );

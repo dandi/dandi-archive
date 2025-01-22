@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import hashlib
+from typing import TYPE_CHECKING
 
 from django.core.files.base import ContentFile
-from django.core.files.storage import Storage
+
+if TYPE_CHECKING:
+    from django.core.files.storage import Storage
 
 
 def test_checksum(faker, storage: Storage):

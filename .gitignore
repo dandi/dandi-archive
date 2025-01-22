@@ -1,4 +1,5 @@
 staticfiles/
+/.ruff_cache/
 
 # Created by https://www.gitignore.io/api/django
 # Edit at https://www.gitignore.io/?templates=django
@@ -123,6 +124,6 @@ dmypy.json
 # End of https://www.gitignore.io/api/django
 
 # Editor settings
-.vscode 
-
+.vscode
+.idea/
 .DS_Store

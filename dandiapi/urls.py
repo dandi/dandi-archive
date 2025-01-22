@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path, register_converter
@@ -16,6 +18,8 @@ from dandiapi.api.views import (
     authorize_view,
     blob_read_view,
     info_view,
+    mailchimp_csv_view,
+    robots_txt_view,
     root_content_view,
     stats_view,
     upload_complete_view,
@@ -77,6 +81,7 @@ class DandisetIDConverter:
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
+    path('robots.txt', robots_txt_view, name='robots_txt'),
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
@@ -103,6 +108,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
+    path('dashboard/mailchimp/', mailchimp_csv_view, name='mailchimp-csv'),
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),

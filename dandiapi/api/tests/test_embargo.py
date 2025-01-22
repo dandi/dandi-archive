@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import pytest
 
 from dandiapi.api.models import Dandiset
+from dandiapi.api.services.embargo import AssetBlobEmbargoedError, remove_asset_blob_embargoed_tag
 
 
 @pytest.fixture(
@@ -54,11 +57,11 @@ EMPTY_PAGINATION = {
         ),
         (
             'get',
-            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',  # noqa: E501
+            '/api/dandisets/{dandiset.identifier}/versions/draft/assets/{asset.asset_id}/validation/',
         ),
     ],
 )
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_embargo_visibility(
     api_client,
     user,
@@ -72,7 +75,7 @@ def test_embargo_visibility(
 ):
     dandiset = dandiset_factory(embargo_status=embargo_status)
     version = draft_version_factory(dandiset=dandiset)
-    asset = draft_asset_factory(blob=None, embargoed_blob=embargoed_asset_blob)
+    asset = draft_asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 
     url = url_format.format(dandiset=dandiset, asset=asset)
@@ -84,3 +87,12 @@ def test_embargo_visibility(
     response = getattr(api_client, method)(url)
     # The client is now authenticated but not an owner, so all response codes should be 403
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
+    with pytest.raises(AssetBlobEmbargoedError):
+        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
+
+    # Test that error not raised on non-embargoed asset blob
+    remove_asset_blob_embargoed_tag(asset_blob)

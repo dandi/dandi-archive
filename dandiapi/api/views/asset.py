@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+import typing
+
+from django.contrib.auth.models import User
 
 from dandiapi.api.asset_paths import search_asset_paths
 from dandiapi.api.services.asset import (
@@ -9,6 +12,12 @@ from dandiapi.api.services.asset import (
     remove_asset_from_version,
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.permissions.dandiset import (
+    is_dandiset_owner,
+    is_owned_asset,
+    require_dandiset_owner_or_403,
+)
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -22,16 +31,12 @@ except ImportError:
     # This should only be used for type interrogation, never instantiation
     MinioStorage = type('FakeMinioStorage', (), {})
 
-import os.path
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import QuerySet
 from django.http import HttpResponse, HttpResponseRedirect
-from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
-from guardian.decorators import permission_required_or_403
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
@@ -41,13 +46,13 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
-from dandiapi.api.models.asset import EmbargoedAssetBlob, validate_asset_path
+from dandiapi.api.models.asset import validate_asset_path
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
     VERSIONS_VERSION_PARAM,
-    DandiPagination,
 )
+from dandiapi.api.views.pagination import DandiPagination, LazyPagination
 from dandiapi.api.views.serializers import (
     AssetDetailSerializer,
     AssetDownloadQueryParameterSerializer,
@@ -84,15 +89,26 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
         # user has ownership
         asset_id = self.kwargs.get('asset_id')
-        if asset_id is not None:
-            asset = get_object_or_404(Asset, asset_id=asset_id)
-            if asset.embargoed_blob is not None:
-                if not self.request.user.is_authenticated:
-                    # Clients must be authenticated to access it
-                    raise NotAuthenticated
-                if not self.request.user.has_perm('owner', asset.embargoed_blob.dandiset):
-                    # The user does not have ownership permission
-                    raise PermissionDenied
+        if asset_id is None:
+            return
+
+        asset = get_object_or_404(Asset.objects.select_related('blob', 'zarr'), asset_id=asset_id)
+        if not asset.is_embargoed:
+            return
+
+        # Clients must be authenticated to access it
+        if not self.request.user.is_authenticated:
+            raise NotAuthenticated
+        self.request.user = typing.cast(User, self.request.user)
+
+        # Admins are allowed to access any embargoed asset blob
+        if self.request.user.is_superuser:
+            return
+
+        # User must be an owner on any of the dandisets this asset belongs to
+        is_owned = is_owned_asset(asset, self.request.user)
+        if not is_owned:
+            raise PermissionDenied
 
     def get_queryset(self):
         self.raise_if_unauthorized()
@@ -131,10 +147,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
             )
 
         # Assign asset_blob
-        if asset.is_blob:
-            asset_blob = asset.blob
-        elif asset.is_embargoed_blob:
-            asset_blob = asset.embargoed_blob
+        asset_blob = asset.blob
 
         # Redirect to correct presigned URL
         storage = asset_blob.blob.storage
@@ -143,7 +156,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         serializer.is_valid(raise_exception=True)
         content_disposition = serializer.validated_data['content_disposition']
         content_type = asset.metadata.get('encodingFormat', 'application/octet-stream')
-        asset_basename = os.path.basename(asset.path)
+        asset_basename = asset.path.split('/')[-1]
 
         if content_disposition == 'attachment':
             return HttpResponseRedirect(
@@ -187,19 +200,12 @@ class AssetRequestSerializer(serializers.Serializer):
     blob_id = serializers.UUIDField(required=False)
     zarr_id = serializers.UUIDField(required=False)
 
-    def get_blob(self) -> AssetBlob | EmbargoedAssetBlob | None:
+    def get_blob(self) -> AssetBlob | None:
         asset_blob = None
-        embargoed_asset_blob = None
-
         if 'blob_id' in self.validated_data:
-            try:
-                asset_blob = AssetBlob.objects.get(blob_id=self.validated_data['blob_id'])
-            except AssetBlob.DoesNotExist:
-                embargoed_asset_blob = get_object_or_404(
-                    EmbargoedAssetBlob, blob_id=self.validated_data['blob_id']
-                )
+            asset_blob = get_object_or_404(AssetBlob, blob_id=self.validated_data['blob_id'])
 
-        return asset_blob or embargoed_asset_blob
+        return asset_blob
 
     def get_zarr_archive(self) -> ZarrArchive | None:
         zarr_archive = None
@@ -230,7 +236,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     def raise_if_unauthorized(self):
         version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset__pk=self.kwargs['versions__dandiset__pk'],
             version=self.kwargs['versions__version'],
         )
@@ -238,16 +244,29 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
-            if not self.request.user.has_perm('owner', version.dandiset):
+            if not is_dandiset_owner(version.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
+    # Override this here to prevent the need for raise_if_unauthorized to exist in get_queryset
+    def get_object(self):
+        self.raise_if_unauthorized()
+        return super().get_object()
+
+    # Override this to skip the call to raise_if_unauthorized in AssetViewSet
+    def get_queryset(self):
+        return super(AssetViewSet, self).get_queryset()
 
     # Redefine info and download actions to update swagger manual_parameters
 
     @swagger_auto_schema(
         method='GET',
         operation_summary='Django serialization of an asset',
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[
+            ASSET_ID_PARAM,
+            VERSIONS_DANDISET_PK_PARAM,
+            VERSIONS_VERSION_PARAM,
+        ],
         responses={200: AssetDetailSerializer},
     )
     @action(detail=True, methods=['GET'])
@@ -259,7 +278,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         method='GET',
         operation_summary='Get the download link for an asset.',
         operation_description='',
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[
+            ASSET_ID_PARAM,
+            VERSIONS_DANDISET_PK_PARAM,
+            VERSIONS_VERSION_PARAM,
+        ],
         responses={
             200: None,  # This disables the auto-generated 200 response
             301: 'Redirect to object store',
@@ -273,7 +296,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(
         responses={200: AssetValidationSerializer},
-        manual_parameters=[ASSET_ID_PARAM, VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
+        manual_parameters=[
+            ASSET_ID_PARAM,
+            VERSIONS_DANDISET_PK_PARAM,
+            VERSIONS_VERSION_PARAM,
+        ],
         operation_summary='Get any validation errors associated with an asset',
         operation_description='',
     )
@@ -295,15 +322,16 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                                User must be an owner of the specified dandiset.\
                                New assets can only be attached to draft versions.',
     )
-    @method_decorator(
-        permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
-    )
+    @require_dandiset_owner_or_403('versions__dandiset__pk')
     def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset=versions__dandiset__pk,
             version=versions__version,
         )
+
+        if version.dandiset.unembargo_in_progress:
+            raise DandisetUnembargoInProgressError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -323,22 +351,23 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         request_body=AssetRequestSerializer,
         responses={200: AssetDetailSerializer},
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
-        operation_summary='Update the metadata of an asset.',
+        operation_summary='Create an asset with updated metadata.',
         operation_description='User must be an owner of the associated dandiset.\
-                               Only draft versions can be modified.',
+                               Only draft versions can be modified.\
+                               Old asset is returned if no updates to metadata are made.',
     )
-    @method_decorator(
-        permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
-    )
+    @require_dandiset_owner_or_403('versions__dandiset__pk')
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
-        """Update the metadata of an asset."""
+        """Create an asset with updated metadata."""
         version: Version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
         if version.version != 'draft':
             raise DraftDandisetNotModifiableError
+        if version.dandiset.unembargo_in_progress:
+            raise DandisetUnembargoInProgressError
 
         serializer = AssetRequestSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
@@ -360,9 +389,7 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @method_decorator(
-        permission_required_or_403('owner', (Dandiset, 'pk', 'versions__dandiset__pk'))
-    )
+    @require_dandiset_owner_or_403('versions__dandiset__pk')
     @swagger_auto_schema(
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         operation_summary='Remove an asset from a version.',
@@ -371,10 +398,12 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
     )
     def destroy(self, request, versions__dandiset__pk, versions__version, **kwargs):
         version = get_object_or_404(
-            Version,
+            Version.objects.select_related('dandiset'),
             dandiset__pk=versions__dandiset__pk,
             version=versions__version,
         )
+        if version.dandiset.unembargo_in_progress:
+            raise DandisetUnembargoInProgressError
 
         # Lock asset for delete
         with transaction.atomic():
@@ -387,19 +416,22 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
 
     @swagger_auto_schema(query_serializer=AssetListSerializer, responses={200: AssetSerializer})
     def list(self, request, *args, **kwargs):
+        # Manually call this to ensure user is authorized
+        self.raise_if_unauthorized()
+
         serializer = AssetListSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        # Fetch initial queryset
-        queryset: QuerySet[Asset] = self.filter_queryset(
-            self.get_queryset().select_related('blob', 'embargoed_blob', 'zarr')
+        # Retrieve version first and then fetch assets, to remove a join
+        version = Version.objects.get(
+            dandiset__pk=self.kwargs['versions__dandiset__pk'],
+            version=self.kwargs['versions__version'],
         )
 
-        # Don't include metadata field if not asked for
-        include_metadata = serializer.validated_data['metadata']
-        if not include_metadata:
-            queryset = queryset.defer('metadata')
+        # Apply filtering from included filter class first
+        asset_queryset = self.filter_queryset(version.assets.all())
 
+        # Must do glob pattern matching before pagination
         glob_pattern: str | None = serializer.validated_data.get('glob')
         if glob_pattern is not None:
             # Escape special characters in the glob pattern. This is a security precaution taken
@@ -407,16 +439,35 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             # include a regex as part of the glob expression, which postgres would happily parse
             # and use if it's not escaped.
             glob_pattern = f'^{re.escape(glob_pattern)}$'
-            queryset = queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
+            asset_queryset = asset_queryset.filter(path__iregex=glob_pattern.replace('\\*', '.*'))
+
+        # Retrieve just the first N asset IDs, and use them for pagination
+        # Use custom pagination class to reduce unnecessary counts of assets
+        paginator = LazyPagination()
+        qs = asset_queryset.values_list('id', flat=True)
+        page_of_asset_ids = paginator.paginate_queryset(qs, request=self.request, view=self)
+
+        # Not sure when the page is ever None, but this condition is checked for compatibility with
+        # the original implementation: https://github.com/encode/django-rest-framework/blob/f4194c4684420ac86485d9610adf760064db381f/rest_framework/mixins.py#L37-L46
+        # This is checked here since the query can't continue if the page is `None` anyway
+        if page_of_asset_ids is None:
+            serializer = self.get_serializer(Asset.objects.none(), many=True)
+            return Response(serializer.data)
+
+        # Now we can retrieve the actual fully joined rows using the limited number of assets we're
+        # going to return
+        queryset = self.filter_queryset(
+            Asset.objects.filter(id__in=page_of_asset_ids).select_related('blob', 'zarr')
+        )
+
+        # Must apply this to the main queryset, since it affects the data returned
+        include_metadata = serializer.validated_data['metadata']
+        if not include_metadata:
+            queryset = queryset.defer('metadata')
 
         # Paginate and return
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True, metadata=include_metadata)
-            return self.get_paginated_response(serializer.data)
-
         serializer = self.get_serializer(queryset, many=True, metadata=include_metadata)
-        return Response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         query_serializer=AssetPathsQueryParameterSerializer,

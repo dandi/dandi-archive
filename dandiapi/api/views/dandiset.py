@@ -1,19 +1,20 @@
+from __future__ import annotations
+
+import typing
+from typing import TYPE_CHECKING
+
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
-from django.db.models import Count, Max, OuterRef, Subquery, Sum
+from django.db import transaction
+from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
 from django.db.models.functions import Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
-from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
-from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import get_objects_for_user
-from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -21,9 +22,24 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
-from dandiapi.api.services.embargo import unembargo_dandiset
-from dandiapi.api.views.common import DANDISET_PK_PARAM, DandiPagination
+from dandiapi.api.services.embargo import kickoff_dandiset_unembargo
+from dandiapi.api.services.embargo.exceptions import (
+    DandisetUnembargoInProgressError,
+    UnauthorizedEmbargoAccessError,
+)
+from dandiapi.api.services.exceptions import NotAllowedError
+from dandiapi.api.services.permissions.dandiset import (
+    get_dandiset_owners,
+    get_owned_dandisets,
+    get_visible_dandisets,
+    is_dandiset_owner,
+    replace_dandiset_owners,
+    require_dandiset_owner_or_403,
+)
+from dandiapi.api.views.common import DANDISET_PK_PARAM
+from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
     CreateDandisetQueryParameterSerializer,
     DandisetDetailSerializer,
@@ -31,10 +47,17 @@ from dandiapi.api.views.serializers import (
     DandisetQueryParameterSerializer,
     DandisetSearchQueryParameterSerializer,
     DandisetSearchResultListSerializer,
+    DandisetUploadSerializer,
+    PaginationQuerySerializer,
     UserSerializer,
     VersionMetadataSerializer,
 )
 from dandiapi.search.models import AssetSearch
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
+
+    from dandiapi.api.models.upload import Upload
 
 
 class DandisetFilterBackend(filters.OrderingFilter):
@@ -78,7 +101,6 @@ class DandisetFilterBackend(filters.OrderingFilter):
                     size=Subquery(
                         latest_version.annotate(
                             size=Coalesce(Sum('assets__blob__size'), 0)
-                            + Coalesce(Sum('assets__embargoed_blob__size'), 0)
                             + Coalesce(Sum('assets__zarr__size'), 0)
                         ).values('size')
                     )
@@ -101,7 +123,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         # Only include embargoed dandisets which belong to the current user
         queryset = Dandiset.objects
         if self.action in ['list', 'search']:
-            queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+            queryset = get_visible_dandisets(self.request.user).order_by('created')
 
             query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
             query_serializer.is_valid(raise_exception=True)
@@ -111,13 +133,17 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             user_kwarg = query_serializer.validated_data.get('user')
             if user_kwarg == 'me':
                 # Replace the original, rather inefficient queryset with a more specific one
-                queryset = get_objects_for_user(
-                    self.request.user, 'owner', Dandiset, with_superuser=False
+                queryset = get_owned_dandisets(
+                    self.request.user, include_superusers=False
                 ).order_by('created')
 
             show_draft: bool = query_serializer.validated_data['draft']
             show_empty: bool = query_serializer.validated_data['empty']
             show_embargoed: bool = query_serializer.validated_data['embargoed']
+
+            # Return early if attempting to access embargoed data without authentication
+            if show_embargoed and not self.request.user.is_authenticated:
+                raise UnauthorizedEmbargoAccessError
 
             if not show_draft:
                 # Only include dandisets that have more than one version, i.e. published dandisets.
@@ -128,16 +154,26 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 # Only include dandisets that have assets in their most recent version.
                 most_recent_version = (
                     Version.objects.filter(dandiset=OuterRef('pk'))
-                    .order_by('created')
+                    .order_by('-created')
                     .annotate(asset_count=Count('assets'))[:1]
                 )
                 queryset = queryset.annotate(
-                    draft_asset_count=Subquery(most_recent_version.values('asset_count'))
+                    asset_count=Subquery(most_recent_version.values('asset_count'))
                 )
-                queryset = queryset.filter(draft_asset_count__gt=0)
+                queryset = queryset.filter(asset_count__gt=0)
             if not show_embargoed:
                 queryset = queryset.filter(embargo_status='OPEN')
         return queryset
+
+    def require_owner_perm(self, dandiset: Dandiset):
+        # Raise 401 if unauthenticated
+        if not self.request.user.is_authenticated:
+            raise NotAuthenticated
+
+        # Raise 403 if unauthorized
+        self.request.user = typing.cast(User, self.request.user)
+        if not is_dandiset_owner(dandiset, self.request.user):
+            raise PermissionDenied
 
     def get_object(self):
         # Alternative to path converters, which DRF doesn't support
@@ -152,12 +188,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset = super().get_object()
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            if not self.request.user.is_authenticated:
-                # Clients must be authenticated to access it
-                raise NotAuthenticated
-            if not self.request.user.has_perm('owner', dandiset):
-                # The user does not have ownership permission
-                raise PermissionDenied
+            self.require_owner_perm(dandiset)
+
         return dandiset
 
     @staticmethod
@@ -332,10 +364,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         ),
     )
     @action(methods=['POST'], detail=True)
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    @require_dandiset_owner_or_403('dandiset__pk')
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
-        unembargo_dandiset(user=request.user, dandiset=dandiset)
+        kickoff_dandiset_unembargo(user=request.user, dandiset=dandiset)
 
         return Response(None, status=status.HTTP_200_OK)
 
@@ -360,13 +392,15 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
-    def users(self, request, dandiset__pk):
+    def users(self, request, dandiset__pk):  # noqa: C901
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
+            if dandiset.unembargo_in_progress:
+                raise DandisetUnembargoInProgressError
+
             # Verify that the user is currently an owner
-            response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
-            if response:
-                return response
+            if not is_dandiset_owner(dandiset, request.user):
+                raise NotAllowedError
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -395,19 +429,33 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                         raise ValidationError(f'User {username} not found')
 
             # All owners found
-            owners = user_owners + [acc.user for acc in socialaccount_owners]
-            removed_owners, added_owners = dandiset.set_owners(owners)
-            dandiset.save()
+            with transaction.atomic():
+                owners = user_owners + [acc.user for acc in socialaccount_owners]
+                removed_owners, added_owners = replace_dandiset_owners(dandiset, owners)
+                dandiset.save()
+
+                if removed_owners or added_owners:
+                    audit.change_owners(
+                        dandiset=dandiset,
+                        user=request.user,
+                        removed_owners=removed_owners,
+                        added_owners=added_owners,
+                    )
 
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-        for owner_user in dandiset.owners:
+        for owner_user in get_dandiset_owners(dandiset):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
-                if 'name' in owner_account.extra_data:
-                    owner_dict['name'] = owner_account.extra_data['name']
+                owner_dict['name'] = owner_account.extra_data.get('name', None)
+                owner_dict['email'] = (
+                    owner_account.extra_data['email']
+                    # Only logged-in users can see owners' email addresses
+                    if request.user.is_authenticated and 'email' in owner_account.extra_data
+                    else None
+                )
                 owners.append(owner_dict)
             except SocialAccount.DoesNotExist:
                 # Just in case some users aren't using social accounts, have a fallback
@@ -415,6 +463,46 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                     {
                         'username': owner_user.username,
                         'name': f'{owner_user.first_name} {owner_user.last_name}',
+                        'email': owner_user.email if request.user.is_authenticated else None,
                     }
                 )
+
         return Response(owners, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        methods=['GET'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        query_serializer=PaginationQuerySerializer,
+        request_body=no_body,
+        operation_summary='List active/incomplete uploads in this dandiset.',
+    )
+    @action(methods=['GET'], detail=True)
+    def uploads(self, request, dandiset__pk):
+        dandiset: Dandiset = self.get_object()
+
+        # Special case where a "safe" method is access restricted, due to the nature of uploads
+        self.require_owner_perm(dandiset)
+
+        uploads: QuerySet[Upload] = dandiset.uploads.all()
+
+        # Paginate and return
+        page = self.paginate_queryset(uploads)
+        if page is not None:
+            serializer = DandisetUploadSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = DandisetUploadSerializer(uploads, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        operation_summary='Delete all active/incomplete uploads in this dandiset.',
+    )
+    @uploads.mapping.delete
+    def clear_uploads(self, request, dandiset__pk):
+        dandiset: Dandiset = self.get_object()
+        self.require_owner_perm(dandiset)
+
+        dandiset.uploads.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

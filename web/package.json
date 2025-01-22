@@ -6,12 +6,12 @@
     "build": "vite build",
     "preview": "vite preview --port 4173",
     "type-check": "vue-tsc --noEmit",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --max-warnings=0 --ignore-path .gitignore"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^9.0.7",
-    "@girder/oauth-client": "^0.8.0",
-    "@koumoul/vjsf": "^2.21.4",
+    "@koumoul/vjsf": "2.23.3",
+    "@resonant/oauth-client": "^0.9.0",
     "@sentry/integrations": "^7.88.0",
     "@sentry/vue": "^7.88.0",
     "ajv": "^8.12.0",

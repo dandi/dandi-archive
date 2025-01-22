@@ -31,7 +31,7 @@
                 </template>
                 <span>
                   Embargoed Dandisets are hidden from public access until a specific time period has
-                  elapsed. Uploading data to the DANDI archive under embargo requires a relevant
+                  elapsed. Uploading data to the DANDI Archive under embargo requires a relevant
                   NIH award number, and the data will be automatically published when the embargo
                   period expires.
                 </span>
@@ -80,7 +80,7 @@
           <div>
             Select a license under which to share the contents of this Dandiset.
             You can learn more about <a
-              href="https://www.dandiarchive.org/handbook/35_data_licenses/"
+              href="https://docs.dandiarchive.org/35_data_licenses/"
               target="_blank"
               rel="noopener"
             >
@@ -181,7 +181,7 @@ const descriptionMaxLength: ComputedRef<number> = computed(
   () => store.schema.properties.description.maxLength,
 );
 const dandiLicenses: ComputedRef<LicenseType[]> = computed(
-  () => store.schema.definitions.LicenseType.enum,
+  () => store.schema.$defs.LicenseType.enum,
 );
 
 if (!loggedIn()) {

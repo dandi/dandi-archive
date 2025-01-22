@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 
+from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
 from django.core.validators import RegexValidator
@@ -36,7 +37,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         max_length=13,
         validators=[RegexValidator(f'^{VERSION_REGEX}$')],
     )
-    doi = models.CharField(max_length=64, null=True, blank=True)
+    doi = models.CharField(max_length=64, null=True, default=None, blank=True)  # noqa: DJ001
     """Track the validation status of this version, without considering assets"""
     status = models.CharField(
         max_length=10,
@@ -46,6 +47,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     validation_errors = models.JSONField(default=list, blank=True, null=True)
 
     class Meta:
+        ordering = ['version']
         unique_together = ['dandiset', 'version']
         constraints = [
             models.CheckConstraint(
@@ -68,6 +70,10 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             get_root_paths(self).aggregate(total_size=models.Sum('aggregate_size'))['total_size']
             or 0
         )
+
+    @property
+    def active_uploads(self):
+        return self.dandiset.uploads.count() if self.version == 'draft' else 0
 
     @property
     def publishable(self) -> bool:
@@ -136,18 +142,14 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         url = f'https://doi.org/{metadata["doi"]}' if 'doi' in metadata else metadata['url']
         version = metadata['version']
         # If we can't find any contributors, use this citation format
-        citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI archive. {url}'
+        citation = f'{name} ({year}). (Version {version}) [Data set]. DANDI Archive. {url}'
         if 'contributor' in metadata and isinstance(metadata['contributor'], list):
             cl = '; '.join(
-                [
-                    val['name']
-                    for val in metadata['contributor']
-                    if 'includeInCitation' in val and val['includeInCitation']
-                ]
+                [val['name'] for val in metadata['contributor'] if val.get('includeInCitation')]
             )
             if cl:
                 citation = (
-                    f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI archive. {url}'
+                    f'{cl} ({year}) {name} (Version {version}) [Data set]. DANDI Archive. {url}'
                 )
         return citation
 
@@ -168,7 +170,41 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'publishedBy',
             'manifestLocation',
         ]
-        return {key: metadata[key] for key in metadata if key not in computed_fields}
+        stripped = {key: metadata[key] for key in metadata if key not in computed_fields}
+
+        # Strip the status and schemaKey fields, as modifying them is not supported
+        if (
+            'access' in stripped
+            and isinstance(stripped['access'], list)
+            and len(stripped['access'])
+            and isinstance(stripped['access'][0], dict)
+        ):
+            stripped['access'][0].pop('schemaKey', None)
+            stripped['access'][0].pop('status', None)
+
+        return stripped
+
+    def _populate_access_metadata(self):
+        default_access = [{}]
+        access = self.metadata.get('access', default_access)
+
+        # Ensure access is a non-empty list
+        if not (isinstance(access, list) and access):
+            access = default_access
+
+        # Ensure that every item in access is a dict
+        access = [x for x in access if isinstance(x, dict)] or default_access
+
+        # Set first access item
+        access[0] = {
+            **access[0],
+            'schemaKey': 'AccessRequirements',
+            'status': AccessType.EmbargoedAccess.value
+            if self.dandiset.embargoed
+            else AccessType.OpenAccess.value,
+        }
+
+        return access
 
     def _populate_metadata(self):
         from dandiapi.api.manifests import manifest_location
@@ -185,8 +221,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'version': self.version,
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'repository': settings.DANDI_WEB_APP_URL,
-            'url': f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}',  # noqa
+            'url': (
+                f'{settings.DANDI_WEB_APP_URL}/dandiset/'
+                f'{self.dandiset.identifier}/{self.version}'
+            ),
             'dateCreated': self.dandiset.created.isoformat(),
+            'access': self._populate_access_metadata(),
         }
 
         if 'assetsSummary' not in metadata:

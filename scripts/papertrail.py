@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """Script that will export all desired papertrail log files."""
+
+from __future__ import annotations
+
 from datetime import datetime
 import os
 from pathlib import Path
@@ -31,7 +34,7 @@ PAPERTRAIL_TOKEN = os.getenv('PAPERTRAIL_APIKEY', None)
 @click.option(
     '-o', '--out', 'output_file', help='The output file', default='logs.tsv.gz', show_default=True
 )
-def cli(*, start, end, force, amend, output_file):
+def cli(*, start, end, force, amend, output_file):  # noqa: C901
     if PAPERTRAIL_TOKEN is None:
         raise ClickException(
             'Must set the PAPERTRAIL_APIKEY environment variable. '

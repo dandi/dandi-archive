@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dandischema.models import Dandiset as PydanticDandiset
 from django.conf import settings
 
@@ -30,15 +32,10 @@ def _normalize_version_metadata(
                 'includeInCitation': True,
             },
         ],
-        # TODO: move this into dandischema
-        'access': [
-            {
-                'schemaKey': 'AccessRequirements',
-                'status': 'dandi:EmbargoedAccess' if embargo else 'dandi:OpenAccess',
-            }
-        ],
         **version_metadata,
     }
     # Run the version_metadata through the pydantic model to automatically include any boilerplate
     # like the access or repository fields
-    return PydanticDandiset.unvalidated(**version_metadata).json_dict()
+    return PydanticDandiset.model_construct(**version_metadata).model_dump(
+        mode='json', exclude_none=True
+    )
