@@ -19,14 +19,14 @@
           <a
             target="_blank"
             rel="noopener"
-            href="https://www.dandiarchive.org/handbook/about/terms/"
+            href="https://docs.dandiarchive.org/about/terms/"
           >Terms</a> 
           <v-icon x-small>
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
-            href="https://www.dandiarchive.org/handbook/about/policies/"
+            href="https://docs.dandiarchive.org/about/policies/"
           >Policies</a>
           <v-icon x-small>
             mdi-open-in-new
