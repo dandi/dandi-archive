@@ -1,3 +1,19 @@
+# v0.4.11 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Upgrade `dandischema` version to 0.11.0 [#2132](https://github.com/dandi/dandi-archive/pull/2132) ([@kabilar](https://github.com/kabilar))
+- Add Netlify link to footer [#2133](https://github.com/dandi/dandi-archive/pull/2133) ([@kabilar](https://github.com/kabilar))
+- Add Terms, Policies, and Code of Conduct to footer [#2135](https://github.com/dandi/dandi-archive/pull/2135) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+- Add Code of Conduct [#2130](https://github.com/dandi/dandi-archive/pull/2130) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.4.10 (Wed Jan 22 2025)
 
 #### 🐛 Bug Fix
