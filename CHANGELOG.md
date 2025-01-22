@@ -1,3 +1,27 @@
+# v0.4.9 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI About site [#2138](https://github.com/dandi/dandi-archive/pull/2138) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.4.8 (Tue Jan 21 2025)
+
+#### 🐛 Bug Fix
+
+- Move to 2025 from 2024 in the footer [#2144](https://github.com/dandi/dandi-archive/pull/2144) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.4.7 (Wed Jan 08 2025)
 
 #### 🐛 Bug Fix
