@@ -1,3 +1,15 @@
+# v0.4.9 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI About site [#2138](https://github.com/dandi/dandi-archive/pull/2138) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.4.8 (Tue Jan 21 2025)
 
 #### 🐛 Bug Fix
