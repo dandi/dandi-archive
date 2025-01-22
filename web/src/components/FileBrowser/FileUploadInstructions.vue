@@ -36,8 +36,8 @@
           <span class="text-body-2 grey--text text--darken-1">
             <span class="text-body-2 grey--text text--darken-1">
               Follow the installation instructions in the
-              <a href="https://www.dandiarchive.org/handbook/10_using_dandi/#dandi-python-client">
-                DANDI handbook
+              <a href="https://docs.dandiarchive.org/10_using_dandi/#dandi-python-client">
+                DANDI Docs
               </a> .
             </span>
           </span>

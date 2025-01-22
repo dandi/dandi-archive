@@ -13,7 +13,7 @@ DANDI is freely accessible to the neuroscience research community. Membership is
 
 - Without an academic email, account approval is still possible under specific circumstances. You can appeal the decision by contacting help@dandiarchive.org.
 
-For more information, see the "Create a DANDI Account page" at https://www.dandiarchive.org/handbook/16_account.
+For more information, see the "Create a DANDI Account page" at https://docs.dandiarchive.org/16_account.
 
 Sincerely,
 
