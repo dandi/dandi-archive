@@ -1,3 +1,16 @@
+# v0.4.10 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI Docs [#2137](https://github.com/dandi/dandi-archive/pull/2137) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.4.9 (Wed Jan 22 2025)
 
 #### 🐛 Bug Fix
