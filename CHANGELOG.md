@@ -1,3 +1,68 @@
+# v0.4.10 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI Docs [#2137](https://github.com/dandi/dandi-archive/pull/2137) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.4.9 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI About site [#2138](https://github.com/dandi/dandi-archive/pull/2138) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.4.8 (Tue Jan 21 2025)
+
+#### 🐛 Bug Fix
+
+- Move to 2025 from 2024 in the footer [#2144](https://github.com/dandi/dandi-archive/pull/2144) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.4.7 (Wed Jan 08 2025)
+
+#### 🐛 Bug Fix
+
+- Prevent duplicate serialization of dandiset in detail view [#2125](https://github.com/dandi/dandi-archive/pull/2125) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix reactivity bug in meditor [#2127](https://github.com/dandi/dandi-archive/pull/2127) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.4.6 (Wed Jan 08 2025)
+
+#### 🐛 Bug Fix
+
+- Create permissions service layer [#2115](https://github.com/dandi/dandi-archive/pull/2115) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Design doc for Upload/AssetBlob garbage collection [#2068](https://github.com/dandi/dandi-archive/pull/2068) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.4.5 (Fri Jan 03 2025)
 
 #### 🐛 Bug Fix

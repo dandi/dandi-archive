@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django.db import transaction
-from guardian.shortcuts import assign_perm
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
@@ -9,6 +8,7 @@ from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import AdminOnlyOperationError, NotAllowedError
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 
 
@@ -38,7 +38,7 @@ def create_dandiset(
         dandiset = Dandiset(id=identifier, embargo_status=embargo_status)
         dandiset.full_clean()
         dandiset.save()
-        assign_perm('owner', user, dandiset)
+        add_dandiset_owner(dandiset, user)
         draft_version = Version(
             dandiset=dandiset,
             name=version_name,
@@ -56,7 +56,7 @@ def create_dandiset(
 
 
 def delete_dandiset(*, user, dandiset: Dandiset) -> None:
-    if not user.has_perm('owner', dandiset):
+    if not is_dandiset_owner(dandiset, user):
         raise NotAllowedError('Cannot delete dandisets which you do not own.')
     if dandiset.versions.exclude(version='draft').exists():
         raise NotAllowedError('Cannot delete dandisets with published versions.')
