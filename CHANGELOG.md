@@ -1,3 +1,16 @@
+# v0.4.12 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Move Google analytics tag to environment variable to prevent DANDI clones using by accident [#2126](https://github.com/dandi/dandi-archive/pull/2126) (aaronkanzer@dhcp-10-31-181-194.dyn.MIT.EDU [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 2
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@dhcp-10-31-181-194.dyn.MIT.EDU)
+
+---
+
 # v0.4.11 (Wed Jan 22 2025)
 
 #### 🐛 Bug Fix
