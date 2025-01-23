@@ -40,7 +40,7 @@ status = 200
 [[redirects]]
 from = "/handbook"
 to = "docs.dandiarchive.org"
-status = 200
+status = 308
 
 
 [[plugins]]
