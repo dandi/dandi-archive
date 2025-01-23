@@ -1,3 +1,17 @@
+# v0.4.13 (Thu Jan 23 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2152](https://github.com/dandi/dandi-archive/pull/2152) ([@waxlamp](https://github.com/waxlamp))
+- Add `/handbook` redirect to `docs.dandiarchive.org` [#2151](https://github.com/dandi/dandi-archive/pull/2151) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.4.12 (Wed Jan 22 2025)
 
 #### 🐛 Bug Fix
