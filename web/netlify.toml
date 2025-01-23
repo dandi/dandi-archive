@@ -39,7 +39,7 @@ status = 200
 
 [[redirects]]
 from = "/handbook"
-to = "docs.dandiarchive.org"
+to = "https://docs.dandiarchive.org"
 status = 308
 
 
