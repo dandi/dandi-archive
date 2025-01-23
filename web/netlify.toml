@@ -30,18 +30,15 @@ VITE_APP_DANDI_API_ROOT = "https://api.dandiarchive.org/api/"
 VITE_APP_SENTRY_DSN = "https://425b9a012300493d867e97785fae7b88@o308436.ingest.sentry.io/5196549"
 VITE_APP_SENTRY_ENVIRONMENT = "production"
 
-
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
-
-
 [[redirects]]
 from = "/handbook"
 to = "https://docs.dandiarchive.org"
 status = 308
 
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
 
 [[plugins]]
 package = "/netlify/plugins/server-info-build"
