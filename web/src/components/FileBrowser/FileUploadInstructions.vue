@@ -12,7 +12,7 @@
         but this is where they will appear once they're added.
       </div>
       <div class="my-7">
-        <span class="text-subtitle-1">For NWB datasets, use the DANDI CLI on the command line:</span>
+        <span class="text-subtitle-1">Use the DANDI CLI on the command line:</span>
         <div
           class="d-flex justify-center"
           style="font-family: monospace;"
@@ -29,12 +29,6 @@
             <div>> dandi upload</div>
           </v-sheet>
         </div>
-        <span class="text-subtitle-1">
-          (For BIDS datasets, use the DANDI CLI with similar instructions found in the 
-          <a href="https://www.dandiarchive.org/handbook/13_upload/#data-uploadmanagement-workflow">
-            DANDI handbook
-          </a>.)
-        </span>
       </div>
       <div>
         <span class="text-subtitle-1">Don't have DANDI CLI?</span>
