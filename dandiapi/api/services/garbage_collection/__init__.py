@@ -7,6 +7,7 @@ import json
 from celery.utils.log import get_task_logger
 from django.core import serializers
 from django.db import transaction
+from django.db.models import Model, QuerySet
 from django.utils import timezone
 from more_itertools import chunked
 
@@ -33,6 +34,35 @@ RESTORATION_WINDOW = timedelta(
 )  # TODO: pick this up from env var set by Terraform to ensure consistency?
 
 
+def _garbage_collect_queryset(cls: type[Model], qs: QuerySet) -> int:
+    deleted_records = 0
+    futures: list[Future] = []
+
+    with transaction.atomic(), ThreadPoolExecutor() as executor:
+        event = GarbageCollectionEvent.objects.create(type=cls.__name__)
+        for chunk in chunked(qs.iterator(), GARBAGE_COLLECTION_EVENT_CHUNK_SIZE):
+            GarbageCollectionEventRecord.objects.bulk_create(
+                GarbageCollectionEventRecord(
+                    event=event, record=json.loads(serializers.serialize('json', [a]))[0]
+                )
+                for a in chunk
+            )
+
+            # Delete the blobs from S3
+            futures.append(
+                executor.submit(
+                    lambda chunk: [a.blob.delete(save=False) for a in chunk],
+                    chunk,
+                )
+            )
+
+            deleted_records += cls.objects.filter(
+                pk__in=[a.pk for a in chunk],
+            ).delete()[0]
+
+        wait(futures)
+
+
 def _garbage_collect_uploads() -> int:
     qs = Upload.objects.filter(
         created__lt=timezone.now() - UPLOAD_EXPIRATION_TIME,
@@ -40,34 +70,7 @@ def _garbage_collect_uploads() -> int:
     if not qs.exists():
         return 0
 
-    deleted_records = 0
-    futures: list[Future] = []
-
-    with transaction.atomic(), ThreadPoolExecutor() as executor:
-        event = GarbageCollectionEvent.objects.create(type=Upload.__name__)
-        for uploads_chunk in chunked(qs.iterator(), GARBAGE_COLLECTION_EVENT_CHUNK_SIZE):
-            GarbageCollectionEventRecord.objects.bulk_create(
-                GarbageCollectionEventRecord(
-                    event=event, record=json.loads(serializers.serialize('json', [u]))[0]
-                )
-                for u in uploads_chunk
-            )
-
-            # Delete the blobs from S3
-            futures.append(
-                executor.submit(
-                    lambda chunk: [u.blob.delete(save=False) for u in chunk],
-                    uploads_chunk,
-                )
-            )
-
-            deleted_records += Upload.objects.filter(
-                pk__in=[u.pk for u in uploads_chunk],
-            ).delete()[0]
-
-        wait(futures)
-
-    return deleted_records
+    return _garbage_collect_queryset(Upload, qs)
 
 
 def _garbage_collect_asset_blobs() -> int:
@@ -78,34 +81,7 @@ def _garbage_collect_asset_blobs() -> int:
     if not qs.exists():
         return 0
 
-    deleted_records = 0
-    futures: list[Future] = []
-
-    with transaction.atomic(), ThreadPoolExecutor() as executor:
-        event = GarbageCollectionEvent.objects.create(type=AssetBlob.__name__)
-        for asset_blobs_chunk in chunked(qs.iterator(), GARBAGE_COLLECTION_EVENT_CHUNK_SIZE):
-            GarbageCollectionEventRecord.objects.bulk_create(
-                GarbageCollectionEventRecord(
-                    event=event, record=json.loads(serializers.serialize('json', [a]))[0]
-                )
-                for a in asset_blobs_chunk
-            )
-
-            # Delete the blobs from S3
-            futures.append(
-                executor.submit(
-                    lambda chunk: [a.blob.delete(save=False) for a in chunk],
-                    asset_blobs_chunk,
-                )
-            )
-
-            deleted_records += AssetBlob.objects.filter(
-                pk__in=[a.pk for a in asset_blobs_chunk],
-            ).delete()[0]
-
-        wait(futures)
-
-    return deleted_records
+    return _garbage_collect_queryset(AssetBlob, qs)
 
 
 def garbage_collect():
