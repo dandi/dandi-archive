@@ -3,7 +3,7 @@ name: Deploy backend to staging
 on:
   push:
     branches:
-      - master
+      - staging
     paths-ignore:
       - "web/**"
       - "CHANGELOG.md"
