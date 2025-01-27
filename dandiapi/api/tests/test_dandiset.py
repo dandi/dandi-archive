@@ -1102,6 +1102,38 @@ def test_dandiset_rest_search_identifier(api_client, draft_version):
 
 
 @pytest.mark.django_db
+def test_dandiset_rest_search_accented_characters(api_client, draft_version_factory):
+    dv = draft_version_factory()
+    dv.metadata['contributor'][0]['name'] = 'Buzsáki, György'
+    dv.save()
+
+    assert (
+        api_client.get('/api/dandisets/', {'search': 'György'}).data['results']
+        == api_client.get('/api/dandisets/', {'search': 'Gyorgy'}).data['results']
+    )
+    assert (
+        api_client.get('/api/dandisets/', {'search': 'Buzsáki'}).data['results']
+        == api_client.get('/api/dandisets/', {'search': 'Buzsaki'}).data['results']
+    )
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_search_many_versions(
+    api_client, draft_version_factory, published_version_factory, dandiset
+):
+    draft_version = draft_version_factory(dandiset=dandiset)
+    draft_version.metadata['contributor'][0]['name'] = 'testname'
+    draft_version.save()
+
+    published_version = published_version_factory(dandiset=dandiset)
+    published_version.metadata['contributor'][0]['name'] = 'testname'
+    published_version.save()
+
+    results = api_client.get('/api/dandisets/', {'search': 'testname'}).data['results']
+    assert len(results) == 1
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'contributors',
     [None, 'string', 1, [], {}],
