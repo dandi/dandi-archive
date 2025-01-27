@@ -123,9 +123,7 @@ class DandisetSearchFilter(filters.BaseFilterBackend):
 
     def get_search_term(self, request):
         param = request.query_params.get(self.search_param, '')
-        param = param.replace('\x00', '')  # strip null characters
-
-        return param  # noqa: RET504
+        return param.replace('\x00', '')  # strip null characters
 
     def filter_queryset(self, request: Request, queryset: QuerySet, view: APIView) -> QuerySet:
         search_term = self.get_search_term(request=request)
