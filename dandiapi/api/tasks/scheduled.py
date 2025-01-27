@@ -161,4 +161,5 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(timedelta(hours=1), collect_s3_log_records_task.s())
 
     # Run garbage collection once a day
-    sender.add_periodic_task(timedelta(days=1), garbage_collection.s())
+    # TODO: enable this once we're ready to run garbage collection automatically
+    # sender.add_periodic_task(timedelta(days=1), garbage_collection.s())
