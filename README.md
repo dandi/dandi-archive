@@ -29,3 +29,4 @@ see [the handbook](https://www.dandiarchive.org/handbook/).
 * To understand how to hack on the archive codebase:
   - Django backend: [`DEVELOPMENT.md`](DEVELOPMENT.md)
   - Vue frontend: [`web/README.md`](web/README.md)
+
