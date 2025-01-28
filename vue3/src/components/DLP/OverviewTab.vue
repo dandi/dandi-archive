@@ -4,11 +4,11 @@
       <v-col>
         <v-card
           v-if="contributors && contributors.length"
-          outlined
+          variant="outlined"
           height="100%"
         >
           <v-card-title class="font-weight-regular">
-            <v-icon class="mr-3 grey--text text--lighten-1">
+            <v-icon class="mr-3 text-grey-lighten-1">
               mdi-account-multiple
             </v-icon>
             Contributors
@@ -18,7 +18,7 @@
               v-for="(contributor, i) in contributors"
               :key="i"
               style="margin: 5px;"
-              outlined
+              variant="outlined"
             >
               {{ contributor.name }}
               <a
@@ -53,7 +53,7 @@
     >
       <template #content="slotProps">
         <div
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <span
             v-if="slotProps.item.awardNumber"
@@ -71,20 +71,20 @@
     </MetadataCard>
 
     <MetadataCard
-      :items="protocols"
       v-if="protocols && protocols.length"
+      :items="protocols"
       name="Protocols"
       icon="mdi-file-document-check"
     >
       <template #content="slotProps">
-        <div class="text-caption grey--text text--darken-1">
-            <a
-                :href="slotProps.item"
-                target="_blank"
-                rel="noopener"
-            >
-                {{ slotProps.item }}
-            </a>
+        <div class="text-caption text-grey-darken-1">
+          <a
+            :href="slotProps.item"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ slotProps.item }}
+          </a>
         </div>
       </template>
     </MetadataCard>
@@ -98,28 +98,28 @@
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
-          class="text-caption grey--text text--darken-1 related-resource"
+          class="text-caption text-grey-darken-1 related-resource"
         >
           <strong>ID: </strong>{{ slotProps.item.identifier }}
           <br>
         </span>
         <span
           v-if="slotProps.item.resourceType"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Resource Type: </strong>{{ slotProps.item.resourceType }}
           <br>
         </span>
         <span
           v-if="slotProps.item.repository"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Repo: </strong>{{ slotProps.item.repository }}
           <br>
         </span>
         <span
           v-if="slotProps.item.relation"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
@@ -141,7 +141,7 @@
       <v-col>
         <v-card
           v-if="assetSummary"
-          outlined
+          variant="outlined"
         >
           <v-card-title class="font-weight-regular">
             <v-progress-circular
@@ -152,7 +152,7 @@
             />
             <v-icon
               v-else
-              class="mr-3 grey--text text--lighten-1"
+              class="mr-3 text-grey-lighten-1"
             >
               mdi-clipboard-list
             </v-icon>
@@ -172,8 +172,7 @@
               v-else-if="!assetSummary || !Object.keys(assetSummary).length"
               class="font-italic font-weight-bold"
               v-text="`This Dandiset does not contain any valid assets.${currentDandiset?.asset_validation_errors.length ? ' Please check the asset validation errors on the right panel.' : ''}`"
-            >
-            </div>
+            />
             <div
               v-for="([type, items], i) in Object.entries(assetSummary)"
               v-else
@@ -192,7 +191,7 @@
                   :key="ii"
                   :title="type"
                   background-color="grey lighten-4"
-                  class="grey lighten-4"
+                  class="bg-grey-lighten-4"
                   style="width: 100%;"
                 >
                   <div
@@ -224,7 +223,7 @@
                     </v-row>
                     <span
                       v-if="!isURL(item.identifier)"
-                      class="text-caption grey--text text--darken-1"
+                      class="text-caption text-grey-darken-1"
                     >
                       {{ item.identifier }}
                     </span>
@@ -246,7 +245,7 @@
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
-          class="text-caption grey--text text--darken-1 related-resource"
+          class="text-caption text-grey-darken-1 related-resource"
         >
           <strong>Identifier: </strong>{{ slotProps.item.identifier }}
           <br>
