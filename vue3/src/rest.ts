@@ -111,7 +111,6 @@ const dandiRest = {
     const uploads = []
     let page = 1;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const res = await client.get(`dandisets/${identifier}/uploads/`, {params: { page }});
 
