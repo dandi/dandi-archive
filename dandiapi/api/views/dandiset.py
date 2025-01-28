@@ -84,17 +84,16 @@ class DandisetOrderingFilter(filters.OrderingFilter):
 
         # ordering can be either 'created' or '-created', so test for both
         if ordering.endswith('id'):
-            return queryset.order_by(ordering)
-
-        if ordering.endswith('name'):
+            queryset = queryset.order_by(ordering)
+        elif ordering.endswith('name'):
             # name refers to the name of the most recent version, so a subquery is required
             latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
                 :1
             ]
-            queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
-            return queryset.order_by(ordering)
-
-        if ordering.endswith('modified'):
+            queryset = queryset.annotate(
+                name=Subquery(latest_version.values('metadata__name'))
+            ).order_by(ordering)
+        elif ordering.endswith('modified'):
             # modified refers to the modification timestamp of the most
             # recent version, so a subquery is required
             latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
@@ -104,10 +103,8 @@ class DandisetOrderingFilter(filters.OrderingFilter):
             # '_version' is appended because the Dandiset model already has a `modified` field
             queryset = queryset.annotate(
                 modified_version=Subquery(latest_version.values('modified'))
-            )
-            return queryset.order_by(f'{ordering}_version')
-
-        if ordering.endswith('size'):
+            ).order_by(f'{ordering}_version')
+        elif ordering.endswith('size'):
             latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
                 :1
             ]
@@ -118,13 +115,13 @@ class DandisetOrderingFilter(filters.OrderingFilter):
                         + Coalesce(Sum('assets__zarr__size'), 0)
                     ).values('size')
                 )
-            )
-            return queryset.order_by(ordering)
-
-        if ordering.endswith('stars'):
-            queryset = queryset.annotate(stars_count=Count('stars'))
+            ).order_by(ordering)
+        elif ordering.endswith('stars'):
             prefix = '-' if ordering.startswith('-') else ''
-            return queryset.order_by(f'{prefix}stars_count')
+            queryset = queryset.annotate(stars_count=Count('stars')).order_by(
+                f'{prefix}stars_count'
+            )
+
         return queryset
 
 
