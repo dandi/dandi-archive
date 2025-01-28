@@ -8,7 +8,7 @@ const FILE_TYPES = ['application/x-nwb', 'image/', 'video/', 'text/'];
   <v-select
     v-model="searchParameters.file_type"
     multiple
-    outlined
+    variant="outlined"
     :items="FILE_TYPES"
     label="File type(s)"
   />

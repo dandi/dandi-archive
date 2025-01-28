@@ -18,11 +18,10 @@ onMounted(populateSpeciesList);
 <template>
   <v-autocomplete
     v-model="searchParameters.species"
+    v-model:search-input="searchTerm"
     multiple
     clearable
-    outlined
-    cache-items
-    :search-input.sync="searchTerm"
+    variant="outlined"
     :items="options"
     :loading="loading"
     label="Species"

@@ -1,10 +1,13 @@
 <template>
   <v-card
     v-if="currentDandiset"
-    outlined
+    variant="outlined"
     class="mt-4 px-3"
   >
-    <v-dialog v-model="showUploadManagementDialog" max-width="60vw">
+    <v-dialog
+      v-model="showUploadManagementDialog"
+      max-width="60vw"
+    >
       <v-card class="pb-3">
         <v-card-title class="text-h5 font-weight-light">
           This dandiset has active uploads
@@ -32,19 +35,22 @@
         <v-card-actions>
           <v-spacer />
           <v-btn
-            depressed
+            variant="flat"
             @click="showUploadManagementDialog = false"
           >
             Close
           </v-btn>
 
-          <v-menu offset-y bottom>
-            <template #activator="{ on, attrs }">
+          <v-menu
+            offset-y
+            location="bottom"
+          >
+            <template #activator="{ props }">
               <v-btn
                 class="ml-2"
-                depressed
-                v-on="on"
-                v-bind="attrs"
+                variant="flat"
+                v-bind="props"
+
                 primary
               >
                 Clear Uploads
@@ -56,7 +62,13 @@
                 Delete all uploads? Once deleted, any partially uploaded data will be lost.
               </v-card-text>
               <v-card-actions>
-                <v-btn @click="clearUploads" color="error" depressed>Delete</v-btn>
+                <v-btn
+                  color="error"
+                  variant="flat"
+                  @click="clearUploads"
+                >
+                  Delete
+                </v-btn>
               </v-card-actions>
             </v-card>
           </v-menu>
@@ -95,22 +107,22 @@
           <v-text-field
             v-model="confirmationPhrase"
             style="width: 30%;"
-            dense
-            outlined
+            density="compact"
+            variant="outlined"
           />
         </v-card-text>
 
         <v-card-actions>
           <v-btn
             color="error"
-            depressed
+            variant="flat"
             :disabled="confirmationPhrase !== currentDandiset.dandiset.identifier"
             @click="unembargo()"
           >
             Yes
           </v-btn>
           <v-btn
-            depressed
+            variant="flat"
             @click="showWarningDialog = false"
           >
             No, take me back
@@ -122,24 +134,31 @@
       class="mb-4"
       no-gutters
     >
-      <v-tooltip left :disabled="!unembargo_in_progress">
-        <template #activator="{ on }">
+      <v-tooltip
+        location="left"
+        :disabled="!unembargo_in_progress"
+      >
+        <template #activator="{ props }">
           <div
             class="px-1 pt-3"
             style="width: 100%"
-            v-on="on"
+            v-bind="props"
           >
             <v-btn
               block
               :color="unembargoDisabled ? 'grey lighten-2': 'info'"
-              depressed
+              variant="flat"
               :disabled="unembargo_in_progress"
               @click="unembargoDisabled ? showUploadManagementDialog = true : unembargo()"
             >
               {{ unembargo_in_progress ? 'Unembargoing' : 'Unembargo' }}
               <v-spacer />
-              <v-icon v-if="unembargoDisabled">mdi-alert</v-icon>
-              <v-icon v-else>mdi-lock-open</v-icon>
+              <v-icon v-if="unembargoDisabled">
+                mdi-alert
+              </v-icon>
+              <v-icon v-else>
+                mdi-lock-open
+              </v-icon>
             </v-btn>
           </div>
         </template>
@@ -147,10 +166,13 @@
       </v-tooltip>
     </v-row>
 
-    <DandisetValidationErrors :dandiset="currentDandiset" :isOwner="true" />
+    <DandisetValidationErrors
+      :dandiset="currentDandiset"
+      :is-owner="true"
+    />
 
     <v-row>
-      <v-list-subheader class="mb-2 black--text text-h5">
+      <v-list-subheader class="mb-2 text-black text-h5">
         This Version
       </v-list-subheader>
     </v-row>
