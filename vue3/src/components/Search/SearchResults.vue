@@ -79,7 +79,7 @@ const dandisets = computed(
       v-if="searchResults"
       v-model="page"
       :length="Math.ceil(searchResults.count / DANDISETS_PER_PAGE)"
-      @input="updateSearchQuery"
+      @update:model-value="updateSearchQuery"
     />
   </v-container>
 </template>

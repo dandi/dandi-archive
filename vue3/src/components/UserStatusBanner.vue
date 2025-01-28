@@ -4,12 +4,11 @@
     single-line
     :color="bannerInfo.color"
   >
-    <v-icon
-      slot="icon"
-      size="36"
-    >
-      {{ bannerInfo.icon }}
-    </v-icon>
+    <template #icon>
+      <v-icon size="36">
+        {{ bannerInfo.icon }}
+      </v-icon>
+    </template>
     {{ bannerInfo.text }}
   </v-banner>
 </template>
