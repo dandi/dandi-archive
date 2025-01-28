@@ -23,11 +23,10 @@ watch(searchTerm, (newSearchTerm) => {
 <template>
   <v-autocomplete
     v-model="searchParameters.genotype"
+    v-model:search-input="searchTerm"
     multiple
     clearable
-    outlined
-    cache-items
-    :search-input.sync="searchTerm"
+    variant="outlined"
     :items="options"
     :loading="loading"
     label="Genotype(s)"

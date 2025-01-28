@@ -1,6 +1,6 @@
 <template>
   <v-container
-    class="grey darken-3 pa-0"
+    class="bg-grey-darken-3 pa-0"
     fluid
   >
     <v-row class="py-6 mt-2">
