@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.contrib.postgres.lookups import Unaccent
 from django.db import transaction
-from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum, TextField
+from django.db.models.functions import Cast, Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -17,6 +18,7 @@ from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.settings import api_settings as drf_settings
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.asset_paths import get_root_paths_many
@@ -56,11 +58,12 @@ from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
+    from rest_framework.views import APIView
 
     from dandiapi.api.models.upload import Upload
 
 
-class DandisetFilterBackend(filters.OrderingFilter):
+class DandisetOrderingFilter(filters.OrderingFilter):
     ordering_fields = ['id', 'name', 'modified', 'size']
     ordering_description = (
         'Which field to use when ordering the results. '
@@ -69,51 +72,80 @@ class DandisetFilterBackend(filters.OrderingFilter):
 
     def filter_queryset(self, request, queryset, view):
         orderings = self.get_ordering(request, queryset, view)
-        if orderings:
-            ordering = orderings[0]
-            # ordering can be either 'created' or '-created', so test for both
-            if ordering.endswith('id'):
-                return queryset.order_by(ordering)
-            if ordering.endswith('name'):
-                # name refers to the name of the most recent version, so a subquery is required
-                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
-                    '-created'
-                )[:1]
-                queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
-                return queryset.order_by(ordering)
-            if ordering.endswith('modified'):
-                # modified refers to the modification timestamp of the most
-                # recent version, so a subquery is required
-                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
-                    '-created'
-                )[:1]
-                # get the `modified` field of the most recent version.
-                # '_version' is appended because the Dandiset model already has a `modified` field
-                queryset = queryset.annotate(
-                    modified_version=Subquery(latest_version.values('modified'))
+        if not orderings:
+            return queryset
+        ordering = orderings[0]
+
+        # ordering can be either 'created' or '-created', so test for both
+        if ordering.endswith('id'):
+            return queryset.order_by(ordering)
+
+        if ordering.endswith('name'):
+            # name refers to the name of the most recent version, so a subquery is required
+            latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
+                :1
+            ]
+            queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
+            return queryset.order_by(ordering)
+
+        if ordering.endswith('modified'):
+            # modified refers to the modification timestamp of the most
+            # recent version, so a subquery is required
+            latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
+                :1
+            ]
+            # get the `modified` field of the most recent version.
+            # '_version' is appended because the Dandiset model already has a `modified` field
+            queryset = queryset.annotate(
+                modified_version=Subquery(latest_version.values('modified'))
+            )
+            return queryset.order_by(f'{ordering}_version')
+
+        if ordering.endswith('size'):
+            latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
+                :1
+            ]
+            queryset = queryset.annotate(
+                size=Subquery(
+                    latest_version.annotate(
+                        size=Coalesce(Sum('assets__blob__size'), 0)
+                        + Coalesce(Sum('assets__zarr__size'), 0)
+                    ).values('size')
                 )
-                return queryset.order_by(f'{ordering}_version')
-            if ordering.endswith('size'):
-                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
-                    '-created'
-                )[:1]
-                queryset = queryset.annotate(
-                    size=Subquery(
-                        latest_version.annotate(
-                            size=Coalesce(Sum('assets__blob__size'), 0)
-                            + Coalesce(Sum('assets__zarr__size'), 0)
-                        ).values('size')
-                    )
-                )
-                return queryset.order_by(ordering)
+            )
+            return queryset.order_by(ordering)
+
         return queryset
+
+
+class DandisetSearchFilter(filters.BaseFilterBackend):
+    search_param = drf_settings.SEARCH_PARAM
+
+    def get_search_term(self, request):
+        param = request.query_params.get(self.search_param, '')
+        return param.replace('\x00', '')  # strip null characters
+
+    def filter_queryset(self, request: Request, queryset: QuerySet, view: APIView) -> QuerySet:
+        search_term = self.get_search_term(request=request)
+        if not search_term:
+            return queryset
+
+        # We must formulate the filter using a separate query first, as otherwise
+        # the generated SQL is incompatible previously generated clauses
+        matching_dandiset_ids = (
+            Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
+            .filter(search_field__icontains=search_term)
+            .values_list('dandiset_id', flat=True)
+            .distinct()
+        )
+
+        return queryset.filter(id__in=matching_dandiset_ids)
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
-    filter_backends = [filters.SearchFilter, DandisetFilterBackend]
-    search_fields = ['versions__metadata']
+    filter_backends = [DandisetSearchFilter, DandisetOrderingFilter]
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
