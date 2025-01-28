@@ -44,7 +44,7 @@
       <v-row>
         <v-col :cols="12">
           <v-card>
-            <v-card-title>
+            <v-card-title class="d-flex align-center">
               <v-btn
                 icon
                 exact
@@ -145,13 +145,13 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
+                  <v-tooltip location="top">
+                    <template #activator="{ props: openInBtnProps }">
                       <v-btn
                         icon
                         :href="inlineURI(item.asset.asset_id)"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="openInBtnProps"
                       >
                         <v-icon color="primary">
                           mdi-open-in-app
@@ -163,13 +163,13 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
+                  <v-tooltip location="top">
+                    <template #activator="{ props: downloadProps }">
                       <v-btn
                         icon
                         :href="downloadURI(item.asset.asset_id)"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="downloadProps"
                       >
                         <v-icon color="primary">
                           mdi-download
@@ -181,15 +181,15 @@
                 </v-list-item-action>
 
                 <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
+                  <v-tooltip location="top">
+                    <template #activator="{ props: infoProps }">
                       <v-btn
                         icon
                         :href="assetMetadataURI(item.asset.asset_id)"
                         target="_blank"
                         rel="noreferrer"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="infoProps"
                       >
                         <v-icon color="primary">
                           mdi-information
@@ -202,30 +202,31 @@
 
                 <v-list-item-action v-if="item.asset">
                   <v-menu
-                    bottom
-                    left
+                    location="bottom left"
                   >
-                    <template #activator="{ on, attrs }">
+                    <template #activator="{ props: openWithProps }">
                       <v-btn
                         color="primary"
-                        x-small
+                        size="x-small"
                         :disabled="!item.services || !item.services.length"
-                        v-bind="attrs"
-                        v-on="on"
+
+                        v-bind="openWithProps"
                       >
-                        Open With <v-icon small>mdi-menu-down</v-icon>
+                        Open With <v-icon size="small">
+                          mdi-menu-down
+                        </v-icon>
                       </v-btn>
                     </template>
                     <v-list
                       v-if="item && item.services"
-                      dense
+                      density="compact"
                     >
-                      <v-subheader
+                      <v-list-subheader
                         v-if="item.services.length"
                         class="font-weight-medium"
                       >
                         EXTERNAL SERVICES
-                      </v-subheader>
+                      </v-list-subheader>
 
                       <v-list-item
                         v-for="el in item.services"
@@ -258,7 +259,7 @@
         v-if="currentDandiset.asset_count"
         :page="page"
         :page-count="pages"
-        @changePage="changePage($event)"
+        @change-page="changePage($event)"
       />
     </v-container>
   </div>
@@ -349,21 +350,21 @@ const EXTERNAL_SERVICES = [
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.nwb\.lindi\.(json|tar)$/,
     maxsize: Infinity,
-    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.avi$/,
     maxsize: Infinity,
-    endpoint: 'https://neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
   }
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
