@@ -2,14 +2,14 @@
   <v-row>
     <v-col>
       <v-card
-        outlined
+        variant="outlined"
         height="100%"
       >
         <v-card-title
           :id="name"
           class="font-weight-regular"
         >
-          <v-icon class="mr-3 grey--text text--lighten-1">
+          <v-icon class="mr-3 text-grey-lighten-1">
             {{ icon }}
           </v-icon>
           {{ name }}
@@ -38,7 +38,7 @@
                 >
                   <v-col
                     cols="9"
-                    class="grey--text text--darken-3"
+                    class="text-grey-darken-3"
                   >
                     <span v-if="item.name || item.identifier || item.id">
                       {{ item.name || item.identifier || item.id }}

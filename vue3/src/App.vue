@@ -17,10 +17,9 @@
       {{ SERVER_DOWNTIME_MESSAGE }}
     </v-main>
     <v-snackbar
-      :value="showError"
+      :model-value="showError"
       :timeout="-1"
-      top
-      right
+      location="top right"
       color="error"
     >
       <span>
@@ -30,7 +29,7 @@
       <template #action="{ attrs }">
         <v-btn
           color="white"
-          text
+          variant="text"
           v-bind="attrs"
           @click="showError = false"
         >
