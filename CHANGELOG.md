@@ -1,3 +1,17 @@
+# v0.4.14 (Tue Jan 28 2025)
+
+#### 🐛 Bug Fix
+
+- Use `Unaccent` with dandiset search filter [#2142](https://github.com/dandi/dandi-archive/pull/2142) ([@jjnesbitt](https://github.com/jjnesbitt))
+- `Upload` and `AssetBlob` garbage collection implementation [#2087](https://github.com/dandi/dandi-archive/pull/2087) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.4.13 (Thu Jan 23 2025)
 
 #### 🐛 Bug Fix
