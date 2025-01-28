@@ -64,7 +64,7 @@ const router = useRouter();
 const currentRoute = useRoute();
 watchEffect(() => {
   if (currentRoute.hash) {
-    const trimmed = router.currentRoute.hash.replace('#', '');
+    const trimmed = router.currentRoute.value.hash.replace('#', '');
     router.replace(trimmed);
   }
 });
