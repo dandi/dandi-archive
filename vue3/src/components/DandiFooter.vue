@@ -21,21 +21,21 @@
             rel="noopener"
             href="https://docs.dandiarchive.org/about/terms/"
           >Terms</a> 
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
             href="https://docs.dandiarchive.org/about/policies/"
           >Policies</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandi-archive/blob/master/CODE_OF_CONDUCT.md"
           >Code of Conduct</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
           <br>
@@ -54,14 +54,14 @@
             rel="noopener"
             href="https://braininitiative.nih.gov/"
           >BRAIN Initiative</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
             href="https://www.nimh.nih.gov/index.shtml"
           >NIMH</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
           <br>
@@ -70,7 +70,7 @@
             rel="noopener"
             href="https://registry.opendata.aws/dandiarchive/"
           >AWS Open Dataset</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
           <br>
@@ -79,7 +79,7 @@
             rel="noopener"
             href="https://netlify.com"
           >This site is powered by Netlify</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
         </v-col>
@@ -90,7 +90,7 @@
             rel="noopener"
             :href="dandiAboutUrl"
           >DANDI Project Homepage</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
           <br>
@@ -99,14 +99,14 @@
             rel="noopener"
             href="https://github.com/dandi/dandi-archive"
           >Project GitHub</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
             href="https://github.com/dandi/dandi-archive/issues"
           >Issues</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
         </v-col>
