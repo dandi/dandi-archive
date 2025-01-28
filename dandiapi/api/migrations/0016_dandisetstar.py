@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('api', '0013_remove_assetpath_consistent_slash_and_more'),
+        ('api', '0015_unaccent_extension'),
     ]
 
     operations = [
