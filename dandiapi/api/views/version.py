@@ -81,7 +81,9 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     def info(self, request, **kwargs):
         """Django serialization of a version."""
         version = self.get_object()
-        serializer = VersionDetailSerializer(instance=version)
+        serializer = VersionDetailSerializer(
+            instance=version, context=self.get_serializer_context()
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(

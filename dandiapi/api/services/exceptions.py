@@ -21,5 +21,10 @@ class NotAllowedError(DandiError):
     http_status_code = status.HTTP_403_FORBIDDEN
 
 
+class NotAuthenticatedError(DandiError):
+    message = 'Action requires authentication.'
+    http_status_code = status.HTTP_401_UNAUTHORIZED
+
+
 class AdminOnlyOperationError(DandiError):
     pass

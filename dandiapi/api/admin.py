@@ -21,6 +21,7 @@ from dandiapi.api.models import (
     AssetBlob,
     AuditRecord,
     Dandiset,
+    DandisetStar,
     GarbageCollectionEvent,
     Upload,
     UserMetadata,
@@ -272,3 +273,12 @@ class AuditRecordAdmin(admin.ModelAdmin):
 @admin.register(GarbageCollectionEvent)
 class GarbageCollectionEventAdmin(admin.ModelAdmin):
     pass
+
+
+@admin.register(DandisetStar)
+class DandisetStarAdmin(admin.ModelAdmin):
+    list_display = ('user', 'dandiset', 'created')
+    list_filter = ('created',)
+    search_fields = ('user__username', 'dandiset__id')
+    raw_id_fields = ('user', 'dandiset')
+    date_hierarchy = 'created'
