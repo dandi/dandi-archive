@@ -60,7 +60,10 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-info@dandiarchive.org.
+community@dandiarchive.org.  The community@dandiarchive.org email is sent
+to Kabilar Gunalan, Roni Choudhury, Satrajit Ghosh, and Yaroslav Halchenko.  If
+you would like to report an incident to an individual person, emails can be
+found on the [Team Page](https://about.dandiarchive.org/team).
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the
