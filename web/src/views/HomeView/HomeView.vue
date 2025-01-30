@@ -23,13 +23,13 @@
           >
             <v-col class="splash-text my-12">
               <div class="text-h2 font-weight-thin text-center light-blue--text text--darken-1">
-                The DANDI Archive
+                The EMBER-DANDI Archive
               </div>
               <div class="text-h6 font-weight-light text-center">
-                The BRAIN Initiative archive for publishing and sharing
+                An instance of DANDI, the BRAIN Initiative archive for publishing and sharing
                 neurophysiology data including electrophysiology,
                 optophysiology, and behavioral time-series, and images from
-                immunostaining experiments.
+                immunostaining experiments, to support the NIH BBQS Program.
               </div>
             </v-col>
           </v-row>
