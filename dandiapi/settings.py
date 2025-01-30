@@ -197,7 +197,7 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
         ALLOWED_HOSTS = []
 
     ALLOWED_HOSTS += [
-        'api-dandi.ember-archive.org',
+        'api-dandi.emberarchive.org',
 
         # Example from Linc-Archive
         # 'linc-staging-terraform-0b817cb1246b.herokuapp.com/',
