@@ -6,27 +6,27 @@ ignore = "false"
 # Staging
 [context.master.environment]
 NODE_VERSION = "20"
-VITE_APP_OAUTH_API_ROOT = "https://api-staging-dandi.emberarchive.org/oauth/"
+VITE_APP_OAUTH_API_ROOT = "https://api-dandi-staging.emberarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = ""
-VITE_APP_DANDI_API_ROOT = "https://api-staging-dandi.emberarchive.org/api/"
+VITE_APP_DANDI_API_ROOT = "https://api-dandi-staging.emberarchive.org/api/"
 VITE_APP_SENTRY_DSN = "https://47b58f7fd49191d6d771509e8834788f@o4508337180966912.ingest.us.sentry.io/4508337195909120"
 VITE_APP_SENTRY_ENVIRONMENT = "staging"
 
 # Deploy previews
 [context.deploy-preview.environment]
 NODE_VERSION = "20"
-VITE_APP_OAUTH_API_ROOT = "https://api-staging-dandi.emberarchive.org/oauth/"
+VITE_APP_OAUTH_API_ROOT = "https://api-dandi-staging.emberarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = ""
-VITE_APP_DANDI_API_ROOT = "https://api-staging-dandi.emberarchive.org/api/"
+VITE_APP_DANDI_API_ROOT = "https://api-dandi-staging.emberarchive.org/api/"
 VITE_APP_SENTRY_DSN = "https://47b58f7fd49191d6d771509e8834788f@o4508337180966912.ingest.us.sentry.io/4508337195909120"
 VITE_APP_SENTRY_ENVIRONMENT = "staging"
 
 # Production
 [context.release.environment]
 NODE_VERSION = "20"
-VITE_APP_OAUTH_API_ROOT = "https://api-staging-dandi.emberarchive.org/oauth/"
+VITE_APP_OAUTH_API_ROOT = "https://api.emberarchive.org/oauth/"
 VITE_APP_OAUTH_CLIENT_ID = ""
-VITE_APP_DANDI_API_ROOT = "https://api-staging-dandi.emberarchive.org/api/"
+VITE_APP_DANDI_API_ROOT = "https://api.emberarchive.org/api/"
 VITE_APP_SENTRY_DSN = "https://47b58f7fd49191d6d771509e8834788f@o4508337180966912.ingest.us.sentry.io/4508337195909120"
 VITE_APP_SENTRY_ENVIRONMENT = "production"
 
