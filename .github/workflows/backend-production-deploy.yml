@@ -37,7 +37,7 @@ jobs:
   production-deploy:
     name: Deploy to Heroku
     runs-on: ubuntu-22.04
-    needs: reset-release-branch
+    #needs: reset-release-branch
     steps:
       - uses: actions/checkout@v4
         with:
