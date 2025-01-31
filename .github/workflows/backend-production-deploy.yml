@@ -1,8 +1,15 @@
 name: Deploy backend to production
 
 on:
-  release:
-    types: [released]
+  push:
+      branches:
+        - staging
+      paths-ignore:
+        - "web/**"
+        - "CHANGELOG.md"
+  # TODO: revert back; only for testing!
+  # release:
+  #   types: [released]
 
 concurrency:
   # If this workflow is already running, cancel it to avoid a scenario
