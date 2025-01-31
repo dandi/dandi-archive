@@ -1,9 +1,9 @@
 name: Deploy backend to production
 
-on:
-  release:
-    types: [released]
-  workflow_dispatch:
+on: workflow_dispatch
+  # release:
+  #   types: [released]
+  
 
 concurrency:
   # If this workflow is already running, cancel it to avoid a scenario
