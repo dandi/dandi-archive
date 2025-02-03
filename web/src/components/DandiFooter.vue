@@ -88,8 +88,8 @@
           - <a
             target="_blank"
             rel="noopener"
-            :href="dandiAboutUrl"
-          >DANDI Project Homepage</a>
+            href="mailto:help@dandiarchive.org"
+          >Send an email</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -97,15 +97,8 @@
           - <a
             target="_blank"
             rel="noopener"
-            href="https://github.com/dandi/dandi-archive"
-          >Project GitHub</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon> / <a
-            target="_blank"
-            rel="noopener"
-            href="https://github.com/dandi/dandi-archive/issues"
-          >Issues</a>
+            href="https://github.com/dandi/helpdesk/issues/new/choose"
+          >File an issue</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -119,7 +112,6 @@
 import { defineComponent } from 'vue';
 import CookieLaw from 'vue-cookie-law';
 
-import { dandiAboutUrl } from '@/utils/constants';
 import { cookiesEnabled } from '@/rest';
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -130,7 +122,6 @@ export default defineComponent({
   components: { CookieLaw },
   setup() {
     return {
-      dandiAboutUrl,
       version,
       githubLink,
       cookiesEnabled,
