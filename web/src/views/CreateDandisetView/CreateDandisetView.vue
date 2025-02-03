@@ -80,7 +80,7 @@
           <div>
             Select a license under which to share the contents of this Dandiset.
             You can learn more about <a
-              href="https://www.dandiarchive.org/handbook/35_data_licenses/"
+              href="https://docs.dandiarchive.org/35_data_licenses/"
               target="_blank"
               rel="noopener"
             >

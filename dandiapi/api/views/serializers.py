@@ -100,6 +100,12 @@ class VersionSerializer(serializers.ModelSerializer):
     dandiset = DandisetSerializer()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
+    def __init__(self, *args, child_context=False, **kwargs):
+        if child_context:
+            del self.fields['dandiset']
+
+        super().__init__(*args, **kwargs)
+
 
 class DandisetVersionSerializer(serializers.ModelSerializer):
     """The version serializer nested within the Dandiset Serializer."""
@@ -174,8 +180,8 @@ class DandisetDetailSerializer(DandisetSerializer):
     class Meta(DandisetSerializer.Meta):
         fields = [*DandisetSerializer.Meta.fields, 'most_recent_published_version', 'draft_version']
 
-    most_recent_published_version = VersionSerializer(read_only=True)
-    draft_version = VersionSerializer(read_only=True)
+    most_recent_published_version = VersionSerializer(read_only=True, child_context=True)
+    draft_version = VersionSerializer(read_only=True, child_context=True)
 
 
 class DandisetQueryParameterSerializer(serializers.Serializer):
