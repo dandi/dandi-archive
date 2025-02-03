@@ -88,7 +88,7 @@
           - <a
             target="_blank"
             rel="noopener"
-            :href="mailto:help@dandiarchive.org"
+            href="mailto:help@dandiarchive.org"
           >Send an email</a>
           <v-icon x-small>
             mdi-open-in-new
