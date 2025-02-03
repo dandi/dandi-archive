@@ -1,3 +1,17 @@
+# v0.4.15 (Mon Feb 03 2025)
+
+#### 🐛 Bug Fix
+
+- Update support links in the footer [#2134](https://github.com/dandi/dandi-archive/pull/2134) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+- Update code of conduct contact information [#2157](https://github.com/dandi/dandi-archive/pull/2157) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.4.14 (Tue Jan 28 2025)
 
 #### 🐛 Bug Fix
