@@ -59,7 +59,7 @@
         :src="logo"
         class="mr-3"
       />
-      <span class="flex-grow-1 font-weight-bold">EMBER-DANDI</span>
+      <span class="flex-grow-1 font-weight-bold mr-3">EMBER-DANDI</span>
     </router-link>
     <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
       <template v-for="navItem in navItems">

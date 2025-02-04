@@ -58,7 +58,7 @@ router.register('zarr', ZarrViewSet, basename='zarr')
 
 schema_view = get_schema_view(
     openapi.Info(
-        title='DANDI Archive',
+        title='EMBER DANDI Archive',
         default_version='v1',
         description='The BRAIN Initiative archive for publishing and sharing '
         'cellular neurophysiology data',

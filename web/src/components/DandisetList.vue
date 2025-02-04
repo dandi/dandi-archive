@@ -23,8 +23,8 @@
             v-if="item.version && item.version !== 'draft'"
             class="mr-1"
             small
-            color="light-blue lighten-4"
-            text-color="light-blue darken-3"
+            color="primary lighten-4"
+            text-color="primary darken-3"
           >
             <b>{{ item.version }}</b>
           </v-chip>

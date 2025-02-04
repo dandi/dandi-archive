@@ -61,8 +61,8 @@
                   id="manage"
                   depressed
                   :disabled="manageOwnersDisabled"
-                  color="light-blue lighten-5"
-                  class="light-blue--text text--lighten-1 justify-start"
+                  color="secondary lighten-1"
+                  class="justify-start"
                   block
                   v-on="on"
                 >

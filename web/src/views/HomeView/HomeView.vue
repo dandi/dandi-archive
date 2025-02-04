@@ -22,7 +22,7 @@
             align="center"
           >
             <v-col class="splash-text my-12">
-              <div class="text-h2 font-weight-thin text-center light-blue--text text--darken-1">
+              <div class="text-h2 font-weight-thin text-center primary--text">
                 The EMBER-DANDI Archive
               </div>
               <div class="text-h6 font-weight-light text-center">
@@ -50,7 +50,7 @@ import { watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router/composables';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import logo from '@/assets/logo.svg';
+import logo from '@/assets/ember-logo.png';
 
 /**
 * Redirect old hash URLS to the correct one. This is only done on
