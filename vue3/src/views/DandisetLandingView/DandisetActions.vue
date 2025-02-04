@@ -18,30 +18,7 @@
         v-if="currentDandiset.dandiset.embargo_status === 'OPEN'"
         no-gutters
       >
-        <CiteAsDialog>
-          <template
-            #activator="{ on }"
-          >
-            <v-btn
-              id="cite_as"
-              outlined
-              block
-              v-on="on"
-            >
-              <v-icon
-                color="primary"
-                left
-              >
-                mdi-format-quote-close
-              </v-icon>
-              <span>Cite As</span>
-              <v-spacer />
-              <v-icon right>
-                mdi-chevron-down
-              </v-icon>
-            </v-btn>
-          </template>
-        </CiteAsDialog>
+        <CiteAsDialog />
       </v-row>
       <v-row
         no-gutters
