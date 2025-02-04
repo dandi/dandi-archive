@@ -5,11 +5,25 @@
     min-width="420"
     max-width="420"
   >
-    <template #activator="{ on }">
-      <slot
-        name="activator"
-        :on="on"
-      />
+    <template #activator="{ props }">
+      <v-btn
+        id="cite_as"
+        variant="outlined"
+        block
+        v-bind="props"
+      >
+        <v-icon
+          color="primary"
+          start
+        >
+          mdi-format-quote-close
+        </v-icon>
+        <span>Cite As</span>
+        <v-spacer />
+        <v-icon end>
+          mdi-chevron-down
+        </v-icon>
+      </v-btn>
     </template>
     <v-card>
       <CopyText
