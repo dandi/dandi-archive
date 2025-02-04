@@ -12,30 +12,7 @@
     <!-- Download and Cite As buttons -->
     <div class="my-4">
       <v-row no-gutters>
-        <DownloadDialog>
-          <template
-            #activator="{ on }"
-          >
-            <v-btn
-              id="download"
-              outlined
-              block
-              v-on="on"
-            >
-              <v-icon
-                color="primary"
-                left
-              >
-                mdi-download
-              </v-icon>
-              <span>Download</span>
-              <v-spacer />
-              <v-icon right>
-                mdi-chevron-down
-              </v-icon>
-            </v-btn>
-          </template>
-        </DownloadDialog>
+        <DownloadDialog />
       </v-row>
       <v-row
         v-if="currentDandiset.dandiset.embargo_status === 'OPEN'"
