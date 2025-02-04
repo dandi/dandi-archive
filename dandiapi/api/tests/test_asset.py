@@ -318,6 +318,35 @@ def test_asset_rest_list_include_metadata(api_client, version, asset, asset_fact
     assert r.json()['results'][0]['metadata'] == asset.full_metadata
 
 
+@pytest.mark.django_db
+def test_asset_rest_list_zarr_only(
+    api_client, draft_version, draft_asset_factory, zarr_archive_factory
+):
+    # Create two blob assets and one zarr asset
+    zarr_asset = draft_asset_factory(
+        blob=None, zarr=zarr_archive_factory(dandiset=draft_version.dandiset)
+    )
+    draft_version.assets.add(zarr_asset)
+    draft_version.assets.add(draft_asset_factory())
+    draft_version.assets.add(draft_asset_factory())
+
+    # Assert missing and false both return all assets
+    ident = draft_version.dandiset.identifier
+    ver = draft_version.version
+    assert api_client.get(f'/api/dandisets/{ident}/versions/{ver}/assets/').json()['count'] == 3
+    assert (
+        api_client.get(f'/api/dandisets/{ident}/versions/{ver}/assets/', {'zarr': False}).json()[
+            'count'
+        ]
+        == 3
+    )
+
+    # Test positive case
+    r = api_client.get(f'/api/dandisets/{ident}/versions/{ver}/assets/', {'zarr': True}).json()
+    assert r['count'] == 1
+    assert r['results'][0]['asset_id'] == str(zarr_asset.asset_id)
+
+
 @pytest.mark.parametrize(
     ('path', 'result_indices'),
     [

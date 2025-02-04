@@ -431,6 +431,11 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         # Apply filtering from included filter class first
         asset_queryset = self.filter_queryset(version.assets.all())
 
+        # Filter query to only zarr assets, if requested
+        zarr_only = serializer.validated_data['zarr']
+        if zarr_only:
+            asset_queryset = asset_queryset.filter(zarr__isnull=False)
+
         # Must do glob pattern matching before pagination
         glob_pattern: str | None = serializer.validated_data.get('glob')
         if glob_pattern is not None:
