@@ -44,19 +44,21 @@ shall take the following query parameters:
       trailing slash removed.
 
 - `metadata` — Whether to include asset metadata in the response; possible
-  values are `0` (the default), indicating that metadata should not be
-  included, and `1`, indicating that metadata should be included.
+  values are `false` (the default), indicating that metadata should not be
+  included, and `true`, indicating that metadata should be included.
 
-    - Values other than `0` and `1` are treated the same as `0`.
+    - Values that cannot be parsed to `true` or `false` using Django's
+      `BooleanField` result in a 400 response.
 
 - `children` — Whether to include children of `path` in the response; possible
-  values are `0` (the default), indicating that children should not be
-  included, and `1`, indicating that children should be included.
+  values are `false` (the default), indicating that children should not be
+  included, and `true`, indicating that children should be included.
 
     - This parameter has no effect when the resource at `path` is an asset
       rather than a folder.
 
-    - Values other than `0` and `1` are treated the same as `0`.
+    - Values that cannot be parsed to `true` or `false` using Django's
+      `BooleanField` result in a 400 response.
 
 - `page` and `page_size` — Pagination parameters
 
@@ -92,7 +94,7 @@ list, using the same pagination schema as is already used for other endpoints.
         - `"total_size"` — an integer giving the total size in bytes of all
           assets in this folder and all of its descendants
 
-  If the `children` parameter was not set to `1` in the request, this is the
+  If the `children` parameter was not set to `true` in the request, this is the
   only element of the list.  Otherwise, the rest of the list consists of JSON
   objects for the assets and subfolders immediately within the folder, ordered
   by their paths (without trailing slashes) and sorted in UTF-8 byte-wise
@@ -108,13 +110,13 @@ list, using the same pagination schema as is already used for other endpoints.
 - When `path` is empty or absent, the list shall be the same as for a folder
   located at the root of the file hierarchy, except that there shall be no
   initial element describing the resource at `path`.  (Hence, if `children` is
-  not `1`, the list shall be empty.)
+  not `true`, the list shall be empty.)
 
 Example
 -------
 
 A request for
-`/dandisets/000029/versions/0.231017.2004/assets/atpath/?metadata=1&children=1`
+`/dandisets/000029/versions/0.231017.2004/assets/atpath/?metadata=true&children=true`
 would have a response of:
 
 ```json
