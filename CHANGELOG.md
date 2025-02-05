@@ -1,3 +1,15 @@
+# v0.4.17 (Wed Feb 05 2025)
+
+#### 🐛 Bug Fix
+
+- Check if dandiset contains zarr assets using asset list endpoint [#2170](https://github.com/dandi/dandi-archive/pull/2170) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.16 (Wed Feb 05 2025)
 
 #### 🐛 Bug Fix
