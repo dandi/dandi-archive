@@ -397,6 +397,7 @@ class AssetDetailSerializer(AssetSerializer):
 class AssetListSerializer(serializers.Serializer):
     glob = serializers.CharField(required=False)
     metadata = serializers.BooleanField(required=False, default=False)
+    zarr = serializers.BooleanField(required=False, default=False)
 
 
 class AssetPathsQueryParameterSerializer(serializers.Serializer):

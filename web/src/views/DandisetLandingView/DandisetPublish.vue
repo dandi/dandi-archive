@@ -305,11 +305,15 @@ const alreadyBeingPublishedError = ref(false);
 const containsZarr = ref(false);
 watchEffect(async () => {
   if (currentDandiset.value) {
-    const zarr = await dandiRest.zarr({
-      dandiset: currentDandiset.value.dandiset.identifier,
-    });
+    const { identifier } = currentDandiset.value.dandiset;
+    const { version } = currentDandiset.value;
+    const res = await dandiRest.assets(
+      identifier,
+      version,
+      { params: { zarr: true, page_size: 1 } },
+    );
 
-    containsZarr.value = zarr.count > 0;
+    containsZarr.value = res !== null && res.count > 0;
   }
 });
 
