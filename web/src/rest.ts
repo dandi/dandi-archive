@@ -306,7 +306,7 @@ const dandiRest = {
     await client.post(`dandisets/${identifier}/star/`);
   },
   async unstarDandiset(identifier: string): Promise<void> {
-    await client.post(`dandisets/${identifier}/unstar/`);
+    await client.delete(`dandisets/${identifier}/star/`);
   },
 };
 

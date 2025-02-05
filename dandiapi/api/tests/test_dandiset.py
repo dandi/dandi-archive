@@ -603,9 +603,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI Archive. {url}'
-        ),
+        'citation': (f'Jane Doe ({year}) {name} (Version draft) [Data set]. DANDI Archive. {url}'),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
@@ -1268,7 +1266,7 @@ def test_dandiset_unstar(api_client, user, dandiset):
     assert dandiset.stars.count() == 1
 
     # Then unstar it
-    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/unstar/')
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/star/')
     assert response.status_code == 200
     assert response.data == {'count': 0}
     assert dandiset.stars.count() == 0

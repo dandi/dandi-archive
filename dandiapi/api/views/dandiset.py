@@ -617,7 +617,6 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         return Response({'count': star_count}, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        methods=['POST'],
         manual_parameters=[DANDISET_PK_PARAM],
         request_body=no_body,
         responses={
@@ -627,7 +626,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_summary='Unstar a dandiset.',
         operation_description='Unstar a dandiset. User must be authenticated.',
     )
-    @action(methods=['POST'], detail=True)
+    @star.mapping.delete
     def unstar(self, request, dandiset__pk) -> Response:
         dandiset = self.get_object()
         star_count = unstar_dandiset(user=request.user, dandiset=dandiset)
