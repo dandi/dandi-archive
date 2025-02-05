@@ -3,7 +3,7 @@ name: Deploy backend to production
 on:
   push:
       branches:
-        - staging
+        - prod
       paths-ignore:
         - "web/**"
         - "CHANGELOG.md"
