@@ -1288,7 +1288,7 @@ def test_dandiset_star_count(api_client, user_factory, dandiset):
         api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
 
     response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
-    assert response.data['star_count'] == 3
+    assert response.data['star_count'] == len(users)
 
 
 @pytest.mark.django_db
