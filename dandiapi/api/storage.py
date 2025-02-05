@@ -182,15 +182,20 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
                 return etag[1:-1]
             return etag
 
-    def generate_presigned_put_object_url(self, blob_name: str, base64md5: str) -> str:
+    def generate_presigned_put_object_url(
+        self, blob_name: str, base64md5: str, content_type: str | None
+    ) -> str:
+        params = {
+            'Bucket': self.bucket_name,
+            'Key': blob_name,
+            'ACL': 'bucket-owner-full-control',
+            'ContentMD5': base64md5,
+        }
+        if content_type is not None:
+            params['ContentType'] = content_type
         return self.connection.meta.client.generate_presigned_url(
             ClientMethod='put_object',
-            Params={
-                'Bucket': self.bucket_name,
-                'Key': blob_name,
-                'ACL': 'bucket-owner-full-control',
-                'ContentMD5': base64md5,
-            },
+            Params=params,
             ExpiresIn=600,  # TODO: proper expiration
         )
 
@@ -243,7 +248,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         else:
             return response.etag
 
-    def generate_presigned_put_object_url(self, blob_name: str, _: str) -> str:
+    def generate_presigned_put_object_url(self, blob_name: str, _: str, content_type: str) -> str:
         # Note: minio-py doesn't support using Content-MD5 headers
 
         # storage.client will generate URLs like `http://minio:9000/...` when running in

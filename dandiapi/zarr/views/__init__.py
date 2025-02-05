@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 class ZarrFileCreationSerializer(serializers.Serializer):
     path = serializers.CharField()
     base64md5 = serializers.CharField()
+    content_type = serializers.CharField(allow_null=True, default=None)
 
 
 class ZarrDeleteFileRequestSerializer(serializers.Serializer):
