@@ -37,7 +37,7 @@ from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
 )
-from dandiapi.api.services.exceptions import NotAllowedError, NotAuthenticatedError
+from dandiapi.api.services.exceptions import DandiError, NotAllowedError, NotAuthenticatedError
 from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     get_owned_dandisets,
@@ -610,13 +610,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_summary='Star a dandiset.',
         operation_description='Star a dandiset. User must be authenticated.',
     )
-    @action(methods=['POST'], detail=True)
-    def star(self, request, dandiset__pk) -> Response:
-        dandiset = self.get_object()
-        star_count = star_dandiset(user=request.user, dandiset=dandiset)
-        return Response({'count': star_count}, status=status.HTTP_200_OK)
-
     @swagger_auto_schema(
+        methods=['DELETE'],
         manual_parameters=[DANDISET_PK_PARAM],
         request_body=no_body,
         responses={
@@ -626,8 +621,16 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         operation_summary='Unstar a dandiset.',
         operation_description='Unstar a dandiset. User must be authenticated.',
     )
-    @star.mapping.delete
-    def unstar(self, request, dandiset__pk) -> Response:
+    @action(methods=['POST', 'DELETE'], detail=True)
+    def star(self, request, dandiset__pk) -> Response:
         dandiset = self.get_object()
-        star_count = unstar_dandiset(user=request.user, dandiset=dandiset)
+        if request.method == 'POST':
+            star_count = star_dandiset(user=request.user, dandiset=dandiset)
+        elif request.method == 'DELETE':
+            star_count = unstar_dandiset(user=request.user, dandiset=dandiset)
+        else:
+            raise DandiError(
+                message='Method not allowed.', http_status_code=status.HTTP_405_METHOD_NOT_ALLOWED
+            )
+
         return Response({'count': star_count}, status=status.HTTP_200_OK)
