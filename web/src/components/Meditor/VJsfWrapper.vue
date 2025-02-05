@@ -149,9 +149,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
-import VJsf from '@koumoul/vjsf/lib/VJsf';
-import '@koumoul/vjsf/lib/deps/third-party';
-import '@koumoul/vjsf/lib/VJsf.css';
+import VJsf from '@koumoul/vjsf';
 import { isEqual } from 'lodash';
 
 import type { DandiModel } from './types';

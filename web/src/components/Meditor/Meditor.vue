@@ -233,9 +233,7 @@ import { ref, computed } from 'vue';
 import jsYaml from 'js-yaml';
 import axios from 'axios';
 
-import VJsf from '@koumoul/vjsf/lib/VJsf';
-import '@koumoul/vjsf/lib/deps/third-party';
-import '@koumoul/vjsf/lib/VJsf.css';
+import VJsf from '@koumoul/vjsf';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
