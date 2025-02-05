@@ -52,15 +52,15 @@
         <v-col>
           <v-card
             class="mb-2"
-            outlined
+            variant="outlined"
           >
             <v-card-actions class="pt-0">
-              <v-tooltip top>
-                <template #activator="{ on }">
+              <v-tooltip location="top">
+                <template #activator="{ props }">
                   <v-icon
-                    left
+                    start
                     :color="modelValid ? 'success' : 'error'"
-                    v-on="on"
+                    v-bind="props"
                   >
                     <template v-if="modelValid">
                       mdi-checkbox-marked-circle
@@ -77,13 +77,13 @@
                   There are errors in the metadata for this Dandiset.
                 </template>
               </v-tooltip>
-              <v-tooltip bottom>
-                <template #activator="{ on }">
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
                   <v-btn
                     icon
                     :color="modified ? 'warning' : 'primary'"
                     :disabled="readonly || !modified"
-                    v-on="on"
+                    v-bind="props"
                     @click="save"
                   >
                     <v-icon>{{ modified ? 'mdi-content-save-alert' : 'mdi-content-save' }}</v-icon>
@@ -91,13 +91,13 @@
                 </template>
                 <span>Save</span>
               </v-tooltip>
-              <v-tooltip bottom>
-                <template #activator="{ on }">
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
                   <v-btn
                     icon
                     color="secondary"
                     :disabled="disableUndo"
-                    v-on="on"
+                    v-bind="props"
                     @click="undoChange"
                   >
                     <v-icon>
@@ -107,13 +107,13 @@
                 </template>
                 <span>Undo</span>
               </v-tooltip>
-              <v-tooltip bottom>
-                <template #activator="{ on }">
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
                   <v-btn
                     icon
                     color="secondary"
                     :disabled="disableRedo"
-                    v-on="on"
+                    v-bind="props"
                     @click="redoChange"
                   >
                     <v-icon>
@@ -124,11 +124,11 @@
                 <span>Redo</span>
               </v-tooltip>
               <v-spacer />
-              <v-tooltip bottom>
-                <template #activator="{ on }">
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
                   <v-btn
                     icon
-                    v-on="on"
+                    v-bind="props"
                     @click="download"
                   >
                     <v-icon>
@@ -145,11 +145,11 @@
       <v-row class="px-2 justify-center">
         <v-tabs
           v-model="tab"
-          background-color="grey darken-2"
+          bg-color="grey darken-2"
           slider-color="highlight"
           dark
           show-arrows
-          align-with-title
+          align-tabs="title"
         >
           <v-tab
             key="tab-0"
@@ -158,7 +158,7 @@
             <v-badge
               color="error"
               dot
-              :value="!basicModelValid"
+              :model-value="!basicModelValid"
             >
               General
             </v-badge>
@@ -171,7 +171,7 @@
             <v-badge
               color="error"
               dot
-              :value="!complexModelValidation[propKey]"
+              :model-value="!complexModelValidation[propKey]"
             >
               {{ getSchemaTitle(propKey) }}
             </v-badge>
