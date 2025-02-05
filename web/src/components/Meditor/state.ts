@@ -1,4 +1,4 @@
-import Vue, { computed, ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { EditorInterface } from './editor';
 
 // NOTE: it would be better to use a single ref here instead of separate state/computed
@@ -19,9 +19,9 @@ const editorInterface = computed({
       if (!newVal) {
         return;
       }
-      // Otherwise, mutate the existing instance's properties using Vue.set
+      // Otherwise, mutate the existing instance's properties
       Object.entries(newVal).forEach(([key, value]) => {
-        Vue.set(state.editorInterface as EditorInterface, key, value);
+        (state.editorInterface as EditorInterface)[key] = value;
       });
     }
   },
