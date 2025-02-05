@@ -10,6 +10,8 @@ import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 
+import { commonjsDeps } from '@koumoul/vjsf/utils/build.js'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -58,6 +60,15 @@ export default defineConfig({
       sass: {
         api: 'modern-compiler',
       },
+    },
+  },
+  // https://koumoul-dev.github.io/vuetify-jsonschema-form/latest/getting-started
+  optimizeDeps: {
+    include: commonjsDeps,
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
     },
   },
 })
