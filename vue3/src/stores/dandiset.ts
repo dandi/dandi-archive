@@ -117,6 +117,14 @@ export const useDandisetStore = defineStore('dandiset', {
 
       const schema = await RefParser.dereference(res.data);
 
+      // TODO: why does vjsf say these regexes are invalid?
+      delete schema['$schema'];
+      delete schema['properties']['identifier']['pattern'];
+      delete schema['$defs']['Project']['properties']['wasAssociatedWith']['items']['oneOf'][2]['properties']['identifier']['pattern'];
+      delete schema['$defs']['Software']['properties']['name']['pattern'];
+
+      console.log(schema)
+
       this.schema = schema;
     },
     async fetchOwners(identifier: string) {
