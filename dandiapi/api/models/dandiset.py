@@ -20,6 +20,9 @@ class Dandiset(TimeStampedModel):
         choices=EmbargoStatus.choices,
         default=EmbargoStatus.OPEN,
     )
+    starred_users = models.ManyToManyField(
+        to=User, through='DandisetStar', related_name='starred_dandisets'
+    )
 
     class Meta:
         ordering = ['id']
@@ -78,7 +81,7 @@ class DandisetGroupObjectPermission(GroupObjectPermissionBase):
 
 
 class DandisetStar(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='starred_dandisets')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dandiset_stars')
     dandiset = models.ForeignKey(Dandiset, on_delete=models.CASCADE, related_name='stars')
     created = models.DateTimeField(auto_now_add=True)
 
