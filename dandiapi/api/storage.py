@@ -248,16 +248,23 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         else:
             return response.etag
 
-    def generate_presigned_put_object_url(self, blob_name: str, _: str, content_type: str | None) -> str:
+    def generate_presigned_put_object_url(
+        self, blob_name: str, _: str, content_type: str | None
+    ) -> str:
         # Note: minio-py doesn't support using Content-MD5 headers
 
+        headers = {}
+        if content_type is not None:
+            headers['response-content-type'] = content_type
         # storage.client will generate URLs like `http://minio:9000/...` when running in
         # docker. To avoid this, use the secondary base_url_client which is configured to
         # generate URLs like `http://localhost:9000/...`.
-        return self.base_url_client.presigned_put_object(
+        return self.base_url_client.get_presigned_url(
+            method='PUT',
             bucket_name=self.bucket_name,
             object_name=blob_name,
             expires=timedelta(seconds=600),  # TODO: proper expiration
+            response_headers=headers,
         )
 
     def generate_presigned_head_object_url(self, key: str) -> str:
