@@ -103,153 +103,158 @@
                 v-if="location !== rootDirectory"
                 @click="navigateToParent"
               >
-                <v-icon
-                  class="mr-2"
-                  color="primary"
-                >
-                  mdi-folder
-                </v-icon>
-                ..
+                <template #prepend>
+                  <v-icon
+                    class="mr-2"
+                    color="primary"
+                  >
+                    mdi-folder
+                  </v-icon>
+                  ..
+                </template>
               </v-list-item>
 
               <v-list-item
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click.self="openItem(item)"
+                @click="openItem(item)"
               >
-                <v-icon
-                  class="mr-2"
-                  color="primary"
-                >
-                  <template v-if="item.asset === null">
-                    mdi-folder
-                  </template>
-                  <template v-else>
-                    mdi-file
-                  </template>
-                </v-icon>
-                {{ item.name }}
-                <v-spacer />
-
-                <v-list-item-action>
-                  <v-btn
-                    v-if="showDelete(item)"
-                    icon
-                    @click="setItemToDelete(item)"
+                <template #prepend>
+                  <v-icon
+                    class="mr-2"
+                    color="primary"
                   >
-                    <v-icon color="error">
-                      mdi-delete
-                    </v-icon>
-                  </v-btn>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset">
-                  <v-tooltip location="top">
-                    <template #activator="{ props: openInBtnProps }">
-                      <v-btn
-                        icon
-                        :href="inlineURI(item.asset.asset_id)"
-
-                        v-bind="openInBtnProps"
-                      >
-                        <v-icon color="primary">
-                          mdi-open-in-app
-                        </v-icon>
-                      </v-btn>
+                    <template v-if="item.asset === null">
+                      mdi-folder
                     </template>
-                    <span>Open asset in browser (you can also click on the item itself)</span>
-                  </v-tooltip>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset">
-                  <v-tooltip location="top">
-                    <template #activator="{ props: downloadProps }">
-                      <v-btn
-                        icon
-                        :href="downloadURI(item.asset.asset_id)"
-
-                        v-bind="downloadProps"
-                      >
-                        <v-icon color="primary">
-                          mdi-download
-                        </v-icon>
-                      </v-btn>
+                    <template v-else>
+                      mdi-file
                     </template>
-                    <span>Download asset</span>
-                  </v-tooltip>
-                </v-list-item-action>
+                  </v-icon>
+                  {{ item.name }}
+                </template>
 
-                <v-list-item-action v-if="item.asset">
-                  <v-tooltip location="top">
-                    <template #activator="{ props: infoProps }">
-                      <v-btn
-                        icon
-                        :href="assetMetadataURI(item.asset.asset_id)"
-                        target="_blank"
-                        rel="noreferrer"
-
-                        v-bind="infoProps"
-                      >
-                        <v-icon color="primary">
-                          mdi-information
-                        </v-icon>
-                      </v-btn>
-                    </template>
-                    <span>View asset metadata</span>
-                  </v-tooltip>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset">
-                  <v-menu
-                    location="bottom left"
-                  >
-                    <template #activator="{ props: openWithProps }">
-                      <v-btn
-                        color="primary"
-                        size="x-small"
-                        :disabled="!item.services || !item.services.length"
-
-                        v-bind="openWithProps"
-                      >
-                        Open With <v-icon size="small">
-                          mdi-menu-down
-                        </v-icon>
-                      </v-btn>
-                    </template>
-                    <v-list
-                      v-if="item && item.services"
-                      density="compact"
+                <template #append>
+                  <v-list-item-action>
+                    <v-btn
+                      v-if="showDelete(item)"
+                      icon
+                      @click="setItemToDelete(item)"
                     >
-                      <v-list-subheader
-                        v-if="item.services.length"
-                        class="font-weight-medium"
-                      >
-                        EXTERNAL SERVICES
-                      </v-list-subheader>
+                      <v-icon color="error">
+                        mdi-delete
+                      </v-icon>
+                    </v-btn>
+                  </v-list-item-action>
 
-                      <v-list-item
-                        v-for="el in item.services"
-                        :key="el.name"
-                        :href="el.url"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <v-list-item-title class="font-weight-light">
-                          {{ el.name }}
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </v-list-item-action>
+                  <v-list-item-action v-if="item.asset">
+                    <v-tooltip location="top">
+                      <template #activator="{ props: openInBtnProps }">
+                        <v-btn
+                          icon
+                          :href="inlineURI(item.asset.asset_id)"
 
-                <v-list-item-action
-                  v-if="item.aggregate_size"
-                  class="justify-end"
-                  :style="{width: '4.5em'}"
-                >
-                  {{ fileSize(item) }}
-                </v-list-item-action>
+                          v-bind="openInBtnProps"
+                        >
+                          <v-icon color="primary">
+                            mdi-open-in-app
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Open asset in browser (you can also click on the item itself)</span>
+                    </v-tooltip>
+                  </v-list-item-action>
+
+                  <v-list-item-action v-if="item.asset">
+                    <v-tooltip location="top">
+                      <template #activator="{ props: downloadProps }">
+                        <v-btn
+                          icon
+                          :href="downloadURI(item.asset.asset_id)"
+
+                          v-bind="downloadProps"
+                        >
+                          <v-icon color="primary">
+                            mdi-download
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Download asset</span>
+                    </v-tooltip>
+                  </v-list-item-action>
+
+                  <v-list-item-action v-if="item.asset">
+                    <v-tooltip location="top">
+                      <template #activator="{ props: infoProps }">
+                        <v-btn
+                          icon
+                          :href="assetMetadataURI(item.asset.asset_id)"
+                          target="_blank"
+                          rel="noreferrer"
+
+                          v-bind="infoProps"
+                        >
+                          <v-icon color="primary">
+                            mdi-information
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>View asset metadata</span>
+                    </v-tooltip>
+                  </v-list-item-action>
+
+                  <v-list-item-action v-if="item.asset">
+                    <v-menu
+                      location="bottom left"
+                    >
+                      <template #activator="{ props: openWithProps }">
+                        <v-btn
+                          color="primary"
+                          size="x-small"
+                          :disabled="!item.services || !item.services.length"
+
+                          v-bind="openWithProps"
+                        >
+                          Open With <v-icon size="small">
+                            mdi-menu-down
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <v-list
+                        v-if="item && item.services"
+                        density="compact"
+                      >
+                        <v-list-subheader
+                          v-if="item.services.length"
+                          class="font-weight-medium"
+                        >
+                          EXTERNAL SERVICES
+                        </v-list-subheader>
+
+                        <v-list-item
+                          v-for="el in item.services"
+                          :key="el.name"
+                          :href="el.url"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <v-list-item-title class="font-weight-light">
+                            {{ el.name }}
+                          </v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
+                  </v-list-item-action>
+
+                  <v-list-item-action
+                    v-if="item.aggregate_size"
+                    class="justify-end"
+                    :style="{width: '4.5em'}"
+                  >
+                    {{ fileSize(item) }}
+                  </v-list-item-action>
+                </template>
               </v-list-item>
             </v-list>
           </v-card>
