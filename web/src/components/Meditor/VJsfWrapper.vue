@@ -28,14 +28,14 @@
             <v-btn
               elevation="0"
               color="white"
-              class="text--darken-2 grey--text font-weight-medium"
+              class="text-grey-darken-2 font-weight-medium"
               @click="clearForm"
             >
               Clear Form
             </v-btn>
             <v-btn
               v-if="index === -1"
-              class="grey darken-3 white--text"
+              class="bg-grey-darken-3 text-white"
               elevation="0"
               @click="createNewItem"
             >
@@ -44,7 +44,7 @@
             </v-btn>
             <v-btn
               v-else
-              class="grey darken-3 white--text"
+              class="bg-grey-darken-3 text-white"
               elevation="0"
               :disabled="!formValid"
               @click="saveItem"
@@ -77,7 +77,7 @@
           >
             <template #default="slotProps">
               <v-card
-                outlined
+                variant="outlined"
                 class="d-flex flex-column"
               >
                 <draggable
@@ -87,7 +87,7 @@
                   <v-card
                     v-for="(item, i) in slotProps.value"
                     :key="i"
-                    outlined
+                    variant="outlined"
                   >
                     <div class="pa-3 d-flex align-center justify-space-between">
                       <span class="d-inline text-truncate text-subtitle-1">
@@ -100,13 +100,13 @@
                       <span style="min-width: 31%;">
                         <span v-if="!readonly">
                           <v-btn
-                            text
-                            small
+                            variant="text"
+                            size="small"
                             @click="removeItem(i)"
                           >
                             <v-icon
                               color="error"
-                              left
+                              start
                             >
                               mdi-minus-circle
                             </v-icon>
@@ -118,13 +118,13 @@
                         <span>
                           <v-btn
                             :disabled="index === i"
-                            text
-                            small
+                            variant="text"
+                            size="small"
                             @click="selectExistingItem(i)"
                           >
                             <v-icon
                               color="info"
-                              left
+                              start
                             >
                               mdi-{{ readonly ? 'eye' : 'pencil' }}
                             </v-icon>
