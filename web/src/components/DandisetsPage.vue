@@ -40,7 +40,7 @@
       </div>
       <v-chip-group
         :value="sortOption"
-        active-class="white light-blue--text"
+        active-class="white primary--text"
         dark
         mandatory
       >
