@@ -313,7 +313,7 @@ watchEffect(async () => {
       { params: { zarr: true, page_size: 1 } },
     );
 
-    containsZarr.value = res.count > 0;
+    containsZarr.value = res !== null && res.count > 0;
   }
 });
 
