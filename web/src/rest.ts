@@ -302,6 +302,12 @@ const dandiRest = {
       `${dandiApiRoot}dandisets/${identifier}/versions/${version}/assets/${uuid}/`
     );
   },
+  async starDandiset(identifier: string): Promise<void> {
+    await client.post(`dandisets/${identifier}/star/`);
+  },
+  async unstarDandiset(identifier: string): Promise<void> {
+    await client.delete(`dandisets/${identifier}/star/`);
+  },
 };
 
 // This is done with an interceptor because the value of

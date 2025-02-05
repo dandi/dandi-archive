@@ -85,6 +85,8 @@ def test_dandiset_rest_list(api_client, user, dandiset):
                 'most_recent_published_version': None,
                 'contact_person': '',
                 'embargo_status': 'OPEN',
+                'star_count': 0,
+                'is_starred': False,
             }
         ],
     }
@@ -167,6 +169,8 @@ def test_dandiset_versions(
             'modified': TIMESTAMP_RE,
             'contact_person': contact_person,
             'embargo_status': 'OPEN',
+            'star_count': 0,
+            'is_starred': False,
             'draft_version': {
                 'version': draft_version.version,
                 'name': draft_version.name,
@@ -228,6 +232,8 @@ def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
                 'most_recent_published_version': None,
                 'contact_person': '',
                 'embargo_status': 'OPEN',
+                'star_count': 0,
+                'is_starred': False,
             }
         ],
     }
@@ -243,6 +249,8 @@ def test_dandiset_rest_retrieve(api_client, dandiset):
         'most_recent_published_version': None,
         'contact_person': '',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
     }
 
 
@@ -284,6 +292,8 @@ def test_dandiset_rest_embargo_access(
         'most_recent_published_version': None,
         'contact_person': '',
         'embargo_status': embargo_status,
+        'star_count': 0,
+        'is_starred': False,
     }
     # This is what unauthorized users should get from the retrieve endpoint
     expected_error_message = {'detail': 'Not found.'}
@@ -359,6 +369,8 @@ def test_dandiset_rest_create(api_client, user):
         'modified': TIMESTAMP_RE,
         'contact_person': 'Doe, John',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
         'draft_version': {
             'version': 'draft',
             'name': name,
@@ -458,6 +470,8 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
         },
         'contact_person': 'Doe, John',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
     }
 
     # Creating a Dandiset has side affects.
@@ -559,6 +573,8 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         },
         'contact_person': 'Jane Doe',
         'embargo_status': 'OPEN',
+        'star_count': 0,
+        'is_starred': False,
     }
 
     # Creating a Dandiset has side affects.
@@ -587,9 +603,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'Jane Doe ({year}) {name} ' f'(Version draft) [Data set]. DANDI Archive. {url}'
-        ),
+        'citation': (f'Jane Doe ({year}) {name} (Version draft) [Data set]. DANDI Archive. {url}'),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
@@ -631,6 +645,8 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         'modified': TIMESTAMP_RE,
         'contact_person': 'Doe, John',
         'embargo_status': 'EMBARGOED',
+        'star_count': 0,
+        'is_starred': False,
         'draft_version': {
             'version': 'draft',
             'name': name,
@@ -1230,3 +1246,86 @@ def test_dandiset_rest_clear_active_uploads(
     response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()
     assert response['count'] == 0
     assert len(response['results']) == 0
+
+
+@pytest.mark.django_db
+def test_dandiset_star(api_client, user, dandiset):
+    api_client.force_authenticate(user=user)
+    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert response.status_code == 200
+    assert response.data == {'count': 1}
+    assert dandiset.stars.count() == 1
+    assert dandiset.stars.first().user == user
+
+
+@pytest.mark.django_db
+def test_dandiset_unstar(api_client, user, dandiset):
+    api_client.force_authenticate(user=user)
+    # First star it
+    api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert dandiset.stars.count() == 1
+
+    # Then unstar it
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert response.status_code == 200
+    assert response.data == {'count': 0}
+    assert dandiset.stars.count() == 0
+
+
+@pytest.mark.django_db
+def test_dandiset_star_unauthenticated(api_client, dandiset):
+    response = api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_dandiset_star_count(api_client, user_factory, dandiset):
+    users = [user_factory() for _ in range(3)]
+    for user in users:
+        api_client.force_authenticate(user=user)
+        api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['star_count'] == len(users)
+
+
+@pytest.mark.django_db
+def test_dandiset_is_starred(api_client, user, dandiset):
+    # Test unauthenticated
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is False
+
+    # Test authenticated but not starred
+    api_client.force_authenticate(user=user)
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is False
+
+    # Test after starring
+    api_client.post(f'/api/dandisets/{dandiset.identifier}/star/')
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
+    assert response.data['is_starred'] is True
+
+
+@pytest.mark.django_db
+def test_dandiset_list_starred(api_client, user, dandiset_factory):
+    api_client.force_authenticate(user=user)
+    dandisets = [dandiset_factory() for _ in range(3)]
+
+    # Star 2 out of 3 dandisets
+    api_client.post(f'/api/dandisets/{dandisets[0].identifier}/star/')
+    api_client.post(f'/api/dandisets/{dandisets[1].identifier}/star/')
+
+    # List starred dandisets
+    response = api_client.get('/api/dandisets/', {'starred': True})
+    assert response.status_code == 200
+    assert response.data['count'] == 2
+    assert {d['identifier'] for d in response.data['results']} == {
+        dandisets[0].identifier,
+        dandisets[1].identifier,
+    }
+
+
+@pytest.mark.django_db
+def test_dandiset_list_starred_unauthenticated(api_client):
+    response = api_client.get('/api/dandisets/', {'starred': True})
+    assert response.status_code == 401

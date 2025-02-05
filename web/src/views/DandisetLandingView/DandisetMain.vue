@@ -13,6 +13,12 @@
             <ShareDialog />
             {{ meta.name }}
           </h1>
+          <StarButton
+            :identifier="currentDandiset.dandiset.identifier"
+            :initial-star-count="currentDandiset.dandiset.star_count"
+            :initial-is-starred="currentDandiset.dandiset.is_starred"
+            class="ml-2"
+          />
           <v-chip
             v-if="currentDandiset.version != 'draft'"
             outlined
@@ -144,7 +150,6 @@
             <strong v-if="!meta.license.length">(none)</strong>
             <span
               v-for="(license, i) in meta.license"
-              v-else
               :key="i"
             >
               <strong>{{ license }}</strong>
@@ -278,6 +283,7 @@ import OverviewTab from '@/components/DLP/OverviewTab.vue';
 import RelatedResourcesTab from '@/components/DLP/RelatedResourcesTab.vue';
 import SubjectMatterTab from '@/components/DLP/SubjectMatterTab.vue';
 import ShareDialog from './ShareDialog.vue';
+import StarButton from '@/components/StarButton.vue';
 
 // max description length before it's truncated and "see more" button is shown
 const MAX_DESCRIPTION_LENGTH = 400;
@@ -324,6 +330,7 @@ export default defineComponent({
     OverviewTab,
     RelatedResourcesTab,
     SubjectMatterTab,
+    StarButton,
   },
   props: {
     schema: {
