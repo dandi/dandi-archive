@@ -150,6 +150,7 @@
 import { computed, ref, watch } from 'vue';
 
 import VJsf from '@koumoul/vjsf';
+import draggable from 'vuedraggable';
 import { isEqual } from 'lodash';
 
 import type { DandiModel } from './types';
