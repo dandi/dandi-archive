@@ -248,7 +248,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         else:
             return response.etag
 
-    def generate_presigned_put_object_url(self, blob_name: str, _: str, content_type: str) -> str:
+    def generate_presigned_put_object_url(self, blob_name: str, _: str, content_type: str | None) -> str:
         # Note: minio-py doesn't support using Content-MD5 headers
 
         # storage.client will generate URLs like `http://minio:9000/...` when running in
