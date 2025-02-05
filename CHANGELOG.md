@@ -1,3 +1,18 @@
+# v0.4.16 (Wed Feb 05 2025)
+
+#### 🐛 Bug Fix
+
+- Add Dandiset star functionality with UI components [#2123](https://github.com/dandi/dandi-archive/pull/2123) ([@bendichter](https://github.com/bendichter) [@jjnesbitt](https://github.com/jjnesbitt))
+- Design document for "atpath" endpoint [#2155](https://github.com/dandi/dandi-archive/pull/2155) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+
+---
+
 # v0.4.15 (Mon Feb 03 2025)
 
 #### 🐛 Bug Fix
