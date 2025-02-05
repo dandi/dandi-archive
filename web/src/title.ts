@@ -2,7 +2,7 @@ import Vue from 'vue';
 
 import type { DirectiveBinding } from 'vue/types/options';
 
-const TITLE = 'DANDI Archive';
+const TITLE = 'EMBER-DANDI Archive';
 
 const setPageTitle = (el: HTMLElement, binding: DirectiveBinding) => {
   if (binding?.value) {

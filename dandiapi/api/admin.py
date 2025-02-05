@@ -31,8 +31,8 @@ from dandiapi.zarr.tasks import ingest_dandiset_zarrs
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
 
-admin.site.site_header = 'DANDI Admin'
-admin.site.site_title = 'DANDI Admin'
+admin.site.site_header = 'EMBER-DANDI Admin'
+admin.site.site_title = 'EMBER-DANDI Admin'
 
 
 class UserMetadataInline(TabularInline):

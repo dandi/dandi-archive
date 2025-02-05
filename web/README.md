@@ -1,12 +1,12 @@
-# DANDI Archive Web Application ![ci](https://github.com/dandi/dandi-archive/actions/workflows/frontend-ci.yml/badge.svg) [![Netlify Status](https://api.netlify.com/api/v1/badges/e7424684-fbdb-4b77-a546-d5757a0f7552/deploy-status)](https://app.netlify.com/sites/gui-dandiarchive-org/deploys)
-The DANDI Archive web application (i.e. the dandi-archive frontend).
+# EMBER-DANDI Archive Web Application ![ci](https://github.com/dandi/dandi-archive/actions/workflows/frontend-ci.yml/badge.svg) [![Netlify Status](https://api.netlify.com/api/v1/badges/e7424684-fbdb-4b77-a546-d5757a0f7552/deploy-status)](https://app.netlify.com/sites/gui-dandiarchive-org/deploys)
+The EMBER-DANDI Archive web application (i.e. the dandi-archive frontend).
 
 ## Develop
 
 ### Build and Run
 
 ```bash
-git clone https://github.com/dandi/dandi-archive
+git clone https://github.com/aplbrain/dandi-archive
 cd web
 yarn install
 yarn run serve
@@ -17,7 +17,7 @@ Instead, install and use `yarnpkg`.
 
 The web app will be served at `http://localhost:8085/`.
 
-To be useful, this app requires a server component, which you can run locally; see the [instructions](https://github.com/dandi/dandi-archive/#dandi-archive).
+To be useful, this app requires a server component, which you can run locally; see the [instructions](https://github.com/aplbrain/dandi-archive/#dandi-archive).
 
 ### Test
 

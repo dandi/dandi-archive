@@ -1,5 +1,6 @@
-const dandiUrl = 'https://dandiarchive.org';
-const dandiAboutUrl = 'https://www.dandiarchive.org/';
+const dandiOriginalUrl = 'https://dandiarchive.org';
+const dandiUrl = 'https://app.emberarchive.org'; // TOOD - change to emberarchive.org soon
+const dandiAboutUrl = 'https://app.emberarchive.org/about';
 const dandiDocumentationUrl = 'https://www.dandiarchive.org/handbook/10_using_dandi/';
 const dandiHelpUrl = 'https://github.com/dandi/helpdesk/issues/new/choose';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
