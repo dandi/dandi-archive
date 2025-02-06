@@ -58,6 +58,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         dandiset_context = DandisetSerializerContext(
             star_count=self.dandiset.star_count,
             starred_by_current_user=self.dandiset.is_starred_by(self.request.user),
+            latest_version=self.dandiset.latest_version,
         )
         return serializer_class(*args, dandiset_context=dandiset_context, **kwargs)
 

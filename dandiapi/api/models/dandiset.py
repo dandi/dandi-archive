@@ -46,6 +46,10 @@ class Dandiset(TimeStampedModel):
         return self.versions.exclude(version='draft').order_by('modified').last()
 
     @property
+    def latest_version(self):
+        return self.versions.order_by('-created').first()
+
+    @property
     def draft_version(self):
         return self.versions.filter(version='draft').get()
 
