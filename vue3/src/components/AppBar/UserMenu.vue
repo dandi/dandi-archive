@@ -32,7 +32,7 @@
       <ApiKeyItem v-if="user?.approved" />
       <v-list-item @click="logout">
         Logout
-        <v-list-item-action>
+        <v-list-item-action class="float-right">
           <v-icon>mdi-logout</v-icon>
         </v-list-item-action>
       </v-list-item>

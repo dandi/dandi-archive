@@ -5,20 +5,23 @@
         id="contact"
         variant="outlined"
         block
-
+        class="justify-space-between"
         v-bind="props"
       >
-        <v-icon
-          color="primary"
-          start
-        >
-          mdi-card-account-mail
-        </v-icon>
-        <span>Contact</span>
-        <v-spacer />
-        <v-icon end>
-          mdi-chevron-down
-        </v-icon>
+        <template #prepend>
+          <v-icon
+            color="primary"
+            start
+          >
+            mdi-card-account-mail
+          </v-icon>
+          <span>Contact</span>
+        </template>
+        <template #append>
+          <v-icon end>
+            mdi-chevron-down
+          </v-icon>
+        </template>
       </v-btn>
     </template>
     <v-card>
