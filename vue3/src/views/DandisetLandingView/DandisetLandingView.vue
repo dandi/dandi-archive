@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- <Meditor v-if="currentDandiset" :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`" /> -->
-    <v-toolbar class="grey darken-2 white--text">
+    <v-toolbar class="bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
         v-model="page"
@@ -9,8 +9,12 @@
         :total-visible="0"
       />
     </v-toolbar>
-    <v-container v-if="embargoedOrUnauthenticated" class="d-flex justify-center align-center" style="height: 50vh;">
-      <div class="d-block blue-grey lighten-5 pa-4 rounded-lg">
+    <v-container
+      v-if="embargoedOrUnauthenticated"
+      class="d-flex justify-center align-center"
+      style="height: 50vh;"
+    >
+      <div class="d-block bg-blue-grey-lighten-5 pa-4 rounded-lg">
         <span class="text-h5">
           <v-icon class="mb-1">
             mdi-alert-circle
@@ -51,7 +55,7 @@
     <v-container
       v-else
       fluid
-      class="grey lighten-4 pa-0"
+      class="bg-grey-lighten-4 pa-0"
     >
       <v-progress-linear
         v-if="!currentDandiset || loading"
