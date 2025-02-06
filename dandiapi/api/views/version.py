@@ -7,7 +7,9 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
@@ -27,6 +29,7 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
+from dandiapi.api.views.utils import DandisetSerializerContext
 
 
 class VersionFilter(filters.FilterSet):
@@ -50,15 +53,23 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
     lookup_field = 'version'
     lookup_value_regex = Version.VERSION_REGEX
 
+    def get_serializer(self, *args, **kwargs) -> BaseSerializer:
+        serializer_class = self.get_serializer_class()
+        dandiset_context = DandisetSerializerContext(
+            star_count=self.dandiset.star_count,
+            starred_by_current_user=self.dandiset.is_starred_by(self.request.user),
+        )
+        return serializer_class(*args, dandiset_context=dandiset_context, **kwargs)
+
     def get_queryset(self):
         # We need to check the dandiset to see if it's embargoed, and if so whether or not the
         # user has ownership
-        dandiset = get_object_or_404(Dandiset, pk=self.kwargs['dandiset__pk'])
-        if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
+        self.dandiset = get_object_or_404(Dandiset, pk=self.kwargs['dandiset__pk'])
+        if self.dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
-            if not is_dandiset_owner(dandiset, self.request.user):
+            if not is_dandiset_owner(self.dandiset, self.request.user):
                 # The user does not have ownership permission
                 raise PermissionDenied
         return super().get_queryset()

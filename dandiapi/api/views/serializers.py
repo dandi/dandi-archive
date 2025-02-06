@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -13,6 +14,8 @@ from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
     from collections import OrderedDict
+
+    from dandiapi.api.views.utils import DandisetSerializerContext
 
 
 def extract_contact_person(version: Version) -> str:
@@ -67,13 +70,16 @@ class DandisetSerializer(serializers.ModelSerializer):
         return extract_contact_person(latest_version)
 
     def get_star_count(self, dandiset):
-        return dandiset.star_count
+        return self.context.get('star_count', lambda: dandiset.star_count)
 
     def get_is_starred(self, dandiset):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return False
-        return dandiset.is_starred_by(request.user)
+
+        return self.context.get(
+            'starred_by_current_user', lambda: dandiset.is_starred_by(request.user)
+        )
 
 
 class CreateDandisetQueryParameterSerializer(serializers.Serializer):
@@ -110,14 +116,31 @@ class VersionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created']
 
-    dandiset = DandisetSerializer()
+    dandiset_context: DandisetSerializerContext | None
+    dandiset = serializers.SerializerMethodField()
     # name = serializers.SlugRelatedField(read_only=True, slug_field='name')
 
-    def __init__(self, *args, child_context=False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        child_context=False,
+        dandiset_context: DandisetSerializerContext | None = None,
+        **kwargs,
+    ):
         if child_context:
             del self.fields['dandiset']
+        else:
+            self.dandiset_context = dandiset_context
 
         super().__init__(*args, **kwargs)
+
+    def get_dandiset(self, obj):
+        context = self.context.copy()
+        if self.dandiset_context:
+            context.update(asdict(self.dandiset_context))
+
+        serializer = DandisetSerializer(instance=obj.dandiset, context=context)
+        return serializer.data
 
 
 class DandisetVersionSerializer(serializers.ModelSerializer):
