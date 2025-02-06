@@ -14,7 +14,7 @@
                 ${propKey}-${index}-${editorInterface.transactionTracker.getTransactionPointer()}
               `"
               class="my-6"
-              :value="currentItem"
+              :model-value="currentItem"
               :schema="schema"
               :options="options"
               @input="currentItem=$event"
@@ -68,78 +68,64 @@
           v-if="editorInterface.complexSchema.properties"
           class="ma-4"
         >
-          <v-jsf
-            :key="JSON.stringify(currentModel)"
-            :value="currentModel"
-            :schema="editorInterface.complexSchema.properties[propKey]"
-            :options="options"
-            @input="setComplexModelProp($event)"
+          <draggable
+            v-model="currentModel"
+            item-key="id"
           >
-            <template #default="slotProps">
+            <template #item="{ element: item, index: i }">
               <v-card
+                :key="i"
                 variant="outlined"
-                class="d-flex flex-column"
               >
-                <draggable
-                  :disabled="readonly"
-                  @update="reorderItem($event)"
-                >
-                  <v-card
-                    v-for="(item, i) in slotProps.value"
-                    :key="i"
-                    variant="outlined"
-                  >
-                    <div class="pa-3 d-flex align-center justify-space-between">
-                      <span class="d-inline text-truncate text-subtitle-1">
-                        <v-icon>mdi-drag-horizontal-variant</v-icon>
-                        <span :class="index === i ? 'accent--text' : undefined">
-                          {{ item.name || item.identifier || item.id }}
-                          {{ index === i && isModified ? '*' : undefined }}
+                <div class="pa-3 d-flex align-center justify-space-between">
+                  <span class="d-inline text-truncate text-subtitle-1">
+                    <v-icon>mdi-drag-horizontal-variant</v-icon>
+                    <span :class="index === i ? 'accent--text' : undefined">
+                      {{ item.name || item.identifier || item.id }}
+                      {{ index === i && isModified ? '*' : undefined }}
+                    </span>
+                  </span>
+                  <span style="min-width: 31%;">
+                    <span v-if="!readonly">
+                      <v-btn
+                        variant="text"
+                        size="small"
+                        @click="removeItem(i)"
+                      >
+                        <v-icon
+                          color="error"
+                          start
+                        >
+                          mdi-minus-circle
+                        </v-icon>
+                        <span class="font-weight-regular">
+                          Remove
                         </span>
-                      </span>
-                      <span style="min-width: 31%;">
-                        <span v-if="!readonly">
-                          <v-btn
-                            variant="text"
-                            size="small"
-                            @click="removeItem(i)"
-                          >
-                            <v-icon
-                              color="error"
-                              start
-                            >
-                              mdi-minus-circle
-                            </v-icon>
-                            <span class="font-weight-regular">
-                              Remove
-                            </span>
-                          </v-btn>
+                      </v-btn>
+                    </span>
+                    <span>
+                      <v-btn
+                        :disabled="index === i"
+                        variant="text"
+                        size="small"
+                        @click="selectExistingItem(i)"
+                      >
+                        <v-icon
+                          color="info"
+                          start
+                        >
+                          mdi-{{ readonly ? 'eye' : 'pencil' }}
+                        </v-icon>
+                        <span class="font-weight-regular">
+                          {{ readonly ? 'View' : 'Edit' }}
                         </span>
-                        <span>
-                          <v-btn
-                            :disabled="index === i"
-                            variant="text"
-                            size="small"
-                            @click="selectExistingItem(i)"
-                          >
-                            <v-icon
-                              color="info"
-                              start
-                            >
-                              mdi-{{ readonly ? 'eye' : 'pencil' }}
-                            </v-icon>
-                            <span class="font-weight-regular">
-                              {{ readonly ? 'View' : 'Edit' }}
-                            </span>
-                          </v-btn>
-                        </span>
-                      </span>
-                    </div>
-                  </v-card>
-                </draggable>
+                      </v-btn>
+                    </span>
+                  </span>
+                </div>
               </v-card>
             </template>
-          </v-jsf>
+          </draggable>
         </v-sheet>
       </v-col>
     </v-row>
@@ -249,28 +235,6 @@ function selectExistingItem(new_index: number) {
   currentItem.value = JSON.parse(JSON.stringify(
     currentModel.value,
   ))[new_index];
-}
-
-function reorderItem(event: any) {
-  const { oldIndex, newIndex } = event;
-  if (index.value === oldIndex) {
-    index.value = newIndex;
-  } else if (index.value === newIndex) {
-    index.value = oldIndex;
-  }
-
-  // make a deep clone of the model
-  const newModel = JSON.parse(
-    JSON.stringify(currentModel.value),
-  );
-
-  // Switch items
-  const b = newModel[newIndex];
-  newModel[newIndex] = newModel[oldIndex];
-  newModel[oldIndex] = b;
-
-  // Update
-  currentModel.value = newModel;
 }
 
 function formListener() {
