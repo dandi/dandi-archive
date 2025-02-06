@@ -10,19 +10,23 @@
         id="cite_as"
         variant="outlined"
         block
+        class="justify-space-between"
         v-bind="props"
       >
-        <v-icon
-          color="primary"
-          start
-        >
-          mdi-format-quote-close
-        </v-icon>
-        <span>Cite As</span>
-        <v-spacer />
-        <v-icon end>
-          mdi-chevron-down
-        </v-icon>
+        <template #prepend>
+          <v-icon
+            color="primary"
+            start
+          >
+            mdi-format-quote-close
+          </v-icon>
+          <span>Cite As</span>
+        </template>
+        <template #append>
+          <v-icon end>
+            mdi-chevron-down
+          </v-icon>
+        </template>
       </v-btn>
     </template>
     <v-card>
