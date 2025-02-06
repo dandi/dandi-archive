@@ -69,7 +69,7 @@
                   v-if="currentDandiset !== null"
                   icon
                   size="small"
-
+                  variant="plain"
                   v-bind="props"
                   @click="copy('dandiID')"
                 >
