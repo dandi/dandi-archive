@@ -1,0 +1,32 @@
+# Fix I002 Missing required import
+7b6d4753c4b1783f796e93e6321cce7eb5ed0eea
+# Fix I001 Import block is un-sorted or un-formatted
+ca96bf1b4fe15abeb87981e10e374fdbc8de68e9
+# Apply new `ruff` rules to decorators
+9ad11899b4aee440e4a0fd19516c46f21435443e
+# Run Black and fix linting
+6928d2595b58bd15fc33f6561404a34c3f3c6446
+# Automatically reformat with Black
+7fc449c0665e696f5022294e31351b615bfe38fb
+# Add format changes from ruff update
+b74c3d28223d131ed92d466903995d099e8eb7e4
+# Apply "ruff format"
+3a4eac4c44875d7260dd14de84b12ca8bd7c9b3c
+# Run `pyupgrade` to update to latest python syntax
+b285a06a9c0b7e1d4057c560a38ef6e4b783f5bb
+# Merge pull request #1748 from dandi/ruff-fixes
+366a9a3e82d42935806ed5d4cdc2692e120b68ae
+# Format using black
+01683c677bc78a5a0418c1073e58743b70cd13bf
+# Merge remote-tracking branch 'origin/master' into ruff-fixes
+ddc64a9010fceeb1dfdaf2f53b6a89d94b4ec2d6
+# Ruff compliance for DandisetStar model and admin integration
+9d11b34f2b24fd15497ac3af19e5dee5e0619223
+# Format with `ruff`
+172c2c52c9c448cf02d51e39710e9546485e4eb7
+# Suppress ruff warnings for complexity and number of arguments
+fcd288cc5df05a1c861e291e90ab676586cabe63
+# Run "pyupgrade --py311-plus --keep-runtime-typing" over all code
+3475e00370422f0db23586b3a24e1b9099dbf203
+# Run `pyupgrade` to update to latest python syntax
+b285a06a9c0b7e1d4057c560a38ef6e4b783f5bb
