@@ -14,11 +14,10 @@
                 ${propKey}-${index}-${editorInterface.transactionTracker.getTransactionPointer()}
               `"
               class="my-6"
-              :value="currentItem"
+              :model-value="currentItem"
               :schema="schema"
               :options="options"
-              @input="currentItem=$event"
-              @change="formListener"
+              @update:model-value="currentItem = $event"
             />
           </v-form>
         </div>
@@ -56,11 +55,7 @@
         </div>
       </v-col>
       <v-col
-        :style="`
-        background-color: ${
-          $vuetify.theme.themes[$vuetify.theme.dark ? 'dark' : 'light'].dropzone
-        }; height: 70vh;
-        `"
+        :style="`background-color: ${theme.current.value.colors.dropzone}; height: 70vh;`"
         class="overflow-y-auto"
         cols="6"
       >
@@ -68,78 +63,64 @@
           v-if="editorInterface.complexSchema.properties"
           class="ma-4"
         >
-          <v-jsf
-            :key="JSON.stringify(currentModel)"
-            :value="currentModel"
-            :schema="editorInterface.complexSchema.properties[propKey]"
-            :options="options"
-            @input="setComplexModelProp($event)"
+          <draggable
+            v-model="currentModel"
+            item-key="id"
           >
-            <template #default="slotProps">
+            <template #item="{ element: item, index: i }">
               <v-card
+                :key="i"
                 variant="outlined"
-                class="d-flex flex-column"
               >
-                <draggable
-                  :disabled="readonly"
-                  @update="reorderItem($event)"
-                >
-                  <v-card
-                    v-for="(item, i) in slotProps.value"
-                    :key="i"
-                    variant="outlined"
-                  >
-                    <div class="pa-3 d-flex align-center justify-space-between">
-                      <span class="d-inline text-truncate text-subtitle-1">
-                        <v-icon>mdi-drag-horizontal-variant</v-icon>
-                        <span :class="index === i ? 'accent--text' : undefined">
-                          {{ item.name || item.identifier || item.id }}
-                          {{ index === i && isModified ? '*' : undefined }}
+                <div class="pa-3 d-flex align-center justify-space-between">
+                  <span class="d-inline text-truncate text-subtitle-1">
+                    <v-icon>mdi-drag-horizontal-variant</v-icon>
+                    <span :class="index === i ? 'accent--text' : undefined">
+                      {{ item.name || item.identifier || item.id }}
+                      {{ index === i && isModified ? '*' : undefined }}
+                    </span>
+                  </span>
+                  <span style="min-width: 31%;">
+                    <span v-if="!readonly">
+                      <v-btn
+                        variant="text"
+                        size="small"
+                        @click="removeItem(i)"
+                      >
+                        <v-icon
+                          color="error"
+                          start
+                        >
+                          mdi-minus-circle
+                        </v-icon>
+                        <span class="font-weight-regular">
+                          Remove
                         </span>
-                      </span>
-                      <span style="min-width: 31%;">
-                        <span v-if="!readonly">
-                          <v-btn
-                            variant="text"
-                            size="small"
-                            @click="removeItem(i)"
-                          >
-                            <v-icon
-                              color="error"
-                              start
-                            >
-                              mdi-minus-circle
-                            </v-icon>
-                            <span class="font-weight-regular">
-                              Remove
-                            </span>
-                          </v-btn>
+                      </v-btn>
+                    </span>
+                    <span>
+                      <v-btn
+                        :disabled="index === i"
+                        variant="text"
+                        size="small"
+                        @click="selectExistingItem(i)"
+                      >
+                        <v-icon
+                          color="info"
+                          start
+                        >
+                          mdi-{{ readonly ? 'eye' : 'pencil' }}
+                        </v-icon>
+                        <span class="font-weight-regular">
+                          {{ readonly ? 'View' : 'Edit' }}
                         </span>
-                        <span>
-                          <v-btn
-                            :disabled="index === i"
-                            variant="text"
-                            size="small"
-                            @click="selectExistingItem(i)"
-                          >
-                            <v-icon
-                              color="info"
-                              start
-                            >
-                              mdi-{{ readonly ? 'eye' : 'pencil' }}
-                            </v-icon>
-                            <span class="font-weight-regular">
-                              {{ readonly ? 'View' : 'Edit' }}
-                            </span>
-                          </v-btn>
-                        </span>
-                      </span>
-                    </div>
-                  </v-card>
-                </draggable>
+                      </v-btn>
+                    </span>
+                  </span>
+                </div>
               </v-card>
             </template>
-          </v-jsf>
+          </draggable>
         </v-sheet>
       </v-col>
     </v-row>
@@ -152,6 +133,8 @@ import { computed, ref, watch } from 'vue';
 import VJsf from '@koumoul/vjsf';
 import draggable from 'vuedraggable';
 import { isEqual } from 'lodash';
+import { useTheme } from 'vuetify';
+import type { JSONSchema7 } from 'json-schema';
 
 import type { DandiModel } from './types';
 import { editorInterface } from './state';
@@ -170,14 +153,17 @@ const props = defineProps({
     required: true,
   },
 });
+
+const theme = useTheme();
+
 const index = ref(-1); // index of item currently being edited
 const currentItem = ref({}); // the item currently being edited
 const formValid = ref(false); // whether or not the current item being edited is valid
 
 // extracts the subschema for the given propKey
 const schema = computed(
-  // @ts-ignore
-  () => editorInterface.value.complexSchema.properties[props.propKey].items,
+  // @ts-expect-error - computed type
+  () => editorInterface.value?.complexSchema.properties?.[props.propKey].items as JSONSchema7
 );
 
 const currentModel = computed({
@@ -200,17 +186,6 @@ const isModified = computed(() => !isEqual(
   currentItem.value,
   currentModel.value[index.value],
 ));
-
-function setComplexModelProp(event: DandiModel): void {
-  const currentValue = [...currentModel.value];
-  if (index.value >= 0) {
-    currentValue[index.value] = { ...(currentValue[index.value] as DandiModel), ...event };
-  } else {
-    index.value = currentValue.push(event);
-  }
-
-  editorInterface.value?.setComplexModelProp(props.propKey, currentValue);
-}
 
 function clearForm() {
   index.value = -1;
@@ -249,32 +224,5 @@ function selectExistingItem(new_index: number) {
   currentItem.value = JSON.parse(JSON.stringify(
     currentModel.value,
   ))[new_index];
-}
-
-function reorderItem(event: any) {
-  const { oldIndex, newIndex } = event;
-  if (index.value === oldIndex) {
-    index.value = newIndex;
-  } else if (index.value === newIndex) {
-    index.value = oldIndex;
-  }
-
-  // make a deep clone of the model
-  const newModel = JSON.parse(
-    JSON.stringify(currentModel.value),
-  );
-
-  // Switch items
-  const b = newModel[newIndex];
-  newModel[newIndex] = newModel[oldIndex];
-  newModel[oldIndex] = b;
-
-  // Update
-  currentModel.value = newModel;
-}
-
-function formListener() {
-  // record a new transaction whenever the current item is modified
-  editorInterface.value?.transactionTracker.add(editorInterface.value.complexModel, true);
 }
 </script>
