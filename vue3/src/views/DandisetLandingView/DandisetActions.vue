@@ -3,9 +3,9 @@
     v-if="currentDandiset"
     height="100%"
     class="px-3 py-1 mb-3"
-    outlined
+    variant="outlined"
   >
-    <div class="black--text text-h5 mt-2">
+    <div class="text-black text-h5 mt-2">
       Dandiset Actions
     </div>
 
@@ -37,14 +37,14 @@
       <v-row no-gutters>
         <v-btn
           id="view-data"
-          outlined
+          variant="outlined"
           block
           :disabled="unembargo_in_progress"
           :to="fileBrowserLink"
           exact
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-folder
@@ -55,13 +55,13 @@
       </v-row>
       <v-btn
         id="view-edit-metadata"
-        outlined
+        variant="outlined"
         block
       >
         <!-- TODO: put this back in the v-btn when we have the meditor working -->
         <!-- @click="openMeditor = true" -->
         <v-icon
-          left
+          start
           color="primary"
         >
           mdi-note-text
@@ -74,12 +74,12 @@
     <div class="my-4">
       <v-row no-gutters>
         <v-btn
-          outlined
+          variant="outlined"
           block
           :href="manifestLocation"
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-clipboard
@@ -97,7 +97,7 @@
         class="justify-center"
       >
         <v-btn
-          outlined
+          variant="outlined"
           class="justify-center"
         >
           <ShareDialog text="Share" />
