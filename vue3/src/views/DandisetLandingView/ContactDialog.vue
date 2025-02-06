@@ -130,10 +130,3 @@ const disableDandisetOwnersButton = computed(
 );
 
 </script>
-<style scoped>
-.v-btn--outlined {
-  border: thin solid #E0E0E0;
-  color: #424242;
-  font-weight: 400;
-}
-</style>
