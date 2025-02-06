@@ -42,6 +42,7 @@
           :disabled="unembargo_in_progress"
           :to="fileBrowserLink"
           exact
+          class="justify-space-between"
         >
           <v-icon
             start
@@ -50,13 +51,13 @@
             mdi-folder
           </v-icon>
           <span>Files</span>
-          <v-spacer />
         </v-btn>
       </v-row>
       <v-btn
         id="view-edit-metadata"
         variant="outlined"
         block
+        class="justify-space-between"
       >
         <!-- TODO: put this back in the v-btn when we have the meditor working -->
         <!-- @click="openMeditor = true" -->
@@ -67,7 +68,6 @@
           mdi-note-text
         </v-icon>
         <span>Metadata</span>
-        <v-spacer />
       </v-btn>
     </div>
 
@@ -77,6 +77,7 @@
           variant="outlined"
           block
           :href="manifestLocation"
+          class="d-inline-flex justify-space-between align-center"
         >
           <v-icon
             start
@@ -85,7 +86,6 @@
             mdi-clipboard
           </v-icon>
           <span>Manifest</span>
-          <v-spacer />
         </v-btn>
       </v-row>
     </div>

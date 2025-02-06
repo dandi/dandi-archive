@@ -5,20 +5,23 @@
         id="external-dandiset-services"
         variant="outlined"
         block
-
+        class="justify-space-between"
         v-bind="props"
       >
-        <v-icon
-          color="primary"
-          start
-        >
-          mdi-web
-        </v-icon>
-        <span>Open with</span>
-        <v-spacer />
-        <v-icon end>
-          mdi-chevron-down
-        </v-icon>
+        <template #prepend>
+          <v-icon
+            color="primary"
+            start
+          >
+            mdi-web
+          </v-icon>
+          <span>Open with</span>
+        </template>
+        <template #append>
+          <v-icon end>
+            mdi-chevron-down
+          </v-icon>
+        </template>
       </v-btn>
     </template>
     <v-card>
