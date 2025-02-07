@@ -1,3 +1,17 @@
+# v0.4.18 (Fri Feb 07 2025)
+
+#### 🐛 Bug Fix
+
+- Fix dandiset ordering icons, default to descending [#2175](https://github.com/dandi/dandi-archive/pull/2175) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add .git-blame-ignore-revs to improve blame view [#2173](https://github.com/dandi/dandi-archive/pull/2173) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.17 (Wed Feb 05 2025)
 
 #### 🐛 Bug Fix
