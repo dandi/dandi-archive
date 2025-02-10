@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -92,3 +93,42 @@ def correct_affiliation_corruption(meta: dict) -> dict | None:
     Note: This function corrects the corruptions described in
         https://github.com/dandi/dandi-schema/issues/276
     """
+    unwanted_fields = ['contactPoint', 'includeInCitation', 'roleName']
+
+    meta_corrected = deepcopy(meta)
+    affiliation_objs = find_objs(meta_corrected, 'Affiliation')
+
+    corrected = False
+    for obj in affiliation_objs:
+        for field in unwanted_fields:
+            if field in obj:
+                del obj[field]
+                corrected = True
+
+    return meta_corrected if corrected else None
+
+
+def find_objs(instance: Any, schema_key: str) -> list[dict]:
+    """
+    Find JSON objects with a specified `"schemaKey"` field within a data instance.
+
+    :param instance: The data instance to find JSON objects from
+    :param schema_key: The `"schemaKey"` field value
+    :return: The list of JSON objects with the specified `"schemaKey"` in the data instance
+    """
+
+    def find_objs_(data: Any) -> None:
+        if isinstance(data, dict):
+            if 'schemaKey' in data and data['schemaKey'] == schema_key:
+                objs.append(data)
+            for value in data.values():
+                find_objs_(value)
+        elif isinstance(data, list):
+            for item in data:
+                find_objs_(item)
+        else:
+            return
+
+    objs: list[dict] = []
+    find_objs_(instance)
+    return objs
