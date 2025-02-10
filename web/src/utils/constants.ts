@@ -1,7 +1,8 @@
-const dandiOriginalUrl = 'https://dandiarchive.org';
-const dandiUrl = 'https://app.emberarchive.org'; // TOOD - change to emberarchive.org soon
-const dandiAboutUrl = 'https://app.emberarchive.org/about';
-const dandiDocumentationUrl = 'https://www.dandiarchive.org/handbook/10_using_dandi/';
+const dandiUrl = 'https://dandiarchive.org';
+const emberHomeUrl = 'https://app.emberarchive.org'; // TOOD - change to emberarchive.org soon
+const emberAboutUrl = 'https://app.emberarchive.org/about';
+const emberGitHubUrl = 'https://github.com/aplbrain/dandi-archive';
+const dandiDocumentationUrl = 'https://docs.dandiarchive.org/10_using_dandi/';
 const dandiHelpUrl = 'https://github.com/dandi/helpdesk/issues/new/choose';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
 
@@ -51,7 +52,9 @@ const DANDISETS_PER_PAGE = 8;
 
 export {
   dandiUrl,
-  dandiAboutUrl,
+  emberHomeUrl,
+  emberAboutUrl,
+  emberGitHubUrl,
   dandiDocumentationUrl,
   dandihubUrl,
   draftVersion,

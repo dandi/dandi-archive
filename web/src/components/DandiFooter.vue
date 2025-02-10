@@ -1,5 +1,5 @@
 <template>
-  <v-footer class="text-body-2">
+  <v-footer class="text-body-2" app>
     <v-container>
       <cookie-law theme="blood-orange">
         <div slot="message">
@@ -15,14 +15,14 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2024 The DANDI Team<br>
-          version
+          &copy; 2024 JHU/APL.<br>
+          <!-- version
           <a
             class="version-link"
             :href="githubLink"
             target="_blank"
             rel="noopener"
-          >{{ version }}</a>
+          >{{ version }}</a> -->
         </v-col>
         <v-col>
           Funding / In-Kind Support:<br>
@@ -33,11 +33,11 @@
           >BRAIN Initiative</a>
           <v-icon x-small>
             mdi-open-in-new
-          </v-icon> / <a
+          </v-icon> <a
             target="_blank"
             rel="noopener"
-            href="https://www.nimh.nih.gov/index.shtml"
-          >NIMH</a>
+            href="https://braininitiative.nih.gov/research/systems-neuroscience/brain-behavior-quantification-and-synchronization-program"
+          >BBQS Program</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -45,36 +45,29 @@
           - <a
             target="_blank"
             rel="noopener"
-            href="https://registry.opendata.aws/dandiarchive/"
-          >AWS Open Dataset</a>
+            href="https://aws.amazon.com/opendata/"
+          >AWS Open Data</a>
+          <!-- TODO: Update to registry link when released for EMBER: https://registry.opendata.aws/XXX/ -->
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
           <br>
+          - <a
+            target="_blank"
+            rel="noopener"
+            :href="dandiUrl"
+          >DANDI</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
         </v-col>
         <v-col>
           Support:<br>
           - <a
             target="_blank"
             rel="noopener"
-            :href="dandiAboutUrl"
-          >DANDI Project Homepage</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon>
-          <br>
-          - <a
-            target="_blank"
-            rel="noopener"
-            href="https://github.com/dandi/dandi-archive"
+            :href="emberGitHubUrl"
           >Project GitHub</a>
-          <v-icon x-small>
-            mdi-open-in-new
-          </v-icon> / <a
-            target="_blank"
-            rel="noopener"
-            href="https://github.com/dandi/dandi-archive/issues"
-          >Issues</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -88,18 +81,20 @@
 import { defineComponent } from 'vue';
 import CookieLaw from 'vue-cookie-law';
 
-import { dandiAboutUrl } from '@/utils/constants';
+import { dandiUrl, emberHomeUrl, emberGitHubUrl } from '@/utils/constants';
 import { cookiesEnabled } from '@/rest';
 
 const version = import.meta.env.VITE_APP_VERSION;
-const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/dandi/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandi-archive';
+const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/aplbrain/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}` : 'https://github.com/aplbrain/dandi-archive';
 
 export default defineComponent({
   name: 'DandiFooter',
   components: { CookieLaw },
   setup() {
     return {
-      dandiAboutUrl,
+      dandiUrl,
+      emberHomeUrl,
+      emberGitHubUrl,
       version,
       githubLink,
       cookiesEnabled,
