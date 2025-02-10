@@ -144,7 +144,7 @@ import {
   user,
 } from '@/rest';
 import {
-  dandiAboutUrl, dandiDocumentationUrl, dandiHelpUrl, dandihubUrl,
+  emberAboutUrl, dandiDocumentationUrl,
 } from '@/utils/constants';
 import UserMenu from '@/components/AppBar/UserMenu.vue';
 import logo from '@/assets/ember-logo.png';
@@ -174,7 +174,7 @@ const navItems: NavigationItem[] = [
   },
   {
     text: 'About',
-    to: dandiAboutUrl,
+    to: emberAboutUrl,
     external: true,
   },
   {
@@ -182,16 +182,16 @@ const navItems: NavigationItem[] = [
     to: dandiDocumentationUrl,
     external: true,
   },
-  {
-    text: 'Help',
-    to: dandiHelpUrl,
-    external: true,
-  },
-  {
-    text: 'DandiHub',
-    to: dandihubUrl,
-    external: true,
-  },
+  // {
+  //   text: 'Help',
+  //   to: dandiHelpUrl,
+  //   external: true,
+  // },
+  // {
+  //   text: 'DandiHub',
+  //   to: dandihubUrl,
+  //   external: true,
+  // },
 ];
 
 function login() {
