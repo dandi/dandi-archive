@@ -3,7 +3,6 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import RefParser from '@apidevtools/json-schema-ref-parser';
 
-// eslint-disable-next-line import/no-cycle
 import { dandiRest, user } from '@/rest';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';

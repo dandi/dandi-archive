@@ -232,6 +232,7 @@ export default defineComponent({
       required: true,
     },
   },
+  emits: ['close'],
   setup(props, ctx) {
     const store = useDandisetStore();
     const display = useDisplay();

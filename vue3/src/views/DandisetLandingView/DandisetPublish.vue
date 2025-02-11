@@ -211,11 +211,10 @@
     </v-snackbar>
     <v-snackbar :model-value="!!publishedVersion">
       Publish complete.
-      <template #action="{ attrs }">
+      <template #actions>
         <v-btn
-          color="info-lighten-2"
+          color="info"
           variant="text"
-          v-bind="attrs"
           @click="navigateToPublishedVersion"
         >
           Go to published dandiset
