@@ -90,7 +90,7 @@
             rel="noopener"
             href="mailto:help@dandiarchive.org"
           >Send an email</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
           <br>
@@ -99,7 +99,7 @@
             rel="noopener"
             href="https://github.com/dandi/helpdesk/issues/new/choose"
           >File an issue</a>
-          <v-icon x-small>
+          <v-icon size="x-small">
             mdi-open-in-new
           </v-icon>
         </v-col>
