@@ -1,6 +1,5 @@
 <template>
   <v-menu
-    offset-y
     :close-on-content-click="false"
     location="left"
     min-width="500"

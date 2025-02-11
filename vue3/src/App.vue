@@ -26,11 +26,10 @@
         Sorry, something went wrong on our side (the developers have been notified).
         Please try that operation again later.
       </span>
-      <template #action="{ attrs }">
+      <template #actions>
         <v-btn
           color="white"
           variant="text"
-          v-bind="attrs"
           @click="showError = false"
         >
           Close
