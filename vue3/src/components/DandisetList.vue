@@ -3,7 +3,6 @@
     <v-list-item
       v-for="(item, index) in dandisets"
       :key="item.dandiset.identifier"
-      selectable
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },

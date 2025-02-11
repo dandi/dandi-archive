@@ -5,9 +5,7 @@
       class="my-2 px-1"
       no-gutters
     >
-      <v-menu
-        :nudge-width="200"
-      >
+      <v-menu>
         <template #activator="{ props: menuProps }">
           <v-tooltip location="bottom">
             <template #activator="{ props: tooltipProps }">
