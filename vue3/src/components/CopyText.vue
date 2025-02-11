@@ -7,7 +7,6 @@
     hide-details="auto"
     variant="outlined"
     readonly
-    :success-messages="messages"
     v-bind="$attrs"
   >
     <template #prepend>
@@ -35,7 +34,6 @@
     variant="outlined"
     density="compact"
     readonly
-    :success-messages="messages"
   >
     <template #prepend>
       <v-tooltip location="bottom">
@@ -82,19 +80,22 @@ export default defineComponent({
     const textField = ref(null);
 
     function copyToClipboard() {
-      // v-text-field provides some internal refs that we can use
-      // one is "input", which is the actual <input> DOM element that it uses
-      // @ts-ignore
-      const inputElement = textField.value.$refs.input;
-      inputElement.focus();
-      document.execCommand('selectAll');
-      inputElement.select();
-      document.execCommand('copy');
+      // TODO: re-enable this with the correct implementation for Vue 3
+      return;
 
-      // Notify the user that the copy was successful
-      messages.value.push('Copied!');
-      // Remove the notification after 4 seconds
-      setTimeout(() => messages.value.pop(), 4000);
+      // // v-text-field provides some internal refs that we can use
+      // // one is "input", which is the actual <input> DOM element that it uses
+      // // @ts-ignore
+      // const inputElement = textField.value.$refs.input;
+      // inputElement.focus();
+      // document.execCommand('selectAll');
+      // inputElement.select();
+      // document.execCommand('copy');
+
+      // // Notify the user that the copy was successful
+      // messages.value.push('Copied!');
+      // // Remove the notification after 4 seconds
+      // setTimeout(() => messages.value.pop(), 4000);
     }
 
     return {
