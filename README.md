@@ -4,7 +4,7 @@
 
 ## EMBER: Ecosystem for Multi-modal Brain-behavior Experimentation and Research
 
-[EMBER](https://app.emberarchive.org) is the BRAIN Initiative data archive for multi-modal neurophysical and behavioral data, supporting the Brain Behavior Quantification and Synchronization (BBQS) Program.
+[EMBER](https://emberarchive.org) is the BRAIN Initiative data archive for multi-modal neurophysical and behavioral data, supporting the Brain Behavior Quantification and Synchronization (BBQS) Program.
 
 ## DANDI: Distributed Archives for Neurophysiology Data Integration
 
