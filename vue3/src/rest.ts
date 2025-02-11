@@ -19,7 +19,6 @@ import type {
   DandisetContributors,
   Organization,
 } from '@/types/schema';
-// eslint-disable-next-line import/no-cycle
 import { useDandisetStore } from '@/stores/dandiset';
 import qs from 'querystring';
 
@@ -43,7 +42,7 @@ try {
       { redirectUrl: new URL(window.location.origin) }
     );
   }
-} catch (e) {
+} catch {
   oauthClient = null;
 }
 

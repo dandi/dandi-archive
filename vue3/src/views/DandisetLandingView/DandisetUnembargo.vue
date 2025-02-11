@@ -41,10 +41,7 @@
             Close
           </v-btn>
 
-          <v-menu
-            offset-y
-            location="bottom"
-          >
+          <v-menu location="bottom">
             <template #activator="{ props }">
               <v-btn
                 class="ml-2"
