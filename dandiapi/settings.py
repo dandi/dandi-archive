@@ -199,11 +199,11 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
     ALLOWED_HOSTS += [
         'api-dandi.emberarchive.org',
         'api-dandi-staging.emberarchive.org',
-
         # Example from Linc-Archive
         # 'linc-staging-terraform-0b817cb1246b.herokuapp.com/',
         # 'api.lincbrain.org'
     ]
+
 
 # NOTE: The staging configuration uses a custom OAuth toolkit `Application` model
 # (`StagingApplication`) to allow for wildcards in OAuth redirect URIs (to support Netlify branch
