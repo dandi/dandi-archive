@@ -15,12 +15,12 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2019 - 2024 The DANDI Team<br>
+          &copy; 2019 - 2025 The DANDI Team<br>
           <a
             target="_blank"
             rel="noopener"
             href="https://docs.dandiarchive.org/about/terms/"
-          >Terms</a> 
+          >Terms</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon> / <a
