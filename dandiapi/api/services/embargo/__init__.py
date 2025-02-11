@@ -68,7 +68,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     v.save()
     logger.info('Version metadata updated')
 
-    # Pre-emptively validate version metadata, so that old validation
+    # Preemptively validate version metadata, so that old validation
     # errors don't show up once un-embargo is finished
     validate_version_metadata(version=v)
     logger.info('Version metadata validated')
