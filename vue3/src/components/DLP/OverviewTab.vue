@@ -272,7 +272,7 @@ function isURL(str: string): boolean {
   let url;
   try {
     url = new URL(str);
-  } catch (e) {
+  } catch {
     return false;
   }
 

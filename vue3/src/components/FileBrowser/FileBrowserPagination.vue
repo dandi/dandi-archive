@@ -22,10 +22,10 @@
       v-model.number="pageInput"
       hide-details
       single-line
-      dense
+      density="compact"
       style="max-width: 5%;"
       class="pa-0 mx-2 my-0"
-      filled
+      variant="filled"
       min="1"
       :max="pageCount"
       :maxlength="pageCount"
