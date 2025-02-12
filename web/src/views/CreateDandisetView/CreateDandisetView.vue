@@ -10,7 +10,7 @@
             v-model="embargoed"
           >
             <template #label>
-              Embargo this Dandiset
+              Mark Dandiset Private
               <v-tooltip
                 right
                 max-width="25%"
@@ -30,10 +30,7 @@
                   </div>
                 </template>
                 <span>
-                  Embargoed Dandisets are hidden from public access until a specific time period has
-                  elapsed. Uploading data to the DANDI archive under embargo requires a relevant
-                  NIH award number, and the data will be automatically published when the embargo
-                  period expires.
+                  Private (or embargoed) Dandisets are hidden from public access.
                 </span>
               </v-tooltip>
             </template>
