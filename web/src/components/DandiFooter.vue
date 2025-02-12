@@ -15,7 +15,8 @@
       </cookie-law>
       <v-row>
         <v-col offset="2">
-          &copy; 2024 JHU/APL.<br>
+          &copy; 2019 - 2024 The DANDI Team<br>
+          &copy; 2024 - 2025 JHU/APL.<br>
           <!-- version
           <a
             class="version-link"
