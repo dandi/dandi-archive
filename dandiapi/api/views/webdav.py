@@ -1,20 +1,19 @@
-# ruff: noqa: TC003
+# ruff: noqa: I002
+# NOTE: Do not add from __future import annotations here.
+# For some reason that breaks django-ninja
 
-from __future__ import annotations
-
-import datetime
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 import uuid
 
-from ninja import NinjaAPI, Query, Schema
+from ninja import Field, ModelSchema, NinjaAPI, Query, Schema
 from ninja.pagination import PageNumberPagination, paginate
+from ninja.renderers import JSONRenderer
 
+from dandiapi.api.asset_paths import get_path_children
+from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
-
-if TYPE_CHECKING:
-    from dandiapi.api.models.asset import Asset
 
 
 class AtPathQuerySchema(Schema):
@@ -25,15 +24,23 @@ class AtPathQuerySchema(Schema):
     children: bool = False
 
 
-class AtPathAssetSchema(Schema):
-    asset_id: uuid.UUID
-    blob: uuid.UUID | None
+class AtPathAssetSchema(ModelSchema):
+    class Meta:
+        model = Asset
+        fields = [
+            'asset_id',
+            'path',
+            'created',
+            'modified',
+        ]
+
+    # Define these fields manually, since they can't be pulled from the model directly
     zarr: uuid.UUID | None
-    path: str
-    size: int
-    created: datetime.datetime
-    modified: datetime.datetime
+    blob: uuid.UUID | None
     metadata: dict | None
+
+    # No resolver is needed as it will access the asset property by default
+    size: int
 
     @staticmethod
     def resolve_blob(obj: Asset):
@@ -50,8 +57,8 @@ class AtPathAssetSchema(Schema):
         return obj.zarr.zarr_id
 
     @staticmethod
-    def resolve_metadata(obj: Asset):
-        if getattr(obj, '_include_metadata', False):
+    def resolve_metadata(obj: Asset, context):
+        if getattr(context['request'], 'include_metadata', False):
             return obj.metadata
 
         return None
@@ -59,8 +66,8 @@ class AtPathAssetSchema(Schema):
 
 class AtPathFolderSchema(Schema):
     path: str
-    total_assets: int
-    total_size: int
+    total_assets: int = Field(alias='aggregate_files')
+    total_size: int = Field(alias='aggregate_size')
 
 
 class AtPathResultsSchema(Schema):
@@ -79,9 +86,7 @@ class AtPathResultsSchema(Schema):
         if obj.asset is not None:
             return obj.asset
 
-        return AtPathFolderSchema(
-            path=obj.path, total_assets=obj.aggregate_files, total_size=obj.aggregate_size
-        )
+        return obj
 
 
 api = NinjaAPI()
@@ -89,28 +94,34 @@ api = NinjaAPI()
 
 @api.get('/assets/atpath', response=list[AtPathResultsSchema])
 @paginate(PageNumberPagination)
-def atpath(
-    request,
-    params: Query[AtPathQuerySchema],
-    # dandiset_id: str,
-    # version_id: str,
-    # path: str = '',
-    # metadata: bool = False,
-    # children: bool = False,
-):
+def atpath(request, params: Query[AtPathQuerySchema]):
     dandiset = Dandiset.objects.get(id=int(params.dandiset_id))
     version = Version.objects.get(dandiset=dandiset, version=params.version_id)
 
-    # Check if path is an asset
-    qs = AssetPath.objects.select_related('asset').filter(version=version)
-    qs = qs.exclude(path__contains='/') if params.path == '' else qs.filter(path=params.path)
+    # Annotate request, so the schema can modify its behavior as needed
+    request.include_metadata = params.metadata
 
-    count = qs.count()
-    if count > 1:
-        return qs
+    # Base query
+    select_related_clauses = ('asset', 'asset__blob')
+    qs = AssetPath.objects.select_related(*select_related_clauses).filter(version=version)
 
-    res = qs.first()
-    if res is None:
+    # Handle root path case explicitly
+    if params.path == '':
+        return qs.exclude(path__contains='/') if params.children else qs.none()
+
+    # Perform path filter
+    qs = qs.filter(path=params.path)
+
+    # Ensure queryset isn't empty
+    path = qs.first()
+    if path is None:
         return []
 
-    return [res]
+    # Since path+version combinations are unique, we know we've matched exactly one path.
+    # Now see if we should extend this with it's children
+    if path.asset is not None or not params.children:
+        return [path]
+
+    # Now we know path is a folder, and we should show its children
+    children = get_path_children(path).select_related(None).select_related(*select_related_clauses)
+    return qs.union(children).order_by('path')
