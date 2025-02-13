@@ -27,8 +27,11 @@ export function computeBasicSchema(schema: JSONSchema7): JSONSchema7 {
     required: newRequired,
   };
 
-  // Description isn't needed and just causes rendering issues
+  // Title and description aren't needed and just causes rendering issues
+  delete newSchema.title;
   delete newSchema.description;
+  // $schema isn't needed and causes Ajv to throw an error
+  delete newSchema.$schema;
   return newSchema;
 }
 
