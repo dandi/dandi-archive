@@ -29,6 +29,7 @@ from dandiapi.api.views import (
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
+    webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
@@ -105,6 +106,7 @@ urlpatterns = [
     ),
     path('api/search/genotypes/', search_genotypes),
     path('api/search/species/', search_species),
+    path('api/webdav/assets/atpath', webdav.atpath),
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
