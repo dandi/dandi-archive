@@ -29,6 +29,7 @@ from dandiapi.api.views import (
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
+    webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
@@ -82,6 +83,7 @@ register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
     path('robots.txt', robots_txt_view, name='robots_txt'),
+    path('api/webdav/', webdav.api.urls),
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
