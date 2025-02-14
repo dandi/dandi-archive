@@ -3,7 +3,7 @@
 {% block body %}
     <h5>Welcome! Are you lost?</h5>
 
-    <p>This is the Django service that supports the DANDI API. There's
+    <p>This is the Django service that supports the EMBER-DANDI API. There's
     nothing specifically valuable at this exact location. You are probably
     looking for one of the following instead:</p>
 
@@ -14,13 +14,14 @@
         <li><a href="{% url 'schema-redoc' %}">Redoc</a> documentation for
         the same</lit>
 
-        <li>The <a href="{{ web_app_url }}">DANDI Archive</a>
+        <li>The <a href="{{ web_app_url }}">EMBER-DANDI Archive</a>
         instance associated with this API server</li>
 
         <li>The <a href="https://www.dandiarchive.org">DANDI project</a>
         website</li>
     </ul>
 
-    <p>If none of these is helpful, you can contact the DANDI team by <a
-    href="mailto:help@dandiarchive.org">email</a>. Have a great day!</p>
+    <!-- TODO: Contact Email -->
+    <!-- <p>If none of these is helpful, you can contact the DANDI team by <a
+    href="mailto:help@dandiarchive.org">email</a>. Have a great day!</p> -->
 {% endblock body %}

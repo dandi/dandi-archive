@@ -24,7 +24,7 @@ BASE_RENDER_CONTEXT = {
 }
 
 # TODO: turn this into a Django setting
-ADMIN_EMAIL = 'admin@api-dandi.emberarchive.org'
+ADMIN_EMAIL = 'BBQS-EMBER-Admin@jhuapl.edu'
 
 
 def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
@@ -98,7 +98,7 @@ def send_ownership_change_emails(dandiset, removed_owners, added_owners):
 def build_registered_message(user: User, socialaccount: SocialAccount):
     # Email sent to the DANDI list when a new user logs in for the first time
     return build_message(
-        subject=f'DANDI: New user registered: {user.email}',
+        subject=f'EMBER-DANDI: New user registered: {user.email}',
         message=render_to_string(
             'api/mail/registered_message.txt',
             {'greeting_name': user_greeting_name(user, socialaccount)},
@@ -121,7 +121,7 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
     }
     # Email sent to the DANDI list when a new user logs in for the first time
     return build_message(
-        subject=f'DANDI: Review new user: {user.username}',
+        subject=f'EMBER-DANDI: Review new user: {user.username}',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
         to=[ADMIN_EMAIL],
     )
@@ -136,7 +136,7 @@ def send_new_user_message_email(user: User, socialaccount: SocialAccount):
 
 def build_approved_user_message(user: User, socialaccount: SocialAccount = None):
     return build_message(
-        subject='Your DANDI Account',
+        subject='Your EMBER-DANDI Account',
         message=render_to_string(
             'api/mail/approved_user_message.txt',
             {
@@ -157,7 +157,7 @@ def send_approved_user_message(user: User, socialaccount: SocialAccount):
 
 def build_rejected_user_message(user: User, socialaccount: SocialAccount = None):
     return build_message(
-        subject='Your DANDI Account',
+        subject='Your EMBER-DANDI Account',
         message=render_to_string(
             'api/mail/rejected_user_message.txt',
             {
@@ -179,7 +179,7 @@ def send_rejected_user_message(user: User, socialaccount: SocialAccount):
 def build_pending_users_message(users: Iterable[User]):
     render_context = {**BASE_RENDER_CONTEXT, 'users': users}
     return build_message(
-        subject='DANDI: new user registrations to review',
+        subject='EMBER-DANDI: new user registrations to review',
         message=render_to_string('api/mail/pending_users_message.txt', render_context),
         to=[ADMIN_EMAIL],
     )
@@ -226,7 +226,7 @@ def build_dandiset_unembargo_failed_message(dandiset: Dandiset):
     render_context = {**BASE_RENDER_CONTEXT, 'dandiset': dandiset_context}
     html_message = render_to_string('api/mail/dandiset_unembargo_failed.html', render_context)
     return build_message(
-        subject=f'DANDI: Unembargo failed for dandiset {dandiset.identifier}',
+        subject=f'EMBER-DANDI: Unembargo failed for dandiset {dandiset.identifier}',
         message=strip_tags(html_message),
         html_message=html_message,
         to=[owner.email for owner in dandiset.owners],

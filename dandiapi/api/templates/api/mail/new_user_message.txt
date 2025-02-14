@@ -1,5 +1,5 @@
 {% autoescape off %}
-A new user ({{ username }}) has signed up for DANDI.
+A new user ({{ username }}) has signed up for EMBER-DANDI.
 
 Please proceed to the following URL to approve or reject their account:
 
