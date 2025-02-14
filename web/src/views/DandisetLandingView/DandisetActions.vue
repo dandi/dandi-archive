@@ -58,9 +58,8 @@
         variant="outlined"
         block
         class="justify-space-between"
+        @click="openMeditor = true"
       >
-        <!-- TODO: put this back in the v-btn when we have the meditor working -->
-        <!-- @click="openMeditor = true" -->
         <v-icon
           start
           color="primary"
@@ -115,7 +114,7 @@ import type { Location } from 'vue-router';
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 
-// import { open as openMeditor } from '@/components/Meditor/state';
+import { open as openMeditor } from '@/components/Meditor/state';
 import DownloadDialog from './DownloadDialog.vue';
 import CiteAsDialog from './CiteAsDialog.vue';
 import ShareDialog from './ShareDialog.vue';
