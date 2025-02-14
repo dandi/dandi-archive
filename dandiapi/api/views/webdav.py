@@ -1,13 +1,10 @@
-# ruff: noqa: I002
-# NOTE: Do not add from __future import annotations here.
-# For some reason that breaks django-ninja
+from __future__ import annotations
 
-from typing import Literal
-import uuid
+from typing import TYPE_CHECKING
 
-from ninja import Field, ModelSchema, NinjaAPI, Query, Schema
-from ninja.pagination import PageNumberPagination, paginate
-from ninja.renderers import JSONRenderer
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import pagination, serializers
+from rest_framework.decorators import api_view
 
 from dandiapi.api.asset_paths import get_path_children
 from dandiapi.api.models.asset import Asset
@@ -15,16 +12,25 @@ from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 
-
-class AtPathQuerySchema(Schema):
-    dandiset_id: str
-    version_id: str
-    path: str = ''
-    metadata: bool = False
-    children: bool = False
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 
-class AtPathAssetSchema(ModelSchema):
+class PathFolderSerializer(serializers.ModelSerializer):
+    path = serializers.CharField()
+    total_assets = serializers.IntegerField(source='aggregate_files')
+    total_size = serializers.IntegerField(source='aggregate_size')
+
+    class Meta:
+        model = AssetPath
+        fields = [
+            'path',
+            'total_assets',
+            'total_size',
+        ]
+
+
+class PathAssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = [
@@ -32,96 +38,93 @@ class AtPathAssetSchema(ModelSchema):
             'path',
             'created',
             'modified',
+            'zarr',
+            'blob',
+            'metadata',
+            'size',
         ]
 
-    # Define these fields manually, since they can't be pulled from the model directly
-    zarr: uuid.UUID | None
-    blob: uuid.UUID | None
-    metadata: dict | None
+    blob = serializers.UUIDField(source='blob.blob_id', allow_null=True)
+    zarr = serializers.UUIDField(source='zarr.zarr_id', allow_null=True)
 
-    # No resolver is needed as it will access the asset property by default
-    size: int
+    def __init__(self, *args, include_metadata=False, **kwargs):
+        if not include_metadata:
+            del self.fields['metadata']
 
-    @staticmethod
-    def resolve_blob(obj: Asset):
-        if obj.blob is None:
-            return None
-
-        return obj.blob.blob_id
-
-    @staticmethod
-    def resolve_zarr(obj: Asset):
-        if obj.zarr is None:
-            return None
-
-        return obj.zarr.zarr_id
-
-    @staticmethod
-    def resolve_metadata(obj: Asset, context):
-        if getattr(context['request'], 'include_metadata', False):
-            return obj.metadata
-
-        return None
+        super().__init__(*args, **kwargs)
 
 
-class AtPathFolderSchema(Schema):
-    path: str
-    total_assets: int = Field(alias='aggregate_files')
-    total_size: int = Field(alias='aggregate_size')
+class PathResultSerializer(serializers.Serializer):
+    type = serializers.SerializerMethodField()
+    resource = serializers.SerializerMethodField()
 
-
-class AtPathResultsSchema(Schema):
-    type: Literal['asset', 'folder']
-    resource: AtPathAssetSchema | AtPathFolderSchema
-
-    @staticmethod
-    def resolve_type(obj: AssetPath):
+    def get_type(self, obj: AssetPath):
         if obj.asset is not None:
             return 'asset'
-
         return 'folder'
 
-    @staticmethod
-    def resolve_resource(obj: AssetPath):
+    def get_resource(self, obj: AssetPath):
         if obj.asset is not None:
-            return obj.asset
-
-        return obj
-
-
-api = NinjaAPI()
+            return PathAssetSerializer(obj.asset, include_metadata=self.context['metadata']).data
+        return PathFolderSerializer(obj).data
 
 
-@api.get('/assets/atpath', response=list[AtPathResultsSchema])
-@paginate(PageNumberPagination)
-def atpath(request, params: Query[AtPathQuerySchema]):
-    dandiset = Dandiset.objects.get(id=int(params.dandiset_id))
-    version = Version.objects.get(dandiset=dandiset, version=params.version_id)
+class AtPathQuerySerializer(serializers.Serializer):
+    dandiset_id = serializers.CharField()
+    version_id = serializers.CharField()
+    path = serializers.CharField(default='')
+    metadata = serializers.BooleanField(default=False)
+    children = serializers.BooleanField(default=False)
 
-    # Annotate request, so the schema can modify its behavior as needed
-    request.include_metadata = params.metadata
 
-    # Base query
+def get_atpath_queryset(*, version: Version, path: str, children: bool) -> QuerySet[AssetPath]:
     select_related_clauses = ('asset', 'asset__blob')
     qs = AssetPath.objects.select_related(*select_related_clauses).filter(version=version)
 
     # Handle root path case explicitly
-    if params.path == '':
-        return qs.exclude(path__contains='/') if params.children else qs.none()
+    if path == '':
+        return qs.exclude(path__contains='/') if children else qs.none()
 
     # Perform path filter
-    qs = qs.filter(path=params.path)
+    qs = qs.filter(path=path)
 
     # Ensure queryset isn't empty
-    path = qs.first()
-    if path is None:
-        return []
+    asset_path = qs.first()
+    if asset_path is None:
+        return qs.none()
 
     # Since path+version combinations are unique, we know we've matched exactly one path.
     # Now see if we should extend this with it's children
-    if path.asset is not None or not params.children:
-        return [path]
+    if asset_path.asset is not None or not children:
+        return qs
 
     # Now we know path is a folder, and we should show its children
-    children = get_path_children(path).select_related(None).select_related(*select_related_clauses)
-    return qs.union(children).order_by('path')
+    children_paths = (
+        get_path_children(asset_path).select_related(None).select_related(*select_related_clauses)
+    )
+    return qs.union(children_paths).order_by('path')
+
+
+@swagger_auto_schema(
+    query_serializer=AtPathQuerySerializer,
+    responses={200: PathResultSerializer(many=True)},
+    method='GET',
+)
+@api_view(['GET'])
+def atpath(request):
+    query_serializer = AtPathQuerySerializer(data=request.query_params)
+    query_serializer.is_valid(raise_exception=True)
+
+    params = query_serializer.validated_data
+    dandiset = Dandiset.objects.get(id=int(params['dandiset_id']))
+    version = Version.objects.get(dandiset=dandiset, version=params['version_id'])
+
+    qs = get_atpath_queryset(version=version, path=params['path'], children=params['children'])
+
+    paginator = pagination.PageNumberPagination()
+    result_page = paginator.paginate_queryset(qs, request=request)
+    serializer = PathResultSerializer(
+        instance=result_page, many=True, context={'metadata': params['metadata']}
+    )
+
+    return paginator.get_paginated_response(serializer.data)
