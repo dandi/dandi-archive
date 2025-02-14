@@ -1,7 +1,7 @@
 <template>
   <div>
-    <Meditor v-if="currentDandiset" :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`" />
-    <v-toolbar class="grey darken-2 white--text">
+    <!-- <Meditor v-if="currentDandiset" :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`" /> -->
+    <v-toolbar class="bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
         v-model="page"
@@ -9,8 +9,12 @@
         :total-visible="0"
       />
     </v-toolbar>
-    <v-container v-if="embargoedOrUnauthenticated" class="d-flex justify-center align-center" style="height: 50vh;">
-      <div class="d-block blue-grey lighten-5 pa-4 rounded-lg">
+    <v-container
+      v-if="embargoedOrUnauthenticated"
+      class="d-flex justify-center align-center"
+      style="height: 50vh;"
+    >
+      <div class="d-block bg-blue-grey-lighten-5 pa-4 rounded-lg">
         <span class="text-h5">
           <v-icon class="mb-1">
             mdi-alert-circle
@@ -51,14 +55,14 @@
     <v-container
       v-else
       fluid
-      class="grey lighten-4 pa-0"
+      class="bg-grey-lighten-4 pa-0"
     >
       <v-progress-linear
         v-if="!currentDandiset || loading"
         indeterminate
       />
       <v-row no-gutters>
-        <v-col :cols="$vuetify.breakpoint.smAndDown ? 12 : 10">
+        <v-col :cols="isSmDisplay ? 12 : 10">
           <v-sheet
             v-if="!currentDandiset || loading"
             class="py-8 px-7"
@@ -74,7 +78,7 @@
           />
         </v-col>
         <v-col
-          v-if="!$vuetify.breakpoint.smAndDown"
+          v-if="!isSmDisplay"
           cols="2"
         >
           <v-sheet
@@ -89,13 +93,13 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="$vuetify.breakpoint.smAndDown">
+      <v-row v-if="isSmDisplay">
         <v-col cols="12">
           <v-sheet
             v-if="!currentDandiset || loading"
             class="py-3"
           >
-            <v-skeleton-loader type="card-heading, list-item@5" />
+            <v-skeleton-loader type="card, list-item@5" />
           </v-sheet>
           <DandisetSidebar
             v-else
@@ -112,15 +116,16 @@ import {
   computed, watch, onMounted, ref,
 } from 'vue';
 import type { Ref } from 'vue';
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
-import Meditor from '@/components/Meditor/Meditor.vue';
+// import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
-import { editorInterface } from '@/components/Meditor/state';
+// import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
 import DandisetMain from './DandisetMain.vue';
 import DandisetSidebar from './DandisetSidebar.vue';
@@ -137,24 +142,26 @@ const props = defineProps({
   },
 });
 
-// This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking
-// a link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
-// "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
-onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
-  // Prompt user if they try to leave the DLP with unsaved changes in the meditor
-  if (!editorInterface.value?.transactionTracker?.isModified()
-    // eslint-disable-next-line no-alert
-    || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
-    next();
-    return true;
-  }
-  return false;
-});
+// // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking
+// // a link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
+// // "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
+// onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
+//   // Prompt user if they try to leave the DLP with unsaved changes in the meditor
+//   if (!editorInterface.value?.transactionTracker?.isModified()
+//     // eslint-disable-next-line no-alert
+//     || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
+//     next();
+//     return true;
+//   }
+//   return false;
+// });
 
 const route = useRoute();
 const router = useRouter();
 const store = useDandisetStore();
+const display = useDisplay();
 
+const isSmDisplay = computed(() => display.smAndDown.value);
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
 
@@ -274,18 +281,18 @@ watch(page, async (newValue, oldValue) => {
 });
 
 onMounted(async () => {
-  // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
-  // clicking external links. The `beforeRouteLeave` function above handles "soft"
-  // page navigations, such as using the back/forward buttons or clicking a link
-  // to navigate elsewhere in the SPA.
-  window.addEventListener('beforeunload', (e) => {
-    // display a confirmation prompt if attempting to navigate away from the
-    // page with unsaved changes in the meditor
-    if (editorInterface.value?.transactionTracker?.isModified()) {
-      e.preventDefault();
-      e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
-    }
-  });
+  // // This guards against "hard" page navigations, i.e. refreshing, closing tabs, or
+  // // clicking external links. The `beforeRouteLeave` function above handles "soft"
+  // // page navigations, such as using the back/forward buttons or clicking a link
+  // // to navigate elsewhere in the SPA.
+  // window.addEventListener('beforeunload', (e) => {
+  //   // display a confirmation prompt if attempting to navigate away from the
+  //   // page with unsaved changes in the meditor
+  //   if (editorInterface.value?.transactionTracker?.isModified()) {
+  //     e.preventDefault();
+  //     e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
+  //   }
+  // });
   await fetchNextPage(); // get the current page and total count
 });
 </script>

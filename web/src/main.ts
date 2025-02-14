@@ -1,64 +1,20 @@
-// Import external packages
-import Vue from 'vue';
-import VueGtag from 'vue-gtag';
-import VueSocialSharing from 'vue-social-sharing';
+/**
+ * main.ts
+ *
+ * Bootstraps Vuetify and other plugins then mounts the App`
+ */
 
-// @ts-ignore missing definitions
-import * as Sentry from '@sentry/vue';
-import { CaptureConsole } from '@sentry/integrations';
+// Plugins
+import { registerPlugins } from '@/plugins'
 
-// Import plugins first (order may matter)
-import pinia from '@/plugins/pinia';
-import vuetify from '@/plugins/vuetify';
+// Components
+import App from './App.vue'
 
-// Import custom behavior
-import '@/title';
+// Composables
+import { createApp } from 'vue'
 
-// Import internal items
-import App from '@/App.vue';
-import router from '@/router';
+const app = createApp(App)
 
-Sentry.init({
-  Vue,
-  dsn: import.meta.env.VITE_APP_SENTRY_DSN,
-  environment: import.meta.env.VITE_APP_SENTRY_ENVIRONMENT,
-  integrations: [
-    new Sentry.BrowserTracing({
-      routingInstrumentation: Sentry.vueRouterInstrumentation(router),
-    }),
-    new CaptureConsole({
-      levels: ['error'],
-    }),
-    new Sentry.Replay(),
-  ],
-  tracePropagationTargets: [import.meta.env.VITE_APP_DANDI_API_ROOT || ''],
+registerPlugins(app)
 
-  // Capture 1% of traces for Sentry performance
-  tracesSampleRate: 0.01,
-  // Capture extra data about Vue components
-  trackComponents: true,
-  // Capture info about Vue component props
-  attachProps: true,
-
-  // Capture Replay for 10% of all sessions,
-  // plus for 100% of sessions with an error
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-});
-
-const googleAnalyticsTag = import.meta.env.VITE_APP_GOOGLE_ANALYTICS_TAG;
-
-if (googleAnalyticsTag) {
-  Vue.use(VueGtag, {
-    config: { id: googleAnalyticsTag },
-  }, router);
-}
-
-Vue.use(VueSocialSharing);
-
-new Vue({
-  router,
-  render: (h) => h(App),
-  pinia,
-  vuetify,
-}).$mount('#app');
+app.mount('#app')

@@ -19,7 +19,6 @@ import type {
   DandisetContributors,
   Organization,
 } from '@/types/schema';
-// eslint-disable-next-line import/no-cycle
 import { useDandisetStore } from '@/stores/dandiset';
 import qs from 'querystring';
 
@@ -43,7 +42,7 @@ try {
       { redirectUrl: new URL(window.location.origin) }
     );
   }
-} catch (e) {
+} catch {
   oauthClient = null;
 }
 
@@ -111,7 +110,6 @@ const dandiRest = {
     const uploads = []
     let page = 1;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const res = await client.get(`dandisets/${identifier}/uploads/`, {params: { page }});
 

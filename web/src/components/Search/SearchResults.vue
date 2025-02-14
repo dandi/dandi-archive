@@ -51,12 +51,10 @@ const dandisets = computed(
       >
         <template
           v-for="result in dandisets"
+          :key="result.dandiset.identifier"
           #[result.dandiset.identifier]
         >
-          <v-sheet
-            :key="result.dandiset.identifier"
-            class="d-flex flex-column"
-          >
+          <v-sheet class="d-flex flex-column">
             <div
               v-for="[searchParam, assetCount] in Object.entries(result.asset_counts)"
               :key="`${searchParam}:${assetCount}`"
@@ -79,7 +77,7 @@ const dandisets = computed(
       v-if="searchResults"
       v-model="page"
       :length="Math.ceil(searchResults.count / DANDISETS_PER_PAGE)"
-      @input="updateSearchQuery"
+      @update:model-value="updateSearchQuery"
     />
   </v-container>
 </template>

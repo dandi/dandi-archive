@@ -5,17 +5,14 @@
       class="my-2 px-1"
       no-gutters
     >
-      <v-menu
-        :nudge-width="200"
-      >
-        <template #activator="{ on: menu, attrs }">
-          <v-tooltip bottom>
-            <template #activator="{ on: tooltip }">
+      <v-menu>
+        <template #activator="{ props: menuProps }">
+          <v-tooltip location="bottom">
+            <template #activator="{ props: tooltipProps }">
               <v-card
-                class="amber lighten-5 no-text-transform"
-                outlined
-                v-bind="attrs"
-                v-on="{ ...tooltip, ...menu }"
+                class="bg-amber-lighten-5 no-text-transform"
+                variant="outlined"
+                v-bind="{ ...menuProps, ...tooltipProps }"
               >
                 <v-row class="align-center px-4">
                   <v-col
@@ -51,15 +48,14 @@
         :asset-validation-errors="dandiset.asset_validation_errors"
         :version-validation-errors="dandiset.version_validation_errors"
         :owner="isOwner"
-        @openMeditor="openMeditor"
       />
     </v-dialog>
 
     <!-- Version Validation Errors Button -->
     <v-card
       v-if="dandiset.version_validation_errors.length"
-      class="my-2 px-1 amber lighten-5 no-text-transform"
-      outlined
+      class="my-2 px-1 bg-amber-lighten-5 no-text-transform"
+      variant="outlined"
       @click="openErrorDialog('metadata')"
     >
       <v-row class="align-center px-4">
@@ -87,8 +83,8 @@
     <!-- Asset Validation Errors Button -->
     <v-card
       v-if="numAssetValidationErrors"
-      class="my-2 px-1 amber lighten-5 no-text-transform"
-      outlined
+      class="my-2 px-1 bg-amber-lighten-5 no-text-transform"
+      variant="outlined"
       @click="openErrorDialog('assets')"
     >
       <v-row class="align-center px-4">
@@ -120,7 +116,7 @@ import { computed, defineProps, ref} from 'vue';
 import type { PropType } from 'vue';
 
 import ValidationErrorDialog from '@/components/DLP/ValidationErrorDialog.vue';
-import { open as meditorOpen } from '@/components/Meditor/state';
+// import { open as meditorOpen } from '@/components/Meditor/state';
 import type { Version } from '@/types';
 
 const props = defineProps({
@@ -145,8 +141,8 @@ function openErrorDialog(tab: ErrorCategory) {
   selectedTab.value = tab;
 }
 
-function openMeditor() {
-  errorDialogOpen.value = false;
-  meditorOpen.value = true;
-}
+// function openMeditor() {
+//   errorDialogOpen.value = false;
+//   // meditorOpen.value = true;
+// }
 </script>

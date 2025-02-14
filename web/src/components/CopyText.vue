@@ -2,19 +2,18 @@
   <v-textarea
     v-if="isTextarea == true"
     ref="textField"
-    :value="text"
+    :model-value="text"
     class="cite-as-textarea"
     hide-details="auto"
-    outlined
+    variant="outlined"
     readonly
-    :success-messages="messages"
     v-bind="$attrs"
   >
     <template #prepend>
-      <v-tooltip bottom>
-        <template #activator="{ on }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
           <v-icon
-            v-on="on"
+            v-bind="props"
             @click="copyToClipboard"
           >
             mdi-content-copy
@@ -30,18 +29,17 @@
     v-bind="$attrs"
     id="api-key-text"
     ref="textField"
-    :value="text"
+    :model-value="text"
     hide-details="auto"
-    outlined
-    dense
+    variant="outlined"
+    density="compact"
     readonly
-    :success-messages="messages"
   >
     <template #prepend>
-      <v-tooltip bottom>
-        <template #activator="{ on }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props }">
           <v-icon
-            v-on="on"
+            v-bind="props"
             @click="copyToClipboard"
           >
             mdi-content-copy
@@ -82,19 +80,22 @@ export default defineComponent({
     const textField = ref(null);
 
     function copyToClipboard() {
-      // v-text-field provides some internal refs that we can use
-      // one is "input", which is the actual <input> DOM element that it uses
-      // @ts-ignore
-      const inputElement = textField.value.$refs.input;
-      inputElement.focus();
-      document.execCommand('selectAll');
-      inputElement.select();
-      document.execCommand('copy');
+      // TODO: re-enable this with the correct implementation for Vue 3
+      return;
 
-      // Notify the user that the copy was successful
-      messages.value.push('Copied!');
-      // Remove the notification after 4 seconds
-      setTimeout(() => messages.value.pop(), 4000);
+      // // v-text-field provides some internal refs that we can use
+      // // one is "input", which is the actual <input> DOM element that it uses
+      // // @ts-ignore
+      // const inputElement = textField.value.$refs.input;
+      // inputElement.focus();
+      // document.execCommand('selectAll');
+      // inputElement.select();
+      // document.execCommand('copy');
+
+      // // Notify the user that the copy was successful
+      // messages.value.push('Copied!');
+      // // Remove the notification after 4 seconds
+      // setTimeout(() => messages.value.pop(), 4000);
     }
 
     return {

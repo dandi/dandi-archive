@@ -1,34 +1,51 @@
 <template>
   <v-menu
-    offset-y
     :close-on-content-click="false"
-    left
+    location="left"
     min-width="500"
     max-width="500"
   >
-    <template #activator="{ on }">
-      <slot
-        name="activator"
-        :on="on"
-      />
+    <template #activator="{ props }">
+      <v-btn
+        id="download"
+        variant="outlined"
+        block
+        class="justify-space-between"
+        v-bind="props"
+      >
+        <template #prepend>
+          <v-icon
+            color="primary"
+            start
+          >
+            mdi-download
+          </v-icon>
+          <span>Download</span>
+        </template>
+        <template #append>
+          <v-icon end>
+            mdi-chevron-down
+          </v-icon>
+        </template>
+      </v-btn>
     </template>
     <v-card>
       <v-card-title>
         Download full dandiset
         <v-spacer />
-        <v-tooltip right>
-          <template #activator="{ on }">
+        <v-tooltip location="right">
+          <template #activator="{ props }">
             <v-btn
               href="https://docs.dandiarchive.org/12_download/"
               target="_blank"
               rel="noopener"
-              text
+              variant="text"
             >
               Help
               <v-icon
                 color="primary"
-                small
-                v-on="on"
+                size="small"
+                v-bind="props"
               >
                 mdi-help-circle
               </v-icon>
@@ -38,10 +55,10 @@
         </v-tooltip>
       </v-card-title>
       <v-list class="pa-0">
-        <v-list-item dense>
+        <v-list-item density="compact">
           Use this command in your DANDI CLI
         </v-list-item>
-        <v-list-item dense>
+        <v-list-item density="compact">
           <CopyText
             :text="defaultDownloadText"
             icon-hover-text="Copy command to clipboard"
@@ -52,12 +69,12 @@
         </v-list-item>
         <v-expansion-panels>
           <v-expansion-panel v-if="availableVersions.length > 0">
-            <v-expansion-panel-header>
+            <v-expansion-panel-title>
               Download a different version?
-            </v-expansion-panel-header>
-            <v-expansion-panel-content>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
               <v-list class="pa-0">
-                <v-list-item dense>
+                <v-list-item density="compact">
                   <v-radio-group v-model="selectedDownloadOption">
                     <v-radio
                       label="Draft"
@@ -75,13 +92,13 @@
                       v-if="selectedDownloadOption == 'other'"
                       v-model="selectedVersion"
                       :items="availableVersions"
-                      item-text="version"
+                      item-title="version"
                       item-value="index"
-                      dense
+                      density="compact"
                     />
                   </v-radio-group>
                 </v-list-item>
-                <v-list-item dense>
+                <v-list-item density="compact">
                   <CopyText
                     :text="customDownloadText"
                     icon-hover-text="Copy command to clipboard"
@@ -92,13 +109,13 @@
                   />
                 </v-list-item>
               </v-list>
-            </v-expansion-panel-content>
+            </v-expansion-panel-text>
           </v-expansion-panel>
           <v-expansion-panel>
-            <v-expansion-panel-header>
+            <v-expansion-panel-title>
               Don't have DANDI CLI?
-            </v-expansion-panel-header>
-            <v-expansion-panel-content>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
               <v-list>
                 <v-list-item>
                   Install the Python client (DANDI CLI)
@@ -108,7 +125,7 @@
                   <kbd>pip install "dandi>=0.60.0"</kbd>
                 </v-list-item>
               </v-list>
-            </v-expansion-panel-content>
+            </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
       </v-list>
