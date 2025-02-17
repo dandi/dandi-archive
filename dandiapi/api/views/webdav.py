@@ -55,7 +55,7 @@ class DandiNinjaPagination(PageNumberPagination):
         }
 
 
-class AtPathQuerySchema(Schema):
+class PathQuerySchema(Schema):
     dandiset_id: str
     version_id: str
     path: str = ''
@@ -63,7 +63,7 @@ class AtPathQuerySchema(Schema):
     children: bool = False
 
 
-class AtPathAssetSchema(ModelSchema):
+class PathAssetSchema(ModelSchema):
     class Meta:
         model = Asset
         fields = [
@@ -103,7 +103,7 @@ class AtPathAssetSchema(ModelSchema):
         return None
 
 
-class AtPathFolderSchema(ModelSchema):
+class PathFolderSchema(ModelSchema):
     class Meta:
         model = AssetPath
         fields = ['path']
@@ -113,9 +113,9 @@ class AtPathFolderSchema(ModelSchema):
     total_size: int = Field(alias='aggregate_size')
 
 
-class AtPathResultsSchema(Schema):
+class PathResultsSchema(Schema):
     type: Literal['asset', 'folder']
-    resource: AtPathAssetSchema | AtPathFolderSchema
+    resource: PathAssetSchema | PathFolderSchema
 
     @staticmethod
     def resolve_type(obj: AssetPath):
@@ -167,9 +167,9 @@ def get_atpath_queryset(*, version: Version, path: str, children: bool) -> Query
 api = NinjaAPI()
 
 
-@api.get('/assets/atpath', response=list[AtPathResultsSchema])
+@api.get('/assets/atpath', response=list[PathResultsSchema])
 @paginate(DandiNinjaPagination)
-def atpath(request, params: Query[AtPathQuerySchema]):
+def atpath(request, params: Query[PathQuerySchema]):
     dandiset = Dandiset.objects.get(id=int(params.dandiset_id))
     version = Version.objects.get(dandiset=dandiset, version=params.version_id)
 
