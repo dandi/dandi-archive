@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Meditor v-if="currentDandiset" />
+    <Meditor v-if="currentDandiset" :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`" />
     <v-toolbar class="grey darken-2 white--text">
       <DandisetSearchField />
       <v-pagination

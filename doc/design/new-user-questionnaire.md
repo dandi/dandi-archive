@@ -36,7 +36,7 @@ them full capabilities of any other normal user (creating/editing dandisets, etc
 
 ### Proposed user signup flow
 1) The user navigates to https://gui.dandiarchive.org and clicks the "LOG IN WITH GITHUB" button.
-2) The user is redirected to GitHub, enters their credentials, and clicks "Sign in". This action creates a new DANDI archive account for the user with the `status` field set to `INCOMPLETE`.
+2) The user is redirected to GitHub, enters their credentials, and clicks "Sign in". This action creates a new DANDI Archive account for the user with the `status` field set to `INCOMPLETE`.
 3) The user is redirected to the SSR rendered questionnaire form and they fill it out and submit it. This populates the `questionnaire_form` field in the DB and sets the `status` field to `PENDING`.
 4) An email is sent to the user confirming their registration and telling them when they can expect approval.
 5) The user is redirected to the DANDI Archive homepage. A banner will be displayed underneath the navbar telling the user that their account is pending approval.

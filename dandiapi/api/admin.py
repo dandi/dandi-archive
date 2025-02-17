@@ -21,6 +21,8 @@ from dandiapi.api.models import (
     AssetBlob,
     AuditRecord,
     Dandiset,
+    DandisetStar,
+    GarbageCollectionEvent,
     Upload,
     UserMetadata,
     Version,
@@ -47,7 +49,7 @@ class SocialAccountInline(TabularInline):
 class UserAdmin(BaseUserAdmin):
     list_select_related = ['metadata']
     list_display = ['email', 'first_name', 'last_name', 'github_username', 'status', 'date_joined']
-    search_fields = ['email', 'first_name', 'last_name']
+    search_fields = ['email', 'first_name', 'last_name', 'socialaccount__extra_data__login']
     inlines = (
         UserMetadataInline,
         SocialAccountInline,
@@ -266,3 +268,17 @@ class AuditRecordAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(GarbageCollectionEvent)
+class GarbageCollectionEventAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(DandisetStar)
+class DandisetStarAdmin(admin.ModelAdmin):
+    list_display = ('user', 'dandiset', 'created')
+    list_filter = ('created',)
+    search_fields = ('user__username', 'dandiset__id')
+    raw_id_fields = ('user', 'dandiset')
+    date_hierarchy = 'created'

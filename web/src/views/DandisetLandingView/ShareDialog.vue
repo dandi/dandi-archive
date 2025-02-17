@@ -92,7 +92,6 @@ import { defineComponent, computed, ref } from 'vue';
 
 import CopyText from '@/components/CopyText.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import { dandiUrl } from '@/utils/constants';
 
 // Twitter user to mention
 const twitterUser = 'DANDIarchive';
@@ -114,7 +113,7 @@ export default defineComponent({
     const meta = computed(() => currentDandiset.value?.metadata);
     const permalink = computed(() => {
       if (currentDandiset.value?.dandiset && currentVersion.value) {
-        return `${dandiUrl}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
+        return `${window.location.origin}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
       }
       return '';
     });

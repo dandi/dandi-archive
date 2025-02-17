@@ -13,6 +13,7 @@ from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import NotAllowedError
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.services.publish.exceptions import (
     DandisetAlreadyPublishedError,
     DandisetAlreadyPublishingError,
@@ -49,7 +50,7 @@ def _lock_dandiset_for_publishing(*, user: User, dandiset: Dandiset) -> None:  #
 
     This function MUST be called before _publish_dandiset is called.
     """
-    if not user.has_perm('owner', dandiset):
+    if not is_dandiset_owner(dandiset, user):
         raise NotAllowedError
 
     if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:

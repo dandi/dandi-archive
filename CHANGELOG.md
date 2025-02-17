@@ -1,3 +1,283 @@
+# v0.4.18 (Fri Feb 07 2025)
+
+#### 🐛 Bug Fix
+
+- Fix dandiset ordering icons, default to descending [#2175](https://github.com/dandi/dandi-archive/pull/2175) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add .git-blame-ignore-revs to improve blame view [#2173](https://github.com/dandi/dandi-archive/pull/2173) ([@danlamanna](https://github.com/danlamanna))
+
+#### Authors: 2
+
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.4.17 (Wed Feb 05 2025)
+
+#### 🐛 Bug Fix
+
+- Check if dandiset contains zarr assets using asset list endpoint [#2170](https://github.com/dandi/dandi-archive/pull/2170) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.4.16 (Wed Feb 05 2025)
+
+#### 🐛 Bug Fix
+
+- Add Dandiset star functionality with UI components [#2123](https://github.com/dandi/dandi-archive/pull/2123) ([@bendichter](https://github.com/bendichter) [@jjnesbitt](https://github.com/jjnesbitt))
+- Design document for "atpath" endpoint [#2155](https://github.com/dandi/dandi-archive/pull/2155) ([@jwodder](https://github.com/jwodder))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- John T. Wodder II ([@jwodder](https://github.com/jwodder))
+
+---
+
+# v0.4.15 (Mon Feb 03 2025)
+
+#### 🐛 Bug Fix
+
+- Update support links in the footer [#2134](https://github.com/dandi/dandi-archive/pull/2134) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+- Update code of conduct contact information [#2157](https://github.com/dandi/dandi-archive/pull/2157) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.4.14 (Tue Jan 28 2025)
+
+#### 🐛 Bug Fix
+
+- Use `Unaccent` with dandiset search filter [#2142](https://github.com/dandi/dandi-archive/pull/2142) ([@jjnesbitt](https://github.com/jjnesbitt))
+- `Upload` and `AssetBlob` garbage collection implementation [#2087](https://github.com/dandi/dandi-archive/pull/2087) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.4.13 (Thu Jan 23 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2152](https://github.com/dandi/dandi-archive/pull/2152) ([@waxlamp](https://github.com/waxlamp))
+- Add `/handbook` redirect to `docs.dandiarchive.org` [#2151](https://github.com/dandi/dandi-archive/pull/2151) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.4.12 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Move Google analytics tag to environment variable to prevent DANDI clones using by accident [#2126](https://github.com/dandi/dandi-archive/pull/2126) (aaronkanzer@dhcp-10-31-181-194.dyn.MIT.EDU [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 2
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@dhcp-10-31-181-194.dyn.MIT.EDU)
+
+---
+
+# v0.4.11 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Upgrade `dandischema` version to 0.11.0 [#2132](https://github.com/dandi/dandi-archive/pull/2132) ([@kabilar](https://github.com/kabilar))
+- Add Netlify link to footer [#2133](https://github.com/dandi/dandi-archive/pull/2133) ([@kabilar](https://github.com/kabilar))
+- Add Terms, Policies, and Code of Conduct to footer [#2135](https://github.com/dandi/dandi-archive/pull/2135) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+- Add Code of Conduct [#2130](https://github.com/dandi/dandi-archive/pull/2130) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.4.10 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI Docs [#2137](https://github.com/dandi/dandi-archive/pull/2137) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.4.9 (Wed Jan 22 2025)
+
+#### 🐛 Bug Fix
+
+- Update URL for DANDI About site [#2138](https://github.com/dandi/dandi-archive/pull/2138) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.4.8 (Tue Jan 21 2025)
+
+#### 🐛 Bug Fix
+
+- Move to 2025 from 2024 in the footer [#2144](https://github.com/dandi/dandi-archive/pull/2144) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.4.7 (Wed Jan 08 2025)
+
+#### 🐛 Bug Fix
+
+- Prevent duplicate serialization of dandiset in detail view [#2125](https://github.com/dandi/dandi-archive/pull/2125) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix reactivity bug in meditor [#2127](https://github.com/dandi/dandi-archive/pull/2127) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.4.6 (Wed Jan 08 2025)
+
+#### 🐛 Bug Fix
+
+- Create permissions service layer [#2115](https://github.com/dandi/dandi-archive/pull/2115) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Design doc for Upload/AssetBlob garbage collection [#2068](https://github.com/dandi/dandi-archive/pull/2068) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.4.5 (Fri Jan 03 2025)
+
+#### 🐛 Bug Fix
+
+- Display validation errors on DLP for embargoed dandisets [#2122](https://github.com/dandi/dandi-archive/pull/2122) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Make logging level of the django app configurable [#2078](https://github.com/dandi/dandi-archive/pull/2078) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 3
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.4.4 (Thu Jan 02 2025)
+
+#### 🐛 Bug Fix
+
+- Set assets to pending during unembargo [#2117](https://github.com/dandi/dandi-archive/pull/2117) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.4.3 (Fri Dec 27 2024)
+
+#### 🐛 Bug Fix
+
+- Enhance OverviewTab.vue to display Resource Type information for DLP items [#2124](https://github.com/dandi/dandi-archive/pull/2124) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
+# v0.4.2 (Thu Dec 19 2024)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger release [#2120](https://github.com/dandi/dandi-archive/pull/2120) ([@waxlamp](https://github.com/waxlamp))
+- Enable User search by GitHub username [#2119](https://github.com/dandi/dandi-archive/pull/2119) ([@waxlamp](https://github.com/waxlamp))
+- DLP: Add "Protocols" card [#2103](https://github.com/dandi/dandi-archive/pull/2103) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp) [@mvandenburgh](https://github.com/mvandenburgh))
+- Login to docker hub only if credentials were provided [#2118](https://github.com/dandi/dandi-archive/pull/2118) ([@yarikoptic](https://github.com/yarikoptic))
+- Capitalize `Archive` when it follows `DANDI` [#2114](https://github.com/dandi/dandi-archive/pull/2114) ([@kabilar](https://github.com/kabilar))
+- Format template [#2112](https://github.com/dandi/dandi-archive/pull/2112) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 4
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.4.1 (Tue Dec 17 2024)
+
+#### 🐛 Bug Fix
+
+- Set version status to PENDING in ingest_zarr_archive [#2111](https://github.com/dandi/dandi-archive/pull/2111) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.4.0 (Mon Dec 16 2024)
+
+#### 🚀 Enhancement
+
+- Add some .debug level messages in tasks upon no action to be performed [#2079](https://github.com/dandi/dandi-archive/pull/2079) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🐛 Bug Fix
+
+- Update shareable link to reflect window.location.origin [#2108](https://github.com/dandi/dandi-archive/pull/2108) (aaronkanzer@Aarons-MacBook-Pro.local [@aaronkanzer](https://github.com/aaronkanzer))
+- Update instructions for serving the web app through a development server [#2095](https://github.com/dandi/dandi-archive/pull/2095) ([@candleindark](https://github.com/candleindark))
+- Use pre-commit hooks in tox configuration [#2057](https://github.com/dandi/dandi-archive/pull/2057) ([@waxlamp](https://github.com/waxlamp))
+- doc: update instruction to natively(locally) run Celery service [#2106](https://github.com/dandi/dandi-archive/pull/2106) ([@candleindark](https://github.com/candleindark) [@mvandenburgh](https://github.com/mvandenburgh))
+- DLP: Have "Cite as" only for OPEN (non embargoed) dandisets [#2102](https://github.com/dandi/dandi-archive/pull/2102) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🧪 Tests
+
+- ENH: run pytest  against dandi-cli with -v to see which tests ran [#2076](https://github.com/dandi/dandi-archive/pull/2076) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 6
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.3.115 (Mon Dec 09 2024)
 
 #### 🐛 Bug Fix

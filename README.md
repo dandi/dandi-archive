@@ -1,6 +1,6 @@
 # EMBER-DANDI Archive
 
-![](https://www.dandiarchive.org/assets/dandi_logo.svg)
+![](https://about.dandiarchive.org/assets/dandi_logo.svg)
 
 ## EMBER: Ecosystem for Multi-modal Brain-behavior Experimentation and Research
 
@@ -23,7 +23,7 @@ Vue-based [frontend](web/) to provide a user interface to the archive.
 ## Resources
 
 * To learn how to interact with the archive,
-see [the handbook](https://www.dandiarchive.org/handbook/).
+see the [DANDI Docs](https://docs.dandiarchive.org).
 
 * To get help:
   - ask a question: https://github.com/dandi/helpdesk/discussions

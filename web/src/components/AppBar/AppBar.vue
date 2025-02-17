@@ -173,6 +173,12 @@ const navItems: NavigationItem[] = [
     if: loggedInFunc,
   },
   {
+    text: 'Starred Dandisets',
+    to: 'starredDandisets',
+    external: false,
+    if: loggedInFunc,
+  },
+  {
     text: 'About',
     to: emberAboutUrl,
     external: true,

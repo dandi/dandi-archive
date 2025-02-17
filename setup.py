@@ -89,6 +89,7 @@ setup(
             'django-stubs',
             'djangorestframework-stubs',
             'types-setuptools',
+            'pre-commit',
         ],
         'test': [
             'factory-boy',

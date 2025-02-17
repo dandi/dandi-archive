@@ -51,11 +51,11 @@
         >
           {{ option.name }}
           <v-icon right>
-            <template v-if="sortDir === 1 || sortOption !== i">
-              mdi-sort-ascending
+            <template v-if="sortDir === -1 || sortOption !== i">
+              mdi-sort-variant
             </template>
             <template v-else>
-              mdi-sort-descending
+              mdi-sort-reverse-variant
             </template>
           </v-icon>
         </v-chip>
@@ -125,6 +125,11 @@ export default defineComponent({
       required: false,
       default: false,
     },
+    starred: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   setup(props) {
     const route = useRoute();
@@ -149,6 +154,7 @@ export default defineComponent({
         ordering,
         user: props.user ? 'me' : null,
         search: props.search ? route.query.search : null,
+        starred: props.starred ? true : null,
         draft: props.user ? true : showDrafts.value,
         empty: props.user ? true : showEmpty.value,
         embargoed: props.user,
@@ -198,7 +204,7 @@ export default defineComponent({
         sortDir.value *= -1;
       } else {
         sortOption.value = index;
-        sortDir.value = 1;
+        sortDir.value = -1;
       }
 
       page.value = 1;

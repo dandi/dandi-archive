@@ -17,6 +17,29 @@
         <v-col offset="2">
           &copy; 2019 - 2024 The DANDI Team<br>
           &copy; 2024 - 2025 JHU/APL.<br>
+          <a
+            target="_blank"
+            rel="noopener"
+            href="https://docs.dandiarchive.org/about/terms/"
+          >Terms</a> 
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://docs.dandiarchive.org/about/policies/"
+          >Policies</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon> / <a
+            target="_blank"
+            rel="noopener"
+            href="https://github.com/dandi/dandi-archive/blob/master/CODE_OF_CONDUCT.md"
+          >Code of Conduct</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+          <br>
           <!-- version
           <a
             class="version-link"
@@ -56,14 +79,37 @@
           - <a
             target="_blank"
             rel="noopener"
-            :href="dandiUrl"
-          >DANDI</a>
+            href="https://netlify.com"
+          >This site is powered by Netlify</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
         </v-col>
         <v-col>
           Support:<br>
+          - <a
+            target="_blank"
+            rel="noopener"
+            :href="dandiUrl"
+          >DANDI</a>
+          <br>
+          - <a
+            target="_blank"
+            rel="noopener"
+            href="mailto:help@dandiarchive.org"
+          >Send an email</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
+        </v-col>
+        <v-col>
+          Support:<br>
+          - <a
+            target="_blank"
+            rel="noopener"
+            href="https://github.com/dandi/helpdesk/issues/new/choose"
+          >File an issue</a>
+          <br>
           - <a
             target="_blank"
             rel="noopener"

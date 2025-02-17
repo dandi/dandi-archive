@@ -82,3 +82,5 @@ def delete_doi(doi: str) -> None:
                 except requests.exceptions.HTTPError:
                     logger.exception('Failed to delete DOI %s', doi)
                     raise
+    else:
+        logger.debug('Skipping DOI deletion for %s since not configured', doi)
