@@ -1,21 +1,21 @@
 {% autoescape off %}
 Dear {{ greeting_name }},
 
-Your DANDI account has been denied approval.
+Your EMBER-DANDI account has been denied approval.
 {% if rejection_reason %}
     Detailed reason:
     {{ rejection_reason }}
 {% endif %}
 
-DANDI is freely accessible to the neuroscience research community. Membership is usually granted automatically to GitHub accounts with a .edu or similar academic email. If your registration is denied:
+EMBER-DANDI is freely accessible to the neuroscience research community. Membership is usually granted automatically to GitHub accounts with a .edu or similar academic email. If your registration is denied:
 
-- With an academic email not linked to your GitHub, please contact help@dandiarchive.org for assistance using this academic email address to verify your academic affiliation.
+- With an academic email not linked to your GitHub, please contact emberarchive@jhuapl.edu for assistance using this academic email address to verify your academic affiliation.
 
-- Without an academic email, account approval is still possible under specific circumstances. You can appeal the decision by contacting help@dandiarchive.org.
+- Without an academic email, account approval is still possible under specific circumstances. You can appeal the decision by contacting emberarchive@jhuapl.edu.
 
 For more information, see the "Create a DANDI Account page" at https://docs.dandiarchive.org/16_account.
 
 Sincerely,
 
-The DANDI team
+The EMBER team
 {% endautoescape %}

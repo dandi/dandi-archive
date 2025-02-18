@@ -1,7 +1,7 @@
 {% autoescape off %}
 Dear {{ greeting_name }},
 
-Your DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account
+Your EMBER-DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account
 to start creating dandisets and uploading data.
 
 Please use the following links to post any questions or issues.
@@ -12,9 +12,9 @@ Issues: https://github.com/dandi/helpdesk/issues/new/choose
 YouTube: https://www.youtube.com/@dandiarchive
 (please Subscribe)
 
-Thank you for choosing DANDI for your neurophysiology data needs.
+Thank you for choosing EMBER-DANDI for your neurophysiology data needs.
 
 Sincerely,
 
-The DANDI team
+The EMBER team
 {% endautoescape %}
