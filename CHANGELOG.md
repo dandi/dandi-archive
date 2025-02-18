@@ -1,3 +1,13 @@
+# v0.4.19
+
+#### 🐛 Bug Fix
+
+- Adjust neurosift external urls for dandisets and nwb files
+
+#### Authors: 1
+
+- Jeremy Magland ([@magland](https://github.com/magland))
+
 # v0.4.18 (Fri Feb 07 2025)
 
 #### 🐛 Bug Fix
