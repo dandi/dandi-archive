@@ -5,33 +5,46 @@ from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.contrib.postgres.lookups import Unaccent
 from django.db import transaction
-from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Max, OuterRef, QuerySet, Subquery, Sum, TextField
+from django.db.models.functions import Cast, Coalesce
 from django.db.models.query_utils import Q
 from django.http import Http404
-from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
-from guardian.decorators import permission_required_or_403
-from guardian.shortcuts import get_objects_for_user
-from guardian.utils import get_40x_or_None
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
+from rest_framework.settings import api_settings as drf_settings
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models.dandiset import DandisetStar
 from dandiapi.api.services import audit
-from dandiapi.api.services.dandiset import create_dandiset, delete_dandiset
+from dandiapi.api.services.dandiset import (
+    create_dandiset,
+    delete_dandiset,
+    star_dandiset,
+    unstar_dandiset,
+)
 from dandiapi.api.services.embargo import kickoff_dandiset_unembargo
 from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
+)
+from dandiapi.api.services.exceptions import DandiError, NotAllowedError, NotAuthenticatedError
+from dandiapi.api.services.permissions.dandiset import (
+    get_dandiset_owners,
+    get_owned_dandisets,
+    get_visible_dandisets,
+    is_dandiset_owner,
+    replace_dandiset_owners,
+    require_dandiset_owner_or_403,
 )
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -51,113 +64,154 @@ from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
+    from rest_framework.views import APIView
 
     from dandiapi.api.models.upload import Upload
 
 
-class DandisetFilterBackend(filters.OrderingFilter):
-    ordering_fields = ['id', 'name', 'modified', 'size']
+class DandisetOrderingFilter(filters.OrderingFilter):
+    ordering_fields = ['id', 'name', 'modified', 'size', 'stars']
     ordering_description = (
         'Which field to use when ordering the results. '
-        'Options are id, -id, name, -name, modified, -modified, size and -size.'
+        'Options are id, -id, name, -name, modified, -modified, size, -size, stars, -stars.'
     )
 
     def filter_queryset(self, request, queryset, view):
         orderings = self.get_ordering(request, queryset, view)
-        if orderings:
-            ordering = orderings[0]
-            # ordering can be either 'created' or '-created', so test for both
-            if ordering.endswith('id'):
-                return queryset.order_by(ordering)
-            if ordering.endswith('name'):
-                # name refers to the name of the most recent version, so a subquery is required
-                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
-                    '-created'
-                )[:1]
-                queryset = queryset.annotate(name=Subquery(latest_version.values('metadata__name')))
-                return queryset.order_by(ordering)
-            if ordering.endswith('modified'):
-                # modified refers to the modification timestamp of the most
-                # recent version, so a subquery is required
-                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
-                    '-created'
-                )[:1]
-                # get the `modified` field of the most recent version.
-                # '_version' is appended because the Dandiset model already has a `modified` field
-                queryset = queryset.annotate(
-                    modified_version=Subquery(latest_version.values('modified'))
+        if not orderings:
+            return queryset
+        ordering = orderings[0]
+
+        # ordering can be either 'created' or '-created', so test for both
+        if ordering.endswith('id'):
+            queryset = queryset.order_by(ordering)
+        elif ordering.endswith('name'):
+            # name refers to the name of the most recent version, so a subquery is required
+            latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
+                :1
+            ]
+            queryset = queryset.annotate(
+                name=Subquery(latest_version.values('metadata__name'))
+            ).order_by(ordering)
+        elif ordering.endswith('modified'):
+            # modified refers to the modification timestamp of the most
+            # recent version, so a subquery is required
+            latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
+                :1
+            ]
+            # get the `modified` field of the most recent version.
+            # '_version' is appended because the Dandiset model already has a `modified` field
+            queryset = queryset.annotate(
+                modified_version=Subquery(latest_version.values('modified'))
+            ).order_by(f'{ordering}_version')
+        elif ordering.endswith('size'):
+            latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by('-created')[
+                :1
+            ]
+            queryset = queryset.annotate(
+                size=Subquery(
+                    latest_version.annotate(
+                        size=Coalesce(Sum('assets__blob__size'), 0)
+                        + Coalesce(Sum('assets__zarr__size'), 0)
+                    ).values('size')
                 )
-                return queryset.order_by(f'{ordering}_version')
-            if ordering.endswith('size'):
-                latest_version = Version.objects.filter(dandiset=OuterRef('pk')).order_by(
-                    '-created'
-                )[:1]
-                queryset = queryset.annotate(
-                    size=Subquery(
-                        latest_version.annotate(
-                            size=Coalesce(Sum('assets__blob__size'), 0)
-                            + Coalesce(Sum('assets__zarr__size'), 0)
-                        ).values('size')
-                    )
-                )
-                return queryset.order_by(ordering)
+            ).order_by(ordering)
+        elif ordering.endswith('stars'):
+            prefix = '-' if ordering.startswith('-') else ''
+            queryset = queryset.annotate(stars_count=Count('stars')).order_by(
+                f'{prefix}stars_count'
+            )
+
         return queryset
+
+
+class DandisetSearchFilter(filters.BaseFilterBackend):
+    search_param = drf_settings.SEARCH_PARAM
+
+    def get_search_term(self, request):
+        param = request.query_params.get(self.search_param, '')
+        return param.replace('\x00', '')  # strip null characters
+
+    def filter_queryset(self, request: Request, queryset: QuerySet, view: APIView) -> QuerySet:
+        search_term = self.get_search_term(request=request)
+        if not search_term:
+            return queryset
+
+        # We must formulate the filter using a separate query first, as otherwise
+        # the generated SQL is incompatible previously generated clauses
+        matching_dandiset_ids = (
+            Version.objects.alias(search_field=Unaccent(Cast('metadata', TextField())))
+            .filter(search_field__icontains=search_term)
+            .values_list('dandiset_id', flat=True)
+            .distinct()
+        )
+
+        return queryset.filter(id__in=matching_dandiset_ids)
 
 
 class DandisetViewSet(ReadOnlyModelViewSet):
     serializer_class = DandisetDetailSerializer
     pagination_class = DandiPagination
-    filter_backends = [filters.SearchFilter, DandisetFilterBackend]
-    search_fields = ['versions__metadata']
+    filter_backends = [DandisetSearchFilter, DandisetOrderingFilter]
 
     lookup_value_regex = Dandiset.IDENTIFIER_REGEX
     # This is to maintain consistency with the auto-generated names shown in swagger.
     lookup_url_kwarg = 'dandiset__pk'
 
     def get_queryset(self):
-        # Only include embargoed dandisets which belong to the current user
         queryset = Dandiset.objects
-        if self.action in ['list', 'search']:
-            queryset = Dandiset.objects.visible_to(self.request.user).order_by('created')
+        if self.action not in ['list', 'search']:
+            return queryset
 
-            query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
-            query_serializer.is_valid(raise_exception=True)
+        queryset = get_visible_dandisets(self.request.user).order_by('created')
 
-            # TODO: This will filter the dandisets list if there is a query parameter user=me.
-            # This is not a great solution but it is needed for the My Dandisets page.
-            user_kwarg = query_serializer.validated_data.get('user')
-            if user_kwarg == 'me':
-                # Replace the original, rather inefficient queryset with a more specific one
-                queryset = get_objects_for_user(
-                    self.request.user, 'owner', Dandiset, with_superuser=False
-                ).order_by('created')
+        query_serializer = DandisetQueryParameterSerializer(data=self.request.query_params)
+        query_serializer.is_valid(raise_exception=True)
 
-            show_draft: bool = query_serializer.validated_data['draft']
-            show_empty: bool = query_serializer.validated_data['empty']
-            show_embargoed: bool = query_serializer.validated_data['embargoed']
+        # TODO: This will filter the dandisets list if there is a query parameter user=me.
+        # This is not a great solution but it is needed for the My Dandisets page.
+        user_kwarg = query_serializer.validated_data.get('user')
+        if user_kwarg == 'me':
+            # Replace the original, rather inefficient queryset with a more specific one
+            queryset = get_owned_dandisets(self.request.user, include_superusers=False).order_by(
+                'created'
+            )
 
-            # Return early if attempting to access embargoed data without authentication
-            if show_embargoed and not self.request.user.is_authenticated:
-                raise UnauthorizedEmbargoAccessError
+        show_draft: bool = query_serializer.validated_data['draft']
+        show_empty: bool = query_serializer.validated_data['empty']
+        show_embargoed: bool = query_serializer.validated_data['embargoed']
+        filter_starred: bool = query_serializer.validated_data['starred']
 
-            if not show_draft:
-                # Only include dandisets that have more than one version, i.e. published dandisets.
-                queryset = queryset.annotate(version_count=Count('versions')).filter(
-                    version_count__gt=1
+        # Return early if attempting to access embargoed data without authentication
+        if show_embargoed and not self.request.user.is_authenticated:
+            raise UnauthorizedEmbargoAccessError
+
+        if not show_draft:
+            # Only include dandisets that have more than one version, i.e. published dandisets.
+            queryset = queryset.annotate(version_count=Count('versions')).filter(
+                version_count__gt=1
+            )
+        if not show_empty:
+            # Only include dandisets that have assets in their most recent version.
+            most_recent_version = (
+                Version.objects.filter(dandiset=OuterRef('pk'))
+                .order_by('-created')
+                .annotate(asset_count=Count('assets'))[:1]
+            )
+            queryset = queryset.annotate(
+                asset_count=Subquery(most_recent_version.values('asset_count'))
+            )
+            queryset = queryset.filter(asset_count__gt=0)
+        if not show_embargoed:
+            queryset = queryset.filter(embargo_status='OPEN')
+        if filter_starred:
+            if not self.request.user.is_authenticated:
+                raise NotAuthenticatedError(
+                    message='Must be authenticated to filter by starred dandisets.'
                 )
-            if not show_empty:
-                # Only include dandisets that have assets in their most recent version.
-                most_recent_version = (
-                    Version.objects.filter(dandiset=OuterRef('pk'))
-                    .order_by('-created')
-                    .annotate(asset_count=Count('assets'))[:1]
-                )
-                queryset = queryset.annotate(
-                    asset_count=Subquery(most_recent_version.values('asset_count'))
-                )
-                queryset = queryset.filter(asset_count__gt=0)
-            if not show_embargoed:
-                queryset = queryset.filter(embargo_status='OPEN')
+
+            queryset = queryset.filter(stars__user=self.request.user).order_by('-stars__created')
+
         return queryset
 
     def require_owner_perm(self, dandiset: Dandiset):
@@ -167,7 +221,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         # Raise 403 if unauthorized
         self.request.user = typing.cast(User, self.request.user)
-        if not self.request.user.has_perm('owner', dandiset):
+        if not is_dandiset_owner(dandiset, self.request.user):
             raise PermissionDenied
 
     def get_object(self):
@@ -186,6 +240,36 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             self.require_owner_perm(dandiset)
 
         return dandiset
+
+    def _get_dandiset_star_context(self, dandisets):
+        # Default value for all relevant dandisets
+        dandisets_to_stars = {
+            d.id: {'total': 0, 'starred_by_current_user': False} for d in dandisets
+        }
+
+        # Group the stars for these dandisets by the dandiset ID,
+        # yielding pairs of (Dandiset ID, Star Count)
+        dandiset_stars = (
+            DandisetStar.objects.filter(dandiset__in=dandisets)
+            .values_list('dandiset')
+            .annotate(star_count=Count('id'))
+            .order_by()
+        )
+        for dandiset_id, star_count in dandiset_stars:
+            dandisets_to_stars[dandiset_id]['total'] = star_count
+
+        # Only annotate dandisets as starred by current user if user is logged in
+        user = self.request.user
+        if user.is_anonymous:
+            return dandisets_to_stars
+        user = typing.cast(User, user)
+
+        # Filter previous query to current user stars
+        user_starred_dandisets = dandiset_stars.filter(user=user)
+        for dandiset_id, _ in user_starred_dandisets:
+            dandisets_to_stars[dandiset_id]['starred_by_current_user'] = True
+
+        return dandisets_to_stars
 
     @staticmethod
     def _get_dandiset_to_version_map(dandisets):
@@ -257,6 +341,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         qs = self.get_queryset()
         dandisets = self.filter_queryset(qs).filter(id__in=relevant_assets.values('dandiset_id'))
         dandisets = self.paginate_queryset(dandisets)
+        dandiset_stars = self._get_dandiset_star_context(dandisets)
         dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
         dandisets_to_asset_counts = (
             AssetSearch.objects.values('dandiset_id')
@@ -278,7 +363,11 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         serializer = DandisetSearchResultListSerializer(
             dandisets,
             many=True,
-            context={'dandisets': dandisets_to_versions, 'asset_counts': dandisets_to_asset_counts},
+            context={
+                'dandisets': dandisets_to_versions,
+                'asset_counts': dandisets_to_asset_counts,
+                'stars': dandiset_stars,
+            },
         )
         return self.get_paginated_response(serializer.data)
 
@@ -290,8 +379,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         qs = self.get_queryset()
         dandisets = self.paginate_queryset(self.filter_queryset(qs))
         dandisets_to_versions = self._get_dandiset_to_version_map(dandisets)
+        dandiset_stars = self._get_dandiset_star_context(dandisets)
         serializer = DandisetListSerializer(
-            dandisets, many=True, context={'dandisets': dandisets_to_versions}
+            dandisets,
+            many=True,
+            context={
+                'dandisets': dandisets_to_versions,
+                'stars': dandiset_stars,
+            },
         )
         return self.get_paginated_response(serializer.data)
 
@@ -359,7 +454,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         ),
     )
     @action(methods=['POST'], detail=True)
-    @method_decorator(permission_required_or_403('owner', (Dandiset, 'pk', 'dandiset__pk')))
+    @require_dandiset_owner_or_403('dandiset__pk')
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
         kickoff_dandiset_unembargo(user=request.user, dandiset=dandiset)
@@ -382,8 +477,10 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             400: 'User not found, or cannot remove all owners',
         },
         operation_summary='Set owners of a dandiset.',
-        operation_description='Set the owners of a dandiset. The user performing this action must\
-                               be an owner of the dandiset themself.',
+        operation_description=(
+            'Set the owners of a dandiset. The user performing this action must '
+            'be an owner of the dandiset themself.'
+        ),
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
@@ -394,9 +491,8 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 raise DandisetUnembargoInProgressError
 
             # Verify that the user is currently an owner
-            response = get_40x_or_None(request, ['owner'], dandiset, return_403=True)
-            if response:
-                return response
+            if not is_dandiset_owner(dandiset, request.user):
+                raise NotAllowedError
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -427,7 +523,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             # All owners found
             with transaction.atomic():
                 owners = user_owners + [acc.user for acc in socialaccount_owners]
-                removed_owners, added_owners = dandiset.set_owners(owners)
+                removed_owners, added_owners = replace_dandiset_owners(dandiset, owners)
                 dandiset.save()
 
                 if removed_owners or added_owners:
@@ -441,7 +537,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             send_ownership_change_emails(dandiset, removed_owners, added_owners)
 
         owners = []
-        for owner_user in dandiset.owners:
+        for owner_user in get_dandiset_owners(dandiset):
             try:
                 owner_account = SocialAccount.objects.get(user=owner_user)
                 owner_dict = {'username': owner_account.extra_data['login']}
@@ -502,3 +598,39 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset.uploads.all().delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        methods=['POST'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'Dandiset starred successfully',
+            401: 'Authentication required',
+        },
+        operation_summary='Star a dandiset.',
+        operation_description='Star a dandiset. User must be authenticated.',
+    )
+    @swagger_auto_schema(
+        methods=['DELETE'],
+        manual_parameters=[DANDISET_PK_PARAM],
+        request_body=no_body,
+        responses={
+            200: 'Dandiset unstarred successfully',
+            401: 'Authentication required',
+        },
+        operation_summary='Unstar a dandiset.',
+        operation_description='Unstar a dandiset. User must be authenticated.',
+    )
+    @action(methods=['POST', 'DELETE'], detail=True)
+    def star(self, request, dandiset__pk) -> Response:
+        dandiset = self.get_object()
+        if request.method == 'POST':
+            star_count = star_dandiset(user=request.user, dandiset=dandiset)
+        elif request.method == 'DELETE':
+            star_count = unstar_dandiset(user=request.user, dandiset=dandiset)
+        else:
+            raise DandiError(
+                message='Method not allowed.', http_status_code=status.HTTP_405_METHOD_NOT_ALLOWED
+            )
+
+        return Response({'count': star_count}, status=status.HTTP_200_OK)

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from django.conf import settings
-from guardian.shortcuts import assign_perm
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.models import AssetPath
+from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset import add_asset_to_version
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
@@ -108,7 +109,7 @@ def test_ingest_zarr_archive_assets(zarr_archive_factory, zarr_file_factory, dra
 @pytest.mark.django_db(transaction=True)
 def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory, zarr_file_factory):
     """Ensure that if the zarr associated to an asset is modified and then ingested, it succeeds."""
-    assign_perm('owner', user, draft_version.dandiset)
+    add_dandiset_owner(draft_version.dandiset, user)
 
     # Ensure zarr is ingested with non-zero size
     zarr_archive = zarr_archive_factory(
@@ -142,6 +143,29 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory,
     # Ingest zarr
     asset.refresh_from_db()
     ingest_zarr_archive(zarr_archive.zarr_id)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ingest_zarr_archive_sets_version_pending(
+    draft_version_factory, zarr_archive_factory, zarr_file_factory
+):
+    """Ensure that when a zarr is ingested, it sets the version back to PENDING."""
+    draft_version = draft_version_factory(status=Version.Status.VALID)
+    assert draft_version.status == Version.Status.VALID
+
+    # Ensure zarr has non-zero size
+    zarr_archive = zarr_archive_factory(
+        dandiset=draft_version.dandiset, status=ZarrArchiveStatus.UPLOADED
+    )
+    zarr_file_factory(zarr_archive=zarr_archive, size=100)
+
+    # Kick off ingest
+    ingest_zarr_archive(zarr_archive.zarr_id)
+    zarr_archive.refresh_from_db()
+    draft_version.refresh_from_db()
+
+    # Check that version is now `PENDING`, instead of VALID
+    assert draft_version.status == Version.Status.PENDING
 
 
 @pytest.mark.django_db(transaction=True)

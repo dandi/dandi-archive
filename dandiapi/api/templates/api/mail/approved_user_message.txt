@@ -6,7 +6,7 @@ to start creating dandisets and uploading data.
 
 Please use the following links to post any questions or issues.
 
-DANDI Handbook: https://www.dandiarchive.org/handbook
+DANDI Docs: https://docs.dandiarchive.org
 Discussions: https://github.com/dandi/helpdesk/discussions
 Issues: https://github.com/dandi/helpdesk/issues/new/choose
 YouTube: https://www.youtube.com/@dandiarchive

@@ -8,6 +8,8 @@ from django.core import mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
+from dandiapi.api.services.permissions.dandiset import get_dandiset_owners
+
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
@@ -207,7 +209,7 @@ def build_dandiset_unembargoed_message(dandiset: Dandiset):
         subject='Your Dandiset has been unembargoed!',
         message=strip_tags(html_message),
         html_message=html_message,
-        to=[owner.email for owner in dandiset.owners],
+        to=[owner.email for owner in get_dandiset_owners(dandiset)],
     )
 
 
@@ -229,7 +231,7 @@ def build_dandiset_unembargo_failed_message(dandiset: Dandiset):
         subject=f'EMBER-DANDI: Unembargo failed for dandiset {dandiset.identifier}',
         message=strip_tags(html_message),
         html_message=html_message,
-        to=[owner.email for owner in dandiset.owners],
+        to=[owner.email for owner in get_dandiset_owners(dandiset)],
         bcc=[settings.DANDI_DEV_EMAIL],
         reply_to=[ADMIN_EMAIL],
     )
