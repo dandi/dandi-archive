@@ -1,15 +1,14 @@
 {% autoescape off %}
 Dear {{ greeting_name }},
 
-Welcome to EMBER.
+Welcome to EMBER-DANDI.
 
 
-Thank you for registering on the EMBER Archive. Your account is now pending approval by
-a EMBER admin. Once approved, you will be able to create Dandisets and upload data right
+Thank you for registering on the EMBER-DANDI archive. Your account is now pending approval by
+an EMBER-DANDI admin. Once approved, you will be able to create Dandisets and upload data right
 away.
 
-It may take up to 48 hours for your account to be approved and for your email to be
-registered with our Slack workspace.
+It may take up to 48 hours for your account to be approved.
 
 Please use the following links to post any questions or issues.
 
@@ -24,7 +23,7 @@ Issues: https://github.com/dandi/helpdesk/issues/new/choose
 DANDI YouTube: https://www.youtube.com/@dandiarchive
 (please Subscribe)
 
-Thank you for choosing EMBER for your data needs.
+Thank you for choosing EMBER-DANDI for your neurophysiology data needs.
 
 Sincerely,
 
