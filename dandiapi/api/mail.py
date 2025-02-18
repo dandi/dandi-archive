@@ -24,7 +24,7 @@ BASE_RENDER_CONTEXT = {
 }
 
 # TODO: turn this into a Django setting
-ADMIN_EMAIL = 'BBQS-EMBER-Admin@jhuapl.edu'
+ADMIN_EMAIL = 'emberarchive@jhuapl.edu'
 
 
 def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
