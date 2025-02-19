@@ -1,5 +1,5 @@
 <template>
-  <v-footer class="text-body-2" app>
+  <v-footer class="text-body-2">
     <v-container>
       <cookie-law theme="blood-orange">
         <div slot="message">
@@ -84,20 +84,12 @@
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
-        </v-col>
-        <v-col>
-          Support:<br>
+          <br>
           - <a
             target="_blank"
             rel="noopener"
             :href="dandiUrl"
           >DANDI</a>
-          <br>
-          - <a
-            target="_blank"
-            rel="noopener"
-            href="mailto:help@dandiarchive.org"
-          >Send an email</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
@@ -107,14 +99,17 @@
           - <a
             target="_blank"
             rel="noopener"
-            href="https://github.com/dandi/helpdesk/issues/new/choose"
-          >File an issue</a>
+            href="mailto:help@emberarchive.org"
+          >Send an email</a>
+          <v-icon x-small>
+            mdi-open-in-new
+          </v-icon>
           <br>
           - <a
             target="_blank"
             rel="noopener"
-            :href="emberGitHubUrl"
-          >Project GitHub</a>
+            href="https://github.com/dandi/helpdesk/issues/new/choose"
+          >File an issue</a>
           <v-icon x-small>
             mdi-open-in-new
           </v-icon>
