@@ -1,3 +1,15 @@
+# v0.4.19 (Wed Feb 19 2025)
+
+#### 🐛 Bug Fix
+
+- Boost us back to 2025 in the footer after having it lost during merge conflict resolving [#2183](https://github.com/dandi/dandi-archive/pull/2183) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.4.18 (Fri Feb 07 2025)
 
 #### 🐛 Bug Fix
