@@ -4,7 +4,7 @@ from django.db import models
 
 
 class AssetPath(models.Model):
-    path = models.CharField(max_length=512)
+    path = models.CharField(max_length=512, db_collation='C')
 
     # Protect deletion, since otherwise aggregate fields would become out of sync
     asset = models.ForeignKey(
