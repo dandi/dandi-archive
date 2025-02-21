@@ -175,3 +175,60 @@ def test_asset_atpath_folder(api_client, user, draft_version, asset_blob):
     assert resp.json()['results'][0]['type'] == 'folder'
     assert resp.json()['results'][1]['type'] == 'asset'
     assert resp.json()['results'][2]['type'] == 'asset'
+
+
+@pytest.mark.django_db
+def test_asset_atpath_path_missing(api_client, user, draft_version, asset_blob):
+    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata={
+            'path': 'foo/bar.txt',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset.identifier,
+            'version_id': draft_version.version,
+            'path': 'foobartxt',
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()['count'] == 0
+
+
+@pytest.mark.django_db
+def test_asset_atpath_path_incorrect_dandiset_id(api_client, user, draft_version, asset_blob):
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': '123456',
+            'version_id': 'draft',
+            'path': '',
+        },
+    )
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_asset_atpath_path_incorrect_version_id(api_client, user, draft_version, asset_blob):
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset,
+            'version_id': 'typo',
+            'path': '',
+        },
+    )
+    assert resp.status_code == 404

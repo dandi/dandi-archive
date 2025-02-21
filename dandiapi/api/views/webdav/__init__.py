@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
 from dandiapi.api.asset_paths import get_path_children
 from dandiapi.api.models.asset_paths import AssetPath
-from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
 from dandiapi.api.views.common import PAGINATION_PARAMS
 from dandiapi.api.views.pagination import DandiPagination
@@ -64,8 +64,11 @@ def atpath(request):
     query_serializer.is_valid(raise_exception=True)
 
     params = query_serializer.validated_data
-    dandiset = Dandiset.objects.get(id=int(params['dandiset_id']))
-    version = Version.objects.get(dandiset=dandiset, version=params['version_id'])
+    version = get_object_or_404(
+        Version.objects.select_related('dandiset'),
+        dandiset_id=int(params['dandiset_id']),
+        version=params['version_id'],
+    )
 
     qs = get_atpath_queryset(version=version, path=params['path'], children=params['children'])
 
