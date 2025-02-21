@@ -5,10 +5,12 @@ from typing import TYPE_CHECKING
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import PermissionDenied
 
 from dandiapi.api.asset_paths import get_path_children
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.version import Version
+from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.views.common import PAGINATION_PARAMS
 from dandiapi.api.views.pagination import DandiPagination
 
@@ -16,6 +18,7 @@ from .serializers import AtPathQuerySerializer, PathResultSerializer
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+    from rest_framework.request import Request
 
 
 def get_atpath_queryset(*, version: Version, path: str, children: bool) -> QuerySet[AssetPath]:
@@ -59,7 +62,7 @@ def get_atpath_queryset(*, version: Version, path: str, children: bool) -> Query
     method='GET',
 )
 @api_view(['GET'])
-def atpath(request):
+def atpath(request: Request):
     query_serializer = AtPathQuerySerializer(data=request.query_params)
     query_serializer.is_valid(raise_exception=True)
 
@@ -69,6 +72,9 @@ def atpath(request):
         dandiset_id=int(params['dandiset_id']),
         version=params['version_id'],
     )
+
+    if not is_dandiset_owner(version.dandiset, request.user):
+        raise PermissionDenied
 
     qs = get_atpath_queryset(version=version, path=params['path'], children=params['children'])
 

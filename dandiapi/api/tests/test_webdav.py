@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.conf import settings
 import pytest
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
@@ -232,3 +233,36 @@ def test_asset_atpath_path_incorrect_version_id(api_client, user, draft_version,
         },
     )
     assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_asset_atpath_embargoed_access(
+    api_client, user_factory, dandiset_factory, draft_version_factory
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    draft_version = draft_version_factory(dandiset=dandiset)
+
+    user = user_factory()
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset.identifier,
+            'version_id': draft_version.version,
+            'path': '',
+        },
+    )
+    assert resp.status_code == 403
+
+    add_dandiset_owner(dandiset, user)
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset.identifier,
+            'version_id': draft_version.version,
+            'path': '',
+        },
+    )
+    assert resp.status_code == 200
