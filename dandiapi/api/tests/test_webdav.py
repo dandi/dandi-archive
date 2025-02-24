@@ -266,3 +266,20 @@ def test_asset_atpath_embargoed_access(
         },
     )
     assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_asset_atpath_public_access(api_client, dandiset_factory, draft_version_factory):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    draft_version = draft_version_factory(dandiset=dandiset)
+
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset.identifier,
+            'version_id': draft_version.version,
+            'path': '',
+        },
+    )
+    assert resp.status_code == 200

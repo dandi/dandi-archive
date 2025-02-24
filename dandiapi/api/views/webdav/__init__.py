@@ -20,6 +20,8 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
     from rest_framework.request import Request
 
+    from dandiapi.api.models.dandiset import Dandiset
+
 
 def get_atpath_queryset(*, version: Version, path: str, children: bool) -> QuerySet[AssetPath]:
     select_related_clauses = ('asset', 'asset__blob')
@@ -72,8 +74,10 @@ def atpath(request: Request):
         dandiset_id=int(params['dandiset_id']),
         version=params['version_id'],
     )
+    dandiset: Dandiset = version.dandiset
 
-    if not is_dandiset_owner(version.dandiset, request.user):
+    # Ensure embargoed dandisets are only accessed by owners
+    if dandiset.embargoed and not is_dandiset_owner(dandiset, request.user):
         raise PermissionDenied
 
     qs = get_atpath_queryset(version=version, path=params['path'], children=params['children'])
