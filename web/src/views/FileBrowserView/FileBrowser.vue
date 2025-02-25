@@ -230,7 +230,8 @@
                       <v-list-item
                         v-for="el in item.services"
                         :key="el.name"
-                        :href="el.url"
+                        @click="el.isPublicNeuroglancer ? redirectNeuroglancerUrl(item) : null"
+                        :href="!el.isPublicNeuroglancer ? el.url : null"
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -288,6 +289,7 @@ const FILES_PER_PAGE = 15;
 interface AssetService {
   name: string,
   url: string,
+  isPublicNeuroglancer: boolean,
 }
 
 interface ExtendedAssetPath extends AssetPath {
@@ -330,7 +332,6 @@ const EXTERNAL_SERVICES = [
     maxsize: 1e9,
     endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=$asset_url$',
   },
-
   {
     name: 'VTK/ITK Viewer',
     regex: /\.ome\.zarr$/,
@@ -351,19 +352,23 @@ const EXTERNAL_SERVICES = [
     maxsize: Infinity,
     endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   },
-
   {
     name: 'Neurosift',
     regex: /\.nwb\.lindi\.(json|tar)$/,
     maxsize: Infinity,
     endpoint: 'https://neurosift.app?p=/nwb&url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
   },
-
   {
     name: 'Neurosift',
     regex: /\.avi$/,
     maxsize: Infinity,
     endpoint: 'https://neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+  },
+  {
+    name: 'Neuroglancer',
+    regex: /\.nii(\.gz)?$|\.zarr$/,
+    maxsize: Infinity,
+    endpoint: '', // defaults to redirectNeuroglancerUrl logic
   }
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -453,6 +458,7 @@ function getExternalServices(path: AssetPath, info: {dandisetId: string, dandise
         assetDandiUrl,
         assetS3Url,
       }),
+      isPublicNeuroglancer: service.name === 'Neuroglancer' && !embargoed.value,
     }));
 }
 
@@ -555,6 +561,31 @@ async function deleteAsset() {
   // Recompute the items to display in the browser.
   getItems();
   itemToDelete.value = null;
+}
+
+function redirectNeuroglancerUrl(item: any) {
+    const assetS3Url = trimEnd((item.asset as AssetFile).url, '/');
+    const baseUrl = `https://neuroglancer-demo.appspot.com/#!`;  // Public neuroglancer instance
+    const jsonObject = {
+        layers: [
+            {
+                type: "new",
+                source: assetS3Url.includes("zarr") ? `zarr://${assetS3Url}`
+                  : `nifti://${assetS3Url}`,
+                tab: "source",
+                name: item.asset.asset_id
+            }
+        ],
+        selectedLayer: {
+            visible: true,
+            layer: item.asset.asset_id
+        },
+        layout: "4panel"
+    };
+
+    const jsonStr = JSON.stringify(jsonObject);
+    const encodedJson = encodeURIComponent(jsonStr);
+    window.open(`${baseUrl}${encodedJson}`);
 }
 
 // Update URL if location changes
