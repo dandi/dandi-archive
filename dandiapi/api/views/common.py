@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from drf_yasg import openapi
 
+from dandiapi.api.views.pagination import DandiPagination
+
 ASSET_ID_PARAM = openapi.Parameter(
     'asset_id',
     openapi.IN_PATH,
@@ -44,3 +46,23 @@ VERSIONS_VERSION_PARAM = openapi.Parameter(
     required=True,
     pattern=r'(0\.\d{6}\.\d{4})|draft',
 )
+
+
+PAGINATION_PARAMS = [
+    openapi.Parameter(
+        DandiPagination.page_query_param,
+        openapi.IN_QUERY,
+        'The page number',
+        type=openapi.TYPE_INTEGER,
+        required=False,
+        default=1,
+    ),
+    openapi.Parameter(
+        DandiPagination.page_size_query_param,
+        openapi.IN_QUERY,
+        'The page size',
+        type=openapi.TYPE_INTEGER,
+        required=False,
+        default=DandiPagination.page_size,
+    ),
+]

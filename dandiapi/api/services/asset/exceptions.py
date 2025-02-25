@@ -7,6 +7,7 @@ from dandiapi.api.services.exceptions import DandiError
 
 class DandisetOwnerRequiredError(DandiError):
     http_status_code = status.HTTP_403_FORBIDDEN
+    message = 'A dandiset owner is required to perform this action.'
 
 
 class DraftDandisetNotModifiableError(DandiError):

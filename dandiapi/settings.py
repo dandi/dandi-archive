@@ -147,6 +147,11 @@ class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
         'from dandiapi.api.mail import *',
     ]
 
+    @staticmethod
+    def mutate_configuration(config: type[ComposedConfiguration]):
+        # This allows django-debug-toolbar to run in swagger and show the last made request
+        config.DEBUG_TOOLBAR_CONFIG['UPDATE_ON_FETCH'] = True
+
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'

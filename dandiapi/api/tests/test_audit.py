@@ -110,10 +110,11 @@ def test_audit_change_owners(api_client, user_factory, draft_version):
 
     rec = get_latest_audit_record(dandiset=dandiset, record_type='change_owners')
     verify_model_properties(rec, alice)
-    assert rec.details == {
-        'added_owners': [user_info(u) for u in [bob, charlie]],
-        'removed_owners': [user_info(u) for u in [alice]],
-    }
+
+    assert sorted(rec.details['added_owners'], key=lambda x: x['username']) == sorted(
+        [user_info(u) for u in [bob, charlie]], key=lambda x: x['username']
+    )
+    assert rec.details['removed_owners'] == [user_info(alice)]
 
 
 @pytest.mark.django_db

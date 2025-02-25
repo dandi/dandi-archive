@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.db.models import Q, QuerySet
 import pytest
 
@@ -15,7 +16,9 @@ from dandiapi.api.asset_paths import (
 )
 from dandiapi.api.models import Asset, AssetPath, Version
 from dandiapi.api.models.asset_paths import AssetPathRelation
+from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.asset.exceptions import AssetAlreadyExistsError
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import publish_dandiset_task
 
 
@@ -357,3 +360,41 @@ def test_asset_path_get_root_paths_many(draft_version_factory, asset_factory):
     assert (
         get_root_paths_many(Version.objects.filter(id__in=[version.id, version2.id])).count() == 8
     )
+
+
+@pytest.mark.django_db
+def test_asset_path_ordering(draft_version, asset_blob, user):
+    # The default collation will ignore special characters, including slashes, on the first pass. If
+    # there are ties, it uses these characters to break ties. This means that in the below example,
+    # removing the slashes leads to a comparison of 'az' and 'aaz', which would obviously sort the
+    # latter before the former ('aaz', then 'az'). However, with the slashes, it's clear that 'a/z'
+    # should come before 'aa/z'. This is fixed by changing the collation of the path field, and as
+    # such this test serves as a regression test.
+
+    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata={
+            'path': 'a/z',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+    add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata={
+            'path': 'aa/z',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+
+    # This listing scenario likely wouldn't occur in the wild, due to how asset paths are
+    # implemented. Nonetheless, it is a good test of this functionality.
+    paths = AssetPath.objects.filter(version=draft_version, path__in=['a/z', 'aa/z']).order_by(
+        'path'
+    )
+    assert paths[0].path == 'a/z'
+    assert paths[1].path == 'aa/z'

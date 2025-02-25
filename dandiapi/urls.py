@@ -29,6 +29,7 @@ from dandiapi.api.views import (
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
+    webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
@@ -55,33 +56,8 @@ router = ExtendedSimpleRouter()
 router.register('assets', AssetViewSet, basename='asset')
 router.register('zarr', ZarrViewSet, basename='zarr')
 
-
-schema_view = get_schema_view(
-    openapi.Info(
-        title='DANDI Archive',
-        default_version='v1',
-        description='The BRAIN Initiative archive for publishing and sharing '
-        'cellular neurophysiology data',
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
-
-
-class DandisetIDConverter:
-    regex = r'\d{6}'
-
-    def to_python(self, value):
-        return value
-
-    def to_url(self, value):
-        return value
-
-
-register_converter(DandisetIDConverter, 'dandiset_id')
-urlpatterns = [
-    path('', root_content_view),
-    path('robots.txt', robots_txt_view, name='robots_txt'),
+# All core API endpoints
+api_urlpatterns = [
     path('api/', include(router.urls)),
     path('api/auth/token/', auth_token_view, name='auth-token'),
     path('api/stats/', stats_view),
@@ -105,6 +81,50 @@ urlpatterns = [
     ),
     path('api/search/genotypes/', search_genotypes),
     path('api/search/species/', search_species),
+]
+schema_view = get_schema_view(
+    openapi.Info(
+        title='DANDI Archive',
+        default_version='v1',
+        description='The BRAIN Initiative archive for publishing and sharing '
+        'cellular neurophysiology data',
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    patterns=api_urlpatterns,
+)
+
+# Webdav only endpoints
+webdav_urlpatterns = [
+    path('api/webdav/assets/atpath', webdav.atpath),
+]
+webdav_schema_view = get_schema_view(
+    openapi.Info(
+        title='Webdav API',
+        default_version='v1',
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    patterns=webdav_urlpatterns,
+)
+
+
+class DandisetIDConverter:
+    regex = r'\d{6}'
+
+    def to_python(self, value):
+        return value
+
+    def to_url(self, value):
+        return value
+
+
+register_converter(DandisetIDConverter, 'dandiset_id')
+urlpatterns = [
+    path('', root_content_view),
+    path('robots.txt', robots_txt_view, name='robots_txt'),
+    *api_urlpatterns,
+    *webdav_urlpatterns,
     path('admin/', admin.site.urls),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
@@ -112,9 +132,15 @@ urlpatterns = [
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),
+    # Doc page views
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path(
+        'api/webdav/docs/swagger/',
+        webdav_schema_view.with_ui('swagger', cache_timeout=0),
+        name='webdav-schema-swagger-ui',
+    ),
 ]
 
 if settings.ENABLE_GITHUB_OAUTH:
