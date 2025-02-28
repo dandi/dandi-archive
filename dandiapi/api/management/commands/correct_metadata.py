@@ -14,33 +14,37 @@ from dandiapi.api.tasks import write_manifest_files
 
 
 @click.command(
-    help='Correct corrupted metadata. If `--dandiset` and `--dandiset-version` are provided, '
-    'apply the correction to the specified Dandiset version. Otherwise, apply the correction to '
-    'all Dandiset versions.'
+    help='Correct corrupted metadata. If `--all` is provided, apply the correction to '
+    'all Dandiset versions. Otherwise, provide the Dandiset and Dandiset version to '
+    'apply the correction to.'
 )
+@click.argument('dandiset', required=False)
+@click.argument('dandiset_version', required=False)
 @click.option(
-    '--dandiset',
-    'dandiset',
-    help='The Dandiset. (This must be provided if `--dandiset-version` is provided.)',
+    '--all',
+    'apply_to_all',
+    is_flag=True,
+    default=False,
+    help='Apply the correction to all Dandiset versions '
+    '(cannot be combined with dandiset arguments).',
 )
-@click.option(
-    '--dandiset-version',
-    'dandiset_version',
-    help='The version of the Dandiset. (This must be provided if `--dandiset` is provided.)',
-)
-def correct_metadata(*, dandiset: str | None, dandiset_version: str | None):
+def correct_metadata(*, dandiset: str | None, dandiset_version: str | None, apply_to_all: bool):
+    if apply_to_all:
+        if dandiset is not None or dandiset_version is not None:
+            raise click.UsageError(
+                'Cannot specify `--all` together with `dandiset` or `dandiset_version` arguments.'
+            )
+    elif dandiset is None or dandiset_version is None:
+        raise click.UsageError(
+            'Either `--all` or two arguments (dandiset, dandiset_version) must be provided.'
+        )
+
     # Func to use to correct the metadata (update as needed)
     correct_func: Callable[[dict], dict | None] = correct_affiliation_corruption
 
-    # Ensure both options are provided together (or both omitted)
-    if (dandiset is None) != (dandiset_version is None):
-        raise click.UsageError(
-            'Both `--dandiset` and `--dandiset-version` must be provided together.'
-        )
-
     vers = (
         Version.objects.all()
-        if dandiset is None
+        if apply_to_all
         else (Version.objects.get(dandiset=dandiset, version=dandiset_version),)
     )
 
