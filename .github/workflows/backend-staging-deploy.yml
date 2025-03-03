@@ -3,7 +3,7 @@ name: Deploy backend to staging
 on:
   push:
     branches:
-      - staging
+      - sandbox
     paths-ignore:
       - "web/**"
       - "CHANGELOG.md"
@@ -41,7 +41,7 @@ jobs:
           python -m build --sdist
 
       - name: Create Heroku Build
-        run: heroku builds:create -a ember-dandi-api-staging --source-tar dist/*.tar.gz
+        run: heroku builds:create -a ember-dandi-api-sandbox --source-tar dist/*.tar.gz
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY  }}
           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL  }}
