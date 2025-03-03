@@ -28,7 +28,14 @@ from dandiapi.api.tasks import write_manifest_files
     help='Apply the correction to all Dandiset versions '
     '(cannot be combined with dandiset arguments).',
 )
-def correct_metadata(*, dandiset: str | None, dandiset_version: str | None, apply_to_all: bool):
+@click.option(
+    '--check',
+    is_flag=True,
+    help="Don't perform any changes, just check for corrupted metadata.",
+)
+def correct_metadata(
+    *, dandiset: str | None, dandiset_version: str | None, apply_to_all: bool, check: bool
+):
     if apply_to_all:
         if dandiset is not None or dandiset_version is not None:
             raise click.UsageError(
