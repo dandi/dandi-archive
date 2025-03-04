@@ -48,13 +48,13 @@ def test_user_registration_email_content(
     assert len(mailoutbox) == 2
 
     email = mailoutbox[0]
-    assert email.subject == f'DANDI: New user registered: {user.email}'
+    assert email.subject == f'EMBER-DANDI: New user registered: {user.email}'
     assert email.to == [ADMIN_EMAIL, user.email]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
     email = mailoutbox[1]
-    assert email.subject == f'DANDI: Review new user: {user.username}'
+    assert email.subject == f'EMBER-DANDI: Review new user: {user.username}'
     assert email.to == [ADMIN_EMAIL]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())

@@ -2,7 +2,7 @@ const dandiUrl = 'https://dandiarchive.org';
 const emberHomeUrl = 'https://emberarchive.org';
 const emberAboutUrl = 'https://emberarchive.org/about';
 const emberGitHubUrl = 'https://github.com/aplbrain/dandi-archive';
-const dandiDocumentationUrl = 'https://docs.dandiarchive.org/10_using_dandi/';
+const dandiDocumentationUrl = 'https://emberarchive.org/documentation'; // TODO: Link aplbrain/dandi-docs deployment instead when ready
 const dandiHelpUrl = 'https://github.com/dandi/helpdesk/issues/new/choose';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
 
