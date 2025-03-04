@@ -4,6 +4,7 @@ from django.db import models
 
 
 class AssetPath(models.Model):
+    # Use 'C' collation to ensure that ordering is handled correctly when slashes are involved
     path = models.CharField(max_length=512, db_collation='C')
 
     # Protect deletion, since otherwise aggregate fields would become out of sync
