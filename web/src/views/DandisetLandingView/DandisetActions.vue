@@ -39,7 +39,7 @@
           id="view-data"
           variant="outlined"
           block
-          :disabled="unembargo_in_progress"
+          :disabled="unembargoInProgress"
           :to="fileBrowserLink"
           exact
           class="justify-space-between"
@@ -125,11 +125,11 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.version);
-const unembargo_in_progress = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
+const unembargoInProgress = computed<boolean>(() => currentDandiset.value !== null && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
 
-const fileBrowserLink: ComputedRef<RouteLocationRaw|null> = computed(() => {
+const fileBrowserLink: ComputedRef<RouteLocationRaw|undefined> = computed(() => {
   if (!currentDandiset.value) {
-    return null;
+    return undefined;
   }
   const version: string = currentVersion.value;
   const { identifier } = currentDandiset.value.dandiset;
