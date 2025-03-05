@@ -1,14 +1,11 @@
 import type { Ref } from 'vue';
 import { ref, watch } from 'vue';
 import { cloneDeep, isEqual } from 'lodash';
-// eslint-disable-next-line import/no-cycle
 import {
   setTransactionPointerLocalStorage,
   setTransactionsLocalStorage,
 } from './localStorage';
-// eslint-disable-next-line import/no-cycle
 import type { EditorInterface } from './editor';
-// eslint-disable-next-line import/no-cycle
 import type { DandiModel } from './types';
 
 interface MeditorTransaction {
