@@ -313,13 +313,16 @@ const dandiRest = {
 // and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
 // would not update when the headers do.
-client.interceptors.request.use((config) => ({
-  ...config,
-  headers: {
-    ...oauthClient?.authHeaders,
-    ...config.headers,
-  },
-}));
+client.interceptors.request.use((config) => {
+  config.headers = new axios.AxiosHeaders({
+    ...(config.headers instanceof axios.AxiosHeaders ? config.headers.toJSON() : config.headers),
+    ...(oauthClient?.authHeaders || {}),
+  });
+
+  return config;
+});
+
+
 
 const loggedIn = () => !!user.value;
 const insideIFrame = (): boolean => window.self !== window.top;
