@@ -117,7 +117,9 @@ export const useDandisetStore = defineStore('dandiset', {
       const schema = await RefParser.dereference(res.data);
 
       // TODO: Fix this upstream in the schema
+      // @ts-expect-error TS7053
       schema['properties']['identifier']['pattern'] = '^DANDI:\\d{6}$'
+      // @ts-expect-error TS7053
       schema['$defs']['Project']['properties']['wasAssociatedWith']['items']['oneOf'][2]['properties']['identifier']['pattern'] = '^RRID:.*'
 
       this.schema = schema;
