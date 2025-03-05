@@ -93,6 +93,12 @@ class MeditorTransactionTracker {
 
     // figure out what changed and record it as a transaction
     Object.keys(oldModel).forEach((propKey) => {
+      // VJSF removes empty properties from the JSON model on load, but we do not want that
+      // to count as a "transaction". So if a property was *removed* (not edited), we skip it.
+      if (oldModel[propKey] !== undefined && newModel[propKey] === undefined) {
+        return;
+      }
+
       if (!isEqual(oldModel[propKey], newModel[propKey])) {
         this.transactions.push({
           field: propKey,
