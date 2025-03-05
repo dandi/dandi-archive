@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, ref } from 'vue';
+import { getCurrentInstance, onMounted, ref, watchEffect } from 'vue';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -57,10 +57,18 @@ const connectedToServer = ref(true);
 
 // Catch any unhandled errors and display a snackbar prompt notifying the user.
 const showError = ref(false);
-getCurrentInstance().appContext.config.errorHandler = (err: Error) => {
-  showError.value = true;
-  throw err;
-};
+watchEffect(() => {
+  // The `app` object isn't immediately available, so we need to wait
+  // until the component is mounted to attach the error handler.
+  const app = getCurrentInstance();
+  if (app) {
+    app.appContext.config.errorHandler = (err) => {
+      showError.value = true;
+      throw err;
+    };
+  }
+});
+
 
 onMounted(() => {
   Promise.all([
