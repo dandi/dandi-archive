@@ -46,6 +46,7 @@
             <v-card-title class="d-flex align-center">
               <v-btn
                 icon
+                variant="text"
                 exact
                 :to="{
                   name: 'dandisetLanding',
@@ -139,6 +140,7 @@
                     <v-btn
                       v-if="showDelete(item)"
                       icon
+                      variant="text"
                       @click.stop="setItemToDelete(item)"
                     >
                       <v-icon color="error">
@@ -152,8 +154,8 @@
                       <template #activator="{ props: openInBtnProps }">
                         <v-btn
                           icon
+                          variant="text"
                           :href="inlineURI(item.asset.asset_id)"
-
                           v-bind="openInBtnProps"
                         >
                           <v-icon color="primary">
@@ -170,8 +172,8 @@
                       <template #activator="{ props: downloadProps }">
                         <v-btn
                           icon
+                          variant="text"
                           :href="downloadURI(item.asset.asset_id)"
-
                           v-bind="downloadProps"
                         >
                           <v-icon color="primary">
@@ -188,6 +190,7 @@
                       <template #activator="{ props: infoProps }">
                         <v-btn
                           icon
+                          variant="text"
                           :href="assetMetadataURI(item.asset.asset_id)"
                           target="_blank"
                           rel="noreferrer"
