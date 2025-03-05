@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 import type { JSONSchema7 } from 'json-schema';
 
 import { cloneDeep, pickBy } from 'lodash';
@@ -65,7 +64,6 @@ export function populateEmptyArrays(schema: JSONSchema7, model: DandiModel) {
 
   arrayFields.forEach((key) => {
     if (model[key] === undefined || model[key] === null) {
-      // eslint-disable-next-line no-param-reassign
       model[key] = [];
     }
   });
@@ -86,7 +84,6 @@ export function filterModelWithSchema(model: DandiModel, schema: JSONSchema7): D
 export function writeSubModelToMaster(
   subModel: DandiModel, subSchema: JSONSchema7, masterModel: DandiModel,
 ) {
-  /* eslint-disable no-param-reassign */
   const propsToWrite = subSchema.properties;
   if (propsToWrite === undefined) { return; }
 
@@ -94,5 +91,4 @@ export function writeSubModelToMaster(
     masterModel[key] = subModel[key];
   });
 
-  /* eslint-enable no-param-reassign */
 }
