@@ -5,7 +5,7 @@ from __future__ import annotations
 import typing
 
 from django.contrib.auth.models import AnonymousUser, User
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Q, QuerySet
 from django.utils.decorators import method_decorator
 from guardian.decorators import permission_required
@@ -17,6 +17,32 @@ if typing.TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
 
     from dandiapi.api.models.asset import Asset
+
+
+class DandisetRole(models.TextChoices):
+    OWNER = 'owner'
+    VIEWER = 'viewer'
+
+
+# can_view_asset(dandiset, user) <-- viewer role applies
+# can_add_asset_to_version(dandiset, user)
+# can_change_asset(dandiset, user)
+# can_delete_asset(dandiset, user)
+
+# can_view_dandiset(dandiset, user) <-- viewer role applies
+# can_delete_dandiset(dandiset, user)
+# can_publish_dandiset(dandiset, user)
+# can_unembargo_dandiset(dandiset, user)
+
+# can_create_dandisets(user)
+# can_star_dandisets(user)
+# can_unstar_dandisets(user)
+
+# can_clear_dandiset_uploads(dandiset, user)
+
+# can_view_dandiset_owners(dandiset, user)
+# can_update_dandiset_owners(dandiset, user)
+#
 
 
 def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
