@@ -142,7 +142,6 @@
         v-model="tab"
         bg-color="grey darken-2"
         slider-color="highlight"
-        dark
         show-arrows
         align-tabs="title"
       >
