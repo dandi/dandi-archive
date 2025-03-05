@@ -147,6 +147,8 @@ const props = defineProps({
   },
 });
 
+defineEmits(['openMeditor']);
+
 const tab = ref(props.selectedTab);
 watch(() => props.selectedTab, (val) => {
   tab.value = val;
