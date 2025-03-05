@@ -275,7 +275,7 @@ import type { Ref } from 'vue';
 import {
   computed, onMounted, ref, watch,
 } from 'vue';
-import type { RawLocation } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router';
 import { filesize } from 'filesize';
 import { trimEnd } from 'lodash';
@@ -575,7 +575,7 @@ watch(location, () => {
   router.push({
     ...route,
     query: { location: location.value, page: String(page.value) },
-  } as RawLocation);
+  } as RouteLocationRaw);
 });
 
 // go to the directory specified in the URL if it changes
@@ -595,7 +595,7 @@ function changePage(newPage: number) {
   router.push({
     ...route,
     query: { location: location.value, page: String(page.value) },
-  } as RawLocation);
+  } as RouteLocationRaw);
 }
 
 // Fetch dandiset if necessary
