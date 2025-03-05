@@ -1,3 +1,16 @@
+# v0.4.21 (Wed Mar 05 2025)
+
+#### 🐛 Bug Fix
+
+- Implement "atpath" asset endpoint [#2193](https://github.com/dandi/dandi-archive/pull/2193) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Set default values for optional DandiError fields [#2192](https://github.com/dandi/dandi-archive/pull/2192) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.20 (Thu Feb 27 2025)
 
 #### 🐛 Bug Fix
