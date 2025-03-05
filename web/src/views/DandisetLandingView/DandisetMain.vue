@@ -376,7 +376,7 @@ export default defineComponent({
       return shortenedDescription;
     });
     const htmlDescription: ComputedRef<string> = computed(
-      () => DOMPurify.sanitize(marked.parse(description.value)),
+      () => DOMPurify.sanitize(marked.parse(description.value) as string),
     );
     const meta = computed(() => currentDandiset.value?.metadata);
 
