@@ -238,7 +238,7 @@ import { useDisplay } from 'vuetify';
 import axios from 'axios';
 import moment from 'moment';
 
-import type { RawLocation } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useRoute } from 'vue-router';
 
 import { dandiRest, loggedIn as loggedInFunc, user } from '@/rest';
@@ -432,7 +432,7 @@ function setVersion({ version: newVersion }: any) {
         ...route.params,
         version,
       },
-    } as RawLocation);
+    } as RouteLocationRaw);
 
     store.fetchDandiset({
       identifier: currentDandiset.value?.dandiset.identifier,
