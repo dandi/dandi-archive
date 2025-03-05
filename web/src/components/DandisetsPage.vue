@@ -185,9 +185,6 @@ export default defineComponent({
     watch(queryParams, (params) => {
       router.replace({
         ...route,
-        // replace() takes a RouteLocationRaw, which has a name: string
-        // Route has a name: string | null, so we need to tweak this
-        name: route.name || undefined,
         query: {
           // do not override the search parameter, if present
           ...route.query,
