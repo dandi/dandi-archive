@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
 import { computed } from 'vue';
-import type { Location } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -127,7 +127,7 @@ const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.version);
 const unembargo_in_progress = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
 
-const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
+const fileBrowserLink: ComputedRef<RouteLocationRaw|null> = computed(() => {
   if (!currentDandiset.value) {
     return null;
   }

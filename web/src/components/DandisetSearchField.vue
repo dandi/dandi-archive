@@ -24,7 +24,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
-import type { RawLocation } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useRoute } from 'vue-router';
 import router from '@/router';
 
@@ -66,7 +66,7 @@ export default defineComponent({
             ...route.query,
             search: currentSearch.value,
           },
-        } as RawLocation);
+        } as RouteLocationRaw);
       }
     }
 

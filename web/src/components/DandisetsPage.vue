@@ -185,7 +185,7 @@ export default defineComponent({
     watch(queryParams, (params) => {
       router.replace({
         ...route,
-        // replace() takes a RawLocation, which has a name: string
+        // replace() takes a RouteLocationRaw, which has a name: string
         // Route has a name: string | null, so we need to tweak this
         name: route.name || undefined,
         query: {
