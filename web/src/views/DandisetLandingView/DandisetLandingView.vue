@@ -120,7 +120,7 @@ import {
 } from 'vue';
 import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
-import type { NavigationGuardNext, RouteLocationRaw, Route } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
@@ -148,7 +148,7 @@ const props = defineProps({
 // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking
 // a link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
 // "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
-onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
+onBeforeRouteLeave((to, from, next) => {
   // Prompt user if they try to leave the DLP with unsaved changes in the meditor
   if (!editorInterface.value?.transactionTracker?.isModified()
     || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
