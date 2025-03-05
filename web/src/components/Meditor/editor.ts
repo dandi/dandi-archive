@@ -4,7 +4,6 @@ import type { ComputedRef, Ref } from 'vue';
 import { computed, reactive, ref, watch } from 'vue';
 import { cloneDeep } from 'lodash';
 
-// eslint-disable-next-line import/no-cycle
 import { setModelLocalStorage } from './localStorage';
 import type { DandiModel, DandiModelUnion } from './types';
 import {
@@ -14,7 +13,6 @@ import {
   writeSubModelToMaster,
   populateEmptyArrays,
 } from './utils';
-// eslint-disable-next-line import/no-cycle
 import { MeditorTransactionTracker } from './transactions';
 
 /**
