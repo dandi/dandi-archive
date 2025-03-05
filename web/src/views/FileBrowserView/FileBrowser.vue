@@ -6,12 +6,11 @@
     />
     <v-container v-else>
       <v-dialog
-        v-if="!!itemToDelete"
-        v-model="itemToDelete"
+        v-model="deletePopupOpen"
         persistent
         max-width="60vh"
       >
-        <v-card>
+        <v-card v-if="itemToDelete">
           <v-card-title class="text-h5">
             Really delete this asset?
           </v-card-title>
@@ -26,7 +25,7 @@
           <v-card-actions>
             <v-spacer />
             <v-btn
-              @click="itemToDelete = null"
+              @click="deletePopupOpen = false"
             >
               Cancel
             </v-btn>
@@ -140,7 +139,7 @@
                     <v-btn
                       v-if="showDelete(item)"
                       icon
-                      @click="setItemToDelete(item)"
+                      @click.stop="setItemToDelete(item)"
                     >
                       <v-icon color="error">
                         mdi-delete
@@ -395,6 +394,8 @@ const items: Ref<ExtendedAssetPath[] | null> = ref(null);
 // Value is the asset id of the item to delete
 const itemToDelete: Ref<AssetPath | null> = ref(null);
 
+const deletePopupOpen = ref(false);
+
 const page = ref(1);
 const pages = ref(0);
 const updating = ref(false);
@@ -544,6 +545,7 @@ async function getItems() {
 
 function setItemToDelete(item: AssetPath) {
   itemToDelete.value = item;
+  deletePopupOpen.value = true;
 }
 
 async function deleteAsset() {
@@ -561,6 +563,7 @@ async function deleteAsset() {
   // Recompute the items to display in the browser.
   getItems();
   itemToDelete.value = null;
+  deletePopupOpen.value = false;
 }
 
 // Update URL if location changes
