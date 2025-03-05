@@ -1,6 +1,9 @@
 <template>
   <div>
-    <Meditor v-if="currentDandiset" :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`" />
+    <Meditor
+      v-if="currentDandiset"
+      :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`"
+    />
     <v-toolbar class="bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
@@ -123,7 +126,7 @@ import { useDisplay } from 'vuetify';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { Version } from '@/types';
+import type { Dandiset, Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
@@ -148,7 +151,6 @@ const props = defineProps({
 onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
   // Prompt user if they try to leave the DLP with unsaved changes in the meditor
   if (!editorInterface.value?.transactionTracker?.isModified()
-    // eslint-disable-next-line no-alert
     || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
     next();
     return true;
@@ -234,7 +236,7 @@ watch([() => props.identifier, () => props.version], async () => {
 
 const page = ref(Number(route.query.pos) || 1);
 const pages = ref(1);
-const nextDandiset: Ref<any[]> = ref([]);
+const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
 
 async function fetchNextPage() {
   const sortOption = Number(route.query.sortOption) || 0;
