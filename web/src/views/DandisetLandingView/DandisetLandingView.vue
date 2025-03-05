@@ -120,7 +120,7 @@ import {
 } from 'vue';
 import type { Ref } from 'vue';
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
-import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import type { NavigationGuardNext, RouteLocationRaw, Route } from 'vue-router';
 import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
@@ -188,7 +188,7 @@ function navigateToVersion(versionToNavigateTo: string) {
       ...route.params,
       versionToNavigateTo,
     },
-  } as RawLocation;
+  } as RouteLocationRaw;
   router.replace(newRoute);
 }
 
