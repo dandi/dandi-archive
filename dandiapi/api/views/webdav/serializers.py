@@ -36,6 +36,7 @@ class PathAssetSerializer(serializers.ModelSerializer):
 
     blob = serializers.UUIDField(source='blob.blob_id', allow_null=True)
     zarr = serializers.UUIDField(source='zarr.zarr_id', allow_null=True)
+    metadata = serializers.JSONField(source='full_metadata')
 
     def __init__(self, *args, include_metadata=False, **kwargs):
         if not include_metadata:

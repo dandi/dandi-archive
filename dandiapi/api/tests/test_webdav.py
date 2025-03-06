@@ -116,7 +116,12 @@ def test_asset_atpath_asset(api_client, user, draft_version, asset_blob):
             'path': path,
         },
     )
-    assert 'metadata' in resp.json()['results'][0]['resource']
+    res = resp.json()['results'][0]['resource']
+    assert 'metadata' in res
+
+    # Ensure the returned metadata is "populated". This is easily tested with the `path` field,
+    # as that is prohibited from being stored in the DB.
+    assert 'path' in res['metadata']
 
 
 @pytest.mark.django_db
