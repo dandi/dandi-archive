@@ -1,3 +1,15 @@
+# v0.4.22 (Thu Mar 06 2025)
+
+#### 🐛 Bug Fix
+
+- Update `atpath` endpoint implementation [#2198](https://github.com/dandi/dandi-archive/pull/2198) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.21 (Wed Mar 05 2025)
 
 #### 🐛 Bug Fix
