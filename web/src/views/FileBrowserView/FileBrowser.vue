@@ -6,12 +6,11 @@
     />
     <v-container v-else>
       <v-dialog
-        v-if="!!itemToDelete"
-        v-model="itemToDelete"
+        v-model="deletePopupOpen"
         persistent
         max-width="60vh"
       >
-        <v-card>
+        <v-card v-if="itemToDelete">
           <v-card-title class="text-h5">
             Really delete this asset?
           </v-card-title>
@@ -26,7 +25,7 @@
           <v-card-actions>
             <v-spacer />
             <v-btn
-              @click="itemToDelete = null"
+              @click="deletePopupOpen = false"
             >
               Cancel
             </v-btn>
@@ -44,9 +43,10 @@
       <v-row>
         <v-col :cols="12">
           <v-card>
-            <v-card-title>
+            <v-card-title class="d-flex align-center">
               <v-btn
                 icon
+                variant="text"
                 exact
                 :to="{
                   name: 'dandisetLanding',
@@ -103,152 +103,160 @@
                 v-if="location !== rootDirectory"
                 @click="navigateToParent"
               >
-                <v-icon
-                  class="mr-2"
-                  color="primary"
-                >
-                  mdi-folder
-                </v-icon>
-                ..
+                <template #prepend>
+                  <v-icon
+                    class="mr-2"
+                    color="primary"
+                  >
+                    mdi-folder
+                  </v-icon>
+                  ..
+                </template>
               </v-list-item>
 
               <v-list-item
                 v-for="item in items"
                 :key="item.path"
                 color="primary"
-                @click.self="openItem(item)"
+                @click="openItem(item)"
               >
-                <v-icon
-                  class="mr-2"
-                  color="primary"
-                >
-                  <template v-if="item.asset === null">
-                    mdi-folder
-                  </template>
-                  <template v-else>
-                    mdi-file
-                  </template>
-                </v-icon>
-                {{ item.name }}
-                <v-spacer />
-
-                <v-list-item-action>
-                  <v-btn
-                    v-if="showDelete(item)"
-                    icon
-                    @click="setItemToDelete(item)"
+                <template #prepend>
+                  <v-icon
+                    class="mr-2"
+                    color="primary"
                   >
-                    <v-icon color="error">
-                      mdi-delete
-                    </v-icon>
-                  </v-btn>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        icon
-                        :href="inlineURI(item.asset.asset_id)"
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        <v-icon color="primary">
-                          mdi-open-in-app
-                        </v-icon>
-                      </v-btn>
+                    <template v-if="item.asset === null">
+                      mdi-folder
                     </template>
-                    <span>Open asset in browser (you can also click on the item itself)</span>
-                  </v-tooltip>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        icon
-                        :href="downloadURI(item.asset.asset_id)"
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        <v-icon color="primary">
-                          mdi-download
-                        </v-icon>
-                      </v-btn>
+                    <template v-else>
+                      mdi-file
                     </template>
-                    <span>Download asset</span>
-                  </v-tooltip>
-                </v-list-item-action>
+                  </v-icon>
+                  {{ item.name }}
+                </template>
 
-                <v-list-item-action v-if="item.asset">
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        icon
-                        :href="assetMetadataURI(item.asset.asset_id)"
-                        target="_blank"
-                        rel="noreferrer"
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        <v-icon color="primary">
-                          mdi-information
-                        </v-icon>
-                      </v-btn>
-                    </template>
-                    <span>View asset metadata</span>
-                  </v-tooltip>
-                </v-list-item-action>
-
-                <v-list-item-action v-if="item.asset">
-                  <v-menu
-                    bottom
-                    left
-                  >
-                    <template #activator="{ on, attrs }">
-                      <v-btn
-                        color="primary"
-                        x-small
-                        :disabled="!item.services || !item.services.length"
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        Open With <v-icon small>mdi-menu-down</v-icon>
-                      </v-btn>
-                    </template>
-                    <v-list
-                      v-if="item && item.services"
-                      dense
+                <template #append>
+                  <v-list-item-action>
+                    <v-btn
+                      v-if="showDelete(item)"
+                      icon
+                      variant="text"
+                      @click.stop="setItemToDelete(item)"
                     >
-                      <v-subheader
-                        v-if="item.services.length"
-                        class="font-weight-medium"
-                      >
-                        EXTERNAL SERVICES
-                      </v-subheader>
+                      <v-icon color="error">
+                        mdi-delete
+                      </v-icon>
+                    </v-btn>
+                  </v-list-item-action>
 
-                      <v-list-item
-                        v-for="el in item.services"
-                        :key="el.name"
-                        :href="el.url"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <v-list-item-title class="font-weight-light">
-                          {{ el.name }}
-                        </v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </v-list-item-action>
+                  <v-list-item-action v-if="item.asset">
+                    <v-tooltip location="top">
+                      <template #activator="{ props: openInBtnProps }">
+                        <v-btn
+                          icon
+                          variant="text"
+                          :href="inlineURI(item.asset.asset_id)"
+                          v-bind="openInBtnProps"
+                        >
+                          <v-icon color="primary">
+                            mdi-open-in-app
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Open asset in browser (you can also click on the item itself)</span>
+                    </v-tooltip>
+                  </v-list-item-action>
 
-                <v-list-item-action
-                  v-if="item.aggregate_size"
-                  class="justify-end"
-                  :style="{width: '4.5em'}"
-                >
-                  {{ fileSize(item) }}
-                </v-list-item-action>
+                  <v-list-item-action v-if="item.asset">
+                    <v-tooltip location="top">
+                      <template #activator="{ props: downloadProps }">
+                        <v-btn
+                          icon
+                          variant="text"
+                          :href="downloadURI(item.asset.asset_id)"
+                          v-bind="downloadProps"
+                        >
+                          <v-icon color="primary">
+                            mdi-download
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Download asset</span>
+                    </v-tooltip>
+                  </v-list-item-action>
+
+                  <v-list-item-action v-if="item.asset">
+                    <v-tooltip location="top">
+                      <template #activator="{ props: infoProps }">
+                        <v-btn
+                          icon
+                          variant="text"
+                          :href="assetMetadataURI(item.asset.asset_id)"
+                          target="_blank"
+                          rel="noreferrer"
+
+                          v-bind="infoProps"
+                        >
+                          <v-icon color="primary">
+                            mdi-information
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <span>View asset metadata</span>
+                    </v-tooltip>
+                  </v-list-item-action>
+
+                  <v-list-item-action v-if="item.asset">
+                    <v-menu
+                      location="bottom left"
+                    >
+                      <template #activator="{ props: openWithProps }">
+                        <v-btn
+                          color="primary"
+                          size="x-small"
+                          :disabled="!item.services || !item.services.length"
+
+                          v-bind="openWithProps"
+                        >
+                          Open With <v-icon size="small">
+                            mdi-menu-down
+                          </v-icon>
+                        </v-btn>
+                      </template>
+                      <v-list
+                        v-if="item && item.services"
+                        density="compact"
+                      >
+                        <v-list-subheader
+                          v-if="item.services.length"
+                          class="font-weight-medium"
+                        >
+                          EXTERNAL SERVICES
+                        </v-list-subheader>
+
+                        <v-list-item
+                          v-for="el in item.services"
+                          :key="el.name"
+                          :href="el.url"
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <v-list-item-title class="font-weight-light">
+                            {{ el.name }}
+                          </v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
+                  </v-list-item-action>
+
+                  <v-list-item-action
+                    v-if="item.aggregate_size"
+                    class="justify-end"
+                    :style="{width: '4.5em'}"
+                  >
+                    {{ fileSize(item) }}
+                  </v-list-item-action>
+                </template>
               </v-list-item>
             </v-list>
           </v-card>
@@ -258,7 +266,7 @@
         v-if="currentDandiset.asset_count"
         :page="page"
         :page-count="pages"
-        @changePage="changePage($event)"
+        @change-page="changePage($event)"
       />
     </v-container>
   </div>
@@ -269,9 +277,9 @@ import type { Ref } from 'vue';
 import {
   computed, onMounted, ref, watch,
 } from 'vue';
-import type { RawLocation } from 'vue-router';
-import { useRouter, useRoute } from 'vue-router/composables';
-import filesize from 'filesize';
+import type { RouteLocationRaw } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { filesize } from 'filesize';
 import { trimEnd } from 'lodash';
 import axios from 'axios';
 
@@ -349,21 +357,21 @@ const EXTERNAL_SERVICES = [
     name: 'Neurosift',
     regex: /\.nwb$/,
     maxsize: Infinity,
-    endpoint: 'https://neurosift.app/nwb?url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://neurosift.app/nwb?url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.nwb\.lindi\.(json|tar)$/,
     maxsize: Infinity,
-    endpoint: 'https://neurosift.app/nwb?url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://neurosift.app/nwb?url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
   },
 
   {
     name: 'Neurosift',
     regex: /\.avi$/,
     maxsize: Infinity,
-    endpoint: 'https://v1.neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$', // eslint-disable-line max-len
+    endpoint: 'https://v1.neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
   }
 ];
 type Service = typeof EXTERNAL_SERVICES[0];
@@ -388,6 +396,8 @@ const items: Ref<ExtendedAssetPath[] | null> = ref(null);
 
 // Value is the asset id of the item to delete
 const itemToDelete: Ref<AssetPath | null> = ref(null);
+
+const deletePopupOpen = ref(false);
 
 const page = ref(1);
 const pages = ref(0);
@@ -538,6 +548,7 @@ async function getItems() {
 
 function setItemToDelete(item: AssetPath) {
   itemToDelete.value = item;
+  deletePopupOpen.value = true;
 }
 
 async function deleteAsset() {
@@ -555,6 +566,7 @@ async function deleteAsset() {
   // Recompute the items to display in the browser.
   getItems();
   itemToDelete.value = null;
+  deletePopupOpen.value = false;
 }
 
 // Update URL if location changes
@@ -569,7 +581,7 @@ watch(location, () => {
   router.push({
     ...route,
     query: { location: location.value, page: String(page.value) },
-  } as RawLocation);
+  } as RouteLocationRaw);
 });
 
 // go to the directory specified in the URL if it changes
@@ -589,7 +601,7 @@ function changePage(newPage: number) {
   router.push({
     ...route,
     query: { location: location.value, page: String(page.value) },
-  } as RawLocation);
+  } as RouteLocationRaw);
 }
 
 // Fetch dandiset if necessary

@@ -1,14 +1,11 @@
 import type { Ref } from 'vue';
 import { ref, watch } from 'vue';
 import { cloneDeep, isEqual } from 'lodash';
-// eslint-disable-next-line import/no-cycle
 import {
   setTransactionPointerLocalStorage,
   setTransactionsLocalStorage,
 } from './localStorage';
-// eslint-disable-next-line import/no-cycle
 import type { EditorInterface } from './editor';
-// eslint-disable-next-line import/no-cycle
 import type { DandiModel } from './types';
 
 interface MeditorTransaction {
@@ -93,6 +90,12 @@ class MeditorTransactionTracker {
 
     // figure out what changed and record it as a transaction
     Object.keys(oldModel).forEach((propKey) => {
+      // VJSF removes empty properties from the JSON model on load, but we do not want that
+      // to count as a "transaction". So if a property was *removed* (not edited), we skip it.
+      if (oldModel[propKey] !== undefined && newModel[propKey] === undefined) {
+        return;
+      }
+
       if (!isEqual(oldModel[propKey], newModel[propKey])) {
         this.transactions.push({
           field: propKey,
