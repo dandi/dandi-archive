@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from dandiapi.api.asset_paths import get_path_children
 from dandiapi.api.models.asset_paths import AssetPath
@@ -80,8 +80,23 @@ def atpath(request: Request):
     if dandiset.embargoed and not is_dandiset_owner(dandiset, request.user):
         raise PermissionDenied
 
-    qs = get_atpath_queryset(version=version, path=params['path'], children=params['children'])
+    # This endpoint allows an ending slash for folders,
+    # but the AssetPath implementation prohibits it
+    path: str = params['path']
+    endslash = path.endswith('/')
+    path = path.rstrip('/')
 
+    qs = get_atpath_queryset(version=version, path=path, children=params['children'])
+
+    # Handle special behavior if results not found
+    if path != '':
+        first = qs.first()
+        if first is None:
+            raise NotFound(detail=f'Folder or asset not found at {path}')
+        if endslash and first.asset is not None:
+            raise NotFound(detail=f'Folder not found at {path}')
+
+    # Paginate
     paginator = DandiPagination()
     result_page = paginator.paginate_queryset(qs, request=request)
     serializer = PathResultSerializer(

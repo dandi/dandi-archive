@@ -161,6 +161,19 @@ def test_asset_atpath_folder(api_client, user, draft_version, asset_blob):
     assert resp.json()['results'][0]['type'] == 'folder'
     assert resp.json()['results'][0]['resource']['path'] == 'foo'
 
+    # Ensure that the response is the same if a trailing slash is included
+    api_client.force_authenticate(user=user)
+    resp_with_slash = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset.identifier,
+            'version_id': draft_version.version,
+            'path': 'foo/',
+        },
+    )
+    assert resp_with_slash.json() == resp.json()
+
     # Now test that children=True includes the assets
     resp = api_client.get(
         '/api/webdav/assets/atpath',
@@ -176,6 +189,33 @@ def test_asset_atpath_folder(api_client, user, draft_version, asset_blob):
     assert resp.json()['results'][0]['type'] == 'folder'
     assert resp.json()['results'][1]['type'] == 'asset'
     assert resp.json()['results'][2]['type'] == 'asset'
+
+
+@pytest.mark.django_db
+def test_asset_atpath_trailing_slash(api_client, user, draft_version, asset_blob):
+    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob,
+        metadata={
+            'path': 'foo',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
+
+    # Assert that trailing slash on an asset returns 404
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(
+        '/api/webdav/assets/atpath',
+        {
+            'children': False,
+            'dandiset_id': draft_version.dandiset.identifier,
+            'version_id': draft_version.version,
+            'path': 'foo/',
+        },
+    )
+    assert resp.status_code == 404
 
 
 @pytest.mark.django_db
@@ -201,8 +241,7 @@ def test_asset_atpath_path_missing(api_client, user, draft_version, asset_blob):
             'path': 'foobartxt',
         },
     )
-    assert resp.status_code == 200
-    assert resp.json()['count'] == 0
+    assert resp.status_code == 404
 
 
 @pytest.mark.django_db
