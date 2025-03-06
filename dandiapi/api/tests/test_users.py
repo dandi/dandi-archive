@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
+from django.conf import settings
 from django.urls.base import reverse
 import pytest
 from pytest_django.asserts import assertContains
 from rest_framework.exceptions import ErrorDetail
 
-from dandiapi.api.mail import ADMIN_EMAIL
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.views.auth import COLLECT_USER_NAME_QUESTIONS, NEW_USER_QUESTIONS, QUESTIONS
 from dandiapi.api.views.users import user_to_dict
@@ -49,13 +49,13 @@ def test_user_registration_email_content(
 
     email = mailoutbox[0]
     assert email.subject == f'DANDI: New user registered: {user.email}'
-    assert email.to == [ADMIN_EMAIL, user.email]
+    assert email.to == [settings.DANDI_ADMIN_EMAIL, user.email]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
     email = mailoutbox[1]
     assert email.subject == f'DANDI: Review new user: {user.username}'
-    assert email.to == [ADMIN_EMAIL]
+    assert email.to == [settings.DANDI_ADMIN_EMAIL]
     assert '<p>' not in email.body
     assert all(len(_) < 100 for _ in email.body.splitlines())
 
