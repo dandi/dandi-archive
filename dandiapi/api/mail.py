@@ -25,9 +25,6 @@ BASE_RENDER_CONTEXT = {
     'dandi_web_app_url': settings.DANDI_WEB_APP_URL,
 }
 
-# TODO: turn this into a Django setting
-ADMIN_EMAIL = 'info@dandiarchive.org'
-
 
 def user_greeting_name(user: User, socialaccount: SocialAccount = None) -> str:
     """Return a suitable name to greet the user with in an email."""
@@ -105,7 +102,7 @@ def build_registered_message(user: User, socialaccount: SocialAccount):
             'api/mail/registered_message.txt',
             {'greeting_name': user_greeting_name(user, socialaccount)},
         ),
-        to=[ADMIN_EMAIL, user.email],
+        to=[settings.DANDI_ADMIN_EMAIL, user.email],
     )
 
 
@@ -125,7 +122,7 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
     return build_message(
         subject=f'DANDI: Review new user: {user.username}',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
-        to=[ADMIN_EMAIL],
+        to=[settings.DANDI_ADMIN_EMAIL],
     )
 
 
@@ -146,7 +143,7 @@ def build_approved_user_message(user: User, socialaccount: SocialAccount = None)
                 'greeting_name': user_greeting_name(user, socialaccount),
             },
         ),
-        to=[ADMIN_EMAIL, user.email],
+        to=[settings.DANDI_ADMIN_EMAIL, user.email],
     )
 
 
@@ -167,7 +164,7 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
                 'rejection_reason': user.metadata.rejection_reason,
             },
         ),
-        to=[ADMIN_EMAIL, user.email],
+        to=[settings.DANDI_ADMIN_EMAIL, user.email],
     )
 
 
@@ -183,12 +180,12 @@ def build_pending_users_message(users: Iterable[User]):
     return build_message(
         subject='DANDI: new user registrations to review',
         message=render_to_string('api/mail/pending_users_message.txt', render_context),
-        to=[ADMIN_EMAIL],
+        to=[settings.DANDI_ADMIN_EMAIL],
     )
 
 
 def send_pending_users_message(users: Iterable[User]):
-    logger.info('Sending pending users message to admins at %s', ADMIN_EMAIL)
+    logger.info('Sending pending users message to admins at %s', settings.DANDI_ADMIN_EMAIL)
     messages = [build_pending_users_message(users)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
@@ -233,7 +230,7 @@ def build_dandiset_unembargo_failed_message(dandiset: Dandiset):
         html_message=html_message,
         to=[owner.email for owner in get_dandiset_owners(dandiset)],
         bcc=[settings.DANDI_DEV_EMAIL],
-        reply_to=[ADMIN_EMAIL],
+        reply_to=[settings.DANDI_ADMIN_EMAIL],
     )
 
 

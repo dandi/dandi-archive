@@ -109,6 +109,7 @@ class DandiMixin(ConfigMixin):
     DANDI_API_URL = values.URLValue(environ_required=True)
     DANDI_JUPYTERHUB_URL = values.URLValue(environ_required=True)
     DANDI_DEV_EMAIL = values.EmailValue(environ_required=True)
+    DANDI_ADMIN_EMAIL = values.EmailValue(environ_required=True)
 
     DANDI_VALIDATION_JOB_INTERVAL = values.IntegerValue(environ=True, default=60)
 
