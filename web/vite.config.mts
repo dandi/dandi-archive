@@ -41,6 +41,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // TODO: this is a fix for a bug in vite, see https://github.com/vitejs/vite/discussions/8549#discussioncomment-7333115
+      '@jsdevtools/ono': '@jsdevtools/ono/cjs/index.js',
     },
     extensions: [
       '.js',
