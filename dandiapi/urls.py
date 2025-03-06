@@ -96,7 +96,7 @@ schema_view = get_schema_view(
 
 # Webdav only endpoints
 webdav_urlpatterns = [
-    path('api/webdav/assets/atpath', webdav.atpath),
+    path('api/webdav/assets/atpath/', webdav.atpath),
 ]
 webdav_schema_view = get_schema_view(
     openapi.Info(
