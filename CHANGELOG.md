@@ -1,3 +1,15 @@
+# v0.4.24 (Thu Mar 06 2025)
+
+#### 🐛 Bug Fix
+
+- Return full metadata in atpath asset resource [#2204](https://github.com/dandi/dandi-archive/pull/2204) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.23 (Thu Mar 06 2025)
 
 #### 🐛 Bug Fix
