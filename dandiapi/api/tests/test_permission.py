@@ -115,3 +115,8 @@ def test_approved_or_readonly(
 
     # The client is now authenticated but not an owner, so all response codes should be 403
     assert response.status_code == 403
+
+
+# TODO: Test all actions
+# @pytest.mark.django_db
+# def test_is_

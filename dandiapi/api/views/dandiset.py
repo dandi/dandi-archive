@@ -173,9 +173,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         user_kwarg = query_serializer.validated_data.get('user')
         if user_kwarg == 'me':
             # Replace the original, rather inefficient queryset with a more specific one
-            queryset = get_owned_dandisets(self.request.user, include_superusers=False).order_by(
-                'created'
-            )
+            queryset = get_owned_dandisets(self.request.user, strict=True).order_by('created')
 
         show_draft: bool = query_serializer.validated_data['draft']
         show_empty: bool = query_serializer.validated_data['empty']

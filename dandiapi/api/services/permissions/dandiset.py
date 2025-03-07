@@ -20,7 +20,14 @@ if typing.TYPE_CHECKING:
 
 
 def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
-    qs = typing.cast(QuerySet[User], get_users_with_perms(dandiset, only_with_perms_in=['owner']))
+    qs = typing.cast(
+        QuerySet[User],
+        get_users_with_perms(
+            dandiset,
+            only_with_perms_in=['owner'],
+            with_superusers=False,
+        ),
+    )
     return qs.order_by('date_joined')
 
 
@@ -54,6 +61,9 @@ def is_dandiset_owner(dandiset: Dandiset, user: AbstractBaseUser | AnonymousUser
         return False
 
     user = typing.cast(User, user)
+    if user.is_superuser or user.is_staff:
+        return True
+
     return user.has_perm('owner', dandiset)
 
 
@@ -63,6 +73,9 @@ def is_owned_asset(asset: Asset, user: AbstractBaseUser | AnonymousUser) -> bool
         return False
 
     user = typing.cast(User, user)
+    if user.is_superuser or user.is_staff:
+        return True
+
     asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
     asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
         content_object__in=asset_dandisets,
@@ -74,10 +87,13 @@ def is_owned_asset(asset: Asset, user: AbstractBaseUser | AnonymousUser) -> bool
 
 
 def get_owned_dandisets(
-    user: AbstractBaseUser | AnonymousUser,
-    include_superusers=True,  # noqa: FBT002
+    user: AbstractBaseUser | AnonymousUser, *, strict=False
 ) -> QuerySet[Dandiset]:
-    return get_objects_for_user(user, 'owner', Dandiset, with_superuser=include_superusers)
+    queryset = Dandiset.objects.all()
+    if not strict and (user.is_staff or user.is_superuser):
+        return queryset
+
+    return get_objects_for_user(user=user, perms='owner', klass=queryset)
 
 
 def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Dandiset]:
