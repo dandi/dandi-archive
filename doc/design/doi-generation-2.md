@@ -38,9 +38,13 @@ We propose to:
   - For embargoed dandiset, **do not** specify any metadata besides the DLP URL.
   - If minting a DOI fails, we need to raise exception to inform developers about the issue but proceed with the creation of the dandiset.
 - Upon changes to dandiset metadata record (so, of a draft version of dandiset), for public (non-embargoed dandisets):
-  - For `Draft DOI` (dandiset was not published yet), there is no validation, try to update datacite metadata record while keeping the same target URL
-    - **Question to clear up**: what happens to Draft DOI if metadata record is invalid? Does it fail to update altogether? does it update only the fields it knows about?
-  - For `Findable DOI` (dandiset was published at least once), we do not update anything since DLP points to that published version.
+  - For `Draft DOI` (dandiset was not published yet): try to update/make it `Findable`.
+    - If fails - keep Draft since there is no validation, try to update datacite metadata record while keeping the same target URL.
+    - **Question to clear up**: what happens to Draft DOI if metadata record is invalid? It seems to create one with no metadata, but does it update only the fields it knows about?
+  - For `Findable DOI` 
+    - if it is still a draft version but which had legit metadata, we try to update metadata. If fails, we either ignore or just add a comment somewhere that "record might not reflect the most recent changes to draft version".
+      - I think we need to add to validation procedures, validation against datacite metadata record, and reporting errors to the user so that users address them before trying to publish. May be we should validate only if no other errors (our schema validation) were detected to reduce noise, or just give a summary that "Metadata is not satisfying datacite model, fix known metadata errors first."
+    - if dandiset was published at least once (has version) -- we do not update anything since DLP points to that published version.
   - **TODO: figure out how to annotate Draft version, so it always says that it is a draft version and thus potentially not used for citation if that could be avoided**
 - Upon changes to dandiset metadata record, for embargoed dandisets don't do anything.
 - Upon unembargoing dandiset: update `Draft DOI` metadata record with current metadata **after** unembargoing.
