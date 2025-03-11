@@ -3341,7 +3341,14 @@ vue-tsc@^2.2.8:
     "@volar/typescript" "~2.4.11"
     "@vue/language-core" "2.2.8"
 
-vue@^3.5.13:
+vue3-social-sharing@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/vue3-social-sharing/-/vue3-social-sharing-1.3.1.tgz#b09e741d06d7a33802894bc1f404cb10578bbfe2"
+  integrity sha512-1WxhmLzy51HKGDoZ474K+r+C16sJMdhUQ05DU7aEQdZE8CZQFFzJM3DixvAnVHzBwWFFkktj2HFxJGCT7XjnIg==
+  dependencies:
+    vue "^3.3.11"
+
+vue@^3.3.11, vue@^3.5.13:
   version "3.5.13"
   resolved "https://registry.yarnpkg.com/vue/-/vue-3.5.13.tgz#9f760a1a982b09c0c04a867903fc339c9f29ec0a"
   integrity sha512-wmeiSMxkZCSc+PM2w2VRsOYAZC8GdipNFRTsLSfodVqI9mbejKeXEGr8SckuLnrQPGe3oJN5c3K0vpoU9q/wCQ==

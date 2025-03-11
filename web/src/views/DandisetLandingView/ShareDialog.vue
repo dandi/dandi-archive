@@ -59,16 +59,17 @@
       <v-divider class="mx-4" />
       <v-card-actions>
         <v-list-item class="grow">
-          <v-row
-            align="center"
+          <ShareNetwork
+            v-slot="{ share }"
+            network="twitter"
+            style="text-decoration: none;"
+            :url="permalink"
+            :title="meta.name"
+            :twitter-user="twitterUser"
           >
-            <!-- TODO: Add back in when Vue 3 equivalent is found -->
-            <!-- <ShareNetwork
-              network="twitter"
-              style="text-decoration: none;"
-              :url="permalink"
-              :title="meta.name"
-              :twitter-user="twitterUser"
+            <v-btn
+              icon
+              @click="share"
             >
               <v-icon
                 class="mr-1"
@@ -77,8 +78,8 @@
               >
                 mdi-twitter
               </v-icon>
-            </ShareNetwork> -->
-          </v-row>
+            </v-btn>
+          </ShareNetwork>
         </v-list-item>
       </v-card-actions>
     </v-card>
@@ -89,6 +90,8 @@
 import CopyText from '@/components/CopyText.vue';
 import { useDandisetStore } from '@/stores/dandiset';
 import { computed, ref } from 'vue';
+import { ShareNetwork } from "vue3-social-sharing";
+
 
 defineProps({
   text: {
@@ -98,7 +101,7 @@ defineProps({
 });
 
 // // Twitter user to mention
-// const twitterUser = 'DANDIarchive';
+const twitterUser = 'DANDIarchive';
 
 const store = useDandisetStore();
 const dialog = ref(false);
