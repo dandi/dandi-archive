@@ -1,18 +1,7 @@
 <template>
   <v-footer class="text-body-2">
     <v-container>
-      <!-- <cookie-law theme="blood-orange">
-        <div slot="message">
-          <span
-            v-if="cookiesEnabled()"
-          >We use cookies to ensure you get the best experience on
-            DANDI.</span>
-          <span
-            v-else
-          >We noticed you're blocking cookies - note that certain aspects of
-            the site may not work.</span>
-        </div>
-      </cookie-law> -->
+      <CookieBanner />
       <v-row>
         <v-col offset="2">
           &copy; 2019 - 2025 The DANDI Team<br>
@@ -111,6 +100,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
+import CookieBanner from './CookieBanner.vue';
 import { cookiesEnabled } from '@/rest';
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -118,6 +108,9 @@ const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/d
 
 export default defineComponent({
   name: 'DandiFooter',
+  components: {
+    CookieBanner,
+  },
   setup() {
     return {
       version,
