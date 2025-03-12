@@ -51,16 +51,13 @@ def unembargo_dandiset(ds: Dandiset, user: User):
 
     # Set all assets to pending
     updated_assets = Asset.objects.filter(versions__dandiset=ds).update(status=Asset.Status.PENDING)
-    # Update embargoed flag on asset blobs and zarrs
+    # Update embargoed flag on asset blobs
+    # Zarrs have no such property as it is derived from the dandiset
     updated_blobs = AssetBlob.objects.filter(embargoed=True, assets__versions__dandiset=ds).update(
         embargoed=False
     )
-    updated_zarrs = ZarrArchive.objects.filter(
-        embargoed=True, assets__versions__dandiset=ds
-    ).update(embargoed=False)
     logger.info('Set %s assets to PENDING', updated_assets)
     logger.info('Updated %s asset blobs', updated_blobs)
-    logger.info('Updated %s zarrs', updated_zarrs)
 
     # Set status to OPEN
     Dandiset.objects.filter(pk=ds.pk).update(embargo_status=Dandiset.EmbargoStatus.OPEN)

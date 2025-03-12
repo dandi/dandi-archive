@@ -106,18 +106,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     def get_queryset(self) -> QuerySet:
         qs = super().get_queryset()
 
-        # Start with just public zarrs, in case user is not authenticated
-        queryset_filter = Q(embargoed=False)
-
-        # Filter zarrs to either open access or owned
-        if self.request.user.is_authenticated:
-            user_owned_dandiset_ids = get_owned_dandisets(self.request.user).values_list(
-                'id', flat=True
-            )
-            queryset_filter |= Q(dandiset_id__in=user_owned_dandiset_ids)
-
-        # Apply filter
-        return qs.filter(queryset_filter)
+        # Filter zarrs to those that are contained by dandisets visible to the user
+        return qs.filter(dandiset__in=get_visible_dandisets(self.request.user))
 
     @swagger_auto_schema(
         query_serializer=ZarrListQuerySerializer,
