@@ -14,18 +14,17 @@ from dandiapi.api.models import Version
 
 @click.command(
     help='Correct corrupted metadata. If `--all` is provided, apply the correction to '
-    'all Dandiset versions. Otherwise, provide the Dandiset and Dandiset version to '
+    'all Dandiset versions. Otherwise, provide the Dandiset to '
     'apply the correction to.'
 )
 @click.argument('dandiset', required=False)
-@click.argument('dandiset_version', required=False)
 @click.option(
     '--all',
     'apply_to_all',
     is_flag=True,
     default=False,
     help='Apply the correction to all Dandiset versions '
-    '(cannot be combined with dandiset arguments).',
+    '(cannot be combined with dandiset argument).',
 )
 @click.option(
     '--check',
@@ -33,23 +32,19 @@ from dandiapi.api.models import Version
     help="Don't perform any changes, just check for corrupted metadata.",
 )
 def correct_metadata(  # noqa: C901
-    *, dandiset: str | None, dandiset_version: str | None, apply_to_all: bool, check: bool
+    *, dandiset: str | None, apply_to_all: bool, check: bool
 ):
     if apply_to_all:
-        if dandiset is not None or dandiset_version is not None:
-            raise click.UsageError(
-                'Cannot specify `--all` together with `dandiset` or `dandiset_version` arguments.'
-            )
-    elif dandiset is None or dandiset_version is None:
-        raise click.UsageError(
-            'Either `--all` or two arguments (dandiset, dandiset_version) must be provided.'
-        )
+        if dandiset is not None:
+            raise click.UsageError('Cannot specify `--all` together with `dandiset` argument.')
+    elif dandiset is None:
+        raise click.UsageError('Either `--all` or `dandiset` argument must be provided.')
 
     # Get version queryset
     vers = Version.objects.all()
     if not apply_to_all:
         dandiset = typing.cast(str, dandiset)
-        vers = vers.filter(dandiset=int(dandiset), version=dandiset_version)
+        vers = vers.filter(dandiset=int(dandiset), version='draft')
 
     if not vers.exists():
         click.echo('No matching versions found')
