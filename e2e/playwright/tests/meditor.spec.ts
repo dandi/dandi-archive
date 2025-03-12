@@ -1,6 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-
-const clientUrl = "http://localhost:8085";
+import { clientUrl, gotoAndLogin } from "../utils.ts";
 
 const noLicenseSelector = async (page: Page) => {
   await page.getByRole("tab", { name: "General Badge" }).click();
@@ -8,19 +7,19 @@ const noLicenseSelector = async (page: Page) => {
 };
 const noContributorSelector = async (page: Page) => {
   await expect(
-    page.getByRole("tab", { name: "Dandiset contributors Badge" })
+    page.getByRole("tab", { name: "Dandiset contributors Badge" }),
   ).toBeVisible();
 };
 const invalidLicenseSelector = async (page: Page) => {
   await page.getByRole("tab", { name: "General Badge" }).click();
   await expect(
-    page.getByRole("button", { name: "License spdx:CC-BY-NC-" })
+    page.getByRole("button", { name: "License spdx:CC-BY-NC-" }),
   ).toBeVisible();
 };
 const titleTooLongSelector = async (page: Page) => {
   await page.getByRole("tab", { name: "General Badge" }).click();
   await expect(
-    page.getByText("Dandiset title150 characters maximum")
+    page.getByText("Dandiset title150 characters maximum"),
   ).toBeVisible();
 };
 
@@ -462,14 +461,7 @@ const invalidDandisets = {
 
 test.describe("Test meditor validation errors", async () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(clientUrl);
-    await page.getByRole("button", { name: "Log In with GitHub" }).click();
-    await page.getByPlaceholder("Email address").click();
-    await page.getByPlaceholder("Email address").fill("admin@kitware.com");
-    await page.getByPlaceholder("Password").click();
-    await page.getByPlaceholder("Password").fill("password");
-    await page.getByRole("button", { name: "Sign In " }).click();
-    await page.waitForLoadState("networkidle");
+    await gotoAndLogin(page);
   });
 
   for (const dandisetId of allDandisets) {
