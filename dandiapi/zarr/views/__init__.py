@@ -17,6 +17,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
+from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import (
     get_owned_dandisets,
     get_visible_dandisets,
@@ -148,6 +149,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         )
         if not is_dandiset_owner(dandiset, request.user):
             raise PermissionDenied
+
+        # Prevent addition to dandiset during unembargo
+        if dandiset.unembargo_in_progress:
+            raise DandiError(
+                message='Cannot add zarr to dandiset during unembargo',
+                http_status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():
             # Use nested transaction block to prevent zarr creation race condition

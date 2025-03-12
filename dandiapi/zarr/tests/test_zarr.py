@@ -111,6 +111,23 @@ def test_zarr_rest_create_embargoed_dandiset(
 
 
 @pytest.mark.django_db
+def test_zarr_rest_create_unembargoing(
+    authenticated_api_client, user, zarr_archive, dandiset_factory
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    add_dandiset_owner(dandiset, user)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
 def test_zarr_rest_get(authenticated_api_client, storage, zarr_archive_factory, zarr_file_factory):
     # Pretend like ZarrArchive was defined with the given storage
     ZarrArchive.storage = storage
