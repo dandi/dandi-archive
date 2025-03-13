@@ -274,6 +274,7 @@ import moment from 'moment';
 import DOMPurify from 'dompurify';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { getDoiMetadata } from '@/utils/doi';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
 import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
@@ -402,22 +403,12 @@ export default defineComponent({
     watchEffect(async () => {
       // Inject datacite metadata into the page
       if (meta.value?.doi) {
-        const prefix = meta.value?.url!.startsWith('https://gui-staging.dandiarchive.org/') ? 'https://handle.stage.datacite.org/' : 'https://doi.org/';
-        const url = new URL(`${prefix}${meta.value?.doi}`);
-        const headers = new Headers({
-          'Accept': 'application/ld+json'
-        });
+        const metadataText = await getDoiMetadata(meta.value.doi, meta.value.url);
+        const script = document.createElement('script');
+        script.setAttribute('type', 'application/ld+json');
+        script.textContent = metadataText;
+        document.head.appendChild(script);
 
-        try {
-          const response = await fetch(url, { headers });
-          const metadataText = await response.text();
-          const script = document.createElement('script');
-          script.setAttribute('type', 'application/ld+json');
-          script.textContent = metadataText;
-          document.head.appendChild(script);
-        } catch (error) {
-          console.error('Error fetching metadata:', error);
-        }
       }
     });
 
