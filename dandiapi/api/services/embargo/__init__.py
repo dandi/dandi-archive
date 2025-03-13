@@ -16,7 +16,6 @@ from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task
-from dandiapi.zarr.models import ZarrArchive
 
 from .exceptions import (
     AssetBlobEmbargoedError,

@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
-from django.db.models import Q
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
@@ -18,11 +17,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
 from dandiapi.api.services.exceptions import DandiError
-from dandiapi.api.services.permissions.dandiset import (
-    get_owned_dandisets,
-    get_visible_dandisets,
-    is_dandiset_owner,
-)
+from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus

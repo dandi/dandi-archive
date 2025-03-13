@@ -10,7 +10,6 @@ from django.db.models import Q
 from more_itertools import chunked
 
 from dandiapi.api.models.asset import Asset
-from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.storage import get_boto_client
 from dandiapi.zarr.models import zarr_s3_path
 
@@ -18,6 +17,8 @@ from .exceptions import AssetTagRemovalError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
+
+    from dandiapi.api.models.dandiset import Dandiset
 
 
 logger = logging.getLogger(__name__)
