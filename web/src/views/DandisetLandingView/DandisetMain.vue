@@ -401,7 +401,7 @@ export default defineComponent({
 
     const injectDataCiteMetadata = async () => {
       if (meta.value?.doi) {
-        const url = new URL(`${meta.value?.doi}`);
+        const url = new URL(`https://doi.org/${meta.value?.doi}`);
         const headers = new Headers({
           'Accept': 'application/ld+json'
         });
