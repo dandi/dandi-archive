@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
-from django.db.models import Q
 from django.http import HttpResponseRedirect
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers, status
@@ -17,11 +16,8 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services import audit
-from dandiapi.api.services.permissions.dandiset import (
-    get_owned_dandisets,
-    get_visible_dandisets,
-    is_dandiset_owner,
-)
+from dandiapi.api.services.exceptions import DandiError
+from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
@@ -106,18 +102,8 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     def get_queryset(self) -> QuerySet:
         qs = super().get_queryset()
 
-        # Start with just public zarrs, in case user is not authenticated
-        queryset_filter = Q(embargoed=False)
-
-        # Filter zarrs to either open access or owned
-        if self.request.user.is_authenticated:
-            user_owned_dandiset_ids = get_owned_dandisets(self.request.user).values_list(
-                'id', flat=True
-            )
-            queryset_filter |= Q(dandiset_id__in=user_owned_dandiset_ids)
-
-        # Apply filter
-        return qs.filter(queryset_filter)
+        # Filter zarrs to those that are contained by dandisets visible to the user
+        return qs.filter(dandiset__in=get_visible_dandisets(self.request.user))
 
     @swagger_auto_schema(
         query_serializer=ZarrListQuerySerializer,
@@ -158,6 +144,14 @@ class ZarrViewSet(ReadOnlyModelViewSet):
         )
         if not is_dandiset_owner(dandiset, request.user):
             raise PermissionDenied
+
+        # Prevent addition to dandiset during unembargo
+        if dandiset.unembargo_in_progress:
+            raise DandiError(
+                message='Cannot add zarr to dandiset during unembargo',
+                http_status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         zarr_archive: ZarrArchive = ZarrArchive(name=name, dandiset=dandiset)
         with transaction.atomic():
             # Use nested transaction block to prevent zarr creation race condition
