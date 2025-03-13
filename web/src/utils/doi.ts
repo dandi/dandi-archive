@@ -4,11 +4,6 @@ export async function getDoiMetadata(doi: string, currentUrl: string): Promise<s
   const headers = new Headers({
     'Accept': 'application/ld+json'
   });
-
-  try {
-    const response = await fetch(url, { headers });
-    return await response.text();
-  } catch (error) {
-    console.error('Error fetching metadata:', error);
-  }
+  const response = await fetch(url, { headers });
+  return await response.text();
 }
