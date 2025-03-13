@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-export async function getDoiMetadata(doi: string, currentUrl: string): Promise<string> {
-  const prefix = currentUrl!.startsWith('https://gui-staging.dandiarchive.org/')
-    ? 'https://handle.stage.datacite.org/'
-    : 'https://doi.org/';
+export async function getDoiMetadata(doi: string): Promise<string> {
+  const prefix = import.meta.env.VITE_APP_DOI_SERVER;
   const url = `${prefix}${doi}`;
 
   const response = await axios.get(url, {

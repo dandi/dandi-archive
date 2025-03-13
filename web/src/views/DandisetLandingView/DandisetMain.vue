@@ -403,7 +403,7 @@ export default defineComponent({
     watchEffect(async () => {
       // Inject datacite metadata into the page
       if (meta.value?.doi) {
-        const metadataText = await getDoiMetadata(meta.value.doi, meta.value.url);
+        const metadataText = await getDoiMetadata(meta.value.doi);
         const script = document.createElement('script');
         script.setAttribute('type', 'application/ld+json');
         script.textContent = metadataText;
