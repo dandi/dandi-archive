@@ -265,7 +265,7 @@
 <script lang="ts">
 import type { ComputedRef } from 'vue';
 import {
-  defineComponent, computed, ref,
+  defineComponent, computed, ref, watchEffect,
 } from 'vue';
 
 import filesize from 'filesize';
@@ -399,7 +399,8 @@ export default defineComponent({
       navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
     }
 
-    const injectDataCiteMetadata = async () => {
+    watchEffect(async () => {
+      // Inject datacite metadata into the page
       if (meta.value?.doi) {
         const prefix = meta.value?.url!.startsWith('https://gui-staging.dandiarchive.org/') ? 'https://handle.stage.datacite.org/' : 'https://doi.org/';
         const url = new URL(`${prefix}${meta.value?.doi}`);
@@ -418,9 +419,8 @@ export default defineComponent({
           console.error('Error fetching metadata:', error);
         }
       }
-    };
+    });
 
-    injectDataCiteMetadata();
     return {
       currentDandiset,
       formatDate,
