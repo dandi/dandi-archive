@@ -1,6 +1,6 @@
 const dandiUrl = 'https://dandiarchive.org';
 const dandiAboutUrl = 'https://about.dandiarchive.org/';
-const dandiDocumentationUrl = 'https://docs.dandiarchive.org/10_using_dandi/';
+const dandiDocumentationUrl = 'https://docs.dandiarchive.org';
 const dandiHelpUrl = 'https://github.com/dandi/helpdesk/issues/new/choose';
 const dandihubUrl = 'https://hub.dandiarchive.org/';
 
