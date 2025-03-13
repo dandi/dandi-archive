@@ -401,12 +401,13 @@ export default defineComponent({
 
     const injectDataCiteMetadata = async () => {
       if (meta.value?.doi) {
+        const url = new URL(`${meta.value?.doi}`);
         const headers = new Headers({
           'Accept': 'application/ld+json'
         });
 
         try {
-          const response = await fetch(meta.value?.doi, { headers });
+          const response = await fetch(url, { headers });
           const metadataText = await response.text();
           const script = document.createElement('script');
           script.setAttribute('type', 'application/ld+json');
