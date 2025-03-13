@@ -401,7 +401,8 @@ export default defineComponent({
 
     const injectDataCiteMetadata = async () => {
       if (meta.value?.doi) {
-        const url = new URL(`https://doi.org/${meta.value?.doi}`);
+        const prefix = meta.value?.url!.startsWith('https://gui-staging.dandiarchive.org/') ? 'https://handle.stage.datacite.org/' : 'https://doi.org/';
+        const url = new URL(`${prefix}${meta.value?.doi}`);
         const headers = new Headers({
           'Accept': 'application/ld+json'
         });
