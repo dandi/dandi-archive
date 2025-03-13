@@ -1,3 +1,22 @@
+# v0.4.25 (Thu Mar 13 2025)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Austin Macdonald ([@asmacdo](https://github.com/asmacdo)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Fix lingering issues with embargoed zarr implementation [#2211](https://github.com/dandi/dandi-archive/pull/2211) ([@jjnesbitt](https://github.com/jjnesbitt))
+- fixup: Add admin email to CI env vars [#2205](https://github.com/dandi/dandi-archive/pull/2205) ([@asmacdo](https://github.com/asmacdo))
+- Move admin email into Django setting [#2205](https://github.com/dandi/dandi-archive/pull/2205) ([@asmacdo](https://github.com/asmacdo))
+
+#### Authors: 2
+
+- Austin Macdonald ([@asmacdo](https://github.com/asmacdo))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.24 (Thu Mar 06 2025)
 
 #### 🐛 Bug Fix
