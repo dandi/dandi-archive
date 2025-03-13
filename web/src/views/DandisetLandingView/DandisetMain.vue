@@ -399,6 +399,26 @@ export default defineComponent({
       navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
     }
 
+    const injectDataCiteMetadata = async () => {
+      if (meta.doi) {
+        const headers = new Headers({
+          'Accept': 'application/ld+json'
+        });
+
+        try {
+          const response = await fetch(meta.doi, { headers });
+          const metadataText = await response.text();
+          const script = document.createElement('script');
+          script.setAttribute('type', 'application/ld+json');
+          script.textContent = metadataText;
+          document.head.appendChild(script);
+        } catch (error) {
+          console.error('Error fetching metadata:', error);
+        }
+      }
+    };
+
+    injectDataCiteMetadata();
     return {
       currentDandiset,
       formatDate,
