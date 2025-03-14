@@ -1,3 +1,15 @@
+# v0.4.26 (Fri Mar 14 2025)
+
+#### 🐛 Bug Fix
+
+- Fix DANDI Docs links [#2213](https://github.com/dandi/dandi-archive/pull/2213) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
 # v0.4.25 (Thu Mar 13 2025)
 
 :tada: This release contains work from a new contributor! :tada:
