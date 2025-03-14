@@ -265,7 +265,7 @@
 <script lang="ts">
 import type { ComputedRef } from 'vue';
 import {
-  defineComponent, computed, ref,
+  defineComponent, computed, ref, watchEffect,
 } from 'vue';
 
 import filesize from 'filesize';
@@ -274,6 +274,7 @@ import moment from 'moment';
 import DOMPurify from 'dompurify';
 
 import { useDandisetStore } from '@/stores/dandiset';
+import { getDoiMetadata } from '@/utils/doi';
 import type { AccessInformation, DandisetStats, SubjectMatterOfTheDataset } from '@/types';
 
 import AccessInformationTab from '@/components/DLP/AccessInformationTab.vue';
@@ -398,6 +399,17 @@ export default defineComponent({
       const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
       navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
     }
+
+    watchEffect(async () => {
+      // Inject datacite metadata into the page
+      if (meta.value?.doi) {
+        const metadataText = await getDoiMetadata(meta.value.doi as string);
+        const script = document.createElement('script');
+        script.setAttribute('type', 'application/ld+json');
+        script.textContent = metadataText;
+        document.head.appendChild(script);
+      }
+    });
 
     return {
       currentDandiset,
