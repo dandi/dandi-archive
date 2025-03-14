@@ -223,6 +223,10 @@ class DandisetQueryParameterSerializer(serializers.Serializer):
         help_text='Whether to filter the result to only dandisets'
         ' that have been starred by the current user.',
     )
+    search = serializers.CharField(
+        required=False,
+        help_text='Search terms to filter the results.',
+    )
 
 
 class DandisetSearchQueryParameterSerializer(DandisetQueryParameterSerializer):
