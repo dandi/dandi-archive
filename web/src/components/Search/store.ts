@@ -4,7 +4,7 @@ import { DANDISETS_PER_PAGE } from '@/utils/constants';
 import { dandiRest } from '@/rest';
 
 const searchParameters = reactive<{
-  file_type?: string;
+  file_type?: string[];
   file_size_min?: number;
   file_size_max?: number;
   measurement_technique?: string[];

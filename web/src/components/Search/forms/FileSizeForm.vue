@@ -10,9 +10,9 @@ import { searchParameters } from '../store';
       <span>Min</span>
       <v-text-field
         v-model="searchParameters.file_size_min"
-        dense
+        density="compact"
         type="number"
-        outlined
+        variant="outlined"
         style="min-width: 4ch;"
       />
     </v-col>
@@ -21,9 +21,9 @@ import { searchParameters } from '../store';
       <span>Max</span>
       <v-text-field
         v-model="searchParameters.file_size_max"
-        dense
+        density="compact"
         type="number"
-        outlined
+        variant="outlined"
         style="min-width: 4ch;"
       />
     </v-col>

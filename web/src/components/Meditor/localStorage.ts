@@ -1,6 +1,5 @@
 import { user } from '@/rest';
 import type { DandiModel } from './types';
-// eslint-disable-next-line import/no-cycle
 import type { MeditorTransaction } from './transactions';
 
 function getModelLocalStorage(identifier: string) {

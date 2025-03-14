@@ -1,6 +1,6 @@
 <template>
   <v-card
-    outlined
+    variant="outlined"
     class="mt-4 px-3 pb-5"
   >
     <v-row
@@ -11,7 +11,7 @@
         no-gutters
         class="my-1 ml-1"
       >
-        <div class="black--text text-h5">
+        <div class="text-black text-h5">
           Owners
         </div>
       </v-row>
@@ -22,9 +22,8 @@
         <v-chip
           v-for="(owner, i) in limitedOwners"
           :key="i"
-          color="grey lighten-4"
-          text-color="grey darken-2"
-          class="font-weight-medium ma-1"
+          color="grey-lighten-4"
+          class="font-weight-medium ma-1 text-grey-darken-2"
           style="border: 1px solid #E0E0E0 !important;"
         >
           {{ owner.name || owner.username }}
@@ -47,24 +46,24 @@
         width="80%"
         persistent
       >
-        <template #activator="{ on }">
+        <template #activator="{ props: dialogProps }">
           <v-tooltip
             :disabled="!manageOwnersDisabled"
-            left
+            location="left"
           >
-            <template #activator="{ on: tooltipOn }">
+            <template #activator="{ props: tooltipProps }">
               <div
                 style="width: 100%;"
-                v-on="tooltipOn"
+                v-bind="tooltipProps"
               >
                 <v-btn
                   id="manage"
-                  depressed
+                  variant="flat"
                   :disabled="manageOwnersDisabled"
-                  color="light-blue lighten-5"
-                  class="light-blue--text text--lighten-1 justify-start"
+                  color="light-blue-lighten-5"
+                  class="text-light-blue-lighten-1 justify-start"
                   block
-                  v-on="on"
+                  v-bind="dialogProps"
                 >
                   <v-icon
                     class="pr-2"

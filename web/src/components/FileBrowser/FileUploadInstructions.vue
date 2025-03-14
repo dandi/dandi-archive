@@ -20,7 +20,7 @@
           <v-sheet
             color="black"
             width="60%"
-            class="white--text pl-2 py-1 text-left"
+            class="text-white pl-2 py-1 text-left"
           >
             <div>> {{ downloadCommand }}</div>
             <div>> cd {{ dandisetIdentifier }}</div>
@@ -33,8 +33,8 @@
       <div>
         <span class="text-subtitle-1">Don't have DANDI CLI?</span>
         <div>
-          <span class="text-body-2 grey--text text--darken-1">
-            <span class="text-body-2 grey--text text--darken-1">
+          <span class="text-body-2 text-grey-darken-1">
+            <span class="text-body-2 text-grey-darken-1">
               Follow the installation instructions in the
               <a href="https://docs.dandiarchive.org/user-guide-sharing/uploading-data">
                 DANDI Docs
