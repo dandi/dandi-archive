@@ -1,3 +1,15 @@
+# v0.4.27 (Fri Mar 14 2025)
+
+#### 🐛 Bug Fix
+
+- Add search query parameter to dandiset list endpoint serializer [#2216](https://github.com/dandi/dandi-archive/pull/2216) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.4.26 (Fri Mar 14 2025)
 
 #### 🐛 Bug Fix
