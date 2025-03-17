@@ -1,3 +1,15 @@
+# v0.4.28 (Mon Mar 17 2025)
+
+#### 🐛 Bug Fix
+
+- Allow robots on web frontend [#2200](https://github.com/dandi/dandi-archive/pull/2200) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.4.27 (Fri Mar 14 2025)
 
 #### 🐛 Bug Fix
