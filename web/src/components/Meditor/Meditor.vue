@@ -173,46 +173,46 @@
         </v-tab>
       </v-tabs>
       <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
-      <v-tabs-window v-model="tab">
-        <v-tabs-window-item value="tab-0">
-          <v-form
-            v-model="basicModelValid"
-            style="height: 70vh;"
-            class="px-7 py-5 overflow-y-auto"
-          >
-            <v-jsf
-              :key="`
+        <v-tabs-window v-model="tab">
+          <v-tabs-window-item value="tab-0">
+            <v-form
+              v-model="basicModelValid"
+              style="height: 70vh;"
+              class="px-7 py-5 overflow-y-auto"
+            >
+              <v-jsf
+                :key="`
             basicModel-${editorInterface.transactionTracker.getTransactionPointer()}
           `"
-              v-model="basicModel"
-              :schema="basicSchema"
-              :options="CommonVJSFOptions"
-              @update:model-value="vjsfListener"
-            />
-          </v-form>
-        </v-tabs-window-item>
-      </v-tabs-window>
-      <v-tabs-window
-        v-for="(propKey, i) in fieldsToRender"
-        :key="`tab-window-${i+1}`"
-        v-model="tab"
-        eager
-      >
-        <v-tabs-window-item :value="`tab-${i+1}`">
-          <v-card class="pa-2 px-1">
-            <v-form
-              v-model="complexModelValidation[propKey]"
-              class="px-7"
-            >
-              <v-jsf-wrapper
-                :prop-key="propKey"
+                v-model="basicModel"
+                :schema="basicSchema"
                 :options="CommonVJSFOptions"
-                :readonly="readonly"
+                @update:model-value="vjsfListener"
               />
             </v-form>
-          </v-card>
-        </v-tabs-window-item>
-      </v-tabs-window>
+          </v-tabs-window-item>
+        </v-tabs-window>
+        <v-tabs-window
+          v-for="(propKey, i) in fieldsToRender"
+          :key="`tab-window-${i+1}`"
+          v-model="tab"
+          eager
+        >
+          <v-tabs-window-item :value="`tab-${i+1}`">
+            <v-card class="pa-2 px-1">
+              <v-form
+                v-model="complexModelValidation[propKey]"
+                class="px-7"
+              >
+                <v-jsf-wrapper
+                  :prop-key="propKey"
+                  :options="CommonVJSFOptions"
+                  :readonly="readonly"
+                />
+              </v-form>
+            </v-card>
+          </v-tabs-window-item>
+        </v-tabs-window>
       </v-defaults-provider>
     </v-card>
   </v-dialog>
