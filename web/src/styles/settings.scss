@@ -22,3 +22,8 @@ change without manual CSS styling.
 .v-theme--DandiLightTheme.v-card {
   background-color: #FFFFFF;
 }
+
+.v-btn.v-btn--disabled {
+  background-color: rgba(0,0,0,.12)!important;
+  color: rgba(0,0,0,.26)!important;
+}
