@@ -172,6 +172,7 @@
           </v-badge>
         </v-tab>
       </v-tabs>
+      <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
       <v-tabs-window v-model="tab">
         <v-tabs-window-item value="tab-0">
           <v-form
@@ -181,8 +182,8 @@
           >
             <v-jsf
               :key="`
-                basicModel-${editorInterface.transactionTracker.getTransactionPointer()}
-              `"
+            basicModel-${editorInterface.transactionTracker.getTransactionPointer()}
+          `"
               v-model="basicModel"
               :schema="basicSchema"
               :options="CommonVJSFOptions"
@@ -212,6 +213,7 @@
           </v-card>
         </v-tabs-window-item>
       </v-tabs-window>
+      </v-defaults-provider>
     </v-card>
   </v-dialog>
 </template>
@@ -221,6 +223,8 @@ import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
 import { ref, computed } from 'vue';
+
+import type { VuetifyOptions } from 'vuetify'
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
@@ -292,6 +296,13 @@ const CommonVJSFOptions = computed(() => ({
   readOnly: readonly.value,
   // Hide the read-only properties in the schema
   readOnlyPropertiesMode: 'hide',
+}));
+
+const VJSFVuetifyDefaultProps = computed<VuetifyOptions['defaults']>(() => ({
+  global: {
+    variant: 'outlined',
+    density: 'compact',
+  }
 }));
 
 // undo/redo functionality
