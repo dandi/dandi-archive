@@ -174,21 +174,23 @@
       </v-tabs>
       <v-tabs-window v-model="tab">
         <v-tabs-window-item value="tab-0">
-          <v-form
-            v-model="basicModelValid"
-            style="height: 70vh;"
-            class="px-7 py-5 overflow-y-auto"
-          >
-            <v-jsf
-              :key="`
-                basicModel-${editorInterface.transactionTracker.getTransactionPointer()}
-              `"
-              v-model="basicModel"
-              :schema="basicSchema"
-              :options="CommonVJSFOptions"
-              @update:model-value="vjsfListener"
-            />
-          </v-form>
+          <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
+            <v-form
+              v-model="basicModelValid"
+              style="height: 70vh;"
+              class="px-7 py-5 overflow-y-auto"
+            >
+              <v-jsf
+                :key="`
+            basicModel-${editorInterface.transactionTracker.getTransactionPointer()}
+          `"
+                v-model="basicModel"
+                :schema="basicSchema"
+                :options="CommonVJSFOptions"
+                @update:model-value="vjsfListener"
+              />
+            </v-form>
+          </v-defaults-provider>
         </v-tabs-window-item>
       </v-tabs-window>
       <v-tabs-window
@@ -232,6 +234,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
+import { VJSFVuetifyDefaultProps } from './utils';
 
 import {
   clearLocalStorage,

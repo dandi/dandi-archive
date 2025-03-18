@@ -1,4 +1,5 @@
 import type { JSONSchema7 } from 'json-schema';
+import type { VuetifyOptions } from 'vuetify';
 
 import { cloneDeep, pickBy } from 'lodash';
 import type {
@@ -92,3 +93,10 @@ export function writeSubModelToMaster(
   });
 
 }
+
+export const VJSFVuetifyDefaultProps: VuetifyOptions['defaults'] = {
+  global: {
+    variant: 'outlined',
+    density: 'compact',
+  },
+};

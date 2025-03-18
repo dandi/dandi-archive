@@ -6,20 +6,22 @@
           style="height: 60vh;"
           class="overflow-y-auto"
         >
-          <v-form v-model="formValid">
-            <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
-            <v-jsf
-              v-if="index >= 0"
-              :key="`
+          <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
+            <v-form v-model="formValid">
+              <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
+              <v-jsf
+                v-if="index >= 0"
+                :key="`
                 ${propKey}-${index}-${editorInterface.transactionTracker.getTransactionPointer()}
               `"
-              class="my-6"
-              :model-value="currentItem"
-              :schema="schema"
-              :options="options"
-              @update:model-value="currentItem = $event"
-            />
-          </v-form>
+                class="my-6"
+                :model-value="currentItem"
+                :schema="schema"
+                :options="options"
+                @update:model-value="currentItem = $event"
+              />
+            </v-form>
+          </v-defaults-provider>
         </div>
         <div style="height: 10vh;">
           <v-divider class="my-2" />
@@ -138,6 +140,7 @@ import type { JSONSchema7 } from 'json-schema';
 
 import type { DandiModel } from './types';
 import { editorInterface } from './state';
+import { VJSFVuetifyDefaultProps } from './utils';
 
 const props = defineProps({
   propKey: {
