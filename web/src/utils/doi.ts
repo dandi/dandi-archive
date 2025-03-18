@@ -9,5 +9,5 @@ export async function getDoiMetadata(doi: string): Promise<string> {
       'Accept': 'application/ld+json',
     },
   });
-  return response.data;
+  return JSON.stringify(response.data);
 }
