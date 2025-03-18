@@ -19,20 +19,19 @@
           class="float-right"
         />
       </v-list-item-title>
-      <v-list-item-subtitle>
+      <v-list-item-subtitle class="opacity-80">
         <v-chip
           v-if="item.version && item.version !== 'draft'"
-          class="mr-1"
+          class="mr-1 bg-light-blue-lighten-4 text-light-blue-darken-3"
           size="small"
-          color="light-blue-lighten-4 text-light-blue-darken-3"
+          variant="flat"
         >
           <b>{{ item.version }}</b>
         </v-chip>
         <v-chip
           v-else
           size="x-small"
-          class="mr-1 px-2"
-          color="amber-lighten-3 text-amber-darken-4"
+          class="mr-1 px-2 bg-amber-lighten-3 text-amber-darken-4"
         >
           <b>DRAFT</b>
         </v-chip>
@@ -40,7 +39,7 @@
           v-if="item.dandiset.embargo_status !== 'OPEN'"
           size="x-small"
           class="mr-1 px-2"
-          :color="`${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4 text-${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'}-darken-3`"
+          :color="`bg-${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'} lighten-4 text-${item.dandiset.embargo_status === 'EMBARGOED' ? 'red' : 'green'}-darken-3`"
         >
           <b>{{ item.dandiset.embargo_status }}</b>
         </v-chip>
