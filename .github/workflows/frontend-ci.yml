@@ -226,6 +226,14 @@ jobs:
 
   #   - name: Install test data
   #     run: python manage.py loaddata playwright
+  #   - name: Create a superuser
+  #     run: python manage.py createsuperuser --noinput --email admin@example.com
+
+  #   - name: Create Dandiset
+  #     run: python manage.py create_dev_dandiset --owner admin@example.com --id 1
+
+  #   - name: Install test data
+  #     run: python manage.py loaddata playwright
 
   #   - name: Install dependencies
   #     run: yarn install --frozen-lockfile
