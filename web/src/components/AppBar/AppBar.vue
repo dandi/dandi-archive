@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar>
+  <v-app-bar class="px-4">
     <v-menu
       v-if="isMobile"
       :close-delay="300"
