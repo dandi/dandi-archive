@@ -1,6 +1,7 @@
 <template>
-  <v-list lines="three">
+  <v-list lines="three" class="pb-8">
     <v-list-item
+      class="py-3"
       v-for="(item, index) in dandisets"
       :key="item.dandiset.identifier"
       :to="{
@@ -10,7 +11,7 @@
       }"
       exact
     >
-      <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 pb-1">
+      <v-list-item-title class="wrap-text text-h6 text-grey-darken-3 font-weight-medium">
         {{ item.name }}
         <StarButton
           :identifier="item.dandiset.identifier"
@@ -19,7 +20,7 @@
           class="float-right"
         />
       </v-list-item-title>
-      <v-list-item-subtitle class="opacity-80">
+      <v-list-item-subtitle class="opacity-70">
         <v-chip
           v-if="item.version && item.version !== 'draft'"
           class="mr-1 bg-light-blue-lighten-4 text-light-blue-darken-3"
