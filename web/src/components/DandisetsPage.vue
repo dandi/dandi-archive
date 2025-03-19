@@ -1,6 +1,9 @@
 <template>
   <div>
-    <v-toolbar color="grey-darken-2">
+    <v-toolbar
+      color="grey-darken-2"
+      class="px-4"
+    >
       <v-menu
         v-if="!user"
         :close-on-content-click="false"
@@ -37,7 +40,7 @@
       </div>
       <v-chip-group
         :model-value="sortOption"
-        selected-class="white light-blue--text"
+        selected-class="white text-light-blue bg-white"
         dark
         mandatory
       >
