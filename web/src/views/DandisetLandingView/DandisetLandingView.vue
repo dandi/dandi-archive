@@ -4,7 +4,7 @@
       v-if="currentDandiset"
       :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`"
     />
-    <v-toolbar class="bg-grey-darken-2 text-white">
+    <v-toolbar class="px-4 bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
         v-model="page"
