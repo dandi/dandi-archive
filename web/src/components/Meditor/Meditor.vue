@@ -140,7 +140,7 @@
       </v-card>
       <v-tabs
         v-model="tab"
-        bg-color="grey darken-2"
+        bg-color="grey-darken-2"
         slider-color="highlight"
         show-arrows
         align-tabs="title"
@@ -173,8 +173,14 @@
         </v-tab>
       </v-tabs>
       <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
-        <v-tabs-window v-model="tab">
-          <v-tabs-window-item value="tab-0">
+        <v-tabs-window
+          v-model="tab"
+          :transition="false"
+        >
+          <v-tabs-window-item
+            value="tab-0"
+            :transition="false"
+          >
             <v-form
               v-model="basicModelValid"
               style="height: 70vh;"
@@ -197,8 +203,12 @@
           :key="`tab-window-${i+1}`"
           v-model="tab"
           eager
+          :transition="false"
         >
-          <v-tabs-window-item :value="`tab-${i+1}`">
+          <v-tabs-window-item
+            :value="`tab-${i+1}`"
+            :transition="false"
+          >
             <v-card class="pa-2 px-1">
               <v-form
                 v-model="complexModelValidation[propKey]"
@@ -302,6 +312,7 @@ const VJSFVuetifyDefaultProps = computed<VuetifyOptions['defaults']>(() => ({
   global: {
     variant: 'outlined',
     density: 'compact',
+    // transition: 'slide-y-transition',
   }
 }));
 
