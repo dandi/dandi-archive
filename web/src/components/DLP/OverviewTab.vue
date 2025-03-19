@@ -208,6 +208,7 @@
                     <v-btn
                       v-if="isURL(item.identifier)"
                       icon
+                      variant="text"
                       :href="item.identifier"
                       target="_blank"
                       rel="noopener"
