@@ -43,5 +43,18 @@ class AuditRecord(models.Model):
     record_type = models.CharField(max_length=32, choices=AUDIT_RECORD_CHOICES)
     details = models.JSONField(blank=True)
 
+    # These fields are only used when these audit actions are done by admins
+    admin = models.BooleanField(default=False)
+    description = models.TextField(null=False, default='')
+
+    class Meta:
+        constraints = [
+            # Ensure that if admin=False, the description is also empty
+            models.CheckConstraint(
+                name='admin-description-pairing',
+                check=(models.Q(admin=False, description='') | models.Q(admin=True)),
+            )
+        ]
+
     def __str__(self):
         return f'{self.record_type}/{self.dandiset_id:06}'
