@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
 from django.core import mail
+from django.core.exceptions import PermissionDenied
 from django.db.models import OuterRef, Q, Subquery
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
@@ -151,14 +152,20 @@ def users_search_view(request: Request) -> HttpResponseBase:
 
 @swagger_auto_schema(
     method='POST',
-    operation_summary='Send an email to the specified user',
+    operation_summary='Send an email to the specified user (Superuser only)',
     request_body=UserEmailSerializer,
-    responses={200: UserEmailSerializer},
+    responses={
+        200: UserEmailSerializer,
+        403: 'Permission Denied: Only superusers can access this endpoint.'
+    },
 )
 @parser_classes([JSONParser])
 @api_view(['POST'])
-# @permission_classes([IsAdmin])  # TODO no such thing. try api/views/dashboard.py for mixin?
 def user_email_view(request: Request) -> HttpResponseBase:
+    # If they are authenticated but are not a superuser, deny access
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     request_serializer = UserEmailSerializer(data=request.data)
     request_serializer.is_valid(raise_exception=True)
     message = build_message(
@@ -169,5 +176,4 @@ def user_email_view(request: Request) -> HttpResponseBase:
     # TODO enable
     # with mail.get_connection() as connection:
     #     connection.send_messages([message])
-    # TODO maybe should be a 301 or something?
     return Response(request_serializer.data)
