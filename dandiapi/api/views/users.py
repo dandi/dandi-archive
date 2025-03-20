@@ -1,21 +1,25 @@
 from __future__ import annotations
 
+import json
 import logging
 import re
 from typing import TYPE_CHECKING
 
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.models import User
+from django.core import mail
 from django.db.models import OuterRef, Q, Subquery
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from dandiapi.api.mail import build_message
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
-from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
+from dandiapi.api.views.serializers import UserDetailSerializer, UserEmailSerializer, UserSerializer
 
 if TYPE_CHECKING:
     from django.http.response import HttpResponseBase
@@ -144,3 +148,26 @@ def users_search_view(request: Request) -> HttpResponseBase:
     users = [serialize_user(user) for user in qs]
     response_serializer = UserDetailSerializer(users, many=True)
     return Response(response_serializer.data)
+
+@swagger_auto_schema(
+    method='POST',
+    operation_summary='Send an email to the specified user',
+    request_body=UserEmailSerializer,
+    responses={200: UserEmailSerializer},
+)
+@parser_classes([JSONParser])
+@api_view(['POST'])
+# @permission_classes([IsAdmin])  # TODO no such thing. try api/views/dashboard.py for mixin?
+def user_email_view(request: Request) -> HttpResponseBase:
+    request_serializer = UserEmailSerializer(data=request.data)
+    request_serializer.is_valid(raise_exception=True)
+    message = build_message(
+        subject=request_serializer.validated_data["subject"],
+        message=request_serializer.validated_data["message"],
+        to=[request_serializer.validated_data["username"]],
+    )
+    # TODO enable
+    # with mail.get_connection() as connection:
+    #     connection.send_messages([message])
+    # TODO maybe should be a 301 or something?
+    return Response(request_serializer.data)

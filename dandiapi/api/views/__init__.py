@@ -14,7 +14,7 @@ from .upload import (
     upload_initialize_view,
     upload_validate_view,
 )
-from .users import users_me_view, users_search_view
+from .users import user_email_view, users_me_view, users_search_view
 from .version import VersionViewSet
 
 __all__ = [
@@ -31,6 +31,7 @@ __all__ = [
     'upload_complete_view',
     'upload_validate_view',
     'user_approval_view',
+    'user_email_view',
     'users_me_view',
     'user_questionnaire_form_view',
     'users_search_view',
