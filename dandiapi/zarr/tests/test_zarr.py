@@ -105,6 +105,27 @@ def test_zarr_rest_create_embargoed_dandiset(
     )
     assert resp.status_code == 200
 
+    # Ensure this zarr is embargoed
+    zarr = ZarrArchive.objects.get(zarr_id=resp.json()['zarr_id'])
+    assert zarr.embargoed
+
+
+@pytest.mark.django_db
+def test_zarr_rest_create_unembargoing(
+    authenticated_api_client, user, zarr_archive, dandiset_factory
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    add_dandiset_owner(dandiset, user)
+    resp = authenticated_api_client.post(
+        '/api/zarr/',
+        {
+            'name': zarr_archive.name,
+            'dandiset': dandiset.identifier,
+        },
+        format='json',
+    )
+    assert resp.status_code == 400
+
 
 @pytest.mark.django_db
 def test_zarr_rest_get(authenticated_api_client, storage, zarr_archive_factory, zarr_file_factory):
@@ -132,7 +153,11 @@ def test_zarr_rest_get(authenticated_api_client, storage, zarr_archive_factory, 
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get_embargoed(authenticated_api_client, user, embargoed_zarr_archive):
+def test_zarr_rest_get_embargoed(
+    authenticated_api_client, user, embargoed_zarr_archive_factory, dandiset_factory
+):
+    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    embargoed_zarr_archive = embargoed_zarr_archive_factory(dandiset=dandiset)
     assert user not in get_dandiset_owners(embargoed_zarr_archive.dandiset)
 
     resp = authenticated_api_client.get(f'/api/zarr/{embargoed_zarr_archive.zarr_id}/')
@@ -144,17 +169,22 @@ def test_zarr_rest_get_embargoed(authenticated_api_client, user, embargoed_zarr_
 
 
 @pytest.mark.django_db
-def test_zarr_rest_list_embargoed(authenticated_api_client, user, dandiset, zarr_archive_factory):
+def test_zarr_rest_list_embargoed(
+    authenticated_api_client, user, dandiset_factory, zarr_archive_factory
+):
+    open_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    embargoed_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+
     # Create some embargoed and some open zarrs
-    open_zarrs = [zarr_archive_factory() for _ in range(3)]
-    embargoed_zarrs = [zarr_archive_factory(embargoed=True, dandiset=dandiset) for _ in range(3)]
+    open_zarrs = [zarr_archive_factory(dandiset=open_dandiset) for _ in range(3)]
+    embargoed_zarrs = [zarr_archive_factory(dandiset=embargoed_dandiset) for _ in range(3)]
 
     # Assert only open zarrs are returned
     zarrs = authenticated_api_client.get('/api/zarr/').json()['results']
     assert sorted(z['zarr_id'] for z in zarrs) == sorted(z.zarr_id for z in open_zarrs)
 
     # Assert that all zarrs returned when user has access to embargoed zarrs
-    replace_dandiset_owners(dandiset, [user])
+    replace_dandiset_owners(embargoed_dandiset, [user])
     zarrs = authenticated_api_client.get('/api/zarr/').json()['results']
     assert len(zarrs) == len(open_zarrs + embargoed_zarrs)
     assert sorted(z['zarr_id'] for z in zarrs) == sorted(

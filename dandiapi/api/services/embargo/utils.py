@@ -81,7 +81,8 @@ def remove_dandiset_embargo_tags(dandiset: Dandiset):
     client = get_boto_client(config=Config(max_pool_connections=100))
     embargoed_assets = (
         Asset.objects.filter(versions__dandiset=dandiset)
-        .filter(Q(blob__embargoed=True) | Q(zarr__embargoed=True))
+        # zarrs have no embargoed flag themselves and so are all included
+        .filter(Q(blob__embargoed=True) | Q(zarr__isnull=False))
         .values_list('blob__blob', 'zarr__zarr_id')
         .iterator(chunk_size=TAG_REMOVAL_CHUNK_SIZE)
     )

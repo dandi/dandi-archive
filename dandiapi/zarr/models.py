@@ -60,7 +60,6 @@ class ZarrArchive(TimeStampedModel):
 
     dandiset = models.ForeignKey(Dandiset, related_name='zarr_archives', on_delete=models.CASCADE)
     zarr_id = models.UUIDField(unique=True, default=uuid4, db_index=True)
-    embargoed = models.BooleanField(default=False)
     name = models.CharField(max_length=512)
     file_count = models.BigIntegerField(default=0)
     size = models.BigIntegerField(default=0)
@@ -70,6 +69,10 @@ class ZarrArchive(TimeStampedModel):
         choices=ZarrArchiveStatus.choices,
         default=ZarrArchiveStatus.PENDING,
     )
+
+    @property
+    def embargoed(self):
+        return self.dandiset.embargoed or self.dandiset.unembargo_in_progress
 
     @property
     def digest(self) -> dict[str, str]:

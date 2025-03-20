@@ -1,3 +1,58 @@
+# v0.4.28 (Mon Mar 17 2025)
+
+#### 🐛 Bug Fix
+
+- Allow robots on web frontend [#2200](https://github.com/dandi/dandi-archive/pull/2200) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 1
+
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.4.27 (Fri Mar 14 2025)
+
+#### 🐛 Bug Fix
+
+- Add search query parameter to dandiset list endpoint serializer [#2216](https://github.com/dandi/dandi-archive/pull/2216) ([@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 1
+
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
+# v0.4.26 (Fri Mar 14 2025)
+
+#### 🐛 Bug Fix
+
+- Fix DANDI Docs links [#2213](https://github.com/dandi/dandi-archive/pull/2213) ([@kabilar](https://github.com/kabilar))
+
+#### Authors: 1
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+
+---
+
+# v0.4.25 (Thu Mar 13 2025)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Austin Macdonald ([@asmacdo](https://github.com/asmacdo)), for all your work!
+
+#### 🐛 Bug Fix
+
+- Fix lingering issues with embargoed zarr implementation [#2211](https://github.com/dandi/dandi-archive/pull/2211) ([@jjnesbitt](https://github.com/jjnesbitt))
+- fixup: Add admin email to CI env vars [#2205](https://github.com/dandi/dandi-archive/pull/2205) ([@asmacdo](https://github.com/asmacdo))
+- Move admin email into Django setting [#2205](https://github.com/dandi/dandi-archive/pull/2205) ([@asmacdo](https://github.com/asmacdo))
+
+#### Authors: 2
+
+- Austin Macdonald ([@asmacdo](https://github.com/asmacdo))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.4.24 (Thu Mar 06 2025)
 
 #### 🐛 Bug Fix
