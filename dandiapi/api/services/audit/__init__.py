@@ -1,3 +1,5 @@
+# ruff: noqa: PLR0913
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -14,7 +16,13 @@ if TYPE_CHECKING:
 
 
 def _make_audit_record(
-    *, dandiset: Dandiset, user: User, record_type: AuditRecordType, details: dict
+    *,
+    dandiset: Dandiset,
+    user: User,
+    record_type: AuditRecordType,
+    details: dict,
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     audit_record = AuditRecord(
         dandiset_id=dandiset.id,
@@ -23,24 +31,45 @@ def _make_audit_record(
         user_fullname=f'{user.first_name} {user.last_name}',
         record_type=record_type,
         details=details,
+        admin=admin,
+        description=description,
     )
     audit_record.save()
 
     return audit_record
 
 
-def create_dandiset(*, dandiset: Dandiset, user: User, metadata: dict, embargoed: bool):
+def create_dandiset(
+    *,
+    dandiset: Dandiset,
+    user: User,
+    metadata: dict,
+    embargoed: bool,
+    admin: bool = False,
+    description: str = '',
+):
     details = {
         'metadata': metadata,
         'embargoed': embargoed,
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='create_dandiset', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='create_dandiset',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
 def change_owners(
-    *, dandiset: Dandiset, user: User, removed_owners: list[User], added_owners: list[User]
+    *,
+    dandiset: Dandiset,
+    user: User,
+    removed_owners: list[User],
+    added_owners: list[User],
+    admin: bool = False,
+    description: str = '',
 ):
     def glean_user_info(user: User):
         return {
@@ -54,14 +83,26 @@ def change_owners(
         'added_owners': [glean_user_info(u) for u in added_owners],
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='change_owners', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='change_owners',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def update_metadata(*, dandiset: Dandiset, user: User, metadata: dict) -> AuditRecord:
+def update_metadata(
+    *, dandiset: Dandiset, user: User, metadata: dict, admin: bool = False, description: str = ''
+) -> AuditRecord:
     details = {'metadata': metadata}
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='update_metadata', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='update_metadata',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
@@ -78,89 +119,173 @@ def _asset_details(asset: Asset) -> dict:
     }
 
 
-def add_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
+def add_asset(
+    *, dandiset: Dandiset, user: User, asset: Asset, admin: bool = False, description: str = ''
+) -> AuditRecord:
     details = _asset_details(asset)
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='add_asset', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='add_asset',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def update_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
+def update_asset(
+    *, dandiset: Dandiset, user: User, asset: Asset, admin: bool = False, description: str = ''
+) -> AuditRecord:
     details = _asset_details(asset)
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='update_asset', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='update_asset',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def remove_asset(*, dandiset: Dandiset, user: User, asset: Asset) -> AuditRecord:
+def remove_asset(
+    *, dandiset: Dandiset, user: User, asset: Asset, admin: bool = False, description: str = ''
+) -> AuditRecord:
     details = {
         'path': asset.path,
         'asset_id': str(asset.asset_id),
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='remove_asset', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='remove_asset',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def create_zarr(*, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive) -> AuditRecord:
+def create_zarr(
+    *,
+    dandiset: Dandiset,
+    user: User,
+    zarr_archive: ZarrArchive,
+    admin: bool = False,
+    description: str = '',
+) -> AuditRecord:
     details = {
         'zarr_id': str(zarr_archive.zarr_id),
         'name': zarr_archive.name,
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='create_zarr', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='create_zarr',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
 def upload_zarr_chunks(
-    *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, paths: list[str]
+    *,
+    dandiset: Dandiset,
+    user: User,
+    zarr_archive: ZarrArchive,
+    paths: list[str],
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = {
         'zarr_id': str(zarr_archive.zarr_id),
         'paths': paths,
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='upload_zarr_chunks', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='upload_zarr_chunks',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
 def delete_zarr_chunks(
-    *, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive, paths: list[str]
+    *,
+    dandiset: Dandiset,
+    user: User,
+    zarr_archive: ZarrArchive,
+    paths: list[str],
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = {
         'zarr_id': str(zarr_archive.zarr_id),
         'paths': paths,
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='delete_zarr_chunks', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='delete_zarr_chunks',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def finalize_zarr(*, dandiset: Dandiset, user: User, zarr_archive: ZarrArchive) -> AuditRecord:
+def finalize_zarr(
+    *,
+    dandiset: Dandiset,
+    user: User,
+    zarr_archive: ZarrArchive,
+    admin: bool = False,
+    description: str = '',
+) -> AuditRecord:
     details = {
         'zarr_id': str(zarr_archive.zarr_id),
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='finalize_zarr', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='finalize_zarr',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def unembargo_dandiset(*, dandiset: Dandiset, user: User) -> AuditRecord:
+def unembargo_dandiset(
+    *, dandiset: Dandiset, user: User, admin: bool = False, description: str = ''
+) -> AuditRecord:
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='unembargo_dandiset', details={}
+        dandiset=dandiset,
+        user=user,
+        record_type='unembargo_dandiset',
+        details={},
     )
 
 
-def publish_dandiset(*, dandiset: Dandiset, user: User, version: str) -> AuditRecord:
+def publish_dandiset(
+    *, dandiset: Dandiset, user: User, version: str, admin: bool = False, description: str = ''
+) -> AuditRecord:
     details = {
         'version': version,
     }
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='publish_dandiset', details=details
+        dandiset=dandiset,
+        user=user,
+        record_type='publish_dandiset',
+        details=details,
+        admin=admin,
+        description=description,
     )
 
 
-def delete_dandiset(*, dandiset: Dandiset, user: User):
+def delete_dandiset(*, dandiset: Dandiset, user: User, admin: bool = False, description: str = ''):
     return _make_audit_record(
-        dandiset=dandiset, user=user, record_type='delete_dandiset', details={}
+        dandiset=dandiset,
+        user=user,
+        record_type='delete_dandiset',
+        details={},
+        admin=admin,
+        description=description,
     )
