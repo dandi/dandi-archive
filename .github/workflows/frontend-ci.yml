@@ -226,6 +226,7 @@ jobs:
 
   #   - name: Install test data
   #     run: python manage.py loaddata playwright
+
   #   - name: Create a superuser
   #     run: python manage.py createsuperuser --noinput --email admin@example.com
 
