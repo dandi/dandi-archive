@@ -49,10 +49,13 @@ class AuditRecord(models.Model):
 
     class Meta:
         constraints = [
-            # Ensure that if admin=False, the description is also empty
+            # Ensure that if admin=False, the description is also empty, and vice versa
             models.CheckConstraint(
                 name='admin-description-pairing',
-                check=(models.Q(admin=False, description='') | models.Q(admin=True)),
+                check=(
+                    models.Q(admin=False, description='')
+                    | (models.Q(admin=True) & ~models.Q(description=''))
+                ),
             )
         ]
 
