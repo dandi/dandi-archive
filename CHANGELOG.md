@@ -1,3 +1,17 @@
+# v0.4.29 (Fri Mar 21 2025)
+
+#### 🐛 Bug Fix
+
+- enh: inject datacite metadata as schema.org for dataset search [#2212](https://github.com/dandi/dandi-archive/pull/2212) ([@satra](https://github.com/satra) [@mvandenburgh](https://github.com/mvandenburgh) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 3
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
 # v0.4.28 (Mon Mar 17 2025)
 
 #### 🐛 Bug Fix
