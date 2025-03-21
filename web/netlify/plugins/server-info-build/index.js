@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   // Use onPostBuild hook so that the dist/ folder exists
   onPostBuild: ({ netlifyConfig }) => {
     let apiUrl = process.env.VITE_APP_DANDI_API_ROOT;

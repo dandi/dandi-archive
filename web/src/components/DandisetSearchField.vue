@@ -4,15 +4,14 @@
     @submit="performSearch"
   >
     <v-text-field
-      :value="$route.query.search"
+      :model-value="$route.query.search"
       label="Search Dandisets by name, description, identifier, or contributor name"
-      outlined
-      solo
+      variant="outlined"
       hide-details
-      :dense="dense"
-      background-color="white"
+      :density="dense ? 'compact' : undefined"
+      bg-color="white"
       color="black"
-      @input="updateSearch"
+      @update:model-value="updateSearch"
     >
       <template #prepend-inner>
         <v-icon @click="performSearch">
@@ -25,8 +24,8 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
-import type { RawLocation } from 'vue-router';
-import { useRoute } from 'vue-router/composables';
+import type { RouteLocationRaw } from 'vue-router';
+import { useRoute } from 'vue-router';
 import router from '@/router';
 
 export default defineComponent({
@@ -67,7 +66,7 @@ export default defineComponent({
             ...route.query,
             search: currentSearch.value,
           },
-        } as RawLocation);
+        } as RouteLocationRaw);
       }
     }
 

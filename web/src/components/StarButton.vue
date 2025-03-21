@@ -1,6 +1,11 @@
 <template>
   <div>
-    <v-btn icon :disabled="!loggedIn" @click.prevent="toggleStar">
+    <v-btn
+      variant="plain"
+      icon
+      :disabled="!loggedIn"
+      @click.prevent="toggleStar"
+    >
       <v-icon :color="isStarred ? 'amber darken-2' : undefined">
         {{ isStarred ? 'mdi-star' : 'mdi-star-outline' }}
       </v-icon>
