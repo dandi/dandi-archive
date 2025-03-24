@@ -180,7 +180,6 @@ class ZarrViewSet(ReadOnlyModelViewSet):
     @action(methods=['POST'], url_path='finalize', detail=True)
     def finalize(self, request, zarr_id):
         """Finalize a zarr archive."""
-        # TODO: Remove locking?
         queryset = self.get_queryset().select_for_update(of=['self'])
         with transaction.atomic():
             zarr_archive: ZarrArchive = get_object_or_404(queryset, zarr_id=zarr_id)
