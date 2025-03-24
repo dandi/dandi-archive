@@ -43,6 +43,7 @@
         selected-class="white text-light-blue bg-white"
         dark
         mandatory
+        style="min-width: 25%"
       >
         <v-chip
           v-for="(option, i) in sortingOptions"
