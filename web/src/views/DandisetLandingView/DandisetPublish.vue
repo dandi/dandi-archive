@@ -158,7 +158,7 @@
       :is-owner="isOwner"
     />
 
-    <v-row>
+    <v-row no-gutters>
       <v-list-subheader class="mb-2 text-black text-h5">
         This Version
       </v-list-subheader>
@@ -179,7 +179,7 @@
         <h3>{{ currentVersion?.toUpperCase() }}</h3>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row no-gutters>
       <v-list-subheader class="mb-2 text-black text-h5">
         Other Versions
       </v-list-subheader>
