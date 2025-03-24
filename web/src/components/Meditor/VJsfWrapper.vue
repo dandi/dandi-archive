@@ -3,7 +3,6 @@
     <v-row class="d-flex justify-space-between">
       <v-col cols="6">
         <div
-          style="height: 60vh;"
           class="overflow-y-auto"
         >
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
@@ -57,7 +56,7 @@
         </div>
       </v-col>
       <v-col
-        :style="`background-color: ${theme.current.value.colors.dropzone}; height: 70vh;`"
+        :style="`background-color: ${theme.current.value.colors.dropzone}; min-height: 55vh; ${currentModel.length === 0 ? 'display: none;' : ''}`"
         class="overflow-y-auto"
         cols="6"
       >

@@ -8,6 +8,7 @@
       v-if="schema && model && editorInterface"
       v-page-title="model.name"
       class="overflow-hidden"
+      min-height="70vh"
     >
       <!-- TODO: fix and re-enable this -->
       <!-- <v-dialog
@@ -172,7 +173,7 @@
           </v-badge>
         </v-tab>
       </v-tabs>
-      <v-tabs-window v-model="tab">
+      <v-tabs-window v-model="tab" eager>
         <v-tabs-window-item value="tab-0">
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form
@@ -405,3 +406,14 @@ const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
 // });
 
 </script>
+
+<style scoped>
+/***
+ Disable all Vuetify component transitions in the Meditor.
+ Vuetify's default tab transitions cause VJSF to glitch out and
+ flicker when tabs change.
+***/
+div[class^="v-"]{
+  transition: none !important;
+}
+</style>
