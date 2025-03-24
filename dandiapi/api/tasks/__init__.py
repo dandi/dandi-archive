@@ -66,7 +66,7 @@ def write_manifest_files(version_id: int) -> None:
 def validate_asset_metadata_task(asset_id: int) -> None:
     from dandiapi.api.services.metadata import validate_asset_metadata
 
-    asset: Asset = Asset.objects.filter(id=asset_id, status=Asset.Status.PENDING).first()
+    asset: Asset | None = Asset.objects.filter(id=asset_id, status=Asset.Status.PENDING).first()
     if asset:
         validate_asset_metadata(asset=asset)
     else:
