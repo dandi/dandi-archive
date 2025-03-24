@@ -140,7 +140,7 @@
       </v-card>
       <v-tabs
         v-model="tab"
-        bg-color="grey darken-2"
+        bg-color="grey-darken-2"
         slider-color="highlight"
         show-arrows
         align-tabs="title"
