@@ -30,3 +30,5 @@ fcd288cc5df05a1c861e291e90ab676586cabe63
 3475e00370422f0db23586b3a24e1b9099dbf203
 # Run `pyupgrade` to update to latest python syntax
 b285a06a9c0b7e1d4057c560a38ef6e4b783f5bb
+# Fix TD004 Missing colon in TODO
+15b7c7a4ae36584f617eb2e778ad3a615a9ed49a
