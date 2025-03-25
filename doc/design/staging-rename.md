@@ -13,7 +13,7 @@ The following changes will be required to make this name change happen.
 1. **New URL for sandbox deployment.** The deployment formerly known as “staging” will be accessible at `https://sandbox.dandiarchive.org`.
 2. **New URL for sandbox API.** The corresponding Django API app will be accessible at `https://api.sandbox.dandiarchive.org`.
 3. **Redirections for old URLs.** To prevent user pain, we will redirect requests to the old application and API URLs to the new ones:
-    1. [`https://gui-staging.dandiarchive.org`](https://gui-staging.dandiarchive.org) → `https://sandbox.dandiarchive.org`
+    1. [`https://gui-staging.dandiarchive.org`](https://gui-staging.dandiarchive.org) → [`https://sandbox.dandiarchive.org`](https://sandbox.dandiarchive.org)
     2. [`https://api-staging.dandiarchive.org`](https://api-staging.dandiarchive.org) → [`https://api.sandbox.dandiarchive.org`](https://api.sandbox.dandiarchive.org) (using HTTP 308 to preserve the request method)
 
     The second redirection is probably less important for end users (excluding those that have written, e.g., Python scripts using the DANDI API against staging/sandbox for some reason), but it is necessary to avoid deprecating all previous versions of the DANDI CLI tool which still presumably references the old URLs.
