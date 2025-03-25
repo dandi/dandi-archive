@@ -4,7 +4,7 @@ We have long referred to our test deployment of the DANDI Archive as “staging�
 
 The latter usage has led to user confusion about the role of the staging deployment. Specifically, the name “staging” makes people think that they are supposed to put data here for review and cleaning, etc., before it makes its way to a more permanent home somewhere.
 
-To avoid that confusion, we are changing the name of the this deployment from “staging” to “sandbox”, better reflecting the end user experience of this deployment. Despite the name change, we will continue to use our deployment strategy without any changes.
+To avoid that confusion, we are changing the name of this deployment from “staging” to “sandbox”, better reflecting the end user experience of this deployment. Despite the name change, we will continue to use our deployment strategy without any changes.
 
 ## Requirements
 
