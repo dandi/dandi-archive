@@ -7,7 +7,6 @@ const COOKIE_DISABLED_MESSAGE = 'We noticed you\'re blocking cookies - note that
 test.describe("Cookie banner behavior", async () => {
   test("cookie banner when cookies are enabled", async ({ page }) => {
     await page.goto(clientUrl);
-    await page.waitForLoadState("networkidle");
     await expect(page.getByText(COOKIE_CONSENT_MESSAGE)).toHaveCount(1);
     await page.getByText("Got it!").click();
     await expect(page.getByText(COOKIE_CONSENT_MESSAGE)).toHaveCount(0);
@@ -20,7 +19,6 @@ test.describe("Cookie banner behavior", async () => {
       Object.defineProperty(navigator.__proto__, "cookieEnabled", { get: () => false });
     });
     await page.goto(clientUrl);
-    await page.waitForLoadState("networkidle");
 
     await expect(page.getByText(COOKIE_DISABLED_MESSAGE)).toHaveCount(1);
     await page.getByText("Got it!").click();

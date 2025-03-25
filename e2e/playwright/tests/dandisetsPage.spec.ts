@@ -18,7 +18,6 @@ test.describe("dandisets page", async () => {
     const searchFieldText = "Search Dandisets by name,";
     await page.getByLabel(searchFieldText).click();
     await page.keyboard.press("Enter");
-    await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: "󰒓" }).click();
     await page.waitForTimeout(500);
     await page.getByText("Empty Dandisets").click();
@@ -46,9 +45,7 @@ test.describe("dandisets page", async () => {
     const name = `name ${id}`;
     const description = `description ${id}`;
     const identifier = await registerDandiset(page, name, description);
-    await page.waitForLoadState("networkidle");
     await page.getByRole("link", { name: "My Dandisets" }).click();
-    await page.waitForLoadState("networkidle");
     await expect(page.getByText(name)).toHaveCount(1);
     await expect(page.getByText(`DANDI:${identifier}`)).toHaveCount(1);
     await expect(page.getByText(`Contact ${lastname}, ${firstname}`)).toHaveCount(1);
