@@ -18,10 +18,8 @@ async function registerNewUser(page: Page) {
   const lastname = faker.person.lastName();
 
   await page.goto(clientUrl);
-  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: LOGIN_BUTTON_TEXT }).click();
   await page.goto(page.url().replace("/accounts/login", "/accounts/signup"));
-  await page.waitForLoadState("networkidle");
   await page.getByPlaceholder("Email address").click();
   await page.getByPlaceholder("Email address").fill(email);
   await page.getByPlaceholder("Password").first().click();
@@ -34,9 +32,9 @@ async function registerNewUser(page: Page) {
   await page.getByLabel("Last Name").click({ force: true });
   await page.getByLabel("Last Name").fill(lastname);
   await page.keyboard.press(" ");  // Using locator.fill does not enable to button for some reason
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   await page.keyboard.press("Backspace");
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   await page.getByRole("button").click();
 
   return { email, firstname, lastname, password };
@@ -59,7 +57,6 @@ async function registerDandiset(page: Page, name: string, description: string) {
   await page.getByLabel("License").click()
   await page.getByRole("option", { name: "spdx:CC0-" }).click();
   await page.getByRole("button", { name: "Register Dandiset" }).click();
-  await page.waitForLoadState("networkidle");
   await page.waitForTimeout(250);
   const dandisetId = await page.url().split("/").pop();
   return dandisetId;
@@ -67,14 +64,12 @@ async function registerDandiset(page: Page, name: string, description: string) {
 
 async function gotoAndLogin(page: Page) {
   await page.goto(clientUrl);
-  await page.waitForLoadState("networkidle");
   await page.getByRole("button", { name: LOGIN_BUTTON_TEXT }).click();
   await page.getByPlaceholder("Email address").click();
   await page.getByPlaceholder("Email address").fill("admin@kitware.com");
   await page.getByPlaceholder("Password").click();
   await page.getByPlaceholder("Password").fill("password");
   await page.getByRole("button", { name: "Sign In " }).click();
-  await page.waitForLoadState("networkidle");
 }
 
 export {
@@ -82,6 +77,7 @@ export {
   TEST_USER_INITIALS,
   LOGOUT_BUTTON_TEXT,
   LOGIN_BUTTON_TEXT,
+  dismissCookieBanner,
   gotoAndLogin,
   registerDandiset,
   registerNewUser,

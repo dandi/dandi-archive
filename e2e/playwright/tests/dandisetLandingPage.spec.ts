@@ -25,7 +25,6 @@ test.describe("dandiset landing page", async () => {
     const dandisetName = faker.lorem.words();
     const dandisetDescription = faker.lorem.sentences();
     await registerDandiset(newPage, dandisetName, dandisetDescription);
-    await newPage.waitForLoadState("networkidle");
     await expect(newPage.getByText(otherUserName)).toHaveCount(0);
     await expect(newPage.getByText(ownerName)).toHaveCount(1);
 
@@ -36,7 +35,6 @@ test.describe("dandiset landing page", async () => {
     await newPage.keyboard.press(" ");
     await newPage.keyboard.press("Backspace");
     await newPage.waitForTimeout(250);
-    await newPage.waitForLoadState("networkidle");
     await newPage.getByRole("dialog").getByRole("button").nth(1).click();
     await newPage.getByRole("button", { name: "Done" }).click();
     await expect(newPage.getByText(otherUserName)).toHaveCount(1);
