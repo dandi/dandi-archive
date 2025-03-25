@@ -173,7 +173,10 @@
           </v-badge>
         </v-tab>
       </v-tabs>
-      <v-tabs-window v-model="tab" eager>
+      <v-tabs-window
+        v-model="tab"
+        eager
+      >
         <v-tabs-window-item value="tab-0">
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form

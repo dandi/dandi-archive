@@ -1,9 +1,12 @@
 <template>
-  <v-list lines="three" class="pb-8">
+  <v-list
+    lines="three"
+    class="pb-8"
+  >
     <v-list-item
-      class="py-3"
       v-for="(item, index) in dandisets"
       :key="item.dandiset.identifier"
+      class="py-3"
       :to="{
         name: 'dandisetLanding',
         params: { identifier: item.dandiset.identifier },
