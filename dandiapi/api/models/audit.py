@@ -49,7 +49,7 @@ class AuditRecord(models.Model):
 
     class Meta:
         constraints = [
-            # Ensure that if admin=False, the description is also empty, and vice versa
+            # Require a description for admin-executed actions.
             models.CheckConstraint(
                 name='admin-description-pairing',
                 check=(
