@@ -21,8 +21,10 @@ const editorInterface = computed({
       }
       // Otherwise, mutate the existing instance's properties
       Object.entries(newVal).forEach(([key, value]) => {
-        // @ts-expect-error TODO: Fix this
-        (state.editorInterface as EditorInterface)[key] = value;
+        if (!state.editorInterface) {
+          throw new Error('Unexpected state change');
+        }
+        state.editorInterface[key as keyof EditorInterface] = value;
       });
     }
   },
