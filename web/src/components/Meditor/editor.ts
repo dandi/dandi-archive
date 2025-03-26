@@ -1,12 +1,9 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef, Ref } from 'vue';
-import Vue, {
-  computed, reactive, ref, watch,
-} from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { cloneDeep } from 'lodash';
 
-// eslint-disable-next-line import/no-cycle
 import { setModelLocalStorage } from './localStorage';
 import type { DandiModel, DandiModelUnion } from './types';
 import {
@@ -16,7 +13,6 @@ import {
   writeSubModelToMaster,
   populateEmptyArrays,
 } from './utils';
-// eslint-disable-next-line import/no-cycle
 import { MeditorTransactionTracker } from './transactions';
 
 /**
@@ -89,18 +85,18 @@ class EditorInterface {
 
   setBasicModel(newModel: DandiModel) {
     Object.entries(newModel).forEach(([key, value]) => {
-      Vue.set(this.basicModel.value, key, value);
+      this.basicModel.value[key] = value;
     });
   }
 
   setComplexModel(newModel: DandiModel) {
     Object.entries(newModel).forEach(([key, value]) => {
-      Vue.set(this.complexModel, key, value);
+      this.complexModel[key] = value;
     });
   }
 
   setComplexModelProp(propKey: string, value: DandiModelUnion) {
-    Vue.set(this.complexModel, propKey, value);
+    this.complexModel[propKey] = value;
   }
 }
 

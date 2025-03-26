@@ -1,0 +1,29 @@
+/**
+ * src/styles/settings.scss
+ *
+ * Configures SASS variables and Vuetify overwrites
+ */
+
+// https://vuetifyjs.com/features/sass-variables/`
+
+/**
+
+This file is an artifact of the transition from Vuetify 2 to Vuetify 3.
+We want to maintain the same look and feel as before, so this file is used to globally override
+some styles that were changed from Vuetify 2 to Vuetify 3 that are not easy to/impossible to
+change without manual CSS styling.
+  */
+.v-theme--DandiLightTheme[class*="variant-outlined"] {
+  border: thin solid #E0E0E0 !important;
+  color: #424242 !important;
+  font-weight: 400 !important;
+}
+
+.v-theme--DandiLightTheme.v-card {
+  background-color: #FFFFFF;
+}
+
+.v-btn.v-btn--disabled {
+  background-color: rgba(0,0,0,.12)!important;
+  color: rgba(0,0,0,.26)!important;
+}

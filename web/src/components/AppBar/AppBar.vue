@@ -1,72 +1,61 @@
 <template>
-  <v-app-bar app>
+  <v-app-bar class="px-4">
     <v-menu
-      v-if="$vuetify.breakpoint.mobile"
-      open-on-hover
-      offset-y
-      close-delay="300"
+      v-if="isMobile"
+      :close-delay="300"
+      location="bottom"
     >
-      <template #activator="{on}">
-        <v-app-bar-nav-icon v-on="on" />
+      <template #activator="{ props }">
+        <v-app-bar-nav-icon v-bind="props" />
       </template>
       <v-list>
-        <v-list-item-group>
-          <template v-for="navItem in navItems">
-            <v-list-item
-              v-if="!navItem.if || navItem.if()"
-              :key="navItem.text"
-              :to="navItem.external ? undefined : {name: navItem.to}"
-              :href="navItem.external ? navItem.to : undefined"
-              :target="navItem.external ? '_blank' : undefined"
-              :rel="navItem.external ? 'noopener' : undefined"
-              exact
-              text
-            >
-              <v-list-item-content
-                v-if="!navItem.external"
-                text
-                class="text-md"
-              >
+        <template v-for="navItem in navItems">
+          <v-list-item
+            v-if="!navItem.if || navItem.if()"
+            :key="navItem.text"
+            :to="navItem.external ? undefined : {name: navItem.to}"
+            :href="navItem.external ? navItem.to : undefined"
+            :target="navItem.external ? '_blank' : undefined"
+            :rel="navItem.external ? 'noopener' : undefined"
+            exact
+            text
+          >
+            <template v-if="!navItem.external">
+              <v-list-item-title class="text-md">
                 {{ navItem.text }}
-              </v-list-item-content>
-              <v-list-item-content
-                v-if="navItem.external"
-                :href="navItem.to"
-                target="_blank"
-                rel="noopener"
-                text
-              >
+              </v-list-item-title>
+            </template>
+            <template v-if="navItem.external">
+              <v-list-item-title class="text-md">
                 {{ navItem.text }}
-              </v-list-item-content>
+              </v-list-item-title>
               <v-icon
-                v-if="navItem.external"
                 class="ml-1"
-                small
+                size="small"
               >
                 mdi-open-in-new
               </v-icon>
-            </v-list-item>
-          </template>
-        </v-list-item-group>
+            </template>
+          </v-list-item>
+        </template>
       </v-list>
     </v-menu>
     <router-link to="/">
       <v-img
         alt="DANDI logo"
-        contain
-        width="100px"
+        :width="100"
         :src="logo"
         class="mr-3"
       />
     </router-link>
-    <v-toolbar-items v-if="!$vuetify.breakpoint.mobile">
+    <v-toolbar-items v-if="!isMobile">
       <template v-for="navItem in navItems">
         <v-btn
           v-if="!navItem.external && (!navItem.if || navItem.if())"
           :key="navItem.text"
           :to="{name: navItem.to}"
           exact
-          text
+          variant="text"
         >
           {{ navItem.text }}
         </v-btn>
@@ -76,12 +65,12 @@
           :href="navItem.to"
           target="_blank"
           rel="noopener"
-          text
+          variant="text"
         >
           {{ navItem.text }}
           <v-icon
             class="ml-1"
-            small
+            size="small"
           >
             mdi-open-in-new
           </v-icon>
@@ -96,10 +85,10 @@
         <v-btn
           :disabled="!user?.approved"
           :to="{ name: 'createDandiset' }"
-          exact
           class="mx-3"
           color="primary"
-          rounded
+          variant="elevated"
+          rounded="pill"
         >
           New Dandiset
         </v-btn>
@@ -107,16 +96,17 @@
       </template>
       <template v-else>
         <v-tooltip
-          bottom
+          location="bottom"
           :disabled="cookiesEnabled"
         >
-          <template #activator="{ on }">
-            <div v-on="on">
+          <template #activator="{ props }">
+            <div v-bind="props">
               <v-btn
                 id="login"
                 class="mx-1"
                 color="primary"
-                rounded
+                variant="elevated"
+                rounded="pill"
                 :disabled="!cookiesEnabled"
                 @click="login"
               >
@@ -133,6 +123,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import {
   cookiesEnabled as cookiesEnabledFunc,
@@ -153,6 +144,9 @@ interface NavigationItem {
   if?(): boolean,
   external: boolean,
 }
+
+const display = useDisplay();
+const isMobile = computed(() => display.mobile.value);
 
 const cookiesEnabled = computed(cookiesEnabledFunc);
 const loggedIn = computed(loggedInFunc);

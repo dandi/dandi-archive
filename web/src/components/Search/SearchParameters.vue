@@ -19,7 +19,7 @@ const SEARCH_PARAMS = [
       <v-card
         v-for="(param, i) in SEARCH_PARAMS"
         :key="i"
-        outlined
+        variant="outlined"
         class="ma-4"
       >
         <v-card-title>

@@ -8,6 +8,7 @@
       v-if="schema && model && editorInterface"
       v-page-title="model.name"
       class="overflow-hidden"
+      min-height="70vh"
     >
       <!-- TODO: fix and re-enable this -->
       <!-- <v-dialog
@@ -48,178 +49,175 @@
           </v-card-actions>
         </v-card>
       </v-dialog> -->
-      <v-row>
-        <v-col>
-          <v-card
-            class="mb-2"
-            outlined
-          >
-            <v-card-actions class="pt-0">
-              <v-tooltip top>
-                <template #activator="{ on }">
-                  <v-icon
-                    left
-                    :color="modelValid ? 'success' : 'error'"
-                    v-on="on"
-                  >
-                    <template v-if="modelValid">
-                      mdi-checkbox-marked-circle
-                    </template>
-                    <template v-else>
-                      mdi-alert-circle
-                    </template>
-                  </v-icon>
-                </template>
+      <v-card
+        class="mb-2"
+        variant="outlined"
+      >
+        <v-card-actions class="pt-0">
+          <v-tooltip location="top">
+            <template #activator="{ props }">
+              <v-icon
+                start
+                :color="modelValid ? 'success' : 'error'"
+                v-bind="props"
+              >
                 <template v-if="modelValid">
-                  All metadata for this dandiset is valid.
+                  mdi-checkbox-marked-circle
                 </template>
                 <template v-else>
-                  There are errors in the metadata for this Dandiset.
+                  mdi-alert-circle
                 </template>
-              </v-tooltip>
-              <v-tooltip bottom>
-                <template #activator="{ on }">
-                  <v-btn
-                    icon
-                    :color="modified ? 'warning' : 'primary'"
-                    :disabled="readonly || !modified"
-                    v-on="on"
-                    @click="save"
-                  >
-                    <v-icon>{{ modified ? 'mdi-content-save-alert' : 'mdi-content-save' }}</v-icon>
-                  </v-btn>
-                </template>
-                <span>Save</span>
-              </v-tooltip>
-              <v-tooltip bottom>
-                <template #activator="{ on }">
-                  <v-btn
-                    icon
-                    color="secondary"
-                    :disabled="disableUndo"
-                    v-on="on"
-                    @click="undoChange"
-                  >
-                    <v-icon>
-                      mdi-undo
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span>Undo</span>
-              </v-tooltip>
-              <v-tooltip bottom>
-                <template #activator="{ on }">
-                  <v-btn
-                    icon
-                    color="secondary"
-                    :disabled="disableRedo"
-                    v-on="on"
-                    @click="redoChange"
-                  >
-                    <v-icon>
-                      mdi-redo
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span>Redo</span>
-              </v-tooltip>
-              <v-spacer />
-              <v-tooltip bottom>
-                <template #activator="{ on }">
-                  <v-btn
-                    icon
-                    v-on="on"
-                    @click="download"
-                  >
-                    <v-icon>
-                      mdi-download
-                    </v-icon>
-                  </v-btn>
-                </template>
-                <span>Download Metadata</span>
-              </v-tooltip>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-      <v-row class="px-2 justify-center">
-        <v-tabs
-          v-model="tab"
-          background-color="grey darken-2"
-          slider-color="highlight"
-          dark
-          show-arrows
-          align-with-title
+              </v-icon>
+            </template>
+            <template v-if="modelValid">
+              All metadata for this dandiset is valid.
+            </template>
+            <template v-else>
+              There are errors in the metadata for this Dandiset.
+            </template>
+          </v-tooltip>
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                icon
+                :color="modified ? 'warning' : 'primary'"
+                :disabled="readonly || !modified"
+                v-bind="props"
+                @click="save"
+              >
+                <v-icon>{{ modified ? 'mdi-content-save-alert' : 'mdi-content-save' }}</v-icon>
+              </v-btn>
+            </template>
+            <span>Save</span>
+          </v-tooltip>
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                icon
+                color="secondary"
+                :disabled="disableUndo"
+                v-bind="props"
+                @click="undoChange"
+              >
+                <v-icon>
+                  mdi-undo
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Undo</span>
+          </v-tooltip>
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                icon
+                color="secondary"
+                :disabled="disableRedo"
+                v-bind="props"
+                @click="redoChange"
+              >
+                <v-icon>
+                  mdi-redo
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Redo</span>
+          </v-tooltip>
+          <v-spacer />
+          <v-tooltip location="bottom">
+            <template #activator="{ props }">
+              <v-btn
+                icon
+                v-bind="props"
+                @click="download"
+              >
+                <v-icon>
+                  mdi-download
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Download Metadata</span>
+          </v-tooltip>
+        </v-card-actions>
+      </v-card>
+      <v-tabs
+        v-model="tab"
+        bg-color="grey-darken-2"
+        slider-color="highlight"
+        show-arrows
+        align-tabs="title"
+      >
+        <v-tab
+          value="tab-0"
+          class="font-weight-medium text-caption ml-2"
         >
-          <v-tab
-            key="tab-0"
-            class="font-weight-medium text-caption ml-2"
+          <v-badge
+            color="error"
+            dot
+            :model-value="!basicModelValid"
           >
-            <v-badge
-              color="error"
-              dot
-              :value="!basicModelValid"
-            >
-              General
-            </v-badge>
-          </v-tab>
-          <v-tab
-            v-for="(propKey, i) in fieldsToRender"
-            :key="`tab-${i+1}`"
-            class="font-weight-medium text-caption"
-          >
-            <v-badge
-              color="error"
-              dot
-              :value="!complexModelValidation[propKey]"
-            >
-              {{ getSchemaTitle(propKey) }}
-            </v-badge>
-          </v-tab>
-        </v-tabs>
-      </v-row>
-      <v-row>
-        <v-tabs-items
-          v-model="tab"
-          style="width: 100%;"
+            General
+          </v-badge>
+        </v-tab>
+        <v-tab
+          v-for="(propKey, i) in fieldsToRender"
+          :key="`tab-${i+1}`"
+          :value="`tab-${i+1}`"
+          class="font-weight-medium text-caption"
         >
-          <v-tab-item
-            key="tab-0"
-            eager
+          <v-badge
+            color="error"
+            dot
+            :model-value="!complexModelValidation[propKey]"
           >
+            {{ getSchemaTitle(propKey) }}
+          </v-badge>
+        </v-tab>
+      </v-tabs>
+      <v-tabs-window
+        v-model="tab"
+        eager
+      >
+        <v-tabs-window-item value="tab-0">
+          <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form
               v-model="basicModelValid"
               style="height: 70vh;"
               class="px-7 py-5 overflow-y-auto"
             >
               <v-jsf
+                :key="`
+            basicModel-${editorInterface.transactionTracker.getTransactionPointer()}
+          `"
                 v-model="basicModel"
                 :schema="basicSchema"
-                :options="{...CommonVJSFOptions, hideReadOnly: true}"
-                @change="vjsfListener"
+                :options="CommonVJSFOptions"
+                @update:model-value="vjsfListener"
               />
             </v-form>
-          </v-tab-item>
-          <v-tab-item
-            v-for="(propKey, i) in fieldsToRender"
-            :key="`tab-${i+1}`"
-            eager
-          >
-            <v-card class="pa-2 px-1">
-              <v-form
-                v-model="complexModelValidation[propKey]"
-                class="px-7"
-              >
-                <v-jsf-wrapper
-                  :prop-key="propKey"
-                  :options="CommonVJSFOptions"
-                  :readonly="readonly"
-                />
-              </v-form>
-            </v-card>
-          </v-tab-item>
-        </v-tabs-items>
-      </v-row>
+          </v-defaults-provider>
+        </v-tabs-window-item>
+      </v-tabs-window>
+      <v-tabs-window
+        v-for="(propKey, i) in fieldsToRender"
+        :key="`tab-window-${i+1}`"
+        v-model="tab"
+        eager
+      >
+        <v-tabs-window-item :value="`tab-${i+1}`">
+          <v-card class="pa-2 px-1">
+            <v-form
+              v-model="complexModelValidation[propKey]"
+              class="px-7"
+            >
+              <v-jsf-wrapper
+                :prop-key="propKey"
+                :options="CommonVJSFOptions"
+                :readonly="readonly"
+              />
+            </v-form>
+          </v-card>
+        </v-tabs-window-item>
+      </v-tabs-window>
     </v-card>
   </v-dialog>
 </template>
@@ -233,15 +231,14 @@ import { ref, computed } from 'vue';
 import jsYaml from 'js-yaml';
 import axios from 'axios';
 
-import VJsf from '@koumoul/vjsf/lib/VJsf';
-import '@koumoul/vjsf/lib/deps/third-party';
-import '@koumoul/vjsf/lib/VJsf.css';
+import VJsf from '@koumoul/vjsf';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
+import { VJSFVuetifyDefaultProps } from './utils';
 
 import {
   clearLocalStorage,
@@ -294,20 +291,14 @@ const {
   transactionTracker,
 } = editorInterface.value;
 const CommonVJSFOptions = computed(() => ({
-  initialValidation: 'all',
-  disableAll: readonly.value,
-  autoFixArrayItems: false,
-  childrenClass: 'px-2',
-  fieldProps: {
-    outlined: true,
-    dense: true,
-  },
-  arrayItemCardProps: {
-    outlined: true,
-    dense: true,
-  },
-  editMode: 'inline',
-  hideReadOnly: true,
+  // Always validate the metadata immediately upong the meditor opening
+  initialValidation: 'always',
+  // Do not add the default value for a field if it is missing
+  defaultOn: 'never',
+  // Do not allow the user to modify the form if it is read-only
+  readOnly: readonly.value,
+  // Hide the read-only properties in the schema
+  readOnlyPropertiesMode: 'hide',
 }));
 
 // undo/redo functionality
@@ -418,3 +409,14 @@ const fieldsToRender = Object.keys(complexSchema.properties as any).filter(
 // });
 
 </script>
+
+<style scoped>
+/***
+ Disable all Vuetify component transitions in the Meditor.
+ Vuetify's default tab transitions cause VJSF to glitch out and
+ flicker when tabs change.
+***/
+div[class^="v-"]{
+  transition: none !important;
+}
+</style>

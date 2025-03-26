@@ -1,51 +1,47 @@
 <template>
   <div>
-    <v-row>
-      <v-col>
-        <v-card
-          v-if="contributors && contributors.length"
-          outlined
-          height="100%"
+    <v-card
+      v-if="contributors && contributors.length"
+      variant="outlined"
+      height="100%"
+    >
+      <v-card-title class="font-weight-regular">
+        <v-icon class="mr-3 text-grey-lighten-1">
+          mdi-account-multiple
+        </v-icon>
+        Contributors
+      </v-card-title>
+      <v-list class="px-2 mb-2">
+        <v-chip
+          v-for="(contributor, i) in contributors"
+          :key="i"
+          style="margin: 5px;"
+          variant="outlined"
         >
-          <v-card-title class="font-weight-regular">
-            <v-icon class="mr-3 grey--text text--lighten-1">
-              mdi-account-multiple
-            </v-icon>
-            Contributors
-          </v-card-title>
-          <div class="px-2 mb-2">
-            <v-chip
-              v-for="(contributor, i) in contributors"
-              :key="i"
-              style="margin: 5px;"
-              outlined
+          {{ contributor.name }}
+          <a
+            v-if="contributor.identifier && contributor.schemaKey === 'Person'"
+            :href="`https://orcid.org/${contributor.identifier}`"
+            target="_blank"
+            class="mx-1 d-flex align-center"
+          >
+            <img
+              alt="ORCID logo"
+              src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
+              width="16"
+              height="16"
             >
-              {{ contributor.name }}
-              <a
-                v-if="contributor.identifier && contributor.schemaKey === 'Person'"
-                :href="`https://orcid.org/${contributor.identifier}`"
-                target="_blank"
-                class="mx-1 d-flex align-center"
-              >
-                <img
-                  alt="ORCID logo"
-                  src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png"
-                  width="16"
-                  height="16"
-                >
-              </a>
-              <a
-                v-if="contactPeople.has(contributor.name)"
-                :href="contributor.email ? `mailto:${contributor.email}` : undefined"
-                class="mx-1 text-decoration-none"
-              >
-                <v-icon color="info">mdi-card-account-mail</v-icon>
-              </a>
-            </v-chip>
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+          </a>
+          <a
+            v-if="contactPeople.has(contributor.name)"
+            :href="contributor.email ? `mailto:${contributor.email}` : undefined"
+            class="mx-1 text-decoration-none"
+          >
+            <v-icon color="info">mdi-card-account-mail</v-icon>
+          </a>
+        </v-chip>
+      </v-list>
+    </v-card>
     <MetadataCard
       :items="fundingInformation"
       name="Funding information"
@@ -53,7 +49,7 @@
     >
       <template #content="slotProps">
         <div
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <span
             v-if="slotProps.item.awardNumber"
@@ -71,20 +67,20 @@
     </MetadataCard>
 
     <MetadataCard
-      :items="protocols"
       v-if="protocols && protocols.length"
+      :items="protocols"
       name="Protocols"
       icon="mdi-file-document-check"
     >
       <template #content="slotProps">
-        <div class="text-caption grey--text text--darken-1">
-            <a
-                :href="slotProps.item"
-                target="_blank"
-                rel="noopener"
-            >
-                {{ slotProps.item }}
-            </a>
+        <div class="text-caption text-grey-darken-1">
+          <a
+            :href="slotProps.item"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ slotProps.item }}
+          </a>
         </div>
       </template>
     </MetadataCard>
@@ -98,28 +94,28 @@
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
-          class="text-caption grey--text text--darken-1 related-resource"
+          class="text-caption text-grey-darken-1 related-resource"
         >
           <strong>ID: </strong>{{ slotProps.item.identifier }}
           <br>
         </span>
         <span
           v-if="slotProps.item.resourceType"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Resource Type: </strong>{{ slotProps.item.resourceType }}
           <br>
         </span>
         <span
           v-if="slotProps.item.repository"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Repo: </strong>{{ slotProps.item.repository }}
           <br>
         </span>
         <span
           v-if="slotProps.item.relation"
-          class="text-caption grey--text text--darken-1"
+          class="text-caption text-grey-darken-1"
         >
           <strong>Relation: </strong>{{ slotProps.item.relation }}
         </span>
@@ -128,6 +124,7 @@
         <v-btn
           v-if="slotProps.item.url"
           icon
+          variant="text"
           :href="slotProps.item.url"
           target="_blank"
           rel="noopener"
@@ -137,105 +134,101 @@
       </template>
     </MetadataCard>
 
-    <v-row>
-      <v-col>
-        <v-card
-          v-if="assetSummary"
-          outlined
+    <v-card
+      v-if="assetSummary"
+      variant="outlined"
+    >
+      <v-card-title class="font-weight-regular">
+        <v-progress-circular
+          v-if="assetSummaryBeingComputed"
+          class="mr-3"
+          size="20"
+          indeterminate
+        />
+        <v-icon
+          v-else
+          class="mr-3 text-grey-lighten-1"
         >
-          <v-card-title class="font-weight-regular">
-            <v-progress-circular
-              v-if="assetSummaryBeingComputed"
-              class="mr-3"
-              size="20"
-              indeterminate
-            />
-            <v-icon
-              v-else
-              class="mr-3 grey--text text--lighten-1"
-            >
-              mdi-clipboard-list
-            </v-icon>
-            Assets Summary
-          </v-card-title>
-          <v-list
-            :style="`column-count: ${assetSummaryColumnCount};`"
-            class="px-3 ml-2"
+          mdi-clipboard-list
+        </v-icon>
+        Assets Summary
+      </v-card-title>
+      <v-list
+        :style="`column-count: ${assetSummaryColumnCount};`"
+        class="px-3 ml-2"
+      >
+        <div
+          v-if="assetSummaryBeingComputed"
+          class="text-subtitle-2"
+        >
+          The assets summary is being computed, please wait.
+        </div>
+        <div
+          v-else-if="!assetSummary || !Object.keys(assetSummary).length"
+          class="font-italic font-weight-bold"
+          v-text="`This Dandiset does not contain any valid assets.${currentDandiset?.asset_validation_errors.length ? ' Please check the asset validation errors on the right panel.' : ''}`"
+        />
+        <div
+          v-for="([type, items], i) in Object.entries(assetSummary)"
+          v-else
+          :key="i"
+        >
+          <div
+            v-if="items && items.length"
+            class="d-inline-block"
+            style="width: 100%;"
           >
+            <span class="font-weight-bold">
+              {{ type }}
+            </span>
             <div
-              v-if="assetSummaryBeingComputed"
-              class="text-subtitle-2"
-            >
-              The assets summary is being computed, please wait.
-            </div>
-            <div
-              v-else-if="!assetSummary || !Object.keys(assetSummary).length"
-              class="font-italic font-weight-bold"
-              v-text="`This Dandiset does not contain any valid assets.${currentDandiset?.asset_validation_errors.length ? ' Please check the asset validation errors on the right panel.' : ''}`"
-            >
-            </div>
-            <div
-              v-for="([type, items], i) in Object.entries(assetSummary)"
-              v-else
-              :key="i"
+              v-for="(item, ii) in items"
+              :key="ii"
+              :title="type"
+              background-color="grey lighten-4"
+              class="bg-grey-lighten-4"
+              style="width: 100%;"
             >
               <div
-                v-if="items && items.length"
-                class="d-inline-block"
-                style="width: 100%;"
-              >
-                <span class="font-weight-bold">
-                  {{ type }}
-                </span>
-                <div
-                  v-for="(item, ii) in items"
-                  :key="ii"
-                  :title="type"
-                  background-color="grey lighten-4"
-                  class="grey lighten-4"
-                  style="width: 100%;"
-                >
-                  <div
-                    class="pl-2 my-1 py-1"
-                    :style="`border-left: medium solid ${$vuetify.theme.themes.light.primary};
+                class="pl-2 my-1 py-1"
+                :style="`border-left: medium solid ${theme.current.value.colors.primary};
                             line-height: 1.25`"
+              >
+                <v-row
+                  no-gutters
+                  class="align-center py-0"
+                  style="min-height: 2em;"
+                >
+                  <v-col
+                    cols="10"
                   >
-                    <v-row
-                      no-gutters
-                      class="align-center py-0"
-                      style="min-height: 2em;"
+                    <span>{{ item.name || item.identifier || item.id || item }}</span>
+                  </v-col>
+                  <v-col>
+                    <v-btn
+                      v-if="isURL(item.identifier)"
+                      icon
+                      variant="text"
+                      :href="item.identifier"
+                      target="_blank"
+                      rel="noopener"
                     >
-                      <v-col
-                        cols="10"
-                      >
-                        <span>{{ item.name || item.identifier || item.id || item }}</span>
-                      </v-col>
-                      <v-col>
-                        <v-btn
-                          v-if="isURL(item.identifier)"
-                          icon
-                          :href="item.identifier"
-                          target="_blank"
-                          rel="noopener"
-                        >
-                          <v-icon>mdi-link</v-icon>
-                        </v-btn>
-                      </v-col>
-                    </v-row>
-                    <span
-                      v-if="!isURL(item.identifier)"
-                      class="text-caption grey--text text--darken-1"
-                    >
-                      {{ item.identifier }}
-                    </span>
-                  </div>
-                </div>
+                      <v-icon>mdi-link</v-icon>
+                    </v-btn>
+                  </v-col>
+                </v-row>
+                <span
+                  v-if="!isURL(item.identifier)"
+                  class="text-caption text-grey-darken-1"
+                >
+                  {{ item.identifier }}
+                </span>
               </div>
             </div>
-          </v-list>
-        </v-card>
-      </v-col>
-    </v-row>
+          </div>
+        </div>
+      </v-list>
+    </v-card>
 
     <MetadataCard
       v-if="associatedProjects && associatedProjects.length"
@@ -246,7 +239,7 @@
       <template #content="slotProps">
         <span
           v-if="slotProps.item.identifier"
-          class="text-caption grey--text text--darken-1 related-resource"
+          class="text-caption text-grey-darken-1 related-resource"
         >
           <strong>Identifier: </strong>{{ slotProps.item.identifier }}
           <br>
@@ -257,9 +250,8 @@
 </template>
 
 <script setup lang="ts">
-import {
-  computed, getCurrentInstance, onMounted, onUnmounted,
-} from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
+import { useDisplay, useTheme } from 'vuetify';
 
 import MetadataCard from '@/components/DLP/MetadataCard.vue';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -281,7 +273,7 @@ function isURL(str: string): boolean {
   let url;
   try {
     url = new URL(str);
-  } catch (e) {
+  } catch {
     return false;
   }
 
@@ -299,7 +291,8 @@ const props = defineProps({
   },
 });
 
-const $vuetify = computed(() => getCurrentInstance()?.proxy.$vuetify);
+const theme = useTheme();
+const display = useDisplay();
 
 const store = useDandisetStore();
 const currentDandiset = computed(() => store.dandiset);
@@ -346,7 +339,7 @@ const assetSummary = computed<Record<string, any>>(
 
 // Approximate a good column count for asset summary card
 const assetSummaryColumnCount = computed(
-  () => ($vuetify.value?.breakpoint.mdAndDown ? 1
+  () => (display.mdAndDown.value ? 1
     : Math.min(Object.keys(assetSummary.value).length, 3)),
 );
 

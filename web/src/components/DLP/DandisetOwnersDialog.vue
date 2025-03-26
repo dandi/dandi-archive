@@ -1,13 +1,13 @@
 <template>
   <v-card
     class="flex-grow-0"
-    :max-height="$vuetify.breakpoint.xs ? undefined : '90vh'"
-    :height="$vuetify.breakpoint.xs ? '100%' : undefined"
+    :max-height="isXsDisplay ? undefined : '90vh'"
+    :height="isXsDisplay ? '100%' : undefined"
   >
     <v-card-title class="justify-space-between">
       <span class="font-weight-light">Manage Owners</span>
       <v-btn
-        :small="$vuetify.breakpoint.xs"
+        :size="isXsDisplay ? 'small' : undefined"
         color="info"
         elevation="0"
         @click="save()"
@@ -20,16 +20,16 @@
 
     <v-row no-gutters>
       <v-col
-        :cols="$vuetify.breakpoint.xs ? 12 : 6"
+        :cols="isXsDisplay ? 12 : 6"
         class="d-flex flex-column"
       >
         <div class="mx-3 mt-4 mb-2">
           <v-text-field
             v-model="searchQuery"
-            dense
+            density="compact"
             label="Filter users (by name/email)"
             hide-details="auto"
-            outlined
+            variant="outlined"
             @keyup="throttledUpdate"
           />
         </div>
@@ -47,10 +47,10 @@
                 <v-row class="align-center">
                   <v-checkbox
                     color="info"
-                    :input-value="isSelected(result)"
+                    :model-value="isSelected(result)"
                     @click="checkBoxHandler(result)"
                   />
-                  <span class="text-body-2 font-weight-medium grey--text text--darken-3">
+                  <span class="text-body-2 font-weight-medium text-grey-darken-3">
                     {{ result.name || result.username }}
                   </span>
                   <span
@@ -61,7 +61,7 @@
                   </span>
                 </v-row>
                 <v-btn
-                  x-small
+                  size="x-small"
                   height="2rem"
                   color="info"
                   elevation="0"
@@ -79,14 +79,14 @@
         <v-card-actions class="elevation-10 mt-1 px-3 justify-space-between">
           <v-btn
             class="pa-2"
-            text
+            variant="text"
             @click="clearForm"
           >
             Clear form
           </v-btn>
           <v-btn
-            class="pa-2 py-5 grey darken-3 white--text"
-            depressed
+            class="pa-2 py-5 bg-grey-darken-3 text-white"
+            variant="flat"
             @click="addSelected"
           >
             <span class="mr-6 ml-2">
@@ -98,7 +98,7 @@
           </v-btn>
         </v-card-actions>
       </v-col>
-      <v-col class="grey lighten-3">
+      <v-col class="bg-grey-lighten-3">
         <div class="my-6">
           <v-dialog
             v-model="selfRemovalWarningDialog"
@@ -135,7 +135,7 @@
             v-for="(owner, i) in newOwners"
             :key="i"
             class="mx-5 pa-3"
-            outlined
+            variant="outlined"
           >
             <div class="d-flex flex-wrap justify-space-between">
               <span class="text-body-2">
@@ -153,13 +153,13 @@
               <span>
                 <v-btn
                   v-if="newOwners.length > 1"
-                  text
-                  small
+                  variant="text"
+                  size="small"
                   @click="removeOwner(owner)"
                 >
                   <v-icon
                     color="error"
-                    left
+                    start
                   >mdi-minus-circle
                   </v-icon>
                   <span class="font-weight-medium">
@@ -194,13 +194,13 @@
         <v-card-actions>
           <v-btn
             color="error"
-            depressed
+            variant="flat"
             @click="save"
           >
             Yes
           </v-btn>
           <v-btn
-            depressed
+            variant="flat"
             @click="adminWarningDisplay = false"
           >
             No
@@ -220,6 +220,8 @@ import type { Ref } from 'vue';
 import {
   computed, defineComponent, ref, watch,
 } from 'vue';
+import { useDisplay } from 'vuetify';
+
 import type { User } from '@/types';
 
 export default defineComponent({
@@ -230,9 +232,12 @@ export default defineComponent({
       required: true,
     },
   },
+  emits: ['close'],
   setup(props, ctx) {
     const store = useDandisetStore();
+    const display = useDisplay();
 
+    const isXsDisplay = computed(() => display.xs.value);
     const currentDandiset = computed(() => store.dandiset);
     const owners = computed(() => store.owners);
 
@@ -244,7 +249,6 @@ export default defineComponent({
 
     const adminWarningDisplay = ref(false);
 
-    // eslint-disable-next-line no-underscore-dangle
     const _searchResults: Ref<User[]> = ref([]);
     const searchResults = computed(() => {
       const newOwnersUsernames = new Set(newOwners.value.map((u: User) => u.username));
@@ -350,6 +354,7 @@ export default defineComponent({
     }
 
     return {
+      isXsDisplay,
       searchQuery,
       searchResults,
       newOwners,

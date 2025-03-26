@@ -1,7 +1,10 @@
 <template>
   <div>
-    <Meditor v-if="currentDandiset" :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`" />
-    <v-toolbar class="grey darken-2 white--text">
+    <Meditor
+      v-if="currentDandiset"
+      :key="`${currentDandiset.dandiset.identifier}/${currentDandiset.version}`"
+    />
+    <v-toolbar class="px-4 bg-grey-darken-2 text-white">
       <DandisetSearchField />
       <v-pagination
         v-model="page"
@@ -9,8 +12,12 @@
         :total-visible="0"
       />
     </v-toolbar>
-    <v-container v-if="embargoedOrUnauthenticated" class="d-flex justify-center align-center" style="height: 50vh;">
-      <div class="d-block blue-grey lighten-5 pa-4 rounded-lg">
+    <v-container
+      v-if="embargoedOrUnauthenticated"
+      class="d-flex justify-center align-center"
+      style="height: 50vh;"
+    >
+      <div class="d-block bg-blue-grey-lighten-5 pa-4 rounded-lg">
         <span class="text-h5">
           <v-icon class="mb-1">
             mdi-alert-circle
@@ -51,14 +58,14 @@
     <v-container
       v-else
       fluid
-      class="grey lighten-4 pa-0"
+      class="bg-grey-lighten-4 pa-0"
     >
       <v-progress-linear
         v-if="!currentDandiset || loading"
         indeterminate
       />
       <v-row no-gutters>
-        <v-col :cols="$vuetify.breakpoint.smAndDown ? 12 : 10">
+        <v-col :cols="isSmDisplay ? 12 : 10">
           <v-sheet
             v-if="!currentDandiset || loading"
             class="py-8 px-7"
@@ -74,7 +81,7 @@
           />
         </v-col>
         <v-col
-          v-if="!$vuetify.breakpoint.smAndDown"
+          v-if="!isSmDisplay"
           cols="2"
         >
           <v-sheet
@@ -89,13 +96,13 @@
           />
         </v-col>
       </v-row>
-      <v-row v-if="$vuetify.breakpoint.smAndDown">
+      <v-row v-if="isSmDisplay">
         <v-col cols="12">
           <v-sheet
             v-if="!currentDandiset || loading"
             class="py-3"
           >
-            <v-skeleton-loader type="card-heading, list-item@5" />
+            <v-skeleton-loader type="card, list-item@5" />
           </v-sheet>
           <DandisetSidebar
             v-else
@@ -112,13 +119,14 @@ import {
   computed, watch, onMounted, ref,
 } from 'vue';
 import type { Ref } from 'vue';
-import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router/composables';
-import type { NavigationGuardNext, RawLocation, Route } from 'vue-router';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
+import { useDisplay } from 'vuetify';
 
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import Meditor from '@/components/Meditor/Meditor.vue';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { Version } from '@/types';
+import type { Dandiset, Version } from '@/types';
 import { draftVersion, sortingOptions } from '@/utils/constants';
 import { editorInterface } from '@/components/Meditor/state';
 import { dandiRest } from '@/rest';
@@ -140,10 +148,9 @@ const props = defineProps({
 // This guards against "soft" page navigations, i.e. using the back/forward buttons or clicking
 // a link to navigate elsewhere in the SPA. The `beforeunload` event listener below handles
 // "hard" page navigations, such as refreshing, closing tabs, or clicking external links.
-onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
+onBeforeRouteLeave((to, from, next) => {
   // Prompt user if they try to leave the DLP with unsaved changes in the meditor
   if (!editorInterface.value?.transactionTracker?.isModified()
-    // eslint-disable-next-line no-alert
     || window.confirm('You have unsaved changes, are you sure you want to leave?')) {
     next();
     return true;
@@ -154,7 +161,9 @@ onBeforeRouteLeave((to: Route, from: Route, next: NavigationGuardNext) => {
 const route = useRoute();
 const router = useRouter();
 const store = useDandisetStore();
+const display = useDisplay();
 
+const isSmDisplay = computed(() => display.smAndDown.value);
 const currentDandiset = computed(() => store.dandiset);
 const loading = ref(false);
 
@@ -179,7 +188,7 @@ function navigateToVersion(versionToNavigateTo: string) {
       ...route.params,
       versionToNavigateTo,
     },
-  } as RawLocation;
+  } as RouteLocationRaw;
   router.replace(newRoute);
 }
 
@@ -227,7 +236,7 @@ watch([() => props.identifier, () => props.version], async () => {
 
 const page = ref(Number(route.query.pos) || 1);
 const pages = ref(1);
-const nextDandiset: Ref<any[]> = ref([]);
+const nextDandiset: Ref<Partial<Dandiset>[]> = ref([]);
 
 async function fetchNextPage() {
   const sortOption = Number(route.query.sortOption) || 0;

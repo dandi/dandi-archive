@@ -1,16 +1,16 @@
 <template>
-  <div v-page-title="pageTitle">
-    <v-toolbar color="grey darken-2 white--text">
+  <div>
+    <v-toolbar
+      color="grey-darken-2"
+      class="px-4"
+    >
       <v-menu
         v-if="!user"
-        offset-y
         :close-on-content-click="false"
       >
-        <template #activator="{ on, attrs }">
+        <template #activator="{ props }">
           <v-icon
-            dark
-            v-bind="attrs"
-            v-on="on"
+            v-bind="props"
           >
             mdi-cog
           </v-icon>
@@ -23,14 +23,14 @@
             <v-switch
               v-model="showDrafts"
               label="Drafts"
-              dense
+              density="compact"
             />
           </v-list-item>
           <v-list-item>
             <v-switch
               v-model="showEmpty"
               label="Empty Dandisets"
-              dense
+              density="compact"
             />
           </v-list-item>
         </v-list>
@@ -39,10 +39,11 @@
         Sort By:
       </div>
       <v-chip-group
-        :value="sortOption"
-        active-class="white light-blue--text"
+        :model-value="sortOption"
+        selected-class="white text-light-blue bg-white"
         dark
         mandatory
+        style="min-width: 25%"
       >
         <v-chip
           v-for="(option, i) in sortingOptions"
@@ -50,7 +51,7 @@
           @click="changeSort(i)"
         >
           {{ option.name }}
-          <v-icon right>
+          <v-icon end>
             <template v-if="sortDir === -1 || sortOption !== i">
               mdi-sort-variant
             </template>
@@ -69,7 +70,7 @@
     />
     <v-container v-else>
       <v-row
-        class="text-center ma-12 grey--text"
+        class="text-center ma-12 text-grey"
         align="center"
         justify="center"
       >
@@ -99,7 +100,7 @@ import {
 } from 'vue';
 
 import omit from 'lodash/omit';
-import { useRoute } from 'vue-router/composables';
+import { useRoute } from 'vue-router';
 import DandisetList from '@/components/DandisetList.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
 import { dandiRest } from '@/rest';
@@ -188,9 +189,6 @@ export default defineComponent({
     watch(queryParams, (params) => {
       router.replace({
         ...route,
-        // replace() takes a RawLocation, which has a name: string
-        // Route has a name: string | null, so we need to tweak this
-        name: route.name || undefined,
         query: {
           // do not override the search parameter, if present
           ...route.query,

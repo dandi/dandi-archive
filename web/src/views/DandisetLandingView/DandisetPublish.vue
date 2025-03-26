@@ -1,7 +1,7 @@
 <template>
   <v-card
     v-if="currentDandiset && otherVersions"
-    outlined
+    variant="outlined"
     class="mt-4 px-3"
   >
     <v-dialog
@@ -26,13 +26,13 @@
         <v-card-actions>
           <v-btn
             color="error"
-            depressed
+            variant="flat"
             @click="publish()"
           >
             Yes
           </v-btn>
           <v-btn
-            depressed
+            variant="flat"
             @click="showPublishWarningDialog = false"
           >
             No, take me back
@@ -46,17 +46,17 @@
     >
       <v-tooltip
         :disabled="!publishDisabledMessage"
-        left
+        location="left"
       >
-        <template #activator="{ on }">
+        <template #activator="{ props: tooltipProps }">
           <div
             class="px-1 pt-3"
             style="width: 100%"
-            v-on="on"
+            v-bind="tooltipProps"
           >
             <v-row
               v-if="showPublishWarning"
-              class="text-caption error--text align-center mb-3"
+              class="text-caption text-error align-center mb-3"
               no-gutters
             >
               <v-col
@@ -81,13 +81,13 @@
                 v-model="showPublishChecklistDialog"
                 width="900"
               >
-                <template #activator="{ on: onNested }">
+                <template #activator="{ props: dialogProps }">
                   <v-btn
                     block
                     :color="showPublishWarning ? 'error' : 'success'"
-                    depressed
+                    variant="flat"
                     :disabled="publishButtonDisabled"
-                    v-on="onNested"
+                    v-bind="dialogProps"
                   >
                     Publish
                     <v-spacer />
@@ -96,7 +96,7 @@
                 </template>
 
                 <v-card>
-                  <v-card-title class="text-h5 grey lighten-2">
+                  <v-card-title class="text-h5 bg-grey-lighten-2">
                     Publish Checklist
                   </v-card-title>
 
@@ -123,14 +123,14 @@
                   <v-card-actions class="justify-end">
                     <v-btn
                       color="dropzone"
-                      depressed
+                      variant="flat"
                       @click="showPublishChecklistDialog = false"
                     >
                       Cancel
                     </v-btn>
                     <v-btn
                       :color="showPublishWarning ? 'error' : 'success'"
-                      depressed
+                      variant="flat"
                       @click="publish"
                     >
                       Publish
@@ -153,12 +153,15 @@
       </v-tooltip>
     </v-row>
 
-    <DandisetValidationErrors :dandiset="currentDandiset" :isOwner="isOwner" />
+    <DandisetValidationErrors
+      :dandiset="currentDandiset"
+      :is-owner="isOwner"
+    />
 
-    <v-row>
-      <v-subheader class="mb-2 black--text text-h5">
+    <v-row no-gutters>
+      <v-list-subheader class="mb-2 text-black text-h5">
         This Version
-      </v-subheader>
+      </v-list-subheader>
     </v-row>
     <v-row
       class="pa-2 mb-5 text-body-2 align-center"
@@ -167,7 +170,7 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="isMdDisplay ? 12 : 4"
         style=""
       >
         {{ formatDate(currentDandiset.modified) }}
@@ -176,10 +179,10 @@
         <h3>{{ currentVersion?.toUpperCase() }}</h3>
       </v-col>
     </v-row>
-    <v-row>
-      <v-subheader class="mb-2 black--text text-h5">
+    <v-row no-gutters>
+      <v-list-subheader class="mb-2 text-black text-h5">
         Other Versions
-      </v-subheader>
+      </v-list-subheader>
     </v-row>
     <v-row
       v-for="(version, i) in otherVersions"
@@ -190,29 +193,28 @@
              text-align: center;"
     >
       <v-col
-        :cols="$vuetify.breakpoint.md ? 12 : 4"
+        :cols="isMdDisplay ? 12 : 4"
       >
         {{ formatDate(version.modified) }}
       </v-col>
       <v-col>
         <v-btn
-          outlined
+          variant="outlined"
           @click="setVersion(version)"
         >
           {{ version.version.toUpperCase() }}
         </v-btn>
       </v-col>
     </v-row>
-    <v-snackbar :value="!!alreadyBeingPublishedError">
+    <v-snackbar :model-value="!!alreadyBeingPublishedError">
       This dandiset is already being published. Please wait for publishing to complete.
     </v-snackbar>
-    <v-snackbar :value="!!publishedVersion">
+    <v-snackbar :model-value="!!publishedVersion">
       Publish complete.
-      <template #action="{ attrs }">
+      <template #actions>
         <v-btn
-          color="info lighten-2"
-          text
-          v-bind="attrs"
+          color="info"
+          variant="text"
           @click="navigateToPublishedVersion"
         >
           Go to published dandiset
@@ -231,12 +233,13 @@ import {
   ref,
   watchEffect,
 } from 'vue';
+import { useDisplay } from 'vuetify';
 
 import axios from 'axios';
 import moment from 'moment';
 
-import type { RawLocation } from 'vue-router';
-import { useRoute } from 'vue-router/composables';
+import type { RouteLocationRaw } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { dandiRest, loggedIn as loggedInFunc, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -276,7 +279,9 @@ const props = defineProps({
 });
 const route = useRoute();
 const store = useDandisetStore();
+const display = useDisplay();
 
+const isMdDisplay = computed(() => display.md.value);
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.dandiset?.version);
 
@@ -427,7 +432,7 @@ function setVersion({ version: newVersion }: any) {
         ...route.params,
         version,
       },
-    } as RawLocation);
+    } as RouteLocationRaw);
 
     store.fetchDandiset({
       identifier: currentDandiset.value?.dandiset.identifier,

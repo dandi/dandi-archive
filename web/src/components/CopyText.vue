@@ -2,19 +2,18 @@
   <v-textarea
     v-if="isTextarea == true"
     ref="textField"
-    :value="text"
+    :model-value="text"
     class="cite-as-textarea"
     hide-details="auto"
-    outlined
+    variant="outlined"
     readonly
-    :success-messages="messages"
     v-bind="$attrs"
   >
     <template #prepend>
-      <v-tooltip bottom>
-        <template #activator="{ on }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
           <v-icon
-            v-on="on"
+            v-bind="tooltipProps"
             @click="copyToClipboard"
           >
             mdi-content-copy
@@ -30,18 +29,17 @@
     v-bind="$attrs"
     id="api-key-text"
     ref="textField"
-    :value="text"
+    :model-value="text"
     hide-details="auto"
-    outlined
-    dense
+    variant="outlined"
+    density="compact"
     readonly
-    :success-messages="messages"
   >
     <template #prepend>
-      <v-tooltip bottom>
-        <template #activator="{ on }">
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
           <v-icon
-            v-on="on"
+            v-bind="tooltipProps"
             @click="copyToClipboard"
           >
             mdi-content-copy
@@ -53,57 +51,40 @@
   </v-text-field>
 </template>
 
-<script lang="ts">
-import type { Ref } from 'vue';
-import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
 
-export default defineComponent({
-  name: 'ApiKeyItem',
+defineOptions({
   // This will prevent arbitrary props from being rendered as HTML attributes
   // v-bind="$attrs" ensures that props are ingested as vue props instead
   inheritAttrs: false,
-  props: {
-    text: {
-      type: String,
-      // not required because the data will frequently default to null prior to loading
-      default: '',
-    },
-    iconHoverText: {
-      type: String,
-      default: 'Copy text to clipboard',
-    },
-    isTextarea: {
-      type: Boolean,
-      default: false,
-    },
+});
+
+const props = defineProps({
+  text: {
+    type: String,
+    default: '',
   },
-  setup() {
-    const messages: Ref<string[]> = ref([]);
-    const textField = ref(null);
-
-    function copyToClipboard() {
-      // v-text-field provides some internal refs that we can use
-      // one is "input", which is the actual <input> DOM element that it uses
-      // @ts-ignore
-      const inputElement = textField.value.$refs.input;
-      inputElement.focus();
-      document.execCommand('selectAll');
-      inputElement.select();
-      document.execCommand('copy');
-
-      // Notify the user that the copy was successful
-      messages.value.push('Copied!');
-      // Remove the notification after 4 seconds
-      setTimeout(() => messages.value.pop(), 4000);
-    }
-
-    return {
-      messages,
-      copyToClipboard,
-      textField,
-    };
+  iconHoverText: {
+    type: String,
+    default: 'Copy text to clipboard',
+  },
+  isTextarea: {
+    type: Boolean,
+    default: false,
   },
 });
+
+const textField = ref<HTMLElement | null>(null);
+
+async function copyToClipboard() {
+  try {
+    await navigator.clipboard.writeText(props.text);
+    console.log('Copied to clipboard');
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
+}
 </script>
 
 <style>

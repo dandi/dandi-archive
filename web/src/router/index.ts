@@ -1,6 +1,5 @@
-import Vue from 'vue';
-import type { RouteConfig } from 'vue-router';
-import Router from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 
 import HomeView from '@/views/HomeView/HomeView.vue';
 import PublicDandisetsView from '@/views/PublicDandisetsView/PublicDandisetsView.vue';
@@ -12,9 +11,7 @@ import FileBrowser from '@/views/FileBrowserView/FileBrowser.vue';
 import SearchView from '@/views/SearchView/SearchView.vue';
 import StarredDandisetsView from '@/views/StarredDandisetsView/StarredDandisetsView.vue';
 
-Vue.use(Router);
-
-const routes: RouteConfig[] = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
@@ -67,4 +64,7 @@ const routes: RouteConfig[] = [
   },
 ];
 
-export default new Router({ mode: 'history', routes });
+export default createRouter({
+  history: createWebHistory(),
+  routes,
+});

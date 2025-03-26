@@ -19,7 +19,6 @@ import type {
   DandisetContributors,
   Organization,
 } from '@/types/schema';
-// eslint-disable-next-line import/no-cycle
 import { useDandisetStore } from '@/stores/dandiset';
 import qs from 'querystring';
 
@@ -43,7 +42,7 @@ try {
       { redirectUrl: new URL(window.location.origin) }
     );
   }
-} catch (e) {
+} catch {
   oauthClient = null;
 }
 
@@ -111,7 +110,6 @@ const dandiRest = {
     const uploads = []
     let page = 1;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const res = await client.get(`dandisets/${identifier}/uploads/`, {params: { page }});
 
@@ -315,13 +313,16 @@ const dandiRest = {
 // and doesn't exist at all if the user isn't logged in.
 // Using client.defaults.headers.common.Authorization = ...
 // would not update when the headers do.
-client.interceptors.request.use((config) => ({
-  ...config,
-  headers: {
-    ...oauthClient?.authHeaders,
-    ...config.headers,
-  },
-}));
+client.interceptors.request.use((config) => {
+  config.headers = new axios.AxiosHeaders({
+    ...(config.headers instanceof axios.AxiosHeaders ? config.headers.toJSON() : config.headers),
+    ...(oauthClient?.authHeaders || {}),
+  });
+
+  return config;
+});
+
+
 
 const loggedIn = () => !!user.value;
 const insideIFrame = (): boolean => window.self !== window.top;

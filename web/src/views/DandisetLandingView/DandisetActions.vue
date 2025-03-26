@@ -3,68 +3,22 @@
     v-if="currentDandiset"
     height="100%"
     class="px-3 py-1 mb-3"
-    outlined
+    variant="outlined"
   >
-    <div class="black--text text-h5 mt-2">
+    <div class="text-black text-h5 mt-2">
       Dandiset Actions
     </div>
 
     <!-- Download and Cite As buttons -->
     <div class="my-4">
       <v-row no-gutters>
-        <DownloadDialog>
-          <template
-            #activator="{ on }"
-          >
-            <v-btn
-              id="download"
-              outlined
-              block
-              v-on="on"
-            >
-              <v-icon
-                color="primary"
-                left
-              >
-                mdi-download
-              </v-icon>
-              <span>Download</span>
-              <v-spacer />
-              <v-icon right>
-                mdi-chevron-down
-              </v-icon>
-            </v-btn>
-          </template>
-        </DownloadDialog>
+        <DownloadDialog />
       </v-row>
       <v-row
         v-if="currentDandiset.dandiset.embargo_status === 'OPEN'"
         no-gutters
       >
-        <CiteAsDialog>
-          <template
-            #activator="{ on }"
-          >
-            <v-btn
-              id="cite_as"
-              outlined
-              block
-              v-on="on"
-            >
-              <v-icon
-                color="primary"
-                left
-              >
-                mdi-format-quote-close
-              </v-icon>
-              <span>Cite As</span>
-              <v-spacer />
-              <v-icon right>
-                mdi-chevron-down
-              </v-icon>
-            </v-btn>
-          </template>
-        </CiteAsDialog>
+        <CiteAsDialog />
       </v-row>
       <v-row
         no-gutters
@@ -83,54 +37,54 @@
       <v-row no-gutters>
         <v-btn
           id="view-data"
-          outlined
+          variant="outlined"
           block
-          :disabled="unembargo_in_progress"
+          :disabled="unembargoInProgress"
           :to="fileBrowserLink"
           exact
+          class="justify-space-between"
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-folder
           </v-icon>
           <span>Files</span>
-          <v-spacer />
         </v-btn>
       </v-row>
       <v-btn
         id="view-edit-metadata"
-        outlined
+        variant="outlined"
         block
+        class="justify-space-between"
         @click="openMeditor = true"
       >
         <v-icon
-          left
+          start
           color="primary"
         >
           mdi-note-text
         </v-icon>
         <span>Metadata</span>
-        <v-spacer />
       </v-btn>
     </div>
 
     <div class="my-4">
       <v-row no-gutters>
         <v-btn
-          outlined
+          variant="outlined"
           block
           :href="manifestLocation"
+          class="d-inline-flex justify-space-between align-center"
         >
           <v-icon
-            left
+            start
             color="primary"
           >
             mdi-clipboard
           </v-icon>
           <span>Manifest</span>
-          <v-spacer />
         </v-btn>
       </v-row>
     </div>
@@ -142,7 +96,7 @@
         class="justify-center"
       >
         <v-btn
-          outlined
+          variant="outlined"
           class="justify-center"
         >
           <ShareDialog text="Share" />
@@ -155,7 +109,7 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue';
 import { computed } from 'vue';
-import type { Location } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 
 import { dandiRest } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
@@ -171,11 +125,11 @@ const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.version);
-const unembargo_in_progress = computed(() => currentDandiset.value && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
+const unembargoInProgress = computed<boolean>(() => currentDandiset.value !== null && currentDandiset.value.dandiset.embargo_status === 'UNEMBARGOING')
 
-const fileBrowserLink: ComputedRef<Location|null> = computed(() => {
+const fileBrowserLink: ComputedRef<RouteLocationRaw|undefined> = computed(() => {
   if (!currentDandiset.value) {
-    return null;
+    return undefined;
   }
   const version: string = currentVersion.value;
   const { identifier } = currentDandiset.value.dandiset;
@@ -196,11 +150,3 @@ const manifestLocation = computed(
 );
 
 </script>
-
-<style scoped>
-.v-btn--outlined {
-  border: thin solid #E0E0E0;
-  color: #424242;
-  font-weight: 400;
-}
-</style>

@@ -2,14 +2,13 @@
   <v-dialog
     v-if="meta && meta.name"
     v-model="dialog"
-    offset-y
-    min-width="420"
-    max-width="500"
+    :min-width="420"
+    :max-width="500"
   >
-    <template #activator="{ on }">
+    <template #activator="{ props }">
       <div
         class="d-inline"
-        v-on="on"
+        v-bind="props"
       >
         <v-icon
           color="primary"
@@ -26,16 +25,14 @@
         flat
       >
         <v-toolbar-title>
-          <span> Share "{{ meta.name }}"</span>
+          Share "{{ meta.name }}"
         </v-toolbar-title>
         <v-spacer />
         <v-btn
-          icon
-          x-small
+          icon="mdi-close"
+          size="small"
           @click="dialog = false"
-        >
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        />
       </v-toolbar>
       <v-card-text>
         <span class="font-weight-black">
@@ -62,69 +59,61 @@
       <v-divider class="mx-4" />
       <v-card-actions>
         <v-list-item class="grow">
-          <v-row
-            align="center"
+          <ShareNetwork
+            v-slot="{ share }"
+            network="twitter"
+            style="text-decoration: none;"
+            :url="permalink"
+            :title="meta.name"
+            :twitter-user="twitterUser"
           >
-            <ShareNetwork
-              network="twitter"
-              style="text-decoration: none;"
-              :url="permalink"
-              :title="meta.name"
-              :twitter-user="twitterUser"
+            <v-btn
+              icon
+              @click="share"
             >
               <v-icon
                 class="mr-1"
                 color="blue"
-                large
+                size="large"
               >
                 mdi-twitter
               </v-icon>
-            </ShareNetwork>
-          </v-row>
+            </v-btn>
+          </ShareNetwork>
         </v-list-item>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed, ref } from 'vue';
-
+<script setup lang="ts">
 import CopyText from '@/components/CopyText.vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { computed, ref } from 'vue';
+import { ShareNetwork } from "vue3-social-sharing";
 
-// Twitter user to mention
-const twitterUser = 'DANDIarchive';
 
-export default defineComponent({
-  name: 'ShareDialog',
-  components: { CopyText },
-  props: {
-    text: {
-      type: String,
-      default: '',
-    },
-  },
-  setup() {
-    const store = useDandisetStore();
-
-    const currentDandiset = computed(() => store.dandiset);
-    const currentVersion = computed(() => store.version);
-    const meta = computed(() => currentDandiset.value?.metadata);
-    const permalink = computed(() => {
-      if (currentDandiset.value?.dandiset && currentVersion.value) {
-        return `${window.location.origin}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
-      }
-      return '';
-    });
-    const doiLink = computed(() => (currentDandiset.value?.version !== 'draft' ? `https://doi.org/${meta.value?.doi}` : ''));
-
-    const dialog = ref(false);
-
-    return {
-      dialog, twitterUser, meta, permalink, doiLink,
-    };
+defineProps({
+  text: {
+    type: String,
+    default: '',
   },
 });
 
+// // Twitter user to mention
+const twitterUser = 'DANDIarchive';
+
+const store = useDandisetStore();
+const dialog = ref(false);
+
+const currentDandiset = computed(() => store.dandiset);
+const currentVersion = computed(() => store.version);
+const meta = computed(() => currentDandiset.value?.metadata);
+const permalink = computed(() => {
+  if (currentDandiset.value?.dandiset && currentVersion.value) {
+    return `${window.location.origin}/dandiset/${currentDandiset.value?.dandiset.identifier}/${currentVersion.value}`;
+  }
+  return '';
+});
+const doiLink = computed(() => (currentDandiset.value?.version !== 'draft' ? `https://doi.org/${meta.value?.doi}` : ''));
 </script>

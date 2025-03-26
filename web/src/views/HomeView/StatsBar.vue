@@ -1,12 +1,14 @@
 <template>
   <v-container
-    class="grey darken-3 pa-0"
+    class="bg-grey-darken-3 pa-0"
     fluid
   >
     <v-row class="py-6 mt-2">
-      <template v-for="stat in stats">
+      <template
+        v-for="stat in stats"
+        :key="stat.name"
+      >
         <v-col
-          :key="stat.name"
           class="py-0 flex-grow-1"
           md="4"
           sm="4"
@@ -26,7 +28,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 import { dandiRest } from '@/rest';
 import SingleStat from '@/views/HomeView/SingleStat.vue';
 

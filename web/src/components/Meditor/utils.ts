@@ -1,5 +1,5 @@
-/* eslint-disable no-use-before-define */
 import type { JSONSchema7 } from 'json-schema';
+import type { VuetifyOptions } from 'vuetify';
 
 import { cloneDeep, pickBy } from 'lodash';
 import type {
@@ -27,8 +27,11 @@ export function computeBasicSchema(schema: JSONSchema7): JSONSchema7 {
     required: newRequired,
   };
 
-  // Description isn't needed and just causes rendering issues
+  // Title and description aren't needed and just causes rendering issues
+  delete newSchema.title;
   delete newSchema.description;
+  // $schema isn't needed and causes Ajv to throw an error
+  delete newSchema.$schema;
   return newSchema;
 }
 
@@ -62,7 +65,6 @@ export function populateEmptyArrays(schema: JSONSchema7, model: DandiModel) {
 
   arrayFields.forEach((key) => {
     if (model[key] === undefined || model[key] === null) {
-      // eslint-disable-next-line no-param-reassign
       model[key] = [];
     }
   });
@@ -83,7 +85,6 @@ export function filterModelWithSchema(model: DandiModel, schema: JSONSchema7): D
 export function writeSubModelToMaster(
   subModel: DandiModel, subSchema: JSONSchema7, masterModel: DandiModel,
 ) {
-  /* eslint-disable no-param-reassign */
   const propsToWrite = subSchema.properties;
   if (propsToWrite === undefined) { return; }
 
@@ -91,5 +92,11 @@ export function writeSubModelToMaster(
     masterModel[key] = subModel[key];
   });
 
-  /* eslint-enable no-param-reassign */
 }
+
+export const VJSFVuetifyDefaultProps: VuetifyOptions['defaults'] = {
+  global: {
+    variant: 'outlined',
+    density: 'compact',
+  },
+};

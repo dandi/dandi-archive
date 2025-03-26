@@ -4,10 +4,7 @@
     starred
   >
     <template #empty>
-      <v-alert
-        type="info"
-        text
-      >
+      <v-alert type="info">
         You haven't starred any Dandisets yet.
       </v-alert>
     </template>
