@@ -3,7 +3,7 @@
     class="grey darken-3 pa-0"
     fluid
   >
-    <v-row class="py-6 mt-2">
+    <v-row class="py-6">
       <template v-for="stat in stats">
         <v-col
           :key="stat.name"

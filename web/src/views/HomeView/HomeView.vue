@@ -41,6 +41,7 @@
         <DandisetSearchField :dense="false" />
       </v-col>
     </v-row>
+    <FooterBanner />
     <StatsBar />
   </v-container>
 </template>
@@ -50,6 +51,7 @@ import { watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router/composables';
 import StatsBar from '@/views/HomeView/StatsBar.vue';
 import DandisetSearchField from '@/components/DandisetSearchField.vue';
+import FooterBanner from '@/components/FooterBanner.vue';
 import logo from '@/assets/logo.svg';
 
 /**
