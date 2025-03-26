@@ -34,6 +34,10 @@ export default [
       ],
       'vue/multi-word-component-names': 'off',
       "@typescript-eslint/no-explicit-any": 'off',
+      "vue/component-api-style": ["error",
+        // Only allow `script-setup` for Vue components
+        ["script-setup"]
+      ],
     }
   }
 ]
