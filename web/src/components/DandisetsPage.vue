@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-page-title="pageTitle">
     <v-toolbar
       color="grey-darken-2"
       class="px-4"
