@@ -69,49 +69,44 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import type { PropType } from 'vue';
-import { computed, defineComponent } from 'vue';
+import { computed } from 'vue';
 import { useDisplay, useTheme } from 'vuetify';
 
 // The maximum amount of columns to show on a metadata card,
 // regardless of how many entries there are.
 const MAX_COLUMNS = 4;
 
-export default defineComponent({
-  name: 'MetadataCard',
-  props: {
-    backgroundColor: {
-      type: String,
-      default: 'white',
-    },
-    items: {
-      type: Array as PropType<any[]>,
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    icon: {
-      type: String,
-      required: true,
-    },
+
+const props = defineProps({
+  backgroundColor: {
+    type: String,
+    default: 'white',
   },
-  setup(props) {
-    const theme = useTheme();
-    const display = useDisplay();
-
-    const borderLeftColor = computed(() => theme.current.value.colors.primary);
-
-    // Try to estimate the ideal number of columns to break the items into.
-    // When viewing on a smaller screen, force the number of columns to 1.
-    const columnCount = computed(
-      () => (display.mdAndDown.value
-        ? 1 : Math.min(Math.ceil(props.items.length / 2), MAX_COLUMNS)),
-    );
-
-    return { borderLeftColor, columnCount };
+  items: {
+    type: Array as PropType<any[]>,
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  icon: {
+    type: String,
+    required: true,
   },
 });
+
+const theme = useTheme();
+const display = useDisplay();
+
+const borderLeftColor = computed(() => theme.current.value.colors.primary);
+
+// Try to estimate the ideal number of columns to break the items into.
+// When viewing on a smaller screen, force the number of columns to 1.
+const columnCount = computed(
+  () => (display.mdAndDown.value
+    ? 1 : Math.min(Math.ceil(props.items.length / 2), MAX_COLUMNS)),
+);
 </script>
