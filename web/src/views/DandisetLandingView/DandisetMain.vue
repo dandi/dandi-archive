@@ -260,10 +260,12 @@
   </div>
 </template>
 
-<script lang="ts">
-import type { ComputedRef } from 'vue';
+<script setup lang="ts">
 import {
-  defineComponent, computed, ref, watchEffect,
+  computed,
+  ref,
+  watchEffect,
+  type ComputedRef,
 } from 'vue';
 
 import { filesize } from 'filesize';
@@ -320,117 +322,83 @@ const tabs = [
   },
 ];
 
-export default defineComponent({
-  name: 'DandisetMain',
-  components: {
-    ShareDialog,
-    AccessInformationTab,
-    AssetSummaryTab,
-    ContributorsTab,
-    OverviewTab,
-    RelatedResourcesTab,
-    SubjectMatterTab,
-    StarButton,
+defineProps({
+  schema: {
+    type: Object,
+    required: true,
   },
-  props: {
-    schema: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup() {
-    const store = useDandisetStore();
-    const display = useDisplay();
+});
 
-    const currentDandiset = computed(() => store.dandiset);
-    const isXsDisplay = computed(() => display.xs.value);
+const store = useDandisetStore();
+const display = useDisplay();
 
-    const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
+const currentDandiset = computed(() => store.dandiset);
+const isXsDisplay = computed(() => display.xs.value);
 
-    const stats: ComputedRef<DandisetStats|null> = computed(() => {
-      if (!currentDandiset.value) {
-        return null;
-      }
-      const { asset_count, size } = currentDandiset.value;
-      return { asset_count, size };
-    });
+const transformFilesize = (size: number) => filesize(size, { round: 1, base: 10, standard: 'iec' });
 
-    // whether or not the "see more" button has been pressed to reveal
-    // the full description
-    const showFullDescription = ref(false);
-    const description: ComputedRef<string> = computed(() => {
-      if (!currentDandiset.value) {
-        return '';
-      }
-      const fullDescription = currentDandiset.value.metadata?.description;
-      if (!fullDescription) {
-        return '';
-      }
-      if (fullDescription.length <= MAX_DESCRIPTION_LENGTH) {
-        return fullDescription;
-      }
-      if (showFullDescription.value) {
-        return currentDandiset.value.metadata?.description || '';
-      }
-      let shortenedDescription = fullDescription.substring(0, MAX_DESCRIPTION_LENGTH);
-      shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
-      return shortenedDescription;
-    });
-    const htmlDescription: ComputedRef<string> = computed(
-      () => DOMPurify.sanitize(marked.parse(description.value) as string),
-    );
-    const meta = computed(() => currentDandiset.value?.metadata);
+const stats: ComputedRef<DandisetStats|null> = computed(() => {
+  if (!currentDandiset.value) {
+    return null;
+  }
+  const { asset_count, size } = currentDandiset.value;
+  return { asset_count, size };
+});
 
-    const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
-      () => meta.value?.access,
-    );
-    const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
-      () => meta.value?.about,
-    );
+// whether or not the "see more" button has been pressed to reveal
+// the full description
+const showFullDescription = ref(false);
+const description: ComputedRef<string> = computed(() => {
+  if (!currentDandiset.value) {
+    return '';
+  }
+  const fullDescription = currentDandiset.value.metadata?.description;
+  if (!fullDescription) {
+    return '';
+  }
+  if (fullDescription.length <= MAX_DESCRIPTION_LENGTH) {
+    return fullDescription;
+  }
+  if (showFullDescription.value) {
+    return currentDandiset.value.metadata?.description || '';
+  }
+  let shortenedDescription = fullDescription.substring(0, MAX_DESCRIPTION_LENGTH);
+  shortenedDescription = `${shortenedDescription.substring(0, shortenedDescription.lastIndexOf(' '))}...`;
+  return shortenedDescription;
+});
+const htmlDescription: ComputedRef<string> = computed(
+  () => DOMPurify.sanitize(marked.parse(description.value) as string),
+);
+const meta = computed(() => currentDandiset.value?.metadata);
 
-    const currentTab = ref(0);
+const accessInformation: ComputedRef<AccessInformation|undefined> = computed(
+  () => meta.value?.access,
+);
+const subjectMatter: ComputedRef<SubjectMatterOfTheDataset|undefined> = computed(
+  () => meta.value?.about,
+);
 
-    function formatDate(date: string): string {
-      return moment(date).format('LL');
-    }
-    function copy(value:string) {
-      if (!meta.value) {
-        throw new Error('metadata is undefined!');
-      }
-      const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
-      navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
-    }
+const currentTab = ref(0);
 
-    watchEffect(async () => {
-      // Inject datacite metadata into the page
-      if (meta.value?.doi) {
-        const metadataText = await getDoiMetadata(meta.value.doi as string);
-        const script = document.createElement('script');
-        script.setAttribute('type', 'application/ld+json');
-        script.textContent = metadataText;
-        document.head.appendChild(script);
-      }
-    });
+function formatDate(date: string): string {
+  return moment(date).format('LL');
+}
+function copy(value:string) {
+  if (!meta.value) {
+    throw new Error('metadata is undefined!');
+  }
+  const version = meta.value?.version === 'draft' ? meta.value?.identifier as string : meta.value?.id as string;
+  navigator.clipboard.writeText(value === 'dandiID' ? version : `https://doi.org/${meta.value?.doi}`);
+}
 
-    return {
-      currentDandiset,
-      isXsDisplay,
-      formatDate,
-      stats,
-      transformFilesize,
-      description,
-      htmlDescription,
-      showFullDescription,
-      MAX_DESCRIPTION_LENGTH,
-
-      accessInformation,
-      subjectMatter,
-      copy,
-
-      currentTab,
-      tabs,
-      meta,
-    };
-  },
+watchEffect(async () => {
+  // Inject datacite metadata into the page
+  if (meta.value?.doi) {
+    const metadataText = await getDoiMetadata(meta.value.doi as string);
+    const script = document.createElement('script');
+    script.setAttribute('type', 'application/ld+json');
+    script.textContent = metadataText;
+    document.head.appendChild(script);
+  }
 });
 </script>
