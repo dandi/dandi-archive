@@ -42,3 +42,6 @@ yarn migrate 0.5.1
 
 - VITE_APP_SERVER_DOWNTIME_MESSAGE
   - A custom error message displayed when the backend server can't be reached.
+
+- VITE_APP_FOOTER_BANNER_TEXT
+  - A custom message to show in an information banner on the DANDI homepage. The banner does not render if this isn't set.
