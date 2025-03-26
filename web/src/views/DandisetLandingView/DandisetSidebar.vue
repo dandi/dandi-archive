@@ -20,7 +20,6 @@
 import { computed } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
-import type { Version } from '@/types';
 
 import DandisetActions from './DandisetActions.vue';
 import DandisetOwners from './DandisetOwners.vue';
@@ -37,9 +36,4 @@ defineProps({
 const store = useDandisetStore();
 
 const currentDandiset = computed(() => store.dandiset);
-const currentVersion = computed(() => store.version);
-
-const otherVersions = computed(() => store.versions?.filter(
-  (version: Version) => version.version !== currentVersion.value,
-));
 </script>

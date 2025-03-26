@@ -80,7 +80,6 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue';
-import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import moment from 'moment';
 import { filesize } from 'filesize';
@@ -98,10 +97,6 @@ defineProps({
 
 const route = useRoute();
 
-const origin = computed(() => {
-  const { name, params, query } = route;
-  return { name, params, query };
-});
 // current position in search result set = items on prev pages + position on current page
 function getPos(index: number) {
   return (Number(route.query.page || 1) - 1) * DANDISETS_PER_PAGE + (index + 1);
