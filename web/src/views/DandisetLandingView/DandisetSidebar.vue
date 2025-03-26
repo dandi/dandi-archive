@@ -16,10 +16,8 @@
   </div>
 </template>
 
-<script lang="ts">
-import {
-  defineComponent, computed,
-} from 'vue';
+<script setup lang="ts">
+import { computed } from 'vue';
 
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Version } from '@/types';
@@ -29,35 +27,19 @@ import DandisetOwners from './DandisetOwners.vue';
 import DandisetPublish from './DandisetPublish.vue';
 import DandisetUnembargo from './DandisetUnembargo.vue';
 
-export default defineComponent({
-  name: 'DandisetSidebar',
-  components: {
-    DandisetActions,
-    DandisetOwners,
-    DandisetPublish,
-    DandisetUnembargo,
+defineProps({
+  userCanModifyDandiset: {
+    type: Boolean,
+    required: true,
   },
-  props: {
-    userCanModifyDandiset: {
-      type: Boolean,
-      required: true,
-    },
-  },
-  setup() {
-    const store = useDandisetStore();
+})
 
-    const currentDandiset = computed(() => store.dandiset);
-    const currentVersion = computed(() => store.version);
+const store = useDandisetStore();
 
-    const otherVersions = computed(() => store.versions?.filter(
-      (version: Version) => version.version !== currentVersion.value,
-    ));
+const currentDandiset = computed(() => store.dandiset);
+const currentVersion = computed(() => store.version);
 
-    return {
-      currentDandiset,
-      currentVersion,
-      otherVersions,
-    };
-  },
-});
+const otherVersions = computed(() => store.versions?.filter(
+  (version: Version) => version.version !== currentVersion.value,
+));
 </script>
