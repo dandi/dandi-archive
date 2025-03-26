@@ -8,9 +8,9 @@
         v-if="!user"
         :close-on-content-click="false"
       >
-        <template #activator="{ props }">
+        <template #activator="{ props: menuProps }">
           <v-icon
-            v-bind="props"
+            v-bind="menuProps"
           >
             mdi-cog
           </v-icon>
@@ -93,10 +93,10 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import type { Ref, ComputedRef } from 'vue';
 import {
-  defineComponent, ref, computed, watch, watchEffect,
+  ref, computed, watch, watchEffect,
 } from 'vue';
 
 import omit from 'lodash/omit';
@@ -108,118 +108,101 @@ import type { Dandiset, Paginated, Version } from '@/types';
 import { sortingOptions, DANDISETS_PER_PAGE } from '@/utils/constants';
 import router from '@/router';
 
-export default defineComponent({
-  name: 'DandisetsPage',
-  components: { DandisetList, DandisetSearchField },
-  props: {
-    title: {
-      type: String,
-      required: true,
-    },
-    user: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    search: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    starred: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
+const props = defineProps({
+  title: {
+    type: String,
+    required: true,
   },
-  setup(props) {
-    const route = useRoute();
-
-    const showDrafts = ref(true);
-    const showEmpty = ref(false);
-    const sortOption = ref(Number(route.query.sortOption) || 0);
-    const sortDir = ref(Number(route.query.sortDir || -1));
-    const page = ref(Number(route.query.page) || 1);
-
-    const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
-    const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
-
-    // Django dandiset listing
-
-    const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
-    watchEffect(async () => {
-      const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
-      const response = await dandiRest.dandisets({
-        page: page.value,
-        page_size: DANDISETS_PER_PAGE,
-        ordering,
-        user: props.user ? 'me' : null,
-        search: props.search ? route.query.search : null,
-        starred: props.starred ? true : null,
-        draft: props.user ? true : showDrafts.value,
-        empty: props.user ? true : showEmpty.value,
-        embargoed: props.user,
-      });
-      djangoDandisetRequest.value = response.data;
-    });
-
-    const dandisets = computed(
-      () => djangoDandisetRequest.value?.results.map((dandiset) => ({
-        ...(dandiset.most_recent_published_version || dandiset.draft_version),
-        dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
-      })),
-    ) as ComputedRef<Version[] | undefined>;
-
-    const pages = computed(() => {
-      const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
-      return Math.ceil(totalDandisets / DANDISETS_PER_PAGE) || 1;
-    });
-
-    watch([showDrafts, showEmpty], () => {
-      page.value = 1;
-    });
-
-    const queryParams = computed(() => ({
-      page: String(page.value),
-      sortOption: String(sortOption.value),
-      sortDir: String(sortDir.value),
-      showDrafts: String(showDrafts.value),
-      showEmpty: String(showEmpty.value),
-    }));
-    watch(queryParams, (params) => {
-      router.replace({
-        ...route,
-        query: {
-          // do not override the search parameter, if present
-          ...route.query,
-          ...params,
-        },
-      });
-    });
-
-    function changeSort(index: number) {
-      if (sortOption.value === index) {
-        sortDir.value *= -1;
-      } else {
-        sortOption.value = index;
-        sortDir.value = -1;
-      }
-
-      page.value = 1;
-    }
-
-    return {
-      showDrafts,
-      showEmpty,
-      sortingOptions,
-      sortOption,
-      sortDir,
-      page,
-      pages,
-      pageTitle,
-      dandisets,
-      changeSort,
-    };
+  user: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
+  search: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+  starred: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
+})
+
+const route = useRoute();
+
+const showDrafts = ref(true);
+const showEmpty = ref(false);
+const sortOption = ref(Number(route.query.sortOption) || 0);
+const sortDir = ref(Number(route.query.sortDir || -1));
+const page = ref(Number(route.query.page) || 1);
+
+const pageTitle = computed(() => ((props.search) ? route.query.search as string : props.title));
+const sortField = computed(() => sortingOptions[sortOption.value].djangoField);
+
+// Django dandiset listing
+
+const djangoDandisetRequest: Ref<Paginated<Dandiset> | null> = ref(null);
+watchEffect(async () => {
+  const ordering = ((sortDir.value === -1) ? '-' : '') + sortField.value;
+  const response = await dandiRest.dandisets({
+    page: page.value,
+    page_size: DANDISETS_PER_PAGE,
+    ordering,
+    user: props.user ? 'me' : null,
+    search: props.search ? route.query.search : null,
+    starred: props.starred ? true : null,
+    draft: props.user ? true : showDrafts.value,
+    empty: props.user ? true : showEmpty.value,
+    embargoed: props.user,
+  });
+  djangoDandisetRequest.value = response.data;
 });
+
+const dandisets = computed(
+  () => djangoDandisetRequest.value?.results.map((dandiset) => ({
+    ...(dandiset.most_recent_published_version || dandiset.draft_version),
+    dandiset: omit(dandiset, 'most_recent_published_version', 'draft_version'),
+  })),
+) as ComputedRef<Version[] | undefined>;
+
+const pages = computed(() => {
+  const totalDandisets: number = djangoDandisetRequest.value?.count || 0;
+  return Math.ceil(totalDandisets / DANDISETS_PER_PAGE) || 1;
+});
+
+watch([showDrafts, showEmpty], () => {
+  page.value = 1;
+});
+
+const queryParams = computed(() => ({
+  page: String(page.value),
+  sortOption: String(sortOption.value),
+  sortDir: String(sortDir.value),
+  showDrafts: String(showDrafts.value),
+  showEmpty: String(showEmpty.value),
+}));
+watch(queryParams, (params) => {
+  router.replace({
+    ...route,
+    query: {
+      // do not override the search parameter, if present
+      ...route.query,
+      ...params,
+    },
+  });
+});
+
+function changeSort(index: number) {
+  if (sortOption.value === index) {
+    sortDir.value *= -1;
+  } else {
+    sortOption.value = index;
+    sortDir.value = -1;
+  }
+
+  page.value = 1;
+}
+
 </script>
