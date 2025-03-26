@@ -18,17 +18,20 @@ if TYPE_CHECKING:
 def _make_audit_record(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     record_type: AuditRecordType,
     details: dict,
     admin: bool = False,
     description: str = '',
 ) -> AuditRecord:
+    if not admin and user is None:
+        raise ValueError('Non-null `user` required when `admin` is False')
+
     audit_record = AuditRecord(
         dandiset_id=dandiset.id,
-        username=user.username,
-        user_email=user.email,
-        user_fullname=f'{user.first_name} {user.last_name}',
+        username=user.username if user else '',
+        user_email=user.email if user else '',
+        user_fullname=f'{user.first_name} {user.last_name}' if user else '',
         record_type=record_type,
         details=details,
         admin=admin,
@@ -42,7 +45,7 @@ def _make_audit_record(
 def create_dandiset(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     metadata: dict,
     embargoed: bool,
     admin: bool = False,
@@ -65,7 +68,7 @@ def create_dandiset(
 def change_owners(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     removed_owners: list[User],
     added_owners: list[User],
     admin: bool = False,
@@ -93,7 +96,12 @@ def change_owners(
 
 
 def update_metadata(
-    *, dandiset: Dandiset, user: User, metadata: dict, admin: bool = False, description: str = ''
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    metadata: dict,
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = {'metadata': metadata}
     return _make_audit_record(
@@ -120,7 +128,12 @@ def _asset_details(asset: Asset) -> dict:
 
 
 def add_asset(
-    *, dandiset: Dandiset, user: User, asset: Asset, admin: bool = False, description: str = ''
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    asset: Asset,
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = _asset_details(asset)
     return _make_audit_record(
@@ -134,7 +147,12 @@ def add_asset(
 
 
 def update_asset(
-    *, dandiset: Dandiset, user: User, asset: Asset, admin: bool = False, description: str = ''
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    asset: Asset,
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = _asset_details(asset)
     return _make_audit_record(
@@ -148,7 +166,12 @@ def update_asset(
 
 
 def remove_asset(
-    *, dandiset: Dandiset, user: User, asset: Asset, admin: bool = False, description: str = ''
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    asset: Asset,
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = {
         'path': asset.path,
@@ -167,7 +190,7 @@ def remove_asset(
 def create_zarr(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     zarr_archive: ZarrArchive,
     admin: bool = False,
     description: str = '',
@@ -189,7 +212,7 @@ def create_zarr(
 def upload_zarr_chunks(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     zarr_archive: ZarrArchive,
     paths: list[str],
     admin: bool = False,
@@ -212,7 +235,7 @@ def upload_zarr_chunks(
 def delete_zarr_chunks(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     zarr_archive: ZarrArchive,
     paths: list[str],
     admin: bool = False,
@@ -235,7 +258,7 @@ def delete_zarr_chunks(
 def finalize_zarr(
     *,
     dandiset: Dandiset,
-    user: User,
+    user: User | None,
     zarr_archive: ZarrArchive,
     admin: bool = False,
     description: str = '',
@@ -254,7 +277,7 @@ def finalize_zarr(
 
 
 def unembargo_dandiset(
-    *, dandiset: Dandiset, user: User, admin: bool = False, description: str = ''
+    *, dandiset: Dandiset, user: User | None, admin: bool = False, description: str = ''
 ) -> AuditRecord:
     return _make_audit_record(
         dandiset=dandiset,
@@ -265,7 +288,12 @@ def unembargo_dandiset(
 
 
 def publish_dandiset(
-    *, dandiset: Dandiset, user: User, version: str, admin: bool = False, description: str = ''
+    *,
+    dandiset: Dandiset,
+    user: User | None,
+    version: str,
+    admin: bool = False,
+    description: str = '',
 ) -> AuditRecord:
     details = {
         'version': version,
@@ -280,7 +308,9 @@ def publish_dandiset(
     )
 
 
-def delete_dandiset(*, dandiset: Dandiset, user: User, admin: bool = False, description: str = ''):
+def delete_dandiset(
+    *, dandiset: Dandiset, user: User | None, admin: bool = False, description: str = ''
+):
     return _make_audit_record(
         dandiset=dandiset,
         user=user,
