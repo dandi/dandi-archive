@@ -211,167 +211,141 @@
   </v-card>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { debounce } from 'lodash';
 
 import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import type { Ref } from 'vue';
-import {
-  computed, defineComponent, ref, watch,
-} from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 
 import type { User } from '@/types';
 
-export default defineComponent({
-  name: 'DandisetOwnersDialog',
-  props: {
-    owners: {
-      type: Array,
-      required: true,
-    },
-  },
-  emits: ['close'],
-  setup(props, ctx) {
-    const store = useDandisetStore();
-    const display = useDisplay();
-
-    const isXsDisplay = computed(() => display.xs.value);
-    const currentDandiset = computed(() => store.dandiset);
-    const owners = computed(() => store.owners);
-
-    const searchQuery = ref('');
-    const newOwners: Ref<User[]> = ref([]);
-
-    // users with checkbox checked
-    const selectedUsers: Ref<User[]> = ref([]);
-
-    const adminWarningDisplay = ref(false);
-
-    const _searchResults: Ref<User[]> = ref([]);
-    const searchResults = computed(() => {
-      const newOwnersUsernames = new Set(newOwners.value.map((u: User) => u.username));
-      // only show non-owners in search results
-      return _searchResults.value.filter((u: User) => !newOwnersUsernames.has(u.username));
-    });
-
-    // Clear search results if search field is empty
-    watch(() => searchQuery.value, () => {
-      if (!searchQuery.value) {
-        _searchResults.value = [];
-      }
-    });
-
-    const throttledUpdate = debounce(async () => {
-      const users = await dandiRest.searchUsers(searchQuery.value);
-      _searchResults.value = users;
-    }, 200);
-
-    watch(() => owners.value, () => (
-      owners.value ? Object.assign(newOwners.value, owners.value) : null
-    ),
-    { immediate: true });
-
-    const isSelected = (user: User) => selectedUsers.value.map(
-      (u) => u.username,
-    ).includes(user.username);
-    const setOwners = (ownersToSet: User[]) => {
-      store.owners = ownersToSet;
-    };
-
-    /**
-     * Add a user as an owner
-     */
-    function addOwner(newOwner: User) {
-      if (!newOwners.value.map((u: User) => u.username).includes(newOwner.username)) {
-        newOwners.value.push(newOwner);
-      }
-    }
-
-    function ownerIsCurrentUser(owner: User) {
-      return user.value && user.value.username === owner.username;
-    }
-
-    const selfRemovalWarningDialog = ref(false);
-    function removeOwner(owner: User | null) {
-      if (owner === null) {
-        throw new Error('Cannot remove null owner from dandiset!');
-      }
-
-      // If current user, open dialog and wait for second call to this function
-      if (ownerIsCurrentUser(owner) && selfRemovalWarningDialog.value === false) {
-        selfRemovalWarningDialog.value = true;
-        return;
-      }
-
-      // Remove at index
-      const index = newOwners.value.findIndex((u) => u.username === owner.username);
-      newOwners.value.splice(index, 1);
-
-      // Set dialog to false in any case
-      selfRemovalWarningDialog.value = false;
-    }
-
-    function checkBoxHandler(_user: User) {
-      const selectedUsersUsernames = selectedUsers.value.map((u: User) => u.username);
-      if (selectedUsersUsernames.includes(_user.username)) {
-        selectedUsers.value = selectedUsers.value.splice(
-          selectedUsersUsernames.indexOf(_user.username), 1,
-        );
-      } else {
-        selectedUsers.value.push(_user);
-      }
-    }
-
-    function addSelected() {
-      newOwners.value = newOwners.value.concat(selectedUsers.value);
-      selectedUsers.value = [];
-    }
-
-    function clearForm() {
-      selectedUsers.value = [];
-    }
-
-    async function save() {
-      if (currentDandiset.value?.dandiset) {
-        const owner = owners.value
-          ?.map((u: User) => u.username)
-          .includes(user.value!.username);
-
-        // If necessary, open display and return. Otherwise, proceed to save.
-        if (!adminWarningDisplay.value && user.value?.admin && !owner) {
-          adminWarningDisplay.value = true;
-          return;
-        }
-
-        const { identifier } = currentDandiset.value.dandiset;
-        const { data } = await dandiRest.setOwners(identifier, newOwners.value);
-        setOwners(data);
-        adminWarningDisplay.value = false;
-      }
-      ctx.emit('close');
-    }
-
-    return {
-      isXsDisplay,
-      searchQuery,
-      searchResults,
-      newOwners,
-      throttledUpdate,
-      addOwner,
-      user,
-      ownerIsCurrentUser,
-      selfRemovalWarningDialog,
-      removeOwner,
-      isSelected,
-      save,
-      clearForm,
-      addSelected,
-      checkBoxHandler,
-      selectedUsers,
-      adminWarningDisplay,
-    };
+defineProps({
+  owners: {
+    type: Array,
+    required: true,
   },
 });
+
+const emit = defineEmits(['close']);
+
+const store = useDandisetStore();
+const display = useDisplay();
+
+const isXsDisplay = computed(() => display.xs.value);
+const currentDandiset = computed(() => store.dandiset);
+
+const searchQuery = ref('');
+const newOwners: Ref<User[]> = ref([]);
+
+// users with checkbox checked
+const selectedUsers: Ref<User[]> = ref([]);
+
+const adminWarningDisplay = ref(false);
+
+const _searchResults: Ref<User[]> = ref([]);
+const searchResults = computed(() => {
+  const newOwnersUsernames = new Set(newOwners.value.map((u: User) => u.username));
+  // only show non-owners in search results
+  return _searchResults.value.filter((u: User) => !newOwnersUsernames.has(u.username));
+});
+
+// Clear search results if search field is empty
+watch(() => searchQuery.value, () => {
+  if (!searchQuery.value) {
+    _searchResults.value = [];
+  }
+});
+
+const throttledUpdate = debounce(async () => {
+  const users = await dandiRest.searchUsers(searchQuery.value);
+  _searchResults.value = users;
+}, 200);
+
+watch(() => store.owners, () => (
+  store.owners ? Object.assign(newOwners.value, store.owners) : null
+),
+{ immediate: true });
+
+const isSelected = (user: User) => selectedUsers.value.map(
+  (u) => u.username,
+).includes(user.username);
+const setOwners = (ownersToSet: User[]) => {
+  store.owners = ownersToSet;
+};
+
+/**
+ * Add a user as an owner
+ */
+function addOwner(newOwner: User) {
+  if (!newOwners.value.map((u: User) => u.username).includes(newOwner.username)) {
+    newOwners.value.push(newOwner);
+  }
+}
+
+function ownerIsCurrentUser(owner: User) {
+  return user.value && user.value.username === owner.username;
+}
+
+const selfRemovalWarningDialog = ref(false);
+function removeOwner(owner: User | null) {
+  if (owner === null) {
+    throw new Error('Cannot remove null owner from dandiset!');
+  }
+
+  // If current user, open dialog and wait for second call to this function
+  if (ownerIsCurrentUser(owner) && selfRemovalWarningDialog.value === false) {
+    selfRemovalWarningDialog.value = true;
+    return;
+  }
+
+  // Remove at index
+  const index = newOwners.value.findIndex((u) => u.username === owner.username);
+  newOwners.value.splice(index, 1);
+
+  // Set dialog to false in any case
+  selfRemovalWarningDialog.value = false;
+}
+
+function checkBoxHandler(_user: User) {
+  const selectedUsersUsernames = selectedUsers.value.map((u: User) => u.username);
+  if (selectedUsersUsernames.includes(_user.username)) {
+    selectedUsers.value = selectedUsers.value.splice(
+      selectedUsersUsernames.indexOf(_user.username), 1,
+    );
+  } else {
+    selectedUsers.value.push(_user);
+  }
+}
+
+function addSelected() {
+  newOwners.value = newOwners.value.concat(selectedUsers.value);
+  selectedUsers.value = [];
+}
+
+function clearForm() {
+  selectedUsers.value = [];
+}
+
+async function save() {
+  if (currentDandiset.value?.dandiset) {
+    const owner = store.owners
+      ?.map((u: User) => u.username)
+      .includes(user.value!.username);
+
+    // If necessary, open display and return. Otherwise, proceed to save.
+    if (!adminWarningDisplay.value && user.value?.admin && !owner) {
+      adminWarningDisplay.value = true;
+      return;
+    }
+
+    const { identifier } = currentDandiset.value.dandiset;
+    const { data } = await dandiRest.setOwners(identifier, newOwners.value);
+    setOwners(data);
+    adminWarningDisplay.value = false;
+  }
+  emit('close');
+}
 </script>
