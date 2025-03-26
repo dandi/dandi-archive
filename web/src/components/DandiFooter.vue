@@ -97,28 +97,11 @@
   </v-footer>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
+<script setup lang="ts">
 import CookieBanner from './CookieBanner.vue';
-import { cookiesEnabled } from '@/rest';
 
 const version = import.meta.env.VITE_APP_VERSION;
 const githubLink = import.meta.env.VITE_APP_GIT_REVISION ? `https://github.com/dandi/dandi-archive/commit/${import.meta.env.VITE_APP_GIT_REVISION}` : 'https://github.com/dandi/dandi-archive';
-
-export default defineComponent({
-  name: 'DandiFooter',
-  components: {
-    CookieBanner,
-  },
-  setup() {
-    return {
-      version,
-      githubLink,
-      cookiesEnabled,
-    };
-  },
-});
 </script>
 
 <style scoped>

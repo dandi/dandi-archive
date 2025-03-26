@@ -4,26 +4,15 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'SubjectMatterTab',
-  components: {
+<script setup lang="ts">
+defineProps({
+  schema: {
+    type: Object,
+    required: true,
   },
-  props: {
-    schema: {
-      type: Object,
-      required: true,
-    },
-    meta: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup() {
-    return {
-    };
+  meta: {
+    type: Object,
+    required: true,
   },
 });
 </script>

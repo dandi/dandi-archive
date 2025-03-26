@@ -22,59 +22,49 @@
   </v-form>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useRoute } from 'vue-router';
 import router from '@/router';
 
-export default defineComponent({
-  name: 'DandisetSearchField',
-  props: {
-    dense: {
-      type: Boolean,
-      required: false,
-      default: true,
-    },
-  },
-  setup() {
-    const route = useRoute();
-    const currentSearch = ref(route.query.search || '');
-
-    function updateSearch(search: string) {
-      currentSearch.value = search;
-    }
-
-    function performSearch(evt: Event) {
-      evt.preventDefault(); // prevent form submission from refreshing page
-
-      if (currentSearch.value === route.query.search) {
-        // nothing has changed, do nothing
-        return;
-      }
-      if (route.name !== 'searchDandisets') {
-        router.push({
-          name: 'searchDandisets',
-          query: {
-            search: currentSearch.value,
-          },
-        });
-      } else {
-        router.replace({
-          ...route,
-          query: {
-            ...route.query,
-            search: currentSearch.value,
-          },
-        } as RouteLocationRaw);
-      }
-    }
-
-    return {
-      currentSearch,
-      updateSearch,
-      performSearch,
-    };
+defineProps({
+  dense: {
+    type: Boolean,
+    required: false,
+    default: true,
   },
 });
+
+const route = useRoute();
+const currentSearch = ref(route.query.search || '');
+
+function updateSearch(search: string) {
+  currentSearch.value = search;
+}
+
+function performSearch(evt: Event) {
+  evt.preventDefault(); // prevent form submission from refreshing page
+
+  if (currentSearch.value === route.query.search) {
+    // nothing has changed, do nothing
+    return;
+  }
+  if (route.name !== 'searchDandisets') {
+    router.push({
+      name: 'searchDandisets',
+      query: {
+        search: currentSearch.value,
+      },
+    });
+  } else {
+    router.replace({
+      ...route,
+      query: {
+        ...route.query,
+        search: currentSearch.value,
+      },
+    } as RouteLocationRaw);
+  }
+}
 </script>
