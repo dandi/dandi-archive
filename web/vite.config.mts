@@ -8,9 +8,34 @@ import VueRouter from 'unplugin-vue-router/vite'
 
 // Utilities
 import { defineConfig } from 'vite'
+import { execSync } from 'node:child_process'
 import { fileURLToPath, URL } from 'node:url'
 
 import { commonjsDeps } from '@koumoul/vjsf/utils/build.js'
+
+function getVersion() {
+  // Try to get the version via `git` if available; otherwise fall back on
+  // the COMMIT_REF environment variable provided by Netlify's build
+  // environment; if that is missing, report "unknown" as the version.
+
+  try {
+    return execSync('git describe --tags').toString();
+  } catch {
+    return process.env.COMMIT_REF ? process.env.COMMIT_REF : 'unknown';
+  }
+}
+
+function getGitRevision() {
+  try {
+    return execSync('git rev-parse HEAD').toString();
+  } catch {
+    return '';
+  }
+}
+
+process.env.VITE_APP_VERSION = getVersion();
+process.env.VITE_APP_GIT_REVISION = getGitRevision();
+
 
 // https://vitejs.dev/config/
 export default defineConfig({
