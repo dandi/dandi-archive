@@ -70,17 +70,19 @@ watchEffect(() => {
 });
 
 
-onMounted(() => {
-  Promise.all([
-    store.fetchSchema(),
-    dandiRest.restoreLogin(),
-  ]).then(() => {
+onMounted(async () => {
+  try {
+    await Promise.all([
+      store.fetchSchema(),
+      dandiRest.restoreLogin(),
+    ]);
     connectedToServer.value = true;
-  }).catch(() => {
+  } catch (err) {
     connectedToServer.value = false;
-  }).finally(() => {
+    throw err;
+  } finally {
     verifiedServerConnection.value = true;
-  });
+  }
 });
 </script>
 
