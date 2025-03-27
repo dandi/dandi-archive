@@ -10,6 +10,7 @@ import djclick as click
 
 from dandiapi.api.manifests import write_dandiset_jsonld, write_dandiset_yaml
 from dandiapi.api.models import Version
+from dandiapi.api.services import audit
 
 
 @click.command(
@@ -68,6 +69,14 @@ def correct_metadata(  # noqa: C901
 
             ver.metadata = new_meta
             ver.save()
+
+            audit.update_metadata(
+                dandiset=ver.dandiset,
+                metadata=new_meta,
+                user=None,
+                admin=True,
+                description='Apply metadata correction from https://github.com/dandi/dandi-schema/issues/276',
+            )
 
     # Remaining check is not needed since no data was modified
     if check:
