@@ -6,6 +6,38 @@ from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 
+class DandisetPermissions(models.TextChoices):
+    # Dandisets
+    CREATE_DANDISET = 'create_dandiset', 'Can create the dandiset'
+    VIEW_DANDISET = 'view_dandiset', 'Can view the dandiset'
+    UPDATE_DANDISET = 'update_dandiset', 'Can update the dandiset'
+    DELETE_DANDISET = 'delete_dandiset', 'Can delete the dandiset'
+    MANAGE_DANDISET_UPLOADS = 'manage_dandiset_uploads', 'Can manage the dandiset uploads'
+    PUBLISH_DANDISET = 'publish_dandiset', 'Can publish the dandiset'
+    UNEMBARGO_DANDISET = 'unembargo_dandiset', 'Can unembargo the dandiset'
+    STAR_DANDISET = 'star_dandiset', 'Can star the dandiset'
+    VIEW_DANDISET_ROLES = 'view_dandiset_roles', 'Can view the dandiset roles'
+    UPDATE_DANDISET_ROLES = 'update_dandiset_roles', 'Can update the dandiset roles'
+
+    # Versions
+    VIEW_DANDISET_VERSIONS = 'view_dandiset_versions', 'Can view the dandiset versions'
+
+    # Assets
+    CREATE_DANDISET_ASSETS = 'create_dandiset_assets', 'Can create the dandiset assets'
+    VIEW_DANDISET_ASSETS = 'view_dandiset_assets', 'Can view the dandiset assets'
+    DELETE_DANDISET_ASSETS = 'delete_dandiset_assets', 'Can delete the dandiset assets'
+    UPDATE_DANDISET_ASSETS = 'update_dandiset_assets', 'Can update the dandiset assets'
+
+    # Zarrs
+    VIEW_ZARR_ARCHIVE = 'view_zarr_archive', 'Can view the zarr archive'
+    CREATE_ZARR_ARCHIVE = 'create_zarr_archive', 'Can create the zarr archive'
+    DELETE_ZARR_ARCHIVE = 'delete_zarr_archive', 'Can delete the zarr archive'
+    FINALIZE_ZARR_ARCHIVE = 'finalize_zarr_archive', 'Can finalize the zarr archive'
+    CREATE_ZARR_ARCHIVE_FILES = 'create_zarr_archive_files', 'Can create the zarr archive files'
+    DELETE_ZARR_ARCHIVE_FILES = 'delete_zarr_archive_files', 'Can delete the zarr archive files'
+    LIST_ZARR_ARCHIVE_FILES = 'list_zarr_archive_files', 'Can list the zarr archive files'
+
+
 class Dandiset(TimeStampedModel):
     # Don't add beginning and end markers, so this can be embedded in larger regexes
     IDENTIFIER_REGEX = r'\d{6}'
@@ -26,7 +58,8 @@ class Dandiset(TimeStampedModel):
 
     class Meta:
         ordering = ['id']
-        permissions = [('owner', 'Owns the dandiset')]
+        default_permissions = []
+        permissions = [(perm, perm.label) for perm in DandisetPermissions]
 
     @property
     def identifier(self) -> str:
