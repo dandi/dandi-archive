@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models.query_utils import Q
 from drf_yasg.utils import swagger_serializer_method
@@ -38,6 +39,17 @@ class UserDetailSerializer(serializers.Serializer):
     name = serializers.CharField(validators=[UnicodeUsernameValidator()])
     admin = serializers.BooleanField()
     status = serializers.CharField()
+
+
+class UserEmailSerializer(serializers.Serializer):
+    subject = serializers.CharField()
+    message = serializers.CharField()
+    username = serializers.CharField()
+
+    def validate_username(self, value):
+        if not User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("No user found with that username.")
+        return value
 
 
 class DandisetSerializer(serializers.ModelSerializer):
