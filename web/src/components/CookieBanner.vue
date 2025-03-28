@@ -41,7 +41,7 @@ function setCookie() {
       color="secondary"
       class="pa-5 d-flex justify-space-between align-center"
       max-width="60%"
-      style="left: 50%; transform: translateX(-50%);"
+      style="left: 50%; transform: translateX(-50%); z-index: 1;"
     >
       <span>We use cookies to ensure you get the best experience on DANDI.</span>
       <v-btn
