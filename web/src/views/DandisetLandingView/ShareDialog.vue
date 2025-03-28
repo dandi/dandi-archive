@@ -13,6 +13,7 @@
         <v-icon
           color="primary"
           style="cursor: pointer;"
+          size="x-small"
         >
           mdi-share-variant
         </v-icon>
