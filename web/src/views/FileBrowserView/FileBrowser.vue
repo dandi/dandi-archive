@@ -194,8 +194,8 @@
                           :href="assetMetadataURI(item.asset.asset_id)"
                           target="_blank"
                           rel="noreferrer"
-
                           v-bind="infoProps"
+                          @click.stop
                         >
                           <v-icon color="primary">
                             mdi-information
