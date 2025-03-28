@@ -25,15 +25,17 @@
               </v-list-item-title>
             </template>
             <template v-if="navItem.external">
-              <v-list-item-title class="text-md">
-                {{ navItem.text }}
-              </v-list-item-title>
-              <v-icon
-                class="ml-1"
-                size="small"
-              >
-                mdi-open-in-new
-              </v-icon>
+              <div class="d-flex justify-space-between align-center">
+                <v-list-item-title class="text-md">
+                  {{ navItem.text }}
+                </v-list-item-title>
+                <v-icon
+                  class="ml-1"
+                  size="x-small"
+                >
+                  mdi-open-in-new
+                </v-icon>
+              </div>
             </template>
           </v-list-item>
         </template>
