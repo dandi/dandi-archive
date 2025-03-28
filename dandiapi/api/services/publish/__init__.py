@@ -171,6 +171,9 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # Add asset paths with new version
         add_version_asset_paths(version=new_version)
 
+        # Copy the finalized assetsSummary to the draft version in case it wasn't up to date
+        # before starting the publish.
+        old_version.metadata['assetsSummary'] = new_version.metadata['assetsSummary']
         # Set the version of the draft to PUBLISHED so that it cannot be published again without
         # being modified and revalidated
         old_version.status = Version.Status.PUBLISHED
