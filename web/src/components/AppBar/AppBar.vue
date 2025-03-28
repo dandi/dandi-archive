@@ -18,7 +18,6 @@
             :target="navItem.external ? '_blank' : undefined"
             :rel="navItem.external ? 'noopener' : undefined"
             exact
-            text
           >
             <template v-if="!navItem.external">
               <v-list-item-title class="text-md">
