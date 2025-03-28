@@ -52,7 +52,7 @@ def correct_metadata(  # noqa: C901
         return
 
     # For each version, find and fix metadata corruptions, along with saving out manifest files
-    for ver in vers:
+    for ver in vers.iterator():
         new_meta = correct_affiliation_corruption(ver.metadata)
         if new_meta is None:
             continue
@@ -83,7 +83,9 @@ def correct_metadata(  # noqa: C901
         return
 
     # If we find any un-fixed instances, raise exception
-    remaining = [ver for ver in vers if correct_affiliation_corruption(ver.metadata) is not None]
+    remaining = [
+        ver for ver in vers.iterator() if correct_affiliation_corruption(ver.metadata) is not None
+    ]
     if remaining:
         click.echo(
             click.style(f'\nFound remaining corrupted versions: {remaining}', fg='red', bold=True)
