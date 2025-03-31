@@ -45,6 +45,7 @@ const invalidDandisets = {
 test.describe("Test meditor validation errors", async () => {
   test.beforeEach(async ({ page }) => {
     await gotoAndLogin(page);
+    await page.waitForTimeout(1000);
   });
 
   for (const dandisetId of dandisetsToTest) {
