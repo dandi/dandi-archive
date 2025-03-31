@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { clientUrl } from "../utils.ts";
 
-const devDandisetId = "000001";
+const devDandisetId = "000003";
 
 test.describe("File browser page", async () => {
   test("there is a file browser", async ({ page }) => {
