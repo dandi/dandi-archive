@@ -14,7 +14,7 @@ from dandiapi.api.services.asset import (
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import is_owned_asset, require_dandiset_owner_or_403
+from dandiapi.api.services.permissions.dandiset import has_asset_perm, require_dandiset_owner_or_403
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -102,9 +102,8 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         if self.request.user.is_superuser:
             return
 
-        # User must be an owner on any of the dandisets this asset belongs to
-        is_owned = is_owned_asset(asset, self.request.user)
-        if not is_owned:
+        # User must have view assets permission on any of the dandisets this asset belongs to
+        if not has_asset_perm(asset, self.request.user, DandisetPermissions.VIEW_DANDISET_ASSETS):
             raise PermissionDenied
 
     def get_queryset(self):

@@ -11,7 +11,7 @@ from django.utils.decorators import method_decorator
 from guardian.decorators import permission_required
 from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms
 
-from dandiapi.api.models.dandiset import Dandiset, DandisetUserObjectPermission
+from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions, DandisetUserObjectPermission
 
 if typing.TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
@@ -49,20 +49,17 @@ def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
     return removed_owners, added_owners
 
 
-def is_owned_asset(asset: Asset, user: AbstractBaseUser | AnonymousUser) -> bool:
-    """Return `True` if this asset belongs to a dandiset that the user is an owner of."""
+def has_asset_perm(
+    asset: Asset, user: AbstractBaseUser | AnonymousUser, perm: DandisetPermissions
+) -> bool:
+    """Return `True` if this asset belongs to a dandiset that the user has the given permission."""
     if user.is_anonymous:
         return False
 
-    user = typing.cast(User, user)
+    user = typing.cast('User', user)
     asset_dandisets = Dandiset.objects.filter(versions__in=asset.versions.all())
-    asset_dandisets_owned_by_user = DandisetUserObjectPermission.objects.filter(
-        content_object__in=asset_dandisets,
-        user=user,
-        permission__codename='owner',
-    )
-
-    return asset_dandisets_owned_by_user.exists()
+    dandisets_with_perm = get_objects_for_user(user=user, perms=perm, klass=asset_dandisets)
+    return dandisets_with_perm.exists()
 
 
 def get_owned_dandisets(
