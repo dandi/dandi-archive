@@ -2,28 +2,6 @@
 from __future__ import annotations
 
 from django.db import migrations
-from guardian.shortcuts import assign_perm
-
-
-def migrate_owners(apps, schema_editor):
-    Dandiset = apps.get_model('api.Dandiset')
-    User = apps.get_model('auth.User')
-    Group = apps.get_model('auth.Group')
-
-    dandisets = Dandiset.objects.all().iterator()
-    for dandiset in dandisets:
-        owners_group = Group.objects.create(name=f'Dandiset {dandiset.identifier} Owners')
-
-        ds_owners = User.objects.filter(
-            dandisetuserobjectpermission__permission__codename='owner',
-            dandisetuserobjectpermission__content_object=dandiset.pk,
-        ).iterator()
-        for owner in ds_owners:
-            # Using _meta.permissions is the only good way we can get the permissions list, as
-            # DandisetPermissions is inaccessible here.
-            perms = [x[0] for x in Dandiset._meta.permissions if x[0] != 'owner']
-            for perm in perms:
-                assign_perm(perm, owners_group, owner)
 
 
 class Migration(migrations.Migration):
@@ -32,40 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Must first create extra perms alongside `owner`, and then remove owner after migration
-        migrations.AlterModelOptions(
-            name='dandiset',
-            options={
-                'default_permissions': [],
-                'ordering': ['id'],
-                'permissions': [
-                    ('owner', 'Owns the dandiset'),
-                    ('create_dandiset', 'Can create the dandiset'),
-                    ('view_dandiset', 'Can view the dandiset'),
-                    ('update_dandiset', 'Can update the dandiset'),
-                    ('delete_dandiset', 'Can delete the dandiset'),
-                    ('manage_dandiset_uploads', 'Can manage the dandiset uploads'),
-                    ('publish_dandiset', 'Can publish the dandiset'),
-                    ('unembargo_dandiset', 'Can unembargo the dandiset'),
-                    ('star_dandiset', 'Can star the dandiset'),
-                    ('view_dandiset_roles', 'Can view the dandiset roles'),
-                    ('update_dandiset_roles', 'Can update the dandiset roles'),
-                    ('view_dandiset_versions', 'Can view the dandiset versions'),
-                    ('create_dandiset_assets', 'Can create the dandiset assets'),
-                    ('view_dandiset_assets', 'Can view the dandiset assets'),
-                    ('delete_dandiset_assets', 'Can delete the dandiset assets'),
-                    ('update_dandiset_assets', 'Can update the dandiset assets'),
-                    ('view_zarr_archive', 'Can view the zarr archive'),
-                    ('create_zarr_archive', 'Can create the zarr archive'),
-                    ('delete_zarr_archive', 'Can delete the zarr archive'),
-                    ('finalize_zarr_archive', 'Can finalize the zarr archive'),
-                    ('create_zarr_archive_files', 'Can create the zarr archive files'),
-                    ('delete_zarr_archive_files', 'Can delete the zarr archive files'),
-                    ('list_zarr_archive_files', 'Can list the zarr archive files'),
-                ],
-            },
-        ),
-        migrations.RunPython(code=migrate_owners),
         migrations.AlterModelOptions(
             name='dandiset',
             options={
