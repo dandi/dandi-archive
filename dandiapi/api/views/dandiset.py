@@ -24,7 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
-from dandiapi.api.models.dandiset import DandisetStar
+from dandiapi.api.models.dandiset import DandisetPermissions, DandisetStar
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import (
     create_dandiset,
@@ -37,12 +37,11 @@ from dandiapi.api.services.embargo.exceptions import (
     DandisetUnembargoInProgressError,
     UnauthorizedEmbargoAccessError,
 )
-from dandiapi.api.services.exceptions import DandiError, NotAllowedError, NotAuthenticatedError
+from dandiapi.api.services.exceptions import DandiError, NotAuthenticatedError
 from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     get_owned_dandisets,
     get_visible_dandisets,
-    is_dandiset_owner,
     replace_dandiset_owners,
     require_dandiset_owner_or_403,
 )
@@ -214,14 +213,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         return queryset
 
-    def require_owner_perm(self, dandiset: Dandiset):
+    def require_perm(self, dandiset: Dandiset, perm: DandisetPermissions):
         # Raise 401 if unauthenticated
         if not self.request.user.is_authenticated:
             raise NotAuthenticated
 
         # Raise 403 if unauthorized
         self.request.user = typing.cast(User, self.request.user)
-        if not is_dandiset_owner(dandiset, self.request.user):
+        if not self.request.user.has_perm(perm, dandiset):
             raise PermissionDenied
 
     def get_object(self):
@@ -237,7 +236,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
         dandiset = super().get_object()
         if dandiset.embargo_status != Dandiset.EmbargoStatus.OPEN:
-            self.require_owner_perm(dandiset)
+            self.require_perm(dandiset, DandisetPermissions.VIEW_DANDISET)
 
         return dandiset
 
@@ -484,15 +483,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     )
     # TODO: move these into a viewset
     @action(methods=['GET', 'PUT'], detail=True)
-    def users(self, request, dandiset__pk):  # noqa: C901
+    def users(self, request, dandiset__pk):
         dandiset: Dandiset = self.get_object()
         if request.method == 'PUT':
             if dandiset.unembargo_in_progress:
                 raise DandisetUnembargoInProgressError
 
-            # Verify that the user is currently an owner
-            if not is_dandiset_owner(dandiset, request.user):
-                raise NotAllowedError
+            # Verify that the user has permission to update roles
+            self.require_perm(dandiset, DandisetPermissions.UPDATE_DANDISET_ROLES)
 
             serializer = UserSerializer(data=request.data, many=True)
             serializer.is_valid(raise_exception=True)
@@ -573,7 +571,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         dandiset: Dandiset = self.get_object()
 
         # Special case where a "safe" method is access restricted, due to the nature of uploads
-        self.require_owner_perm(dandiset)
+        self.require_perm(dandiset, DandisetPermissions.MANAGE_DANDISET_UPLOADS)
 
         uploads: QuerySet[Upload] = dandiset.uploads.all()
 
@@ -594,7 +592,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
     @uploads.mapping.delete
     def clear_uploads(self, request, dandiset__pk):
         dandiset: Dandiset = self.get_object()
-        self.require_owner_perm(dandiset)
+        self.require_perm(dandiset, DandisetPermissions.MANAGE_DANDISET_UPLOADS)
 
         dandiset.uploads.all().delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

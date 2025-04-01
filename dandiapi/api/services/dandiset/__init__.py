@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.db import transaction
 
-from dandiapi.api.models.dandiset import Dandiset, DandisetStar
+from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset.exceptions import DandisetAlreadyExistsError
@@ -12,8 +14,11 @@ from dandiapi.api.services.exceptions import (
     NotAllowedError,
     NotAuthenticatedError,
 )
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
 def create_dandiset(
@@ -59,8 +64,8 @@ def create_dandiset(
     return dandiset, draft_version
 
 
-def delete_dandiset(*, user, dandiset: Dandiset) -> None:
-    if not is_dandiset_owner(dandiset, user):
+def delete_dandiset(*, user: User, dandiset: Dandiset) -> None:
+    if not user.has_perm(DandisetPermissions.DELETE_DANDISET, dandiset):
         raise NotAllowedError('Cannot delete dandisets which you do not own.')
     if dandiset.versions.exclude(version='draft').exists():
         raise NotAllowedError('Cannot delete dandisets with published versions.')

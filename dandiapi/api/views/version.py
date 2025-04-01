@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import typing
+
+from django.contrib.auth.models import User
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -12,12 +15,10 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.services import audit
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import (
-    is_dandiset_owner,
-    require_dandiset_owner_or_403,
-)
+from dandiapi.api.services.permissions.dandiset import require_dandiset_owner_or_403
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
@@ -58,9 +59,12 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
-            if not is_dandiset_owner(dandiset, self.request.user):
+
+            self.request.user = typing.cast('User', self.request.user)
+            if not self.request.user.has_perm(DandisetPermissions.VIEW_DANDISET_VERSIONS, dandiset):
                 # The user does not have ownership permission
                 raise PermissionDenied
+
         return super().get_queryset()
 
     @swagger_auto_schema(

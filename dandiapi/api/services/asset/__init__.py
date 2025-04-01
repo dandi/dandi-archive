@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from dandiapi.api.asset_paths import add_asset_paths, delete_asset_paths, get_conflicting_paths
 from dandiapi.api.models.asset import Asset, AssetBlob
-from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import (
@@ -17,10 +17,11 @@ from dandiapi.api.services.asset.exceptions import (
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
 )
-from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.tasks import remove_asset_blob_embargoed_tag_task
 
 if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+
     from dandiapi.zarr.models import ZarrArchive
 
 
@@ -81,7 +82,7 @@ def _remove_asset_from_version(*, asset: Asset, version: Version):
 
 def change_asset(  # noqa: PLR0913
     *,
-    user,
+    user: User,
     asset: Asset,
     version: Version,
     new_asset_blob: AssetBlob | None = None,
@@ -99,7 +100,8 @@ def change_asset(  # noqa: PLR0913
     if 'path' not in new_metadata:
         raise ValueError('Path must be present in new_metadata')
 
-    if not is_dandiset_owner(version.dandiset, user):
+    if not user.has_perm(DandisetPermissions.UPDATE_DANDISET_ASSETS, version.dandiset):
+        # TODO: Update exception name
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
@@ -135,7 +137,7 @@ def change_asset(  # noqa: PLR0913
 
 def add_asset_to_version(
     *,
-    user,
+    user: User,
     version: Version,
     asset_blob: AssetBlob | None = None,
     zarr_archive: ZarrArchive | None = None,
@@ -149,7 +151,8 @@ def add_asset_to_version(
     if 'path' not in metadata:
         raise RuntimeError('Path must be present in metadata')
 
-    if not is_dandiset_owner(version.dandiset, user):
+    if not user.has_perm(DandisetPermissions.CREATE_DANDISET_ASSETS, version.dandiset):
+        # TODO: Update exception name
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
@@ -194,8 +197,9 @@ def add_asset_to_version(
     return asset
 
 
-def remove_asset_from_version(*, user, asset: Asset, version: Version) -> Version:
-    if not is_dandiset_owner(version.dandiset, user):
+def remove_asset_from_version(*, user: User, asset: Asset, version: Version) -> Version:
+    if not user.has_perm(DandisetPermissions.DELETE_DANDISET_ASSETS, version.dandiset):
+        # TODO: Update exception name
         raise DandisetOwnerRequiredError
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError

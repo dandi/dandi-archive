@@ -6,6 +6,7 @@ import typing
 from django.contrib.auth.models import User
 
 from dandiapi.api.asset_paths import search_asset_paths
+from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.services.asset import (
     add_asset_to_version,
     change_asset,
@@ -13,11 +14,7 @@ from dandiapi.api.services.asset import (
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import (
-    is_dandiset_owner,
-    is_owned_asset,
-    require_dandiset_owner_or_403,
-)
+from dandiapi.api.services.permissions.dandiset import is_owned_asset, require_dandiset_owner_or_403
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -244,8 +241,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
             if not self.request.user.is_authenticated:
                 # Clients must be authenticated to access it
                 raise NotAuthenticated
-            if not is_dandiset_owner(version.dandiset, self.request.user):
-                # The user does not have ownership permission
+
+            user = typing.cast('User', self.request.user)
+            if not user.has_perm(DandisetPermissions.VIEW_DANDISET_ASSETS, version.dandiset):
                 raise PermissionDenied
 
     # Override this here to prevent the need for raise_if_unauthorized to exist in get_queryset

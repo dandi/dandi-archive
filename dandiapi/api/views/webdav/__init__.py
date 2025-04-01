@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
@@ -9,8 +10,8 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 
 from dandiapi.api.asset_paths import get_path_children
 from dandiapi.api.models.asset_paths import AssetPath
+from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.models.version import Version
-from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.views.common import PAGINATION_PARAMS
 from dandiapi.api.views.pagination import DandiPagination
 
@@ -77,7 +78,10 @@ def atpath(request: Request):
     dandiset: Dandiset = version.dandiset
 
     # Ensure embargoed dandisets are only accessed by owners
-    if dandiset.embargoed and not is_dandiset_owner(dandiset, request.user):
+    if dandiset.embargoed and (
+        not isinstance(request.user, User)
+        or not request.user.has_perm(DandisetPermissions.VIEW_DANDISET_ASSETS, dandiset)
+    ):
         raise PermissionDenied
 
     # This endpoint allows an ending slash for folders,
