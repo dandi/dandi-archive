@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.contrib.auth.models import Group
 from django.db import transaction
+from guardian.shortcuts import assign_perm
 
 from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions, DandisetStar
 from dandiapi.api.models.version import Version
@@ -19,6 +21,12 @@ from dandiapi.api.services.version.metadata import _normalize_version_metadata
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
+
+
+def _create_dandiset_owners_group(dandiset: Dandiset):
+    owners_group = Group.objects.create(name=dandiset.owners_group_name)
+    for perm in DandisetPermissions:
+        assign_perm(perm=perm, user_or_group=owners_group, obj=dandiset)
 
 
 def create_dandiset(
@@ -47,7 +55,10 @@ def create_dandiset(
         dandiset = Dandiset(id=identifier, embargo_status=embargo_status)
         dandiset.full_clean()
         dandiset.save()
+
+        _create_dandiset_owners_group(dandiset=dandiset)
         add_dandiset_owner(dandiset, user)
+
         draft_version = Version(
             dandiset=dandiset,
             name=version_name,
