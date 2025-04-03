@@ -371,6 +371,23 @@ def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_fac
 
 
 @pytest.mark.django_db
+def test_version_publish_updates_draft_version_assets_summary(
+    draft_version_factory, draft_asset_factory, user
+):
+    version = draft_version_factory(status=Version.Status.PUBLISHING)
+    asset = draft_asset_factory(status=Asset.Status.VALID)
+    version.assets.add(asset)
+
+    tasks.publish_dandiset_task(version.dandiset.id, user.id)
+
+    version.refresh_from_db()
+    draft_asset_summary = version.metadata['assetsSummary']
+    published_asset_summary = Version.objects.latest('created').metadata['assetsSummary']
+
+    assert published_asset_summary == draft_asset_summary
+
+
+@pytest.mark.django_db
 def test_version_aggregate_assets_summary_metadata_modified(
     draft_version_factory, draft_asset_factory
 ):
