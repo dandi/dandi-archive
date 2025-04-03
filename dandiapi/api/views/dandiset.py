@@ -43,7 +43,7 @@ from dandiapi.api.services.permissions.dandiset import (
     get_owned_dandisets,
     get_visible_dandisets,
     replace_dandiset_owners,
-    require_dandiset_owner_or_403,
+    require_dandiset_perm_or_403,
 )
 from dandiapi.api.views.common import DANDISET_PK_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -453,7 +453,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         ),
     )
     @action(methods=['POST'], detail=True)
-    @require_dandiset_owner_or_403('dandiset__pk')
+    @require_dandiset_perm_or_403('dandiset__pk', perm=DandisetPermissions.UNEMBARGO_DANDISET)
     def unembargo(self, request, dandiset__pk):
         dandiset: Dandiset = get_object_or_404(Dandiset, pk=dandiset__pk)
         kickoff_dandiset_unembargo(user=request.user, dandiset=dandiset)

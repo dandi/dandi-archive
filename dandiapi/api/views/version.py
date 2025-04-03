@@ -18,7 +18,7 @@ from dandiapi.api.models import Dandiset, Version
 from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.services import audit
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import require_dandiset_owner_or_403
+from dandiapi.api.services.permissions.dandiset import require_dandiset_perm_or_403
 from dandiapi.api.services.publish import publish_dandiset
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
@@ -95,7 +95,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={200: VersionDetailSerializer},
         manual_parameters=[DANDISET_PK_PARAM, VERSION_PARAM],
     )
-    @require_dandiset_owner_or_403('dandiset__pk')
+    @require_dandiset_perm_or_403('dandiset__pk', perm=DandisetPermissions.UPDATE_DANDISET)
     def update(self, request, **kwargs):
         """Update the metadata of a version."""
         version: Version = self.get_object()
@@ -144,7 +144,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
         responses={200: VersionSerializer},
     )
     @action(detail=True, methods=['POST'])
-    @require_dandiset_owner_or_403('dandiset__pk')
+    @require_dandiset_perm_or_403('dandiset__pk', perm=DandisetPermissions.PUBLISH_DANDISET)
     def publish(self, request, **kwargs):
         """Publish a version."""
         if kwargs['version'] != 'draft':

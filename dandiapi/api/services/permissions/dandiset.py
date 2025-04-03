@@ -94,14 +94,12 @@ def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Da
     ).order_by('created')
 
 
-def require_dandiset_owner_or_403(pk_path: str):
+def require_dandiset_perm_or_403(pk_path: str, *, perm: DandisetPermissions):
     """
     Decorate viewset methods to only allow access to dandiset owners.
 
     The `pk_path` argument is the Dandiset ID URL path variable that DRF passes into the request.
     """
     return method_decorator(
-        permission_required(
-            perm='owner', lookup_variables=(Dandiset, 'pk', pk_path), return_403=True
-        )
+        permission_required(perm=perm, lookup_variables=(Dandiset, 'pk', pk_path), return_403=True)
     )

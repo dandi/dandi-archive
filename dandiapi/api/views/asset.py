@@ -14,7 +14,7 @@ from dandiapi.api.services.asset import (
 )
 from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import has_asset_perm, require_dandiset_owner_or_403
+from dandiapi.api.services.permissions.dandiset import has_asset_perm, require_dandiset_perm_or_403
 from dandiapi.zarr.models import ZarrArchive
 
 try:
@@ -319,7 +319,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                                User must be an owner of the specified dandiset.\
                                New assets can only be attached to draft versions.',
     )
-    @require_dandiset_owner_or_403('versions__dandiset__pk')
+    @require_dandiset_perm_or_403(
+        'versions__dandiset__pk', perm=DandisetPermissions.CREATE_DANDISET_ASSETS
+    )
     def create(self, request, versions__dandiset__pk, versions__version):
         version: Version = get_object_or_404(
             Version.objects.select_related('dandiset'),
@@ -353,7 +355,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
                                Only draft versions can be modified.\
                                Old asset is returned if no updates to metadata are made.',
     )
-    @require_dandiset_owner_or_403('versions__dandiset__pk')
+    @require_dandiset_perm_or_403(
+        'versions__dandiset__pk', perm=DandisetPermissions.UPDATE_DANDISET_ASSETS
+    )
     def update(self, request, versions__dandiset__pk, versions__version, **kwargs):
         """Create an asset with updated metadata."""
         version: Version = get_object_or_404(
@@ -386,7 +390,9 @@ class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet)
         serializer = AssetDetailSerializer(instance=asset)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @require_dandiset_owner_or_403('versions__dandiset__pk')
+    @require_dandiset_perm_or_403(
+        'versions__dandiset__pk', perm=DandisetPermissions.DELETE_DANDISET_ASSETS
+    )
     @swagger_auto_schema(
         manual_parameters=[VERSIONS_DANDISET_PK_PARAM, VERSIONS_VERSION_PARAM],
         operation_summary='Remove an asset from a version.',
