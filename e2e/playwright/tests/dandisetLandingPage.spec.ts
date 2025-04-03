@@ -13,7 +13,7 @@ test.describe("dandiset landing page", async () => {
     const otherUserName = `${otherUserFirstname} ${otherUserLastName}`;
     const otherUserInitials = `${otherUserFirstname.charAt(0)}${otherUserLastName.charAt(0)}`;
     await page.getByRole("button", { name: otherUserInitials }).click();
-    await page.getByRole("menuitem", { name: LOGOUT_BUTTON_TEXT }).click();
+    await page.getByText(LOGOUT_BUTTON_TEXT).click();
 
     // Create a fresh browser context and page
     const context = await browser.newContext();

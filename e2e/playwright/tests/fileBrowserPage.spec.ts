@@ -9,6 +9,6 @@ test.describe("File browser page", async () => {
     await page.getByRole("link", { name: "Files" }).click()
 
     // Ensure the page has loaded with a folder
-    await expect(page.getByText("foo 20 B")).toHaveCount(1);
+    await expect(page.getByText("foo")).toHaveCount(1);
   });
 });

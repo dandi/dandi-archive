@@ -10,7 +10,7 @@ test.describe("dandiset registration page", async () => {
     await page.getByLabel("Title").fill("My Dandiset");
     await page.getByLabel("Description").click();
     await page.getByLabel("Description").fill("My Dandiset Description");
-    await page.getByLabel("License").click()
+    await page.locator('div:nth-child(3) > .v-input__control > .v-field > .v-field__field > .v-field__input').click()
     await page.getByRole("option", { name: "spdx:CC0-" }).click();
     await page.getByRole("button", { name: "Register Dandiset" }).click();
 
