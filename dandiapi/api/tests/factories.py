@@ -20,6 +20,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.services.dandiset import _create_dandiset_owners_group
 from dandiapi.api.services.publish import publish_asset
 
 
@@ -76,6 +77,13 @@ class SocialAccountFactory(factory.django.DjangoModelFactory):
 class DandisetFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Dandiset
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        manager = cls._get_manager(model_class)
+        dandiset = manager.create(*args, **kwargs)
+        _create_dandiset_owners_group(dandiset=dandiset)
+        return dandiset
 
 
 class BaseVersionFactory(factory.django.DjangoModelFactory):
