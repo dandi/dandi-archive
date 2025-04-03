@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
@@ -103,6 +103,13 @@ class Dandiset(TimeStampedModel):
         if not user.is_authenticated:
             return False
         return self.stars.filter(user=user).exists()
+
+    @property
+    def owners_group_name(self):
+        return f'Dandiset {self.identifier} Owners'
+
+    def get_owners_group(self):
+        return Group.objects.get(name=self.owners_group_name)
 
 
 class DandisetUserObjectPermission(UserObjectPermissionBase):

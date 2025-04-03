@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import typing
 
 from django.contrib.auth.models import AnonymousUser, User
@@ -9,9 +10,9 @@ from django.db import transaction
 from django.db.models import Q, QuerySet
 from django.utils.decorators import method_decorator
 from guardian.decorators import permission_required
-from guardian.shortcuts import assign_perm, get_objects_for_user, get_users_with_perms
+from guardian.shortcuts import get_objects_for_user
 
-from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions, DandisetUserObjectPermission
+from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions
 
 if typing.TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
@@ -20,12 +21,11 @@ if typing.TYPE_CHECKING:
 
 
 def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
-    qs = typing.cast(QuerySet[User], get_users_with_perms(dandiset, only_with_perms_in=['owner']))
-    return qs.order_by('date_joined')
+    return User.objects.filter(groups=dandiset.get_owners_group()).order_by('date_joined')
 
 
 def add_dandiset_owner(dandiset: Dandiset, user: User):
-    assign_perm('owner', user, dandiset)
+    user.groups.add(dandiset.get_owners_group())
 
 
 def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
@@ -35,9 +35,7 @@ def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
 
     with transaction.atomic():
         # Delete all existing owners
-        DandisetUserObjectPermission.objects.filter(
-            content_object=dandiset.pk, permission__codename='owner'
-        ).delete()
+        dandiset.get_owners_group().user_set.clear()
 
         # Set owners to new list
         for user in users:
@@ -63,10 +61,21 @@ def has_asset_perm(
 
 
 def get_owned_dandisets(
-    user: AbstractBaseUser | AnonymousUser,
-    include_superusers=True,  # noqa: FBT002
+    user: AbstractBaseUser | AnonymousUser, *, include_superusers=True
 ) -> QuerySet[Dandiset]:
-    return get_objects_for_user(user, 'owner', Dandiset, with_superuser=include_superusers)
+    regex = r'Dandiset (\d{6}) Owners'
+
+    # Superusers have the same permissions as dandiset owners
+    user = typing.cast('User', user)
+    if include_superusers and user.is_superuser:
+        return Dandiset.objects.all()
+
+    # Group name is the sole criteria for distinguishing groups
+    owner_group_names = user.groups.filter(name__regex=regex).values_list('name', flat=True)
+    matches = [re.match(regex, name) for name in owner_group_names]
+    ids = [int(match.group(1)) for match in matches if match is not None]
+
+    return Dandiset.objects.filter(id__in=ids)
 
 
 def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Dandiset]:
