@@ -50,6 +50,17 @@ def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):
     return removed_owners, added_owners
 
 
+def has_dandiset_perm(
+    dandiset: Dandiset, user: AbstractBaseUser | AnonymousUser, perm: DandisetPermissions
+) -> bool:
+    """Return `True` if `user` has `perm` on `dandiset`."""
+    if user.is_anonymous:
+        return False
+
+    user = typing.cast('User', user)
+    return user.has_perm(perm=perm, obj=dandiset)
+
+
 def has_asset_perm(
     asset: Asset, user: AbstractBaseUser | AnonymousUser, perm: DandisetPermissions
 ) -> bool:

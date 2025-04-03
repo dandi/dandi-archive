@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.http.response import Http404, HttpResponseBase
 from django.shortcuts import get_object_or_404
@@ -20,7 +19,7 @@ from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.permissions import IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import NotAllowedError
-from dandiapi.api.services.permissions.dandiset import get_visible_dandisets
+from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, has_dandiset_perm
 from dandiapi.api.tasks import calculate_sha256
 from dandiapi.api.views.serializers import AssetBlobSerializer
 
@@ -138,9 +137,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         id=dandiset_id,
     )
 
-    if not isinstance(request.user, User) or not request.user.has_perm(
-        DandisetPermissions.MANAGE_DANDISET_UPLOADS, dandiset
-    ):
+    if not has_dandiset_perm(dandiset, request.user, DandisetPermissions.MANAGE_DANDISET_UPLOADS):
         raise NotAllowedError
 
     # Ensure dandiset not in the process of unembargo
@@ -195,9 +192,8 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
     parts: list[TransferredPart] = request_serializer.save()
 
     upload: Upload = get_object_or_404(Upload, upload_id=upload_id)
-    if upload.embargoed and (
-        not isinstance(request.user, User)
-        or not request.user.has_perm(DandisetPermissions.MANAGE_DANDISET_UPLOADS, upload.dandiset)
+    if upload.embargoed and not has_dandiset_perm(
+        upload.dandiset, request.user, DandisetPermissions.MANAGE_DANDISET_UPLOADS
     ):
         raise Http404 from None
 
@@ -235,9 +231,8 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
     Also starts the asynchronous checksum calculation process.
     """
     upload = get_object_or_404(Upload, upload_id=upload_id)
-    if upload.embargoed and (
-        not isinstance(request.user, User)
-        or not request.user.has_perm(DandisetPermissions.MANAGE_DANDISET_UPLOADS, upload.dandiset)
+    if upload.embargoed and not has_dandiset_perm(
+        upload.dandiset, request.user, DandisetPermissions.MANAGE_DANDISET_UPLOADS
     ):
         raise Http404 from None
 

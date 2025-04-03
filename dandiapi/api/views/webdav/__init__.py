@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
@@ -12,6 +11,7 @@ from dandiapi.api.asset_paths import get_path_children
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.models.version import Version
+from dandiapi.api.services.permissions.dandiset import has_dandiset_perm
 from dandiapi.api.views.common import PAGINATION_PARAMS
 from dandiapi.api.views.pagination import DandiPagination
 
@@ -78,9 +78,8 @@ def atpath(request: Request):
     dandiset: Dandiset = version.dandiset
 
     # Ensure embargoed dandisets are only accessed by owners
-    if dandiset.embargoed and (
-        not isinstance(request.user, User)
-        or not request.user.has_perm(DandisetPermissions.VIEW_DANDISET_ASSETS, dandiset)
+    if dandiset.embargoed and not has_dandiset_perm(
+        dandiset, request.user, DandisetPermissions.VIEW_DANDISET_ASSETS
     ):
         raise PermissionDenied
 

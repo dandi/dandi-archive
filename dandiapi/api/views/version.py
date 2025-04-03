@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing
 
-from django.contrib.auth.models import User
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -28,6 +27,9 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
+
+if typing.TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
 class VersionFilter(filters.FilterSet):
