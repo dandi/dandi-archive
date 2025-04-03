@@ -85,7 +85,7 @@
             Clear form
           </v-btn>
           <v-btn
-            class="pa-2 py-5 bg-grey-darken-3 text-white"
+            class="pa-2 py-5 bg-grey-darken-3 text-white d-flex align-center"
             variant="flat"
             @click="addSelected"
           >
