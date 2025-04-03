@@ -26,6 +26,8 @@ def migrate_owners(apps, schema_editor):
         # DandisetPermissions is inaccessible here.
         perms = [x[0] for x in Dandiset._meta.permissions if x[0] != 'owner']
         for perm in perms:
+            # Cannot use assign_perm in a migration, and so must directly
+            # create the group <-> permission relation
             DandisetGroupObjectPermission.objects.create(
                 content_object=dandiset,
                 group=owners_group,
