@@ -28,12 +28,66 @@
         >
           {{ owner.name || owner.username }}
         </v-chip>
-        <span
+        <v-btn
           v-if="numExtraOwners"
-          class="ml-1 text--secondary"
+          variant="text"
+          color="secondary"
+          size="small"
+          class="ml-1 text-none"
+          @click="showAllOwnersDialog = true"
         >
           +{{ numExtraOwners }} more...
-        </span>
+        </v-btn>
+        
+        <!-- Dialog to show all owners -->
+        <v-dialog
+          v-model="showAllOwnersDialog"
+          width="600"
+        >
+          <v-card>
+            <v-card-title class="text-h5 d-flex align-center">
+              <v-icon size="large" class="mr-2">mdi-account-group</v-icon>
+              All {{ owners?.length || 0 }} Owners
+            </v-card-title>
+            <v-divider></v-divider>
+            <v-card-text class="pt-4">
+              <v-row>
+                <v-col cols="12">
+                  <v-list>
+                    <v-list-item
+                      v-for="(owner, i) in owners"
+                      :key="i"
+                      class="mb-2"
+                    >
+                      <template #prepend>
+                        <v-avatar color="primary" class="mr-3">
+                          <v-icon color="white">mdi-account</v-icon>
+                        </v-avatar>
+                      </template>
+                      <v-list-item-title class="font-weight-medium">
+                        {{ owner.name || owner.username }}
+                      </v-list-item-title>
+                      <v-list-item-subtitle v-if="owner.name">
+                        {{ owner.username }}
+                      </v-list-item-subtitle>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
+              </v-row>
+            </v-card-text>
+            <v-divider></v-divider>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn
+                color="primary"
+                variant="text"
+                @click="showAllOwnersDialog = false"
+              >
+                Close
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </v-col>
     </v-row>
 
@@ -101,6 +155,7 @@ import { computed, ref } from 'vue';
 const store = useDandisetStore();
 
 const ownerDialog = ref(false);
+const showAllOwnersDialog = ref(false);
 const owners = computed(() => store.owners);
 
 const manageOwnersDisabled = computed(() => {
