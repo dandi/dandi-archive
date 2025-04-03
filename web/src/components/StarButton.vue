@@ -3,7 +3,7 @@
     <v-btn
       variant="plain"
       icon
-      :disabled="!loggedIn"
+      :readonly="!loggedIn"
       @click.prevent="toggleStar"
     >
       <v-icon :color="isStarred ? 'amber darken-2' : undefined">
