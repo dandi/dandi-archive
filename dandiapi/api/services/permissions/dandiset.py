@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import typing
 
 from django.contrib.auth.models import AnonymousUser, User
@@ -12,7 +11,11 @@ from django.utils.decorators import method_decorator
 from guardian.decorators import permission_required
 from guardian.shortcuts import get_objects_for_user
 
-from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions
+from dandiapi.api.models.dandiset import (
+    Dandiset,
+    DandisetGroupObjectPermission,
+    DandisetPermissions,
+)
 
 if typing.TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
@@ -63,19 +66,27 @@ def has_asset_perm(
 def get_owned_dandisets(
     user: AbstractBaseUser | AnonymousUser, *, include_superusers=True
 ) -> QuerySet[Dandiset]:
-    regex = r'Dandiset (\d{6}) Owners'
-
-    # Superusers have the same permissions as dandiset owners
     user = typing.cast('User', user)
+
+    # Superusers have the same permissions as dandiset owners, but on all dandisets
     if include_superusers and user.is_superuser:
         return Dandiset.objects.all()
+    if user.is_anonymous:
+        return Dandiset.objects.none()
 
     # Group name is the sole criteria for distinguishing groups
-    owner_group_names = user.groups.filter(name__regex=regex).values_list('name', flat=True)
-    matches = [re.match(regex, name) for name in owner_group_names]
-    ids = [int(match.group(1)) for match in matches if match is not None]
+    regex = r'Dandiset (\d{6}) Owners'
 
-    return Dandiset.objects.filter(id__in=ids)
+    # This is a slightly roundabout way of getting the dandisets that this user is an owner of.
+    # Until we have a direct relation between groups and dandisets, this will have to do.
+    dandiset_ids = (
+        DandisetGroupObjectPermission.objects.all()
+        .filter(group__user=user, group__name__regex=regex)
+        .values_list('content_object', flat=True)
+        .distinct()
+    )
+
+    return Dandiset.objects.filter(id__in=dandiset_ids)
 
 
 def get_visible_dandisets(user: AbstractBaseUser | AnonymousUser) -> QuerySet[Dandiset]:
