@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from rest_framework import status
 
 from dandiapi.api.services.exceptions import DandiError
 
+if TYPE_CHECKING:
+    from dandiapi.api.models.dandiset import DandisetPermissions
 
-class DandisetOwnerRequiredError(DandiError):
+
+class DandisetPermRequiredError(DandiError):
     http_status_code = status.HTTP_403_FORBIDDEN
-    message = 'A dandiset owner is required to perform this action.'
+
+    def __init__(self, perm: DandisetPermissions) -> None:
+        message = f'The {perm} permission is required for this action.'
+        super().__init__(message=message)
 
 
 class DraftDandisetNotModifiableError(DandiError):

@@ -10,7 +10,7 @@ from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import DandisetPermissions
 from dandiapi.api.services import audit
-from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
+from dandiapi.api.services.asset.exceptions import DandisetPermRequiredError
 from dandiapi.api.services.embargo.utils import _delete_object_tags, remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
@@ -97,8 +97,7 @@ def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):
         raise DandisetNotEmbargoedError
 
     if not user.has_perm(DandisetPermissions.UNEMBARGO_DANDISET, dandiset):
-        # TODO: Update exception name
-        raise DandisetOwnerRequiredError
+        raise DandisetPermRequiredError(perm=DandisetPermissions.UNEMBARGO_DANDISET)
 
     if dandiset.uploads.count():
         raise DandisetActiveUploadsError

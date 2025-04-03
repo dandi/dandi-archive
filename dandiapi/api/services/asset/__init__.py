@@ -13,7 +13,7 @@ from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import (
     AssetAlreadyExistsError,
     AssetPathConflictError,
-    DandisetOwnerRequiredError,
+    DandisetPermRequiredError,
     DraftDandisetNotModifiableError,
     ZarrArchiveBelongsToDifferentDandisetError,
 )
@@ -101,8 +101,7 @@ def change_asset(  # noqa: PLR0913
         raise ValueError('Path must be present in new_metadata')
 
     if not user.has_perm(DandisetPermissions.UPDATE_DANDISET_ASSETS, version.dandiset):
-        # TODO: Update exception name
-        raise DandisetOwnerRequiredError
+        raise DandisetPermRequiredError(perm=DandisetPermissions.UPDATE_DANDISET_ASSETS)
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
@@ -152,8 +151,7 @@ def add_asset_to_version(
         raise RuntimeError('Path must be present in metadata')
 
     if not user.has_perm(DandisetPermissions.CREATE_DANDISET_ASSETS, version.dandiset):
-        # TODO: Update exception name
-        raise DandisetOwnerRequiredError
+        raise DandisetPermRequiredError(perm=DandisetPermissions.CREATE_DANDISET_ASSETS)
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
@@ -199,8 +197,7 @@ def add_asset_to_version(
 
 def remove_asset_from_version(*, user: User, asset: Asset, version: Version) -> Version:
     if not user.has_perm(DandisetPermissions.DELETE_DANDISET_ASSETS, version.dandiset):
-        # TODO: Update exception name
-        raise DandisetOwnerRequiredError
+        raise DandisetPermRequiredError(perm=DandisetPermissions.DELETE_DANDISET_ASSETS)
     if version.version != 'draft':
         raise DraftDandisetNotModifiableError
 
