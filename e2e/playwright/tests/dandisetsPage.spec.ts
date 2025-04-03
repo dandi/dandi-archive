@@ -5,6 +5,7 @@ import { faker } from "@faker-js/faker";
 
 test.describe("dandisets page", async () => {
   test("search for Dandisets", async ({ page }) => {
+    test.slow();
     await registerNewUser(page);
     const dandisetIdentifierNameMapping: Map<string, string> = new Map();
 

@@ -19,7 +19,7 @@ async function registerNewUser(page: Page) {
 
   await page.goto(clientUrl);
   await page.getByRole("button", { name: LOGIN_BUTTON_TEXT }).click();
-  await page.goto(page.url().replace("/accounts/login", "/accounts/signup"));
+  await page.getByRole('link', { name: 'sign up', exact: true }).click();
   await page.getByPlaceholder("Email address").click();
   await page.getByPlaceholder("Email address").fill(email);
   await page.getByPlaceholder("Password").first().click();
@@ -54,7 +54,7 @@ async function registerDandiset(page: Page, name: string, description: string) {
   await page.getByLabel("Title").fill(name);
   await page.getByLabel("Description").click();
   await page.getByLabel("Description").fill(description);
-  await page.getByLabel("License").click()
+  await page.locator('div:nth-child(3) > .v-input__control > .v-field > .v-field__field > .v-field__input').click()
   await page.getByRole("option", { name: "spdx:CC0-" }).click();
   await page.getByRole("button", { name: "Register Dandiset" }).click();
   await page.waitForTimeout(1000);
