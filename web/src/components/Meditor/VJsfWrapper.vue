@@ -2,9 +2,7 @@
   <div v-if="editorInterface && editorInterface.complexSchema">
     <v-row class="d-flex justify-space-between">
       <v-col cols="6">
-        <div
-          class="overflow-y-auto"
-        >
+        <div class="overflow-y-auto pr-3">
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form v-model="formValid">
               <!-- Note: use transaction stack pointer as key to force vjsf rerender on undo/redo -->
