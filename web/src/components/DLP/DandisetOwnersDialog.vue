@@ -4,7 +4,7 @@
     :max-height="isXsDisplay ? undefined : '90vh'"
     :height="isXsDisplay ? '100%' : undefined"
   >
-    <v-card-title class="justify-space-between">
+    <v-card-title class="d-flex justify-space-between">
       <span class="font-weight-light">Manage Owners</span>
       <v-btn
         :size="isXsDisplay ? 'small' : undefined"
