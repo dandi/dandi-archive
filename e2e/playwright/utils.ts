@@ -70,6 +70,8 @@ async function gotoAndLogin(page: Page) {
   await page.getByPlaceholder("Password").click();
   await page.getByPlaceholder("Password").fill("password");
   await page.getByRole("button", { name: "Sign In " }).click();
+  await page.getByRole("button", { name: TEST_USER_INITIALS }).waitFor({ state: "visible" });
+
 }
 
 export {

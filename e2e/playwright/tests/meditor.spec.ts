@@ -3,11 +3,11 @@ import { clientUrl, gotoAndLogin } from "../utils.ts";
 
 const noLicenseSelector = async (page: Page) => {
   await page.getByRole("tab", { name: "General Badge" }).click();
-  await expect(page.getByText("LicenseNo less than 1 items")).toBeVisible();
+  await expect(page.getByText("required information")).toBeVisible();
 };
 const noContributorSelector = async (page: Page) => {
   await expect(
-    page.getByRole("tab", { name: "Dandiset contributors Badge" }),
+    page.getByRole("tab", { name: "Dandiset contributors" }),
   ).toBeVisible();
 };
 const invalidLicenseSelector = async (page: Page) => {
@@ -61,11 +61,11 @@ test.describe("Test meditor validation errors", async () => {
       await page.keyboard.press("End");
       await page.keyboard.press("Backspace");
       await page.keyboard.press("Tab");
-      await page.locator(".v-card__actions > button").first().click();
+      await page.locator(".v-card-actions > button").first().click();
       await page.waitForTimeout(3000);
       await page.waitForLoadState("networkidle");
 
-      const validIcon = await page.locator(".v-card__actions > i");
+      const validIcon = await page.locator(".v-card-actions > i");
       const iconClass = await validIcon.getAttribute("class");
 
       if (Object.keys(invalidDandisets).includes(dandisetId)) {
