@@ -55,6 +55,14 @@
           density="compact"
           class="my-4"
         />
+        <v-alert
+          v-if="showTestWarning"
+          type="warning"
+          variant="tonal"
+          class="my-2"
+        >
+          If this is a test dandiset and does not contain actual neuroscience data, please consider using the staging server instead. See documentation here for how to use the staging server.
+        </v-alert>
 
         <div class="text-h4">
           Description
@@ -203,5 +211,7 @@ async function registerDandiset() {
   const { identifier } = data;
   router.push({ name: 'dandisetLanding', params: { identifier } });
 }
+
+const showTestWarning = computed(() => name.value.toLowerCase().includes('test'));
 
 </script>
