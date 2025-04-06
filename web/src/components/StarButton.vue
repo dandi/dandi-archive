@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="star-container">
     <v-btn
       variant="plain"
       icon
@@ -43,3 +43,12 @@ async function toggleStar() {
   }
 }
 </script>
+
+<style scoped>
+.star-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+</style>
