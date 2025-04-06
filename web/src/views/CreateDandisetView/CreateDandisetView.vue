@@ -55,6 +55,22 @@
           density="compact"
           class="my-4"
         />
+        <v-alert
+          v-if="showTestWarning"
+          type="warning"
+          variant="tonal"
+          class="my-2"
+        >
+          <span>
+            If this is a test dandiset and does not contain actual neuroscience data,
+            please consider using the sandbox instance instead. See documentation
+            <a
+              :href="sandboxDocsUrl"
+              target="_blank"
+            >here</a>
+            for how to use the the sandbox instance.
+          </span>
+        </v-alert>
 
         <div class="text-h4">
           Description
@@ -142,6 +158,7 @@ import { useRouter } from 'vue-router';
 import type { ComputedRef } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
+import { sandboxDocsUrl } from '@/utils/constants';
 
 import type { IdentifierForAnAward, LicenseType, License } from '@/types';
 
@@ -182,6 +199,9 @@ const descriptionMaxLength: ComputedRef<number> = computed(
 const dandiLicenses: ComputedRef<LicenseType[]> = computed(
   () => store.schema.$defs.LicenseType.enum,
 );
+
+// Try to guess if the Dandiset is a test Dandiset based on the name, and show a warning if so.
+const showTestWarning = computed(() => name.value.toLowerCase().includes('test'));
 
 if (!loggedIn()) {
   router.push({ name: 'home' });
