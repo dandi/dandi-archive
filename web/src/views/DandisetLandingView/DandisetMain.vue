@@ -7,7 +7,7 @@
     >
       <v-row class="mx-2 my-2 mb-0">
         <v-col
-          class="d-flex align-center justify-space-between"
+          class="d-flex align-start justify-space-between"
         >
           <div class="title-container d-flex align-center">
             <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
