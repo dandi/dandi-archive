@@ -12,14 +12,12 @@ const noContributorSelector = async (page: Page) => {
 };
 const invalidLicenseSelector = async (page: Page) => {
   await page.getByRole("tab", { name: "General Badge" }).click();
-  await expect(
-    page.getByRole("button", { name: "License spdx:CC-BY-NC-" }),
-  ).toBeVisible();
+  await expect(page.getByText('must be equal to one of the')).toBeVisible();
 };
 const titleTooLongSelector = async (page: Page) => {
   await page.getByRole("tab", { name: "General Badge" }).click();
   await expect(
-    page.getByText("Dandiset title150 characters maximum"),
+    page.getByText("must NOT be longer than 150 characters"),
   ).toBeVisible();
 };
 
