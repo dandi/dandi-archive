@@ -25,6 +25,7 @@
               label="Drafts"
               density="compact"
               class="mx-2"
+              color="primary"
             />
           </v-list-item>
           <v-list-item>
@@ -33,6 +34,7 @@
               label="Empty Dandisets"
               density="compact"
               class="mx-2"
+              color="primary"
             />
           </v-list-item>
         </v-list>
