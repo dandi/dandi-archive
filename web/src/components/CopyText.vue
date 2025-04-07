@@ -29,6 +29,7 @@
     v-bind="$attrs"
     id="api-key-text"
     ref="textField"
+    class="my-1"
     :model-value="text"
     hide-details="auto"
     variant="outlined"
