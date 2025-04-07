@@ -5,7 +5,7 @@
   >
     <v-text-field
       :model-value="$route.query.search"
-      label="Search Dandisets by name, description, identifier, or contributor name"
+      placeholder="Search Dandisets by name, description, identifier, or contributor name"
       variant="outlined"
       hide-details
       :density="dense ? 'compact' : undefined"
