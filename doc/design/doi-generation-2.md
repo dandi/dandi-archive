@@ -1,6 +1,19 @@
 # DOI for Draft Dandisets
 
-Author: Yaroslav O. Halchenko & Dorota Jarecka
+Authors: Yaroslav O. Halchenko, Dorota Jarecka, Austin Macdonald
+
+## Overview
+
+This document describes an updated strategy for DOI management within the Dandi Archive.
+Upon creation, every public Dandiset will receive a **Dandiset DOI** that will represent the current draft and all future versions.
+Every public published version of a Dandiset will recieve a **Version DOI**.
+
+For example:
+Dandiset DOI: `https://doi.org/10.48324/dandi.000027/`
+Version DOI: `https://doi.org/10.48324/dandi.000027/0.210831.2033`
+
+Prior to publication, the Dandiset DOI will refer to the latest draft version.
+Following publication, the Dandiset DOI will refer to the latest published version.
 
 ## The current approach
 
