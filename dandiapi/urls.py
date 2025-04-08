@@ -29,6 +29,7 @@ from dandiapi.api.views import (
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
+    verify_email_view,
     webdav,
 )
 from dandiapi.search.views import search_genotypes, search_species
@@ -79,6 +80,7 @@ api_urlpatterns = [
     re_path(
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
     ),
+    path('api/users/verify-email/', verify_email_view, name='verify-email'),
     path('api/search/genotypes/', search_genotypes),
     path('api/search/species/', search_species),
 ]
