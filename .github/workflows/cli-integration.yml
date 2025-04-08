@@ -74,6 +74,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel
 
+      - name: Install `numcodes<0.16.0`
+        run: |
+          # TODO: temporary fix until https://github.com/zarr-developers/numcodecs/issues/721 is resolved
+          pip install "numcodecs<0.16.0"
+
       - name: Install released dandi
         if: matrix.dandi-version == 'release'
         run: pip install "dandi[test]"
