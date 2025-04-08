@@ -61,7 +61,7 @@
           variant="tonal"
           class="my-2"
         >
-          If this is a test dandiset and does not contain actual neuroscience data, please consider using the staging server instead. See documentation here for how to use the staging server.
+          If this is a test dandiset and does not contain actual neuroscience data, please consider using the sandbox instance instead. See documentation here for how to use the the sandbox instance.
         </v-alert>
 
         <div class="text-h4">
