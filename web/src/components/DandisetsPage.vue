@@ -24,6 +24,8 @@
               v-model="showDrafts"
               label="Drafts"
               density="compact"
+              class="mx-2"
+              color="primary"
             />
           </v-list-item>
           <v-list-item>
@@ -31,6 +33,8 @@
               v-model="showEmpty"
               label="Empty Dandisets"
               density="compact"
+              class="mx-2"
+              color="primary"
             />
           </v-list-item>
         </v-list>
