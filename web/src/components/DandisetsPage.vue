@@ -68,7 +68,7 @@
       <DandisetSearchField class="flex-grow-1" />
     </v-toolbar>
     <div v-if="props.search && djangoDandisetRequest" class="mx-4 mx-md-8 mt-4 text-h6">
-      {{ djangoDandisetRequest.count }} results found
+      {{ djangoDandisetRequest.count }} {{ djangoDandisetRequest.count === 1 ? 'result' : 'results' }} found
     </div>
     <DandisetList
       v-if="dandisets && dandisets.length"
