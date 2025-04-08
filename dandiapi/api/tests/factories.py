@@ -20,7 +20,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
-from dandiapi.api.services.dandiset import _create_dandiset_owners_group
+from dandiapi.api.services.dandiset import _create_dandiset_group
 from dandiapi.api.services.publish import publish_asset
 
 
@@ -82,7 +82,7 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     def _create(cls, model_class, *args, **kwargs):
         manager = cls._get_manager(model_class)
         dandiset = manager.create(*args, **kwargs)
-        _create_dandiset_owners_group(dandiset=dandiset)
+        _create_dandiset_group(dandiset=dandiset, rolename='owners')
         return dandiset
 
 

@@ -13,6 +13,7 @@ def migrate_owners(apps, schema_editor):
     Dandiset = apps.get_model('api.Dandiset')
     User = apps.get_model('auth.User')
     Group = apps.get_model('auth.Group')
+    DandisetRole = apps.get_model('api.DandisetRole')
     DandisetGroupObjectPermission = apps.get_model('api.DandisetGroupObjectPermission')
     Permission = apps.get_model('auth.Permission')
 
@@ -20,6 +21,7 @@ def migrate_owners(apps, schema_editor):
     for dandiset in dandisets:
         ident = f'{dandiset.id:06}'  # re-implemented since we can't access model methods here
         owners_group = Group.objects.create(name=f'Dandiset {ident} Owners')
+        DandisetRole.objects.create(group=owners_group, dandiset=dandiset, rolename='owners')
 
         # Assign all perms to the owners group
         # Using _meta.permissions is the only good way we can get the permissions list, as
@@ -49,7 +51,7 @@ def remove_owner_perm(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0018_alter_dandiset_options'),
+        ('api', '0018_alter_dandiset_options_dandisetrole_and_more'),
     ]
 
     operations = [

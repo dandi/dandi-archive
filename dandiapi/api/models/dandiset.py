@@ -104,12 +104,8 @@ class Dandiset(TimeStampedModel):
             return False
         return self.stars.filter(user=user).exists()
 
-    @property
-    def owners_group_name(self):
-        return f'Dandiset {self.identifier} Owners'
-
     def get_owners_group(self):
-        return Group.objects.get(name=self.owners_group_name)
+        return Group.objects.get(dandisetrole__rolename='owners', dandisetrole__dandiset=self)
 
 
 class DandisetUserObjectPermission(UserObjectPermissionBase):

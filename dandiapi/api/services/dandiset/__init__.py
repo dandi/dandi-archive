@@ -6,6 +6,7 @@ from django.contrib.auth.models import Group
 from django.db import transaction
 from guardian.shortcuts import assign_perm
 
+from dandiapi.api.models.auth import DandisetRole
 from dandiapi.api.models.dandiset import Dandiset, DandisetPermissions, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
@@ -23,8 +24,10 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
 
-def _create_dandiset_owners_group(dandiset: Dandiset):
-    owners_group = Group.objects.create(name=dandiset.owners_group_name)
+def _create_dandiset_group(dandiset: Dandiset, rolename: str):
+    group_name = f'Dandiset {dandiset.identifier} {rolename.capitalize()}'
+    owners_group = Group.objects.create(name=group_name)
+    DandisetRole.objects.create(group=owners_group, rolename=rolename, dandiset=dandiset)
     for perm in DandisetPermissions:
         assign_perm(perm=perm, user_or_group=owners_group, obj=dandiset)
 
@@ -56,7 +59,7 @@ def create_dandiset(
         dandiset.full_clean()
         dandiset.save()
 
-        _create_dandiset_owners_group(dandiset=dandiset)
+        _create_dandiset_group(dandiset=dandiset, rolename='owners')
         add_dandiset_owner(dandiset, user)
 
         draft_version = Version(
