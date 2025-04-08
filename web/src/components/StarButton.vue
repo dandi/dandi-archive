@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="d-flex align-center justify-end ml-auto">
     <v-btn
       variant="plain"
       icon

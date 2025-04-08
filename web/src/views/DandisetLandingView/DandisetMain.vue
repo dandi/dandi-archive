@@ -7,12 +7,14 @@
     >
       <v-row class="mx-2 my-2 mb-0">
         <v-col
-          class="d-flex align-center"
+          class="d-flex align-start justify-space-between"
         >
-          <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
-            <ShareDialog />
-            {{ meta.name }}
-          </h1>
+          <div class="title-container d-flex align-center">
+            <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
+              <ShareDialog />
+              {{ meta.name }}
+            </h1>
+          </div>
           <StarButton
             :identifier="currentDandiset.dandiset.identifier"
             :initial-star-count="currentDandiset.dandiset.star_count"
