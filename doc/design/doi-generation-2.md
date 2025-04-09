@@ -76,6 +76,76 @@ We propose to:
        - **Question to clear up**:how to do that in API
     - **Question to clear up**: behavior on what happens if metadata record is invalid?
 
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant DandiArchive as Dandi Archive
+    participant DataCite
+
+    Note over User,DataCite: Public Dandiset Creation
+    User->>DandiArchive: Create public dandiset
+    DandiArchive->>DataCite: Request Draft DOI (10.48324/dandi.{id})
+    DataCite-->>DandiArchive: Return Draft DOI
+    Note right of DataCite: Minimal metadata + DLP URL
+    DandiArchive-->>User: Return dandiset with Draft DOI
+
+    Note over User,DataCite: Metadata Updates (Public Dandiset)
+    User->>DandiArchive: Update dandiset metadata
+    alt Draft DOI (not published yet)
+        DandiArchive->>DataCite: Try to update & make DOI Findable
+        alt Validation successful
+            DataCite-->>DandiArchive: Update to Findable DOI
+        else Validation fails
+            DataCite-->>DandiArchive: Keep as Draft DOI
+            DandiArchive->>DataCite: Update metadata record only
+        end
+    else Findable DOI (previous draft with valid metadata)
+        DandiArchive->>DataCite: Try to update metadata
+        alt Validation successful
+            DataCite-->>DandiArchive: Update metadata
+        else Validation fails
+            DandiArchive-->>DandiArchive: Log error, continue
+        end
+    else Published dandiset (has version)
+        DandiArchive-->>DandiArchive: No DOI update (points to published version)
+    end
+    DandiArchive-->>User: Return updated dandiset
+
+    Note over User,DataCite: Embargoed Dandiset Handling
+    User->>DandiArchive: Create embargoed dandiset
+    DandiArchive->>DataCite: Request Draft DOI (minimal info)
+    Note right of DataCite: Only DLP URL, no metadata
+    DataCite-->>DandiArchive: Return Draft DOI
+    DandiArchive-->>User: Return dandiset with Draft DOI
+
+    User->>DandiArchive: Unembargo dandiset
+    DandiArchive->>DataCite: Update Draft DOI with current metadata
+    DataCite-->>DandiArchive: Update Draft DOI
+    DandiArchive-->>User: Return unembaroed dandiset
+
+    Note over User,DataCite: Dandiset Publication
+    User->>DandiArchive: Publish dandiset
+    DandiArchive->>DataCite: Mint version DOI (10.48324/dandi.{id}/{version})
+    DataCite-->>DandiArchive: Return Findable version DOI
+
+    DandiArchive->>DataCite: Update dandiset-wide DOI with version metadata
+    alt Draft DOI
+        DataCite-->>DandiArchive: Update to Findable state
+    else Already Findable
+        DataCite-->>DandiArchive: Update metadata only
+    end
+
+    DandiArchive-->>User: Return published dandiset with both DOIs
+
+    Note over User,DataCite: Dandiset Deletion
+    User->>DandiArchive: Delete dandiset
+    DandiArchive->>DataCite: Update DOI to point to deletion page
+    DataCite-->>DandiArchive: Update DOI target URL
+    DandiArchive-->>User: Confirm deletion
+```
+
 ### Migration
 
 A django-admin script should be created and executed to create a `Dandiset DOI` for all existing dandisets.
