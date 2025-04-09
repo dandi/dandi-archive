@@ -19,8 +19,11 @@ Following publication, the Dandiset DOI will refer to the latest published versi
 
 - [initial design doc](./doi-generation-1.md)
 - overall:
-   - inject fake DOI upon dandiset creation
-   - mint proper DOI only upon dandiset publication (function `create_doi`)
+   - leave DOI absent upon dandiset creation
+   - upon publication
+      - inject fake DOI (but do not save) and validate
+      - after validation, create a new `Version DOI` (function `create_doi`)
+      - publish dandiset
 
 ### Issues with the Existing Approach
 
