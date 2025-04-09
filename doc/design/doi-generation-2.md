@@ -86,60 +86,80 @@ sequenceDiagram
 
     Note over User,DataCite: Public Dandiset Creation
     User->>DandiArchive: Create public dandiset
-    DandiArchive->>DataCite: Request Draft DOI (10.48324/dandi.{id})
-    DataCite-->>DandiArchive: Return Draft DOI
+    DandiArchive->>DataCite: Mint Dandiset DOI (Draft) (10.48324/dandi.{id})
     Note right of DataCite: Minimal metadata + DLP URL
-    DandiArchive-->>User: Return dandiset with Draft DOI
+    alt DOI minting successful
+        DataCite-->>DandiArchive: Return Dandiset DOI (Draft)
+    else DOI minting fails
+        DataCite-->>DandiArchive: Error
+        Note right of DandiArchive: Log error but continue dandiset creation
+    end
+    DandiArchive-->>User: Return dandiset with or without Dandiset DOI
 
-    Note over User,DataCite: Metadata Updates (Public Dandiset)
+    Note over User,DataCite: Metadata Updates (Non-embargoed Draft)
     User->>DandiArchive: Update dandiset metadata
-    alt Draft DOI (not published yet)
-        DandiArchive->>DataCite: Try to update & make DOI Findable
+    alt No Dandiset DOI exists (previous mint failed)
+        DandiArchive->>DataCite: Mint Dandiset DOI (Draft)
+        DataCite-->>DandiArchive: Return Dandiset DOI (Draft)
+        DandiArchive->>DataCite: Try to promote to Dandiset DOI (Findable)
         alt Validation successful
-            DataCite-->>DandiArchive: Update to Findable DOI
+            DataCite-->>DandiArchive: Update to Dandiset DOI (Findable)
         else Validation fails
-            DataCite-->>DandiArchive: Keep as Draft DOI
+            DataCite-->>DandiArchive: Keep as Dandiset DOI (Draft)
+        end
+    else Dandiset DOI (Draft) exists
+        DandiArchive->>DataCite: Try to promote to Dandiset DOI (Findable)
+        alt Validation successful
+            DataCite-->>DandiArchive: Update to Dandiset DOI (Findable)
+        else Validation fails
+            DataCite-->>DandiArchive: Keep as Dandiset DOI (Draft)
             DandiArchive->>DataCite: Update metadata record only
         end
-    else Findable DOI (previous draft with valid metadata)
-        DandiArchive->>DataCite: Try to update metadata
+    else Dandiset DOI (Findable) exists (no prior publications)
+        DandiArchive->>DataCite: Update metadata
         alt Validation successful
             DataCite-->>DandiArchive: Update metadata
         else Validation fails
             DandiArchive-->>DandiArchive: Log error, continue
         end
-    else Published dandiset (has version)
+    else Dandiset has published versions
         DandiArchive-->>DandiArchive: No DOI update (points to published version)
     end
     DandiArchive-->>User: Return updated dandiset
 
     Note over User,DataCite: Embargoed Dandiset Handling
     User->>DandiArchive: Create embargoed dandiset
+    DandiArchive-->>DandiArchive: No DOI updates for embargoed dandisets
+    User->>DandiArchive: Update embargoed dandiset
+    DandiArchive-->>DandiArchive: No DOI updates for embargoed dandisets
+
+    User->>DandiArchive: Unembargo dandiset
     DandiArchive->>DataCite: Request Draft DOI (minimal info)
     Note right of DataCite: Only DLP URL, no metadata
     DataCite-->>DandiArchive: Return Draft DOI
-    DandiArchive-->>User: Return dandiset with Draft DOI
-
-    User->>DandiArchive: Unembargo dandiset
-    DandiArchive->>DataCite: Update Draft DOI with current metadata
-    DataCite-->>DandiArchive: Update Draft DOI
-    DandiArchive-->>User: Return unembaroed dandiset
+    DandiArchive->>DataCite: Try to promote to Dandiset DOI (Findable)
+    alt Validation successful
+        DataCite-->>DandiArchive: Update to Dandiset DOI (Findable)
+    else Validation fails
+        DataCite-->>DandiArchive: Keep as Dandiset DOI (Draft)
+    end
+    DandiArchive-->>User: Return unembargoed dandiset
 
     Note over User,DataCite: Dandiset Publication
     User->>DandiArchive: Publish dandiset
-    DandiArchive->>DataCite: Mint version DOI (10.48324/dandi.{id}/{version})
-    DataCite-->>DandiArchive: Return Findable version DOI
-
-    DandiArchive->>DataCite: Update dandiset-wide DOI with version metadata
-    alt Draft DOI
-        DataCite-->>DandiArchive: Update to Findable state
+    alt Dandiset DOI is Draft
+        DandiArchive->>DataCite: Promote to Dandiset DOI (Findable)
+        DataCite-->>DandiArchive: Update to Dandiset DOI (Findable)
     else Already Findable
         DataCite-->>DandiArchive: Update metadata only
     end
-
+    DandiArchive->>DataCite: Mint Version DOI (Findable) (10.48324/dandi.{id}/{version})
+    DataCite-->>DandiArchive: Return Version DOI (Findable)
+    DandiArchive->>DataCite: Update Dandiset DOI with version metadata
+    Note right of DandiArchive: Keep URL pointing to DLP
     DandiArchive-->>User: Return published dandiset with both DOIs
 
-    Note over User,DataCite: Dandiset Deletion
+    Note over User,DataCite: Dandiset Deletion (Optional)
     User->>DandiArchive: Delete dandiset
     DandiArchive->>DataCite: Update DOI to point to deletion page
     DataCite-->>DandiArchive: Update DOI target URL
