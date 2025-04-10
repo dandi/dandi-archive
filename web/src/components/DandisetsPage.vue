@@ -137,7 +137,7 @@ const props = defineProps({
 const route = useRoute();
 
 const showDrafts = ref(true);
-const showEmpty = ref(false);
+const showEmpty = ref(props.search);
 const sortOption = ref(Number(route.query.sortOption) || 0);
 const sortDir = ref(Number(route.query.sortDir || -1));
 const page = ref(Number(route.query.page) || 1);
