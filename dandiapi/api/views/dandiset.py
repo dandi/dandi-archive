@@ -522,13 +522,14 @@ class DandisetViewSet(ReadOnlyModelViewSet):
 
             # All owners found
             with transaction.atomic():
+                dandiset_locked = Dandiset.objects.select_for_update().get(pk=dandiset__pk)
                 owners = user_owners + [acc.user for acc in socialaccount_owners]
-                removed_owners, added_owners = replace_dandiset_owners(dandiset, owners)
-                dandiset.save()
+                removed_owners, added_owners = replace_dandiset_owners(dandiset_locked, owners)
+                dandiset_locked.save()
 
                 if removed_owners or added_owners:
                     audit.change_owners(
-                        dandiset=dandiset,
+                        dandiset=dandiset_locked,
                         user=request.user,
                         removed_owners=removed_owners,
                         added_owners=added_owners,
