@@ -6,7 +6,7 @@
   <form method="POST" class="col s12">
     {% csrf_token %}
     {{ form }}
-    <div class="row">
+        <div class="row">
       <div class="col m6 offset-m3 s12">
         {% for question in questions %}
           <div class="input-field">
@@ -14,6 +14,12 @@
             <label class="active" for="{{ question.question }}">{{ question.question }}</label>
           </div>
         {% endfor %}
+
+        <div class="input-field">
+          <input id="institutional_email" name="institutional_email" type="email" class="validate">
+          <label class="active" for="institutional_email">Institutional Email (optional, .edu or .gov for automatic verification)</label>
+          <span class="helper-text">Providing a .edu or .gov email will help expedite your registration</span>
+        </div>
         {% for name, value in query_params.items %}
           <input type="hidden" name="{{ name }}" value="{{ value }}">
         {% endfor %}
@@ -38,25 +44,48 @@
   <script>
     // Length validation
     document.addEventListener('DOMContentLoaded', () => {
-      const elems = document.querySelectorAll('.validate');
-      elems.forEach((elem) => {
-        M.CharacterCounter.init(elem); // init character counter for each text box
+      const requiredElems = document.querySelectorAll('.validate:not(#institutional_email)');
+      const allElems = document.querySelectorAll('.validate');
+
+      allElems.forEach((elem) => {
+        if (elem.hasAttribute('data-length')) {
+          M.CharacterCounter.init(elem); // init character counter for each text box
+        }
+
         elem.addEventListener('keyup', (e) => {
-          // List of CSS classes on each input element. Materialize CSS will automatically assign
-          // the 'invalid' class to any input that exceeds it's max data-length.
-          const classList = Array.from(elems).map(elem => elem.classList).reduce((a, b) => [...a, ...b], []);
+          validateForm();
+        });
 
-          // List of lengths of each input, used to ensure no inputs are blank
-          const inputLengths = Array.from(elems).map(elem => elem.value.length);
-
-          // Disable submit button if any inputs exceed their max lengths OR are empty
-          if (classList.includes('invalid') || inputLengths.includes(0)) {
-            document.getElementById('btn').setAttribute('disabled', true);
-          } else {
-            document.getElementById('btn').removeAttribute('disabled');
-          }
+        elem.addEventListener('change', (e) => {
+          validateForm();
         });
       });
+
+      function validateForm() {
+        // List of CSS classes on each input element. Materialize CSS will automatically assign
+        // the 'invalid' class to any input that exceeds it's max data-length.
+        const classList = Array.from(allElems).map(elem => elem.classList).reduce((a, b) => [...a, ...b], []);
+
+        // Check if email is valid when provided
+        const emailInput = document.getElementById('institutional_email');
+        const emailInvalid = emailInput.value.length > 0 && !isValidEmail(emailInput.value);
+
+        // List of lengths of each required input, used to ensure no required inputs are blank
+        const requiredInputLengths = Array.from(requiredElems).map(elem => elem.value.length);
+
+        // Disable submit button if any inputs exceed their max lengths OR required inputs are empty OR email is invalid
+        if (classList.includes('invalid') || requiredInputLengths.includes(0) || emailInvalid) {
+          document.getElementById('btn').setAttribute('disabled', true);
+        } else {
+          document.getElementById('btn').removeAttribute('disabled');
+        }
+      }
+
+      function isValidEmail(email) {
+        // Basic email validation
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+      }
     });
   </script>
 

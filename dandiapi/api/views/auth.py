@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING
+import uuid
 
 from django.conf import settings
 from django.db import transaction
@@ -21,6 +22,7 @@ from dandiapi.api.mail import (
     send_approved_user_message,
     send_new_user_message_email,
     send_registered_notice_email,
+    send_verification_email,
 )
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.permissions import IsApproved
@@ -110,7 +112,20 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             else None
             for question in QUESTIONS
         }
-        user_metadata.save(update_fields=['questionnaire_form'])
+
+        # Process institutional email if provided
+        institutional_email = req_body.get('institutional_email')
+        needs_verification = False
+
+        if institutional_email:
+            user_metadata.institutional_email = institutional_email
+
+            # Generate verification token
+            user_metadata.verification_token = uuid.uuid4()
+            user_metadata.is_email_verified = False
+            needs_verification = True
+
+        user_metadata.save()
 
         # Save first and last name if applicable
         if req_body.get('First Name'):
@@ -128,23 +143,44 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
             not questionnaire_already_filled_out
             and user_metadata.status == UserMetadata.Status.INCOMPLETE
         ):
-            should_auto_approve: bool = user.email.endswith('.edu') or user.email.endswith(
-                '@alleninstitute.org'
+            # Check if user has a GitHub email that should be auto-approved
+            github_email_auto_approve = (
+                user.email.endswith('.edu')
+                or user.email.endswith('.gov')
+                or user.email.endswith('@alleninstitute.org')
             )
 
-            # auto-approve users with edu emails, otherwise require manual approval
-            user_metadata.status = (
-                UserMetadata.Status.APPROVED if should_auto_approve else UserMetadata.Status.PENDING
+            # Check if user provided an institutional email that should be verified
+            has_institutional_email = bool(user_metadata.institutional_email)
+            needs_institutional_verification = has_institutional_email and (
+                user_metadata.institutional_email.endswith('.edu')
+                or user_metadata.institutional_email.endswith('.gov')
             )
+
+            # Set status based on email verification requirements
+            if github_email_auto_approve:
+                # Auto-approve users with eligible GitHub emails
+                user_metadata.status = UserMetadata.Status.APPROVED
+            elif needs_institutional_verification:
+                # Set to pending until institutional email is verified
+                user_metadata.status = UserMetadata.Status.PENDING
+            else:
+                # Regular manual approval process
+                user_metadata.status = UserMetadata.Status.PENDING
+
             user_metadata.save(update_fields=['status'])
 
-            # send email indicating the user has signed up
+            # Send appropriate emails
             for socialaccount in user.socialaccount_set.all():
+                # Send verification email if institutional email was provided
+                if needs_verification and needs_institutional_verification:
+                    send_verification_email(user, socialaccount)
+
                 # Send approved email if they have been auto-approved
                 if user_metadata.status == UserMetadata.Status.APPROVED:
                     send_approved_user_message(user, socialaccount)
-                # otherwise, send "awaiting approval" email
-                else:
+                # otherwise, send "awaiting approval" email for regular cases
+                elif not needs_institutional_verification:
                     send_registered_notice_email(user, socialaccount)
                     send_new_user_message_email(user, socialaccount)
 

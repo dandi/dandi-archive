@@ -1,0 +1,20 @@
+Dear {{ greeting_name }},
+
+Thank you for providing your institutional email address during DANDI registration.
+
+To verify that this email belongs to you, please click on the following link:
+
+{{ verification_link }}
+
+This link will expire in 24 hours. After verification, your DANDI account will be automatically approved.
+
+If you did not register for a DANDI account, please disregard this email.
+
+Best regards,
+The DANDI Team
+
+---
+DANDI is a platform for publishing, sharing, and processing FAIR neurophysiology data.
+Web: {{ dandi_web_app_url }}
+API: {{ dandi_api_url }}
+Contact: help@dandiarchive.org
