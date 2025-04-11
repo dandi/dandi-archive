@@ -23,6 +23,7 @@ class Dandiset(TimeStampedModel):
     starred_users = models.ManyToManyField(
         to=User, through='DandisetStar', related_name='starred_dandisets'
     )
+    doi = models.CharField(max_length=64, null=True, default=None, blank=True)  # noqa: DJ001
 
     class Meta:
         ordering = ['id']

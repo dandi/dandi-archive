@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from dandiapi.api import doi
 from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
@@ -55,6 +56,15 @@ def create_dandiset(
         audit.create_dandiset(
             dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
         )
+        def _create_dandiset_doi(version_id: int):
+            version = Version.objects.get(id=version_id)
+            version.doi = doi.create_dandiset_doi(version)
+            version.save()
+            version.dandiset.doi = version.doi
+            version.dandiset.save()
+
+
+        transaction.on_commit(lambda: _create_dandiset_doi(draft_version.id))
 
     return dandiset, draft_version
 

@@ -188,12 +188,15 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # published version has been committed to DB.
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
-        def _create_doi(version_id: int):
+        def _create_version_doi(version_id: int):
+            # Create Version DOI
             version = Version.objects.get(id=version_id)
-            version.doi = doi.create_doi(version)
+            version.doi = doi.create_version_doi(version)
             version.save()
+            # PUT to Dandiset DOI, should reference this version now
+            doi.update_dandiset_doi(version)
 
-        transaction.on_commit(lambda: _create_doi(new_version.id))
+        transaction.on_commit(lambda: _create_version_doi(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
