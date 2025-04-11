@@ -24,12 +24,14 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
 
-def _create_dandiset_group(dandiset: Dandiset, rolename: str):
+def create_dandiset_role(*, dandiset: Dandiset, rolename: str, perms: list[DandisetPermissions]):
     group_name = f'Dandiset {dandiset.identifier} {rolename.capitalize()}'
     owners_group = Group.objects.create(name=group_name)
-    DandisetRole.objects.create(group=owners_group, rolename=rolename, dandiset=dandiset)
-    for perm in DandisetPermissions:
+    role = DandisetRole.objects.create(group=owners_group, rolename=rolename, dandiset=dandiset)
+    for perm in perms:
         assign_perm(perm=perm, user_or_group=owners_group, obj=dandiset)
+
+    return role
 
 
 def create_dandiset(
@@ -59,7 +61,7 @@ def create_dandiset(
         dandiset.full_clean()
         dandiset.save()
 
-        _create_dandiset_group(dandiset=dandiset, rolename='owners')
+        create_dandiset_role(dandiset=dandiset, rolename='owners', perms=list(DandisetPermissions))
         add_dandiset_owner(dandiset, user)
 
         draft_version = Version(
