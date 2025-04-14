@@ -185,7 +185,7 @@ A django-admin script should be created and executed to create a `Dandiset DOI` 
 - `Findable` DOI cannot be deleted, but in principle we allow for deletion of dandisets.
   - Option 1: We might want a dedicated 404 page for deleted dandisets, then we adjust DOI record to point to that page.
   - Option 2: at least a message that the dandiset was deleted, and ideally describe the reason why it was deleted ("Upon request of maintainer", "Due to violation of terms of service", etc.)
-
+  - Option 3: We can "hide" the DOI by changing it from Findable to Registered
 - Should we do anything at dandischema level?
   - yes
     - Needs to be able to mint `Draft DOI`
