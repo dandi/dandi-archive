@@ -36,6 +36,13 @@ ASSET_COMPUTED_FIELDS = [
 ]
 
 
+class AssetStatus(models.TextChoices):
+    PENDING = 'Pending'
+    VALIDATING = 'Validating'
+    VALID = 'Valid'
+    INVALID = 'Invalid'
+
+
 def validate_asset_path(path: str):
     if path.startswith('/'):
         raise ValidationError('Path must not begin with /')
@@ -101,12 +108,6 @@ class AssetBlob(TimeStampedModel):
 class Asset(PublishableMetadataMixin, TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
 
-    class Status(models.TextChoices):
-        PENDING = 'Pending'
-        VALIDATING = 'Validating'
-        VALID = 'Valid'
-        INVALID = 'Invalid'
-
     asset_id = models.UUIDField(unique=True, default=uuid.uuid4)
     path = models.CharField(max_length=512, validators=[validate_asset_path], db_collation='C')
     blob = models.ForeignKey(
@@ -119,11 +120,14 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     versions = models.ManyToManyField(Version, related_name='assets')
     status = models.CharField(
         max_length=10,
-        default=Status.PENDING,
-        choices=Status.choices,
+        default=AssetStatus.PENDING,
+        choices=AssetStatus.choices,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
     published = models.BooleanField(default=False)
+
+    # Let other code still refer to statuses via Asset.Status
+    Status = AssetStatus
 
     class Meta:
         ordering = ['created']
