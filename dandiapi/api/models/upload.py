@@ -38,6 +38,7 @@ class Upload(models.Model):  # noqa: DJ008
     size = models.PositiveBigIntegerField()
 
     class Meta:
+        ordering = ['created']
         indexes = [models.Index(fields=['etag'])]
 
     @staticmethod
