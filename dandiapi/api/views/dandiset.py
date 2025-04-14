@@ -24,6 +24,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.mail import send_ownership_change_emails
 from dandiapi.api.models import Dandiset, Version
+from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import DandisetStar
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import (
@@ -192,16 +193,26 @@ class DandisetViewSet(ReadOnlyModelViewSet):
                 version_count__gt=1
             )
         if not show_empty:
-            # Only include dandisets that have assets in their most recent version.
-            most_recent_version = (
-                Version.objects.filter(dandiset=OuterRef('pk'))
-                .order_by('-created')
-                .annotate(asset_count=Count('assets'))[:1]
+            # Get the most recent version of every dandiset in the queryset
+            most_recent_versions = (
+                Version.objects.filter(dandiset__in=queryset)
+                .order_by('dandiset_id', '-created')
+                .distinct('dandiset_id')
             )
-            queryset = queryset.annotate(
-                asset_count=Subquery(most_recent_version.values('asset_count'))
+
+            # Use asset paths to determine which of these most recent versions are empty. This is
+            # done by simply querying the table for any asset paths from any of the most recent
+            # versions, and returning back the list of version IDs. This may seem like it
+            # accomplishes nothing, but since asset paths only exist when assets on a version exist,
+            # it filters out versions which have no assets (those that are empty).
+            nonempty_version_ids = (
+                AssetPath.objects.filter(version__in=most_recent_versions)
+                .order_by()
+                .distinct('version_id')
+                .values_list('version_id', flat=True)
             )
-            queryset = queryset.filter(asset_count__gt=0)
+
+            queryset = queryset.filter(versions__in=nonempty_version_ids)
         if not show_embargoed:
             queryset = queryset.filter(embargo_status='OPEN')
         if filter_starred:
