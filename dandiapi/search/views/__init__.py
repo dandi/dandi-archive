@@ -57,15 +57,12 @@ class SpeciesSearchSerializer(SearchSerializer):
 
         species: str | None = self.validated_data.get('species')
         if species:
-            # TODO: take advantage of trigram index?
-            qs = qs.filter(asset_metadata__wasAttributedTo__0__genotype__icontains=species)
+            qs = qs.filter(species__icontains=species)
 
         # Filter out empty string species
-        qs = qs.exclude(asset_metadata__wasAttributedTo__0__species__name__exact='')
+        qs = qs.exclude(species__exact='')
 
-        return qs.values_list(
-            'asset_metadata__wasAttributedTo__0__species__name', flat=True
-        ).distinct()[:10]
+        return qs.values_list('species', flat=True).distinct()[:10]
 
 
 @swagger_auto_schema(methods=['GET'], auto_schema=None)

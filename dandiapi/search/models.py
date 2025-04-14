@@ -29,6 +29,7 @@ class AssetSearch(models.Model):
     dandiset_id = models.PositiveBigIntegerField()
     asset_id = models.PositiveBigIntegerField(primary_key=True)
     asset_metadata = models.JSONField()
+    species = models.CharField(max_length=255)
     asset_size = models.PositiveBigIntegerField()
 
     objects = AssetSearchManager()
