@@ -21,13 +21,18 @@ const titleTooLongSelector = async (page: Page) => {
   ).toBeVisible();
 };
 
+// For now, skip testing Dandiset 000071.
+// The UI for validation is currently not working across tabs. For this particular test
+// case, it means that the icon indicating invalid metadata will fail to show up, since
+// the only validation issue is NOT on the default meditor tab.
+// See https://github.com/dandi/dandi-archive/issues/2281
 const dandisetsToTest = [
   "000003",
   "000018",
   "000024",
   // "000071",
   "000106",
-  // "000107",
+  "000107",
   "000362",
 ];
 
