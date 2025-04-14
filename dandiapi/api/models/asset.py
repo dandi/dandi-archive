@@ -127,6 +127,16 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     class Meta:
         ordering = ['created']
+        indexes = [
+            # Other statuses are likely too common to index, but pending assets are continually
+            # polled and being moved through the pipeline.
+            models.Index(
+                fields=['status'],
+                name='%(app_label)s_%(class)s_status_pending',
+                # TODO: refer to Pending via the Status enum
+                condition=Q(status='Pending'),
+            ),
+        ]
         constraints = [
             models.CheckConstraint(
                 name='blob-xor-zarr',
