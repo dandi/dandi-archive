@@ -175,9 +175,11 @@
       </v-tabs>
       <v-tabs-window
         v-model="tab"
-        eager
       >
-        <v-tabs-window-item value="tab-0">
+        <v-tabs-window-item
+          eager
+          value="tab-0"
+        >
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form
               v-model="basicModelValid"
@@ -201,12 +203,13 @@
         v-for="(propKey, i) in fieldsToRender"
         :key="`tab-window-${i+1}`"
         v-model="tab"
-        eager
       >
-        <v-tabs-window-item :value="`tab-${i+1}`">
+        <v-tabs-window-item
+          eager
+          :value="`tab-${i+1}`"
+        >
           <v-card class="pa-2 px-1">
             <v-form
-              v-model="complexModelValidation[propKey]"
               class="px-7"
             >
               <v-jsf-wrapper
