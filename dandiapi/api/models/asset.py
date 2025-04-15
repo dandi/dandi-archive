@@ -8,11 +8,12 @@ import uuid
 
 from dandischema.models import AccessType
 from django.conf import settings
-from django.contrib.postgres.indexes import HashIndex
+from django.contrib.postgres.indexes import GinIndex, HashIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Upper
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -128,6 +129,9 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     class Meta:
         ordering = ['created']
         indexes = [
+            GinIndex(
+                OpClass(Upper('path'), name='gin_trgm_ops'), name='%(app_label)s_%(class)s_path_gin'
+            ),
             # Other statuses are likely too common to index, but pending assets are continually
             # polled and being moved through the pipeline.
             models.Index(
