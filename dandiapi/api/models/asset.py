@@ -137,8 +137,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             models.Index(
                 fields=['status'],
                 name='%(app_label)s_%(class)s_status_pending',
-                # TODO: refer to Pending via the Status enum
-                condition=Q(status='Pending'),
+                condition=Q(status=AssetStatus.PENDING),
             ),
         ]
         constraints = [
