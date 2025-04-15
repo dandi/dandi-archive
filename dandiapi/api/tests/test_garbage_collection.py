@@ -64,7 +64,10 @@ def test_garbage_collect_asset_blobs(asset_factory, asset_blob_factory):
 
 
 @pytest.mark.django_db
-def test_garbage_collection_event_records(asset_blob_factory, upload_factory):
+def test_garbage_collection_event_records(asset_blob_factory, upload_factory, mocker):
+    # Mock GARBAGE_COLLECTION_EVENT_CHUNK_SIZE to reduce the time of this test
+    mocker.patch.object(garbage_collection, 'GARBAGE_COLLECTION_EVENT_CHUNK_SIZE', 1)
+
     # Create enough asset blobs to create 3 GarbageCollectionEvents
     asset_blob_count = garbage_collection.GARBAGE_COLLECTION_EVENT_CHUNK_SIZE * 2 + 1
     garbage_collected_asset_blobs: list[AssetBlob] = []
