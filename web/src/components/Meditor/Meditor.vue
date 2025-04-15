@@ -229,7 +229,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
-import { ref, computed } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
@@ -241,7 +241,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
-import { VJSFVuetifyDefaultProps } from './utils';
+import { validateDandisetMetadata, VJSFVuetifyDefaultProps } from './utils';
 
 import {
   clearLocalStorage,
@@ -303,6 +303,13 @@ const CommonVJSFOptions = computed(() => ({
   // Hide the read-only properties in the schema
   readOnlyPropertiesMode: 'hide',
 }));
+
+
+watchEffect(() => {
+  if (schema.value && editorInterface.value) {
+    validateDandisetMetadata(editorInterface.value)
+  }
+});
 
 // undo/redo functionality
 function undoChange() {
