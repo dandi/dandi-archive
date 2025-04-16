@@ -175,9 +175,11 @@
       </v-tabs>
       <v-tabs-window
         v-model="tab"
-        eager
       >
-        <v-tabs-window-item value="tab-0">
+        <v-tabs-window-item
+          eager
+          value="tab-0"
+        >
           <v-defaults-provider :defaults="VJSFVuetifyDefaultProps">
             <v-form
               v-model="basicModelValid"
@@ -201,12 +203,13 @@
         v-for="(propKey, i) in fieldsToRender"
         :key="`tab-window-${i+1}`"
         v-model="tab"
-        eager
       >
-        <v-tabs-window-item :value="`tab-${i+1}`">
+        <v-tabs-window-item
+          eager
+          :value="`tab-${i+1}`"
+        >
           <v-card class="pa-2 px-1">
             <v-form
-              v-model="complexModelValidation[propKey]"
               class="px-7"
             >
               <v-jsf-wrapper
@@ -226,7 +229,7 @@
 import type { JSONSchema7 } from 'json-schema';
 
 import type { ComputedRef } from 'vue';
-import { ref, computed } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 
 import jsYaml from 'js-yaml';
 import axios from 'axios';
@@ -238,7 +241,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import type { DandiModel } from './types';
 import { isJSONSchema } from './types';
 import { EditorInterface } from './editor';
-import { VJSFVuetifyDefaultProps } from './utils';
+import { validateDandisetMetadata, VJSFVuetifyDefaultProps } from './utils';
 
 import {
   clearLocalStorage,
@@ -300,6 +303,13 @@ const CommonVJSFOptions = computed(() => ({
   // Hide the read-only properties in the schema
   readOnlyPropertiesMode: 'hide',
 }));
+
+
+watchEffect(() => {
+  if (schema.value && editorInterface.value) {
+    validateDandisetMetadata(editorInterface.value)
+  }
+});
 
 // undo/redo functionality
 function undoChange() {
