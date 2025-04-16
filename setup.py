@@ -53,7 +53,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-guardian',
-        'django-oauth-toolkit>=1.7,<2',
+        'django-oauth-toolkit',
         # TODO: pin this until we figure out what the cause of
         # https://github.com/dandi/dandi-archive/issues/1894 is.
         'djangorestframework==3.14.0',
