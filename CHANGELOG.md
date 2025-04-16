@@ -1,3 +1,84 @@
+# v0.5.0 (Wed Apr 16 2025)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Michael Nagler ([@naglepuff](https://github.com/naglepuff)), for all your work!
+
+#### 🚀 Enhancement
+
+- Display the number of results found in DandisetSearchField [#2293](https://github.com/dandi/dandi-archive/pull/2293) ([@bendichter](https://github.com/bendichter))
+- Metadata correction [#2177](https://github.com/dandi/dandi-archive/pull/2177) ([@candleindark](https://github.com/candleindark) [@jjnesbitt](https://github.com/jjnesbitt))
+- Allow null `user` when `admin` is True [#2242](https://github.com/dandi/dandi-archive/pull/2242) ([@waxlamp](https://github.com/waxlamp))
+- Add admin and description fields to AuditRecord model [#2225](https://github.com/dandi/dandi-archive/pull/2225) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Vue 3 Migration feature branch [#2186](https://github.com/dandi/dandi-archive/pull/2186) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🐛 Bug Fix
+
+- Fix validation issue with vue/vjsf 3 [#2317](https://github.com/dandi/dandi-archive/pull/2317) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove console.log invocation [#2318](https://github.com/dandi/dandi-archive/pull/2318) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove hardcoded string for pending status [#2315](https://github.com/dandi/dandi-archive/pull/2315) ([@danlamanna](https://github.com/danlamanna))
+- Add default ordering for uploads [#2309](https://github.com/dandi/dandi-archive/pull/2309) ([@danlamanna](https://github.com/danlamanna))
+- Fix invalid closing li tag [#2304](https://github.com/dandi/dandi-archive/pull/2304) ([@danlamanna](https://github.com/danlamanna))
+- Show empty dandisets for search by default [#2291](https://github.com/dandi/dandi-archive/pull/2291) ([@naglepuff](https://github.com/naglepuff))
+- Lock dandiset when changing owners [#2288](https://github.com/dandi/dandi-archive/pull/2288) ([@naglepuff](https://github.com/naglepuff))
+- Refactor StarButton layout and improve alignment in DandisetMain view [#2282](https://github.com/dandi/dandi-archive/pull/2282) ([@bendichter](https://github.com/bendichter))
+- Fix a case where draft asset summaries could become stale [#2231](https://github.com/dandi/dandi-archive/pull/2231) ([@danlamanna](https://github.com/danlamanna))
+- Fix v-switch margins and color [#2290](https://github.com/dandi/dandi-archive/pull/2290) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Use `placeholder` instead of `label` for dandiset search bar [#2287](https://github.com/dandi/dandi-archive/pull/2287) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix cutoff text on CopyText form [#2286](https://github.com/dandi/dandi-archive/pull/2286) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add padding to stop meditor icon from getting cut off [#2278](https://github.com/dandi/dandi-archive/pull/2278) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix position of Manage Owners button [#2279](https://github.com/dandi/dandi-archive/pull/2279) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix star button disabled halo issue [#2276](https://github.com/dandi/dandi-archive/pull/2276) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix alignment issue with Manage Owners button [#2277](https://github.com/dandi/dandi-archive/pull/2277) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix z-index of cookie banner [#2265](https://github.com/dandi/dandi-archive/pull/2265) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix "View asset metadata" link [#2260](https://github.com/dandi/dandi-archive/pull/2260) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix Share icon size [#2264](https://github.com/dandi/dandi-archive/pull/2264) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix link dropdown text on mobile [#2266](https://github.com/dandi/dandi-archive/pull/2266) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Compute zarr checksums outside of transactions [#2267](https://github.com/dandi/dandi-archive/pull/2267) ([@danlamanna](https://github.com/danlamanna))
+- Add Sentry back to Vue application [#2258](https://github.com/dandi/dandi-archive/pull/2258) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Don't suppress exceptions when fetching schema/logging in [#2257](https://github.com/dandi/dandi-archive/pull/2257) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Remove quotes on DANDI_ADMIN_EMAIL env var [#2226](https://github.com/dandi/dandi-archive/pull/2226) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Add version string back into frontend [#2236](https://github.com/dandi/dandi-archive/pull/2236) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏎 Performance
+
+- Remove n+1 queries from Asset.full_metadata [#2316](https://github.com/dandi/dandi-archive/pull/2316) ([@danlamanna](https://github.com/danlamanna))
+- Denormalize species for faster searching [#2308](https://github.com/dandi/dandi-archive/pull/2308) ([@danlamanna](https://github.com/danlamanna))
+- Mock GC event chunk size during testing [#2313](https://github.com/dandi/dandi-archive/pull/2313) ([@danlamanna](https://github.com/danlamanna))
+- Add an index for looking up pending assets [#2303](https://github.com/dandi/dandi-archive/pull/2303) ([@danlamanna](https://github.com/danlamanna))
+- Optimize dandiset list query when excluding empty [#2310](https://github.com/dandi/dandi-archive/pull/2310) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Move Asset.Status to top level AssetStatus class [#2305](https://github.com/dandi/dandi-archive/pull/2305) ([@danlamanna](https://github.com/danlamanna))
+- Add required annotations import [#2312](https://github.com/dandi/dandi-archive/pull/2312) ([@danlamanna](https://github.com/danlamanna))
+- Remove deprecated version field from docker compose .yml [#2307](https://github.com/dandi/dandi-archive/pull/2307) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add `celerybeat-schedule*` files to .gitignore [#2280](https://github.com/dandi/dandi-archive/pull/2280) ([@mvandenburgh](https://github.com/mvandenburgh))
+- update test doi server [#2241](https://github.com/dandi/dandi-archive/pull/2241) ([@satra](https://github.com/satra))
+- Add Netlify configuration for branch deploys [#2228](https://github.com/dandi/dandi-archive/pull/2228) ([@waxlamp](https://github.com/waxlamp))
+- Convert remaining Vue components to `<script setup>` syntax [#2238](https://github.com/dandi/dandi-archive/pull/2238) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- Update CODE_OF_CONDUCT.md [#2259](https://github.com/dandi/dandi-archive/pull/2259) ([@satra](https://github.com/satra))
+
+#### 🧪 Tests
+
+- Migrate puppeteer tests to playwright [#2223](https://github.com/dandi/dandi-archive/pull/2223) ([@naglepuff](https://github.com/naglepuff))
+
+#### Authors: 8
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Dan LaManna ([@danlamanna](https://github.com/danlamanna))
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
 # v0.4.29 (Fri Mar 21 2025)
 
 #### 🐛 Bug Fix
