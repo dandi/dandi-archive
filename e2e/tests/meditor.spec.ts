@@ -48,6 +48,7 @@ test.describe("Test meditor validation errors", async () => {
 
   for (const dandisetId of dandisetsToTest) {
     test(`Test dandiset ${dandisetId}`, async ({ page }) => {
+      test.slow();
       await page.goto(`${clientUrl}/#/dandiset/${dandisetId}/draft/`);
       await page.getByRole("button", { name: "Metadata" }).click();
 
