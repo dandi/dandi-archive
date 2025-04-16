@@ -1,3 +1,15 @@
+# v0.7.0 (Wed Apr 16 2025)
+
+#### 🚀 Enhancement
+
+- Add warning alert for test dandisets in CreateDandisetView [#2283](https://github.com/dandi/dandi-archive/pull/2283) ([@bendichter](https://github.com/bendichter))
+
+#### Authors: 1
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+
+---
+
 # v0.6.0 (Wed Apr 16 2025)
 
 #### 🚀 Enhancement
