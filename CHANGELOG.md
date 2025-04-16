@@ -1,3 +1,15 @@
+# v0.6.0 (Wed Apr 16 2025)
+
+#### 🚀 Enhancement
+
+- Conditionally display sticky banner [#2321](https://github.com/dandi/dandi-archive/pull/2321) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.5.0 (Wed Apr 16 2025)
 
 :tada: This release contains work from a new contributor! :tada:
