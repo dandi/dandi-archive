@@ -96,7 +96,8 @@ def write_dandiset_jsonld(version: Version) -> None:
 def write_assets_jsonld(version: Version) -> None:
     # Use full metadata when writing externally
     assets_metadata = (
-        asset.full_metadata for asset in version.assets.select_related('blob', 'zarr').iterator()
+        asset.full_metadata
+        for asset in version.assets.select_related('blob', 'zarr', 'zarr__dandiset').iterator()
     )
     with _streaming_file_upload(_assets_jsonld_path(version)) as stream:
         stream.write(b'[')
@@ -122,7 +123,7 @@ def write_assets_yaml(version: Version) -> None:
             # Use full metadata when writing externally
             (
                 asset.full_metadata
-                for asset in version.assets.select_related('blob', 'zarr')
+                for asset in version.assets.select_related('blob', 'zarr', 'zarr__dandiset')
                 .order_by('created')
                 .iterator()
             ),
