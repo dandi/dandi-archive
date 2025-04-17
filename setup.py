@@ -26,7 +26,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
-        'Framework :: Django :: 3.0',
+        'Framework :: Django :: 4.2',
         'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
@@ -44,7 +44,6 @@ setup(
         # Pin dandischema to exact version to make explicit which schema version is being used
         'dandischema==0.11.0',  # schema version 0.6.9
         'django~=4.2.0',
-        'django-admin-display',
         # Pin to version where this bug is fixed
         # https://codeberg.org/allauth/django-allauth/issues/4072
         'django-allauth>=65.3.0',
@@ -57,7 +56,6 @@ setup(
         # TODO: pin this until we figure out what the cause of
         # https://github.com/dandi/dandi-archive/issues/1894 is.
         'djangorestframework==3.14.0',
-        'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
         'fsspec[http]',
@@ -92,6 +90,7 @@ setup(
             'pre-commit',
         ],
         'test': [
+            'djangorestframework-yaml',
             'factory-boy',
             'freezegun',
             'pytest',
