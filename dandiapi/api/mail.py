@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import datetime
 import logging
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core import mail
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.html import strip_tags
 
 from dandiapi.api.services.permissions.dandiset import get_dandiset_owners
@@ -171,6 +173,37 @@ def build_rejected_user_message(user: User, socialaccount: SocialAccount = None)
 def send_rejected_user_message(user: User, socialaccount: SocialAccount):
     logger.info('Sending rejected user message to %s', user)
     messages = [build_rejected_user_message(user, socialaccount)]
+    with mail.get_connection() as connection:
+        connection.send_messages(messages)
+
+
+def build_verification_email(user: User, socialaccount: SocialAccount, verification_url: str):
+    """Build an email for institutional email verification."""
+    render_context = {
+        **BASE_RENDER_CONTEXT,
+        'greeting_name': user_greeting_name(user, socialaccount),
+        'verification_link': verification_url,
+    }
+    return build_message(
+        subject='DANDI: Verify your institutional email address',
+        message=render_to_string('api/mail/verification_email.txt', render_context),
+        to=[user.metadata.institutional_email],
+    )
+
+
+def send_verification_email(user: User, socialaccount: SocialAccount):
+    """Send a verification email to the user's institutional email."""
+    logger.info('Sending verification email to institutional address for %s', user)
+
+    # Create the verification URL with the token
+    token = user.metadata.verification_token
+    verification_url = f"{settings.DANDI_API_URL}{reverse('verify-email')}?token={token}"
+
+    # Set the token creation time
+    user.metadata.verification_token_created = datetime.datetime.now(tz=datetime.UTC)
+    user.metadata.save(update_fields=['verification_token_created'])
+
+    messages = [build_verification_email(user, socialaccount, verification_url)]
     with mail.get_connection() as connection:
         connection.send_messages(messages)
 
