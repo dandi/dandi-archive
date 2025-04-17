@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, re_path, register_converter
+from django.urls import include, path, re_path, register_converter, reverse_lazy
+from django.views.generic import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -132,10 +133,22 @@ urlpatterns = [
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),
-    # Doc page views
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    # Doc page views
+    path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
+    path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
+    # Doc page redirects for backwards compatibility
+    path(
+        'swagger/',
+        RedirectView.as_view(permanent=True, url=reverse_lazy('docs-swagger')),
+        name='schema-swagger-ui',
+    ),
+    path(
+        'redoc/',
+        RedirectView.as_view(permanent=True, url=reverse_lazy('docs-redoc')),
+        name='schema-redoc',
+    ),
+    # Webdav doc page views
     path(
         'api/webdav/docs/swagger/',
         webdav_schema_view.with_ui('swagger', cache_timeout=0),
