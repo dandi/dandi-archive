@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from django.contrib.auth.models import Group
+from typing import Any
+
+from django.contrib.auth.backends import ModelBackend
+from django.contrib.auth.models import Group, User
 from django.db import models
 
 
@@ -19,3 +22,12 @@ class DandisetRole(models.Model):
 
     def __str__(self):
         return f'{self.dandiset.identifier}/{self.rolename}'
+
+
+class DandiGlobalPermissionBackend(ModelBackend):
+    """Give permission to any object if the global permission is granted to the user."""
+
+    def has_perm(self, user_obj: User, perm: str, obj: Any = None):
+        # Check just the global permission
+        global_perm = f'api.{perm}' if '.' not in perm else perm
+        return super().has_perm(user_obj=user_obj, perm=global_perm)

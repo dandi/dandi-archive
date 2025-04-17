@@ -53,6 +53,9 @@ class DandiMixin(ConfigMixin):
 
         # Authentication
         configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
+        configuration.AUTHENTICATION_BACKENDS += [
+            'dandiapi.api.models.auth.DandiGlobalPermissionBackend'
+        ]
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             'rest_framework.authentication.TokenAuthentication',
         ]
