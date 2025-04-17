@@ -5,6 +5,7 @@
   >
     <AppBar />
     <v-main v-if="connectedToServer">
+      <InfoBanner />
       <UserStatusBanner />
       <router-view />
       <DandiFooter />
@@ -47,6 +48,7 @@ import { useDandisetStore } from '@/stores/dandiset';
 import AppBar from '@/components/AppBar/AppBar.vue';
 import DandiFooter from '@/components/DandiFooter.vue';
 import UserStatusBanner from '@/components/UserStatusBanner.vue';
+import InfoBanner from '@/components/InfoBanner.vue';
 
 const store = useDandisetStore();
 
