@@ -57,7 +57,6 @@ setup(
         # TODO: pin this until we figure out what the cause of
         # https://github.com/dandi/dandi-archive/issues/1894 is.
         'djangorestframework==3.14.0',
-        'djangorestframework-yaml',
         'drf-extensions',
         'drf-yasg',
         'fsspec[http]',
@@ -92,6 +91,7 @@ setup(
             'pre-commit',
         ],
         'test': [
+            'djangorestframework-yaml',
             'factory-boy',
             'freezegun',
             'pytest',
