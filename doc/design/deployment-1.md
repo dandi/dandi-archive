@@ -34,7 +34,10 @@ To make changes to production, developers should:
 - Create a PR that will merge the PR branch to `master`.
   - Assign reviewers
   - Pay attention to CI results, investigate any failures
-  - Add the `release` label and an increment label (`major`, `minor`, `patch`) to the PR. This informs [`auto`](https://intuit.github.io/) that it should make a release.
-    - Not all changes necessitate an immediate release. Simply leave the labels off if you don't want to release right away.
+  - Add increment or "type" label (`major`, `minor`, `patch`, `documentation`, `tests`) to the PR.
+    This informs [`auto`](https://intuit.github.io/) which section to attribute a corresponding changelog entry and what version bump to perform.
+    See the [full list of default labels for auto](https://intuit.github.io/auto/docs/configuration/autorc#labels).
+  - Add the `release` label to trigger [`auto`](https://intuit.github.io/) to make a release on merge.
+    - Not all changes necessitate an immediate release. Simply leave the `release` label off if you don't want to release right away. The increment/type label will still be accounted for in a future auto release.
 - Once the PR is approved, merge it.
   - If the appropriate release labels are present, `auto` will increment the version number, create a new git tag with that version, and create a new GitHub release.
