@@ -1,3 +1,42 @@
+# v0.8.0 (Fri Apr 18 2025)
+
+#### 🚀 Enhancement
+
+- Move banner with info blurb to top of all pages [#2329](https://github.com/dandi/dandi-archive/pull/2329) ([@naglepuff](https://github.com/naglepuff))
+
+#### 🐛 Bug Fix
+
+- Don't override oauth2_provider settings dict [#2337](https://github.com/dandi/dandi-archive/pull/2337) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix oauth2 setting [#2335](https://github.com/dandi/dandi-archive/pull/2335) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Require minimum version of 2.0 for django-oauth-toolkit [#2326](https://github.com/dandi/dandi-archive/pull/2326) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Revert OAuth model change [#2338](https://github.com/dandi/dandi-archive/pull/2338) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Switch from `runtime.txt` to `.python-version` [#2332](https://github.com/dandi/dandi-archive/pull/2332) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Switch staging back to builtin oauth `Application` [#2331](https://github.com/dandi/dandi-archive/pull/2331) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update swagger/redocs urls to align with Resonant [#2327](https://github.com/dandi/dandi-archive/pull/2327) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- DOC: fixup description of the interaction with auto for releases based on labels [#2285](https://github.com/dandi/dandi-archive/pull/2285) ([@yarikoptic](https://github.com/yarikoptic) [@waxlamp](https://github.com/waxlamp))
+
+#### 🔩 Dependency Updates
+
+- Clean up `setup.py` [#2324](https://github.com/dandi/dandi-archive/pull/2324) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update Heroku Python runtime [#2323](https://github.com/dandi/dandi-archive/pull/2323) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Unpin `django-oauth-toolkit`, generate migrations for downstream `StagingApplication` [#2320](https://github.com/dandi/dandi-archive/pull/2320) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 5
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.7.0 (Wed Apr 16 2025)
 
 #### 🚀 Enhancement
