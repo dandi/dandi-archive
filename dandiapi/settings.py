@@ -204,6 +204,4 @@ class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguratio
 class HerokuStagingConfiguration(HerokuProductionConfiguration):
     # The staging configuration enables wildcards in OAuth redirect URIs in order
     # to support Netlify deploy previews.
-    OAUTH2_PROVIDER = {
-        'ALLOW_URI_WILDCARDS': True,
-    }
+    ALLOW_URI_WILDCARDS = True
