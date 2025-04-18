@@ -1,7 +1,9 @@
 <template>
   <v-banner
     v-if="bannerText"
-    color="grey-darken-1"
+    bg-color="grey-lighten-6"
+    sticky
+    :style="{ top: '64px' }"
   >
     <v-icon>
       mdi-information
