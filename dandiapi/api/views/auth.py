@@ -130,6 +130,10 @@ def user_questionnaire_form_view(request: HttpRequest) -> HttpResponse:
         ):
             should_auto_approve: bool = user.email.endswith('.edu') or user.email.endswith(
                 '@alleninstitute.org'
+            ) or user.email.endswith(
+                '@nih.gov'
+            ) or user.email.endswith(
+                '@janelia.hhmi.org'
             )
 
             # auto-approve users with edu emails, otherwise require manual approval
