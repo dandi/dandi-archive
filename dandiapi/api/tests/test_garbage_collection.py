@@ -25,7 +25,7 @@ def test_garbage_collect_uploads(upload_factory):
 
     non_expired_upload: Upload = upload_factory()
 
-    assert garbage_collection._garbage_collect_uploads() == 1
+    assert garbage_collection.upload.garbage_collect() == 1
 
     assert Upload.objects.filter(id=non_expired_upload.id).exists()
     assert not Upload.objects.filter(id=expired_upload.id).exists()
@@ -56,7 +56,7 @@ def test_garbage_collect_asset_blobs(asset_factory, asset_blob_factory):
     asset_factory(blob=non_orphaned_non_expired_asset_blob)
 
     # Only Case 1 should be garbage collected
-    assert garbage_collection._garbage_collect_asset_blobs() == 1
+    assert garbage_collection.asset_blob.garbage_collect() == 1
     assert not AssetBlob.objects.filter(id=orphaned_expired_asset_blob.id).exists()
     assert AssetBlob.objects.filter(id=orphaned_non_expired_asset_blob.id).exists()
     assert AssetBlob.objects.filter(id=non_orphaned_expired_asset_blob.id).exists()
