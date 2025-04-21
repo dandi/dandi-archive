@@ -1,3 +1,19 @@
+# v0.8.1 (Mon Apr 21 2025)
+
+#### 🏠 Internal
+
+- Integrate `garbage_collection` service into `collect_garbage.py` [#2343](https://github.com/dandi/dandi-archive/pull/2343) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🧪 Tests
+
+- Remove unneeded data from playwright test fixture [#2341](https://github.com/dandi/dandi-archive/pull/2341) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.8.0 (Fri Apr 18 2025)
 
 #### 🚀 Enhancement
