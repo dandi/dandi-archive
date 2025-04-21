@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import timedelta
 import json
+from typing import TYPE_CHECKING
 
 from celery.utils.log import get_task_logger
 from django.core import serializers
@@ -15,18 +16,28 @@ from dandiapi.api.models import (
     GarbageCollectionEvent,
     GarbageCollectionEventRecord,
 )
-from dandiapi.api.services.garbage_collection import GARBAGE_COLLECTION_EVENT_CHUNK_SIZE
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 logger = get_task_logger(__name__)
 
 ASSET_BLOB_EXPIRATION_TIME = timedelta(days=7)
 
 
-def garbage_collect() -> int:
-    qs = AssetBlob.objects.filter(
+def get_queryset() -> QuerySet[AssetBlob]:
+    """Get the queryset of AssetBlobs that are eligible for garbage collection."""
+    return AssetBlob.objects.filter(
         assets__isnull=True,
         created__lt=timezone.now() - ASSET_BLOB_EXPIRATION_TIME,
     )
+
+
+def garbage_collect() -> int:
+    from . import GARBAGE_COLLECTION_EVENT_CHUNK_SIZE
+
+    qs = get_queryset()
+
     if not qs.exists():
         return 0
 

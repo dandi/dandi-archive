@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 import json
+from typing import TYPE_CHECKING
 
 from celery.utils.log import get_task_logger
 from django.core import serializers
@@ -14,18 +15,28 @@ from dandiapi.api.models import (
     GarbageCollectionEventRecord,
     Upload,
 )
-from dandiapi.api.services.garbage_collection import GARBAGE_COLLECTION_EVENT_CHUNK_SIZE
 from dandiapi.api.storage import DandiMultipartMixin
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 logger = get_task_logger(__name__)
 
 UPLOAD_EXPIRATION_TIME = DandiMultipartMixin._url_expiration  # noqa: SLF001
 
 
-def garbage_collect() -> int:
-    qs = Upload.objects.filter(
+def get_queryset() -> QuerySet[Upload]:
+    """Get the queryset of Uploads that are eligible for garbage collection."""
+    return Upload.objects.filter(
         created__lt=timezone.now() - UPLOAD_EXPIRATION_TIME,
     )
+
+
+def garbage_collect() -> int:
+    from . import GARBAGE_COLLECTION_EVENT_CHUNK_SIZE
+
+    qs = get_queryset()
+
     if not qs.exists():
         return 0
 
