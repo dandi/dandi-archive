@@ -39,13 +39,13 @@ def collect_garbage(*, assets: bool, assetblobs: bool, uploads: bool, s3blobs: b
     if doing_deletes:
         echo_report()
 
-    if assetblobs:
+    if assetblobs and click.confirm('This will delete all AssetBlobs. Are you sure?'):
         garbage_collection.asset_blob.garbage_collect()
-    if uploads:
+    if uploads and click.confirm('This will delete all Uploads. Are you sure?'):
         garbage_collection.upload.garbage_collect()
-    if s3blobs:
+    if s3blobs and click.confirm('This will delete all S3 Blobs. Are you sure?'):
         raise click.NoSuchOption('Deleting S3 Blobs is not yet implemented')
-    if assets:
+    if assets and click.confirm('This will delete all Assets. Are you sure?'):
         assets_to_delete = stale_assets()
         if click.confirm(f'This will delete {assets_to_delete.count()} assets. Are you sure?'):
             assets_to_delete.delete()
