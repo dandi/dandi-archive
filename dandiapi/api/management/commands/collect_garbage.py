@@ -1,14 +1,29 @@
 from __future__ import annotations
 
+from django.db.models import Sum
 import djclick as click
 
 from dandiapi.api.garbage import stale_assets
+from dandiapi.api.services import garbage_collection
 
 
 def echo_report():
-    click.echo(f'Assets: {stale_assets().count()}')
-    click.echo('AssetBlobs: Coming soon')
-    click.echo('Uploads: Coming soon')
+    garbage_collectable_assets = stale_assets()
+    assets_count = garbage_collectable_assets.count()
+
+    garbage_collectable_asset_blobs = garbage_collection.asset_blob.get_queryset()
+    asset_blobs_count = garbage_collectable_asset_blobs.count()
+    asset_blobs_size_in_bytes = garbage_collectable_asset_blobs.aggregate(Sum('size'))['size__sum']
+
+    garbage_collectable_uploads = garbage_collection.upload.get_queryset()
+    uploads_count = garbage_collectable_uploads.count()
+
+    click.echo(f'Assets: {assets_count}')
+    click.echo(
+        f'AssetBlobs: {asset_blobs_count} ({asset_blobs_size_in_bytes} bytes / '
+        f'{asset_blobs_size_in_bytes / (1024 ** 3):.2f} GB)'
+    )
+    click.echo(f'Uploads: {uploads_count}')
     click.echo('S3 Blobs: Coming soon')
 
 
@@ -25,9 +40,9 @@ def collect_garbage(*, assets: bool, assetblobs: bool, uploads: bool, s3blobs: b
         echo_report()
 
     if assetblobs:
-        raise click.NoSuchOption('Deleting AssetBlobs is not yet implemented')
+        garbage_collection.asset_blob.garbage_collect()
     if uploads:
-        raise click.NoSuchOption('Deleting Uploads is not yet implemented')
+        garbage_collection.upload.garbage_collect()
     if s3blobs:
         raise click.NoSuchOption('Deleting S3 Blobs is not yet implemented')
     if assets:
