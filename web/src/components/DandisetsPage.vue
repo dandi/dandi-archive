@@ -11,6 +11,7 @@
         <template #activator="{ props: menuProps }">
           <v-icon
             v-bind="menuProps"
+            class="mr-6"
           >
             mdi-cog
           </v-icon>
@@ -39,33 +40,53 @@
           </v-list-item>
         </v-list>
       </v-menu>
-      <div class="mx-6">
-        Sort By:
-      </div>
-      <v-chip-group
-        :model-value="sortOption"
-        selected-class="white text-light-blue bg-white"
-        dark
-        mandatory
-        style="min-width: 25%"
+      <DandisetSearchField class="flex-grow-1 mr-2" />
+      <v-btn-group
+        variant="flat"
+        density="comfortable"
+        divided
+        class="btn-group--sort-options"
       >
-        <v-chip
-          v-for="(option, i) in sortingOptions"
-          :key="option.name"
-          @click="changeSort(i)"
+        <v-btn class="btn--sort-option">
+          <v-icon>mdi-sort-variant</v-icon>
+          <v-tooltip
+            location="top"
+            activator="parent"
+          >
+            <span>Sorting Options</span>
+          </v-tooltip>
+          <v-menu activator="parent">
+            <v-list>
+              <v-list-item
+                v-for="(option, i) in sortingOptions"
+                :key="option.name"
+                :value="option"
+                :append-icon="option.name === sortingOptions[sortOption].name ? 'mdi-check' : ''"
+                :class="option.name === sortingOptions[sortOption].name ? 'v-list-item--active': ''"
+                @click="changeSort(i)"
+              >
+                <v-list-item-title >{{ option.name }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-btn>
+        <v-btn
+          class="pa-0 btn--sort-order bg-grey-lighten-2"
+          @click="changeSortDir"
         >
-          {{ option.name }}
-          <v-icon end>
-            <template v-if="sortDir === -1 || sortOption !== i">
-              mdi-sort-variant
-            </template>
-            <template v-else>
-              mdi-sort-reverse-variant
-            </template>
+          <v-icon v-if="sortDir === 1">
+            mdi-arrow-up-thin
           </v-icon>
-        </v-chip>
-      </v-chip-group>
-      <DandisetSearchField class="flex-grow-1" />
+          <v-icon v-else>mdi-arrow-down-thin</v-icon>
+          <v-tooltip
+            location="top"
+            activator="parent"
+          >
+            <span v-if="sortDir === 1">Ascending</span>
+            <span v-else>Descending</span>
+          </v-tooltip>
+        </v-btn>
+      </v-btn-group>
     </v-toolbar>
     <div
       v-if="props.search && djangoDandisetRequest"
@@ -205,14 +226,26 @@ watch(queryParams, (params) => {
 });
 
 function changeSort(index: number) {
-  if (sortOption.value === index) {
-    sortDir.value *= -1;
-  } else {
-    sortOption.value = index;
-    sortDir.value = -1;
-  }
-
+  sortOption.value = index;
   page.value = 1;
 }
 
+function changeSortDir() {
+  sortDir.value = -1 * sortDir.value;
+}
+
 </script>
+
+<style scoped>
+.btn-group--sort-options {
+  min-width: 84px;
+}
+
+.btn--sort-option {
+  min-width: 56px;
+}
+
+.btn--sort-order {
+  min-width: 28px;
+}
+</style>
