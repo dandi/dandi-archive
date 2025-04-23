@@ -6,14 +6,13 @@ Authors: Yaroslav O. Halchenko, Dorota Jarecka, Austin Macdonald
 
 This document describes an updated strategy for DOI management within the Dandi Archive.
 Upon creation, every public Dandiset will receive a **Dandiset DOI** that will represent the current draft and all future versions.
-Every public published version of a Dandiset will recieve a **Version DOI**.
+Every public published version of a Dandiset will receive a **Version DOI**.
 
 For example:
 Dandiset DOI: `https://doi.org/10.48324/dandi.000027/`
 Version DOI: `https://doi.org/10.48324/dandi.000027/0.210831.2033`
 
-Prior to publication, the Dandiset DOI will refer to the latest draft version.
-Following publication, the Dandiset DOI will refer to the latest published version.
+The Dandiset DOI will always refer to the DLP
 
 At creation the `Dandiset DOI` will be a DataCite `Draft DOI`, but will be "promoted" to a DataCite `Findable DOI` as soon as possible.
 `Version DOI` will always be a `Findable DOI`.
@@ -33,7 +32,7 @@ At creation the `Dandiset DOI` will be a DataCite `Draft DOI`, but will be "prom
 - [Stop injecting "fake" DOIs into draft dandisets](https://github.com/dandi/dandi-archive/issues/1709)
 - [Unpublished Dandisets display a DOI under `Cite As`](https://github.com/dandi/dandi-archive/issues/1932)
 
-## Proposed Solution
+## Background
 
 Initially proposed/discussed in
 
@@ -50,7 +49,7 @@ DataCite allows for three types of DOIs ([DataCite](https://support.datacite.org
 - `Findable`. Is the type we use for published dandisets.
   Requires to be valid (pass validation to fit the datacite schema) to be created.
 
-We propose to:
+## Proposed Solution
 
 - Upon creation of a **public** dandiset, mint a `Dandiset DOI` (a DataCite `Draft DOI`) `10.48324/dandi.{dandiset.id}` with
   - *minimal metadata* entered during creation request (title, description, license)
@@ -161,7 +160,10 @@ sequenceDiagram
 
     Note over User,DataCite: Dandiset Deletion (Optional)
     User->>DandiArchive: Delete dandiset
-    DandiArchive->>DataCite: Update DOI to point to deletion page
+    alt Dandiset DOI is Draft
+          DandiArchive->>DataCite: Delete Draft DOI
+    else Dandiset DOI is  Findable
+          DandiArchive->>DataCite: "hide" DOI (Convert to "Registered") and point DOI to tombstone page
     DataCite-->>DandiArchive: Update DOI target URL
     DandiArchive-->>User: Confirm deletion
 ```
