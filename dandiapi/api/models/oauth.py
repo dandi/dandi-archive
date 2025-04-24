@@ -3,10 +3,11 @@ from __future__ import annotations
 from fnmatch import fnmatch
 
 from django.core.exceptions import ValidationError
-from oauth2_provider.models import Application
+from django.db import models
+from oauth2_provider.models import AbstractApplication
 
 
-class StagingApplication(Application):
+class StagingApplication(AbstractApplication):
     """
     Custom OAuth Toolkit `Application` model to allow wildcards to be used in redirect URIs.
 
@@ -14,8 +15,9 @@ class StagingApplication(Application):
     in production and local development.
     """
 
-    class Meta:
-        proxy = True
+    # The default value of `skip_authorization` in `AbstractApplication` is `False`; we
+    # override that default here for staging.
+    skip_authorization = models.BooleanField(default=True)
 
     def clean(self):
         """
