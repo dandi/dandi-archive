@@ -32,7 +32,16 @@ jobs:
         run: yarn run build
 
   test-e2e:
+    name: E2E tests (${{ matrix.django_server.name }})
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        django_server:
+          - name: manage.py runserver
+            command: python manage.py runserver
+          - name: gunicorn
+            command: python -m gunicorn --bind 0.0.0.0:8000 dandiapi.wsgi --timeout 25  # from /Procfile
     services:
       postgres:
         image: postgres:latest
@@ -122,21 +131,20 @@ jobs:
     - name: Run Playwright tests
       run: |
           # start vue dev server
-          yarn --cwd ../web/ run dev 2> /dev/null &
+          yarn --cwd web/ run dev 2> /dev/null &
           while ! nc -z localhost 8085; do
             sleep 3
           done
 
           # start the dandi-api server
-          python ../manage.py runserver &
+          ${{ matrix.django_server.command }} &
 
           # run the tests
-          npx playwright test
-      working-directory: e2e
+          cd e2e && npx playwright test
 
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report
+        name: playwright-report-${{ matrix.django_server.name }}
         path: e2e/playwright-report/
         retention-days: 30
