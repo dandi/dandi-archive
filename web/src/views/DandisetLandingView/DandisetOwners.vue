@@ -38,7 +38,7 @@
         >
           +{{ numExtraOwners }} more...
         </v-btn>
-        
+
         <!-- Dialog to show all owners -->
         <v-dialog
           v-model="showAllOwnersDialog"
@@ -49,7 +49,7 @@
               <v-icon size="large" class="mr-2">mdi-account-group</v-icon>
               All {{ owners?.length || 0 }} Owners
             </v-card-title>
-            <v-divider></v-divider>
+            <v-divider />
             <v-card-text class="pt-4">
               <v-row>
                 <v-col cols="12">
@@ -75,9 +75,9 @@
                 </v-col>
               </v-row>
             </v-card-text>
-            <v-divider></v-divider>
+            <v-divider />
             <v-card-actions>
-              <v-spacer></v-spacer>
+              <v-spacer />
               <v-btn
                 color="primary"
                 variant="text"
