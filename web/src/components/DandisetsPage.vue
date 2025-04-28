@@ -56,18 +56,28 @@
             <span>Sorting Options</span>
           </v-tooltip>
           <v-menu activator="parent">
-            <v-list>
-              <v-list-item
-                v-for="(option, i) in sortingOptions"
-                :key="option.name"
-                :value="option"
-                :append-icon="option.name === sortingOptions[sortOption].name ? 'mdi-check' : ''"
-                :active="option.name === sortingOptions[sortOption].name"
-                @click="changeSort(i)"
-              >
-                <v-list-item-title >{{ option.name }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
+            <v-item-group v-model="sortOption">
+              <v-list>
+                <v-item
+                  v-for="(option, i) in sortingOptions"
+                  :key="option.name"
+                  v-slot="{ isSelected, toggle }"
+                  :value="i"
+                >
+                  <v-list-item
+                    :active="isSelected"
+                    @click="toggle"
+                  >
+                    <template #append>
+                      <v-icon v-if="isSelected">
+                        mdi-check
+                      </v-icon>
+                    </template>
+                    <v-list-item-title>{{ option.name }}</v-list-item-title>
+                  </v-list-item>
+                </v-item>
+              </v-list>
+            </v-item-group>
           </v-menu>
         </v-btn>
         <v-btn
@@ -77,7 +87,9 @@
           <v-icon v-if="sortDir === 1">
             mdi-arrow-up-thin
           </v-icon>
-          <v-icon v-else>mdi-arrow-down-thin</v-icon>
+          <v-icon v-else>
+            mdi-arrow-down-thin
+          </v-icon>
           <v-tooltip
             location="top"
             activator="parent"
@@ -224,11 +236,6 @@ watch(queryParams, (params) => {
     },
   });
 });
-
-function changeSort(index: number) {
-  sortOption.value = index;
-  page.value = 1;
-}
 
 function changeSortDir() {
   sortDir.value = -1 * sortDir.value;
