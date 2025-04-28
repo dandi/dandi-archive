@@ -90,7 +90,8 @@
         </v-dialog>
       </v-col>
     </v-row>
-
+    
+    <!-- Manage Owners dialog -->
     <v-row
       class="justify-center"
       no-gutters
