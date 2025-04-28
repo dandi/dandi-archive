@@ -64,6 +64,7 @@ jobs:
           - 9000:9000
     env:
       # API server env vars
+      DJANGO_CONFIGURATION: DevelopmentConfiguration
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
       DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
       DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
