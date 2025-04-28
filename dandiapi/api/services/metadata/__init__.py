@@ -98,8 +98,14 @@ def version_aggregate_assets_summary(version: Version) -> None:
 
     updated_metadata = {**version.metadata, 'assetsSummary': assets_summary}
 
-    updated_count = Version.objects.filter(id=version.id, metadata=version.metadata).update(
-        modified=timezone.now(), metadata=updated_metadata
+    updated_count = Version.objects.filter(
+        id=version.id,
+        metadata=version.metadata,
+        last_asset_add_remove_time=version.last_asset_add_remove_time,
+    ).update(
+        modified=timezone.now(),
+        last_summary_time=timezone.now(),
+        metadata=updated_metadata,
     )
     if updated_count == 0:
         logger.info('Skipped updating assetsSummary for version %s', version.id)

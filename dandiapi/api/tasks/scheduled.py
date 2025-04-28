@@ -17,6 +17,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import connection
+from django.db.models import F
 from django.db.models.query_utils import Q
 
 from dandiapi.analytics.tasks import collect_s3_log_records_task
@@ -99,13 +100,26 @@ def validate_draft_version_metadata():
         logger.info('Found %s versions to validate', pending_draft_versions_count)
         for draft_version_id in pending_draft_versions.iterator():
             validate_version_metadata_task.delay(draft_version_id)
-            aggregate_assets_summary_task.delay(draft_version_id)
 
             # Revalidation should be triggered every time a version is modified,
             # so now is a good time to write out the manifests as well.
             write_manifest_files.delay(draft_version_id)
     else:
         logger.debug('Found no versions to validate')
+
+
+@shared_task(soft_time_limit=20)
+def schedule_aggregate_assets_summary():
+    versions = (
+        Version.objects.filter(
+            version='draft', last_summary_time__lt=F('last_asset_add_remove_time')
+        )
+        .exclude(status__in=[Version.Status.PUBLISHING, Version.Status.PUBLISHED])
+        .values_list('id', flat=True)
+    )
+
+    for version_id in versions:
+        aggregate_assets_summary_task.delay(version_id)
 
 
 @shared_task(soft_time_limit=20)
@@ -149,6 +163,12 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(
         timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
         validate_pending_asset_metadata.s(),
+    )
+
+    # Schedule aggregate assets summary every 10 mins
+    sender.add_periodic_task(
+        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
+        schedule_aggregate_assets_summary.s(),
     )
 
     # Send daily email to admins containing a list of users awaiting approval

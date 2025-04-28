@@ -62,7 +62,9 @@ def _add_asset_to_version(
 
     # Trigger a version metadata validation, as saving the version might change the metadata
     Version.objects.filter(id=version.id).update(
-        status=Version.Status.PENDING, modified=timezone.now()
+        status=Version.Status.PENDING,
+        modified=timezone.now(),
+        last_asset_add_remove_time=timezone.now(),
     )
 
     return asset
@@ -74,8 +76,11 @@ def _remove_asset_from_version(*, asset: Asset, version: Version):
     version.assets.remove(asset)
 
     # Trigger a version metadata validation, as saving the version might change the metadata
+    now = timezone.now()
     Version.objects.filter(id=version.id).update(
-        status=Version.Status.PENDING, modified=timezone.now()
+        status=Version.Status.PENDING,
+        modified=now,
+        last_asset_add_remove_time=now,
     )
 
 

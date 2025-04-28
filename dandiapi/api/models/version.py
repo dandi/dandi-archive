@@ -46,6 +46,12 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
 
+    # Store the last time the aggregate assets summary was computed and the last time
+    # the assets within a version has changed. This allows us to be eventually consistent
+    # with the correct summary.
+    last_summary_time = models.DateTimeField()
+    last_asset_add_remove_time = models.DateTimeField()
+
     class Meta:
         ordering = ['version']
         unique_together = ['dandiset', 'version']

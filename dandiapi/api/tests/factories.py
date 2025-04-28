@@ -85,6 +85,13 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
     dandiset = factory.SubFactory(DandisetFactory)
     name = factory.Faker('sentence')
 
+    last_summary_time = factory.Faker(
+        'date_time_between',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=365),  # noqa: DTZ005
+        tzinfo=datetime.UTC,
+    )
+    last_asset_add_remove_time = factory.LazyAttribute(lambda o: o.last_summary_time)
+
     @factory.lazy_attribute
     def version(self):
         return Version.next_published_version(self.dandiset)

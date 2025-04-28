@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from django.contrib.postgres.functions import TransactionNow
 from django.db import transaction
+from django.db.models.functions import Now
 
 from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
@@ -48,8 +50,17 @@ def create_dandiset(
             name=version_name,
             metadata=version_metadata,
             version='draft',
+            # Notably, these are both set to the same value so there is no need to
+            # compute an asset summary.
+            last_summary_time=TransactionNow(),
+            last_asset_add_remove_time=TransactionNow(),
         )
-        draft_version.full_clean(validate_constraints=False)
+        draft_version.full_clean(
+            # full_clean currently rejects non-datetime values like TransactionNow()
+            # see https://forum.djangoproject.com/t/using-the-same-database-timestamp-for-saving-two-objects/37660/7
+            validate_constraints=False,
+            exclude=['last_summary_time', 'last_asset_add_remove_time'],
+        )
         draft_version.save()
 
         audit.create_dandiset(

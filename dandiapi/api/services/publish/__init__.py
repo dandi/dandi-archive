@@ -92,6 +92,8 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
         metadata=draft_version.metadata,
         status=Version.Status.VALID,
         version=Version.next_published_version(draft_version.dandiset),
+        last_summary_time=draft_version.last_summary_time,
+        last_asset_add_remove_time=draft_version.last_asset_add_remove_time,
     )
 
     now = datetime.datetime.now(datetime.UTC)
