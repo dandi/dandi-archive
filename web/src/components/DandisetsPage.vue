@@ -62,7 +62,7 @@
                 :key="option.name"
                 :value="option"
                 :append-icon="option.name === sortingOptions[sortOption].name ? 'mdi-check' : ''"
-                :class="option.name === sortingOptions[sortOption].name ? 'v-list-item--active': ''"
+                :active="option.name === sortingOptions[sortOption].name"
                 @click="changeSort(i)"
               >
                 <v-list-item-title >{{ option.name }}</v-list-item-title>
