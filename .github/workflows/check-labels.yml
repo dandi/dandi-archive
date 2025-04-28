@@ -1,0 +1,22 @@
+name: Check intuit/auto labels
+
+on:
+  push:
+
+jobs:
+  check-labels:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download latest auto
+        run: |
+          auto_download_url="$(curl -fsSL https://api.github.com/repos/intuit/auto/releases/latest | jq -r '.assets[] | select(.name == "auto-linux.gz") | .browser_download_url')"
+          wget -O- "$auto_download_url" | gunzip > ~/auto
+          chmod a+x ~/auto
+
+      - name: Check labels
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          ~/auto label
