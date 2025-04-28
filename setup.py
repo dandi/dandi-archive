@@ -80,6 +80,7 @@ setup(
             'django-composed-configuration[dev]>=0.25.0',
             'django-debug-toolbar',
             'django-s3-file-field[minio]',
+            'Faker>=36.0.0',
             'ipython',
             'tox',
             'memray',
