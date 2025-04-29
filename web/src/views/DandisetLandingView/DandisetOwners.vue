@@ -47,7 +47,12 @@
         >
           <v-card>
             <v-card-title class="text-h5 d-flex align-center">
-              <v-icon size="large" class="mr-2">mdi-account-group</v-icon>
+              <v-icon
+                size="large"
+                class="mr-2"
+              >
+                mdi-account-group
+              </v-icon>
               All {{ owners?.length || 0 }} Owners
             </v-card-title>
             <v-divider />
@@ -65,8 +70,13 @@
                       class="mb-2"
                     >
                       <template #prepend>
-                        <v-avatar color="primary" class="mr-3">
-                          <v-icon color="white">mdi-account</v-icon>
+                        <v-avatar
+                          color="primary"
+                          class="mr-3"
+                        >
+                          <v-icon color="white">
+                            mdi-account
+                          </v-icon>
                         </v-avatar>
                       </template>
                       <v-list-item-title class="font-weight-medium">
