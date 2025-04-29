@@ -42,7 +42,8 @@
         <!-- Dialog to show all owners -->
         <v-dialog
           v-model="showAllOwnersDialog"
-          width="600"
+          width="unset"
+          max-width="1000"
         >
           <v-card>
             <v-card-title class="text-h5 d-flex align-center">
@@ -52,10 +53,14 @@
             <v-divider />
             <v-card-text class="pt-4">
               <v-row>
-                <v-col cols="12">
+                <v-col 
+                  v-for="(ownersChunk, chunkIndex) in chunk(owners, 10)"
+                  :key="chunkIndex"
+                  cols="auto"
+                >
                   <v-list>
                     <v-list-item
-                      v-for="(owner, i) in owners"
+                      v-for="(owner, i) in ownersChunk"
                       :key="i"
                       class="mb-2"
                     >
@@ -148,6 +153,7 @@
 </template>
 
 <script setup lang="ts">
+import { chunk } from 'lodash';
 import { loggedIn, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import DandisetOwnersDialog from '@/components/DLP/DandisetOwnersDialog.vue';
