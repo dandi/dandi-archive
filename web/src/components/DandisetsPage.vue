@@ -70,7 +70,11 @@
         <v-menu activator="parent">
           <v-list>
             <v-item-group v-model="sortOption">
-              <v-list-subheader>Sort by</v-list-subheader>
+              <v-list-subheader
+                class="text-high-emphasis font-weight-bold"
+              >
+                Sort by
+              </v-list-subheader>
               <v-item
                 v-for="(option, i) in sortingOptions"
                 :key="option.name"
@@ -78,6 +82,7 @@
                 :value="i"
               >
                 <v-list-item
+                  class="pl-8"
                   :active="isSelected"
                   @click="toggle"
                 >
@@ -90,13 +95,19 @@
                 </v-list-item>
               </v-item>
             </v-item-group>
+            <v-divider />
             <v-item-group v-model="sortDir">
-              <v-list-subheader>Order</v-list-subheader>
+              <v-list-subheader
+                class="text-high-emphasis font-weight-bold"
+              >
+                Order
+              </v-list-subheader>
               <v-item
                 v-slot="{ isSelected, toggle }"
                 :value="1"
               >
                 <v-list-item
+                  class="pl-8"
                   :active="isSelected"
                   @click="toggle"
                 >
@@ -113,6 +124,7 @@
                 :value="-1"
               >
                 <v-list-item
+                  class="pl-8"
                   :active="isSelected"
                   @click="toggle"
                 >
