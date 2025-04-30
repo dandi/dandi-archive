@@ -1,3 +1,41 @@
+# v0.9.0 (Wed Apr 30 2025)
+
+#### 🚀 Enhancement
+
+- Fix display of dandisets with many owners [#2272](https://github.com/dandi/dandi-archive/pull/2272) ([@bendichter](https://github.com/bendichter) [@jjnesbitt](https://github.com/jjnesbitt))
+- Update sorting controls for Dandisets page [#2358](https://github.com/dandi/dandi-archive/pull/2358) ([@naglepuff](https://github.com/naglepuff))
+- Auto-allow people with `@nih.gov` and `@janelia.hhmi.org` email addresses [#2340](https://github.com/dandi/dandi-archive/pull/2340) ([@kabilar](https://github.com/kabilar) [@waxlamp](https://github.com/waxlamp))
+
+#### 🐛 Bug Fix
+
+- Check to see if cookies are enabled for banner message [#2359](https://github.com/dandi/dandi-archive/pull/2359) ([@naglepuff](https://github.com/naglepuff))
+- Revert "Convert StagingApplication to a proxy model" [#2357](https://github.com/dandi/dandi-archive/pull/2357) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Convert StagingApplication to a proxy model [#2339](https://github.com/dandi/dandi-archive/pull/2339) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Make eslint fail on warning [#2360](https://github.com/dandi/dandi-archive/pull/2360) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- Remove import_dandisets command from docs [#2351](https://github.com/dandi/dandi-archive/pull/2351) ([@asmacdo](https://github.com/asmacdo))
+
+#### 🧪 Tests
+
+- Parametrize e2e tests in CI to run in both prod/dev modes [#2361](https://github.com/dandi/dandi-archive/pull/2361) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 7
+
+- Austin Macdonald ([@asmacdo](https://github.com/asmacdo))
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+
+---
+
 # v0.8.1 (Mon Apr 21 2025)
 
 #### 🏠 Internal
