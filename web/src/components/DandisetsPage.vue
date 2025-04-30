@@ -149,7 +149,6 @@
     </div>
     <DandisetList
       v-if="dandisets && dandisets.length"
-      class="mx-4 mx-md-8 my-8"
       :dandisets="dandisets"
     />
     <v-container v-else>
