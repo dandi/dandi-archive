@@ -1,3 +1,15 @@
+# v0.10.0 (Wed Apr 30 2025)
+
+#### 🚀 Enhancement
+
+- Remove margin around DandisetList [#2366](https://github.com/dandi/dandi-archive/pull/2366) ([@naglepuff](https://github.com/naglepuff))
+
+#### Authors: 1
+
+- Michael Nagler ([@naglepuff](https://github.com/naglepuff))
+
+---
+
 # v0.9.0 (Wed Apr 30 2025)
 
 #### 🚀 Enhancement
