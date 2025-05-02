@@ -184,10 +184,11 @@ A django-admin script should be created and executed to create a `Dandiset DOI` 
 - Test site of datacite had different result of validation that the primary one
 
 - `Draft` DOI is not visible/usable by users. We might want to switch it to `Findable` as soon ASAP (when datacite validates record ok).
-- `Findable` DOI cannot be deleted, but in principle we allow for deletion of dandisets.
-  - Option 1: We might want a dedicated 404 page for deleted dandisets, then we adjust DOI record to point to that page.
-  - Option 2: at least a message that the dandiset was deleted, and ideally describe the reason why it was deleted ("Upon request of maintainer", "Due to violation of terms of service", etc.)
-  - Option 3: We can "hide" the DOI by changing it from Findable to Registered
+- Dandisets can be deleted. In such cases, upon deletion of a dandiset:
+  - if DOI was a `Draft` DOI - just delete it as well.
+  - if DOI was a `Findable` DOI - convert to `Registered` DOI (follows [datacite best practices](https://support.datacite.org/docs/tombstone-pages))
+  - Also at the level of the DANDI archive itself we should provide tombstone page so URL is still "working" (#3211)
+  - If no tombstone page support added, just adjusted URL in datacite record to point to https://www.datacite.org/invalid.html
 - Should we do anything at dandischema level?
   - yes
     - Needs to be able to mint `Draft DOI`
