@@ -163,6 +163,7 @@ Instead, the `Draft Dandiset` DOI field will be where the `Dandiset DOI` is stor
 It will need to be extended to:
     - "publish" `Draft DOI` to `Findable DOI`
     - "hide" `Findable DOI` to `Registered DOI`
+    - Produce `Dandiset DOI` and `Version DOI` (only does version DOI currently)
 
 We will keep (and deprecate) the `publish` parameter, and add a new parameter `event` which is either:
     - (None): Draft DOI
