@@ -202,7 +202,6 @@ We discussed annotating the DOI, ie "potentially incorrect metadata", but we ult
     - We do not need to annotate `Draft DOI` metadata since it is not visible.
     - If the `Dandiset DOI` is visible on the Draft Dandiset page, we should consider changing the "Cite As" or add an additional field.
     - Zenodo's "Concept DOIs" are presented as "Cite all versions" but we didn't think this was clear enough.
-- Test site of datacite had different result of validation that the primary one
 - We may want to include `Dandiset DOI` somewhere on published versions too, in addition to the `Version DOI` which we currently use.
     - The "Draft Dandiset" Version will be populated with `Dandiset DOI`, so this may not be necessary.
 - Should we somehow reflect interactions with DataCite in Audit log? Possible things to log:
