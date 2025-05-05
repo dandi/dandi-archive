@@ -14,8 +14,8 @@ Version DOI: `https://doi.org/10.48324/dandi.000027/0.210831.2033`
 
 The Dandiset DOI will always refer to the DLP
 
-At creation the `Dandiset DOI` will be a DataCite `Draft DOI`, but will be "promoted" to a DataCite `Findable DOI` as soon as possible.
-`Version DOI` will always be a `Findable DOI`.
+At creation the `Dandiset DOI` will be a DataCite `Draft DOI`, but will be "promoted" to a DataCite `Findable DOI` as soon as there is a published version.
+A `Version DOI` will be created as a `Findable DOI`.
 
 ## The current approach
 
@@ -51,29 +51,39 @@ DataCite allows for three types of DOIs ([DataCite](https://support.datacite.org
 
 ## Proposed Solution
 
-- Upon creation of a **public** dandiset, mint a `Dandiset DOI` (a DataCite `Draft DOI`) `10.48324/dandi.{dandiset.id}` with
-  - *minimal metadata* entered during creation request (title, description, license)
-  - DLP URL `https://dandiarchive.org/dandiset/{dandiset.id}`
-  - For embargoed dandiset, **do not** specify any metadata besides the DLP URL.
-  - If minting a DOI fails, we need to raise exception to inform developers about the issue but proceed with the creation of the dandiset.
-- Upon changes to a non-embargoed, draft dandiset metadata record:
-  - If `Draft DOI`, attempt to "promote" it to `Findable`.
-    - If validation fails - keep `Draft DOI` (very limited validation), attempt to update datacite metadata record while keeping the same target URL.
-    - **Question to clear up**: what happens to `Draft DOI` if metadata record is invalid? It seems to create one with no metadata, but does it update only the fields it knows about?
-  - If `Findable DOI`
-    - if draft version with no prior publications, but which had legit metadata, we try to update metadata.
-      - **Question to clear up** If fails, we either ignore or just add a comment somewhere that "record might not reflect the most recent changes to draft version".
-      - **Question to clear up** If we add to validation procedures to dandiset updates, (validation against datacite metadata record), we can report errors to the user so they can be addressed prior to attempted publication. May be we should validate only if no other errors (our schema validation) were detected to reduce noise, or just give a summary that "Metadata is not satisfying datacite model, fix known metadata errors first."
-    - if dandiset was published at least once (has version) -- we do not update anything since DLP points to that published version.
-  - **TODO: figure out how to annotate Draft version, so it always says that it is a draft version and thus potentially not used for citation if that could be avoided**
-- Upon changes to embargoed dandiset metadata record, don't do anything.
-- Upon unembargoing dandiset: update `Draft DOI` metadata record with current metadata and attempt to promote to a `Findable DOI` **after** unembargoing.
-- Upon publication of the dandiset:
-  - (already done currently) mint a proper `Findable` `Version DOI`, ie `10.48324/dandi.{dandiset.id}/{version}`
-  - update `Dandiset DOI` `10.48324/dandi.{dandiset.id}` with metadata provided for the `Version DOI`, **while keeping URL pointing to DLP instead of the released version**.
-    - if `Dandiset DOI` was a `Draft DOI` state, promote to `Findable DOI` (should work since we know metadata record passed validation).
-       - **Question to clear up**:how to do that in API
-    - **Question to clear up**: behavior on what happens if metadata record is invalid?
+- For **Public dandisets**:
+    - Upon creation:
+        - mint a `Dandiset DOI` (a DataCite `Draft DOI`) `10.48324/dandi.{dandiset.id}` with *minimal metadata* entered during creation request (title, description, license)
+        - URL should point be DLP `https://dandiarchive.org/dandiset/{dandiset.id}`
+        - If minting a DOI fails, we need to raise exception to inform developers about the issue but proceed with the creation of the dandiset.
+    - Upon updates to a draft dandiset metadata **prior to first publication**:
+        - Update the datacite metadata of the `Draft DOI`, (leave as draft)
+        - If validation fails, log error and continue
+    - Upon deletion of a draft dandiset metadata **prior to first publication**:
+        - Delete the `Dandiset DOI` (Draft) from Datacite
+    - Upon **first publication** of a dandiset:
+        - Mint a new `Version DOI` (Findable) (already done currently), ie `10.48324/dandi.{dandiset.id}/{version}`
+        - Update `Dandiset DOI` metadata to match published version
+        - promote `Dandiset DOI` (Draft) to `Findable DOI`
+    - Upon updates to draft dandiset metadata **after the first publication**"
+        - no-op. The `Dandiset DOI` metadata will match the most recent publication.
+    - Upon deletion of a draft dandiset metadata **after the first publication**:
+        - "hide" the `Dandiset DOI` (Findable) to `Registered DOI`
+    - Upon **subsequent publications** of a dandiset:
+        - Mint a new `Version DOI`
+        - Update `Dandiset DOI` metadata to match published version
+- For **embargoed dandiset**:
+    - Upon creation, no DOI is created.
+    - Upon changes to embargoed dandiset metadata record, don't do anything.
+    - Upon deletion of an embargoed dandiset:
+        - Delete the `Dandiset DOI` (Draft) from Datacite
+    - Upon unembargoing dandiset:
+        - If there are published versions:
+            - Mint `Dandiset DOI` (Findable) with latest published version of metadata,
+            - Mint `Version DOI` for each published version.
+        - If there are no published versions:
+            - Mint `Dandiset DOI` (Draft) with latest metadata,
+
 
 ### Sequence Diagram
 
@@ -172,44 +182,61 @@ sequenceDiagram
 
 A django-admin script should be created and executed to create a `Dandiset DOI` for all existing dandisets.
 
-**Question to address**: Will adding a `Dandiset DOI` in addition to `Version DOI` require a db migration?
+No new field will be added for `Dandiset DOI`.
+Instead, the `Draft Dandiset` DOI field will be where the `Dandiset DOI` is stored.
 
-## Concerns to keep in mind/address
+### Dandi Schema Changes
 
-- Draft dandiset might not have sufficient (or valid) metadata to promote to a `Findable` DOI, thus causing issues with minting a DOI
-  - **Solution**: start with Draft (not findable) DOI, and then upon publication promote to a "findable" DOI.
-  - **Follow up concern**: after dandiset and DOI publish, metadata of the Draft version of the dandiset could still be changed.
-    This potentially making changed record again "invalid".
-    Should be Ok'ish
-- Test site of datacite had different result of validation that the primary one
+`dandi-schema` function `to_datacite` is currently only able to create a `Draft DOI` (`publish=True`) or create a `Findable DOI` (`publish=False`)
 
-- `Draft` DOI is not visible/usable by users. We might want to switch it to `Findable` as soon ASAP (when datacite validates record ok).
+It will need to be extended to:
+    - "publish" `Draft DOI` to `Findable DOI`
+    - "hide" `Findable DOI` to `Registered DOI`
+
+We will keep (and deprecate) the `publish` parameter, and add a new parameter `event` which is either:
+    - (None): Draft DOI
+    - `publish`: Findable DOI
+    - `hide`: Registered DOI
+
+## Alternatives Explored
+
+### Creating DOIs for Embargoed Dandisets
+
+We opted not to create DOIs for embargoed Dandisets because:
+ - We own the prefix, and so there is no need to "reserve"
+ - We should avoid sending any potentially secret metadata to a 3rd party, even if it is not publicly searchable.
+ - If we were to create a DOI with fake metadata that probably would not have any value at all.
+ - What the DOIs will eventually be upon publication is semantically determined, so the value can be used even prior to being "real".
+
+### Promoting Draft DOIs to Findable for Draft Dandisets
+
+There might be some value in having a `Findable DOI` (Version DOI and/or Dandiset DOI) that points to the draft version of a Dandiset.
+This is because `Draft` DOI is not visible/usable by users.
+
+However, if we promote the `Draft DOI` to `Findable` as soon as it is valid, and the user then change it to be invalid again, the DOI metadata will be wrong.
+We discussed annotating the DOI, ie "potentially incorrect metadata", but we ultimately decided that the messiness is not worth the value.
+
 - Dandisets can be deleted. In such cases, upon deletion of a dandiset:
   - if DOI was a `Draft` DOI - just delete it as well.
   - if DOI was a `Findable` DOI - convert to `Registered` DOI (follows [datacite best practices](https://support.datacite.org/docs/tombstone-pages))
   - Also at the level of the DANDI archive itself we should provide tombstone page so URL is still "working" (#3211)
   - If no tombstone page support added, just adjusted URL in datacite record to point to https://www.datacite.org/invalid.html
-- Should we do anything at dandischema level?
-  - yes
-    - Needs to be able to mint `Draft DOI`
-    - Needs to be able to promote `Draft DOI` to `Findable DOI`
-  - potentially model might need to change
 
-- Should we do anything at DLP level?
-    - We may want to include `Dandiset DOI` somewhere, in addition to the `Version DOI` which we currently use.
+## Concerns to keep in mind/address
 
+- **Question to clear up**: what happens to `Draft DOI` if metadata record is invalid?
+    - It seems to create one with no metadata, but does it update only the fields it knows about?
+- **Question to clear up** If we add to validation procedures to dandiset updates, (validation against datacite metadata record), we can report errors to the user so they can be addressed prior to attempted publication. May be we should validate only if no other errors (our schema validation) were detected to reduce noise, or just give a summary that "Metadata is not satisfying datacite model, fix known metadata errors first."
+- **TODO: figure out how to annotate Draft version, so it always says that it is a draft version and thus potentially not used for citation if that could be avoided**
+    - We do not need to annotate `Draft DOI` metadata since it is not visible.
+    - If the `Dandiset DOI` is visible on the Draft Dandiset page, we should consider changing the "Cite As" or add an additional field.
+    - Zenodo's "Concept DOIs" are presented as "Cite all versions" but we didn't think this was clear enough.
+- Test site of datacite had different result of validation that the primary one
+- We may want to include `Dandiset DOI` somewhere on published versions too, in addition to the `Version DOI` which we currently use.
+    - The "Draft Dandiset" Version will be populated with `Dandiset DOI`, so this may not be necessary.
 - Should we somehow reflect interactions with DataCite in Audit log? Possible things to log:
   - `Dandiset DOI`
     - Success/Fail creation of `Draft DOI`
     - Success/Fail promotion of `Draft DOI` to `Findable DOI` (Expected to fail if metadata is incomplete)
   - `Version DOI`
     - Success/Fail creation of `Findable DOI`
-
-# Targets TODO before implementation
-
-- develop a script, which tests on test fabric of datacite changes as introduced to all dandisets in the archive by
-  - for each dandiset
-    - generate a record for overall *dandiset DOI* corresponding to metadata of the first release if any exists, otherwise corresponding to metadata of the draft version
-    - for each release: mint a new *version DOI* for that release + possibly update *dandiset DOI* to correspond to potential changes in metadata
-    - update *dandiset DOI*  to metadata of draft version
-
