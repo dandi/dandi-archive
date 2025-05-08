@@ -45,27 +45,38 @@ def generate_doi_data(version: Version, version_doi=True):
     datacite_payload = to_datacite(metadata)
     return (doi, datacite_payload)
 
-def create_doi(datacite_payload: dict) -> str:
-    # If DOI isn't configured, skip the API call
+def create_or_update_doi(datacite_payload: dict) -> str:
     if not doi_configured():
-        try:
-            requests.post(
-                settings.DANDI_DOI_API_URL,
-                json=datacite_payload,
-                auth=requests.auth.HTTPBasicAuth(
-                    settings.DANDI_DOI_API_USER,
-                    settings.DANDI_DOI_API_PASSWORD,
-                ),
-                timeout=30,
-            ).raise_for_status()
-        except requests.exceptions.HTTPError as e:
+        print("DOI NOT CONFIGURED!!!")
+        return
+
+    doi = datacite_payload["data"]["attributes"]["doi"]
+    url = settings.DANDI_DOI_API_URL
+    auth = requests.auth.HTTPBasicAuth(settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
+
+    try:
+        response = requests.post(url, json=datacite_payload, auth=auth, timeout=30)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        if e.response is not None and e.response.status_code == 422:
+            # Retry with PUT if DOI already exists
+            update_url = f"{url}/{doi}"
+            try:
+                update_response = requests.put(update_url, json=datacite_payload, auth=auth, timeout=30)
+                update_response.raise_for_status()
+            except Exception:
+                logger.exception('Failed to update existing DOI %s', doi)
+                logger.exception(datacite_payload)
+                if e.response:
+                    logger.exception(e.response.text)
+                raise
+        else:
             logger.exception('Failed to create DOI %s', doi)
-            logger.exception(request_body)
+            logger.exception(datacite_payload)
             if e.response:
                 logger.exception(e.response.text)
             raise
-    else:
-        print("DOI NOT CONFIGURED!!!")
+
 
 def delete_doi(doi: str) -> None:
     # If DOI isn't configured, skip the API call

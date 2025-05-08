@@ -193,8 +193,8 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
             version = Version.objects.get(id=version_id)
             version_doi, version_doi_payload = doi.generate_doi_data(version, version_doi=True)
             dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(version, version_doi=False)
-            doi.create_doi(dandiset_doi_payload)
-            doi.create_doi(version_doi_payload)
+            doi.create_or_update_doi(dandiset_doi_payload)
+            doi.create_or_update_doi(version_doi_payload)
             version.doi = version.doi
             draft_version = version.dandiset.draft_version
             draft_version.doi = dandiset_doi
