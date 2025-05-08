@@ -34,11 +34,13 @@ def generate_doi_data(version: Version, version_doi=True):
     prefix = settings.DANDI_DOI_API_PREFIX or '10.80507'
     dandiset_id = version.dandiset.identifier
     version_id = version.version
+    metadata = version.metadata
     if version_doi:
         doi = f'{prefix}/dandi.{dandiset_id}/{version_id}'
     else:
         doi = f'{prefix}/dandi.{dandiset_id}'
-    metadata = version.metadata
+        # Dandiset DOI is the same as version url without version
+        metadata['url'] = metadata['url'].rsplit('/', 1)[0]
     metadata['doi'] = doi
     # TODO(asmacdo) findable dois
     # datacite_body = to_datacite(metadata, event=event)
