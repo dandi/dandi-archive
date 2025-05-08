@@ -188,15 +188,43 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # published version has been committed to DB.
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
-        def _create_version_doi(version_id: int):
+        def _create_and_update_dois(version_id: int):
             # Create Version DOI
             version = Version.objects.get(id=version_id)
-            version.doi = doi.create_version_doi(version)
+            version_doi, version_doi_payload = doi.generate_doi_data(version, version_doi=True)
+            dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(version, version_doi=False)
+            doi.create_doi(dandiset_doi_payload)
+            doi.create_doi(version_doi_payload)
+            version.doi = version.doi
+            draft_version = version.dandiset.draft_version
+            draft_version.doi = dandiset_doi
+            draft_version.save()
             version.save()
+            print("+++++++++++++++++++++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("++++                           ++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++ +++++++++++++++++")
+            print("+++++++++++++++++++++++++++++++++++")
             # PUT to Dandiset DOI, should reference this version now
-            doi.update_dandiset_doi(version)
+            # TODO
+            # doi.update_dandiset_doi(version)
 
-        transaction.on_commit(lambda: _create_version_doi(new_version.id))
+        # def _create_dandiset_doi(version_id: int):
+        #     version = Version.objects.get(id=version_id)
+        #     version.doi = doi.create_dandiset_doi(version)
+        #     version.save()
+        #     version.dandiset.doi = version.doi
+        #     version.dandiset.save()
+        #
+        # transaction.on_commit(lambda: _create_dandiset_doi(draft_version.id))
+        transaction.on_commit(lambda: _create_and_update_dois(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(

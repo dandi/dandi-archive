@@ -26,7 +26,7 @@ def doi_configured() -> bool:
 
 # TODO(asmacdo) findable dois
 # def _generate_doi_data(version: Version, event: str):
-def _generate_doi_data(version: Version, version_doi=True):
+def generate_doi_data(version: Version, version_doi=True):
     from dandischema.datacite import to_datacite
 
     publish = settings.DANDI_DOI_PUBLISH
@@ -42,69 +42,16 @@ def _generate_doi_data(version: Version, version_doi=True):
     metadata['doi'] = doi
     # TODO(asmacdo) findable dois
     # datacite_body = to_datacite(metadata, event=event)
-    datacite_body = to_datacite(metadata, version_doi=version_doi)
-    return (doi, datacite_body)
+    datacite_payload = to_datacite(metadata)
+    return (doi, datacite_payload)
 
-def update_dandiset_doi(version: Version) -> str:
-    payload = {
-        "data": {
-            "attributes": {
-                "url": version.metadata["url"]
-            }
-        }
-    }
-    if doi_configured():
-        logger.info(f"updating {version.dandiset} DOI {version.dandiset.doi} pointer to {version.metadata['url']}!")
-        try:
-            requests.put(
-                f"{settings.DANDI_DOI_API_URL}/{version.dandiset.doi}",
-                json=payload,
-                auth=requests.auth.HTTPBasicAuth(
-                    settings.DANDI_DOI_API_USER,
-                    settings.DANDI_DOI_API_PASSWORD,
-                ),
-                timeout=30,
-            ).raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.exception('Failed to update Dandiset DOI %s', version.dandiset.doi)
-            logger.exception(payload)
-            if e.response:
-                logger.exception(e.response.text)
-            raise
-    else:
-        logger.debug("Skipping Datacite API usage, doi is not configured.")
-
-
-def create_dandiset_doi(version: Version) -> str:
-    doi, request_body = _generate_doi_data(version, version_doi=False)
-    if doi_configured():
-        try:
-            requests.post(
-                settings.DANDI_DOI_API_URL,
-                json=request_body,
-                auth=requests.auth.HTTPBasicAuth(
-                    settings.DANDI_DOI_API_USER,
-                    settings.DANDI_DOI_API_PASSWORD,
-                ),
-                timeout=30,
-            ).raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.exception('Failed to create DOI %s', doi)
-            logger.exception(request_body)
-            if e.response:
-                logger.exception(e.response.text)
-            raise
-    return doi
-
-
-def create_version_doi(version: Version) -> str:
-    doi, request_body = _generate_doi_data(version, version_doi=True)
+def create_doi(datacite_payload: dict) -> str:
     # If DOI isn't configured, skip the API call
-    if doi_configured():
+    if not doi_configured():
         try:
             requests.post(
                 settings.DANDI_DOI_API_URL,
-                json=request_body,
+                json=datacite_payload,
                 auth=requests.auth.HTTPBasicAuth(
                     settings.DANDI_DOI_API_USER,
                     settings.DANDI_DOI_API_PASSWORD,
@@ -119,8 +66,6 @@ def create_version_doi(version: Version) -> str:
             raise
     else:
         print("DOI NOT CONFIGURED!!!")
-    return doi
-
 
 def delete_doi(doi: str) -> None:
     # If DOI isn't configured, skip the API call
