@@ -95,7 +95,7 @@
           <div>
             Select a license under which to share the contents of this Dandiset.
             You can learn more about <a
-              href="https://docs.dandiarchive.org/35_data_licenses/"
+              :href="`${dandiDocumentationUrl}/user-guide-sharing/data-licenses`"
               target="_blank"
               rel="noopener"
             >
@@ -158,7 +158,7 @@ import { useRouter } from 'vue-router';
 import type { ComputedRef } from 'vue';
 import { dandiRest, loggedIn } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import { sandboxDocsUrl } from '@/utils/constants';
+import { dandiDocumentationUrl, sandboxDocsUrl } from '@/utils/constants';
 
 import type { IdentifierForAnAward, LicenseType, License } from '@/types';
 

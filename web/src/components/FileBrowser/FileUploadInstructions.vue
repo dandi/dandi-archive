@@ -36,7 +36,7 @@
           <span class="text-body-2 text-grey-darken-1">
             <span class="text-body-2 text-grey-darken-1">
               Follow the installation instructions in the
-              <a href="https://docs.dandiarchive.org/user-guide-sharing/uploading-data">
+              <a :href="`${dandiDocumentationUrl}/user-guide-sharing/uploading-data`">
                 DANDI Docs
               </a> .
             </span>
@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDandisetStore } from '@/stores/dandiset';
+import { dandiDocumentationUrl } from '@/utils/constants';
 
 const store = useDandisetStore();
 const dandisetIdentifier = computed(() => store.dandiset?.dandiset.identifier);
