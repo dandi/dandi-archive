@@ -1,8 +1,7 @@
 {% autoescape off %}
 Dear {{ greeting_name }},
 
-Your DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account
-to start creating dandisets and uploading data.
+Your DANDI account has been approved. You can go to {{ dandi_web_app_url }} and login with your GitHub account to start creating dandisets and uploading data.
 
 Please use the following links to post any questions or issues.
 
