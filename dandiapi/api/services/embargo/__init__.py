@@ -80,9 +80,9 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     try:
         _create_dandiset_draft_doi(v)
         logger.info('Draft DOI created for unembargoed dandiset')
-    except Exception as e:
+    except Exception:
         # Log error but continue with unembargo
-        logger.exception(f"Failed to create DOI during unembargo for dandiset {ds.identifier}: {e}")
+        logger.exception('Failed to create DOI during unembargo for dandiset %s', ds.identifier)
 
     # Notify owners of completed unembargo
     send_dandiset_unembargoed_message(ds)

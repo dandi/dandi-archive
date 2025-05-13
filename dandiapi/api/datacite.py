@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 import requests
@@ -39,15 +39,15 @@ class DataCiteClient:
         """Check if the DOI client is properly configured."""
         return all(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
 
-    def format_doi(self, dandiset_id: str, version_id: Optional[str] = None) -> str:
+    def format_doi(self, dandiset_id: str, version_id: str | None = None) -> str:
         """
         Format a DOI string for a dandiset or version.
-        
+
         Args:
             dandiset_id: The dandiset identifier.
             version_id: Optional version identifier. If provided, creates a Version DOI.
                         If omitted, creates a Dandiset DOI.
-        
+
         Returns:
             Formatted DOI string.
         """
@@ -56,14 +56,11 @@ class DataCiteClient:
         return f'{self.api_prefix}/dandi.{dandiset_id}'
 
     def generate_doi_data(
-        self, 
-        version: Version, 
-        version_doi: bool = True, 
-        event: Optional[str] = None
-    ) -> Tuple[str, Dict]:
+        self, version: Version, version_doi: bool = True, event: str | None = None
+    ) -> tuple[str, dict]:
         """
         Generate DOI data for a version or dandiset.
-        
+
         Args:
             version: Version object containing metadata.
             version_doi: If True, generate a Version DOI, otherwise generate a Dandiset DOI.
@@ -71,7 +68,7 @@ class DataCiteClient:
                 - None: Creates a Draft DOI.
                 - "publish": Creates or promotes to a Findable DOI.
                 - "hide": Converts to a Registered DOI.
-        
+
         Returns:
             Tuple of (doi_string, datacite_payload)
         """
@@ -91,67 +88,71 @@ class DataCiteClient:
             doi = self.format_doi(dandiset_id)
             # Dandiset DOI is the same as version url without version
             metadata['url'] = metadata['url'].rsplit('/', 1)[0]
-        
+
         metadata['doi'] = doi
-        
+
         # Generate the datacite payload with the appropriate event
         datacite_payload = to_datacite(metadata, event=event)
-        
+
         return (doi, datacite_payload)
 
-    def create_or_update_doi(self, datacite_payload: Dict) -> Optional[str]:
+    def create_or_update_doi(self, datacite_payload: dict) -> str | None:
         """
         Create or update a DOI with the DataCite API.
-        
+
         Args:
             datacite_payload: The DOI payload to send to DataCite.
-            
+
         Returns:
             The DOI string on success, None on failure when not configured.
-            
+
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
         if not self.is_configured():
-            logger.warning("DOI NOT CONFIGURED!!!")
+            logger.warning('DOI NOT CONFIGURED!!!')
             return None
 
-        doi = datacite_payload["data"]["attributes"]["doi"]
-        
+        doi = datacite_payload['data']['attributes']['doi']
+
         # Check if we're trying to create a non-draft DOI when it's not allowed
-        event = datacite_payload["data"]["attributes"].get("event")
-        if not DOI_PUBLISH_ENABLED and event in ["publish", "hide"]:
+        event = datacite_payload['data']['attributes'].get('event')
+        if not DOI_PUBLISH_ENABLED and event in ['publish', 'hide']:
             # Remove the event to make it a draft DOI
-            if "event" in datacite_payload["data"]["attributes"]:
-                del datacite_payload["data"]["attributes"]["event"]
-            
+            if 'event' in datacite_payload['data']['attributes']:
+                del datacite_payload['data']['attributes']['event']
+
             logger.warning(
-                f"DANDI_DOI_PUBLISH is not enabled. DOI {doi} will be created as draft."
+                'DANDI_DOI_PUBLISH is not enabled. DOI %s will be created as draft.', doi
             )
 
         try:
             response = requests.post(
-                self.api_url, 
-                json=datacite_payload, 
-                auth=self.auth, 
+                self.api_url,
+                json=datacite_payload,
+                auth=self.auth,
                 headers=self.headers,
-                timeout=self.timeout
+                timeout=self.timeout,
             )
             response.raise_for_status()
+            # Return early on success
             return doi
         except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code == 422:
+            # HTTP 422 status code means DOI already exists
+            already_exists_code = 422
+            if e.response is not None and e.response.status_code == already_exists_code:
                 # Retry with PUT if DOI already exists
-                update_url = f"{self.api_url}/{doi}"
+                update_url = f'{self.api_url}/{doi}'
                 try:
                     update_response = requests.put(
-                        update_url, 
-                        json=datacite_payload, 
+                        update_url,
+                        json=datacite_payload,
                         auth=self.auth,
                         headers=self.headers,
-                        timeout=self.timeout
+                        timeout=self.timeout,
                     )
                     update_response.raise_for_status()
+                    # Success with update
                     return doi
                 except Exception:
                     logger.exception('Failed to update existing DOI %s', doi)
@@ -169,91 +170,79 @@ class DataCiteClient:
     def delete_or_hide_doi(self, doi: str) -> None:
         """
         Delete a draft DOI or hide a findable DOI depending on its state.
-        
+
         This method first checks the DOI's state and then either deletes it (if it's a draft)
         or hides it (if it's findable). Hiding a DOI requires DANDI_DOI_PUBLISH to be enabled.
-        
+
         Args:
             doi: The DOI to delete or hide.
-            
+
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
         # If DOI isn't configured, skip the API call
         if not self.is_configured():
-            logger.warning(f"DOI NOT CONFIGURED!!! Skipping operations for {doi}")
+            logger.warning('DOI NOT CONFIGURED!!! Skipping operations for %s', doi)
             return
 
-        doi_url = f"{self.api_url}/{doi}"
+        doi_url = f'{self.api_url}/{doi}'
 
         try:
             # First, get DOI information to check its state
             response = requests.get(
-                doi_url, 
-                auth=self.auth,
-                headers=self.headers,
-                timeout=self.timeout
+                doi_url, auth=self.auth, headers=self.headers, timeout=self.timeout
             )
             response.raise_for_status()
-            
+
             doi_data = response.json()
             # Get the state, defaulting to 'draft' if absent
             doi_state = doi_data.get('data', {}).get('attributes', {}).get('state', 'draft')
-            
+
             if doi_state == 'draft':
                 # Draft DOIs can be deleted
                 delete_response = requests.delete(
-                    doi_url, 
-                    auth=self.auth,
-                    headers=self.headers,
-                    timeout=self.timeout
+                    doi_url, auth=self.auth, headers=self.headers, timeout=self.timeout
                 )
                 delete_response.raise_for_status()
-                logger.info(f"Successfully deleted draft DOI: {doi}")
+                logger.info('Successfully deleted draft DOI: %s', doi)
             else:
                 # Findable DOIs must be hidden
                 # Check if DANDI_DOI_PUBLISH is enabled for hiding
                 if not DOI_PUBLISH_ENABLED:
                     logger.warning(
-                        f"DANDI_DOI_PUBLISH is not enabled. DOI {doi} will remain findable."
+                        'DANDI_DOI_PUBLISH is not enabled. DOI %s will remain findable.', doi
                     )
                     return
-                
+
                 # Create hide payload
                 hide_payload = {
-                    "data": {
-                        "id": doi,
-                        "type": "dois",
-                        "attributes": {
-                            "event": "hide"
-                        }
-                    }
+                    'data': {'id': doi, 'type': 'dois', 'attributes': {'event': 'hide'}}
                 }
-                
+
                 hide_response = requests.put(
                     doi_url,
-                    json=hide_payload, 
+                    json=hide_payload,
                     auth=self.auth,
                     headers=self.headers,
-                    timeout=self.timeout
+                    timeout=self.timeout,
                 )
                 hide_response.raise_for_status()
-                logger.info(f"Successfully hid findable DOI: {doi}")
-                
+                logger.info('Successfully hid findable DOI: %s', doi)
+
         except requests.exceptions.HTTPError as e:
             if e.response and e.response.status_code == requests.codes.not_found:
-                logger.warning(f'Tried to get data for nonexistent DOI {doi}')
+                logger.warning('Tried to get data for nonexistent DOI %s', doi)
                 return
-            logger.exception(f'Failed to delete or hide DOI {doi}')
+            logger.exception('Failed to delete or hide DOI %s', doi)
             raise
 
     def delete_doi(self, doi: str) -> None:
         """
         Delete a DOI if it's in draft state.
-        
+
         Args:
             doi: The DOI to delete.
-            
+
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
@@ -262,12 +251,12 @@ class DataCiteClient:
     def hide_doi(self, doi: str) -> None:
         """
         Convert a Findable DOI to a Registered DOI.
-        
+
         This is used when deleting a published dandiset or version.
-        
+
         Args:
             doi: The DOI to hide.
-            
+
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
@@ -285,15 +274,13 @@ def doi_configured() -> bool:
 
 
 def generate_doi_data(
-    version: Version, 
-    version_doi: bool = True, 
-    event: Optional[str] = None
-) -> Tuple[str, Dict]:
+    version: Version, version_doi: bool = True, event: str | None = None
+) -> tuple[str, dict]:
     """Generate DOI data for a version or dandiset."""
     return datacite_client.generate_doi_data(version, version_doi, event)
 
 
-def create_or_update_doi(datacite_payload: Dict) -> Optional[str]:
+def create_or_update_doi(datacite_payload: dict) -> str | None:
     """Create or update a DOI with the DataCite API."""
     return datacite_client.create_or_update_doi(datacite_payload)
 
