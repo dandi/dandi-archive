@@ -77,13 +77,8 @@ class DataCiteClient:
         """
         from dandischema.datacite import to_datacite
 
-        # If DOI_PUBLISH_ENABLED is not True, we should only create draft DOIs
-        if not DOI_PUBLISH_ENABLED and event in ["publish", "hide"]:
-            logger.warning(
-                "DANDI_DOI_PUBLISH is not enabled. Requested event '%s' but creating draft DOI instead.",
-                event
-            )
-            event = None  # Force event to None (draft DOI)
+        # The DANDI_DOI_PUBLISH check is now handled in the API call functions
+        # to provide more specific context in the log messages
 
         dandiset_id = version.dandiset.identifier
         version_id = version.version
@@ -126,13 +121,13 @@ class DataCiteClient:
         # Check if we're trying to create a non-draft DOI when it's not allowed
         event = datacite_payload["data"]["attributes"].get("event")
         if not DOI_PUBLISH_ENABLED and event in ["publish", "hide"]:
+            # Remove the event to make it a draft DOI
+            if "event" in datacite_payload["data"]["attributes"]:
+                del datacite_payload["data"]["attributes"]["event"]
+            
             logger.warning(
-                "DANDI_DOI_PUBLISH is not enabled. Skipping create/update with event '%s' for DOI %s.",
-                event, doi
+                f"DANDI_DOI_PUBLISH is not enabled. DOI {doi} will be created as draft."
             )
-            # Return the DOI string even though we didn't create it
-            # This prevents errors in the calling code
-            return doi
 
         try:
             response = requests.post(
@@ -220,7 +215,7 @@ class DataCiteClient:
                 # Check if DANDI_DOI_PUBLISH is enabled for hiding
                 if not DOI_PUBLISH_ENABLED:
                     logger.warning(
-                        f"DANDI_DOI_PUBLISH is not enabled. Cannot hide findable DOI {doi}."
+                        f"DANDI_DOI_PUBLISH is not enabled. DOI {doi} will remain findable."
                     )
                     return
                 
