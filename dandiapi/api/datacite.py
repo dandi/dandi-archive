@@ -202,7 +202,8 @@ class DataCiteClient:
             response.raise_for_status()
             
             doi_data = response.json()
-            doi_state = doi_data['data']['attributes']['state']
+            # Get the state, defaulting to 'draft' if absent
+            doi_state = doi_data.get('data', {}).get('attributes', {}).get('state', 'draft')
             
             if doi_state == 'draft':
                 # Draft DOIs can be deleted
