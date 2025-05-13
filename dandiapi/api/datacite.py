@@ -17,8 +17,6 @@ DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
 
-# Whether DOI publishing is enabled
-DOI_PUBLISH_ENABLED = settings.DANDI_DOI_PUBLISH
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +115,7 @@ class DataCiteClient:
 
         # Check if we're trying to create a non-draft DOI when it's not allowed
         event = datacite_payload['data']['attributes'].get('event')
-        if not DOI_PUBLISH_ENABLED and event in ['publish', 'hide']:
+        if not settings.DANDI_DOI_PUBLISH and event in ['publish', 'hide']:
             # Remove the event to make it a draft DOI
             if 'event' in datacite_payload['data']['attributes']:
                 del datacite_payload['data']['attributes']['event']
@@ -208,7 +206,7 @@ class DataCiteClient:
             else:
                 # Findable DOIs must be hidden
                 # Check if DANDI_DOI_PUBLISH is enabled for hiding
-                if not DOI_PUBLISH_ENABLED:
+                if not settings.DANDI_DOI_PUBLISH:
                     logger.warning(
                         'DANDI_DOI_PUBLISH is not enabled. DOI %s will remain findable.', doi
                     )
