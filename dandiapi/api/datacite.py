@@ -32,6 +32,8 @@ class DataCiteClient:
         self.api_password = settings.DANDI_DOI_API_PASSWORD
         self.api_prefix = settings.DANDI_DOI_API_PREFIX or '10.80507'
         self.auth = requests.auth.HTTPBasicAuth(self.api_user, self.api_password)
+        self.headers = {'Accept': 'application/vnd.api+json'}
+        self.timeout = 30
 
     def is_configured(self) -> bool:
         """Check if the DOI client is properly configured."""
@@ -137,7 +139,8 @@ class DataCiteClient:
                 self.api_url, 
                 json=datacite_payload, 
                 auth=self.auth, 
-                timeout=30
+                headers=self.headers,
+                timeout=self.timeout
             )
             response.raise_for_status()
             return doi
@@ -149,8 +152,9 @@ class DataCiteClient:
                     update_response = requests.put(
                         update_url, 
                         json=datacite_payload, 
-                        auth=self.auth, 
-                        timeout=30
+                        auth=self.auth,
+                        headers=self.headers,
+                        timeout=self.timeout
                     )
                     update_response.raise_for_status()
                     return doi
@@ -167,6 +171,86 @@ class DataCiteClient:
                     logger.exception(e.response.text)
                 raise
 
+    def delete_or_hide_doi(self, doi: str) -> None:
+        """
+        Delete a draft DOI or hide a findable DOI depending on its state.
+        
+        This method first checks the DOI's state and then either deletes it (if it's a draft)
+        or hides it (if it's findable). Hiding a DOI requires DANDI_DOI_PUBLISH to be enabled.
+        
+        Args:
+            doi: The DOI to delete or hide.
+            
+        Raises:
+            requests.exceptions.HTTPError: If the API request fails.
+        """
+        # If DOI isn't configured, skip the API call
+        if not self.is_configured():
+            logger.warning(f"DOI NOT CONFIGURED!!! Skipping operations for {doi}")
+            return
+
+        doi_url = f"{self.api_url}/{doi}"
+
+        try:
+            # First, get DOI information to check its state
+            response = requests.get(
+                doi_url, 
+                auth=self.auth,
+                headers=self.headers,
+                timeout=self.timeout
+            )
+            response.raise_for_status()
+            
+            doi_data = response.json()
+            doi_state = doi_data['data']['attributes']['state']
+            
+            if doi_state == 'draft':
+                # Draft DOIs can be deleted
+                delete_response = requests.delete(
+                    doi_url, 
+                    auth=self.auth,
+                    headers=self.headers,
+                    timeout=self.timeout
+                )
+                delete_response.raise_for_status()
+                logger.info(f"Successfully deleted draft DOI: {doi}")
+            else:
+                # Findable DOIs must be hidden
+                # Check if DANDI_DOI_PUBLISH is enabled for hiding
+                if not DOI_PUBLISH_ENABLED:
+                    logger.warning(
+                        f"DANDI_DOI_PUBLISH is not enabled. Cannot hide findable DOI {doi}."
+                    )
+                    return
+                
+                # Create hide payload
+                hide_payload = {
+                    "data": {
+                        "id": doi,
+                        "type": "dois",
+                        "attributes": {
+                            "event": "hide"
+                        }
+                    }
+                }
+                
+                hide_response = requests.put(
+                    doi_url,
+                    json=hide_payload, 
+                    auth=self.auth,
+                    headers=self.headers,
+                    timeout=self.timeout
+                )
+                hide_response.raise_for_status()
+                logger.info(f"Successfully hid findable DOI: {doi}")
+                
+        except requests.exceptions.HTTPError as e:
+            if e.response and e.response.status_code == requests.codes.not_found:
+                logger.warning(f'Tried to get data for nonexistent DOI {doi}')
+                return
+            logger.exception(f'Failed to delete or hide DOI {doi}')
+            raise
+
     def delete_doi(self, doi: str) -> None:
         """
         Delete a DOI if it's in draft state.
@@ -177,29 +261,7 @@ class DataCiteClient:
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
-        # If DOI isn't configured, skip the API call
-        if not self.is_configured():
-            logger.debug('Skipping DOI deletion for %s since not configured', doi)
-            return
-
-        doi_url = f"{self.api_url}/{doi}"
-        with requests.Session() as s:
-            s.auth = (self.api_user, self.api_password)
-            try:
-                r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
-                r.raise_for_status()
-            except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code == requests.codes.not_found:
-                    logger.warning('Tried to get data for nonexistent DOI %s', doi)
-                    return
-                logger.exception('Failed to fetch data for DOI %s', doi)
-                raise
-            if r.json()['data']['attributes']['state'] == 'draft':
-                try:
-                    s.delete(doi_url).raise_for_status()
-                except requests.exceptions.HTTPError:
-                    logger.exception('Failed to delete DOI %s', doi)
-                    raise
+        self.delete_or_hide_doi(doi)
 
     def hide_doi(self, doi: str) -> None:
         """
@@ -213,37 +275,7 @@ class DataCiteClient:
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
-        if not self.is_configured():
-            logger.warning("DOI NOT CONFIGURED!!!")
-            return
-            
-        # If DOI_PUBLISH_ENABLED is not True, we should not hide DOIs
-        if not DOI_PUBLISH_ENABLED:
-            logger.warning(
-                "DANDI_DOI_PUBLISH is not enabled. Skipping hide operation for DOI %s.",
-                doi
-            )
-            return
-            
-        # Generate a minimal payload with "hide" event
-        hide_payload = {
-            "data": {
-                "id": doi,
-                "type": "dois",
-                "attributes": {
-                    "event": "hide"
-                }
-            }
-        }
-        
-        url = f"{self.api_url}/{doi}"
-        
-        try:
-            response = requests.put(url, json=hide_payload, auth=self.auth, timeout=30)
-            response.raise_for_status()
-        except Exception:
-            logger.exception('Failed to hide DOI %s', doi)
-            raise
+        self.delete_or_hide_doi(doi)
 
 
 # Singleton instance
