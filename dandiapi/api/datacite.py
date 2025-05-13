@@ -17,8 +17,8 @@ DANDI_DOI_SETTINGS = [
     (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
 ]
 
-# Default to False if setting doesn't exist
-DOI_PUBLISH_ENABLED = getattr(settings, 'DANDI_DOI_PUBLISH', False)
+# Whether DOI publishing is enabled
+DOI_PUBLISH_ENABLED = settings.DANDI_DOI_PUBLISH
 
 logger = logging.getLogger(__name__)
 
