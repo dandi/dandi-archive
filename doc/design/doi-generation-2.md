@@ -67,22 +67,19 @@ DataCite allows for three types of DOIs ([DataCite](https://support.datacite.org
         - promote `Dandiset DOI` (Draft) to `Findable DOI`
     - Upon updates to draft dandiset metadata **after the first publication**"
         - no-op. The `Dandiset DOI` metadata will match the most recent publication.
-    - Upon deletion of a draft dandiset metadata **after the first publication**:
-        - "hide" the `Dandiset DOI` (Findable) to `Registered DOI`
+    - Upon deletion of a published dandiset version (`VersionViewSet.destroy`) :
+        - "hide" the `Version DOI` (Findable) to `Registered DOI`
+    - Upon deletion of a dandiset (`DandisetViewSet.destroy`):
+        - "hide"  the `Dandiset DOI`  if `Findable` and delete if `Draft`
     - Upon **subsequent publications** of a dandiset:
         - Mint a new `Version DOI`
         - Update `Dandiset DOI` metadata to match published version
 - For **embargoed dandiset**:
     - Upon creation, no DOI is created.
     - Upon changes to embargoed dandiset metadata record, don't do anything.
-    - Upon deletion of an embargoed dandiset:
-        - Delete the `Dandiset DOI` (Draft) from Datacite
+    - Upon deletion of an embargoed dandiset: don't do anything.
     - Upon unembargoing dandiset:
-        - If there are published versions:
-            - Mint `Dandiset DOI` (Findable) with latest published version of metadata,
-            - Mint `Version DOI` for each published version.
-        - If there are no published versions:
-            - Mint `Dandiset DOI` (Draft) with latest metadata,
+        - Mint `Dandiset DOI` (Draft) with latest metadata,
 
 
 ### Sequence Diagram
@@ -169,8 +166,8 @@ sequenceDiagram
 
 A django-admin script should be created and executed to create a `Dandiset DOI` for all existing dandisets.
 
-No new field will be added for `Dandiset DOI`.
-Instead, the `Draft Dandiset` DOI field will be where the `Dandiset DOI` is stored.
+No DB migration will be needed, as no new field will be added to `Dandiset` model, and
+instead, the `Dandiset DOI` will be stored in the "draft" `Version`.
 
 ### Dandi Schema Changes
 
@@ -195,6 +192,8 @@ We opted not to create DOIs for embargoed Dandisets because:
  - We should avoid sending any potentially secret metadata to a 3rd party, even if it is not publicly searchable.
  - If we were to create a DOI with fake metadata that probably would not have any value at all.
  - What the DOIs will eventually be upon publication is semantically determined, so the value can be used even prior to being "real".
+ 
+ We might reconsider, if decision would be made to expose metadata of Embargoed Dandisets for the purpose of discovery.
 
 ### Promoting Draft DOIs to Findable for Draft Dandisets
 
