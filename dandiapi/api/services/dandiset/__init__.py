@@ -117,22 +117,7 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         # Record the audit event first so that the AuditRecord instance has a
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
-
-        # Handle DOI deletion/hiding based on whether it's been published
-        if has_doi:
-            # If there are published versions, the DOI is Findable and should be hidden
-            if dandiset.versions.exclude(version='draft').exists():
-                try:
-                    datacite.hide_doi(draft_version.doi)
-                except Exception:
-                    logger.exception('Failed to hide DOI %s', draft_version.doi)
-            # If no published versions, the DOI is a Draft and can be deleted
-            else:
-                try:
-                    datacite.delete_doi(draft_version.doi)
-                except Exception:
-                    logger.exception('Failed to delete DOI %s', draft_version.doi)
-
+        datacite.delete_or_hide_doi(draft_version.doi)
         dandiset.versions.all().delete()
         dandiset.delete()
 

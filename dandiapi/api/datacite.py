@@ -229,32 +229,6 @@ class DataCiteClient:
             logger.exception('Failed to delete or hide DOI %s', doi)
             raise
 
-    def delete_doi(self, doi: str) -> None:
-        """
-        Delete a DOI if it's in draft state.
-
-        Args:
-            doi: The DOI to delete.
-
-        Raises:
-            requests.exceptions.HTTPError: If the API request fails.
-        """
-        self.delete_or_hide_doi(doi)
-
-    def hide_doi(self, doi: str) -> None:
-        """
-        Convert a Findable DOI to a Registered DOI.
-
-        This is used when deleting a published dandiset or version.
-
-        Args:
-            doi: The DOI to hide.
-
-        Raises:
-            requests.exceptions.HTTPError: If the API request fails.
-        """
-        self.delete_or_hide_doi(doi)
-
 
 # Singleton instance
 datacite_client = DataCiteClient()
@@ -271,12 +245,5 @@ def create_or_update_doi(datacite_payload: dict) -> str | None:
     """Create or update a DOI with the DataCite API."""
     return datacite_client.create_or_update_doi(datacite_payload)
 
-
-def delete_doi(doi: str) -> None:
-    """Delete a DOI if it's in draft state."""
-    datacite_client.delete_doi(doi)
-
-
-def hide_doi(doi: str) -> None:
-    """Convert a Findable DOI to a Registered DOI."""
-    datacite_client.hide_doi(doi)
+def delete_or_hide_doi(datacite_payload: dict) -> str | None:
+    return datacite_client.delete_or_hide_doi(datacite_payload)
