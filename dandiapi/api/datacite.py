@@ -71,10 +71,6 @@ class DataCiteClient:
             Tuple of (doi_string, datacite_payload)
         """
         from dandischema.datacite import to_datacite
-
-        # The DANDI_DOI_PUBLISH check is now handled in the API call functions
-        # to provide more specific context in the log messages
-
         dandiset_id = version.dandiset.identifier
         version_id = version.version
         metadata = version.metadata.copy()  # Create a copy to avoid modifying the original
@@ -107,11 +103,11 @@ class DataCiteClient:
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
-        if not self.is_configured():
-            logger.warning('DOI NOT CONFIGURED!!!')
-            return None
-
         doi = datacite_payload['data']['attributes']['doi']
+
+        if not self.is_configured():
+            logger.warning('DOI API not configured. Skipping operations for %s', doi)
+            return None
 
         # Check if we're trying to create a non-draft DOI when it's not allowed
         event = datacite_payload['data']['attributes'].get('event')
@@ -178,9 +174,8 @@ class DataCiteClient:
         Raises:
             requests.exceptions.HTTPError: If the API request fails.
         """
-        # If DOI isn't configured, skip the API call
         if not self.is_configured():
-            logger.warning('DOI NOT CONFIGURED!!! Skipping operations for %s', doi)
+            logger.warning('DOI API not configured. Skipping operations for %s', doi)
             return
 
         doi_url = f'{self.api_url}/{doi}'
@@ -263,12 +258,6 @@ class DataCiteClient:
 
 # Singleton instance
 datacite_client = DataCiteClient()
-
-
-# Functional interface to maintain compatibility
-def doi_configured() -> bool:
-    """Check if DOI is configured."""
-    return datacite_client.is_configured()
 
 
 def generate_doi_data(

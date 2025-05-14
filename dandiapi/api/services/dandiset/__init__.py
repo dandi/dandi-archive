@@ -82,10 +82,6 @@ def _create_dandiset_draft_doi(draft_version: Version) -> None:
     Args:
         draft_version: The draft version of the dandiset.
     """
-    if not datacite.doi_configured():
-        logger.warning('DOI NOT CONFIGURED. Skipping Draft DOI creation.')
-        return
-
     # Generate a Draft DOI (event=None)
     dandiset_doi, dandiset_doi_payload = datacite.generate_doi_data(
         draft_version,
@@ -180,32 +176,27 @@ def unstar_dandiset(*, user, dandiset: Dandiset) -> int:
 def update_draft_doi(draft_version: Version) -> None:
     """
     Update or create a Draft DOI for a dandiset with the latest metadata.
-    
+
     This is called when a draft version's metadata is updated for a dandiset
     that has never been published.
-    
+
     Args:
         draft_version: The draft version of the dandiset with updated metadata.
     """
-    # Skip if DOI is not configured
-    if not datacite.doi_configured():
-        logger.warning('DOI NOT CONFIGURED. Skipping Draft DOI update.')
-        return
-        
     # Skip for dandisets that have published versions
     if draft_version.dandiset.versions.exclude(version='draft').exists():
         return
-    
+
     # Generate DOI payload with updated metadata
     dandiset_doi, dandiset_doi_payload = datacite.generate_doi_data(
         draft_version,
         version_doi=False,  # Generate a Dandiset DOI, not a Version DOI
         event=None,  # Keep as Draft DOI
     )
-    
+
     # Create or update the DOI
     datacite.create_or_update_doi(dandiset_doi_payload)
-    
+
     # If the version doesn't have a DOI yet, store it
     if draft_version.doi is None:
         draft_version.doi = dandiset_doi
