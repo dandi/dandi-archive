@@ -245,5 +245,6 @@ def create_or_update_doi(datacite_payload: dict) -> str | None:
     """Create or update a DOI with the DataCite API."""
     return datacite_client.create_or_update_doi(datacite_payload)
 
-def delete_or_hide_doi(datacite_payload: dict) -> str | None:
-    return datacite_client.delete_or_hide_doi(datacite_payload)
+def delete_or_hide_doi(doi: str) -> None:
+    """Delete a draft DOI or hide a findable DOI depending on its state."""
+    datacite_client.delete_or_hide_doi(doi)
