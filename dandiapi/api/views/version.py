@@ -19,6 +19,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
+from dandiapi.api.services.dandiset import update_draft_doi
 from dandiapi.api.tasks import delete_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
@@ -130,6 +131,10 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                     user=request.user,
                     metadata=locked_version.metadata,
                 )
+                
+                # For unpublished dandisets, update or create the draft DOI
+                # to keep it in sync with the latest metadata
+                update_draft_doi(locked_version)
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)

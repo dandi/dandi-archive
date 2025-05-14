@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from more_itertools import ichunked
 
-from dandiapi.api import doi
+from dandiapi.api import datacite
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services import audit
@@ -188,12 +188,50 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # published version has been committed to DB.
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
 
-        def _create_doi(version_id: int):
+        def _create_and_update_dois(version_id: int):
+            # Get the published version
             version = Version.objects.get(id=version_id)
-            version.doi = doi.create_doi(version)
+
+            # Get the draft version (for storing Dandiset DOI)
+            draft_version = version.dandiset.draft_version
+
+            # Check if this is the first publication (no prior DOI in draft version)
+            is_first_publication = draft_version.doi is None
+
+            # Create Version DOI as Findable
+            version_doi, version_doi_payload = datacite.generate_doi_data(
+                version, version_doi=True, event='publish'
+            )
+
+            # Either create or update the Dandiset DOI based on whether it's the first publication
+            if is_first_publication:
+                # For first publication: generate Dandiset DOI and promote from Draft to Findable
+                dandiset_doi, dandiset_doi_payload = datacite.generate_doi_data(
+                    version,
+                    version_doi=False,
+                    event='publish',  # Promote to Findable on first publication
+                )
+            else:
+                # For subsequent publications: update the metadata but keep as Findable
+                dandiset_doi, dandiset_doi_payload = datacite.generate_doi_data(
+                    version,
+                    version_doi=False,
+                    event='publish',  # Update existing Findable DOI
+                )
+
+            # Create or update the DOIs
+            datacite.create_or_update_doi(dandiset_doi_payload)
+            datacite.create_or_update_doi(version_doi_payload)
+
+            # Store the DOI values
+            version.doi = version_doi
+            draft_version.doi = dandiset_doi
+
+            # Save the values
+            draft_version.save()
             version.save()
 
-        transaction.on_commit(lambda: _create_doi(new_version.id))
+        transaction.on_commit(lambda: _create_and_update_dois(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
