@@ -22,7 +22,14 @@ def _normalize_version_metadata(
     version_metadata = {
         'schemaKey': 'Dandiset',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
-        'contributor': [
+        'contributor': [],
+        **version_metadata,
+    }
+    # if function did not receive already a record for that name
+    # we create one:
+    if not any(r.get('name') == name for r in version_metadata['contributor']):
+        version_metadata['contributor'].insert(
+            0,
             {
                 'name': name,
                 'email': email,
@@ -31,9 +38,7 @@ def _normalize_version_metadata(
                 'affiliation': [],
                 'includeInCitation': True,
             },
-        ],
-        **version_metadata,
-    }
+        )
     # Run the version_metadata through the pydantic model to automatically include any boilerplate
     # like the access or repository fields
     return PydanticDandiset.model_construct(**version_metadata).model_dump(
