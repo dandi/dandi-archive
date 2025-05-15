@@ -183,6 +183,15 @@ We will keep (and deprecate) the `publish` parameter, and add a new parameter `e
     - `publish`: Findable DOI
     - `hide`: Registered DOI
 
+In the current implementation, only published dandisets are given a DOI, so we are using the pydantic validation for `PublishedDandiset`.
+This is too restrictive for our case.
+Instead, we'll try `PublishedDandiset` first, then fallback to `Dandiset`, then fall back to unvalidated.
+
+#### (Option considered but rejected) Prevent Findable DOIs when not validated
+
+If we fallback to unvalidated, we could prevent the DOI from becoming findable.
+Instead though, we've opted to just try to update the DOI via Datacite anyway and handle the API failure if it happens.
+
 ## Alternatives Explored
 
 ### Creating DOIs for Embargoed Dandisets
@@ -192,7 +201,7 @@ We opted not to create DOIs for embargoed Dandisets because:
  - We should avoid sending any potentially secret metadata to a 3rd party, even if it is not publicly searchable.
  - If we were to create a DOI with fake metadata that probably would not have any value at all.
  - What the DOIs will eventually be upon publication is semantically determined, so the value can be used even prior to being "real".
- 
+
  We might reconsider, if decision would be made to expose metadata of Embargoed Dandisets for the purpose of discovery.
 
 ### Promoting Draft DOIs to Findable for Draft Dandisets
