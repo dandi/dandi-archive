@@ -113,33 +113,8 @@ NB Yarik failed to find location where we explicitly load JSONSchema if we do...
 
 ### Vendorization
 
-ATM we also have some hardcoded vendorization in dandi-archive code (see below).
-Work is ongoing in [dandi-schema:PR#294](https://github.com/dandi/dandi-schema/pull/294) to make vendorization of the schema configurable.
-That would result in `dandi/schema` JSONSchema serializations becoming generally de-vendorized.
-And it will be `dandi-archive` instance responsibility to vendorize, which would primarily consist in changing regular expressions more restrictive, via configuration/environment-variables.
-
-#### Backend
-
-Excluding some where we might want to vendorize too (e.g. email subjects etc):
-
-```shell
-❯ git grep DANDI: -- dandiapi | grep -v -e test_ -e 'subject=' -e 'verbose_name'
-dandiapi/api/models/version.py:            'identifier': f'DANDI:{self.dandiset.identifier}',
-dandiapi/api/models/version.py:            'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
-dandiapi/api/services/metadata/__init__.py:            f'DANDI:{publishable_version.dandiset.identifier}/{publishable_version.version}'
-dandiapi/api/tests/fuzzy.py:DANDISET_SCHEMA_ID_RE = Re(r'DANDI:\d{6}')
-dandiapi/api/views/dandiset.py:            if identifier.startswith('DANDI:'):
-```
-
-#### Web frontend
-
-```shell
-❯ git grep DANDI: -- web | grep -v -e test_ -e 'subject=' -e 'verbose_name'
-web/src/components/DandisetList.vue:        DANDI:<b>{{ item.dandiset.identifier }}</b>
-web/src/stores/dandiset.ts:      schema['properties']['identifier']['pattern'] = '^DANDI:\\d{6}$'
-web/src/views/DandisetLandingView/DownloadDialog.vue:  // Use the special 'DANDI:' url prefix if appropriate.
-web/src/views/DandisetLandingView/DownloadDialog.vue:  const dandiUrl = `DANDI:${identifier}`;
-```
+Initial motivation for this PR/design document was de-re-vendorization of DANDI instances with initial changes in the [dandi-schema:PR#294](https://github.com/dandi/dandi-schema/pull/294).
+See [dandi-archive:issue#2382](https://github.com/dandi/dandi-archive/issues/2382) for more information on de-re-vendorization of dandi-archive.
 
 
 ### Summary
