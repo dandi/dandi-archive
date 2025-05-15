@@ -81,6 +81,21 @@ DataCite allows for three types of DOIs ([DataCite](https://support.datacite.org
     - Upon unembargoing dandiset:
         - Mint `Dandiset DOI` (Draft) with latest metadata,
 
+### Cautions
+
+If DANDI_DOI_PUBLISH is false (default)
+    - creation as `Findable` should be disabled
+    - update to `Findable` and `Registered` should be disabled
+
+If all DOI configuration options are not set:
+    - all required options:
+        - `DANDI_DOI_API_URL`
+        - `DANDI_DOI_API_URL`
+        - `DANDI_DOI_API_PASSWORD`
+        - `DANDI_DOI_API_PASSWORD`
+    - DOIs CRUD through Datacite API should be entirely disabled
+    - DOI (the string) should not be added to the version
+
 
 ### Sequence Diagram
 
@@ -187,12 +202,13 @@ In the current implementation, only published dandisets are given a DOI, so we a
 This is too restrictive for our case.
 Instead, we'll try `PublishedDandiset` first, then fallback to `Dandiset`, then fall back to unvalidated.
 
-#### (Option considered but rejected) Prevent Findable DOIs when not validated
+## Alternatives Explored
+
+#### Prevent Findable DOIs when not validated
 
 If we fallback to unvalidated, we could prevent the DOI from becoming findable.
 Instead though, we've opted to just try to update the DOI via Datacite anyway and handle the API failure if it happens.
 
-## Alternatives Explored
 
 ### Creating DOIs for Embargoed Dandisets
 
