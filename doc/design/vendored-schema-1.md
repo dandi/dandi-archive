@@ -1,4 +1,4 @@
-# Use of dandi-schema
+# Access to JSONSchema serialization of dandi-schema dandiset.json
 
 ## Current situation
 
@@ -32,7 +32,7 @@ flowchart TD
   Pydantic -->|used to validate| API
 
   JSONSchema -->|used to produce| Meditor
-  JSONSchema -->|used to validate??| Meditor
+  JSONSchema -->|used to validate| Meditor
   Meditor    -->|submits metadata| API
 
   CLI        -->|used to upload & submit metadata| API
@@ -52,12 +52,10 @@ flowchart TD
   class Meditor ui;
 ```
 
-NB Might need fixing since failed to find explicit use of serialized JSONSchema's by frontend for validation.
-
 In summary, dandi-archive relies on two *instantiations* of `dandi-schema`:
 
 - **Pydantic**: backend validates metadata using Python library;
-- **JSONSchema**: frontend is produced and validates against JSONSchema serialization.
+- **JSONSchema**: frontend is produced with validation of entry against loaded from JSONSchema serialization definitions.
 
 ### Pydantic models: backend
 
@@ -109,7 +107,7 @@ Unclear though if we are up-to-date since
 
 although we already use v0.6.9 of dandischema.
 
-NB Yarik failed to find location where we explicitly load JSONSchema if we do...
+Web frontend then takes the `schema_url` from `/info` URL (thus JSONSchema serialization from `dandi/schema` repository) and loads it to `.schema` in [dandiset.ts](https://github.com/dandi/dandi-archive/blob/master/web/src/stores/dandiset.ts#L109).
 
 ### Vendorization
 
@@ -124,15 +122,24 @@ We
 - use two instantiations of the schema and rely on external process to generate JSONSchema from Pydantic models
 - manually trigger update of web frontend files according to some version of the schema
 - hardcoded some vendorization inside the dandi-archive codebase (backend and frontend)
+- **any vendorization done via Configuration at runtime for Pydantic, is not reflected in the JSONSchema serialization used by the web frontend since loaded from a generic serialization!**
 
-## Proposed solution idea
 
-The idea was to remove use/reliance on https://github.com/dandi/schema/ JSONSchema serializations by `dandi-archive` and perform serialization to be used by the frontend, by directly serializing needed JSONSchema at startup time.
+## Proposed solution
 
-## Current verdict
+### Summary
 
-But reviewing code, it seems that we do not use JSONSchema serializations in `dandi-archive` at run time at all.
+The overall idea is to remove use/reliance on https://github.com/dandi/schema/ JSONSchema serializations and to perform serialization to be used by the frontend, by directly serializing needed JSONSchema at the backend startup time, thus accounting for possible vendorization, or upon a request of an API (public or not) call.
 
-So we might be ok to switch to use vendorized version of dandi-schema, and just address hardcoded vendorizations.
+### Details
 
-**Note:** We would still need `context.json` among those `dandi/schema` serializations but not sure if others are used explicitly anywhere.  We do expose `dandiset.json` schema as `schema_url` in our "server info" at https://dandiarchive.org/server-info and https://api.dandiarchive.org/api/info/.  But I do not think `schema_url` is actually used by anything ATM.
+- create API endpoint `/api/schema/({version}|latest)/dandiset/`, with currently no `{version}` support for non-matching version(but later could expose)
+  - ideally should in the future allow for alternative content type requests, defaulting e.g. to [application/schema+json](https://json-schema.org/draft/2020-12/json-schema-core#section-14) providing JSONSchema serialization
+- `schema_url` in `/info` should point to that instance's `/api/schema/{version}/dandiset/` URL , thus web frontend would load that schema from the backend/API instead of relying on the static JSONSchema serialization in a separate `dandi/schema` repository.
+
+## Additional considerations
+
+### s3://dandiarchive/schema/
+
+As all of our data is on `dandiarchive` s3 bucket, I wonder if while refactoring our use of JSONSchema serializations, we should implement mirroring of `dandi/schema` repository under `s3://dandiarchive/schema/` and point to `context.json` from there instead of GitHub.
+Mirroring could be implemented via `git annex exporttree` from the `dandi/schema` repository.
