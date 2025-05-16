@@ -42,7 +42,7 @@ setup(
         'celery',
         'dandi',
         # Pin dandischema to exact version to make explicit which schema version is being used
-        'dandischema==0.11.0',  # schema version 0.6.9
+        'dandischema==0.11.1',  # schema version 0.6.10
         'django~=4.2.0',
         # Pin to version where this bug is fixed
         # https://codeberg.org/allauth/django-allauth/issues/4072
