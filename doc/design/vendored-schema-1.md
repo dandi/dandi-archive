@@ -16,14 +16,15 @@ flowchart TD
 
   end
 
-  subgraph dandi_cli_repo["<a href='https://github.com/dandi/dandi-cli'>dandi-cli</a>"]
-    CLI["CLI & Library<br>validation logic<br/>(Python)"]
-  end
-
   subgraph dandi_archive_repo["<a href='https://github.com/dandi/dandi-archive/'>dandi-archive</a>"]
     Meditor["Web UI<br/>Metadata Editor<br/>(meditor; Vue)"]
     API["Archive API<br/>(Python; DJANGO)"]
+    SchemaEndpoint["Schema API Endpoint<br/>(JSONSchema)"]
     Storage[("DB (Postgresql)")]
+  end
+
+  subgraph dandi_cli_repo["<a href='https://github.com/dandi/dandi-cli'>dandi-cli</a>"]
+    CLI["CLI & Library<br>validation logic<br/>(Python)"]
   end
 
   %% main flow
@@ -31,12 +32,12 @@ flowchart TD
   Pydantic -->|used to validate| CLI
   Pydantic -->|used to validate| API
 
-  JSONSchema -->|used to produce| Meditor
-  JSONSchema -->|used to validate| Meditor
+  API -->|serialize at runtime| SchemaEndpoint
+  SchemaEndpoint -->|used to produce| Meditor
+  SchemaEndpoint -->|used to validate| Meditor
+
   Meditor    -->|submits metadata| API
-
   CLI        -->|used to upload & submit metadata| API
-
   API <-->|metadata JSON| Storage
 
   %% styling
@@ -46,8 +47,8 @@ flowchart TD
   classDef data   fill:#fff3e0,stroke:#e65100,stroke-width:1px;
   JSONSchema@{ shape: docs }
 
-  class dandi_schema_repo,schema_repo,dandi_cli_repo,dandi_archive_repo repo;
-  class Pydantic,CLI,API code;
+  class dandi_schema_repo,dandi_cli_repo,dandi_archive_repo repo;
+  class Pydantic,CLI,API,SchemaEndpoint code;
   class JSONSchema,Storage data;
   class Meditor ui;
 ```
@@ -130,6 +131,58 @@ We
 ### Summary
 
 The overall idea is to remove use/reliance on https://github.com/dandi/schema/ JSONSchema serializations and to perform serialization to be used by the frontend, by directly serializing needed JSONSchema at the backend startup time, thus accounting for possible vendorization, or upon a request of an API (public or not) call.
+
+### Updated Architecture
+
+This mermaid diagram depicts the proposed changes to the flow of metadata schema:
+
+```mermaid
+flowchart TD
+  %% repositories as grouped nodes
+  subgraph dandi_schema_repo["<a href='https://github.com/dandi/dandi-schema/'>dandi/dandi-schema</a>"]
+    Pydantic["Pydantic Models"]
+  end
+
+  subgraph dandi_archive_repo["<a href='https://github.com/dandi/dandi-archive/'>dandi-archive</a>"]
+    Meditor["Web UI<br/>Metadata Editor<br/>(meditor; Vue)"]
+    API["Archive API<br/>(Python; DJANGO)"]
+    SchemaEndpoint["Schema API Endpoint<br/>(JSONSchema)"]
+    Storage[("DB (Postgresql)")]
+  end
+
+  subgraph dandi_cli_repo["<a href='https://github.com/dandi/dandi-cli'>dandi-cli</a>"]
+    CLI["CLI & Library<br>validation logic<br/>(Python)"]
+  end
+
+  %% main flow
+  Pydantic -->|used to validate| CLI
+  Pydantic -->|used to validate| API
+
+  API -->|serialize at runtime| SchemaEndpoint
+  SchemaEndpoint -->|used to produce| Meditor
+  SchemaEndpoint -->|used to validate| Meditor
+
+  Meditor    -->|submits metadata| API
+  CLI        -->|used to upload & submit metadata| API
+  API <-->|metadata JSON| Storage
+
+  %% styling
+  classDef repo   fill:#f9f9f9,stroke:#333,stroke-width:1px;
+  classDef code   fill:#e1f5fe,stroke:#0277bd,stroke-width:1px;
+  classDef ui     fill:#e8f5e9,stroke:#2e7d32,stroke-width:1px;
+  classDef data   fill:#fff3e0,stroke:#e65100,stroke-width:1px;
+
+  class dandi_schema_repo,dandi_cli_repo,dandi_archive_repo repo;
+  class Pydantic,CLI,API,SchemaEndpoint code;
+  class Storage data;
+  class Meditor ui;
+```
+
+Key changes:
+1. The separate JSONSchema repository is no longer used
+2. Schema API endpoints in dandi-archive dynamically generate JSONSchema from Pydantic models
+3. The web UI (meditor) uses the locally generated schema instead of GitHub hosted schema
+4. Any vendorization done at runtime is automatically reflected in the JSONSchema
 
 ### Details
 
