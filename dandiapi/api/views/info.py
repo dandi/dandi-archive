@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view
@@ -8,10 +9,11 @@ from rest_framework.response import Response
 
 from dandiapi import __version__
 
-schema_url = (
-    'https://raw.githubusercontent.com/dandi/schema/master/'
-    f'releases/{settings.DANDI_SCHEMA_VERSION}/dandiset.json'
-)
+
+def get_schema_url(request):
+    """Get the URL for the schema based on current server deployment."""
+    # Use the local schema endpoint instead of GitHub
+    return request.build_absolute_uri(reverse('schema-dandiset-latest'))
 
 
 class ApiServiceSerializer(serializers.Serializer):
@@ -55,12 +57,12 @@ class ApiInfoSerializer(serializers.Serializer):
     method='GET',
 )
 @api_view()
-def info_view(self):
+def info_view(request):
     api_url = f'{settings.DANDI_API_URL}/api'
     serializer = ApiInfoSerializer(
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
-            'schema_url': schema_url,
+            'schema_url': get_schema_url(request),
             'version': __version__,
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
