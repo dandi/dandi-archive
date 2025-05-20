@@ -11,7 +11,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
-    "lint": "eslint . --fix --max-warnings=0"
+    "lint": "eslint . --fix --max-warnings=0",
+    "migrate": "tsx src/migrate.ts"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^11.9.3",
@@ -49,6 +50,7 @@
     "json-schema-to-typescript": "^15.0.4",
     "sass": "1.85.1",
     "sass-embedded": "^1.85.1",
+    "tsx": "^4.19.4",
     "typescript": "~5.7.*",
     "unplugin-fonts": "^1.1.1",
     "unplugin-vue-components": "^28.4.1",
