@@ -46,6 +46,7 @@
     "eslint": "^9.14.0",
     "eslint-plugin-vue": "^9.30.0",
     "eslint-plugin-vuetify": "^2.5.1",
+    "json-schema-to-typescript": "^15.0.4",
     "sass": "1.85.1",
     "sass-embedded": "^1.85.1",
     "typescript": "~5.7.*",
