@@ -28,15 +28,17 @@ yarn run lint
 ```
 
 ### Schema Migration
+
 The web app uses TypeScript typings (src/types/schema.ts) that are automatically generated from the dandiset metadata's
-[JSON schema](https://github.com/dandi/schema). To change the schema version (and as a result, the types),
-use the `yarn migrate` command.
+[JSON schema](https://github.com/dandi/schema).
+These typings are used only for linting, and not to drive any functionality.
+To change the schema version (and as a result, the types), use the `yarn
+migrate` command.
 
 For example, to migrate to schema version 0.5.1, run:
 ```bash
 yarn migrate 0.5.1
 ```
-
 
 ### Environment Variables
 
