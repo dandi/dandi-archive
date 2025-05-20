@@ -1,10 +1,7 @@
-/* eslint-disable no-console */
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { compile } from 'json-schema-to-typescript';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +24,7 @@ async function migrate(version: string) {
     const res = await axios.get(schemaUrl);
     data = res.data;
   } catch (e) {
-    console.error(`Failed to download schema version ${version} from GitHub.`);
+    console.error(`Failed to download schema version ${version} from GitHub: ${e}`);
     process.exit(1);
   }
 
@@ -43,7 +40,7 @@ async function migrate(version: string) {
        */`,
     });
   } catch (e) {
-    console.error('json-schema-to-typescript failed to convert schema to TS typings.');
+    console.error(`json-schema-to-typescript failed to convert schema to TS typings: ${e}`);
     process.exit(1);
   }
 
