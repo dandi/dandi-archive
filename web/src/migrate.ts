@@ -1,11 +1,14 @@
 /* eslint-disable no-console */
 
-const fs = require('fs');
-const path = require('path');
-
-const axios = require('axios');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import axios from 'axios';
 // eslint-disable-next-line import/no-extraneous-dependencies
-const { compile } = require('json-schema-to-typescript');
+import { compile } from 'json-schema-to-typescript';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Migrates the TypeScript typings in src/schema.ts to the
@@ -54,3 +57,5 @@ if (process.argv.length !== 3) {
 }
 
 migrate(process.argv[2]);
+
+export {}; // Required for ESM TypeScript modules
