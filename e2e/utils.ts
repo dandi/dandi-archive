@@ -26,7 +26,7 @@ async function registerNewUser(page: Page) {
   await page.getByPlaceholder("Password").first().fill(password);
   await page.getByPlaceholder("Password (again)").click();
   await page.getByPlaceholder("Password (again)").fill(password);
-  await page.getByRole("button", { name: "Sign Up " }).click();
+  await page.getByRole("button", { name: "Sign Up" }).click();
   await page.getByLabel("First Name").click({ force: true });
   await page.getByLabel("First Name").fill(firstname);
   await page.getByLabel("Last Name").click({ force: true });
@@ -69,7 +69,7 @@ async function gotoAndLogin(page: Page) {
   await page.getByPlaceholder("Email address").fill("admin@kitware.com");
   await page.getByPlaceholder("Password").click();
   await page.getByPlaceholder("Password").fill("password");
-  await page.getByRole("button", { name: "Sign In " }).click();
+  await page.getByRole("button", { name: "Sign In" }).click(); // GitHub sign in button
   await page.getByRole("button", { name: TEST_USER_INITIALS }).waitFor({ state: "visible" });
 
 }
