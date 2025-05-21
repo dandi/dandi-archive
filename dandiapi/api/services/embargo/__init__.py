@@ -10,6 +10,7 @@ from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
+from dandiapi.api.services.dandiset import _create_dandiset_draft_doi
 from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
@@ -72,6 +73,14 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     # errors don't show up once un-embargo is finished
     validate_version_metadata(version=v)
     logger.info('Version metadata validated')
+
+    # Create a Draft DOI now that the dandiset is public
+    try:
+        _create_dandiset_draft_doi(v)
+        logger.info('Draft DOI created for unembargoed dandiset')
+    except Exception:
+        # Log error but continue with unembargo
+        logger.exception('Failed to create DOI during unembargo for dandiset %s', ds.identifier)
 
     # Notify owners of completed unembargo
     send_dandiset_unembargoed_message(ds)

@@ -344,7 +344,9 @@ def test_publish_task(
     published_asset_factory,
     draft_version_factory,
     django_capture_on_commit_callbacks,
+    mocker,
 ):
+    mock_handle_dois = mocker.patch('dandiapi.api.services.publish._handle_publication_dois')
     # Create a draft_version in PUBLISHING state
     draft_version: Version = draft_version_factory(status=Version.Status.PUBLISHING)
 
@@ -400,7 +402,7 @@ def test_publish_task(
             f'/{published_version.version}'
         ),
         'citation': published_version.citation(published_version.metadata),
-        'doi': f'10.80507/dandi.{draft_version.dandiset.identifier}/{published_version.version}',
+        # We have mocked the doi generation, so we will not have a DOI on the model.
         # Once the assets are linked, assetsSummary should be computed properly
         'assetsSummary': {
             'schemaKey': 'AssetsSummary',
@@ -457,3 +459,4 @@ def test_publish_task(
     assert new_published_asset.path == old_published_asset.path
     assert new_published_asset.blob == old_published_asset.blob
     assert new_published_asset.metadata == old_published_asset.metadata
+    mock_handle_dois.delay.assert_called_once()

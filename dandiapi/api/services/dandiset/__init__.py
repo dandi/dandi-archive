@@ -9,8 +9,11 @@ if TYPE_CHECKING:
 
     from django.contrib.auth.models import User
 
+import logging
+
 from dandischema.models import AccessRequirements, AccessType, Organization, RoleType
 
+from dandiapi.api import doi
 from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
@@ -23,6 +26,8 @@ from dandiapi.api.services.exceptions import (
 )
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+
+logger = logging.getLogger(__name__)
 
 
 def _create_dandiset(
@@ -76,6 +81,12 @@ def create_open_dandiset(
             version_name=version_name,
             version_metadata=version_metadata,
         )
+
+        try:
+            _create_dandiset_draft_doi(draft_version)
+        except Exception:
+            # Log error but allow dandiset creation to proceed
+            logger.exception('Failed to create Draft DOI for dandiset %s', dandiset.identifier)
 
         audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
 
@@ -136,6 +147,31 @@ def create_embargoed_dandiset(  # noqa: PLR0913
     return dandiset, draft_version
 
 
+def _create_dandiset_draft_doi(draft_version: Version) -> None:
+    """
+    Create a Draft DOI for a dandiset.
+
+    This is called during dandiset creation for public dandisets.
+    For embargoed dandisets, no DOI is created until unembargo.
+
+    Args:
+        draft_version: The draft version of the dandiset.
+    """
+    # Generate a Draft DOI (event=None)
+    dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(
+        draft_version,
+        version_doi=False,
+        event=None,  # Draft DOI
+    )
+
+    # Create the DOI
+    doi.create_or_update_doi(dandiset_doi_payload)
+
+    # Store the DOI in the draft version
+    draft_version.doi = dandiset_doi
+    draft_version.save()
+
+
 def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     if not is_dandiset_owner(dandiset, user):
         raise NotAllowedError('Cannot delete dandisets which you do not own.')
@@ -146,13 +182,22 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
+    # Check if there's a DOI that needs to be handled
+    draft_version = dandiset.versions.filter(version='draft').first()
+
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
     with transaction.atomic():
         # Record the audit event first so that the AuditRecord instance has a
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
-
+        # Dandisets with published versions cannot be deleted
+        # so only the Dandiset DOI needs to be delete.
+        if draft_version and draft_version.doi is not None:
+            try:
+                doi.delete_or_hide_doi(draft_version.doi)
+            except Exception:
+                pass  # doi operation should not stop deletion. delete_or_hide will log the exception.
         dandiset.versions.all().delete()
         dandiset.delete()
 
@@ -191,3 +236,36 @@ def unstar_dandiset(*, user, dandiset: Dandiset) -> int:
 
     DandisetStar.objects.filter(user=user, dandiset=dandiset).delete()
     return dandiset.star_count
+
+
+def update_draft_version_doi(draft_version: Version) -> None:
+    """
+    Update or create a Draft DOI for a dandiset with the latest metadata.
+
+    This is called when a draft version's metadata is updated for a dandiset
+    that has never been published.
+
+    Args:
+        draft_version: The draft version of the dandiset with updated metadata.
+    """
+    # Skip for dandisets that have published versions
+    if draft_version.dandiset.versions.exclude(version='draft').exists():
+        return
+
+    # Generate DOI payload with updated metadata
+    dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(
+        draft_version,
+        version_doi=False,  # Generate a Dandiset DOI, not a Version DOI
+        event=None,  # Keep as Draft DOI
+    )
+
+    # Create or update the DOI
+    doi.create_or_update_doi(dandiset_doi_payload)
+
+    # If the version doesn't have a DOI yet, store it
+    if draft_version.doi is None:
+        draft_version.doi = dandiset_doi
+        draft_version.save()
+        logger.info('Created new Draft DOI %s', dandiset_doi)
+    else:
+        logger.info('Updated Draft DOI %s with new metadata', draft_version.doi)

@@ -106,6 +106,56 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
     return publishable_version
 
 
+def _handle_publication_dois(version_id: int) -> None:
+    """
+    Create and update DOIs for a published version.
+
+    Args:
+        version_id: ID of the published version
+    """
+    version = Version.objects.get(id=version_id)
+    draft_version = version.dandiset.draft_version
+
+    # Check if this is the first publication (no prior DOI in draft version)
+    # TODO(asmacdo) not true anymore, we need to check the db.
+    # if draft_version.dandiset.versions.exclude(version='draft').exists():
+    is_first_publication = draft_version.doi is None
+
+    # Create Version DOI as Findable
+    version_doi, version_doi_payload = doi.generate_doi_data(
+        version, version_doi=True, event='publish'
+    )
+
+    # Either create or update the Dandiset DOI based on whether it's the first publication
+    if is_first_publication:
+        # For first publication: generate Dandiset DOI and promote from Draft to Findable
+        dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(
+            version,
+            version_doi=False,
+            event='publish',  # Promote to Findable on first publication
+        )
+    else:
+        # For subsequent publications: update the metadata but keep as Findable
+        dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(
+            version,
+            version_doi=False,
+            event='publish',  # Update existing Findable DOI
+        )
+
+    # Create or update the DOIs
+    # TODO(asmacdo) we need to try:except here, so dandiset doi doesnt block version doi
+    doi.create_or_update_doi(dandiset_doi_payload)
+    doi.create_or_update_doi(version_doi_payload)
+
+    # Store the DOI values
+    version.doi = version_doi
+    draft_version.doi = dandiset_doi
+
+    # Save the values
+    draft_version.save()
+    version.save()
+
+
 def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
     """
     Publish a dandiset.
@@ -187,13 +237,8 @@ def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
         # Write updated manifest files and create DOI after
         # published version has been committed to DB.
         transaction.on_commit(lambda: write_manifest_files.delay(new_version.id))
+        transaction.on_commit(lambda: _handle_publication_dois.delay(new_version.id))
 
-        def _create_doi(version_id: int):
-            version = Version.objects.get(id=version_id)
-            version.doi = doi.create_doi(version)
-            version.save()
-
-        transaction.on_commit(lambda: _create_doi(new_version.id))
 
         user = User.objects.get(id=user_id)
         audit.publish_dandiset(
