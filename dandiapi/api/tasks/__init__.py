@@ -7,7 +7,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 
-from dandiapi.api.doi import delete_doi
+from dandiapi.api.doi import delete_or_hide_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -83,7 +83,7 @@ def validate_version_metadata_task(version_id: int) -> None:
 
 @shared_task
 def delete_doi_task(doi: str) -> None:
-    delete_doi(doi)
+    delete_or_hide_doi(doi)
 
 
 @shared_task
