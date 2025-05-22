@@ -629,7 +629,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_embargoed(api_client, user, mocker):
+def test_dandiset_rest_create_embargoed(api_client, user):
     user.first_name = 'John'
     user.last_name = 'Doe'
     user.save()
@@ -905,7 +905,6 @@ def test_dandiset_rest_delete(
     else:
         assert response.status_code >= 400
         assert Dandiset.objects.count() == 1
-        # Verify that delete_or_hide_doi was not called
         mock_delete_doi.assert_not_called()
 
 

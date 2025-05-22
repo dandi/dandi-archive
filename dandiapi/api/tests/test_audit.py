@@ -114,7 +114,7 @@ def test_audit_change_owners(api_client, user_factory, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_update_metadata(api_client, draft_version, user, mocker):
+def test_audit_update_metadata(api_client, draft_version, user):
     # Create a Dandiset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
