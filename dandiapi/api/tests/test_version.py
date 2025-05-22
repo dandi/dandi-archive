@@ -612,9 +612,7 @@ def test_version_rest_update(api_client, user, draft_version):
 
 @pytest.mark.django_db
 def test_version_rest_update_embargoed(api_client, user, draft_version_factory):
-    draft_version = draft_version_factory(
-        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
-    )
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 

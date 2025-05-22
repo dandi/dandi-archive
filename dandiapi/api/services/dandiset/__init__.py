@@ -9,8 +9,6 @@ if TYPE_CHECKING:
 
     from django.contrib.auth.models import User
 
-import logging
-
 from dandischema.models import AccessRequirements, AccessType, Organization, RoleType
 
 from dandiapi.api import doi
@@ -27,8 +25,6 @@ from dandiapi.api.services.exceptions import (
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 from dandiapi.api.tasks import create_dandiset_draft_doi_task
-
-logger = logging.getLogger(__name__)
 
 
 def _create_dandiset(

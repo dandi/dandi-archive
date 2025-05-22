@@ -109,7 +109,7 @@ def _handle_publication_dois(version_id: int) -> None:
     draft_version = version.dandiset.draft_version
 
     # Check if this is the first publication (no prior DOI in draft version)
-    # TODO(asmacdo) not true anymore, we need to check the db.
+    # TODO(asmacdo): not true anymore, we need to check the db.
     # if draft_version.dandiset.versions.exclude(version='draft').exists():
     is_first_publication = draft_version.doi is None
 
@@ -135,7 +135,7 @@ def _handle_publication_dois(version_id: int) -> None:
         )
 
     # Create or update the DOIs
-    # TODO(asmacdo) we need to try:except here, so dandiset doi doesnt block version doi
+    # TODO(asmacdo): we need to try:except here, so dandiset doi doesn't block version doi
     datacite_client.create_or_update_doi(dandiset_doi_payload)
     datacite_client.create_or_update_doi(version_doi_payload)
 
