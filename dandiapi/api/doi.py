@@ -101,6 +101,39 @@ def _create_dandiset_draft_doi(draft_version: Version) -> None:
     draft_version.save()
 
 
+def _update_draft_version_doi(draft_version: Version) -> None:
+    """
+    Update or create a Draft DOI for a dandiset with the latest metadata.
+
+    This is called when a draft version's metadata is updated for a dandiset
+    that has never been published.
+
+    Args:
+        draft_version: The draft version of the dandiset with updated metadata.
+    """
+    # Skip for dandisets that have published versions
+    if draft_version.dandiset.versions.exclude(version='draft').exists():
+        return
+
+    # Generate DOI payload with updated metadata
+    dandiset_doi, dandiset_doi_payload = generate_doi_data(
+        draft_version,
+        version_doi=False,  # Generate a Dandiset DOI, not a Version DOI
+        event=None,  # Keep as Draft DOI
+    )
+
+    # Create or update the DOI
+    create_or_update_doi(dandiset_doi_payload)
+
+    # If the version doesn't have a DOI yet, store it
+    if draft_version.doi is None:
+        draft_version.doi = dandiset_doi
+        draft_version.save()
+        logger.info('Created new Draft DOI %s', dandiset_doi)
+    else:
+        logger.info('Updated Draft DOI %s with new metadata', draft_version.doi)
+
+
 def _handle_publication_dois(version_id: int) -> None:
     """
     Create and update DOIs for a published version.
