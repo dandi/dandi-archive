@@ -154,22 +154,19 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
     if dandiset.unembargo_in_progress:
         raise DandisetUnembargoInProgressError
 
-    # Check if there's a DOI that needs to be handled
-    draft_version = dandiset.versions.filter(version='draft').first()
-
     # Delete all versions first, so that AssetPath deletion is cascaded
     # through versions, rather than through zarrs directly
     with transaction.atomic():
         # Record the audit event first so that the AuditRecord instance has a
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
+
         # Dandisets with published versions cannot be deleted
-        # so only the Dandiset DOI needs to be delete.
+        # so only the Dandiset DOI needs to be deleted.
+        draft_version = dandiset.versions.filter(version='draft').first()
         if draft_version and draft_version.doi is not None:
-            try:
-                doi.delete_or_hide_doi(draft_version.doi)
-            except Exception:
-                pass  # doi operation should not stop deletion. delete_or_hide will log the exception.
+            # Call DOI deletion prior to delete so if this raises, we do not proceed
+            doi.delete_or_hide_doi(draft_version.doi)
         dandiset.versions.all().delete()
         dandiset.delete()
 
