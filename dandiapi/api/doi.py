@@ -74,6 +74,31 @@ def delete_or_hide_doi(doi: str) -> None:
     datacite_client.delete_or_hide_doi(doi)
 
 
+def _create_dandiset_draft_doi(draft_version: Version) -> None:
+    """
+    Create a Draft DOI for a dandiset.
+
+    This is called during dandiset creation for public dandisets.
+    For embargoed dandisets, no DOI is created until unembargo.
+
+    Args:
+        draft_version: The draft version of the dandiset.
+    """
+    # Generate a Draft DOI (event=None)
+    dandiset_doi, dandiset_doi_payload = generate_doi_data(
+        draft_version,
+        version_doi=False,
+        event=None,  # Draft DOI
+    )
+
+    # Create the DOI
+    create_or_update_doi(dandiset_doi_payload)
+
+    # Store the DOI in the draft version
+    draft_version.doi = dandiset_doi
+    draft_version.save()
+
+
 def _handle_publication_dois(version_id: int) -> None:
     """
     Create and update DOIs for a published version.
