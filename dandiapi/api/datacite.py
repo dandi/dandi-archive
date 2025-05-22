@@ -8,7 +8,9 @@ The public interface is exposed through doi.py.
 from __future__ import annotations
 
 import copy
+from functools import wraps
 import logging
+import sys
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -27,6 +29,19 @@ DANDI_DOI_SETTINGS = [
 ]
 
 logger = logging.getLogger(__name__)
+
+
+
+def block_during_test(fn):
+    """
+    Datacite API should not be called 
+    """
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if "pytest" in sys.modules:
+            raise RuntimeError(f"DOI calls to {fn.__name__} blocked during test.")
+        return fn(*args, **kwargs)
+    return wrapper
 
 
 class DataCiteClient:
@@ -101,6 +116,7 @@ class DataCiteClient:
 
         return (doi, datacite_payload)
 
+    @block_during_test
     def create_or_update_doi(self, original_datacite_payload: dict) -> str | None:
         """
         Create or update a DOI with the DataCite API.
@@ -175,6 +191,7 @@ class DataCiteClient:
                 logger.exception(error_details)
                 raise
 
+    @block_during_test
     def delete_or_hide_doi(self, doi: str) -> None:
         """
         Delete a draft DOI or hide a findable DOI depending on its state.
