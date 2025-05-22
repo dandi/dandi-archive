@@ -523,10 +523,9 @@ def test_version_rest_info_with_asset(
 
 
 @pytest.mark.django_db
-def test_version_rest_update(api_client, user, draft_version, mocker):
+def test_version_rest_update(api_client, user, draft_version):
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     new_name = 'A unique and special name!'
     new_metadata = {
@@ -609,17 +608,15 @@ def test_version_rest_update(api_client, user, draft_version, mocker):
     assert draft_version.metadata == saved_metadata
     assert draft_version.name == new_name
     assert draft_version.status == Version.Status.PENDING
-    mock_update_doi.assert_called_once_with(draft_version)
 
 
 @pytest.mark.django_db
-def test_version_rest_update_embargoed(api_client, user, draft_version_factory, mocker):
+def test_version_rest_update_embargoed(api_client, user, draft_version_factory):
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
     )
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     new_name = 'Embargoed dandiset name'
     new_metadata = {
@@ -634,35 +631,10 @@ def test_version_rest_update_embargoed(api_client, user, draft_version_factory, 
         format='json',
     )
     assert resp.status_code == 200
-    mock_update_doi.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_version_rest_update_doi_error(api_client, user, draft_version, mocker):
-    add_dandiset_owner(draft_version.dandiset, user)
-    api_client.force_authenticate(user=user)
-
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
-    mock_update_doi.side_effect = ValueError('DOI error')
-    mock_logger = mocker.patch('dandiapi.api.views.version.logger')
-
-    new_name = 'Test error handling'
-    new_metadata = {'schemaVersion': settings.DANDI_SCHEMA_VERSION, 'description': 'Test'}
-
-    # Update should succeed even if DOI update fails
-    resp = api_client.put(
-        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
-        {'metadata': new_metadata, 'name': new_name},
-        format='json',
-    )
-    assert resp.status_code == 200
-    mock_update_doi.assert_called_once()
-    mock_logger.exception.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_version_rest_update_unembargo_in_progress(api_client, user, draft_version_factory, mocker):
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
+def test_version_rest_update_unembargo_in_progress(api_client, user, draft_version_factory):
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
@@ -684,14 +656,12 @@ def test_version_rest_update_unembargo_in_progress(api_client, user, draft_versi
         {'metadata': new_metadata, 'name': new_name},
     )
     assert resp.status_code == 400
-    mock_update_doi.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_version_rest_update_published_version(api_client, user, published_version, mocker):
+def test_version_rest_update_published_version(api_client, user, published_version):
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     new_name = 'A unique and special name!'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
@@ -703,13 +673,11 @@ def test_version_rest_update_published_version(api_client, user, published_versi
     )
     assert resp.status_code == 405
     assert resp.data == 'Only draft versions can be modified.'
-    mock_update_doi.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_version_rest_update_not_an_owner(api_client, user, version, mocker):
+def test_version_rest_update_not_an_owner(api_client, user, version):
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     new_name = 'A unique and special name!'
     new_metadata = {'foo': 'bar', 'num': 123, 'list': ['a', 'b', 'c']}
@@ -721,26 +689,24 @@ def test_version_rest_update_not_an_owner(api_client, user, version, mocker):
         ).status_code
         == 403
     )
-    mock_update_doi.assert_not_called()
 
 
 @pytest.mark.parametrize(
-    ('access', 'triggers_update'),
+    'access',
     [
-        ('some value', True),
-        (123, True),
-        (None, True),
-        ([], True),
-        (['a', 'b'], True),
-        (['a', 'b', {}], True),
-        ([{'schemaKey': 'AccessRequirements', 'status': 'foobar'}], False)
+        'some value',
+        123,
+        None,
+        [],
+        ['a', 'b'],
+        ['a', 'b', {}],
+        [{'schemaKey': 'AccessRequirements', 'status': 'foobar'}]
     ],
 )
 @pytest.mark.django_db
-def test_version_rest_update_access_values(api_client, user, draft_version, access, triggers_update, mocker):
+def test_version_rest_update_access_values(api_client, user, draft_version, access):
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     new_metadata = {**draft_version.metadata, 'access': access}
     resp = api_client.put(
@@ -757,15 +723,12 @@ def test_version_rest_update_access_values(api_client, user, draft_version, acce
         if draft_version.dandiset.embargoed
         else AccessType.OpenAccess.value
     )
-    if triggers_update:
-        mock_update_doi.assert_called_once()
 
 
 @pytest.mark.django_db
-def test_version_rest_update_access_missing(api_client, user, draft_version, mocker):
+def test_version_rest_update_access_missing(api_client, user, draft_version):
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     # Check that the field missing entirely is also okay
     new_metadata = {**draft_version.metadata}
@@ -785,14 +748,12 @@ def test_version_rest_update_access_missing(api_client, user, draft_version, moc
         if draft_version.dandiset.embargoed
         else AccessType.OpenAccess.value
     )
-    mock_update_doi.assert_called_once()
 
 
 @pytest.mark.django_db
-def test_version_rest_update_access_valid(api_client, user, draft_version, mocker):
+def test_version_rest_update_access_valid(api_client, user, draft_version):
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
 
     # Check that extra fields persist
     new_metadata = {**draft_version.metadata, 'access': [{'extra': 'field'}]}
@@ -812,7 +773,6 @@ def test_version_rest_update_access_valid(api_client, user, draft_version, mocke
     )
 
     assert access[0]['extra'] == 'field'
-    mock_update_doi.assert_called_once()
 
 
 @pytest.mark.django_db

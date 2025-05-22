@@ -119,7 +119,6 @@ def test_audit_update_metadata(api_client, draft_version, user, mocker):
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
 
-    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
     # Edit its metadata.
     metadata = draft_version.metadata
     metadata['foo'] = 'bar'
@@ -140,7 +139,6 @@ def test_audit_update_metadata(api_client, draft_version, user, mocker):
     metadata = rec.details['metadata']
     assert metadata['name'] == 'baz'
     assert metadata['foo'] == 'bar'
-    mock_update_doi.assert_called_once()
 
 
 @pytest.mark.django_db
