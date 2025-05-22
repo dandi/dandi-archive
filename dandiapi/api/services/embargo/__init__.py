@@ -10,13 +10,12 @@ from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
-from dandiapi.api.services.dandiset import _create_dandiset_draft_doi
 from dandiapi.api.services.embargo.utils import _delete_object_tags, remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
 from dandiapi.api.storage import get_boto_client
-from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.api.tasks import create_dandiset_draft_doi_task, unembargo_dandiset_task
 
 from .exceptions import (
     AssetBlobEmbargoedError,
@@ -75,13 +74,6 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     validate_version_metadata(version=v)
     logger.info('Version metadata validated')
 
-    # Create a Draft DOI now that the dandiset is public
-    try:
-        _create_dandiset_draft_doi(v)
-        logger.info('Draft DOI created for unembargoed dandiset')
-    except Exception:
-        # Log error but continue with unembargo
-        logger.exception('Failed to create DOI during unembargo for dandiset %s', ds.identifier)
 
     # Notify owners of completed unembargo
     send_dandiset_unembargoed_message(ds)
@@ -90,7 +82,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     logger.info('...Done')
 
     audit.unembargo_dandiset(dandiset=ds, user=user)
-
+    transaction.on_commit(lambda: create_dandiset_draft_doi_task.delay(v.id))
 
 def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
     """Remove the embargoed tag of an asset blob."""
