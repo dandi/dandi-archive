@@ -719,7 +719,7 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
 
 
 @pytest.mark.parametrize(
-    'access',
+    ('access'),
     [
         'some value',
         123,
@@ -727,7 +727,7 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
         [],
         ['a', 'b'],
         ['a', 'b', {}],
-        [{'schemaKey': 'AccessRequirements', 'status': 'foobar'}]
+        [{'schemaKey': 'AccessRequirements', 'status': 'foobar'}],
     ],
 )
 @pytest.mark.django_db
@@ -741,6 +741,7 @@ def test_version_rest_update_access_values(api_client, user, draft_version, acce
         {'metadata': new_metadata, 'name': draft_version.name},
         format='json',
     )
+    assert resp.status_code == 200
     draft_version.refresh_from_db()
 
     access = draft_version.metadata['access']
