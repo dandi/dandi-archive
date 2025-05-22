@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-
 from django.db import transaction
 
 from dandiapi.api import doi
@@ -18,8 +16,6 @@ from dandiapi.api.services.exceptions import (
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 from dandiapi.api.tasks import create_dandiset_draft_doi_task
-
-logger = logging.getLogger(__name__)
 
 
 def create_dandiset(
