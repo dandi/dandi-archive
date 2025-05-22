@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dandischema.models import PublishedAsset, PublishedDandiset
+from dandischema.models import Asset, Dandiset
 from dandischema.utils import TransitionalGenerateJsonSchema
 from django.conf import settings
 from django.urls import reverse
@@ -11,9 +11,9 @@ import requests
 @pytest.mark.parametrize(
     ('endpoint', 'model', 'kwargs'),
     [
-        ('schema-dandiset-latest', PublishedDandiset, {}),
-        ('schema-asset-latest', PublishedAsset, {}),
-        ('schema-dandiset', PublishedDandiset, {'version': settings.DANDI_SCHEMA_VERSION}),
+        ('schema-dandiset-latest', Dandiset, {}),
+        ('schema-asset-latest', Asset, {}),
+        ('schema-dandiset', Dandiset, {'version': settings.DANDI_SCHEMA_VERSION}),
     ],
 )
 def test_schema_latest(api_client, endpoint, model, kwargs):

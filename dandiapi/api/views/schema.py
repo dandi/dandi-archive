@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from dandischema.models import PublishedAsset, PublishedDandiset
+from dandischema.models import Asset, Dandiset
 from dandischema.utils import TransitionalGenerateJsonSchema
 from django.conf import settings
 from django.http import HttpRequest, JsonResponse
@@ -52,7 +52,7 @@ def dandiset_schema_view(request: HttpRequest, version: str | None = None) -> Js
         raise NotFound(f'Schema version {version} not found')
 
     # Generate the schema JSON using the same approach as dandischema
-    schema = generate_model_schema(PublishedDandiset)
+    schema = generate_model_schema(Dandiset)
 
     return JsonResponse(schema)
 
@@ -78,6 +78,6 @@ def asset_schema_view(request: HttpRequest, version: str | None = None) -> JsonR
         raise NotFound(f'Schema version {version} not found')
 
     # Generate the schema JSON using the same approach as dandischema
-    schema = generate_model_schema(PublishedAsset)
+    schema = generate_model_schema(Asset)
 
     return JsonResponse(schema)
