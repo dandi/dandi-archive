@@ -106,3 +106,10 @@ def unembargo_dandiset_task(dandiset_id: int, user_id: int):
     except Exception:
         send_dandiset_unembargo_failed_message(ds)
         raise
+
+
+@shared_task(soft_time_limit=60)
+def handle_publication_dois_task(version_id: int) -> None:
+    from dandiapi.api.doi import _handle_publication_dois
+
+    _handle_publication_dois(version_id)
