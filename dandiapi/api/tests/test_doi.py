@@ -22,7 +22,7 @@ def test__create_dandiset_draft_doi(draft_version, mocker):
     mock_generate_doi.assert_called_once_with(
         draft_version,
         version_doi=False,
-        event=None  # Draft DOI
+        event=None,  # Draft DOI
     )
     mock_create_doi.assert_called_once_with({'data': {'attributes': {}}})
 
@@ -43,11 +43,7 @@ def test_update_draft_version_doi_no_previous_doi(draft_version, mocker):
     _update_draft_version_doi(draft_version)
 
     # Verify the mocks were called correctly
-    mock_generate_doi.assert_called_once_with(
-        draft_version,
-        version_doi=False,
-        event=None
-    )
+    mock_generate_doi.assert_called_once_with(draft_version, version_doi=False, event=None)
     mock_create_doi.assert_called_once_with({'data': {'attributes': {}}})
 
     # Verify the DOI was stored in the draft version
@@ -71,11 +67,7 @@ def test_update_draft_version_doi_existing_doi(draft_version, mocker):
     _update_draft_version_doi(draft_version)
 
     # Verify the mocks were called correctly
-    mock_generate_doi.assert_called_once_with(
-        draft_version,
-        version_doi=False,
-        event=None
-    )
+    mock_generate_doi.assert_called_once_with(draft_version, version_doi=False, event=None)
     mock_create_doi.assert_called_once_with({'data': {'attributes': {}}})
 
     # Verify the DOI is still the same

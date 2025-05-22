@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 
 from django.db import transaction
@@ -28,7 +29,6 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -138,10 +138,14 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 # For unpublished dandisets, update or create the draft DOI
                 # to keep it in sync with the latest metadata
                 if not locked_version.dandiset.embargoed:
-                    transaction.on_commit(lambda: update_draft_version_doi_task.delay(locked_version.id))
+                    transaction.on_commit(
+                        lambda: update_draft_version_doi_task.delay(locked_version.id)
+                    )
                 else:
-                    logger.debug("Skipping DOI update for embargoed Dandiset %s.",
-                                 locked_version.dandiset.identifier)
+                    logger.debug(
+                        'Skipping DOI update for embargoed Dandiset %s.',
+                        locked_version.dandiset.identifier,
+                    )
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)
