@@ -125,3 +125,15 @@ def create_dandiset_draft_doi_task(version_id: int) -> None:
     except Exception:
         # Log error but allow dandiset creation to proceed
         logger.exception('Failed to create Draft DOI for dandiset %s', version.dandiset.identifier)
+
+
+@shared_task(soft_time_limit=60)
+def update_draft_version_doi_task(version_id: int) -> None:
+    from dandiapi.api.doi import _update_draft_version_doi
+
+    version = Version.objects.get(id=version_id)
+    try:
+        _update_draft_version_doi(version)
+    except Exception:
+        # Log error but allow version update to proceed
+        logger.exception('Failed to update Draft DOI for dandiset %s', version.dandiset.identifier)
