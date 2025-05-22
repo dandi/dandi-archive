@@ -20,8 +20,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.services.dandiset import update_draft_version_doi
-from dandiapi.api.tasks import delete_doi_task
+from dandiapi.api.tasks import delete_doi_task, update_draft_version_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -139,10 +138,7 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                 # For unpublished dandisets, update or create the draft DOI
                 # to keep it in sync with the latest metadata
                 if not locked_version.dandiset.embargoed:
-                    try:
-                        update_draft_version_doi(locked_version)
-                    except ValueError:
-                        logger.exception('Failed to update Draft DOI for dandiset %s', locked_version.dandiset.identifier)
+                    transaction.on_commit(lambda: update_draft_version_doi_task.delay(locked_version.id))
                 else:
                     logger.debug("Skipping DOI update for embargoed Dandiset %s.",
                                  locked_version.dandiset.identifier)
