@@ -108,31 +108,17 @@ def _handle_publication_dois(version_id: int) -> None:
     version = Version.objects.get(id=version_id)
     draft_version = version.dandiset.draft_version
 
-    # Check if this is the first publication (no prior DOI in draft version)
-    # TODO(asmacdo): not true anymore, we need to check the db.
-    # if draft_version.dandiset.versions.exclude(version='draft').exists():
-    is_first_publication = draft_version.doi is None
-
     # Create Version DOI as Findable
     version_doi, version_doi_payload = datacite_client.generate_doi_data(
         version, version_doi=True, event='publish'
     )
 
-    # Either create or update the Dandiset DOI based on whether it's the first publication
-    if is_first_publication:
-        # For first publication: generate Dandiset DOI and promote from Draft to Findable
-        dandiset_doi, dandiset_doi_payload = datacite_client.generate_doi_data(
-            version,
-            version_doi=False,
-            event='publish',  # Promote to Findable on first publication
-        )
-    else:
-        # For subsequent publications: update the metadata but keep as Findable
-        dandiset_doi, dandiset_doi_payload = datacite_client.generate_doi_data(
-            version,
-            version_doi=False,
-            event='publish',  # Update existing Findable DOI
-        )
+    # Update Dandiset DOI metadata and promote Findable (ok if already findable)
+    dandiset_doi, dandiset_doi_payload = datacite_client.generate_doi_data(
+        version,
+        version_doi=False,
+        event='publish',
+    )
 
     # Create or update the DOIs
     # TODO(asmacdo): we need to try:except here, so dandiset doi doesn't block version doi
@@ -142,7 +128,5 @@ def _handle_publication_dois(version_id: int) -> None:
     # Store the DOI values
     version.doi = version_doi
     draft_version.doi = dandiset_doi
-
-    # Save the values
     draft_version.save()
     version.save()
