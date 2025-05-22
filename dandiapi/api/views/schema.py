@@ -1,12 +1,34 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 from dandischema.models import PublishedAsset, PublishedDandiset
+from dandischema.utils import TransitionalGenerateJsonSchema
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from drf_yasg.utils import swagger_auto_schema
-from pydantic import TypeAdapter
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import NotFound
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+
+def generate_model_schema(model_class: type[BaseModel]) -> dict[str, Any]:
+    """
+    Generate JSON schema for a Pydantic model using the same approach as dandischema.
+
+    This function mirrors the schema generation logic used in
+    dandischema.metadata.publish_model_schemata to ensure consistency
+    with the static schemas that were previously generated.
+
+    Args:
+        model_class: Pydantic model class to generate schema for
+
+    Returns:
+        dict: JSON schema for the model
+    """
+    return model_class.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
 
 
 @swagger_auto_schema(
@@ -15,7 +37,7 @@ from rest_framework.exceptions import NotFound
     operation_description='Returns the JSONSchema for Dandiset metadata',
 )
 @api_view(['GET'])
-def dandiset_schema_view(request, version: str | None = None):
+def dandiset_schema_view(request: HttpRequest, version: str | None = None) -> JsonResponse:
     """
     Return the JSONSchema for Dandiset metadata.
 
@@ -29,9 +51,8 @@ def dandiset_schema_view(request, version: str | None = None):
     if version and version not in {settings.DANDI_SCHEMA_VERSION, 'latest'}:
         raise NotFound(f'Schema version {version} not found')
 
-    # Generate the schema JSON directly from the Pydantic model using TypeAdapter
-    adapter = TypeAdapter(PublishedDandiset)
-    schema = adapter.json_schema()
+    # Generate the schema JSON using the same approach as dandischema
+    schema = generate_model_schema(PublishedDandiset)
 
     return JsonResponse(schema)
 
@@ -42,7 +63,7 @@ def dandiset_schema_view(request, version: str | None = None):
     operation_description='Returns the JSONSchema for Asset metadata',
 )
 @api_view(['GET'])
-def asset_schema_view(request, version: str | None = None):
+def asset_schema_view(request: HttpRequest, version: str | None = None) -> JsonResponse:
     """
     Return the JSONSchema for Asset metadata.
 
@@ -56,8 +77,7 @@ def asset_schema_view(request, version: str | None = None):
     if version and version not in {settings.DANDI_SCHEMA_VERSION, 'latest'}:
         raise NotFound(f'Schema version {version} not found')
 
-    # Generate the schema JSON directly from the Pydantic model using TypeAdapter
-    adapter = TypeAdapter(PublishedAsset)
-    schema = adapter.json_schema()
+    # Generate the schema JSON using the same approach as dandischema
+    schema = generate_model_schema(PublishedAsset)
 
     return JsonResponse(schema)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dandischema.models import PublishedAsset, PublishedDandiset
+from dandischema.utils import TransitionalGenerateJsonSchema
 from django.conf import settings
 from django.urls import reverse
-from pydantic import TypeAdapter
 import pytest
 import requests
 
@@ -28,9 +28,8 @@ def test_schema_latest(api_client, endpoint, model, kwargs):
     assert 'properties' in schema
     assert 'title' in schema
 
-    # Compare with expected schema from pydantic
-    adapter = TypeAdapter(model)
-    expected_schema = adapter.json_schema()
+    # Compare with expected schema from pydantic using same generator as dandischema
+    expected_schema = model.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
     assert schema == expected_schema
 
     # Also compare against the original GitHub schema content
