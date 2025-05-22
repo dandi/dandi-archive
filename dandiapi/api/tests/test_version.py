@@ -1019,14 +1019,16 @@ def test_version_rest_delete_published_not_admin(api_client, user, published_ver
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_admin(api_client, admin_user, published_version):
+def test_version_rest_delete_published_admin(api_client, admin_user, published_version, mocker):
     api_client.force_authenticate(user=admin_user)
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.datacite_client.delete_or_hide_doi')
     response = api_client.delete(
         f'/api/dandisets/{published_version.dandiset.identifier}'
         f'/versions/{published_version.version}/'
     )
     assert response.status_code == 204
     assert not Version.objects.all()
+    mock_delete_doi.assert_called_once()
 
 
 @pytest.mark.django_db
