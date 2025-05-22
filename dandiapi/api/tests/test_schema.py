@@ -5,6 +5,7 @@ from django.conf import settings
 from django.urls import reverse
 from pydantic import TypeAdapter
 import pytest
+import requests
 
 
 @pytest.mark.parametrize(
@@ -31,6 +32,21 @@ def test_schema_latest(api_client, endpoint, model, kwargs):
     adapter = TypeAdapter(model)
     expected_schema = adapter.json_schema()
     assert schema == expected_schema
+
+    # Also compare against the original GitHub schema content
+    schema_type = endpoint.split('-')[1]  # Extract 'dandiset' or 'asset' from endpoint name
+    github_url = (
+        'https://raw.githubusercontent.com/dandi/schema/master/'
+        f'releases/{settings.DANDI_SCHEMA_VERSION}/{schema_type}.json'
+    )
+
+    # Download and compare with GitHub schema
+    github_resp = requests.get(github_url)
+    github_resp.raise_for_status()
+    github_schema = github_resp.json()
+
+    # Our local schema should match the GitHub schema
+    assert schema == github_schema
 
 
 @pytest.mark.parametrize(
