@@ -74,7 +74,6 @@ def unembargo_dandiset(ds: Dandiset, user: User):
     validate_version_metadata(version=v)
     logger.info('Version metadata validated')
 
-
     # Notify owners of completed unembargo
     send_dandiset_unembargoed_message(ds)
     logger.info('Dandiset owners notified.')
@@ -83,6 +82,7 @@ def unembargo_dandiset(ds: Dandiset, user: User):
 
     audit.unembargo_dandiset(dandiset=ds, user=user)
     transaction.on_commit(lambda: create_dandiset_draft_doi_task.delay(v.id))
+
 
 def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
     """Remove the embargoed tag of an asset blob."""
