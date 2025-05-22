@@ -285,7 +285,7 @@ def test_audit_publish_dandiset(
     # through the API).
     validate_asset_metadata(asset=draft_asset)
     validate_version_metadata(version=draft_version)
-    mock_handle_dois = mocker.patch('dandiapi.api.services.publish._handle_publication_dois')
+    mock_handle_dois = mocker.patch('dandiapi.api.services.publish.handle_publication_dois_task')
 
     # Publish the Dandiset.
     api_client.force_authenticate(user=user)

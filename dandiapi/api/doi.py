@@ -72,3 +72,55 @@ def delete_or_hide_doi(doi: str) -> None:
         requests.exceptions.HTTPError: If the API request fails.
     """
     datacite_client.delete_or_hide_doi(doi)
+
+
+def _handle_publication_dois(version_id: int) -> None:
+    """
+    Create and update DOIs for a published version.
+
+    Args:
+        version_id: ID of the published version
+    """
+    from dandiapi.api.models import Version
+
+    version = Version.objects.get(id=version_id)
+    draft_version = version.dandiset.draft_version
+
+    # Check if this is the first publication (no prior DOI in draft version)
+    # TODO(asmacdo) not true anymore, we need to check the db.
+    # if draft_version.dandiset.versions.exclude(version='draft').exists():
+    is_first_publication = draft_version.doi is None
+
+    # Create Version DOI as Findable
+    version_doi, version_doi_payload = generate_doi_data(
+        version, version_doi=True, event='publish'
+    )
+
+    # Either create or update the Dandiset DOI based on whether it's the first publication
+    if is_first_publication:
+        # For first publication: generate Dandiset DOI and promote from Draft to Findable
+        dandiset_doi, dandiset_doi_payload = generate_doi_data(
+            version,
+            version_doi=False,
+            event='publish',  # Promote to Findable on first publication
+        )
+    else:
+        # For subsequent publications: update the metadata but keep as Findable
+        dandiset_doi, dandiset_doi_payload = generate_doi_data(
+            version,
+            version_doi=False,
+            event='publish',  # Update existing Findable DOI
+        )
+
+    # Create or update the DOIs
+    # TODO(asmacdo) we need to try:except here, so dandiset doi doesnt block version doi
+    create_or_update_doi(dandiset_doi_payload)
+    create_or_update_doi(version_doi_payload)
+
+    # Store the DOI values
+    version.doi = version_doi
+    draft_version.doi = dandiset_doi
+
+    # Save the values
+    draft_version.save()
+    version.save()
