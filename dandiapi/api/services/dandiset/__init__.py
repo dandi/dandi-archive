@@ -17,6 +17,7 @@ from dandiapi.api.services.exceptions import (
 )
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+from dandiapi.api.tasks import create_dandiset_draft_doi_task
 
 logger = logging.getLogger(__name__)
 
@@ -61,40 +62,10 @@ def create_dandiset(
             dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
         )
 
-        # For public dandisets, create a Draft DOI
         if not embargo:
-            try:
-                _create_dandiset_draft_doi(draft_version)
-            except Exception:
-                # Log error but allow dandiset creation to proceed
-                logger.exception('Failed to create Draft DOI for dandiset %s', dandiset.identifier)
+            transaction.on_commit(lambda: create_dandiset_draft_doi_task.delay(draft_version.id))
 
     return dandiset, draft_version
-
-
-def _create_dandiset_draft_doi(draft_version: Version) -> None:
-    """
-    Create a Draft DOI for a dandiset.
-
-    This is called during dandiset creation for public dandisets.
-    For embargoed dandisets, no DOI is created until unembargo.
-
-    Args:
-        draft_version: The draft version of the dandiset.
-    """
-    # Generate a Draft DOI (event=None)
-    dandiset_doi, dandiset_doi_payload = doi.generate_doi_data(
-        draft_version,
-        version_doi=False,
-        event=None,  # Draft DOI
-    )
-
-    # Create the DOI
-    doi.create_or_update_doi(dandiset_doi_payload)
-
-    # Store the DOI in the draft version
-    draft_version.doi = dandiset_doi
-    draft_version.save()
 
 
 def delete_dandiset(*, user, dandiset: Dandiset) -> None:
