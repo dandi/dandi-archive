@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dandischema.models import Asset, Dandiset
+from dandischema.models import Asset, Dandiset, PublishedAsset, PublishedDandiset
 from dandischema.utils import TransitionalGenerateJsonSchema
 from django.conf import settings
 from django.urls import reverse
@@ -14,6 +14,13 @@ import requests
         ('schema-dandiset-latest', Dandiset, {}),
         ('schema-asset-latest', Asset, {}),
         ('schema-dandiset', Dandiset, {'version': settings.DANDI_SCHEMA_VERSION}),
+        ('schema-published-dandiset-latest', PublishedDandiset, {}),
+        ('schema-published-asset-latest', PublishedAsset, {}),
+        (
+            'schema-published-dandiset',
+            PublishedDandiset,
+            {'version': settings.DANDI_SCHEMA_VERSION},
+        ),
     ],
 )
 def test_schema_latest(api_client, endpoint, model, kwargs):
@@ -33,7 +40,13 @@ def test_schema_latest(api_client, endpoint, model, kwargs):
     assert schema == expected_schema
 
     # Also compare against the original GitHub schema content
-    schema_type = endpoint.split('-')[1]  # Extract 'dandiset' or 'asset' from endpoint name
+    # Extract schema type from endpoint name (e.g., 'dandiset', 'published-dandiset')
+    endpoint_parts = endpoint.split('-')
+    if endpoint.endswith('-latest'):
+        schema_type = '-'.join(endpoint_parts[1:-1])  # Remove 'schema' prefix and 'latest' suffix
+    else:
+        schema_type = '-'.join(endpoint_parts[1:])  # Remove only 'schema' prefix
+
     github_url = (
         'https://raw.githubusercontent.com/dandi/schema/master/'
         f'releases/{settings.DANDI_SCHEMA_VERSION}/{schema_type}.json'
@@ -59,6 +72,8 @@ def test_schema_latest(api_client, endpoint, model, kwargs):
     [
         'schema-dandiset',
         'schema-asset',
+        'schema-published-dandiset',
+        'schema-published-asset',
     ],
 )
 def test_schema_invalid_version(api_client, endpoint):

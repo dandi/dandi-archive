@@ -22,6 +22,8 @@ from dandiapi.api.views import (
     dandiset_schema_view,
     info_view,
     mailchimp_csv_view,
+    published_asset_schema_view,
+    published_dandiset_schema_view,
     robots_txt_view,
     root_content_view,
     stats_view,
@@ -70,6 +72,26 @@ api_urlpatterns = [
     path('api/schema/<str:version>/dandiset/', dandiset_schema_view, name='schema-dandiset'),
     path('api/schema/latest/asset/', asset_schema_view, name='schema-asset-latest'),
     path('api/schema/<str:version>/asset/', asset_schema_view, name='schema-asset'),
+    path(
+        'api/schema/latest/published-dandiset/',
+        published_dandiset_schema_view,
+        name='schema-published-dandiset-latest',
+    ),
+    path(
+        'api/schema/<str:version>/published-dandiset/',
+        published_dandiset_schema_view,
+        name='schema-published-dandiset',
+    ),
+    path(
+        'api/schema/latest/published-asset/',
+        published_asset_schema_view,
+        name='schema-published-asset-latest',
+    ),
+    path(
+        'api/schema/<str:version>/published-asset/',
+        published_asset_schema_view,
+        name='schema-published-asset',
+    ),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     re_path(
         r'api/uploads/(?P<upload_id>[0-9a-f\-]{36})/complete/',
