@@ -541,7 +541,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         # This contributor is different from the admin_user
         'contributor': [
             {
-                'name': 'Jane Doe',
+                'name': 'Doe, Jane',
                 'email': 'jane.doe@kitware.com',
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
@@ -603,10 +603,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (
-            f'Doe, John; Jane Doe ({year}) {name} (Version draft) [Data set]. '
-            f'DANDI Archive. {url}'
-        ),
+        'citation': (f'Doe, John; Doe, Jane ({year}) {name} (Version draft) [Data set]. DANDI Archive. {url}'),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
@@ -622,7 +619,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
                 'schemaKey': 'Person',
             },
             {
-                'name': 'Jane Doe',
+                'name': 'Doe, Jane',
                 'email': 'jane.doe@kitware.com',
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
