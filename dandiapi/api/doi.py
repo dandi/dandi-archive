@@ -1,86 +1,132 @@
+"""
+DOI management interface for the DANDI Archive.
+
+This module provides the public interface for DOI operations,
+while the implementation details are in datacite.py.
+"""
+
 from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
 
-from django.conf import settings
-import requests
+from dandiapi.api.datacite import DataCiteClient
 
 if TYPE_CHECKING:
     from dandiapi.api.models import Version
 
-# All of the required DOI configuration settings
-DANDI_DOI_SETTINGS = [
-    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_URL'),
-    (settings.DANDI_DOI_API_URL, 'DANDI_DOI_API_USER'),
-    (settings.DANDI_DOI_API_PASSWORD, 'DANDI_DOI_API_PASSWORD'),
-    (settings.DANDI_DOI_API_PREFIX, 'DANDI_DOI_API_PREFIX'),
-]
-
 logger = logging.getLogger(__name__)
 
 
-def doi_configured() -> bool:
-    return any(setting is not None for setting, _ in DANDI_DOI_SETTINGS)
+# Singleton instance
+datacite_client = DataCiteClient()
 
 
-def _generate_doi_data(version: Version):
-    from dandischema.datacite import to_datacite
+def delete_or_hide_doi(doi: str) -> None:
+    """
+    Delete a draft DOI or hide a findable DOI depending on its state.
 
-    publish = settings.DANDI_DOI_PUBLISH
-    # Use the DANDI test datacite instance as a placeholder if PREFIX isn't set
-    prefix = settings.DANDI_DOI_API_PREFIX or '10.80507'
-    dandiset_id = version.dandiset.identifier
-    version_id = version.version
-    doi = f'{prefix}/dandi.{dandiset_id}/{version_id}'
-    metadata = version.metadata
-    metadata['doi'] = doi
-    return (doi, to_datacite(metadata, publish=publish))
+    This method first checks the DOI's state and then either deletes it (if it's a draft)
+    or hides it (if it's findable). Hiding a DOI requires DANDI_DOI_PUBLISH to be enabled.
 
+    Args:
+        doi: The DOI to delete or hide.
 
-def create_doi(version: Version) -> str:
-    doi, request_body = _generate_doi_data(version)
-    # If DOI isn't configured, skip the API call
-    if doi_configured():
-        try:
-            requests.post(
-                settings.DANDI_DOI_API_URL,
-                json=request_body,
-                auth=requests.auth.HTTPBasicAuth(
-                    settings.DANDI_DOI_API_USER,
-                    settings.DANDI_DOI_API_PASSWORD,
-                ),
-                timeout=30,
-            ).raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.exception('Failed to create DOI %s', doi)
-            logger.exception(request_body)
-            if e.response:
-                logger.exception(e.response.text)
-            raise
-    return doi
+    Raises:
+        requests.exceptions.HTTPError: If the API request fails.
+    """
+    datacite_client.delete_or_hide_doi(doi)
 
 
-def delete_doi(doi: str) -> None:
-    # If DOI isn't configured, skip the API call
-    if doi_configured():
-        doi_url = settings.DANDI_DOI_API_URL.rstrip('/') + '/' + doi
-        with requests.Session() as s:
-            s.auth = (settings.DANDI_DOI_API_USER, settings.DANDI_DOI_API_PASSWORD)
-            try:
-                r = s.get(doi_url, headers={'Accept': 'application/vnd.api+json'})
-                r.raise_for_status()
-            except requests.exceptions.HTTPError as e:
-                if e.response and e.response.status_code == requests.codes.not_found:
-                    logger.warning('Tried to get data for nonexistent DOI %s', doi)
-                    return
-                logger.exception('Failed to fetch data for DOI %s', doi)
-                raise
-            if r.json()['data']['attributes']['state'] == 'draft':
-                try:
-                    s.delete(doi_url).raise_for_status()
-                except requests.exceptions.HTTPError:
-                    logger.exception('Failed to delete DOI %s', doi)
-                    raise
+def _create_dandiset_draft_doi(draft_version: Version) -> None:
+    """
+    Create a Draft DOI for a dandiset.
+
+    This is called during dandiset creation for public dandisets.
+    For embargoed dandisets, no DOI is created until unembargo.
+
+    Args:
+        draft_version: The draft version of the dandiset.
+    """
+    # Generate a Draft DOI (event=None)
+    dandiset_doi, dandiset_doi_payload = datacite_client.generate_doi_data(
+        draft_version,
+        version_doi=False,
+        event=None,  # Draft DOI
+    )
+
+    # Create the DOI
+    datacite_client.create_or_update_doi(dandiset_doi_payload)
+
+    # Store the DOI in the draft version
+    draft_version.doi = dandiset_doi
+    draft_version.save()
+
+
+def _update_draft_version_doi(draft_version: Version) -> None:
+    """
+    Update or create a Draft DOI for a dandiset with the latest metadata.
+
+    This is called when a draft version's metadata is updated for a dandiset
+    that has never been published.
+
+    Args:
+        draft_version: The draft version of the dandiset with updated metadata.
+    """
+    # Skip for dandisets that have published versions
+    if draft_version.dandiset.versions.exclude(version='draft').exists():
+        return
+
+    # Generate DOI payload with updated metadata
+    dandiset_doi, dandiset_doi_payload = datacite_client.generate_doi_data(
+        draft_version,
+        version_doi=False,  # Generate a Dandiset DOI, not a Version DOI
+        event=None,  # Keep as Draft DOI
+    )
+
+    # Create or update the DOI
+    datacite_client.create_or_update_doi(dandiset_doi_payload)
+
+    # If the version doesn't have a DOI yet, store it
+    if draft_version.doi is None:
+        draft_version.doi = dandiset_doi
+        draft_version.save()
+        logger.info('Created new Draft DOI %s', dandiset_doi)
     else:
-        logger.debug('Skipping DOI deletion for %s since not configured', doi)
+        logger.info('Updated Draft DOI %s with new metadata', draft_version.doi)
+
+
+def _handle_publication_dois(version_id: int) -> None:
+    """
+    Create and update DOIs for a published version.
+
+    Args:
+        version_id: ID of the published version
+    """
+    from dandiapi.api.models import Version
+
+    version = Version.objects.get(id=version_id)
+    draft_version = version.dandiset.draft_version
+
+    # Create Version DOI as Findable
+    version_doi, version_doi_payload = datacite_client.generate_doi_data(
+        version, version_doi=True, event='publish'
+    )
+
+    # Update Dandiset DOI metadata and promote Findable (ok if already findable)
+    dandiset_doi, dandiset_doi_payload = datacite_client.generate_doi_data(
+        version,
+        version_doi=False,
+        event='publish',
+    )
+
+    # Create or update the DOIs
+    # TODO(asmacdo): we need to try:except here, so dandiset doi doesn't block version doi
+    datacite_client.create_or_update_doi(dandiset_doi_payload)
+    datacite_client.create_or_update_doi(version_doi_payload)
+
+    # Store the DOI values
+    version.doi = version_doi
+    draft_version.doi = dandiset_doi
+    draft_version.save()
+    version.save()
