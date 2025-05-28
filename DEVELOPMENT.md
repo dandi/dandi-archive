@@ -112,6 +112,18 @@ To include a memory profile with your tests, add `--memray` at the end of your t
 
 #### NOTE: If you have an existing dandi-archive installation in which you have previously run tox, you may need to recreate the tox environment (by adding `-r` to your tox invocation) the first time you attempt to use memray. If your attempt to use the `--memray` flag fails with `pytest: error: unrecognized arguments: --memray`, this is likely why.
 
+### CLI Integration Testing
+
+The `scripts/test_cli_integration.sh` script allows you to test dandi-cli against your local dandi-archive changes. This emulates the CI workflow but uses your local code changes, making it easier to test breaking changes or new features that require coordination between the archive and CLI.
+
+Run `./scripts/test_cli_integration.sh --help` for complete usage information.
+
+This tool is especially useful when:
+- Testing archive changes that affect CLI behavior
+- Developing new API endpoints used by the CLI
+- Debugging integration test failures in CI
+- Validating that archive and CLI changes work together
+
 ## dandiarchive.org WEB Interface
 
 This repository now also contains sources for the web interface under [web/](./web/) folder.
