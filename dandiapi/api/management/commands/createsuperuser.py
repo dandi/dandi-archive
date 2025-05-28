@@ -12,13 +12,12 @@ if TYPE_CHECKING:
     from composed_configuration._allauth_support.createsuperuser import EmailAsUsernameProxyUser
 
 
-def create_usermetadata(instance: EmailAsUsernameProxyUser, created: bool, **kwargs):
+def create_usermetadata(instance: EmailAsUsernameProxyUser, created: bool, **kwargs):  # noqa: FBT001
     if created and not hasattr(instance, '_usermetadata_created'):
         UserMetadata.objects.get_or_create(
-            user=instance, 
-            defaults={'status': UserMetadata.Status.APPROVED}
+            user=instance, defaults={'status': UserMetadata.Status.APPROVED}
         )
-        instance._usermetadata_created = True
+        instance._usermetadata_created = True  # noqa: SLF001
 
 
 class Command(createsuperuser.Command):
@@ -34,7 +33,7 @@ class Command(createsuperuser.Command):
         # Set first_name and last_name from environment variables if provided
         first_name = os.environ.get('DJANGO_SUPERUSER_FIRST_NAME')
         last_name = os.environ.get('DJANGO_SUPERUSER_LAST_NAME')
-        
+
         if first_name or last_name:
             # Find the user that was just created
             email = kwargs.get('email') or os.environ.get('DJANGO_SUPERUSER_EMAIL')
