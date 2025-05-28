@@ -78,9 +78,42 @@ jobs:
         if: matrix.dandi-version == 'release'
         run: pip install "dandi[test]"
 
-      - name: Install dev dandi
-        if: matrix.dandi-version == 'master'
-        run: pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+      - name: Extract CLI PR reference from description
+        if: matrix.dandi-version == 'master' && github.event_name == 'pull_request'
+        id: cli-pr
+        run: |
+          if echo "${{ github.event.pull_request.body }}" | grep -i "Requires_CLI_PR:"; then
+            CLI_PR_URL=$(echo "${{ github.event.pull_request.body }}" | grep -i "Requires_CLI_PR:" | sed 's/.*Requires_CLI_PR:[[:space:]]*//' | head -1)
+            echo "CLI PR URL found: $CLI_PR_URL"
+            # Extract PR number from URL (e.g., https://github.com/dandi/dandi-cli/pull/123)
+            CLI_PR_NUM=$(echo "$CLI_PR_URL" | grep -o '[0-9]\+$')
+            echo "cli_pr_num=$CLI_PR_NUM" >> $GITHUB_OUTPUT
+          else
+            echo "No CLI PR reference found in description"
+            echo "cli_pr_num=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get CLI PR branch name
+        if: matrix.dandi-version == 'master' && steps.cli-pr.outputs.cli_pr_num != ''
+        id: cli-branch
+        run: |
+          CLI_PR_NUM="${{ steps.cli-pr.outputs.cli_pr_num }}"
+          echo "Getting branch name for CLI PR #$CLI_PR_NUM"
+          BRANCH_NAME=$(curl -s "https://api.github.com/repos/dandi/dandi-cli/pulls/$CLI_PR_NUM" | jq -r '.head.ref')
+          echo "Branch name: $BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Install dev dandi from specific PR branch
+        if: matrix.dandi-version == 'master' && steps.cli-branch.outputs.branch_name != '' && steps.cli-branch.outputs.branch_name != 'null'
+        run: |
+          echo "Installing dandi from PR branch: ${{ steps.cli-branch.outputs.branch_name }}"
+          pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli@${{ steps.cli-branch.outputs.branch_name }}"
+
+      - name: Install dev dandi from master
+        if: matrix.dandi-version == 'master' && (steps.cli-branch.outputs.branch_name == '' || steps.cli-branch.outputs.branch_name == 'null')
+        run: |
+          echo "Installing dandi from master branch"
+          pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
 
       - name: Run dandi-api tests in dandi-cli
         run: |
