@@ -83,10 +83,11 @@ jobs:
         id: cli-pr
         run: |
           if echo "${{ github.event.pull_request.body }}" | grep -i "Requires_CLI_PR:"; then
-            CLI_PR_URL=$(echo "${{ github.event.pull_request.body }}" | grep -i "Requires_CLI_PR:" | sed 's/.*Requires_CLI_PR:[[:space:]]*//' | head -1)
+            CLI_PR_URL=$(echo "${{ github.event.pull_request.body }}" | grep -i "Requires_CLI_PR:" | sed 's/.*Requires_CLI_PR:[[:space:]]*//' | head -1 | tr -d '\r\n')
             echo "CLI PR URL found: $CLI_PR_URL"
             # Extract PR number from URL (e.g., https://github.com/dandi/dandi-cli/pull/123)
-            CLI_PR_NUM=$(echo "$CLI_PR_URL" | grep -o '[0-9]\+$')
+            CLI_PR_NUM=$(echo "$CLI_PR_URL" | grep -o '[0-9]\+' | tail -1)
+            echo "CLI PR number: $CLI_PR_NUM"
             echo "cli_pr_num=$CLI_PR_NUM" >> $GITHUB_OUTPUT
           else
             echo "No CLI PR reference found in description"
