@@ -201,7 +201,7 @@ We will keep (and deprecate) the `publish` parameter, and add a new parameter `e
 
 In the current implementation, only published dandisets are given a DOI, so we are using the pydantic validation for `PublishedDandiset`.
 This is too restrictive for our case.
-Instead, we'll try `PublishedDandiset` first, then fallback to `Dandiset`, then fall back to unvalidated.
+Instead, we'll try `PublishedDandiset` first, then fallback to unvalidated.
 
 ## Alternatives Explored
 
