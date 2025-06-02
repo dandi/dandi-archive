@@ -9,10 +9,10 @@ Upon creation, every public Dandiset will receive a **Dandiset DOI** that will r
 Every public published version of a Dandiset will receive a **Version DOI**.
 
 For example:
-Dandiset DOI: `https://doi.org/10.48324/dandi.000027/`
-Version DOI: `https://doi.org/10.48324/dandi.000027/0.210831.2033`
+ - Dandiset DOI: `https://doi.org/10.48324/dandi.000027/`
+ - Version DOI: `https://doi.org/10.48324/dandi.000027/0.210831.2033`
 
-The Dandiset DOI will always refer to the DLP
+Dandiset DOI redirect will always refer to the DLP.
 
 At creation the `Dandiset DOI` will be a DataCite `Draft DOI`, but will be "promoted" to a DataCite `Findable DOI` as soon as there is a published version.
 A `Version DOI` will be created as a `Findable DOI`.
