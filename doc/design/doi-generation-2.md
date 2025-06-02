@@ -14,8 +14,9 @@ For example:
 
 Dandiset DOI redirect will always refer to the DLP.
 
-At creation the `Dandiset DOI` will be a DataCite `Draft DOI`, but will be "promoted" to a DataCite `Findable DOI` as soon as there is a published version.
-A `Version DOI` will be created as a `Findable DOI`.
+At creation the `Dandiset DOI` will be a DataCite `Draft DOI`.
+`Dandiset DOI` will remain a `Draft DOI` until there is a published version, at that time we will "promote" to a DataCite `Findable DOI`.
+For each published version there will be a `Version DOI` created as a `Findable DOIs`.
 
 ## The current approach
 
@@ -79,7 +80,7 @@ DataCite allows for three types of DOIs ([DataCite](https://support.datacite.org
     - Upon changes to embargoed dandiset metadata record, don't do anything.
     - Upon deletion of an embargoed dandiset: don't do anything.
     - Upon unembargoing dandiset:
-        - Mint `Dandiset DOI` (Draft) with latest metadata,
+        - Mint `Dandiset DOI` (Draft) with latest metadata
 
 ### Cautions
 
@@ -90,9 +91,9 @@ If DANDI_DOI_PUBLISH is false (default)
 If all DOI configuration options are not set:
     - all required options:
         - `DANDI_DOI_API_URL`
-        - `DANDI_DOI_API_URL`
+        - `DANDI_DOI_API_USER`
         - `DANDI_DOI_API_PASSWORD`
-        - `DANDI_DOI_API_PASSWORD`
+        - `DANDI_DOI_API_PREFIX`
     - DOIs CRUD through Datacite API should be entirely disabled
     - DOI (the string) should not be added to the version
 
@@ -228,7 +229,7 @@ This is because `Draft` DOI is not visible/usable by users.
 However, if we promote the `Draft DOI` to `Findable` as soon as it is valid, and the user then change it to be invalid again, the DOI metadata will be wrong.
 We discussed annotating the DOI, ie "potentially incorrect metadata", but we ultimately decided that the messiness is not worth the value.
 
-- Dandisets can be deleted. In such cases, upon deletion of a dandiset:
+How Findable DOIs for Draft Dandisets would work upon deletion of a dandiset:
   - if DOI was a `Draft` DOI - just delete it as well.
   - if DOI was a `Findable` DOI - convert to `Registered` DOI (follows [datacite best practices](https://support.datacite.org/docs/tombstone-pages))
   - Also at the level of the DANDI archive itself we should provide tombstone page so URL is still "working" (#3211)
