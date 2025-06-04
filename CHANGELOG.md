@@ -1,3 +1,35 @@
+# v0.11.0 (Wed Jun 04 2025)
+
+:tada: This release contains work from a new contributor! :tada:
+
+Thank you, Nicole Stock Tregoning ([@NEStock](https://github.com/NEStock)), for all your work!
+
+#### 🚀 Enhancement
+
+- Bump dandischema to 0.11.1 in API dependencies; bring back "yarn migrate" command to update typings for frontend/schema [#2383](https://github.com/dandi/dandi-archive/pull/2383) (aaronkanzer@Aarons-MacBook-Pro-2.local [@yarikoptic](https://github.com/yarikoptic) [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### 🐛 Bug Fix
+
+- fix: update backend (API) robots.txt to allow Googlebot access to dandiset metadata [#2397](https://github.com/dandi/dandi-archive/pull/2397) ([@bendichter](https://github.com/bendichter) [@yarikoptic](https://github.com/yarikoptic))
+- fix: update pytest version constraints for compat with factoryboy ([@bendichter](https://github.com/bendichter))
+- Fix broken/out-of-date docs links [#2371](https://github.com/dandi/dandi-archive/pull/2371) ([@NEStock](https://github.com/NEStock))
+- Fix formatting of approved user message template [#2373](https://github.com/dandi/dandi-archive/pull/2373) ([@kabilar](https://github.com/kabilar))
+
+#### 🧪 Tests
+
+- Fix Frontend CI Failing: remove " " from the Sign In/Up button names [#2389](https://github.com/dandi/dandi-archive/pull/2389) ([@NEStock](https://github.com/NEStock))
+
+#### Authors: 6
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro-2.local)
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Nicole Stock Tregoning ([@NEStock](https://github.com/NEStock))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.10.0 (Wed Apr 30 2025)
 
 #### 🚀 Enhancement
