@@ -15,9 +15,6 @@ Disallow: /api/
 
 # Disallow all other bots from accessing API endpoints
 User-agent: *
-Disallow: /api/
-Disallow: /admin/
-Disallow: /oauth/
-Disallow: /swagger/
+Disallow: /
 """
     return HttpResponse(content, content_type='text/plain')
