@@ -94,7 +94,7 @@ setup(
             'djangorestframework-yaml',
             'factory-boy',
             'freezegun',
-            'pytest',
+            'pytest<8.4.0',  # current incompatibility with factoryboy
             'pytest-cov',
             'pytest-django',
             'pytest-factoryboy',
