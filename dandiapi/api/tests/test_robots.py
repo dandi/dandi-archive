@@ -9,5 +9,18 @@ def test_robots_txt(api_client):
     response = api_client.get(reverse('robots_txt'))
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/plain'
-    expected_content = 'User-agent: *\nDisallow: /'
+
+    expected_content = """# Allow Googlebot to access dandiset metadata for structured data indexing
+User-agent: Googlebot
+Allow: /api/dandisets/*/versions/*/info
+Allow: /api/dandisets/*/versions/*/
+Allow: /api/dandisets/*/info
+Allow: /api/dandisets/*/
+Allow: /api/info/
+
+# Disallow all other bots from accessing API endpoints
+User-agent: *
+Disallow: /
+"""
+
     assert response.content.decode('utf-8').strip() == expected_content.strip()
