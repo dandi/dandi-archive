@@ -11,7 +11,6 @@ Allow: /api/dandisets/*/versions/*/
 Allow: /api/dandisets/*/info
 Allow: /api/dandisets/*/
 Allow: /api/info/
-Disallow: /api/
 
 # Disallow all other bots from accessing API endpoints
 User-agent: *
