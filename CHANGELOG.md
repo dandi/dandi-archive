@@ -1,3 +1,31 @@
+# v0.11.1 (Thu Jun 05 2025)
+
+#### 🏎 Performance
+
+- fix: update robots.txt rules to disallow specific asset API endpoints for Googlebot [#2401](https://github.com/dandi/dandi-archive/pull/2401) ([@bendichter](https://github.com/bendichter))
+- Including trailing slash on assets frontend call to prevent redundancy [#2402](https://github.com/dandi/dandi-archive/pull/2402) (aaronkanzer@dhcp-10-29-186-193.dyn.MIT.EDU [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### 🏠 Internal
+
+- Prune web/ from sdist of dandiarchive/ and thus when uploading to heroku [#2403](https://github.com/dandi/dandi-archive/pull/2403) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 📝 Documentation
+
+- Add staging rename design doc [#2229](https://github.com/dandi/dandi-archive/pull/2229) ([@waxlamp](https://github.com/waxlamp))
+- Design document for the Zenodo like DOI per dandiset [#2012](https://github.com/dandi/dandi-archive/pull/2012) ([@yarikoptic](https://github.com/yarikoptic) [@asmacdo](https://github.com/asmacdo))
+- Give explicit instructions on where to get code and check/set port for django DB [#2400](https://github.com/dandi/dandi-archive/pull/2400) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 6
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@dhcp-10-29-186-193.dyn.MIT.EDU)
+- Austin Macdonald ([@asmacdo](https://github.com/asmacdo))
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.11.0 (Wed Jun 04 2025)
 
 :tada: This release contains work from a new contributor! :tada:
