@@ -1,5 +1,14 @@
 # Development Guidelines
 
+## Getting Started
+
+You would need a local clone of the `dandi-archive` repository to develop on it.
+
+1. Run `git clone https://github.com/dandi/dandi-archive`
+2. Run `cd dandi-archive`
+3. Make sure your PostgreSQL port (5432) is available (recommended), or
+export `DOCKER_POSTGRES_PORT` environment variable to point to an alternative port.
+
 ## Develop with Docker (recommended quickstart)
 This is the simplest configuration for developers to start with.
 
@@ -43,7 +52,7 @@ but allows developers to run Python code on their native system.
   pip install psycopg2
   ```
 5. Create and activate a new Python virtualenv
-6. Run `pip install -e .[dev]`
+6. Run `pip install -e ".[dev]"`
 7. Run `source ./dev/export-env.sh`
 8. Run `./manage.py migrate`
 9. Run `./manage.py createcachetable`
@@ -85,7 +94,7 @@ the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
 ### Initial Setup
 tox is used to execute all tests.
 tox is installed automatically with the `dev` package extra.
-To install the tox pytest dependencies into your environment, run `pip install -e .[test]`.
+To install the tox pytest dependencies into your environment, run `pip install -e ".[test]"`.
 These are useful for IDE autocompletion or if you want to run `pytest` directly (not recommended).
 
 When running the "Develop with Docker" configuration, all tox commands must be run as
