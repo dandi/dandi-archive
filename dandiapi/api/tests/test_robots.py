@@ -12,11 +12,10 @@ def test_robots_txt(api_client):
 
     expected_content = """# Allow Googlebot to access dandiset metadata for structured data indexing
 User-agent: Googlebot
-Allow: /api/dandisets/*/versions/*/info
-Allow: /api/dandisets/*/versions/*/
-Allow: /api/dandisets/*/info
 Allow: /api/dandisets/*/
 Allow: /api/info/
+Disallow: /api/dandisets/*/versions/*/assets
+Disallow: /
 
 # Disallow all other bots from accessing API endpoints
 User-agent: *
