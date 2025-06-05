@@ -6,7 +6,7 @@ You would need a local clone of the `dandi-archive` repository to develop on it.
 
 1. Run `git clone https://github.com/dandi/dandi-archive`
 2. Run `cd dandi-archive`
-3. Also make sure you are not already running a local PostgreSQL server on port 5432 (recommended), or
+3. Make sure your PostgreSQL port (5432) is available (recommended), or
 export `DOCKER_POSTGRES_PORT` environment variable to point to an alternative port.
 
 ## Develop with Docker (recommended quickstart)
