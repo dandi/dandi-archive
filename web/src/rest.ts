@@ -133,7 +133,7 @@ const dandiRest = {
   ): Promise<Paginated<Asset> | null> {
     try {
       const { data } = await client.get(
-        `dandisets/${identifier}/versions/${version}/assets`,
+        `dandisets/${identifier}/versions/${version}/assets/`,
         config
       );
       return data;
