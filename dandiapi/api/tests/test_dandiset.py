@@ -541,13 +541,13 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         # This contributor is different from the admin_user
         'contributor': [
             {
-                'name': 'Jane Doe',
+                'name': 'Doe, Jane',
                 'email': 'jane.doe@kitware.com',
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
                 'affiliation': [],
                 'includeInCitation': True,
-            }
+            },
         ],
     }
 
@@ -571,7 +571,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
             'created': TIMESTAMP_RE,
             'modified': TIMESTAMP_RE,
         },
-        'contact_person': 'Jane Doe',
+        'contact_person': 'Doe, John',
         'embargo_status': 'OPEN',
         'star_count': 0,
         'is_starred': False,
@@ -603,7 +603,10 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'version': 'draft',
         'url': url,
         'dateCreated': UTC_ISO_TIMESTAMP_RE,
-        'citation': (f'Jane Doe ({year}) {name} (Version draft) [Data set]. DANDI Archive. {url}'),
+        'citation': (
+            f'Doe, John; Doe, Jane ({year}) {name} '
+            f'(Version draft) [Data set]. DANDI Archive. {url}'
+        ),
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
@@ -611,13 +614,21 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         'repository': settings.DANDI_WEB_APP_URL,
         'contributor': [
             {
-                'name': 'Jane Doe',
+                'affiliation': [],
+                'email': 'admin@example.com',
+                'includeInCitation': True,
+                'name': 'Doe, John',
+                'roleName': ['dcite:ContactPerson'],
+                'schemaKey': 'Person',
+            },
+            {
+                'name': 'Doe, Jane',
                 'email': 'jane.doe@kitware.com',
                 'roleName': ['dcite:ContactPerson'],
                 'schemaKey': 'Person',
                 'affiliation': [],
                 'includeInCitation': True,
-            }
+            },
         ],
         'assetsSummary': {
             'schemaKey': 'AssetsSummary',
