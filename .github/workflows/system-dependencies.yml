@@ -1,0 +1,35 @@
+# This workflow tests the instructions, given in `DEVELOPMENT.md`, for setting up
+# the system dependencies required for installing this project for development.
+
+name: Test instructions for system dependencies setup for development
+on:
+  pull_request:
+    paths:
+      - "DEVELOPMENT.md"
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # Make pg_config visible on both Intel and Apple-silicon runners
+      - name: Add pg_config to PATH (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          # Intel runners use /usr/local, Apple-silicon uses /opt/homebrew
+          echo "$(brew --prefix)/opt/libpq/bin" >> "$GITHUB_PATH"
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
