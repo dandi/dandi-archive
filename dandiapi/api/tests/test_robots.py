@@ -14,6 +14,7 @@ def test_robots_txt(api_client):
 User-agent: Googlebot
 Allow: /api/dandisets/search
 Allow: /api/dandisets/*/
+Allow: /api/dandisets/?
 Allow: /api/info/
 Allow: /api/dandisets/*/versions/*/assets*page_size=1
 Disallow: /api/dandisets/*/versions/*/assets
