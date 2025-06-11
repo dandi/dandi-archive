@@ -6,7 +6,7 @@ from django.http import HttpResponse
 def robots_txt_view(request):
     content = """# Allow Googlebot to access dandiset metadata for structured data indexing
 User-agent: Googlebot
-Allow: /api/dandisets/*/
+Allow: /api/dandisets/
 Allow: /api/info/
 Disallow: /api/dandisets/*/versions/*/assets
 Disallow: /
