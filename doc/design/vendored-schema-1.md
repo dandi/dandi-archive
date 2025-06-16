@@ -16,15 +16,14 @@ flowchart TD
 
   end
 
+  subgraph dandi_cli_repo["<a href='https://github.com/dandi/dandi-cli'>dandi-cli</a>"]
+    CLI["CLI & Library<br>validation logic<br/>(Python)"]
+  end
+
   subgraph dandi_archive_repo["<a href='https://github.com/dandi/dandi-archive/'>dandi-archive</a>"]
     Meditor["Web UI<br/>Metadata Editor<br/>(meditor; Vue)"]
     API["Archive API<br/>(Python; DJANGO)"]
-    SchemaEndpoint["Schema API Endpoint<br/>(JSONSchema)"]
     Storage[("DB (Postgresql)")]
-  end
-
-  subgraph dandi_cli_repo["<a href='https://github.com/dandi/dandi-cli'>dandi-cli</a>"]
-    CLI["CLI & Library<br>validation logic<br/>(Python)"]
   end
 
   %% main flow
@@ -32,12 +31,12 @@ flowchart TD
   Pydantic -->|used to validate| CLI
   Pydantic -->|used to validate| API
 
-  API -->|serialize at runtime| SchemaEndpoint
-  SchemaEndpoint -->|used to produce| Meditor
-  SchemaEndpoint -->|used to validate| Meditor
-
+  JSONSchema -->|used to produce| Meditor
+  JSONSchema -->|used to validate| Meditor
   Meditor    -->|submits metadata| API
+
   CLI        -->|used to upload & submit metadata| API
+
   API <-->|metadata JSON| Storage
 
   %% styling
@@ -47,8 +46,8 @@ flowchart TD
   classDef data   fill:#fff3e0,stroke:#e65100,stroke-width:1px;
   JSONSchema@{ shape: docs }
 
-  class dandi_schema_repo,dandi_cli_repo,dandi_archive_repo repo;
-  class Pydantic,CLI,API,SchemaEndpoint code;
+  class dandi_schema_repo,schema_repo,dandi_cli_repo,dandi_archive_repo repo;
+  class Pydantic,CLI,API code;
   class JSONSchema,Storage data;
   class Meditor ui;
 ```
@@ -143,6 +142,11 @@ flowchart TD
     Pydantic["Pydantic Models"]
   end
 
+  subgraph schema_repo["<a href='https://github.com/dandi/schema/'>dandi/schema</a>"]
+    JSONSchema["JSONSchema<br>serializations"]
+
+  end
+
   subgraph dandi_archive_repo["<a href='https://github.com/dandi/dandi-archive/'>dandi-archive</a>"]
     Meditor["Web UI<br/>Metadata Editor<br/>(meditor; Vue)"]
     API["Archive API<br/>(Python; DJANGO)"]
@@ -155,6 +159,7 @@ flowchart TD
   end
 
   %% main flow
+  Pydantic -->|"serialize into<br/>(CI)"| JSONSchema
   Pydantic -->|used to validate| CLI
   Pydantic -->|used to validate| API
 
@@ -171,10 +176,11 @@ flowchart TD
   classDef code   fill:#e1f5fe,stroke:#0277bd,stroke-width:1px;
   classDef ui     fill:#e8f5e9,stroke:#2e7d32,stroke-width:1px;
   classDef data   fill:#fff3e0,stroke:#e65100,stroke-width:1px;
+  JSONSchema@{ shape: docs }
 
   class dandi_schema_repo,dandi_cli_repo,dandi_archive_repo repo;
   class Pydantic,CLI,API,SchemaEndpoint code;
-  class Storage data;
+  class JSONSchema,Storage data;
   class Meditor ui;
 ```
 
