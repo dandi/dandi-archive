@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.urls import reverse
 
 from dandiapi import __version__
-from dandiapi.api.views.info import schema_url
+from dandiapi.conftest import TEST_SERVER_NAME
 
 
 def test_rest_info(api_client):
     resp = api_client.get('/api/info/')
     assert resp.status_code == 200
+
+    # Get the expected schema URL
+    schema_url = f'http://{TEST_SERVER_NAME}{reverse("schema-dandiset-latest")}'
+
     assert resp.json() == {
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,
