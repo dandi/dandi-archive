@@ -108,6 +108,7 @@ class DataCiteClient:
             doi = self.format_doi(dandiset_id)
             # Dandiset DOI is the same as version url without version
             metadata['url'] = metadata['url'].rsplit('/', 1)[0]
+            metadata['version'] = version.dandiset.draft_version.metadata['id']
 
         metadata['doi'] = doi
 

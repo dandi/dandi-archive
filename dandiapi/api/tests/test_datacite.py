@@ -79,11 +79,14 @@ def test_format_doi(datacite_client, mocker):
 
 
 @pytest.mark.django_db
-def test_generate_doi_data(datacite_client, published_version, mocker):
+def test_generate_doi_data(datacite_client, published_version, draft_version_factory, mocker):
     """Test generating DOI data for a version."""
     # Mock to_datacite to avoid actual validation
     mock_to_datacite = mocker.patch('dandischema.datacite.to_datacite')
     mock_to_datacite.return_value = {'data': {'attributes': {}}}
+
+    # Create a draft version for Dandiset DOI generation
+    draft_version_factory(dandiset=published_version.dandiset)
 
     # Test Version DOI
     doi_string, payload = datacite_client.generate_doi_data(published_version, version_doi=True)
@@ -416,3 +419,39 @@ def test_delete_or_hide_doi_get_error(datacite_client_unsafe, mock_requests, moc
     assert not mock_requests.put.called
     assert not mock_requests.delete.called
     mock_logger.exception.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_generate_doi_data_schema_integration(
+    datacite_client, published_version, draft_version_factory
+):
+    """Test generating DOI data with real dandischema.datacite integration."""
+    # This test exercises the actual dandischema.datacite.to_datacite function
+    # without mocking, ensuring our schema changes work with the archive
+
+    # Create a draft version for Dandiset DOI generation
+    draft_version_factory(dandiset=published_version.dandiset)
+
+    # Test Version DOI with real schema integration
+    doi_string, payload = datacite_client.generate_doi_data(published_version, version_doi=True)
+    dandiset_id = published_version.dandiset.identifier
+    version_id = published_version.version
+    expected_doi = f'{datacite_client.api_prefix}/dandi.{dandiset_id}/{version_id}'
+
+    assert doi_string == expected_doi
+    assert 'doi' in published_version.metadata
+
+    # Verify the payload structure from real to_datacite
+    assert 'data' in payload
+    assert 'attributes' in payload['data']
+    assert 'doi' in payload['data']['attributes']
+    assert payload['data']['attributes']['doi'] == expected_doi
+
+    # Test Dandiset DOI with real schema integration
+    doi_string, payload = datacite_client.generate_doi_data(published_version, version_doi=False)
+    expected_doi = f'{datacite_client.api_prefix}/dandi.{dandiset_id}'
+
+    assert doi_string == expected_doi
+    assert 'data' in payload
+    assert 'attributes' in payload['data']
+    assert payload['data']['attributes']['doi'] == expected_doi
