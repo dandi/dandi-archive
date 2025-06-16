@@ -7,7 +7,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 
-from dandiapi.api.doi import delete_doi
+from dandiapi.api.doi import delete_or_hide_doi
 from dandiapi.api.mail import send_dandiset_unembargo_failed_message
 from dandiapi.api.manifests import (
     write_assets_jsonld,
@@ -83,7 +83,7 @@ def validate_version_metadata_task(version_id: int) -> None:
 
 @shared_task
 def delete_doi_task(doi: str) -> None:
-    delete_doi(doi)
+    delete_or_hide_doi(doi)
 
 
 @shared_task
@@ -106,3 +106,34 @@ def unembargo_dandiset_task(dandiset_id: int, user_id: int):
     except Exception:
         send_dandiset_unembargo_failed_message(ds)
         raise
+
+
+@shared_task(soft_time_limit=60)
+def handle_publication_dois_task(version_id: int) -> None:
+    from dandiapi.api.doi import _handle_publication_dois
+
+    _handle_publication_dois(version_id)
+
+
+@shared_task(soft_time_limit=60)
+def create_dandiset_draft_doi_task(version_id: int) -> None:
+    from dandiapi.api.doi import _create_dandiset_draft_doi
+
+    version = Version.objects.get(id=version_id)
+    try:
+        _create_dandiset_draft_doi(version)
+    except Exception:
+        # Log error but allow dandiset creation to proceed
+        logger.exception('Failed to create Draft DOI for dandiset %s', version.dandiset.identifier)
+
+
+@shared_task(soft_time_limit=60)
+def update_draft_version_doi_task(version_id: int) -> None:
+    from dandiapi.api.doi import _update_draft_version_doi
+
+    version = Version.objects.get(id=version_id)
+    try:
+        _update_draft_version_doi(version)
+    except Exception:
+        # Log error but allow version update to proceed
+        logger.exception('Failed to update Draft DOI for dandiset %s', version.dandiset.identifier)
