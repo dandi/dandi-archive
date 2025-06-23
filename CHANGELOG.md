@@ -1,3 +1,23 @@
+# v0.11.2 (Mon Jun 23 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to force release cycle [#2418](https://github.com/dandi/dandi-archive/pull/2418) ([@waxlamp](https://github.com/waxlamp))
+- ENH: allow googlebot also /search endpoint and for filtered listing of assets [#2408](https://github.com/dandi/dandi-archive/pull/2408) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- Remove gossip and mingling from Celery workers [#2251](https://github.com/dandi/dandi-archive/pull/2251) (aaronkanzer@dhcp-10-29-159-71.dyn.mit.edu [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 4
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@dhcp-10-29-159-71.dyn.mit.edu)
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.11.1 (Thu Jun 05 2025)
 
 #### 🏎 Performance
