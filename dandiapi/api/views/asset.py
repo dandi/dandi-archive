@@ -233,6 +233,8 @@ class AssetRequestSerializer(serializers.Serializer):
 
 class NestedAssetViewSet(NestedViewSetMixin, AssetViewSet, ReadOnlyModelViewSet):
     pagination_class = DandiPagination
+    filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = AssetFilter
 
     def raise_if_unauthorized(self):
         version = get_object_or_404(
