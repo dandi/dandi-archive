@@ -116,7 +116,7 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(soft_time_limit=80)
 def refresh_materialized_view_search() -> None:
     """
     Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search.
@@ -155,7 +155,7 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
 
     # Refresh the materialized view used by asset search every 10 mins.
-    sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
+    # sender.add_periodic_task(timedelta(seconds=15), refresh_materialized_view_search.s())
 
     # Process new S3 logs every hour
     sender.add_periodic_task(timedelta(hours=1), collect_s3_log_records_task.s())
