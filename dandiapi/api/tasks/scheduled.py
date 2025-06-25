@@ -116,7 +116,7 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-@shared_task(soft_time_limit=60)
+@shared_task(soft_time_limit=90)
 def refresh_materialized_view_search() -> None:
     """
     Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search.
