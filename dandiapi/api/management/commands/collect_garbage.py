@@ -12,14 +12,13 @@ def echo_report():
 
     # Django doesn't support combining .distinct() and .aggregate() in a single query,
     # so we need to manually sum the sizes of the distinct blobs.
-    assets_size_in_bytes = 0
-    for asset in (
-        garbage_collectable_assets.select_related('blob')
-        .order_by('blob')
+    assets_size_in_bytes = sum(
+        size
+        for size in garbage_collectable_assets.order_by('blob')
         .distinct('blob')
+        .values_list('blob__size', flat=True)
         .iterator()
-    ):
-        assets_size_in_bytes += asset.blob.size
+    )
 
     garbage_collectable_asset_blobs = garbage_collection.asset_blob.get_queryset()
     asset_blobs_count = garbage_collectable_asset_blobs.count()
@@ -28,11 +27,19 @@ def echo_report():
     garbage_collectable_uploads = garbage_collection.upload.get_queryset()
     uploads_count = garbage_collectable_uploads.count()
 
+    # Verification of upload size only happens if the upload is explicitly validated by the
+    # client. It's reasonable to assume that many garbage-collectable uploads will not have
+    # their size verified, so we cannot rely on the database here and must call out
+    # to the storage backend to get the size of each upload.
+    uploads_size_in_bytes = 0
+    for upload in garbage_collectable_uploads.iterator():
+        uploads_size_in_bytes += upload.blob.size
+
     click.echo(f'Assets: {assets_count} ({assets_size_in_bytes / (1024 ** 3):.2f} GB)')
     click.echo(
         f'AssetBlobs: {asset_blobs_count} ({asset_blobs_size_in_bytes / (1024 ** 3):.2f} GB)'
     )
-    click.echo(f'Uploads: {uploads_count}')
+    click.echo(f'Uploads: {uploads_count} ({uploads_size_in_bytes / (1024 ** 3):.2f} GB)')
     click.echo('S3 Blobs: Coming soon')
 
 
