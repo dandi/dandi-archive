@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from celery.utils.log import get_task_logger
 from django.core import serializers
 from django.db import transaction
-from django.db.models import Exists, OuterRef
 from django.utils import timezone
 from more_itertools import chunked
 
@@ -15,7 +14,6 @@ from dandiapi.api.models import (
     Asset,
     GarbageCollectionEvent,
     GarbageCollectionEventRecord,
-    Version,
 )
 
 if TYPE_CHECKING:
@@ -28,14 +26,8 @@ ASSET_EXPIRATION_TIME = timedelta(days=30)
 
 def get_queryset() -> QuerySet[Asset]:
     """Get the queryset of Assets that are eligible for garbage collection."""
-    return Asset.objects.alias(
-        has_version=Exists(
-            Version.objects.filter(
-                assets=OuterRef('id'),
-            ),
-        )
-    ).filter(
-        has_version=False,
+    return Asset.objects.filter(
+        versions__isnull=True,
         published=False,
         blob__isnull=False,  # only delete assets with blobs; zarrs are not supported yet
         modified__lt=timezone.now() - ASSET_EXPIRATION_TIME,
