@@ -26,7 +26,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
-        'Framework :: Django :: 4.2',
+        'Framework :: Django :: 5.2',
         'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
@@ -43,7 +43,7 @@ setup(
         'dandi',
         # Pin dandischema to exact version to make explicit which schema version is being used
         'dandischema==0.11.1',  # schema version 0.6.10
-        'django~=4.2.0',
+        'django~=5.2.0',
         # Pin to version where this bug is fixed
         # https://codeberg.org/allauth/django-allauth/issues/4072
         'django-allauth>=65.3.0',
