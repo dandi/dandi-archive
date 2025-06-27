@@ -25,13 +25,13 @@ As is the case with asset blobs and uploads, an orphaned asset will remain recov
 
 ## Data
 
-The current amount of orphaned data in the system as of 4/29/25 is as follows:
+The current amount of orphaned data in the system as of 6/30/25 is as follows:
 
-- Assets: 274,573 (329,725.63 GB)
-- AssetBlobs: 88 (350.12 GB)
-- Uploads: 962
+- Assets: 278,186 (335,356.39 GB)
+- AssetBlobs: 103 (385.52 GB)
+- Uploads: 1040 (0.01 GB)
 
-**Note that around 50% of the existing data in DANDI (About 329 TB out of 787 TB) consists of orphaned Assets and will be garbage collected.**
+**Note that about 336 TB out of the 845 TB currently in DANDI (as of 6/30/25) consists of orphaned Assets and will be garbage collected.**
 
 ## Implementation
 
