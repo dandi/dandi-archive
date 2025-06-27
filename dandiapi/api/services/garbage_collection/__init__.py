@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from dandiapi.api.models import GarbageCollectionEvent
-from dandiapi.api.services.garbage_collection import asset_blob, upload
+from dandiapi.api.services.garbage_collection import asset, asset_blob, upload
 from dandiapi.api.storage import DandiMultipartMixin
 
 logger = get_task_logger(__name__)
@@ -29,6 +29,7 @@ def garbage_collect():
     with transaction.atomic():
         garbage_collected_uploads = upload.garbage_collect()
         garbage_collected_asset_blobs = asset_blob.garbage_collect()
+        garbage_collected_assets = asset.garbage_collect()
 
         GarbageCollectionEvent.objects.filter(
             timestamp__lt=timezone.now() - RESTORATION_WINDOW
@@ -36,3 +37,4 @@ def garbage_collect():
 
     logger.info('Garbage collected %s Uploads.', garbage_collected_uploads)
     logger.info('Garbage collected %s AssetBlobs.', garbage_collected_asset_blobs)
+    logger.info('Garbage collected %s Assets.', garbage_collected_assets)
