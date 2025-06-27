@@ -5,6 +5,18 @@ import djclick as click
 
 from dandiapi.api.services import garbage_collection
 
+# This prepares the types of exceptions we may encounter if an `Upload` exists in the database
+# but does not have a corresponding S3 blob. When using django-minio-storage, this results in
+# a `minio.error.S3Error` being raised, but if the user is using the S3 backend from
+# django-storages, it will raise a `FileNotFoundError` instead.
+upload_missing_blob_exceptions = (FileNotFoundError,)
+try:
+    from minio.error import S3Error
+
+    upload_missing_blob_exceptions += (S3Error,)
+except ModuleNotFoundError:
+    pass
+
 
 def echo_report():
     garbage_collectable_assets = garbage_collection.asset.get_queryset()
@@ -33,7 +45,10 @@ def echo_report():
     # to the storage backend to get the size of each upload.
     uploads_size_in_bytes = 0
     for upload in garbage_collectable_uploads.iterator():
-        uploads_size_in_bytes += upload.blob.size
+        try:
+            uploads_size_in_bytes += upload.blob.size
+        except* upload_missing_blob_exceptions:
+            click.echo(f'Upload {upload.pk} has no blob, skipping size calculation.', err=True)
 
     click.echo(f'Assets: {assets_count} ({assets_size_in_bytes / (1024 ** 3):.2f} GB)')
     click.echo(
