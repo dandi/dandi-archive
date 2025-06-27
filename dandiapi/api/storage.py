@@ -10,7 +10,7 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
-from django.core.files.storage import Storage, get_storage_class
+from django.core.files.storage import DefaultStorage, Storage
 from minio import S3Error
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
@@ -290,15 +290,15 @@ def create_s3_storage(bucket_name: str) -> Storage:
     This abstracts over differences between S3Storage and MinioStorage,
     allowing either to be used as an additional non-default Storage.
     """
-    # For production, calling django.core.files.storage.get_storage_class is fine
-    # to return the storage class of S3Storage.
-    default_storage_class = get_storage_class()
+    # Get the default storage class from Django. This will work in both prod and
+    # dev with S3Storage and MinioStorage, respectively.
+    default_storage = DefaultStorage()
 
-    if issubclass(default_storage_class, S3Storage):
+    if isinstance(default_storage, S3Storage):
         storage = VerbatimNameS3Storage(bucket_name=bucket_name)
         # Required to upload to the sponsored bucket
         storage.default_acl = 'bucket-owner-full-control'
-    elif issubclass(default_storage_class, MinioStorage):
+    elif isinstance(default_storage, MinioStorage):
         base_url = None
         if getattr(settings, 'MINIO_STORAGE_MEDIA_URL', None):
             # If a new base_url is set for the media storage, it's safe to assume one should be
@@ -333,7 +333,7 @@ def create_s3_storage(bucket_name: str) -> Storage:
         # TODO: filename transforming?
         # TODO: content_type
     else:
-        raise TypeError(f'Unknown storage: {default_storage_class}')
+        raise TypeError(f'Unknown storage: {default_storage}')
 
     return storage
 
