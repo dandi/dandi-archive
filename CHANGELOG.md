@@ -1,3 +1,15 @@
+# v0.11.3 (Mon Jun 30 2025)
+
+#### 🐛 Bug Fix
+
+- Increase timeout for `refresh_materialized_view_search` [#2421](https://github.com/dandi/dandi-archive/pull/2421) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.11.2 (Mon Jun 23 2025)
 
 #### 🐛 Bug Fix
