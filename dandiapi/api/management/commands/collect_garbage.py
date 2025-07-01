@@ -9,7 +9,7 @@ from dandiapi.api.services import garbage_collection
 # but does not have a corresponding S3 blob. When using django-minio-storage, this results in
 # a `minio.error.S3Error` being raised, but if the user is using the S3 backend from
 # django-storages, it will raise a `FileNotFoundError` instead.
-upload_missing_blob_exceptions = (FileNotFoundError,)
+upload_missing_blob_exceptions: tuple[type[Exception], ...] = (FileNotFoundError,)
 try:
     from minio.error import S3Error
 
