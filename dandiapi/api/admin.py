@@ -54,7 +54,7 @@ class UserAdmin(BaseUserAdmin):
         UserMetadataInline,
         SocialAccountInline,
     )
-    actions = ['export_emails_to_plaintext']
+    actions = ['export_emails_to_plaintext', 'export_github_usernames_to_plaintext']
     list_filter = ['metadata__status', 'is_staff', 'is_superuser', 'is_active']
 
     def get_queryset(self, request):
@@ -74,6 +74,23 @@ class UserAdmin(BaseUserAdmin):
         writer.writerow(emails)
         return response
 
+    @admin.action(description="Export selected users' GitHub usernames")
+    def export_github_usernames_to_plaintext(self, request, queryset):
+        response = HttpResponse(content_type='text/plain')
+        writer = csv.writer(response)
+        github_usernames = []
+        for obj in queryset:
+            social_account = obj.socialaccount_set.first()
+            if social_account is not None:
+                gh_username = social_account_to_dict(social_account)['username']
+                github_usernames.append(gh_username)
+            else:
+                github_usernames.append('(none)')
+        writer.writerow(github_usernames)
+        return response
+
+    # In __init__ or actions list/tuple, ensure this action is included:
+    actions = ['export_emails_to_plaintext', 'export_github_usernames_to_plaintext']    
     @admin.display(ordering='metadata__status')
     def status(self, obj):
         return format_html(
