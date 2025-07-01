@@ -17,21 +17,32 @@ from dandiapi.api.services.exceptions import (
     NotAllowedError,
     NotAuthenticatedError,
 )
-from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.services.permissions.dandiset import add_dandiset_creator
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+from dandiapi.roles import DANDISET_ROLES
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
 
-def create_dandiset_role(*, dandiset: Dandiset, rolename: str, perms: list[DandisetPermissions]):
-    group_name = f'Dandiset {dandiset.identifier} {rolename.capitalize()}'
-    owners_group = Group.objects.create(name=group_name)
-    role = DandisetRole.objects.create(group=owners_group, rolename=rolename, dandiset=dandiset)
-    for perm in perms:
-        assign_perm(perm=perm, user_or_group=owners_group, obj=dandiset)
+def _create_role(
+    *, rolename: str, perms: list[DandisetPermissions], dandiset: Dandiset | None = None
+):
+    group_name = f'{rolename.capitalize()}'
+    if dandiset is not None:
+        group_name = f'Dandiset {dandiset.identifier} {group_name}'
 
-    return role
+    role_group = Group.objects.create(name=group_name)
+    for perm in perms:
+        assign_perm(perm=perm, user_or_group=role_group, obj=dandiset)
+
+    if dandiset is not None:
+        DandisetRole.objects.create(group=role_group, rolename=rolename, dandiset=dandiset)
+
+
+def create_dandiset_roles(*, dandiset: Dandiset):
+    for role, perms in DANDISET_ROLES.items():
+        _create_role(rolename=role, perms=perms, dandiset=dandiset)
 
 
 def create_dandiset(
@@ -61,8 +72,8 @@ def create_dandiset(
         dandiset.full_clean()
         dandiset.save()
 
-        create_dandiset_role(dandiset=dandiset, rolename='owners', perms=list(DandisetPermissions))
-        add_dandiset_owner(dandiset, user)
+        create_dandiset_roles(dandiset=dandiset)
+        add_dandiset_creator(dandiset, user)
 
         draft_version = Version(
             dandiset=dandiset,

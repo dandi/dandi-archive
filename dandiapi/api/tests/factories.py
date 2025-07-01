@@ -21,7 +21,7 @@ from dandiapi.api.models import (
     Version,
 )
 from dandiapi.api.models.dandiset import DandisetPermissions
-from dandiapi.api.services.dandiset import create_dandiset_role
+from dandiapi.api.services.dandiset import _create_dandiset_role
 from dandiapi.api.services.publish import publish_asset
 
 
@@ -83,7 +83,7 @@ class DandisetFactory(factory.django.DjangoModelFactory):
     def _create(cls, model_class, *args, **kwargs):
         manager = cls._get_manager(model_class)
         dandiset = manager.create(*args, **kwargs)
-        create_dandiset_role(dandiset=dandiset, rolename='owners', perms=list(DandisetPermissions))
+        _create_dandiset_role(dandiset=dandiset, rolename='owner', perms=list(DandisetPermissions))
         return dandiset
 
 

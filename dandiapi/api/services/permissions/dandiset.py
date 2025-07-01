@@ -11,11 +11,13 @@ from django.utils.decorators import method_decorator
 from guardian.decorators import permission_required
 from guardian.shortcuts import get_objects_for_user
 
+from dandiapi.api.models.auth import DandisetRole
 from dandiapi.api.models.dandiset import (
     Dandiset,
     DandisetGroupObjectPermission,
     DandisetPermissions,
 )
+from dandiapi.roles import DANDISET_CREATOR_ROLE
 
 if typing.TYPE_CHECKING:
     from django.contrib.auth.base_user import AbstractBaseUser
@@ -29,6 +31,11 @@ def get_dandiset_owners(dandiset: Dandiset) -> QuerySet[User]:
 
 def add_dandiset_owner(dandiset: Dandiset, user: User):
     user.groups.add(dandiset.get_owners_group())
+
+
+def add_dandiset_creator(dandiset: Dandiset, user: User):
+    default_role = DandisetRole.objects.get(dandiset=dandiset, rolename=DANDISET_CREATOR_ROLE)
+    user.groups.add(default_role.group)
 
 
 def replace_dandiset_owners(dandiset: Dandiset, users: list[User]):

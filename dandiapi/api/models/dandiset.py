@@ -16,6 +16,9 @@ class DandisetPermissions(models.TextChoices):
     PUBLISH_DANDISET = 'publish_dandiset', 'Can publish the dandiset'
     UNEMBARGO_DANDISET = 'unembargo_dandiset', 'Can unembargo the dandiset'
     STAR_DANDISET = 'star_dandiset', 'Can star the dandiset'
+
+    # TODO: Update this to better refer to user management,
+    # not role management (roles themselves aren't being changed)
     VIEW_DANDISET_ROLES = 'view_dandiset_roles', 'Can view the dandiset roles'
     UPDATE_DANDISET_ROLES = 'update_dandiset_roles', 'Can update the dandiset roles'
 

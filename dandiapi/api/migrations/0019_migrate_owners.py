@@ -20,8 +20,8 @@ def migrate_owners(apps, schema_editor):
     dandisets = Dandiset.objects.all().iterator()
     for dandiset in dandisets:
         ident = f'{dandiset.id:06}'  # re-implemented since we can't access model methods here
-        owners_group = Group.objects.create(name=f'Dandiset {ident} Owners')
-        DandisetRole.objects.create(group=owners_group, dandiset=dandiset, rolename='owners')
+        owners_group = Group.objects.create(name=f'Dandiset {ident} Owner')
+        DandisetRole.objects.create(group=owners_group, dandiset=dandiset, rolename='owner')
 
         # Assign all perms to the owners group
         # Using _meta.permissions is the only good way we can get the permissions list, as
