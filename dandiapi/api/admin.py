@@ -84,8 +84,6 @@ class UserAdmin(BaseUserAdmin):
             if social_account is not None:
                 gh_username = social_account_to_dict(social_account)['username']
                 github_usernames.append(gh_username)
-            else:
-                github_usernames.append('(none)')
         writer.writerow(github_usernames)
         return response
 
