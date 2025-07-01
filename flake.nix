@@ -18,6 +18,7 @@
 
           # Postgres stuff
           postgresql
+          postgresql.pg_config
           libpqxx
         ];
 
