@@ -1,3 +1,15 @@
+# v0.11.4 (Tue Jul 01 2025)
+
+#### 🐛 Bug Fix
+
+- Set timeout of refresh_materialized_view_search to 10 minutes [#2423](https://github.com/dandi/dandi-archive/pull/2423) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.11.3 (Mon Jun 30 2025)
 
 #### 🐛 Bug Fix
