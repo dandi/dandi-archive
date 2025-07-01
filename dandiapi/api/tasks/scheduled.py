@@ -116,7 +116,9 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-@shared_task(soft_time_limit=90)
+# Set timeout of 10 minutes, to prevent this query
+# from bleeding into other tasks and causing errors
+@shared_task(soft_time_limit=10 * 60)
 def refresh_materialized_view_search() -> None:
     """
     Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search.
