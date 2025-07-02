@@ -436,6 +436,132 @@ def test_asset_rest_list_ordering(api_client, version, asset_factory, order_para
     assert result_paths == ordering
 
 
+@pytest.mark.parametrize(
+    ('order_param', 'expected_order'),
+    [
+        ('created', ['asset1', 'asset2', 'asset3']),
+        ('-created', ['asset3', 'asset2', 'asset1']),
+        ('modified', ['asset1', 'asset2', 'asset3']),
+        ('-modified', ['asset3', 'asset2', 'asset1']),
+        ('path', ['asset1', 'asset3', 'asset2']),
+        ('-path', ['asset2', 'asset3', 'asset1']),
+    ],
+)
+@pytest.mark.django_db
+def test_nested_asset_ordering(
+    api_client, draft_version, asset_factory, order_param, expected_order
+):
+    """Test that assets can be ordered by created, modified, and path in the nested endpoint."""
+    # Create assets with specific paths and timestamps to test ordering
+    assets = {}
+
+    # Create asset1 (first created, first modified, alphabetically first path)
+    assets['asset1'] = asset_factory(path='a_first.txt')
+    draft_version.assets.add(assets['asset1'])
+
+    # Create asset2 (second created, second modified, alphabetically last path)
+    assets['asset2'] = asset_factory(path='c_last.txt')
+    draft_version.assets.add(assets['asset2'])
+
+    # Create asset3 (last created, last modified, alphabetically middle path)
+    assets['asset3'] = asset_factory(path='b_middle.txt')
+    draft_version.assets.add(assets['asset3'])
+
+    # Get the ordered assets
+    response = api_client.get(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        {'order': order_param},
+    )
+
+    assert response.status_code == 200
+    results = response.json()['results']
+
+    # Extract the asset IDs from the results
+    result_asset_ids = [result['asset_id'] for result in results]
+
+    # Map the expected order to asset IDs
+    expected_asset_ids = [str(assets[name].asset_id) for name in expected_order]
+
+    assert result_asset_ids == expected_asset_ids
+
+
+@pytest.mark.django_db
+def test_nested_asset_ordering_with_authenticated_user(
+    api_client, user, draft_version, asset_factory
+):
+    """Test that ordering works with an authenticated user."""
+    # Add user as owner
+    add_dandiset_owner(draft_version.dandiset, user)
+    api_client.force_authenticate(user=user)
+
+    # Create assets with different paths
+    asset1 = asset_factory(path='a_first.txt')
+    asset2 = asset_factory(path='c_last.txt')
+    asset3 = asset_factory(path='b_middle.txt')
+
+    draft_version.assets.add(asset1)
+    draft_version.assets.add(asset2)
+    draft_version.assets.add(asset3)
+
+    # Test ordering by path
+    response = api_client.get(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        {'order': 'path'},
+    )
+
+    assert response.status_code == 200
+    results = response.json()['results']
+
+    # Extract paths from results
+    result_paths = [result['path'] for result in results]
+
+    # Expected order by path
+    expected_paths = ['a_first.txt', 'b_middle.txt', 'c_last.txt']
+
+    assert result_paths == expected_paths
+
+
+@pytest.mark.django_db
+def test_nested_asset_ordering_with_embargoed_assets(
+    api_client, user, draft_version_factory, asset_factory, embargoed_asset_blob
+):
+    """Test that ordering works with embargoed assets."""
+    from dandiapi.api.models.dandiset import Dandiset
+
+    # Create embargoed dandiset and version
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+
+    # Add user as owner
+    add_dandiset_owner(draft_version.dandiset, user)
+    api_client.force_authenticate(user=user)
+
+    # Create assets with different paths
+    asset1 = asset_factory(path='a_first.txt', blob=embargoed_asset_blob)
+    asset2 = asset_factory(path='c_last.txt', blob=embargoed_asset_blob)
+    asset3 = asset_factory(path='b_middle.txt', blob=embargoed_asset_blob)
+
+    draft_version.assets.add(asset1)
+    draft_version.assets.add(asset2)
+    draft_version.assets.add(asset3)
+
+    # Test ordering by path
+    response = api_client.get(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/assets/',
+        {'order': 'path'},
+    )
+
+    assert response.status_code == 200
+    results = response.json()['results']
+
+    # Extract paths from results
+    result_paths = [result['path'] for result in results]
+
+    # Expected order by path
+    expected_paths = ['a_first.txt', 'b_middle.txt', 'c_last.txt']
+
+    assert result_paths == expected_paths
+
+
 @pytest.mark.django_db
 def test_asset_path_ordering(api_client, version, asset_factory):
     # The default collation will ignore special characters, including slashes, on the first pass. If
