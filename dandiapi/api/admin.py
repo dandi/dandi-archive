@@ -75,15 +75,14 @@ class UserAdmin(BaseUserAdmin):
         return response
 
     @admin.action(description="Export selected users' GitHub usernames")
-    def export_github_usernames_to_plaintext(self, request, queryset):
+    def export_github_usernames_to_plaintext(self, request, queryset: QuerySet[User]):
         response = HttpResponse(content_type='text/plain')
         writer = csv.writer(response)
-        github_usernames = []
-        for obj in queryset:
-            social_account = obj.socialaccount_set.first()
-            if social_account is not None:
-                gh_username = social_account_to_dict(social_account)['username']
-                github_usernames.append(gh_username)
+        github_usernames = (
+            SocialAccount.objects.filter(user__in=queryset)
+            .values_list('extra_data__login', flat=True)
+            .order_by('extra_data__login')
+        )
         writer.writerow(github_usernames)
         return response
 
