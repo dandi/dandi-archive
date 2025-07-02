@@ -54,7 +54,7 @@ class UserAdmin(BaseUserAdmin):
         UserMetadataInline,
         SocialAccountInline,
     )
-    actions = ['export_emails_to_plaintext']
+    actions = ['export_emails_to_plaintext', 'export_github_usernames_to_plaintext']
     list_filter = ['metadata__status', 'is_staff', 'is_superuser', 'is_active']
 
     def get_queryset(self, request):
@@ -72,6 +72,18 @@ class UserAdmin(BaseUserAdmin):
         writer = csv.writer(response)
         emails = [obj.email for obj in queryset]
         writer.writerow(emails)
+        return response
+
+    @admin.action(description="Export selected users' GitHub usernames")
+    def export_github_usernames_to_plaintext(self, request, queryset: QuerySet[User]):
+        response = HttpResponse(content_type='text/plain')
+        writer = csv.writer(response)
+        github_usernames = (
+            SocialAccount.objects.filter(user__in=queryset)
+            .values_list('extra_data__login', flat=True)
+            .order_by('extra_data__login')
+        )
+        writer.writerow(github_usernames)
         return response
 
     @admin.display(ordering='metadata__status')
