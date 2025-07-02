@@ -5,6 +5,7 @@ from typing import Any
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.models import Group, User
 from django.db import models
+from guardian.backends import ObjectPermissionBackend
 
 
 class DandisetRole(models.Model):
@@ -31,3 +32,20 @@ class DandiGlobalPermissionBackend(ModelBackend):
         # Check just the global permission
         global_perm = f'api.{perm}' if '.' not in perm else perm
         return super().has_perm(user_obj=user_obj, perm=global_perm)
+
+
+class DandiObjectPermissionBackend(ObjectPermissionBackend):
+    def has_perm(self, user_obj, perm, obj=None):
+        return super().has_perm(user_obj, perm, obj)
+
+
+# class OauthScopePermissionBackend(ModelBackend):
+#     """Determine if the user's oauth scope is sufficient, if present."""
+
+#     def has_perm(self, user_obj: User, perm: str, obj: Any = None):
+#         # # Check just the global permission
+#         # global_perm = f'api.{perm}' if '.' not in perm else perm
+#         # return super().has_perm(user_obj=user_obj, perm=global_perm)
+#         print(dir(self))
+
+#         return True

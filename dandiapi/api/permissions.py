@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from oauth2_provider.oauth2_backends import OAuthLibCore
+from oauth2_provider.oauth2_validators import OAuth2Validator
+from oauthlib.oauth2 import Server
 from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
 
 from dandiapi.api.models.user import UserMetadata
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
 
 
 class IsApproved(IsAuthenticated):
@@ -28,3 +36,10 @@ class IsApprovedOrReadOnly(BasePermission):
                 or request.user.metadata.status == UserMetadata.Status.APPROVED
             )
         )
+
+
+def scope_checker(request: Request):
+    validator = OAuth2Validator()
+    core = OAuthLibCore(Server(validator))
+    valid, oauthlib_req = core.verify_request(request, scopes=['read', 'write', 'otherscope'])
+    print(valid, oauthlib_req)

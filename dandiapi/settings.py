@@ -52,7 +52,10 @@ class DandiMixin(ConfigMixin):
             ]
 
         # Authentication
-        configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
+        # configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
+        configuration.AUTHENTICATION_BACKENDS += [
+            'dandiapi.api.models.auth.DandiObjectPermissionBackend'
+        ]
         configuration.AUTHENTICATION_BACKENDS += [
             'dandiapi.api.models.auth.DandiGlobalPermissionBackend'
         ]
