@@ -116,7 +116,7 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-REFRESH_MATERIALIZED_VIEW_TIMEOUT = timedelta(minutes=10).total_seconds()
+REFRESH_MATERIALIZED_VIEW_TIMEOUT = timedelta(minutes=3).total_seconds()
 
 
 @shared_task(soft_time_limit=REFRESH_MATERIALIZED_VIEW_TIMEOUT)
