@@ -87,8 +87,6 @@ class UserAdmin(BaseUserAdmin):
         writer.writerow(github_usernames)
         return response
 
-    # In __init__ or actions list/tuple, ensure this action is included:
-    actions = ['export_emails_to_plaintext', 'export_github_usernames_to_plaintext']    
     @admin.display(ordering='metadata__status')
     def status(self, obj):
         return format_html(
