@@ -3,13 +3,34 @@ from __future__ import annotations
 from django.db.models import Sum
 import djclick as click
 
-from dandiapi.api.garbage import stale_assets
 from dandiapi.api.services import garbage_collection
+
+# This prepares the types of exceptions we may encounter if an `Upload` exists in the database
+# but does not have a corresponding S3 blob. When using django-minio-storage, this results in
+# a `minio.error.S3Error` being raised, but if the user is using the S3 backend from
+# django-storages, it will raise a `FileNotFoundError` instead.
+upload_missing_blob_exceptions: tuple[type[Exception], ...] = (FileNotFoundError,)
+try:
+    from minio.error import S3Error
+
+    upload_missing_blob_exceptions += (S3Error,)
+except ModuleNotFoundError:
+    pass
 
 
 def echo_report():
-    garbage_collectable_assets = stale_assets()
+    garbage_collectable_assets = garbage_collection.asset.get_queryset()
     assets_count = garbage_collectable_assets.count()
+
+    # Django doesn't support combining .distinct() and .aggregate() in a single query,
+    # so we need to manually sum the sizes of the distinct blobs.
+    assets_size_in_bytes = sum(
+        size
+        for size in garbage_collectable_assets.order_by('blob')
+        .distinct('blob')
+        .values_list('blob__size', flat=True)
+        .iterator()
+    )
 
     garbage_collectable_asset_blobs = garbage_collection.asset_blob.get_queryset()
     asset_blobs_count = garbage_collectable_asset_blobs.count()
@@ -18,12 +39,22 @@ def echo_report():
     garbage_collectable_uploads = garbage_collection.upload.get_queryset()
     uploads_count = garbage_collectable_uploads.count()
 
-    click.echo(f'Assets: {assets_count}')
+    # Verification of upload size only happens if the upload is explicitly validated by the
+    # client. It's reasonable to assume that many garbage-collectable uploads will not have
+    # their size verified, so we cannot rely on the database here and must call out
+    # to the storage backend to get the size of each upload.
+    uploads_size_in_bytes = 0
+    for upload in garbage_collectable_uploads.iterator():
+        try:
+            uploads_size_in_bytes += upload.blob.size
+        except* upload_missing_blob_exceptions:
+            click.echo(f'Upload {upload.pk} has no blob, skipping size calculation.', err=True)
+
+    click.echo(f'Assets: {assets_count} ({assets_size_in_bytes / (1024 ** 3):.2f} GB)')
     click.echo(
-        f'AssetBlobs: {asset_blobs_count} ({asset_blobs_size_in_bytes} bytes / '
-        f'{asset_blobs_size_in_bytes / (1024 ** 3):.2f} GB)'
+        f'AssetBlobs: {asset_blobs_count} ({asset_blobs_size_in_bytes / (1024 ** 3):.2f} GB)'
     )
-    click.echo(f'Uploads: {uploads_count}')
+    click.echo(f'Uploads: {uploads_count} ({uploads_size_in_bytes / (1024 ** 3):.2f} GB)')
     click.echo('S3 Blobs: Coming soon')
 
 
@@ -46,9 +77,7 @@ def collect_garbage(*, assets: bool, assetblobs: bool, uploads: bool, s3blobs: b
     if s3blobs and click.confirm('This will delete all S3 Blobs. Are you sure?'):
         raise click.NoSuchOption('Deleting S3 Blobs is not yet implemented')
     if assets and click.confirm('This will delete all Assets. Are you sure?'):
-        assets_to_delete = stale_assets()
-        if click.confirm(f'This will delete {assets_to_delete.count()} assets. Are you sure?'):
-            assets_to_delete.delete()
+        garbage_collection.asset.garbage_collect()
 
     # Log how many things there are, either after deletion
     # or if the user forgot to specify anything to delete
