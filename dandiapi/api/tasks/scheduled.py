@@ -116,9 +116,10 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-# Set timeout of 10 minutes, to prevent this query
-# from bleeding into other tasks and causing errors
-@shared_task(soft_time_limit=10 * 60)
+REFRESH_MATERIALIZED_VIEW_TIMEOUT = timedelta(minutes=10).total_seconds()
+
+
+@shared_task(soft_time_limit=REFRESH_MATERIALIZED_VIEW_TIMEOUT)
 def refresh_materialized_view_search() -> None:
     """
     Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search.
@@ -127,7 +128,16 @@ def refresh_materialized_view_search() -> None:
     updated without locking the table.
     """
     with connection.cursor() as cursor:
+        # This query may take a long time, so we explicitly set a timeout with
+        # postgres that is slightly less (5 seconds) than the Celery soft_time_limit to
+        # avoid it running too long.
+        # Note that setting Celery time limits alone is not sufficient. If the task times out,
+        # Celery will stop the Python execution, but not the DB query.
+        cursor.execute('BEGIN;')
+        statement_timeout = (REFRESH_MATERIALIZED_VIEW_TIMEOUT * 1000) - 5000
+        cursor.execute('SET LOCAL statement_timeout = %s;', [statement_timeout])
         cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY asset_search;')
+        cursor.execute('COMMIT;')
 
 
 @shared_task(soft_time_limit=60)
