@@ -2,14 +2,15 @@
 import { onMounted, ref } from 'vue';
 import { client } from '@/rest';
 import { searchParameters } from '../store';
+import type { Paginated } from '@/types';
 
 const searchTerm = ref<string | null>(null);
 const options = ref<string[]>([]);
 const loading = ref<boolean>(false);
 async function populateSpeciesList(newSearchTerm: string = '') {
   loading.value = true;
-  const species: string[] = (await client.get('/search/species', { params: { species: newSearchTerm } })).data;
-  options.value = species;
+  const species: Paginated<string[]> = (await client.get('/search/species', { params: { species: newSearchTerm } })).data;
+  options.value = species.results;
   loading.value = false;
 }
 onMounted(populateSpeciesList);
