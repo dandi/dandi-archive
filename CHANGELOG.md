@@ -1,3 +1,27 @@
+# v0.11.5 (Thu Jul 03 2025)
+
+#### 🐛 Bug Fix
+
+- Remove s3 log processing task [#2425](https://github.com/dandi/dandi-archive/pull/2425) ([@mvandenburgh](https://github.com/mvandenburgh))
+- enh: add action to export github usernames [#2424](https://github.com/dandi/dandi-archive/pull/2424) ([@satra](https://github.com/satra) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏎 Performance
+
+- Set `statement_timeout` in materialized view query [#2427](https://github.com/dandi/dandi-archive/pull/2427) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🔩 Dependency Updates
+
+- Update to Python 3.13 [#2420](https://github.com/dandi/dandi-archive/pull/2420) ([@mvandenburgh](https://github.com/mvandenburgh) [@waxlamp](https://github.com/waxlamp))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Roni Choudhury ([@waxlamp](https://github.com/waxlamp))
+- Satrajit Ghosh ([@satra](https://github.com/satra))
+
+---
+
 # v0.11.4 (Tue Jul 01 2025)
 
 #### 🐛 Bug Fix
