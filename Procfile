@@ -9,5 +9,3 @@ web: gunicorn --bind 0.0.0.0:$PORT dandiapi.wsgi --timeout 25
 worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q celery -B --without-gossip --without-mingle
 # The checksum-worker calculates blob checksums and updates zarr checksum files
 checksum-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO -Q calculate_sha256,ingest_zarr_archive --without-gossip --without-mingle
-# The analytics-worker processes s3 log files serially
-analytics-worker: REMAP_SIGTERM=SIGQUIT celery --app dandiapi.celery worker --loglevel INFO --concurrency 1 -Q s3-log-processing --without-gossip --without-mingle
