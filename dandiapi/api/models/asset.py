@@ -72,7 +72,6 @@ class AssetBlob(TimeStampedModel):
     )
     etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
     size = models.PositiveBigIntegerField()
-    download_count = models.PositiveBigIntegerField(default=0)
 
     class Meta:
         indexes = [HashIndex(fields=['etag'])]
