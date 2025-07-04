@@ -46,7 +46,7 @@ class ZarrArchive(TimeStampedModel):
             ),
             models.CheckConstraint(
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
-                check=models.Q(
+                condition=models.Q(
                     checksum__isnull=True,
                     status__in=[
                         ZarrArchiveStatus.PENDING,
