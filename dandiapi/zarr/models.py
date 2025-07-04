@@ -66,7 +66,7 @@ class ZarrArchive(TimeStampedModel):
     checksum = models.CharField(max_length=512, null=True, default=None, blank=True)  # noqa: DJ001
     status = models.CharField(
         max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
-        choices=ZarrArchiveStatus.choices,
+        choices=ZarrArchiveStatus,
         default=ZarrArchiveStatus.PENDING,
     )
 
