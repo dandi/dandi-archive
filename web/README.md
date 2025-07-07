@@ -27,62 +27,6 @@ To fix the code formatting and check for common errors, run:
 yarn run lint
 ```
 
-### End-to-End (E2E) Testing
-
-The web application includes Playwright-based e2e tests located in `../e2e/`.
-See the [GitHub workflow](../.github/workflows/frontend-ci.yml) for the complete setup.
-
-#### Required Services
-
-You need these services running locally, see the root README:
-- **PostgreSQL** (port 5432)
-- **RabbitMQ** (port 5672)
-- **MinIO** (port 9000) with access key `minioAccessKey` and secret `minioSecretKey`
-
-#### Install Dependencies
-
-```bash
-# Install web app dependencies
-cd web && yarn install --frozen-lockfile
-
-# Install e2e test dependencies
-cd ../e2e && yarn install --frozen-lockfile
-
-# Install Playwright browsers
-npx playwright install chromium
-
-# On Fedora, install dependencies manually instead of --with-deps:
-# npx playwright install chromium
-```
-
-#### Setup Django Backend
-
-```bash
-# From repository root
-./manage.py migrate
-./manage.py createcachetable
-./manage.py loaddata playwright
-```
-
-#### Run Tests
-
-```bash
-# Start the backend server
-python manage.py runserver &
-
-# Start the frontend server
-cd web && yarn run dev &
-
-# Wait for servers, then run tests
-cd e2e && npx playwright test
-
-# Run specific test
-npx playwright test -g "add an owner to the dandiset"
-
-# Run with visible browser
-npx playwright test --headed
-```
-
 ### Schema Migration
 
 The web app uses TypeScript typings (src/types/schema.ts) that are automatically generated from the dandiset metadata's

@@ -91,6 +91,7 @@ Since most of Django's environment variables contain additional content, use the
 the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
 
 ## Testing
+
 ### Initial Setup
 tox is used to execute all tests.
 tox is installed automatically with the `dev` package extra.
@@ -115,6 +116,10 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+### E2E Tests
+
+See the [e2e README](e2e/README.md).
 
 ### Profiling with Memray
 To include a memory profile with your tests, add `--memray` at the end of your test command invocation. For example, to run a memory profile with all tests, you would run `tox -e test -- --memray`. This can be used in conjunction with other pytest CLI flags (like `-k`) as well. See the `pytest-memray` [docs](https://github.com/bloomberg/pytest-memray) for more invocation details.
