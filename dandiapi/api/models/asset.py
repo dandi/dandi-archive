@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from dandiapi.api.asset_paths import get_root_paths_many
 from dandiapi.api.models.metadata import PublishableMetadataMixin
 from dandiapi.api.storage import get_storage, get_storage_prefix
 
@@ -291,12 +292,5 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
 
     @classmethod
     def total_size(cls):
-        from dandiapi.zarr.models import ZarrArchive
-
-        return sum(
-            cls.objects.filter(assets__versions__isnull=False)
-            .distinct()
-            .aggregate(size=models.Sum('size'))['size']
-            or 0
-            for cls in (AssetBlob, ZarrArchive)
-        )
+        root_paths = get_root_paths_many(versions=Version.objects.filter(version='draft'))
+        return root_paths.aggregate(total_size=models.Sum('aggregate_size'))['total_size'] or 0
