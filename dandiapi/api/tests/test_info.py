@@ -15,6 +15,7 @@ def test_rest_info(api_client):
     schema_url = f'http://{TEST_SERVER_NAME}{reverse("schema-dandiset-latest")}'
 
     assert resp.json() == {
+        'instance_config': {'instance_name': 'DANDI', 'doi_prefix': '10.80507'},
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,
         'version': __version__,
