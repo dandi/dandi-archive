@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dandischema.conf import get_instance_config
 from django.conf import settings
 from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -8,6 +9,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from dandiapi import __version__
+
+_INSTANCE_CONFIG = get_instance_config()
 
 
 def get_schema_url(request):
@@ -40,6 +43,9 @@ class ApiInfoSerializer(serializers.Serializer):
             }
         )
 
+    # Instance Configuration
+    instance_config = serializers.JSONField()
+
     # Schema
     schema_version = serializers.CharField()
     schema_url = serializers.URLField()
@@ -61,6 +67,13 @@ def info_view(request):
     api_url = f'{settings.DANDI_API_URL}/api'
     serializer = ApiInfoSerializer(
         data={
+            'instance_config': _INSTANCE_CONFIG.model_dump(
+                # Not excluding any `None` values in this object because the `None` values are
+                # needed to set the instance configuration in dandi-cli properly since
+                # a corresponding environment variable is used to set the instance configuration if
+                # the argument for a particular field is not provided.
+                mode='json'
+            ),
             'schema_version': settings.DANDI_SCHEMA_VERSION,
             'schema_url': get_schema_url(request),
             'version': __version__,
