@@ -51,6 +51,8 @@ jobs:
         run: |
           tox -e ${{ matrix.tox-env }}
         env:
+          DANDI_INSTANCE_NAME: DANDI
+          DANDI_DOI_PREFIX: "10.80507"
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
