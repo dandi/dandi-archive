@@ -114,13 +114,34 @@ export const useDandisetStore = defineStore('dandiset', {
         throw new Error('Could not retrieve Dandiset Schema!');
       }
 
-      const schema = await RefParser.dereference(res.data);
+      let schema = await RefParser.dereference(res.data);
 
       // TODO: Fix this upstream in the schema
       // @ts-expect-error TS7053
       schema['properties']['identifier']['pattern'] = '^DANDI:\\d{6}$'
       // @ts-expect-error TS7053
       schema['$defs']['Project']['properties']['wasAssociatedWith']['items']['oneOf'][2]['properties']['identifier']['pattern'] = '^RRID:.*'
+
+      // vjsf renders < and > as HTML tags, which breaks rendering of the schema
+      // in places like help text. For example, given this description for a field:
+      //
+      // {
+      //   ...
+      //   "description": "This relation should satisfy: dandiset <relation> resource.",
+      //   ...
+      // }
+      //
+      // vjsf will render it as raw HTML, causing the < and > to be interpreted like this:
+      //
+      // <p>This relation should satisfy: dandiset <relation>resource</relation>.</p>
+      //
+      // To fix this, we escape the < and > characters that look like HTML tags.
+      schema = JSON.parse(
+        JSON.stringify(schema)
+          .replace(
+            /<\/?[a-zA-Z][^>\s]*[^>]*>/g, t => t.replace(/</g, '\\\\<').replace(/>/g, '\\\\>')
+          )
+      );
 
       this.schema = schema;
     },
