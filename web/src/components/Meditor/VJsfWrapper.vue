@@ -226,3 +226,13 @@ function selectExistingItem(new_index: number) {
   ))[new_index];
 }
 </script>
+
+<style>
+/*
+For unknown reasons, the vjsf help message tooltip appears behind the vjsf form
+popup, but *only in development builds*.
+*/
+.vjsf-help-message-tooltip {
+  z-index: 10000 !important;
+}
+</style>
