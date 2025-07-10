@@ -1,3 +1,15 @@
+# v0.11.6 (Thu Jul 10 2025)
+
+#### 🐛 Bug Fix
+
+- Fix missing species on search page [#2422](https://github.com/dandi/dandi-archive/pull/2422) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.11.5 (Thu Jul 03 2025)
 
 #### 🐛 Bug Fix
