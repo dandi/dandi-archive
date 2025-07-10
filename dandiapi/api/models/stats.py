@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.db import models
 
 
-class ApplicationStats(models.Model):
+class ApplicationStats(models.Model):  # noqa: DJ008
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True, unique=True)
 
     # Actual stats
@@ -15,6 +15,3 @@ class ApplicationStats(models.Model):
     class Meta:
         verbose_name_plural = 'Application Stats'
         ordering = ['timestamp']
-
-    def __str__(self) -> str:
-        return super().__str__()
