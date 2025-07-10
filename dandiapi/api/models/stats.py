@@ -14,10 +14,7 @@ class ApplicationStats(models.Model):
 
     class Meta:
         verbose_name_plural = 'Application Stats'
+        ordering = ['timestamp']
 
     def __str__(self) -> str:
         return super().__str__()
-
-    @classmethod
-    def latest(cls):
-        return cls.objects.order_by('-timestamp').first()
