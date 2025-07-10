@@ -96,11 +96,12 @@ def send_ownership_change_emails(dandiset, removed_owners, added_owners):
 
 def build_registered_message(user: User, socialaccount: SocialAccount):
     # Email sent to the DANDI list when a new user logs in for the first time
+    greeting_name = user_greeting_name(user, socialaccount)
     return build_message(
-        subject=f'DANDI: New user registered: {user.email}',
+        subject=f'DANDI: New user registered: {user.username} AKA {greeting_name} <{user.email}>)',
         message=render_to_string(
             'api/mail/registered_message.txt',
-            {'greeting_name': user_greeting_name(user, socialaccount)},
+            {'greeting_name': greeting_name},
         ),
         to=[settings.DANDI_ADMIN_EMAIL, user.email],
     )
@@ -119,8 +120,9 @@ def build_new_user_messsage(user: User, socialaccount: SocialAccount = None):
         'username': user.username,
     }
     # Email sent to the DANDI list when a new user logs in for the first time
+    greeting_name = user_greeting_name(user, socialaccount)
     return build_message(
-        subject=f'DANDI: Review new user: {user.username}',
+        subject=f'DANDI: Review new user: {user.username} AKA {greeting_name} <{user.email}>)',
         message=render_to_string('api/mail/new_user_message.txt', render_context),
         to=[settings.DANDI_ADMIN_EMAIL],
     )
