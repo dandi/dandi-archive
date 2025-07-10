@@ -22,7 +22,7 @@
             class="ml-2"
           />
           <v-chip
-            v-if="currentDandiset.version != 'draft'"
+            v-if="meta.doi"
             variant="outlined"
             class="mx-2 pl-1"
           >
