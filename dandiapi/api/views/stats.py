@@ -15,4 +15,4 @@ class ApplicationStatsSerializer(serializers.ModelSerializer):
 
 @api_view()
 def stats_view(self):
-    return Response(ApplicationStatsSerializer(ApplicationStats.latest()).data)
+    return Response(ApplicationStatsSerializer(ApplicationStats.objects.last()).data)

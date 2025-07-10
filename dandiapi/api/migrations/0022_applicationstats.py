@@ -55,6 +55,7 @@ class Migration(migrations.Migration):
                 ('size', models.PositiveBigIntegerField()),
             ],
             options={
+                'ordering': ['timestamp'],
                 'verbose_name_plural': 'Application Stats',
             },
         ),
