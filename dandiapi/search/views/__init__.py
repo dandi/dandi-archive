@@ -7,7 +7,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
+import sentry_sdk
 
+from dandiapi.api.views.common import DandiPagination
 from dandiapi.search.models import AssetSearch
 
 if TYPE_CHECKING:
@@ -62,7 +64,7 @@ class SpeciesSearchSerializer(SearchSerializer):
         # Filter out empty string species
         qs = qs.exclude(species__exact='')
 
-        return qs.values_list('species', flat=True).distinct()[:10]
+        return qs.values_list('species', flat=True).distinct()
 
 
 @swagger_auto_schema(methods=['GET'], auto_schema=None)
@@ -72,4 +74,17 @@ def search_species(request):
     serializer = SpeciesSearchSerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
 
-    return JsonResponse(list(serializer.to_queryset(user=request.user)), safe=False)
+    qs = serializer.to_queryset(user=request.user)
+
+    paginator = DandiPagination()
+    qs = paginator.paginate_queryset(qs, request)
+
+    response = paginator.get_paginated_response(qs)
+
+    if response.get('next') is not None:
+        sentry_sdk.capture_message(
+            'Species search pagination is not implemented on frontend',
+            level='warning',
+        )
+
+    return response
