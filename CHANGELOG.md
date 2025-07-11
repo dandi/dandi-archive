@@ -1,3 +1,15 @@
+# v0.11.7 (Fri Jul 11 2025)
+
+#### 🐛 Bug Fix
+
+- Fix Meditor rendering bugs [#2434](https://github.com/dandi/dandi-archive/pull/2434) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.11.6 (Thu Jul 10 2025)
 
 #### 🐛 Bug Fix
