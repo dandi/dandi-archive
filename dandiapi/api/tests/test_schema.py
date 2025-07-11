@@ -1,0 +1,83 @@
+from __future__ import annotations
+
+from dandischema.models import Asset, Dandiset, PublishedAsset, PublishedDandiset
+from dandischema.utils import TransitionalGenerateJsonSchema
+from django.conf import settings
+from django.urls import reverse
+import pytest
+import requests
+
+
+@pytest.mark.parametrize(
+    ('endpoint', 'model', 'kwargs'),
+    [
+        ('schema-dandiset-latest', Dandiset, {}),
+        ('schema-asset-latest', Asset, {}),
+        ('schema-dandiset', Dandiset, {'version': settings.DANDI_SCHEMA_VERSION}),
+        ('schema-published-dandiset-latest', PublishedDandiset, {}),
+        ('schema-published-asset-latest', PublishedAsset, {}),
+        (
+            'schema-published-dandiset',
+            PublishedDandiset,
+            {'version': settings.DANDI_SCHEMA_VERSION},
+        ),
+    ],
+)
+def test_schema_latest(api_client, endpoint, model, kwargs):
+    """Test that the schema endpoints return valid schemas."""
+    url = reverse(endpoint, kwargs=kwargs)
+    resp = api_client.get(url)
+    assert resp.status_code == 200
+
+    # Verify that the schema is json and has core properties
+    schema = resp.json()
+    assert isinstance(schema, dict)
+    assert 'properties' in schema
+    assert 'title' in schema
+
+    # Compare with expected schema from pydantic using same generator as dandischema
+    expected_schema = model.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
+    assert schema == expected_schema
+
+    # Also compare against the original GitHub schema content
+    # Extract schema type from endpoint name (e.g., 'dandiset', 'published-dandiset')
+    endpoint_parts = endpoint.split('-')
+    if endpoint.endswith('-latest'):
+        schema_type = '-'.join(endpoint_parts[1:-1])  # Remove 'schema' prefix and 'latest' suffix
+    else:
+        schema_type = '-'.join(endpoint_parts[1:])  # Remove only 'schema' prefix
+
+    github_url = (
+        'https://raw.githubusercontent.com/dandi/schema/master/'
+        f'releases/{settings.DANDI_SCHEMA_VERSION}/{schema_type}.json'
+    )
+
+    # Download and compare with GitHub schema
+    github_resp = requests.get(github_url)
+    github_resp.raise_for_status()
+    github_schema = github_resp.json()
+
+    # Adjust for vendorization differences before comparison
+    # The local schema may have different default values due to runtime configuration
+    if 'properties' in schema and 'repository' in schema['properties']:
+        # Set repository default to None to match GitHub schema
+        schema['properties']['repository']['default'] = None
+
+    # Our local schema should match the GitHub schema after adjusting for vendorization
+    assert schema == github_schema
+
+
+@pytest.mark.parametrize(
+    'endpoint',
+    [
+        'schema-dandiset',
+        'schema-asset',
+        'schema-published-dandiset',
+        'schema-published-asset',
+    ],
+)
+def test_schema_invalid_version(api_client, endpoint):
+    """Test that schema endpoints with invalid versions return 404."""
+    url = reverse(endpoint, kwargs={'version': 'invalid-version'})
+    resp = api_client.get(url)
+    assert resp.status_code == 404
