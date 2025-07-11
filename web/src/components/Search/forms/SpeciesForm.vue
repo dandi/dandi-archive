@@ -9,7 +9,7 @@ const options = ref<string[]>([]);
 const loading = ref<boolean>(false);
 async function populateSpeciesList(newSearchTerm: string = '') {
   loading.value = true;
-  const species: Paginated<string[]> = (await client.get('/search/species', { params: { species: newSearchTerm } })).data;
+  const species: Paginated<string> = (await client.get('/search/species', { params: { species: newSearchTerm } })).data;
   options.value = species.results;
   loading.value = false;
 }
