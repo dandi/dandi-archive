@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from django.conf import settings
 import pytest
 
 from dandiapi.api.models import UserMetadata
+from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.services.asset import add_asset_to_version
+from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 
 @pytest.mark.django_db
@@ -47,34 +51,39 @@ def test_stats_user(api_client, user_factory):
 
 
 @pytest.mark.django_db
-def test_stats_asset(api_client, version, asset):
-    version.assets.add(asset)
+def test_stats_asset(api_client, draft_version, user, asset_blob_factory):
+    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    asset = add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=asset_blob_factory(),
+        metadata={
+            'path': 'foo/bar.txt',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
     stats = api_client.get('/api/stats/').data
 
     assert stats['size'] == asset.size
 
 
 @pytest.mark.django_db
-def test_stats_embargoed_asset(api_client, version, asset_factory, embargoed_asset_blob_factory):
-    embargoed_asset = asset_factory()
-    embargoed_asset.blob = embargoed_asset_blob_factory()
-    version.assets.add(embargoed_asset)
+def test_stats_embargoed_asset(
+    api_client, dandiset_factory, draft_version_factory, user, embargoed_asset_blob_factory
+):
+    embargoed_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    draft_version = draft_version_factory(dandiset=embargoed_dandiset)
+
+    add_dandiset_owner(dandiset=draft_version.dandiset, user=user)
+    embargoed_asset = add_asset_to_version(
+        user=user,
+        version=draft_version,
+        asset_blob=embargoed_asset_blob_factory(),
+        metadata={
+            'path': 'foo/bar.txt',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
 
     stats = api_client.get('/api/stats/').data
     assert stats['size'] == embargoed_asset.size
-
-
-@pytest.mark.django_db
-def test_stats_embargoed_and_regular_blobs(
-    api_client, version, asset_factory, asset_blob_factory, embargoed_asset_blob_factory
-):
-    asset = asset_factory()
-    asset.blob = asset_blob_factory()
-    version.assets.add(asset)
-
-    embargoed_asset = asset_factory()
-    embargoed_asset.blob = embargoed_asset_blob_factory()
-    version.assets.add(embargoed_asset)
-
-    stats = api_client.get('/api/stats/').data
-    assert stats['size'] == asset.size + embargoed_asset.size

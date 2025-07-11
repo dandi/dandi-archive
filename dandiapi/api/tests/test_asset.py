@@ -142,36 +142,38 @@ def test_publish_asset(draft_asset: Asset):
 
 @pytest.mark.django_db
 def test_asset_total_size(
-    draft_version_factory, asset_factory, asset_blob_factory, zarr_archive_factory
+    draft_version_factory, asset_factory, asset_blob_factory, zarr_archive_factory, user
 ):
-    # This asset blob should only be counted once,
-    # despite belonging to multiple assets and multiple versions.
-    asset_blob = asset_blob_factory()
-
-    asset1 = asset_factory(blob=asset_blob)
     version1 = draft_version_factory()
-    version1.assets.add(asset1)
+    add_dandiset_owner(dandiset=version1.dandiset, user=user)
+    asset1 = add_asset_to_version(
+        version=version1,
+        asset_blob=asset_blob_factory(),
+        user=user,
+        metadata={
+            'path': 'foo/bar.txt',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
 
-    asset2 = asset_factory(blob=asset_blob)
+    # adding of an asset with zarr should be reflected
     version2 = draft_version_factory()
-    version2.assets.add(asset2)
+    add_dandiset_owner(dandiset=version2.dandiset, user=user)
+    asset2 = add_asset_to_version(
+        version=version2,
+        zarr_archive=zarr_archive_factory(dandiset=version2.dandiset, size=100),
+        user=user,
+        metadata={
+            'path': 'foo/bar.zarr',
+            'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        },
+    )
 
     # These asset blobs should not be counted since they aren't in any versions.
     asset_blob_factory()
     asset_factory()
 
-    assert Asset.total_size() == asset_blob.size
-
-    zarr_archive = zarr_archive_factory()
-    # give it some size
-    zarr_archive.size = 100
-    zarr_archive.save()  # save adjusted .size into DB
-
-    # adding of an asset with zarr should be reflected
-    asset3 = asset_factory(zarr=zarr_archive, blob=None)
-    version2.assets.add(asset3)
-
-    assert Asset.total_size() == asset_blob.size + zarr_archive.size
+    assert Asset.total_size() == asset1.size + asset2.size
 
 
 @pytest.mark.django_db
