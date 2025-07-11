@@ -56,14 +56,6 @@ class DandiMixin(ConfigMixin):
             'rest_framework.authentication.TokenAuthentication',
         ]
 
-        # Caching
-        configuration.CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-                'LOCATION': 'dandi_cache_table',
-            }
-        }
-
         # Permission
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += [
             'dandiapi.api.permissions.IsApprovedOrReadOnly'
@@ -167,13 +159,6 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     # Ensure celery tasks run synchronously
     CELERY_TASK_EAGER_PROPAGATES = True
     CELERY_TASK_ALWAYS_EAGER = True
-
-    # Use a dummy cache for testing
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
 
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
