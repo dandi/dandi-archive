@@ -1,3 +1,16 @@
+# v0.11.8 (Fri Jul 11 2025)
+
+#### 🐛 Bug Fix
+
+- Remove `ProcessedS3Log` model [#2426](https://github.com/dandi/dandi-archive/pull/2426) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix type checking error [#2437](https://github.com/dandi/dandi-archive/pull/2437) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.11.7 (Fri Jul 11 2025)
 
 #### 🐛 Bug Fix
