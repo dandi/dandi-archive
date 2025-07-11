@@ -35,7 +35,6 @@ class DandiMixin(ConfigMixin):
     def mutate_configuration(configuration: type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
-            'dandiapi.analytics.apps.AnalyticsConfig',
             'dandiapi.api.apps.PublishConfig',
             'dandiapi.search.apps.SearchConfig',
             'dandiapi.zarr.apps.ZarrConfig',
