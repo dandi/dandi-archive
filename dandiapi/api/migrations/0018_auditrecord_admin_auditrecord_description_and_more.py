@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='auditrecord',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(('admin', False), ('description', '')),
                     models.Q(('admin', True), models.Q(('description', ''), _negated=True)),
                     _connector='OR',
