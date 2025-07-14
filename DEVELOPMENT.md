@@ -5,8 +5,8 @@
 You would need a local clone of the `dandi-archive` repository to develop on it.
 
 1. Run `git clone https://github.com/dandi/dandi-archive`
-2. Run `cd dandi-archive`
-3. Make sure your PostgreSQL port (5432) is available (recommended), or
+1. Run `cd dandi-archive`
+1. Make sure your PostgreSQL port (5432) is available (recommended), or
 export `DOCKER_POSTGRES_PORT` environment variable to point to an alternative port.
 
 ## Develop with Docker (recommended quickstart)
@@ -14,25 +14,25 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Run `docker compose pull` to ensure you have the latest versions of the service container images.
-2. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
-3. Run `docker compose run --rm django ./manage.py migrate`
-4. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
+1. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
+1. Run `docker compose run --rm django ./manage.py migrate`
+1. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
    This sets your username to your git email to ensure parity with how GitHub logins work. You can also replace the command substitution expression with a literal email address, or omit the `--email` option entirely to run the command in interactive mode.
-5. Run `docker compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
+1. Run `docker compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
 
 ### Run Application
 1. Run `docker compose up`
-2. Access the site, starting at http://localhost:8000/admin/
-3. When finished, use `Ctrl+C`
+1. Access the site, starting at http://localhost:8000/admin/
+1. When finished, use `Ctrl+C`
 
 ### Application Maintenance
 Occasionally, new package dependencies or schema changes will necessitate
 maintenance. To non-destructively update your development stack at any time:
 1. Run `docker compose pull`
-2. Run `docker compose build --pull --no-cache --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` (omitting the `--build-arg` arguments if you did so in Step 1 of *Initial Setup* above).
-3. Run `docker compose run --rm django ./manage.py migrate`
+1. Run `docker compose build --pull --no-cache --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` (omitting the `--build-arg` arguments if you did so in Step 1 of *Initial Setup* above).
+1. Run `docker compose run --rm django ./manage.py migrate`
 
 ## Develop Natively (advanced)
 This configuration still uses Docker to run attached services in the background,
@@ -40,9 +40,9 @@ but allows developers to run Python code on their native system.
 
 ### Initial Setup
 1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
-2. Run `docker compose -f ./docker-compose.yml up -d`
-3. Install Python 3.13
-4. Install
+1. Run `docker compose -f ./docker-compose.yml up -d`
+1. Install Python 3.13
+1. Install
   [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites).
   Example `psycopg2` installation on Ubuntu 20.04:
   ```
@@ -50,23 +50,23 @@ but allows developers to run Python code on their native system.
   export PATH=/usr/lib/postgresql/X.Y/bin/:$PATH
   pip install psycopg2
   ```
-5. Create and activate a new Python virtualenv
-6. Run `pip install -e ".[dev]"`
-7. Run `source ./dev/export-env.sh`
-8. Run `./manage.py migrate`
-9. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
-10. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
+1. Create and activate a new Python virtualenv
+1. Run `pip install -e ".[dev]"`
+1. Run `source ./dev/export-env.sh`
+1. Run `./manage.py migrate`
+1. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
+1. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
 
 ### Run Application
 1. Ensure `docker compose -f ./docker-compose.yml up -d` is still active
-2. Run:
+1. Run:
    1. `source ./dev/export-env.sh`
-   2. `./manage.py runserver`
-3. Run in a separate terminal:
+   1. `./manage.py runserver`
+1. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
-   2. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
-4. When finished, run `docker compose stop`
+   1. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+1. When finished, run `docker compose stop`
 
 ## Remap Service Ports (optional)
 Attached services may be exposed to the host system via alternative ports. Developers who work
