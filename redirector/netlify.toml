@@ -1,4 +1,5 @@
 [[redirects]]
-from = "/*"
+from = "https://gui.dandiarchive.org/*"
 to = "https://dandiarchive.org/:splat"
 status = 301
+
