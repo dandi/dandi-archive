@@ -16,11 +16,10 @@ This is the simplest configuration for developers to start with.
 1. Run `docker compose pull` to ensure you have the latest versions of the service container images.
 2. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
 3. Run `docker compose run --rm django ./manage.py migrate`
-4. Run `docker compose run --rm django ./manage.py createcachetable`
-5. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
+4. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
    This sets your username to your git email to ensure parity with how GitHub logins work. You can also replace the command substitution expression with a literal email address, or omit the `--email` option entirely to run the command in interactive mode.
-6. Run `docker compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
+5. Run `docker compose run --rm django ./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
 
 ### Run Application
@@ -55,9 +54,8 @@ but allows developers to run Python code on their native system.
 6. Run `pip install -e ".[dev]"`
 7. Run `source ./dev/export-env.sh`
 8. Run `./manage.py migrate`
-9. Run `./manage.py createcachetable`
-10. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
-11. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
+9. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
+10. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
    to create a dummy dandiset to start working with.
 
 ### Run Application
