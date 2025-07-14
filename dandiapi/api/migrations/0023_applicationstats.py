@@ -35,7 +35,7 @@ def bootstrap_application_stats(apps, _):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0021_stagingapplication_allowed_origins_and_more'),
+        ('api', '0022_remove_assetblob_download_count'),
     ]
 
     operations = [
