@@ -1,3 +1,20 @@
+# v0.11.9 (Mon Jul 14 2025)
+
+#### 🏎 Performance
+
+- Replace stats endpoint caching with ApplicationStats model [#2435](https://github.com/dandi/dandi-archive/pull/2435) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove the rest of `dandiapi.analytics` [#2438](https://github.com/dandi/dandi-archive/pull/2438) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.11.8 (Fri Jul 11 2025)
 
 #### 🐛 Bug Fix
