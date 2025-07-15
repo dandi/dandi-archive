@@ -52,7 +52,7 @@ class AuditRecord(models.Model):
             # Require a description for admin-executed actions.
             models.CheckConstraint(
                 name='admin-description-pairing',
-                check=(
+                condition=(
                     models.Q(admin=False, description='')
                     | (models.Q(admin=True) & ~models.Q(description=''))
                 ),
