@@ -1,11 +1,9 @@
 <template>
   <v-menu location="left">
     <template #activator="{ props }">
-      <v-btn
+      <v-list-item
         id="external-dandiset-services"
-        variant="outlined"
-        block
-        class="justify-space-between"
+        class="justify-space-between border rounded-b"
         v-bind="props"
       >
         <template #prepend>
@@ -15,14 +13,14 @@
           >
             mdi-web
           </v-icon>
-          <span>Open with</span>
+          <v-list-item-title>Open with</v-list-item-title>
         </template>
         <template #append>
           <v-icon end>
             mdi-chevron-down
           </v-icon>
         </template>
-      </v-btn>
+      </v-list-item>
     </template>
     <v-card>
       <v-list>

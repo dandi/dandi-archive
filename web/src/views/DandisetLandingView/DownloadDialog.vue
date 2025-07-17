@@ -6,11 +6,9 @@
     max-width="500"
   >
     <template #activator="{ props }">
-      <v-btn
+      <v-list-item
         id="download"
-        variant="outlined"
-        block
-        class="justify-space-between"
+        class="justify-space-between border border-b-0 rounded-t"
         v-bind="props"
       >
         <template #prepend>
@@ -20,14 +18,14 @@
           >
             mdi-download
           </v-icon>
-          <span>Download</span>
+          <v-list-item-title>Download</v-list-item-title>
         </template>
         <template #append>
           <v-icon end>
             mdi-chevron-down
           </v-icon>
         </template>
-      </v-btn>
+      </v-list-item>
     </template>
     <v-card>
       <v-card-title>
