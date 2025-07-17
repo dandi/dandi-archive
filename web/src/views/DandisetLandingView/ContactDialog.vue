@@ -1,5 +1,5 @@
 <template>
-  <v-menu location="left">
+  <v-menu>
     <template #activator="{ props }">
       <v-list-item
         id="contact"

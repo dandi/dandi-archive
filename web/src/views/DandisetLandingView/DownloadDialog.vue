@@ -1,7 +1,6 @@
 <template>
   <v-menu
     :close-on-content-click="false"
-    location="left"
     min-width="500"
     max-width="500"
   >
