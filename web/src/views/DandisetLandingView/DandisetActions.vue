@@ -2,37 +2,22 @@
   <v-card
     v-if="currentDandiset"
     height="100%"
-    class="px-3 py-1 mb-3"
-    variant="outlined"
+    class="rounded-0 elevation-0"
   >
-    <div class="text-black text-h5 mt-2">
+    <v-card-title>
       Dandiset Actions
-    </div>
+    </v-card-title>
 
-    <!-- Download and Cite As buttons -->
-    <div class="my-4">
-      <v-row no-gutters>
-        <DownloadDialog />
-      </v-row>
-      <v-row
-        v-if="currentDandiset.dandiset.embargo_status === 'OPEN'"
-        no-gutters
-      >
+    <v-list class="px-4">
+      <DownloadDialog />
+      <div v-if="currentDandiset.dandiset.embargo_status === 'OPEN'">
         <CiteAsDialog />
-      </v-row>
-      <v-row
-        no-gutters
-      >
-        <ContactDialog />
-      </v-row>
-      <v-row
-        no-gutters
-      >
-        <ExternalDandisetServicesDialog />
-      </v-row>
-    </div>
+      </div>
+      <ContactDialog />
+      <ExternalDandisetServicesDialog />
+    </v-list>
 
-    <!-- Files and Metadata buttons -->
+    <!-- Files and Metadata buttons
     <div>
       <v-row no-gutters>
         <v-btn
@@ -89,7 +74,7 @@
       </v-row>
     </div>
 
-    <!-- Share button -->
+    <!-- Share button
     <div class="mt-6 mb-4">
       <v-row
         no-gutters
@@ -102,7 +87,7 @@
           <ShareDialog text="Share" />
         </v-btn>
       </v-row>
-    </div>
+    </div>-->
   </v-card>
 </template>
 
