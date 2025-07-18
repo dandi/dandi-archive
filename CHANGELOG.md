@@ -1,3 +1,15 @@
+# v0.12.1 (Fri Jul 18 2025)
+
+#### 🐛 Bug Fix
+
+- Update hardcoded staging URL [#2441](https://github.com/dandi/dandi-archive/pull/2441) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.0 (Fri Jul 18 2025)
 
 #### 🚀 Enhancement
