@@ -1,3 +1,25 @@
+# v0.12.0 (Fri Jul 18 2025)
+
+#### 🚀 Enhancement
+
+- Redirect `gui-staging` URLs to `sandbox` [#2439](https://github.com/dandi/dandi-archive/pull/2439) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🐛 Bug Fix
+
+- ENH: add filtering capabilities to NestedAssetViewSet [#2414](https://github.com/dandi/dandi-archive/pull/2414) ([@bendichter](https://github.com/bendichter))
+
+#### 📝 Documentation
+
+- Use 1. for all items in markdown ordered lists [#2436](https://github.com/dandi/dandi-archive/pull/2436) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.11.9 (Mon Jul 14 2025)
 
 #### 🏎 Performance
