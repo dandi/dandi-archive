@@ -12,12 +12,11 @@ The following changes will be required to make this name change happen.
 
 1. **New URL for sandbox deployment.** The deployment formerly known as “staging” will be accessible at `https://sandbox.dandiarchive.org`.
 2. **New URL for sandbox API.** The corresponding Django API app will be accessible at `https://api.sandbox.dandiarchive.org`.
-3. **Redirections for old URLs.** To prevent user pain, we will redirect requests to the old application and API URLs to the new ones:
-    1. [`https://gui-staging.dandiarchive.org`](https://gui-staging.dandiarchive.org) → [`https://sandbox.dandiarchive.org`](https://sandbox.dandiarchive.org)
-    2. [`https://api-staging.dandiarchive.org`](https://api-staging.dandiarchive.org) → [`https://api.sandbox.dandiarchive.org`](https://api.sandbox.dandiarchive.org) (using HTTP 308 to preserve the request method)
+3. **Redirection for old web application URL.** To prevent user pain, we will redirect requests to the old application to the new one:
+    [`https://gui-staging.dandiarchive.org`](https://gui-staging.dandiarchive.org) → [`https://sandbox.dandiarchive.org`](https://sandbox.dandiarchive.org)
 
-    The second redirection is probably less important for end users (excluding those that have written, e.g., Python scripts using the DANDI API against staging/sandbox for some reason), but it is necessary to avoid deprecating all previous versions of the DANDI CLI tool which still presumably references the old URLs.
-    We will plan to run the redirections indefinitely, though, at any point in the future, we can retire them after announcing our intention to do so.
+    We will not provide redirects for the API server. Instead, we will release a new version of the DANDI CLI with the updated API URL and deprecate past versions. The S3 bucket name/URL has not changed, so past blob download URLs will continue to work.
+    We will plan to run the redirection indefinitely, though, at any point in the future, we can retire it after announcing our intention to do so.
 4. **Application code updates to use the new URLs.** Any references to the old URLs within Vue or Django application code must be updated to the new ones.
 5. **Userbase notification.** We need to inform users about the URL change.
 6. **Update documentation.** The documentation ecosystem must be updated to refer only to the new URLs and the new name of the deployment.
