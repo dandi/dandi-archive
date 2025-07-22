@@ -1,3 +1,17 @@
+# v0.12.2 (Tue Jul 22 2025)
+
+#### 🏠 Internal
+
+- Point staging web app at sandbox URL [#2446](https://github.com/dandi/dandi-archive/pull/2446) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add source script for fish shell [#2440](https://github.com/dandi/dandi-archive/pull/2440) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.1 (Fri Jul 18 2025)
 
 #### 🐛 Bug Fix
