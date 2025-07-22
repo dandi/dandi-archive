@@ -19,10 +19,11 @@ from django.contrib.auth.models import User
 from django.db import connection
 from django.db.models.query_utils import Q
 
-from dandiapi.analytics.tasks import collect_s3_log_records_task
 from dandiapi.api.mail import send_pending_users_message
 from dandiapi.api.models import UserMetadata, Version
 from dandiapi.api.models.asset import Asset
+from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.models.stats import ApplicationStats
 from dandiapi.api.services.garbage_collection import garbage_collect
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
@@ -116,7 +117,10 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-@shared_task(soft_time_limit=60)
+REFRESH_MATERIALIZED_VIEW_TIMEOUT = timedelta(minutes=3).total_seconds()
+
+
+@shared_task(soft_time_limit=REFRESH_MATERIALIZED_VIEW_TIMEOUT)
 def refresh_materialized_view_search() -> None:
     """
     Execute a REFRESH MATERIALIZED VIEW query to update the view used by asset search.
@@ -125,12 +129,31 @@ def refresh_materialized_view_search() -> None:
     updated without locking the table.
     """
     with connection.cursor() as cursor:
+        # This query may take a long time, so we explicitly set a timeout with
+        # postgres that is slightly less (5 seconds) than the Celery soft_time_limit to
+        # avoid it running too long.
+        # Note that setting Celery time limits alone is not sufficient. If the task times out,
+        # Celery will stop the Python execution, but not the DB query.
+        cursor.execute('BEGIN;')
+        statement_timeout = (REFRESH_MATERIALIZED_VIEW_TIMEOUT * 1000) - 5000
+        cursor.execute('SET LOCAL statement_timeout = %s;', [statement_timeout])
         cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY asset_search;')
+        cursor.execute('COMMIT;')
 
 
 @shared_task(soft_time_limit=60)
 def garbage_collection() -> None:
     garbage_collect()
+
+
+@shared_task(soft_time_limit=60)
+def compute_application_stats() -> None:
+    ApplicationStats.objects.create(
+        dandiset_count=Dandiset.objects.count(),
+        published_dandiset_count=Dandiset.published_count(),
+        user_count=User.objects.filter(metadata__status=UserMetadata.Status.APPROVED).count(),
+        size=Asset.total_size(),
+    )
 
 
 def register_scheduled_tasks(sender: Celery, **kwargs):
@@ -157,8 +180,8 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     # Refresh the materialized view used by asset search every 10 mins.
     sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
 
-    # Process new S3 logs every hour
-    sender.add_periodic_task(timedelta(hours=1), collect_s3_log_records_task.s())
+    # Refresh the application stats every 6 hours
+    sender.add_periodic_task(timedelta(hours=6), compute_application_stats.s())
 
     # Run garbage collection once a day
     # TODO: enable this once we're ready to run garbage collection automatically

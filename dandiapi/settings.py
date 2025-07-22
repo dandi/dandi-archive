@@ -35,7 +35,6 @@ class DandiMixin(ConfigMixin):
     def mutate_configuration(configuration: type[ComposedConfiguration]):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
-            'dandiapi.analytics.apps.AnalyticsConfig',
             'dandiapi.api.apps.PublishConfig',
             'dandiapi.search.apps.SearchConfig',
             'dandiapi.zarr.apps.ZarrConfig',
@@ -56,14 +55,6 @@ class DandiMixin(ConfigMixin):
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             'rest_framework.authentication.TokenAuthentication',
         ]
-
-        # Caching
-        configuration.CACHES = {
-            'default': {
-                'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-                'LOCATION': 'dandi_cache_table',
-            }
-        }
 
         # Permission
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += [
@@ -168,13 +159,6 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     # Ensure celery tasks run synchronously
     CELERY_TASK_EAGER_PROPAGATES = True
     CELERY_TASK_ALWAYS_EAGER = True
-
-    # Use a dummy cache for testing
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
 
 
 class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):

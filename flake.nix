@@ -10,14 +10,15 @@
     {
       devShells.x86_64-linux.default = pkgs.mkShell {
         buildInputs = with pkgs; [
-          # Python 3.11
-          python311Packages.python
+          # Python 3.13
+          python313Packages.python
 
           # Docker and Docker Compose
           docker
 
           # Postgres stuff
           postgresql
+          postgresql.pg_config
           libpqxx
         ];
 

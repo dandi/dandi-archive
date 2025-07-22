@@ -6,6 +6,7 @@ import RefParser from '@apidevtools/json-schema-ref-parser';
 import { dandiRest, user } from '@/rest';
 import type { User, Version } from '@/types';
 import { draftVersion } from '@/utils/constants';
+import { fixSchema } from '@/utils/schema';
 
 
 function isUnauthenticatedOrForbidden(err: unknown) {
@@ -116,13 +117,7 @@ export const useDandisetStore = defineStore('dandiset', {
 
       const schema = await RefParser.dereference(res.data);
 
-      // TODO: Fix this upstream in the schema
-      // @ts-expect-error TS7053
-      schema['properties']['identifier']['pattern'] = '^DANDI:\\d{6}$'
-      // @ts-expect-error TS7053
-      schema['$defs']['Project']['properties']['wasAssociatedWith']['items']['oneOf'][2]['properties']['identifier']['pattern'] = '^RRID:.*'
-
-      this.schema = schema;
+      this.schema = fixSchema(schema);
     },
     async fetchOwners(identifier: string) {
       const { data } = await dandiRest.owners(identifier);

@@ -108,7 +108,7 @@ jobs:
     - uses: actions/cache@v4
       id: pip-cache
       with:
-        path: ${{ env.pythonLocation}}/lib/python3.11/site-packages/*
+        path: ${{ env.pythonLocation}}/lib/python3.13/site-packages/*
         key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
 
     - name: Install dandi-api dependencies
@@ -116,9 +116,6 @@ jobs:
 
     - name: Apply migrations to API server
       run: python manage.py migrate
-
-    - name: Create any cache tables
-      run: python manage.py createcachetable
 
     - name: Install test data
       run: python manage.py loaddata playwright

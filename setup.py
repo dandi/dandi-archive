@@ -32,17 +32,17 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python',
     ],
-    python_requires='>=3.11',
+    python_requires='>=3.13',
     packages=find_namespace_packages(include=['dandiapi*']),
     include_package_data=True,
     install_requires=[
         'celery',
         'dandi',
         # Pin dandischema to exact version to make explicit which schema version is being used
-        'dandischema==0.11.0',  # schema version 0.6.9
+        'dandischema==0.11.1',  # schema version 0.6.10
         'django~=4.2.0',
         # Pin to version where this bug is fixed
         # https://codeberg.org/allauth/django-allauth/issues/4072
@@ -94,7 +94,7 @@ setup(
             'djangorestframework-yaml',
             'factory-boy',
             'freezegun',
-            'pytest',
+            'pytest<8.4.0',  # current incompatibility with factoryboy
             'pytest-cov',
             'pytest-django',
             'pytest-factoryboy',
