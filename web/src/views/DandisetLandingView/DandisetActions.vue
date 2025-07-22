@@ -8,73 +8,88 @@
       Dandiset Actions
     </v-card-title>
 
-    <v-list class="px-4">
+    <v-list
+      class="px-4"
+      density="compact"
+    >
+      <!-- Download -->
       <DownloadDialog />
+
+      <!-- Cite As -->
       <div v-if="currentDandiset.dandiset.embargo_status === 'OPEN'">
         <CiteAsDialog />
       </div>
+
+      <!-- Contact -->
       <ContactDialog />
+
+      <!-- Open With -->
       <ExternalDandisetServicesDialog />
     </v-list>
 
-    <!-- Files and Metadata buttons
-    <div>
-      <v-row no-gutters>
-        <v-btn
-          id="view-data"
-          variant="outlined"
-          block
-          :disabled="unembargoInProgress"
-          :to="fileBrowserLink"
-          exact
-          class="justify-space-between"
-        >
+    <v-list
+      class="px-4"
+      density="compact"
+    >
+      <!-- Files -->
+      <v-list-item
+        id="view-data"
+        :disabled="unembargoInProgress"
+        :to="fileBrowserLink"
+        exact
+        class="justify-space-between border border-b-0 rounded-t"
+      >
+        <template #prepend>
           <v-icon
-            start
             color="primary"
+            start
           >
             mdi-folder
           </v-icon>
-          <span>Files</span>
-        </v-btn>
-      </v-row>
-      <v-btn
+          <v-list-item-title>Files</v-list-item-title>
+        </template>
+      </v-list-item>
+
+      <!-- Metadata -->
+      <v-list-item
         id="view-edit-metadata"
-        variant="outlined"
-        block
-        class="justify-space-between"
+        class="justify-space-between border rounded-b"
         @click="openMeditor = true"
       >
-        <v-icon
-          start
-          color="primary"
-        >
-          mdi-note-text
-        </v-icon>
-        <span>Metadata</span>
-      </v-btn>
-    </div>
-
-    <div class="my-4">
-      <v-row no-gutters>
-        <v-btn
-          variant="outlined"
-          block
-          :href="manifestLocation"
-          class="d-inline-flex justify-space-between align-center"
-        >
+        <template #prepend>
           <v-icon
-            start
             color="primary"
+            start
+          >
+            mdi-note-text
+          </v-icon>
+          <v-list-item-title>Metadata</v-list-item-title>
+        </template>
+      </v-list-item>
+    </v-list>
+
+    <v-list
+      class="px-4"
+      density="compact"
+    >
+      <!-- Manifest -->
+      <v-list-item
+        class="justify-space-between border rounded"
+        :href="manifestLocation"
+      >
+        <template #prepend>
+          <v-icon
+            color="primary"
+            start
           >
             mdi-clipboard
           </v-icon>
-          <span>Manifest</span>
-        </v-btn>
-      </v-row>
-    </div>
+          <v-list-item-title>Manifest</v-list-item-title>
+        </template>
+      </v-list-item>
+    </v-list>
 
-    <!-- Share button
+    <!-- Share button -->
     <div class="mt-6 mb-4">
       <v-row
         no-gutters
@@ -82,12 +97,11 @@
       >
         <v-btn
           variant="outlined"
-          class="justify-center"
         >
           <ShareDialog text="Share" />
         </v-btn>
       </v-row>
-    </div>-->
+    </div>
   </v-card>
 </template>
 
