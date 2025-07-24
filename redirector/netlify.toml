@@ -7,3 +7,8 @@ status = 301
 from = "https://gui-staging.dandiarchive.org/*"
 to = "https://sandbox.dandiarchive.org/:splat"
 status = 301
+
+[[redirects]]
+from = "https://api-staging.dandiarchive.org/*"
+to = "https://api.sandbox.dandiarchive.org/:splat"
+status = 308
