@@ -255,7 +255,7 @@
           :is="tabs[currentTab].component"
           v-if="tabs[currentTab]"
           v-bind="{ schema, meta }"
-          class="d-flex flex-column pa-2 ga-2 w-100"
+          class="d-flex flex-column pa-9 ga-3 w-100"
         />
       </v-col>
     </v-row>
