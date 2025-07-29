@@ -1,8 +1,7 @@
 <template>
   <v-card
     v-if="currentDandiset && otherVersions"
-    variant="outlined"
-    class="mt-4 px-3"
+    class="px-3 border-b rounded-0 elevation-0"
   >
     <v-dialog
       v-if="showPublishWarningDialog"
