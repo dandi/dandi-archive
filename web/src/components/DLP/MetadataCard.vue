@@ -1,17 +1,21 @@
 <template>
   <v-card
+    :prepend-icon="icon"
     variant="outlined"
     height="100%"
   >
-    <v-card-title
+    <template
       :id="name"
       class="font-weight-regular"
+      v-slot:title
     >
       <v-icon class="mr-3 text-grey-lighten-1">
         {{ icon }}
       </v-icon>
       {{ name }}
     </v-card-title>
+      <span>{{ name }}</span>
+    </template>
     <v-list
       v-if="items && items.length"
       :style="`column-count: ${columnCount};`"
