@@ -1,7 +1,7 @@
 <template>
   <div
-    class="border-s"
     v-if="currentDandiset"
+    class="border-s"
   >
     <DandisetActions />
     <v-divider />

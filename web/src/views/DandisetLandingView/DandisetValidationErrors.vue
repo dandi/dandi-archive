@@ -35,8 +35,8 @@
 
     <!-- Version Validation Errors Button -->
     <v-alert
-      class="my-1"
       v-if="dandiset.version_validation_errors.length"
+      class="my-1"
       density="compact"
       icon="mdi-playlist-remove"
       type="warning"
@@ -50,8 +50,8 @@
 
     <!-- Asset Validation Errors Button -->
     <v-alert
-      class="my-1"
       v-if="numAssetValidationErrors"
+      class="my-1"
       density="compact"
       icon="mdi-database-remove"
       type="warning"
