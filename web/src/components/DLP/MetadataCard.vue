@@ -5,8 +5,7 @@
     height="100%"
   >
     <template
-      :id="name"
-      v-slot:title
+      #title
     >
       <span>{{ name }}</span>
     </template>

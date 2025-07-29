@@ -6,7 +6,7 @@
       variant="outlined"
       height="100%"
     >
-      <template v-slot:title>
+      <template #title>
         <span>Contributors</span>
       </template>
       <v-list class="mx-5 mt-1 mb-4 pa-0">
@@ -136,7 +136,7 @@
       prepend-icon="mdi-clipboard-list"
       variant="outlined"
     >
-      <template v-slot:title>
+      <template #title>
         <v-progress-circular
           v-if="assetSummaryBeingComputed"
           class="mr-3"
