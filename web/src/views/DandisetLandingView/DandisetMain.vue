@@ -227,7 +227,6 @@
           </v-card>
         </v-col>
       </v-row>
-
       <!-- TODO: Re-enable these tab components when the others are complete -->
 
       <!-- <v-tabs
@@ -251,11 +250,12 @@
 
     <!-- Dynamically render component based on current tab -->
     <v-row class="justify-center">
-      <v-col cols="11">
+      <v-col cols="12">
         <component
           :is="tabs[currentTab].component"
           v-if="tabs[currentTab]"
           v-bind="{ schema, meta }"
+          class="d-flex flex-column pa-2 ga-2 w-100"
         />
       </v-col>
     </v-row>
