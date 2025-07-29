@@ -1,45 +1,26 @@
 <template>
-  <v-container>
-    <v-row
-      v-if="dandiset.status === 'Pending'"
-      class="my-2 px-1"
-      no-gutters
-    >
-      <v-menu>
-        <template #activator="{ props: menuProps }">
-          <v-tooltip location="bottom">
-            <template #activator="{ props: tooltipProps }">
-              <v-card
-                class="bg-amber-lighten-5 no-text-transform"
-                variant="outlined"
-                v-bind="{ ...menuProps, ...tooltipProps }"
-              >
-                <v-row class="align-center px-4">
-                  <v-col
-                    cols="1"
-                    class="justify-center py-0"
-                  >
-                    <v-icon
-                      color="warning"
-                      class="mr-1"
-                    >
-                      mdi-playlist-remove
-                    </v-icon>
-                  </v-col>
-                  <v-spacer />
-                  <v-col cols="9">
-                    <div class="text-caption">
-                      Validation of the dandiset is pending.
-                    </div>
-                  </v-col>
-                </v-row>
-              </v-card>
-            </template>
-            <span>Reload the page to see if validation is over.</span>
-          </v-tooltip>
-        </template>
-      </v-menu>
-    </v-row>
+  <v-container class="pa-0 py-2">
+    <v-menu v-if="dandiset.status === 'Pending'">
+      <template #activator="{ props: menuProps }">
+        <v-tooltip location="bottom">
+          <template #activator="{ props: tooltipProps }">
+            <v-alert
+              class="my-1"
+              density="compact"
+              icon="mdi-playlist-remove"
+              type="warning"
+              variant="tonal"
+              v-bind="{ ...menuProps, ...tooltipProps }"
+            >
+              <v-alert-content class="text-body-2">
+                Validation of the dandiset is pending.
+              </v-alert-content>
+            </v-alert>
+          </template>
+          <span>Reload the page to see if validation is over.</span>
+        </v-tooltip>
+      </template>
+    </v-menu>
 
     <!-- Dialog where version and asset errors are shown -->
     <v-dialog v-model="errorDialogOpen">
@@ -53,62 +34,34 @@
     </v-dialog>
 
     <!-- Version Validation Errors Button -->
-    <v-card
+    <v-alert
+      class="my-1"
       v-if="dandiset.version_validation_errors.length"
-      class="my-2 px-1 bg-amber-lighten-5 no-text-transform"
-      variant="outlined"
+      density="compact"
+      icon="mdi-playlist-remove"
+      type="warning"
+      variant="tonal"
       @click="openErrorDialog('metadata')"
     >
-      <v-row class="align-center px-4">
-        <v-col
-          cols="1"
-          class="justify-center py-0"
-        >
-          <v-icon
-            color="warning"
-            class="mr-1"
-          >
-            mdi-playlist-remove
-          </v-icon>
-        </v-col>
-        <v-spacer />
-        <v-col cols="9">
-          <div class="text-caption">
-            This Dandiset has {{ dandiset.version_validation_errors.length }}
-            metadata validation error(s).
-          </div>
-        </v-col>
-      </v-row>
-    </v-card>
+      <v-alert-content class="text-body-2">
+        This Dandiset has {{ dandiset.version_validation_errors.length }} metadata validation error(s).
+      </v-alert-content>
+    </v-alert>
 
     <!-- Asset Validation Errors Button -->
-    <v-card
+    <v-alert
+      class="my-1"
       v-if="numAssetValidationErrors"
-      class="my-2 px-1 bg-amber-lighten-5 no-text-transform"
-      variant="outlined"
+      density="compact"
+      icon="mdi-database-remove"
+      type="warning"
+      variant="tonal"
       @click="openErrorDialog('assets')"
     >
-      <v-row class="align-center px-4">
-        <v-col
-          cols="1"
-          class="justify-center py-0"
-        >
-          <v-icon
-            color="warning"
-            class="mr-1"
-          >
-            mdi-database-remove
-          </v-icon>
-        </v-col>
-        <v-spacer />
-        <v-col cols="9">
-          <div class="text-caption">
-            This Dandiset has {{ numAssetValidationErrors }}
-            asset validation error(s).
-          </div>
-        </v-col>
-      </v-row>
-    </v-card>
+      <v-alert-content class="text-body-2">
+        This Dandiset has {{ numAssetValidationErrors }} asset validation error(s).
+      </v-alert-content>
+    </v-alert>
   </v-container>
 </template>
 
