@@ -9,10 +9,10 @@
       <template v-slot:title>
         <span>Contributors</span>
       </template>
+      <v-list class="mx-5 mt-1 mb-4 pa-0">
         <v-chip
           v-for="(contributor, i) in contributors"
           :key="i"
-          style="margin: 5px;"
           variant="outlined"
         >
           {{ contributor.name }}
@@ -147,7 +147,7 @@
       </template>
       <v-list
         :style="`column-count: ${assetSummaryColumnCount};`"
-        class="px-3 ml-2"
+        class="mx-5 mt-1 mb-4 pa-0"
       >
         <div
           v-if="assetSummaryBeingComputed"

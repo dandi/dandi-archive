@@ -59,7 +59,7 @@
     </v-list>
     <v-sheet
       v-else
-      class="ma-5"
+      class="mx-5 mt-1 mb-4 pa-0"
     >
       <!-- Optional alternate component that will be used as a fallback if `items` is empty -->
       <slot name="emptyFallback" />
