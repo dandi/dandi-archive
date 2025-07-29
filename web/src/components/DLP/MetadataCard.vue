@@ -6,14 +6,8 @@
   >
     <template
       :id="name"
-      class="font-weight-regular"
       v-slot:title
     >
-      <v-icon class="mr-3 text-grey-lighten-1">
-        {{ icon }}
-      </v-icon>
-      {{ name }}
-    </v-card-title>
       <span>{{ name }}</span>
     </template>
     <v-list
