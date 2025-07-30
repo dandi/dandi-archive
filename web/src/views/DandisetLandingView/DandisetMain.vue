@@ -1,13 +1,15 @@
 <template>
   <div v-if="currentDandiset && meta && stats">
     <v-card
-      class="px-3"
+      class="border-b pa-10"
       color="grey-lighten-5"
-      variant="outlined"
+      style="box-shadow:0 0 16px rgba(0, 0, 0, .2)"
+      flat
+      tile
     >
-      <v-row class="mx-2 my-2 mb-0">
+      <v-row>
         <v-col
-          class="d-flex align-start justify-space-between"
+          class="d-flex align-start justify-space-between py-0"
         >
           <div class="title-container d-flex align-center">
             <h1 :class="`font-weight-light ${isXsDisplay ? 'text-h6' : ''}`">
@@ -56,7 +58,7 @@
           </v-chip>
         </v-col>
       </v-row>
-      <v-row class="mx-1">
+      <v-row>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <v-chip
             class="text-wrap py-1 pl-1"
@@ -128,9 +130,7 @@
           </span>
         </v-col>
       </v-row>
-      <v-row
-        class="mx-1"
-      >
+      <v-row>
         <v-col :cols="isXsDisplay ? 12 : 3">
           <span>
             <v-icon class="text-grey-lighten-1">mdi-calendar-range</v-icon>
@@ -170,25 +170,26 @@
             </span>
           </span>
         </v-col>
+        <v-divider class="ma-3" />
       </v-row>
 
-      <v-divider />
+      <v-row class="font-weight-light">
+        <v-col>
+          <!-- We use DOMPurify to sanitize against XSS -->
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <div v-html="htmlDescription" />
 
-      <v-row class="mx-1 my-4 px-4 font-weight-light">
-        <!-- We use DOMPurify to sanitize against XSS -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div v-html="htmlDescription" />
-
-        <!-- Truncate text if necessary -->
-        <a
-          v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
-          @click="showFullDescription = !showFullDescription"
-        > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
+          <!-- Truncate text if necessary -->
+          <a
+            v-if="meta.description && (meta.description.length > MAX_DESCRIPTION_LENGTH)"
+            @click="showFullDescription = !showFullDescription"
+          > {{ showFullDescription ? "[ - see less ]" : "[ + see more ]" }}</a>
+        </v-col>
       </v-row>
 
       <v-row class="justify-center">
         <v-col
-          cols="11"
+          cols="12"
           class="pb-0"
         >
           <v-card
