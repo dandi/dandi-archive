@@ -70,6 +70,12 @@ class DandiMixin(ConfigMixin):
             'dandiapi.drf_utils.rewrap_django_core_exceptions'
         )
 
+        # Add custom middleware for logging Dandi user information
+        # on every request
+        configuration.MIDDLEWARE += [
+            'dandiapi.middleware.DandiUserLoggingMiddleware',
+        ]
+
         # If this environment variable is set, the pydantic model will allow URLs with localhost
         # in them. This is important for development and testing environments, where URLs will
         # frequently point to localhost.
