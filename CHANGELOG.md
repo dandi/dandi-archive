@@ -1,3 +1,21 @@
+# v0.12.3 (Wed Jul 30 2025)
+
+#### 🐛 Bug Fix
+
+- Fix spacing of DLP cards on left side of page [#2453](https://github.com/dandi/dandi-archive/pull/2453) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- doc: dev setup and execution of e2e web tests [#2411](https://github.com/dandi/dandi-archive/pull/2411) ([@asmacdo](https://github.com/asmacdo))
+
+#### Authors: 3
+
+- Austin Macdonald ([@asmacdo](https://github.com/asmacdo))
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.2 (Tue Jul 22 2025)
 
 #### 🏠 Internal
