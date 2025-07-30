@@ -1,3 +1,16 @@
+# v0.12.4 (Wed Jul 30 2025)
+
+#### 🐛 Bug Fix
+
+- Fix metadata alignment and spacing [#2454](https://github.com/dandi/dandi-archive/pull/2454) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.3 (Wed Jul 30 2025)
 
 #### 🐛 Bug Fix
