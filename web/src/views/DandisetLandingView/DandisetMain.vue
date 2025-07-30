@@ -3,9 +3,9 @@
     <v-card
       class="border-b pa-10"
       color="grey-lighten-5"
-      flat="true"
       style="box-shadow:0 0 16px rgba(0, 0, 0, .2)"
-      tile="true"
+      flat
+      tile
     >
       <v-row>
         <v-col
