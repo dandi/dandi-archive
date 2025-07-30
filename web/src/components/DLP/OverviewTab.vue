@@ -2,20 +2,17 @@
   <div>
     <v-card
       v-if="contributors && contributors.length"
+      prepend-icon="mdi-account-multiple"
       variant="outlined"
       height="100%"
     >
-      <v-card-title class="font-weight-regular">
-        <v-icon class="mr-3 text-grey-lighten-1">
-          mdi-account-multiple
-        </v-icon>
-        Contributors
-      </v-card-title>
-      <v-list class="px-2 mb-2">
+      <template #title>
+        <span>Contributors</span>
+      </template>
+      <v-list class="mx-5 mt-1 mb-4 pa-0">
         <v-chip
           v-for="(contributor, i) in contributors"
           :key="i"
-          style="margin: 5px;"
           variant="outlined"
         >
           {{ contributor.name }}
@@ -136,26 +133,21 @@
 
     <v-card
       v-if="assetSummary"
+      prepend-icon="mdi-clipboard-list"
       variant="outlined"
     >
-      <v-card-title class="font-weight-regular">
+      <template #title>
         <v-progress-circular
           v-if="assetSummaryBeingComputed"
           class="mr-3"
           size="20"
           indeterminate
         />
-        <v-icon
-          v-else
-          class="mr-3 text-grey-lighten-1"
-        >
-          mdi-clipboard-list
-        </v-icon>
         Assets Summary
-      </v-card-title>
+      </template>
       <v-list
         :style="`column-count: ${assetSummaryColumnCount};`"
-        class="px-3 ml-2"
+        class="mx-5 mt-1 mb-4 pa-0"
       >
         <div
           v-if="assetSummaryBeingComputed"
