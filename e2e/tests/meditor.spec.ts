@@ -42,15 +42,15 @@ const invalidDandisets = {
 
 test.describe("Test meditor validation errors", async () => {
   test.beforeEach(async ({ page }) => {
-    await gotoAndLogin(page);
-    await page.waitForTimeout(1000);
+    // await gotoAndLogin(page);
+    // await page.waitForTimeout(1000);
   });
 
   for (const dandisetId of dandisetsToTest) {
     test(`Test dandiset ${dandisetId}`, async ({ page }) => {
       test.slow();
       await page.goto(`${clientUrl}/#/dandiset/${dandisetId}/draft/`);
-      await page.getByRole("button", { name: "Metadata" }).click();
+      await page.getByText("Metadata", { exact: true }).click();
 
       await page.getByLabel("Dandiset title").click();
       await page.keyboard.press("End");

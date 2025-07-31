@@ -5,11 +5,9 @@
     max-width="420"
   >
     <template #activator="{ props }">
-      <v-btn
+      <v-list-item
         id="cite_as"
-        variant="outlined"
-        block
-        class="justify-space-between"
+        class="justify-space-between border border-b-0"
         v-bind="props"
       >
         <template #prepend>
@@ -19,14 +17,14 @@
           >
             mdi-format-quote-close
           </v-icon>
-          <span>Cite As</span>
+          <v-list-item-title>Cite As</v-list-item-title>
         </template>
         <template #append>
           <v-icon end>
             mdi-chevron-down
           </v-icon>
         </template>
-      </v-btn>
+      </v-list-item>
     </template>
     <v-card>
       <CopyText

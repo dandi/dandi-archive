@@ -1,8 +1,5 @@
 <template>
-  <v-card
-    variant="outlined"
-    class="mt-4 px-3 pb-5"
-  >
+  <v-card class="px-3 pb-5 rounded-0 elevation-0">
     <v-row
       no-gutters
       class="my-1"
@@ -58,7 +55,7 @@
             <v-divider />
             <v-card-text class="pt-4">
               <v-row>
-                <v-col 
+                <v-col
                   v-for="(ownersChunk, chunkIndex) in chunk(owners, 10)"
                   :key="chunkIndex"
                   cols="auto"
@@ -105,7 +102,7 @@
         </v-dialog>
       </v-col>
     </v-row>
-    
+
     <!-- Manage Owners dialog -->
     <v-row
       class="justify-center"
