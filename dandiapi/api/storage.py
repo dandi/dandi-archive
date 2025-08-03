@@ -191,7 +191,7 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
                 'ACL': 'bucket-owner-full-control',
                 'ContentMD5': base64md5,
             },
-            ExpiresIn=600,  # TODO: proper expiration
+            ExpiresIn=1800,  # TODO: proper expiration
         )
 
     def generate_presigned_head_object_url(self, key: str) -> str:
@@ -252,7 +252,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         return self.base_url_client.presigned_put_object(
             bucket_name=self.bucket_name,
             object_name=blob_name,
-            expires=timedelta(seconds=600),  # TODO: proper expiration
+            expires=timedelta(seconds=1800),  # TODO: proper expiration
         )
 
     def generate_presigned_head_object_url(self, key: str) -> str:
