@@ -32,6 +32,13 @@ class AssetAuditEventResponseSerializer(serializers.ModelSerializer):
             'details',
         ]
 
+    details = serializers.SerializerMethodField()
+
+    # Don't need to return metadata
+    def get_details(self, obj: AuditRecord):
+        obj.details.pop('metadata', None)
+        return obj.details
+
 
 class AssetuditEventPagination(CursorPagination):
     ordering = 'timestamp'
