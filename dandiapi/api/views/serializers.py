@@ -78,6 +78,10 @@ class DandisetSerializer(serializers.ModelSerializer):
 
 class CreateDandisetQueryParameterSerializer(serializers.Serializer):
     embargo = serializers.BooleanField(required=False, default=False)
+    funding_source = serializers.CharField(required=False, allow_blank=True)
+    award_number = serializers.CharField(required=False, allow_blank=True)
+    grant_end_date = serializers.DateField(required=False)
+    embargo_end_date = serializers.DateField(required=False)
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):

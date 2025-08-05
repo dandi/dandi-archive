@@ -432,10 +432,18 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             except ValueError:
                 return Response(f'Invalid Identifier {identifier}', status=400)
 
+        embargo_config = {
+            'embargo': query_serializer.validated_data['embargo'],
+            'funding_source': query_serializer.validated_data.get('funding_source'),
+            'award_number': query_serializer.validated_data.get('award_number'),
+            'grant_end_date': query_serializer.validated_data.get('grant_end_date'),
+            'embargo_end_date': query_serializer.validated_data.get('embargo_end_date'),
+        }
+
         dandiset, _ = create_dandiset(
             user=request.user,
             identifier=identifier,
-            embargo=query_serializer.validated_data['embargo'],
+            embargo_config=embargo_config,
             version_name=serializer.validated_data['name'],
             version_metadata=serializer.validated_data['metadata'],
         )
