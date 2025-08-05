@@ -20,7 +20,7 @@ def create_dandiset(
     *,
     user,
     identifier: int | None = None,
-    embargo: bool,
+    embargo_config: dict,
     version_name: str,
     version_metadata: dict,
 ) -> tuple[Dandiset, Version]:
@@ -33,7 +33,56 @@ def create_dandiset(
     if existing_dandiset:
         raise DandisetAlreadyExistsError(f'Dandiset {existing_dandiset.identifier} already exists')
 
+    embargo = embargo_config.get('embargo', False)
     embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargo else Dandiset.EmbargoStatus.OPEN
+
+    # Handle embargo parameters - add funding info to contributors and set embargo end date
+    if embargo:
+        funding_source = embargo_config.get('funding_source')
+        award_number = embargo_config.get('award_number')
+        grant_end_date = embargo_config.get('grant_end_date')
+        embargo_end_date = embargo_config.get('embargo_end_date')
+
+        # Determine the embargo end date
+        if grant_end_date:
+            # Use grant end date for award-based embargoes
+            embargo_until = grant_end_date
+        elif embargo_end_date:
+            # Use explicit embargo end date
+            embargo_until = embargo_end_date
+        else:
+            # Default to 2 years from now if no date specified
+            from datetime import datetime, timedelta, timezone
+
+            embargo_until = (datetime.now(tz=timezone.UTC) + timedelta(days=720)).strftime(
+                '%Y-%m-%d'
+            )
+
+        # Set access metadata with embargo end date
+        version_metadata['access'] = [
+            {
+                'schemaKey': 'AccessRequirements',
+                'status': 'dandi:EmbargoedAccess',
+                'embargoedUntil': embargo_until,
+            }
+        ]
+
+        if funding_source:
+            # Add funding organization as a contributor
+            funding_org = {
+                'name': funding_source,
+                'schemaKey': 'Organization',
+                'roleName': ['dcite:Funder'],
+            }
+
+            if award_number:
+                funding_org['awardNumber'] = award_number
+
+            # Add to contributors if not already present
+            contributors = version_metadata.get('contributor', [])
+            contributors.append(funding_org)
+            version_metadata['contributor'] = contributors
+
     version_metadata = _normalize_version_metadata(
         version_metadata, f'{user.last_name}, {user.first_name}', user.email, embargo=embargo
     )
