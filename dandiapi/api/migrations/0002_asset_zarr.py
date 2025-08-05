@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ('blob__isnull', True),
                         ('embargoed_blob__isnull', True),

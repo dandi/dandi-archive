@@ -52,7 +52,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 name='version_metadata_has_schema_version',
-                check=Q(metadata__schemaVersion__isnull=False),
+                condition=Q(metadata__schemaVersion__isnull=False),
             )
         ]
         indexes = [
