@@ -1,3 +1,16 @@
+# v0.12.5 (Tue Aug 05 2025)
+
+#### 🐛 Bug Fix
+
+- DLP Sidebar Design [#2452](https://github.com/dandi/dandi-archive/pull/2452) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.4 (Wed Jul 30 2025)
 
 #### 🐛 Bug Fix
