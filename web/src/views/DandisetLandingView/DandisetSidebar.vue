@@ -1,10 +1,14 @@
 <template>
-  <div v-if="currentDandiset">
+  <div
+    v-if="currentDandiset"
+    class="border-s"
+  >
     <DandisetActions />
+    <v-divider />
     <DandisetOwners
       :user-can-modify-dandiset="userCanModifyDandiset"
     />
-
+    <v-divider />
     <div v-if="currentDandiset.dandiset.embargo_status === 'EMBARGOED'">
       <DandisetUnembargo />
     </div>
