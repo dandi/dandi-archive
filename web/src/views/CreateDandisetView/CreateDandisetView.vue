@@ -254,11 +254,24 @@ const embargoEndDate = computed(() => {
   return twoYearsFromNow.toISOString().split('T')[0];
 });
 
+// Helper function to validate grant end date bounds
+const isGrantEndDateValid = computed(() => {
+  if (!grantEndDate.value) return false; // Required field
+
+  const selectedDate = new Date(grantEndDate.value);
+  const today = new Date();
+  const fiveYearsFromNow = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate());
+
+  // Check if date is in the past or more than 5 years in the future
+  return selectedDate >= today && selectedDate <= fiveYearsFromNow;
+});
+
 const saveDisabled = computed(
   () => !name.value
       || !description.value
       || (!embargoed.value && !license.value)
-      || (embargoed.value && hasAward.value && (!fundingSource.value || !grantEndDate.value)),
+      || (embargoed.value && hasAward.value && (!fundingSource.value || !grantEndDate.value || !isGrantEndDateValid.value))
+      || (embargoed.value && !hasAward.value && !embargoEndDate.value),
 );
 
 const awardNumberRules = computed(
