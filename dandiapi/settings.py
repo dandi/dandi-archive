@@ -17,11 +17,6 @@ from dandischema.consts import DANDI_SCHEMA_VERSION as _DANDI_SCHEMA_VERSION
 
 
 class DandiMixin(ConfigMixin):
-    WSGI_APPLICATION = 'dandiapi.wsgi.application'
-    ROOT_URLCONF = 'dandiapi.urls'
-
-    BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
-
     REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
     ACCOUNT_EMAIL_VERIFICATION = 'none'
@@ -33,16 +28,6 @@ class DandiMixin(ConfigMixin):
 
     @staticmethod
     def mutate_configuration(configuration: type[ComposedConfiguration]):
-        # Install local apps first, to ensure any overridden resources are found first
-        configuration.INSTALLED_APPS = [
-            'dandiapi.api.apps.PublishConfig',
-            'dandiapi.search.apps.SearchConfig',
-            'dandiapi.zarr.apps.ZarrConfig',
-            *configuration.INSTALLED_APPS,
-        ]
-
-        # Install guardian
-        configuration.INSTALLED_APPS += ['guardian']
 
         # Install github provider only if github oauth is enabled
         if configuration.ENABLE_GITHUB_OAUTH:
@@ -50,25 +35,6 @@ class DandiMixin(ConfigMixin):
                 'allauth.socialaccount.providers.github',
             ]
 
-        # Authentication
-        configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
-        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-            'rest_framework.authentication.TokenAuthentication',
-        ]
-
-        # Permission
-        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += [
-            'dandiapi.api.permissions.IsApprovedOrReadOnly'
-        ]
-
-        # Pagination
-        configuration.REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = (
-            'dandiapi.api.views.pagination.DandiPagination'
-        )
-
-        configuration.REST_FRAMEWORK['EXCEPTION_HANDLER'] = (
-            'dandiapi.drf_utils.rewrap_django_core_exceptions'
-        )
 
         # If this environment variable is set, the pydantic model will allow URLs with localhost
         # in them. This is important for development and testing environments, where URLs will
@@ -127,20 +93,14 @@ class DandiMixin(ConfigMixin):
     # Disable github oauth by default
     ENABLE_GITHUB_OAUTH = False
 
-
 class DevelopmentConfiguration(DandiMixin, DevelopmentBaseConfiguration):
     # This makes pydantic model schema allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
-
-    SHELL_PLUS_IMPORTS = [
-        'from dandiapi.api.mail import *',
-    ]
 
     @staticmethod
     def mutate_configuration(config: type[ComposedConfiguration]):
         # This allows django-debug-toolbar to run in swagger and show the last made request
         config.DEBUG_TOOLBAR_CONFIG['UPDATE_ON_FETCH'] = True
-
 
 class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     DANDI_DANDISETS_BUCKET_NAME = 'test-dandiapi-dandisets'
@@ -153,21 +113,8 @@ class TestingConfiguration(DandiMixin, TestingBaseConfiguration):
     # This makes the dandischema pydantic model allow URLs with localhost in them.
     DANDI_ALLOW_LOCALHOST_URLS = True
 
-    # Ensure celery tasks run synchronously
-    CELERY_TASK_EAGER_PROPAGATES = True
-    CELERY_TASK_ALWAYS_EAGER = True
-
-
-class ProductionConfiguration(DandiMixin, ProductionBaseConfiguration):
-    pass
-
 
 class HerokuProductionConfiguration(DandiMixin, HerokuProductionBaseConfiguration):
-    @staticmethod
-    def mutate_configuration(configuration: type[ComposedConfiguration]):
-        # We're configuring sentry by hand since we need to pass custom options (traces_sampler).
-        configuration.INSTALLED_APPS.remove('composed_configuration.sentry.apps.SentryConfig')
-
     ENABLE_GITHUB_OAUTH = True
 
     # All login attempts in production should go straight to GitHub
