@@ -1,5 +1,0 @@
-# Include any data files such as templates or static assets in the source distribution
-graft dandiapi
-
-# Exclude the web folder from the source distribution
-prune web
