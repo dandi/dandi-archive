@@ -57,7 +57,6 @@ jobs:
           - release
           - master
     env:
-      DANDI_ALLOW_LOCALHOST_URLS: 1
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
     steps:
       - name: Download Docker image tarball

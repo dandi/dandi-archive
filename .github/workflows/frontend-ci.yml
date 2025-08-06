@@ -86,14 +86,9 @@ jobs:
       DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
       DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
       DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
-      DJANGO_DANDI_DANDISETS_LOG_BUCKET_NAME: dandiapi-dandisets-logs
-      DJANGO_DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME: dandiapi-embargo-dandisets-logs
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
       DJANGO_DANDI_API_URL: http://localhost:8000
       DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
-      DJANGO_DANDI_DEV_EMAIL: test@example.com
-      DJANGO_DANDI_ADMIN_EMAIL: admin@kitware.com
-      DANDI_ALLOW_LOCALHOST_URLS: 1
 
       # Web client env vars
       VITE_APP_DANDI_API_ROOT: http://localhost:8000/api/
