@@ -79,6 +79,13 @@ packages = [
   "dandiapi",
 ]
 
+# When building an sdist for upload to Heroku, also include "requirements.txt"
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "dandiapi",
+  "/requirements.txt",
+]
+
 [tool.hatch.version]
 source = "vcs"
 raw-options = {version_scheme = "no-guess-dev"}
