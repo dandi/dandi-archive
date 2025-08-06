@@ -10,7 +10,7 @@ license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   "celery",
-  "dandi",
+  "dandi>=0.60.0",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
   "dandischema==0.11.1",  # schema version 0.6.10
   "django~=4.2.0",
