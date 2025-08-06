@@ -6,8 +6,7 @@ You would need a local clone of the `dandi-archive` repository to develop on it.
 
 1. Run `git clone https://github.com/dandi/dandi-archive`
 1. Run `cd dandi-archive`
-1. Make sure your PostgreSQL port (5432) is available (recommended), or
-export `DOCKER_POSTGRES_PORT` environment variable to point to an alternative port.
+1. Make sure your PostgreSQL port (5432) is available.
 
 ## Develop with Docker (recommended quickstart)
 This is the simplest configuration for developers to start with.
@@ -67,26 +66,6 @@ but allows developers to run Python code on their native system.
    1. `source ./dev/export-env.sh`
    1. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 1. When finished, run `docker compose stop`
-
-## Remap Service Ports (optional)
-Attached services may be exposed to the host system via alternative ports. Developers who work
-on multiple software projects concurrently may find this helpful to avoid port conflicts.
-
-To do so, before running any `docker compose` commands, set any of the environment variables:
-* `DOCKER_POSTGRES_PORT`
-* `DOCKER_RABBITMQ_PORT`
-* `DOCKER_MINIO_PORT`
-
-The Django server must be informed about the changes:
-* When running the "Develop with Docker" configuration, override the environment variables:
-  * `DJANGO_MINIO_STORAGE_MEDIA_URL`, using the port from `DOCKER_MINIO_PORT`.
-* When running the "Develop Natively" configuration, override the environment variables:
-  * `DJANGO_DATABASE_URL`, using the port from `DOCKER_POSTGRES_PORT`
-  * `DJANGO_CELERY_BROKER_URL`, using the port from `DOCKER_RABBITMQ_PORT`
-  * `DJANGO_MINIO_STORAGE_ENDPOINT`, using the port from `DOCKER_MINIO_PORT`
-
-Since most of Django's environment variables contain additional content, use the values from
-the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
 
 ## Testing
 
