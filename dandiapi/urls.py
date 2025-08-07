@@ -156,7 +156,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.ENABLE_GITHUB_OAUTH:
+if 'allauth.socialaccount.providers.github' in settings.INSTALLED_APPS:
     # Include github oauth endpoints only
     urlpatterns.append(
         path('accounts/', include('allauth.socialaccount.providers.github.urls')),

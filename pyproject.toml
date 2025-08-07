@@ -69,7 +69,6 @@ dev = [
   "boto3-stubs[s3]",
   "django-stubs",
   "djangorestframework-stubs",
-  "types-setuptools",
   "pre-commit",
 ]
 test = [
@@ -165,6 +164,10 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = [
   "INP001", # File is part of an implicit namespace package
+]
+"**/settings/**" = [
+  "F403", # unable to detect undefined names
+  "F405", # may be undefined, or defined from star imports
 ]
 "**/migrations/**" = [
   "N806", # Variable in function should be lowercase

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import os
+
 from django_extensions.utils import InternalIPS
 
 from .base import *
@@ -32,7 +36,7 @@ MIDDLEWARE += [
 # to add new settings as individual feature flags.
 DEBUG = True
 
-SECRET_KEY = 'insecure-secret'
+SECRET_KEY = 'insecure-secret'  # noqa: S105
 
 # This is typically only overridden when running from Docker.
 INTERNAL_IPS = InternalIPS(env.list('DJANGO_INTERNAL_IPS', cast=str, default=['127.0.0.1']))
@@ -45,6 +49,7 @@ CORS_ALLOWED_ORIGIN_REGEXES = env.list(
 STORAGES['default'] = {
     'BACKEND': 'minio_storage.storage.MinioMediaStorage',
 }
+DANDI_DANDISETS_BUCKET_NAME = MINIO_STORAGE_MEDIA_BUCKET_NAME
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -56,3 +61,16 @@ SHELL_PLUS_IMPORTS = [
     'from dandiapi.api import tasks',
     'from dandiapi.api.mail import *',
 ]
+
+# This allows django-debug-toolbar to run in swagger and show the last made request
+DEBUG_TOOLBAR_CONFIG['UPDATE_ON_FETCH'] = True
+
+# If this environment variable is set, the pydantic model will allow URLs with localhost
+# in them. This is important for development and testing environments, where URLs will
+# frequently point to localhost.
+os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
+
+DANDI_AUTO_APPROVE_USERS = True
+
+DANDI_DEV_EMAIL = 'test-dev@example.com'
+DANDI_ADMIN_EMAIL = 'test-admin@example.com'

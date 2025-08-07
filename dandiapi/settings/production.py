@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import sentry_sdk
@@ -6,6 +8,7 @@ import sentry_sdk.integrations.django
 import sentry_sdk.integrations.logging
 import sentry_sdk.integrations.pure_eval
 
+from ._sentry_utils import get_sentry_performance_sample_rate
 from .base import *
 
 # Import these afterwards, to override
@@ -17,6 +20,12 @@ WSGI_APPLICATION = 'dandiapi.wsgi.application'
 
 SECRET_KEY: str = env.str('DJANGO_SECRET_KEY')
 
+INSTALLED_APPS += [
+    'allauth.socialaccount.providers.github',
+]
+# All login attempts in production should go straight to GitHub
+LOGIN_URL = '/accounts/github/login/'
+
 # This only needs to be defined in production. Testing will add 'testserver'. In development
 # (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.
 ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', cast=str)
@@ -24,6 +33,11 @@ ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', cast=str)
 STORAGES['default'] = {
     'BACKEND': 'storages.backends.s3.S3Storage',
 }
+DANDI_DANDISETS_BUCKET_NAME = AWS_STORAGE_BUCKET_NAME
+
+DANDI_DEV_EMAIL: str = env.str('DJANGO_DANDI_DEV_EMAIL')
+DANDI_ADMIN_EMAIL: str = env.str('DJANGO_DANDI_ADMIN_EMAIL')
+
 
 # sentry_sdk is able to directly use environment variables like 'SENTRY_DSN', but prefix them
 # with 'DJANGO_' to avoid avoiding conflicts with other Sentry-using services.
@@ -46,4 +60,6 @@ sentry_sdk.init(
     attach_stacktrace=True,
     # Submit request User info from Django
     send_default_pii=True,
+    traces_sampler=get_sentry_performance_sample_rate,
+    profiles_sampler=get_sentry_performance_sample_rate,
 )

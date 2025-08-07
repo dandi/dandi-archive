@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 # Redefine these before importing the rest of the settings
