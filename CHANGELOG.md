@@ -1,3 +1,26 @@
+# v0.12.6 (Thu Aug 07 2025)
+
+#### 🐛 Bug Fix
+
+- Retain focus on meditor text input fields [#2471](https://github.com/dandi/dandi-archive/pull/2471) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Declare  the same minimal version of dandi-cli as we announce in /info (/server-info) [#2458](https://github.com/dandi/dandi-archive/pull/2458) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- Miscellaneous improvements [#2468](https://github.com/dandi/dandi-archive/pull/2468) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Include other files needed by Heroku in sdist [#2472](https://github.com/dandi/dandi-archive/pull/2472) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Ensure `requirements.txt` is included in sdist [#2470](https://github.com/dandi/dandi-archive/pull/2470) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add `requirements.txt` [#2469](https://github.com/dandi/dandi-archive/pull/2469) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Switch from setuptools to hatchling [#2466](https://github.com/dandi/dandi-archive/pull/2466) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.12.5 (Tue Aug 05 2025)
 
 #### 🐛 Bug Fix
