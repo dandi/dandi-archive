@@ -324,7 +324,44 @@ const disableUndo = computed(
 const disableRedo = computed(
   () => readonly.value || !transactionTracker.areTransactionsAhead(),
 );
-const vjsfListener = () => transactionTracker.add(basicModel.value, false);
+const vjsfListener = () => {
+  // Since the vjsf form will be re-rendered, retrieve the active element, and store its properties
+  const el = document.activeElement as HTMLInputElement;
+  const curosrPos = el.selectionStart as number;
+  const scrollPos = el.scrollLeft;
+
+  const oldTransactionLength = transactionTracker.getTransactions().length;
+
+  // This will cause the re-render
+  transactionTracker.add(basicModel.value, false)
+
+  // Changes that invalidate the schema don't get recorded, so in that case there's nothing to fix
+  if (transactionTracker.getTransactions().length === oldTransactionLength) {
+    return;
+  }
+  
+  // A transaction was recorded, which means the form will be re-rendered.
+  // However, we only care about this behavior on normal strings.
+  const { newValue } = transactionTracker.getTransactions()[transactionTracker.getTransactionPointer()];
+  if (typeof newValue !== 'string') {
+    return;
+  }
+  
+  // A double render may occur, so use a timeout to wait until that's done and retrieve the settled element
+  setTimeout(() => {
+    const newElement = document.evaluate(
+      `//input[@value='${newValue}']`,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue as HTMLInputElement;
+
+    newElement.focus()
+    newElement.setSelectionRange(curosrPos, curosrPos, 'forward');
+    newElement.scroll({ left: scrollPos });
+  }, 10);
+};
 const modified = computed(() => transactionTracker.isModified());
 
 async function save() {
