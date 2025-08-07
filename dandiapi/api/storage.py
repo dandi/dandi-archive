@@ -22,6 +22,8 @@ from storages.backends.s3 import S3Storage
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+PRESIGNED_URL_TIMEOUT = timedelta(minutes=30)
+
 
 class ChecksumCalculatorFile:
     """File-like object that calculates the checksum of everything written to it."""
@@ -191,7 +193,7 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
                 'ACL': 'bucket-owner-full-control',
                 'ContentMD5': base64md5,
             },
-            ExpiresIn=1800,  # TODO: proper expiration
+            ExpiresIn=int(PRESIGNED_URL_TIMEOUT.total_seconds()),  # TODO: proper expiration
         )
 
     def generate_presigned_head_object_url(self, key: str) -> str:
@@ -252,7 +254,7 @@ class VerbatimNameMinioStorage(VerbatimNameStorageMixin, DeconstructableMinioSto
         return self.base_url_client.presigned_put_object(
             bucket_name=self.bucket_name,
             object_name=blob_name,
-            expires=timedelta(seconds=1800),  # TODO: proper expiration
+            expires=PRESIGNED_URL_TIMEOUT,  # TODO: proper expiration
         )
 
     def generate_presigned_head_object_url(self, key: str) -> str:
