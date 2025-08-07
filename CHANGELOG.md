@@ -1,3 +1,15 @@
+# v0.12.7 (Thu Aug 07 2025)
+
+#### 🐛 Bug Fix
+
+- Fix broken behavior when text includes single quotes [#2474](https://github.com/dandi/dandi-archive/pull/2474) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.12.6 (Thu Aug 07 2025)
 
 #### 🐛 Bug Fix
