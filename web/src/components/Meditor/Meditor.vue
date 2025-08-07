@@ -346,11 +346,25 @@ const vjsfListener = () => {
   if (typeof newValue !== 'string') {
     return;
   }
-  
+
+  // We choose single quotes to wrap the text, and if the text contains any single quotes itself,
+  // we must use xpath.concat to create the string properly. The string we pass to xpath.concat
+  // has the following format:
+  //    'no single quotes', "<single quote>", 'no single quotes', ...
+  let xpathValue = `'${newValue}'`;
+  if (newValue.includes("'")) {
+    const splitValue = newValue.split("'");
+    const mappedValue = splitValue.map((s) => `'${s}'`);
+    for (let i = 1; i < mappedValue.length; i += 2) {
+      mappedValue.splice(i, 0, `"'"`)
+    }
+    xpathValue = `concat(${mappedValue.join(', ')})`;
+  }
+
   // A double render may occur, so use a timeout to wait until that's done and retrieve the settled element
   setTimeout(() => {
     const newElement = document.evaluate(
-      `//input[@value='${newValue}']`,
+      `//input[@value=${xpathValue}]`,
       document,
       null,
       XPathResult.FIRST_ORDERED_NODE_TYPE,
