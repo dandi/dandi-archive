@@ -187,6 +187,7 @@ def test_asset_full_metadata(draft_asset_factory):
         'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
+    assert asset.blob is not None
     blob_url = asset.blob.s3_url
     assert asset.full_metadata == {
         **raw_metadata,
@@ -214,6 +215,7 @@ def test_asset_full_metadata_zarr(draft_asset_factory, zarr_archive):
         'asset-download',
         kwargs={'asset_id': str(asset.asset_id)},
     )
+    assert asset.zarr is not None
     s3_url = asset.zarr.s3_url
     assert asset.full_metadata == {
         **raw_metadata,
@@ -889,6 +891,7 @@ def test_asset_create_embargo(
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
 
     assert new_asset.full_metadata['access'][0]['status'] == AccessType.EmbargoedAccess.value
+    assert new_asset.blob is not None
     assert new_asset.blob.embargoed
     assert new_asset.zarr is None
 
@@ -1282,6 +1285,7 @@ def test_asset_rest_rename(api_client, user, draft_version, asset_blob):
     asset = add_asset_to_version(
         user=user, version=draft_version, asset_blob=asset_blob, metadata=metadata
     )
+    assert asset.blob is not None
 
     # Change path and make update request
     metadata['path'] = 'foo/bar2'
@@ -1697,6 +1701,7 @@ def test_asset_rest_delete_zarr_modified(
     asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert asset.size == 100
     ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
+    assert ap is not None
     assert ap.aggregate_files == 1
     assert ap.aggregate_size == 100
 

@@ -149,6 +149,7 @@ def test_validate_asset_metadata_no_encoding_format(draft_asset: Asset):
 
 @pytest.mark.django_db
 def test_validate_asset_metadata_no_digest(draft_asset: Asset):
+    assert draft_asset.blob is not None
     draft_asset.blob.sha256 = None
     draft_asset.blob.save()
 

@@ -131,6 +131,7 @@ def test_ingest_zarr_archive_modified(user, draft_version, zarr_archive_factory,
     )
     assert asset.size == 100
     ap = AssetPath.objects.filter(version=draft_version, asset=asset).first()
+    assert ap is not None
     assert ap.aggregate_files == 1
     assert ap.aggregate_size == 100
 
