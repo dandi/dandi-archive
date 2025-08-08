@@ -62,9 +62,12 @@ def test_dandiset_get_visible_dandisets(
     dandiset_factory, user_factory, embargo_status, user_status, visible
 ):
     dandiset = dandiset_factory(embargo_status=embargo_status)
-    user = AnonymousUser() if user_status == 'anonymous' else user_factory()
-    if user_status == 'owner':
-        add_dandiset_owner(dandiset, user)
+    if user_status == 'anonymous':
+        user = AnonymousUser()
+    else:
+        user = user_factory()
+        if user_status == 'owner':
+            add_dandiset_owner(dandiset, user)
 
     assert list(get_visible_dandisets(user)) == ([dandiset] if visible else [])
 
