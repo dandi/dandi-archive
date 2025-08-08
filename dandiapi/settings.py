@@ -83,9 +83,6 @@ class DandiMixin(ConfigMixin):
     DANDI_LOG_LEVEL = values.Value(default='INFO', environ=True)
     DANDI_ZARR_PREFIX_NAME = values.Value(default='zarr', environ=True)
 
-    # Mainly applies to unembargo
-    DANDI_MULTIPART_COPY_MAX_WORKERS = values.IntegerValue(environ=True, default=50)
-
     # This is where the schema version should be set.
     # It can optionally be overwritten with the environment variable, but that should only be
     # considered a temporary fix.
