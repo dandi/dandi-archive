@@ -348,7 +348,7 @@ const EXTERNAL_SERVICES = [
 
   {
     name: 'OME Zarr validator',
-    regex: /\.ome\.zarr$/,
+    regex: /\.(ome|nii)\.zarr$/,
     maxsize: Infinity,
     endpoint: 'https://ome.github.io/ome-ngff-validator/?source=$asset_url$',
   },
