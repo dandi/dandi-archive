@@ -14,12 +14,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from dandiapi.api.models import UserMetadata
-from dandiapi.api.permissions import IsApproved
+from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 from dandiapi.api.views.serializers import UserDetailSerializer, UserSerializer
 
 if TYPE_CHECKING:
     from django.http.response import HttpResponseBase
-    from rest_framework.request import Request
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ def serialize_user(user: User):
 @api_view(['GET'])
 @parser_classes([JSONParser])
 @permission_classes([IsAuthenticated])
-def users_me_view(request: Request) -> HttpResponseBase:
+def users_me_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """Get the currently authenticated user."""
     if request.user.socialaccount_set.count() == 1:
         social_account = request.user.socialaccount_set.get()
@@ -107,7 +106,7 @@ def users_me_view(request: Request) -> HttpResponseBase:
 @api_view(['GET'])
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
-def users_search_view(request: Request) -> HttpResponseBase:
+def users_search_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """Search for a user."""
     request_serializer = UserSerializer(data=request.query_params)
 
