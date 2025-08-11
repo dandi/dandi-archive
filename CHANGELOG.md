@@ -1,3 +1,20 @@
+# v0.12.9 (Mon Aug 11 2025)
+
+#### 🐛 Bug Fix
+
+- Add support to open NIfTI-Zarr assets with the OME-Zarr Validator external service [#2455](https://github.com/dandi/dandi-archive/pull/2455) ([@kabilar](https://github.com/kabilar))
+
+#### 🔩 Dependency Updates
+
+- Remove `s3-log-parse` dependency [#2480](https://github.com/dandi/dandi-archive/pull/2480) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.8 (Mon Aug 11 2025)
 
 #### 🐛 Bug Fix
