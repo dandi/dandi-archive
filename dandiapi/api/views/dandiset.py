@@ -112,8 +112,13 @@ class DandisetOrderingFilter(filters.OrderingFilter):
             queryset = queryset.annotate(
                 size=Subquery(
                     latest_version.annotate(
-                        size=Coalesce(Sum('assets__blob__size'), 0)
-                        + Coalesce(Sum('assets__zarr__size'), 0)
+                        size=Coalesce(
+                            Sum(
+                                'asset_paths__aggregate_size',
+                                filter=~Q(asset_paths__path__contains='/'),
+                            ),
+                            0,
+                        )
                     ).values('size')
                 )
             ).order_by(ordering)
