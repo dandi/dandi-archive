@@ -27,6 +27,7 @@ from dandiapi.api.views import (
     upload_initialize_view,
     upload_validate_view,
     user_approval_view,
+    user_email_view,
     user_questionnaire_form_view,
     users_me_view,
     users_search_view,
@@ -76,6 +77,7 @@ api_urlpatterns = [
         name='upload-validate',
     ),
     path('api/users/me/', users_me_view),
+    path('api/users/mail/', user_email_view),
     path('api/users/search/', users_search_view),
     re_path(
         r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
