@@ -70,17 +70,13 @@ class AssetBlob(TimeStampedModel):
         max_length=64,
         validators=[RegexValidator(f'^{SHA256_REGEX}$')],
     )
-    etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
+    etag = models.CharField(
+        unique=True, max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')]
+    )
     size = models.PositiveBigIntegerField()
 
     class Meta:
         indexes = [HashIndex(fields=['etag'])]
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-etag-size',
-                fields=['etag', 'size'],
-            )
-        ]
 
     @property
     def references(self) -> int:

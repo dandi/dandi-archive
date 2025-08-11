@@ -149,12 +149,12 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         dandiset,
     )
 
-    asset_blobs = AssetBlob.objects.filter(etag=etag)
-    if asset_blobs.exists():
+    existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
+    if existing_asset_blob is not None:
         return Response(
             'Blob already exists.',
             status=status.HTTP_409_CONFLICT,
-            headers={'Location': asset_blobs.first().blob_id},
+            headers={'Location': str(existing_asset_blob.blob_id)},
         )
 
     logger.info('Blob with ETag %s does not yet exist', etag)
