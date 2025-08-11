@@ -1,3 +1,30 @@
+# v0.12.8 (Mon Aug 11 2025)
+
+#### 🐛 Bug Fix
+
+- Extend allowed time to fulfill PUT upload to half-hour from 10 minutes [#2456](https://github.com/dandi/dandi-archive/pull/2456) ([@yarikoptic](https://github.com/yarikoptic) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏎 Performance
+
+- Use asset paths for dandiset list size order subquery [#2479](https://github.com/dandi/dandi-archive/pull/2479) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove unused code [#2475](https://github.com/dandi/dandi-archive/pull/2475) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- Improve and update doc regarding the `psycopg` dependency and its system dependencies [#2406](https://github.com/dandi/dandi-archive/pull/2406) ([@candleindark](https://github.com/candleindark) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.12.7 (Thu Aug 07 2025)
 
 #### 🐛 Bug Fix
