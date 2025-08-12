@@ -16,7 +16,7 @@ jobs:
     name: Update release branch
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # fetch history for all branches and tags
           token: ${{ secrets.GH_TOKEN }} # use PAT with permissions to push to master
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: reset-release-branch
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # fetch history for all branches and tags
           ref: release
