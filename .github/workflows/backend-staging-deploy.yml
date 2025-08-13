@@ -8,6 +8,9 @@ on:
       - "web/**"
       - "CHANGELOG.md"
 
+permissions:
+  contents: read
+
 concurrency:
   # If this workflow is already running, cancel it to avoid a scenario
   # where the older run finishes *after* the newer run and overwrites
@@ -26,8 +29,6 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v5
-        with:
-          python-version-file: .python-version
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
