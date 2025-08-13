@@ -32,18 +32,8 @@ jobs:
         run: yarn run build
 
   test-e2e:
-    name: E2E tests (${{ matrix.mode.name }})
+    name: E2E tests
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        mode:
-          - name: Development
-            backend_server_command: python manage.py runserver
-            frontend_server_command: yarn --cwd web/ run dev 2> /dev/null
-          - name: Production
-            backend_server_command: python -m gunicorn --bind 0.0.0.0:8000 dandiapi.wsgi --timeout 25  # from /Procfile
-            frontend_server_command: yarn --cwd web/ run build 2> /dev/null && npx serve --single web/dist --listen 8085
     services:
       postgres:
         image: postgres:latest
@@ -79,13 +69,10 @@ jobs:
           - 9000:9000
     env:
       # API server env vars
-      DJANGO_CONFIGURATION: DevelopmentConfiguration
+      DJANGO_SETTINGS_MODULE: dandiapi.settings.development
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
-      DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
-      DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
+      DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
       DJANGO_DANDI_API_URL: http://localhost:8000
       DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
@@ -121,10 +108,10 @@ jobs:
       run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
     - name: Apply migrations to API server
-      run: python manage.py migrate
+      run: ./manage.py migrate
 
     - name: Install test data
-      run: python manage.py loaddata playwright
+      run: ./manage.py loaddata playwright
 
     - name: Install dependencies
       run: yarn install --frozen-lockfile
@@ -137,13 +124,13 @@ jobs:
     - name: Run Playwright tests
       run: |
           # start vue dev server
-          ${{ matrix.mode.frontend_server_command }} &
+          yarn --cwd web/ run build 2> /dev/null && npx serve --single web/dist --listen 8085 &
           while ! nc -z localhost 8085; do
             sleep 3
           done
 
           # start the dandi-api server
-          ${{ matrix.mode.backend_server_command }} &
+          ./manage.py runserver &
 
           # run the tests
           cd e2e && npx playwright test
@@ -151,6 +138,6 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-${{ matrix.mode.name }}
+        name: playwright-report
         path: e2e/playwright-report/
         retention-days: 30
