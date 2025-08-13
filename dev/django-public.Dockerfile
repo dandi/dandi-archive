@@ -1,9 +1,8 @@
 FROM python:3.13-slim
-# Install system librarires for Python packages:
-# * psycopg2
+# Install system librarires for Python packages
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-    libpq-dev gcc libc6-dev git && \
+    gcc libc6-dev git && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED 1

@@ -54,10 +54,10 @@ jobs:
         python:
           - "3.13"
         dandi-version:
-          - release
+          # TODO: re-enable this when https://github.com/dandi/dandi-cli/pull/1678 is merged
+          # - release
           - master
     env:
-      DANDI_ALLOW_LOCALHOST_URLS: 1
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
     steps:
       - name: Download Docker image tarball
@@ -83,7 +83,8 @@ jobs:
 
       - name: Install dev dandi
         if: matrix.dandi-version == 'master'
-        run: pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+        # TODO: set back to `master` after https://github.com/dandi/dandi-cli/pull/1678 is merged
+        run: pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli@update-"
 
       - name: Run dandi-api tests in dandi-cli
         run: |

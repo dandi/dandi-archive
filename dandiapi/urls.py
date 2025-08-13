@@ -133,7 +133,7 @@ urlpatterns = [
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
     re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),
-    path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('oauth/', include('oauth2_provider.urls')),
     # Doc page views
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
@@ -156,7 +156,7 @@ urlpatterns = [
     ),
 ]
 
-if settings.ENABLE_GITHUB_OAUTH:
+if 'allauth.socialaccount.providers.github' in settings.INSTALLED_APPS:
     # Include github oauth endpoints only
     urlpatterns.append(
         path('accounts/', include('allauth.socialaccount.providers.github.urls')),
@@ -168,6 +168,9 @@ else:
     )
 
 if settings.DEBUG:
-    import debug_toolbar
+    import debug_toolbar.toolbar
 
-    urlpatterns = [path('__debug__/', include(debug_toolbar.urls)), *urlpatterns]
+    urlpatterns += [
+        *debug_toolbar.toolbar.debug_toolbar_urls(),
+        path('__reload__/', include('django_browser_reload.urls')),
+    ]

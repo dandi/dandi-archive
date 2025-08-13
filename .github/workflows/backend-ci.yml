@@ -13,10 +13,6 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        tox-env: [lint, type, test, check-migrations]
     services:
       postgres:
         image: postgres:latest
@@ -60,15 +56,11 @@ jobs:
           pip install tox
       - name: Run tests
         run: |
-          tox -e ${{ matrix.tox-env }}
+          tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
           DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
           DJANGO_DANDI_API_URL: http://localhost:8000
           DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
-          DJANGO_DANDI_DEV_EMAIL: test@example.com
-          DJANGO_DANDI_ADMIN_EMAIL: test-admin@example.com
-          DANDI_ALLOW_LOCALHOST_URLS: 1

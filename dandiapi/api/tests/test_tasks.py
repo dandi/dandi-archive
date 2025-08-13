@@ -19,7 +19,7 @@ from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
-from .fuzzy import URN_RE, UTC_ISO_TIMESTAMP_RE
+from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -434,9 +434,7 @@ def test_publish_task(
             'schemaKey': 'PublishActivity',
         },
         'datePublished': UTC_ISO_TIMESTAMP_RE,
-        'manifestLocation': [
-            f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/dandisets/{draft_version.dandiset.identifier}/{published_version.version}/assets.yaml',
-        ],
+        'manifestLocation': [HTTP_URL_RE],
         'identifier': f'DANDI:{draft_version.dandiset.identifier}',
         'version': published_version.version,
         'id': f'DANDI:{draft_version.dandiset.identifier}/{published_version.version}',
