@@ -1,3 +1,16 @@
+# v0.12.11 (Thu Aug 14 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2492](https://github.com/dandi/dandi-archive/pull/2492) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Revert change to github token again [#2491](https://github.com/dandi/dandi-archive/pull/2491) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.10 (Thu Aug 14 2025)
 
 #### 🐛 Bug Fix
