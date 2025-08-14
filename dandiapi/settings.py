@@ -76,6 +76,13 @@ class DandiMixin(ConfigMixin):
         if configuration.DANDI_ALLOW_LOCALHOST_URLS:
             os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
+        # Configure custom logging to log username if request is associated
+        # with a user
+        configuration.LOGGING['handlers']['console']['class'] = 'dandiapi.api.logging.DandiHandler'
+        configuration.MIDDLEWARE += [
+            'dandiapi.api.logging.RequestUserMiddleware',
+        ]
+
     DANDI_DANDISETS_BUCKET_NAME = values.Value(environ_required=True)
     DANDI_DANDISETS_BUCKET_PREFIX = values.Value(default='', environ=True)
     DANDI_DANDISETS_LOG_BUCKET_NAME = values.Value(environ_required=True)
