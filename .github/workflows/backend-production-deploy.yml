@@ -4,8 +4,9 @@ on:
   release:
     types: [released]
 
-permissions:
-  contents: write
+# TODO: enable when we switch to GITHUB_TOKEN
+# permissions:
+#   contents: write
 
 concurrency:
   # If this workflow is already running, cancel it to avoid a scenario
@@ -22,6 +23,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # fetch history for all branches and tags
+          token: ${{ secrets.GH_TOKEN }}  # TODO: switch to GITHUB_TOKEN
           ref: release
 
       - name: Perform reset
