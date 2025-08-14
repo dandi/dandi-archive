@@ -91,7 +91,11 @@ class ZarrArchive(TimeStampedModel):
 
     def generate_upload_urls(self, path_md5s: list[dict]):
         return [
-            self.storage.generate_presigned_put_object_url(self.s3_path(o['path']), o['base64md5'])
+            self.storage.generate_presigned_put_object_url(
+                self.s3_path(o['path']),
+                o['base64md5'],
+                tagging='embargoed=true' if self.embargoed else '',
+            )
             for o in path_md5s
         ]
 
