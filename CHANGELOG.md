@@ -1,3 +1,30 @@
+# v0.12.10 (Thu Aug 14 2025)
+
+#### 🐛 Bug Fix
+
+- Revert change to github token [#2490](https://github.com/dandi/dandi-archive/pull/2490) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Support embargo tags in generated zarr upload URLs [#2489](https://github.com/dandi/dandi-archive/pull/2489) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Improvements to GitHub Actions [#2465](https://github.com/dandi/dandi-archive/pull/2465) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix "union-attr" type errors [#2476](https://github.com/dandi/dandi-archive/pull/2476) ([@brianhelba](https://github.com/brianhelba))
+- Fix AnonymousUser-related type errors [#2477](https://github.com/dandi/dandi-archive/pull/2477) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/download-artifact from 4 to 5 [#2482](https://github.com/dandi/dandi-archive/pull/2482) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/checkout from 4 to 5 [#2481](https://github.com/dandi/dandi-archive/pull/2481) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.9 (Mon Aug 11 2025)
 
 #### 🐛 Bug Fix
