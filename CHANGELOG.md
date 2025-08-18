@@ -1,3 +1,19 @@
+# v0.12.12 (Mon Aug 18 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2495](https://github.com/dandi/dandi-archive/pull/2495) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Switch `django-composed-configuration` to flat settings [#2483](https://github.com/dandi/dandi-archive/pull/2483) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.11 (Thu Aug 14 2025)
 
 #### 🐛 Bug Fix
