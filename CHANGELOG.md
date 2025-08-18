@@ -1,3 +1,24 @@
+# v0.12.13 (Mon Aug 18 2025)
+
+#### 🐛 Bug Fix
+
+- Only search by etag in AssetBlob `get_or_create` [#2498](https://github.com/dandi/dandi-archive/pull/2498) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Expect that AssetBlob.etag should be unique, regardless of size [#2478](https://github.com/dandi/dandi-archive/pull/2478) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🧪 Tests
+
+- Test that tagging applied to zarr pre-signed PUT URLs [#2494](https://github.com/dandi/dandi-archive/pull/2494) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.12.12 (Mon Aug 18 2025)
 
 #### 🐛 Bug Fix
