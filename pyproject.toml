@@ -17,12 +17,17 @@ dependencies = [
   # Pin to version where this bug is fixed
   # https://codeberg.org/allauth/django-allauth/issues/4072
   "django-allauth>=65.3.0",
+  "django-auth-style",
   "django-click",
-  "django-configurations[database,email]",
+  "django-cors-headers",
+  "django-environ",
   "django-extensions",
   "django-filter",
   "django-guardian",
   "django-oauth-toolkit>2",
+  "django-resonant-settings[allauth,celery]",
+  "django-resonant-utils",
+  "django-stubs-ext",
   # TODO: pin this until we figure out what the cause of
   # https://github.com/dandi/dandi-archive/issues/1894 is.
   "djangorestframework==3.14.0",
@@ -32,13 +37,16 @@ dependencies = [
   "jsonschema",
   "boto3[s3]",
   "more_itertools",
+  "psycopg[binary]",
   "requests",
+  "rich",
+  "whitenoise[brotli]",
   "zarr-checksum>=0.2.8",
   # Production-only
-  "django-composed-configuration[prod]>=0.25.0",
   "django-s3-file-field[s3]>=1.0.0",
   "django-storages[s3]==1.14.3",
   "gunicorn",
+  "sentry-sdk[celery,django,pure_eval]",
   # Development-only, but required
   "django-minio-storage",
   "minio>7",
@@ -48,17 +56,18 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-  "django-composed-configuration[dev]>=0.25.0",
+  "django-browser-reload",
   "django-debug-toolbar",
   "django-s3-file-field[minio]",
   "Faker>=36.0.0",
   "ipython",
+  "watchdog",
+  "werkzeug",
   "tox",
   "memray",
   "boto3-stubs[s3]",
   "django-stubs",
   "djangorestframework-stubs",
-  "types-setuptools",
   "pre-commit",
 ]
 test = [
@@ -154,6 +163,10 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "scripts/**" = [
   "INP001", # File is part of an implicit namespace package
+]
+"**/settings/**" = [
+  "F403", # unable to detect undefined names
+  "F405", # may be undefined, or defined from star imports
 ]
 "**/migrations/**" = [
   "N806", # Variable in function should be lowercase

@@ -41,18 +41,6 @@ but allows developers to run Python code on their native system.
 1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
 1. Run `docker compose -f ./docker-compose.yml up -d`
 1. Install Python 3.13
-1. Ensure `psycopg` local installation [prerequisites](https://www.psycopg.org/psycopg3/docs/basic/install.html#local-installation) are met. Among the prerequisites, the `libpq` requirement can be met by running the following installation.
-
-    - On Ubuntu 20.04:
-      ```shell
-      sudo apt install libpq-dev
-      export PATH=/usr/lib/postgresql/X.Y/bin/:$PATH
-      ```
-    - On macOS, you can install `libpq` via Homebrew:
-      ```shell
-      brew install libpq
-      echo 'export PATH="$(brew --prefix)/opt/libpq/bin:$PATH"' >> ~/.zshrc
-      ```
 1. Create and activate a new Python virtualenv
 1. Run `pip install -e ".[dev]"`
 1. Run `source ./dev/export-env.sh`
