@@ -246,8 +246,8 @@ def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
         # Avoid a race condition where two clients are uploading the same blob at the same time.
         asset_blob, created = AssetBlob.objects.get_or_create(
             etag=upload.etag,
-            size=upload.size,
             defaults={
+                'size': upload.size,
                 'embargoed': upload.embargoed,
                 'blob_id': upload.upload_id,
                 'blob': upload.blob,
