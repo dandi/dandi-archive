@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from .base import *
 
 # Import these afterwards, to override
@@ -24,8 +22,6 @@ DANDI_DANDISETS_BUCKET_PREFIX = 'test-prefix/'
 # Run celery tasks synchronously in tests
 CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_TASK_ALWAYS_EAGER = True
-
-os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
 DANDI_ZARR_PREFIX_NAME = 'test-zarr'
 

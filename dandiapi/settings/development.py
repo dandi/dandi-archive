@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from django_extensions.utils import InternalIPS
 
 from .base import *
@@ -64,11 +62,6 @@ SHELL_PLUS_IMPORTS = [
 
 # This allows django-debug-toolbar to run in swagger and show the last made request
 DEBUG_TOOLBAR_CONFIG['UPDATE_ON_FETCH'] = True
-
-# If this environment variable is set, the pydantic model will allow URLs with localhost
-# in them. This is important for development and testing environments, where URLs will
-# frequently point to localhost.
-os.environ['DANDI_ALLOW_LOCALHOST_URLS'] = 'True'
 
 DANDI_AUTO_APPROVE_USERS = True
 
