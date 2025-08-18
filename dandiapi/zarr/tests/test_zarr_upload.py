@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from storages.backends.s3 import S3Storage
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
@@ -32,6 +33,8 @@ def test_zarr_rest_upload_start(
     )
     assert resp.status_code == 200
     assert resp.json() == [HTTP_URL_RE]
+    if isinstance(storage, S3Storage):
+        assert 'x-amz-tagging' in resp.json()[0]
 
     # Assert fields updated
     zarr_archive.refresh_from_db()
