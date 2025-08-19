@@ -4,6 +4,10 @@ on:
   release:
     types: [released]
 
+# TODO: enable when we switch to GITHUB_TOKEN
+# permissions:
+#   contents: write
+
 concurrency:
   # If this workflow is already running, cancel it to avoid a scenario
   # where the older run finishes *after* the newer run and overwrites
@@ -16,10 +20,10 @@ jobs:
     name: Update release branch
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # fetch history for all branches and tags
-          token: ${{ secrets.GH_TOKEN }} # use PAT with permissions to push to master
+          token: ${{ secrets.GH_TOKEN }}  # TODO: switch to GITHUB_TOKEN
           ref: release
 
       - name: Perform reset
@@ -32,15 +36,13 @@ jobs:
     runs-on: ubuntu-22.04
     needs: reset-release-branch
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # fetch history for all branches and tags
           ref: release
 
       - name: Set up Python
         uses: actions/setup-python@v5
-        with:
-          python-version-file: .python-version
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh

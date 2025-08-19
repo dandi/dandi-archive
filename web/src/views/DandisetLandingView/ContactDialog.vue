@@ -1,11 +1,9 @@
 <template>
-  <v-menu location="left">
+  <v-menu>
     <template #activator="{ props }">
-      <v-btn
+      <v-list-item
         id="contact"
-        variant="outlined"
-        block
-        class="justify-space-between"
+        class="justify-space-between border border-b-0"
         v-bind="props"
       >
         <template #prepend>
@@ -15,14 +13,14 @@
           >
             mdi-card-account-mail
           </v-icon>
-          <span>Contact</span>
+          <v-list-item-title>Contact</v-list-item-title>
         </template>
         <template #append>
           <v-icon end>
             mdi-chevron-down
           </v-icon>
         </template>
-      </v-btn>
+      </v-list-item>
     </template>
     <v-card>
       <v-card-title

@@ -6,8 +6,7 @@ You would need a local clone of the `dandi-archive` repository to develop on it.
 
 1. Run `git clone https://github.com/dandi/dandi-archive`
 1. Run `cd dandi-archive`
-1. Make sure your PostgreSQL port (5432) is available (recommended), or
-export `DOCKER_POSTGRES_PORT` environment variable to point to an alternative port.
+1. Make sure your PostgreSQL port (5432) is available.
 
 ## Develop with Docker (recommended quickstart)
 This is the simplest configuration for developers to start with.
@@ -42,14 +41,6 @@ but allows developers to run Python code on their native system.
 1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
 1. Run `docker compose -f ./docker-compose.yml up -d`
 1. Install Python 3.13
-1. Install
-  [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites).
-  Example `psycopg2` installation on Ubuntu 20.04:
-  ```
-  sudo apt install libpq-dev
-  export PATH=/usr/lib/postgresql/X.Y/bin/:$PATH
-  pip install psycopg2
-  ```
 1. Create and activate a new Python virtualenv
 1. Run `pip install -e ".[dev]"`
 1. Run `source ./dev/export-env.sh`
@@ -68,27 +59,8 @@ but allows developers to run Python code on their native system.
    1. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 1. When finished, run `docker compose stop`
 
-## Remap Service Ports (optional)
-Attached services may be exposed to the host system via alternative ports. Developers who work
-on multiple software projects concurrently may find this helpful to avoid port conflicts.
-
-To do so, before running any `docker compose` commands, set any of the environment variables:
-* `DOCKER_POSTGRES_PORT`
-* `DOCKER_RABBITMQ_PORT`
-* `DOCKER_MINIO_PORT`
-
-The Django server must be informed about the changes:
-* When running the "Develop with Docker" configuration, override the environment variables:
-  * `DJANGO_MINIO_STORAGE_MEDIA_URL`, using the port from `DOCKER_MINIO_PORT`.
-* When running the "Develop Natively" configuration, override the environment variables:
-  * `DJANGO_DATABASE_URL`, using the port from `DOCKER_POSTGRES_PORT`
-  * `DJANGO_CELERY_BROKER_URL`, using the port from `DOCKER_RABBITMQ_PORT`
-  * `DJANGO_MINIO_STORAGE_ENDPOINT`, using the port from `DOCKER_MINIO_PORT`
-
-Since most of Django's environment variables contain additional content, use the values from
-the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
-
 ## Testing
+
 ### Initial Setup
 tox is used to execute all tests.
 tox is installed automatically with the `dev` package extra.
@@ -113,6 +85,10 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+### E2E Tests
+
+See the [e2e README](e2e/README.md).
 
 ### Profiling with Memray
 To include a memory profile with your tests, add `--memray` at the end of your test command invocation. For example, to run a memory profile with all tests, you would run `tox -e test -- --memray`. This can be used in conjunction with other pytest CLI flags (like `-k`) as well. See the `pytest-memray` [docs](https://github.com/bloomberg/pytest-memray) for more invocation details.

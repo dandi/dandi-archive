@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from django.conf import settings
 import pytest
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
@@ -497,8 +496,8 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_fil
         {'prefix': 'foo/bar/a.txt', 'download': True},
     )
     assert resp.status_code == 302
-    assert resp.headers['Location'].startswith(
-        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/foo/bar/a.txt?'
+    assert (
+        f'/test-prefix/test-zarr/{zarr_archive.zarr_id}/foo/bar/a.txt?' in resp.headers['Location']
     )
 
 
@@ -510,6 +509,4 @@ def test_zarr_explore_head(api_client, storage, zarr_archive: ZarrArchive):
     filepath = 'foo/bar.txt'
     resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
     assert resp.status_code == 302
-    assert resp.headers['Location'].startswith(
-        f'http://{settings.MINIO_STORAGE_ENDPOINT}/test-dandiapi-dandisets/test-prefix/test-zarr/{zarr_archive.zarr_id}/{filepath}?'
-    )
+    assert f'/test-prefix/test-zarr/{zarr_archive.zarr_id}/{filepath}?' in resp.headers['Location']

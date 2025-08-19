@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
-from dandiapi.api.permissions import IsApproved
+from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import NotAllowedError
 from dandiapi.api.services.permissions.dandiset import get_visible_dandisets, is_dandiset_owner
@@ -114,7 +114,7 @@ def blob_read_view(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
-def upload_initialize_view(request: Request) -> HttpResponseBase:
+def upload_initialize_view(request: AuthenticatedRequest) -> HttpResponseBase:
     """
     Initialize a multipart upload.
 
@@ -149,12 +149,12 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
         dandiset,
     )
 
-    asset_blobs = AssetBlob.objects.filter(etag=etag)
-    if asset_blobs.exists():
+    existing_asset_blob = AssetBlob.objects.filter(etag=etag).first()
+    if existing_asset_blob is not None:
         return Response(
             'Blob already exists.',
             status=status.HTTP_409_CONFLICT,
-            headers={'Location': asset_blobs.first().blob_id},
+            headers={'Location': str(existing_asset_blob.blob_id)},
         )
 
     logger.info('Blob with ETag %s does not yet exist', etag)
@@ -177,7 +177,7 @@ def upload_initialize_view(request: Request) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
-def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
+def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
     Complete a multipart upload.
 
@@ -220,7 +220,7 @@ def upload_complete_view(request: Request, upload_id: str) -> HttpResponseBase:
 @api_view(['POST'])
 @parser_classes([JSONParser])
 @permission_classes([IsApproved])
-def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
+def upload_validate_view(request: AuthenticatedRequest, upload_id: str) -> HttpResponseBase:
     """
     Verify that an upload completed successfully and mint a new AssetBlob.
 
@@ -246,8 +246,8 @@ def upload_validate_view(request: Request, upload_id: str) -> HttpResponseBase:
         # Avoid a race condition where two clients are uploading the same blob at the same time.
         asset_blob, created = AssetBlob.objects.get_or_create(
             etag=upload.etag,
-            size=upload.size,
             defaults={
+                'size': upload.size,
                 'embargoed': upload.embargoed,
                 'blob_id': upload.upload_id,
                 'blob': upload.blob,

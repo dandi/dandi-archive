@@ -1,8 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
+from rest_framework.request import Request
 
 from dandiapi.api.models.user import UserMetadata
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
+
+
+# https://github.com/typeddjango/django-stubs#how-can-i-create-a-httprequest-thats-guaranteed-to-have-an-authenticated-user
+class AuthenticatedRequest(Request):
+    """A DRF Request guaranteed to have an authenticated user."""
+
+    user: User
 
 
 class IsApproved(IsAuthenticated):

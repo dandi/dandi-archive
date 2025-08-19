@@ -1,3 +1,217 @@
+# v0.12.13 (Mon Aug 18 2025)
+
+#### 🐛 Bug Fix
+
+- Only search by etag in AssetBlob `get_or_create` [#2498](https://github.com/dandi/dandi-archive/pull/2498) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Expect that AssetBlob.etag should be unique, regardless of size [#2478](https://github.com/dandi/dandi-archive/pull/2478) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🧪 Tests
+
+- Test that tagging applied to zarr pre-signed PUT URLs [#2494](https://github.com/dandi/dandi-archive/pull/2494) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.12.12 (Mon Aug 18 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2495](https://github.com/dandi/dandi-archive/pull/2495) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Switch `django-composed-configuration` to flat settings [#2483](https://github.com/dandi/dandi-archive/pull/2483) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.11 (Thu Aug 14 2025)
+
+#### 🐛 Bug Fix
+
+- Empty commit to trigger a release [#2492](https://github.com/dandi/dandi-archive/pull/2492) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Revert change to github token again [#2491](https://github.com/dandi/dandi-archive/pull/2491) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.10 (Thu Aug 14 2025)
+
+#### 🐛 Bug Fix
+
+- Revert change to github token [#2490](https://github.com/dandi/dandi-archive/pull/2490) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Support embargo tags in generated zarr upload URLs [#2489](https://github.com/dandi/dandi-archive/pull/2489) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Improvements to GitHub Actions [#2465](https://github.com/dandi/dandi-archive/pull/2465) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix "union-attr" type errors [#2476](https://github.com/dandi/dandi-archive/pull/2476) ([@brianhelba](https://github.com/brianhelba))
+- Fix AnonymousUser-related type errors [#2477](https://github.com/dandi/dandi-archive/pull/2477) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/download-artifact from 4 to 5 [#2482](https://github.com/dandi/dandi-archive/pull/2482) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+- [gh-actions](deps): Bump actions/checkout from 4 to 5 [#2481](https://github.com/dandi/dandi-archive/pull/2481) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.9 (Mon Aug 11 2025)
+
+#### 🐛 Bug Fix
+
+- Add support to open NIfTI-Zarr assets with the OME-Zarr Validator external service [#2455](https://github.com/dandi/dandi-archive/pull/2455) ([@kabilar](https://github.com/kabilar))
+
+#### 🔩 Dependency Updates
+
+- Remove `s3-log-parse` dependency [#2480](https://github.com/dandi/dandi-archive/pull/2480) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Kabilar Gunalan ([@kabilar](https://github.com/kabilar))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.8 (Mon Aug 11 2025)
+
+#### 🐛 Bug Fix
+
+- Extend allowed time to fulfill PUT upload to half-hour from 10 minutes [#2456](https://github.com/dandi/dandi-archive/pull/2456) ([@yarikoptic](https://github.com/yarikoptic) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏎 Performance
+
+- Use asset paths for dandiset list size order subquery [#2479](https://github.com/dandi/dandi-archive/pull/2479) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove unused code [#2475](https://github.com/dandi/dandi-archive/pull/2475) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- Improve and update doc regarding the `psycopg` dependency and its system dependencies [#2406](https://github.com/dandi/dandi-archive/pull/2406) ([@candleindark](https://github.com/candleindark) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.12.7 (Thu Aug 07 2025)
+
+#### 🐛 Bug Fix
+
+- Fix broken behavior when text includes single quotes [#2474](https://github.com/dandi/dandi-archive/pull/2474) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
+# v0.12.6 (Thu Aug 07 2025)
+
+#### 🐛 Bug Fix
+
+- Retain focus on meditor text input fields [#2471](https://github.com/dandi/dandi-archive/pull/2471) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Declare  the same minimal version of dandi-cli as we announce in /info (/server-info) [#2458](https://github.com/dandi/dandi-archive/pull/2458) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### 🏠 Internal
+
+- Miscellaneous improvements [#2468](https://github.com/dandi/dandi-archive/pull/2468) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Include other files needed by Heroku in sdist [#2472](https://github.com/dandi/dandi-archive/pull/2472) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Ensure `requirements.txt` is included in sdist [#2470](https://github.com/dandi/dandi-archive/pull/2470) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add `requirements.txt` [#2469](https://github.com/dandi/dandi-archive/pull/2469) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Switch from setuptools to hatchling [#2466](https://github.com/dandi/dandi-archive/pull/2466) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.12.5 (Tue Aug 05 2025)
+
+#### 🐛 Bug Fix
+
+- DLP Sidebar Design [#2452](https://github.com/dandi/dandi-archive/pull/2452) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.4 (Wed Jul 30 2025)
+
+#### 🐛 Bug Fix
+
+- Fix metadata alignment and spacing [#2454](https://github.com/dandi/dandi-archive/pull/2454) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.3 (Wed Jul 30 2025)
+
+#### 🐛 Bug Fix
+
+- Fix spacing of DLP cards on left side of page [#2453](https://github.com/dandi/dandi-archive/pull/2453) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 📝 Documentation
+
+- doc: dev setup and execution of e2e web tests [#2411](https://github.com/dandi/dandi-archive/pull/2411) ([@asmacdo](https://github.com/asmacdo))
+
+#### Authors: 3
+
+- Austin Macdonald ([@asmacdo](https://github.com/asmacdo))
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.2 (Tue Jul 22 2025)
+
+#### 🏠 Internal
+
+- Point staging web app at sandbox URL [#2446](https://github.com/dandi/dandi-archive/pull/2446) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Add source script for fish shell [#2440](https://github.com/dandi/dandi-archive/pull/2440) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.1 (Fri Jul 18 2025)
 
 #### 🐛 Bug Fix

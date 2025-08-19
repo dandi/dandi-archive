@@ -178,6 +178,7 @@ def test_asset_path_add_version_asset_paths_idempotent(draft_version_factory, as
     )
     for path in leafpaths:
         assert path.aggregate_files == 1
+        assert path.asset is not None
         assert path.aggregate_size == path.asset.size
 
 
@@ -196,6 +197,8 @@ def test_asset_path_add_asset_shared_paths(draft_version_factory, asset_factory)
 
     # Get path
     path = AssetPath.objects.get(path='foo', version=version)
+    assert asset1.blob is not None
+    assert asset2.blob is not None
     assert path.aggregate_size == asset1.blob.size + asset2.blob.size
     assert path.aggregate_files == 2
 
@@ -271,6 +274,7 @@ def test_asset_path_delete_asset_shared_paths(
 
     # Get path
     path = AssetPath.objects.get(path='foo', version=version)
+    assert asset2.blob is not None
     assert path.aggregate_size == asset2.blob.size
     assert path.aggregate_files == 1
 
@@ -287,12 +291,14 @@ def test_asset_path_search_asset_paths(draft_version_factory, asset_factory):
     qs = search_asset_paths('', version)
 
     # Assert that there are two folders
+    assert qs is not None
     assert qs.count() == 2
     assert sorted([x.path for x in qs]) == ['bar', 'foo']
     assert all(x.asset is None for x in qs)
 
     # Search foo, assert there are two files
     qs = search_asset_paths('foo', version)
+    assert qs is not None
     assert qs.count() == 2
     assert all(x.asset is not None for x in qs)
 

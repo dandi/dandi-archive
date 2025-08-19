@@ -2,26 +2,52 @@ services:
   postgres:
     image: postgres:latest
     command: postgres -c log_lock_waits=on -c log_min_duration_statement=100
+    shm_size: 128mb
     environment:
       POSTGRES_DB: django
       POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username", "postgres"]
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_POSTGRES_PORT-5432}:5432
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
 
   rabbitmq:
-    image: rabbitmq:management
+    image: rabbitmq:management-alpine
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_RABBITMQ_PORT-5672}:5672
-      - ${DOCKER_RABBITMQ_CONSOLE_PORT-15672}:15672
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
 
   minio:
     image: minio/minio:latest
     # When run with a TTY, minio prints credentials on startup
     tty: true
-    command: ["server", "/data", "--console-address", ":${DOCKER_MINIO_CONSOLE_PORT-9001}"]
+    command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: minioAccessKey
       MINIO_ROOT_PASSWORD: minioSecretKey
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      # "mc ready" doesn't terminate on failure, so time it out
+      timeout: 1s
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_MINIO_PORT-9000}:9000
-      - ${DOCKER_MINIO_CONSOLE_PORT-9001}:9001
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio:/data
+
+volumes:
+  postgres:
+  minio:
+  rabbitmq:

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from composed_configuration._allauth_support.management.commands import createsuperuser
 from django.db.models.signals import post_save
+from resonant_settings.allauth_support.management.commands import createsuperuser
 
 from dandiapi.api.models.user import UserMetadata
 
 if TYPE_CHECKING:
-    from composed_configuration._allauth_support.createsuperuser import EmailAsUsernameProxyUser
+    from resonant_settings.allauth_support.createsuperuser import EmailAsUsernameProxyUser
 
 
 def create_usermetadata(instance: EmailAsUsernameProxyUser, *args, **kwargs):
