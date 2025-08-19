@@ -625,6 +625,27 @@ def test_version_rest_update(api_client, user, draft_version):
 
 
 @pytest.mark.django_db
+def test_version_rest_update_embargoed(api_client, user, draft_version_factory):
+    draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    add_dandiset_owner(draft_version.dandiset, user)
+    api_client.force_authenticate(user=user)
+
+    new_name = 'Embargoed dandiset name'
+    new_metadata = {
+        'schemaVersion': settings.DANDI_SCHEMA_VERSION,
+        'name': new_name,
+        'description': 'Test description',
+    }
+
+    resp = api_client.put(
+        f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
+        {'metadata': new_metadata, 'name': new_name},
+        format='json',
+    )
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
 def test_version_rest_update_unembargo_in_progress(api_client, user, draft_version_factory):
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
@@ -978,14 +999,16 @@ def test_version_rest_delete_published_not_admin(api_client, user, published_ver
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_admin(api_client, admin_user, published_version):
+def test_version_rest_delete_published_admin(api_client, admin_user, published_version, mocker):
     api_client.force_authenticate(user=admin_user)
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.datacite_client.delete_or_hide_doi')
     response = api_client.delete(
         f'/api/dandisets/{published_version.dandiset.identifier}'
         f'/versions/{published_version.version}/'
     )
     assert response.status_code == 204
     assert not Version.objects.all()
+    mock_delete_doi.assert_called_once()
 
 
 @pytest.mark.django_db
