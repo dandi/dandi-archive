@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+import json
+from typing import TYPE_CHECKING, Any
+
+from botocore.exceptions import ClientError
+from storages.backends.s3 import S3Storage
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from mypy_boto3_s3.client import S3Client
+
+
+class DandiS3Storage(S3Storage):
+    """
+    An enhanced S3Storage.
+
+    This class additionally:
+    * Allows unsigned URLs to be generated
+    * Provides an API to tag objects
+    """
+
+    # S3Storage provides this, but doesn't properly annotate it
+    bucket_name: str
+
+    @property
+    def s3_client(self) -> S3Client:
+        return self.connection.meta.client
+
+    def _url_unsigned(self, name: str) -> str:
+        if self.endpoint_url:
+            # TODO: correct URL when inside Docker
+            # Assume only path-style requests are supported, as this is probably MinIO
+            return f'{self.endpoint_url}/{self.bucket_name}/{name}'
+        # https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html#virtual-hosted-style-access
+        return f'https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{name}'
+
+    def url(
+        self,
+        name: str,
+        *,
+        parameters: Mapping[str, Any] | None = None,
+        expire: int | None = None,
+        http_method: str | None = None,
+        signed: bool = True,
+    ) -> str:
+        if signed:
+            return super().url(name, parameters=parameters, expire=expire, http_method=http_method)
+        return self._url_unsigned(name)
+
+    def get_tags(self, name: str) -> dict[str, str]:
+        return {
+            tag['Key']: tag['Value']
+            for tag in self.s3_client.get_object_tagging(Bucket=self.bucket_name, Key=name)[
+                'TagSet'
+            ]
+        }
+
+    def put_tags(self, name: str, tags: Mapping[str, str]) -> None:
+        self.s3_client.put_object_tagging(
+            Bucket=self.bucket_name,
+            Key=name,
+            Tagging={'TagSet': [{'Key': key, 'Value': value} for key, value in tags.items()]},
+        )
+
+    def delete_tags(self, name: str) -> None:
+        self.s3_client.delete_object_tagging(Bucket=self.bucket_name, Key=name)
+
+
+class MinioDandiS3Storage(DandiS3Storage):
+    """Storage to be used for local development with MinIO."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self._bucket_exists():
+            self._create_bucket()
+
+    def _bucket_exists(self) -> bool:
+        try:
+            self.bucket.meta.client.head_bucket(Bucket=self.bucket_name)
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                return False
+            raise
+        return True
+
+    def _create_bucket(self) -> None:
+        self.bucket.create()
+        self.bucket.Policy().put(
+            Policy=json.dumps(
+                {
+                    'Version': '2012-10-17',
+                    'Statement': [
+                        {
+                            'Effect': 'Allow',
+                            'Principal': {'AWS': ['*']},
+                            'Action': ['s3:GetBucketLocation'],
+                            'Resource': [f'arn:aws:s3:::{self.bucket_name}'],
+                        },
+                        {
+                            'Effect': 'Allow',
+                            'Principal': {'AWS': ['*']},
+                            'Action': ['s3:ListBucket'],
+                            'Resource': [f'arn:aws:s3:::{self.bucket_name}'],
+                        },
+                        {
+                            'Effect': 'Allow',
+                            'Principal': {'AWS': ['*']},
+                            'Action': ['s3:GetObject'],
+                            'Resource': [f'arn:aws:s3:::{self.bucket_name}/*'],
+                        },
+                    ],
+                }
+            )
+        )

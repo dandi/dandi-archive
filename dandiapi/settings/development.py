@@ -7,7 +7,6 @@ from .base import *
 # Import these afterwards, to override
 from resonant_settings.development.celery import *  # isort: skip
 from resonant_settings.development.debug_toolbar import *  # isort: skip
-from resonant_settings.development.minio_storage import *  # isort: skip
 
 INSTALLED_APPS += [
     'debug_toolbar',
@@ -44,10 +43,20 @@ CORS_ALLOWED_ORIGIN_REGEXES = env.list(
     default=[r'^http://localhost:\d+$', r'^http://127\.0\.0\.1:\d+$'],
 )
 
+_minio_url: ParseResult = env.url('DJANGO_MINIO_STORAGE_URL')
 STORAGES['default'] = {
-    'BACKEND': 'minio_storage.storage.MinioMediaStorage',
+    'BACKEND': 'dandiapi.storage.MinioDandiS3Storage',
+    'OPTIONS': {
+        'endpoint_url': f'{_minio_url.scheme}://{_minio_url.hostname}:{_minio_url.port}',
+        'region_name': 'us-east-1',  # This is MinIO's default region
+        'access_key': _minio_url.username,
+        'secret_key': _minio_url.password,
+        'bucket_name': _minio_url.path.lstrip('/'),
+        'signature_version': 's3v4',
+        'querystring_expire': int(timedelta(hours=6).total_seconds()),
+    },
 }
-DANDI_DANDISETS_BUCKET_NAME = MINIO_STORAGE_MEDIA_BUCKET_NAME
+DANDI_DANDISETS_BUCKET_NAME = STORAGES['default']['OPTIONS']['bucket_name']  # TODO: remove
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 

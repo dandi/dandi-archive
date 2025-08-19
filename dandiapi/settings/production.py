@@ -31,7 +31,7 @@ LOGIN_URL = '/accounts/github/login/'
 ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', cast=str)
 
 STORAGES['default'] = {
-    'BACKEND': 'storages.backends.s3.S3Storage',
+    'BACKEND': 'dandiapi.storage.DandiS3Storage',
 }
 DANDI_DANDISETS_BUCKET_NAME = AWS_STORAGE_BUCKET_NAME
 
