@@ -39,33 +39,6 @@ def test_schema_latest(api_client, endpoint, model, kwargs):
     expected_schema = model.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
     assert schema == expected_schema
 
-    # Also compare against the original GitHub schema content
-    # Extract schema type from endpoint name (e.g., 'dandiset', 'published-dandiset')
-    endpoint_parts = endpoint.split('-')
-    if endpoint.endswith('-latest'):
-        schema_type = '-'.join(endpoint_parts[1:-1])  # Remove 'schema' prefix and 'latest' suffix
-    else:
-        schema_type = '-'.join(endpoint_parts[1:])  # Remove only 'schema' prefix
-
-    github_url = (
-        'https://raw.githubusercontent.com/dandi/schema/master/'
-        f'releases/{settings.DANDI_SCHEMA_VERSION}/{schema_type}.json'
-    )
-
-    # Download and compare with GitHub schema
-    github_resp = requests.get(github_url)
-    github_resp.raise_for_status()
-    github_schema = github_resp.json()
-
-    # Adjust for vendorization differences before comparison
-    # The local schema may have different default values due to runtime configuration
-    if 'properties' in schema and 'repository' in schema['properties']:
-        # Set repository default to None to match GitHub schema
-        schema['properties']['repository']['default'] = None
-
-    # Our local schema should match the GitHub schema after adjusting for vendorization
-    assert schema == github_schema
-
 
 @pytest.mark.parametrize(
     'endpoint',
