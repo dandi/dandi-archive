@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.storage import get_storage
+
+if TYPE_CHECKING:
+    from dandiapi.api.storage import DandiS3Storage
 
 logger = logging.getLogger(name=__name__)
 
@@ -34,7 +38,7 @@ class ZarrArchiveStatus(models.TextChoices):
 class ZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
-    storage = get_storage()
+    storage: DandiS3Storage = default_storage
 
     class Meta:
         ordering = ['created']
