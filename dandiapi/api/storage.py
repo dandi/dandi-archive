@@ -9,7 +9,7 @@ import boto3
 from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
-from django.core.files.storage import Storage, get_storage_class
+from django.core.files.storage import Storage, default_storage, get_storage_class
 from minio import S3Error
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
@@ -328,7 +328,7 @@ def create_s3_storage(bucket_name: str) -> Storage:
 
 def get_boto_client(storage: Storage | None = None, config: Config | None = None):
     """Return an s3 client from the current storage."""
-    storage = storage if storage else get_storage()
+    storage = storage if storage else default_storage
     storage_params = get_storage_params(storage)
     region_name = 'us-east-1' if isinstance(storage, MinioStorage) else 'us-east-2'
     return boto3.client(
@@ -354,10 +354,6 @@ def get_storage_params(storage: Storage):
         'access_key': storage.access_key,
         'secret_key': storage.secret_key,
     }
-
-
-def get_storage() -> Storage:
-    return create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
 
 
 def get_storage_prefix(instance: Any, filename: str) -> str:

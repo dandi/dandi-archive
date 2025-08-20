@@ -7,11 +7,11 @@ from urllib.parse import urlparse, urlunparse
 
 from django.conf import settings
 from django.core.files.base import File
+from django.core.files.storage import default_storage
 from rest_framework.renderers import JSONRenderer
 import yaml
 
 from dandiapi.api.models import Asset, AssetBlob, Version
-from dandiapi.api.storage import create_s3_storage
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 def _s3_url(path: str) -> str:
     """Turn an object path into a fully qualified S3 URL."""
-    storage = create_s3_storage(settings.DANDI_DANDISETS_BUCKET_NAME)
+    storage = default_storage
     signed_url = storage.url(path)
     # Strip off the query parameters from the presigning, as they are different every time
     parsed = urlparse(signed_url)
