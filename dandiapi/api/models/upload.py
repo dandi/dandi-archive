@@ -7,7 +7,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import CreationDateTimeField
 
-from dandiapi.api.storage import get_storage, get_storage_prefix
+from dandiapi.api.storage import get_storage_prefix
 
 from .asset import AssetBlob
 from .dandiset import Dandiset
@@ -20,7 +20,7 @@ class Upload(models.Model):  # noqa: DJ008
 
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
-    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True, upload_to=get_storage_prefix)
     embargoed = models.BooleanField(default=False)
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
