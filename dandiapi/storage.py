@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from typing import TYPE_CHECKING, Any
+from urllib.parse import urlencode
 
 from botocore.config import Config
 from botocore.exceptions import ClientError
@@ -20,6 +21,7 @@ class DandiS3Storage(S3Storage):
     This class additionally:
     * Does not transform original filenames
     * Allows unsigned URLs to be generated
+    * Provides an API to generate presigned PUT URLs
     * Provides an API to tag objects
     """
 
@@ -79,6 +81,34 @@ class DandiS3Storage(S3Storage):
         if signed:
             return super().url(name, parameters=parameters, expire=expire, http_method=http_method)
         return self._url_unsigned(name)
+
+    def generate_presigned_put_object_url(
+        self,
+        name: str,
+        *,
+        expire: int | None = None,
+        content_md5: str | None = None,
+        tags: Mapping[str, str] | None = None,
+    ) -> str:
+        # Just calling "S3Storage.url(..., http_method=='PUT')" doesn't work, as "get_object" can't
+        # accept "Tagging" options, even if its method is overridden.
+        if expire is None:
+            expire = self.querystring_expire
+        optional_params = {}
+        if content_md5 is not None:
+            optional_params['ContentMD5'] = content_md5
+        if tags is not None:
+            optional_params['Tagging'] = urlencode(tags)
+
+        return self.connection.meta.client.generate_presigned_url(
+            ClientMethod='put_object',
+            Params={
+                'Bucket': self.bucket_name,
+                'Key': name,
+                **optional_params,
+            },
+            ExpiresIn=expire,
+        )
 
     def get_tags(self, name: str) -> dict[str, str]:
         return {

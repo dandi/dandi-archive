@@ -151,8 +151,6 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         asset_blob = asset.blob
 
         # Redirect to correct presigned URL
-        storage = asset_blob.blob.storage
-
         serializer = AssetDownloadQueryParameterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         content_disposition = serializer.validated_data['content_disposition']
@@ -161,13 +159,20 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
         if content_disposition == 'attachment':
             return HttpResponseRedirect(
-                storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
+                asset_blob.blob.storage.url(
+                    asset_blob.blob.name,
+                    parameters={
+                        'ResponseContentDisposition': f'attachment; filename="{asset_basename}"',
+                    },
+                )
             )
         if content_disposition == 'inline':
-            url = storage.generate_presigned_inline_url(
+            url = asset_blob.blob.storage.url(
                 asset_blob.blob.name,
-                asset_basename,
-                content_type,
+                parameters={
+                    'ResponseContentDisposition': f'inline; filename="{asset_basename}"',
+                    'ResponseContentType': content_type,
+                },
             )
 
             if content_type.startswith('video/'):

@@ -23,8 +23,6 @@ if TYPE_CHECKING:
 
     from botocore.config import Config
 
-PRESIGNED_URL_TIMEOUT = timedelta(minutes=30)
-
 
 class ChecksumCalculatorFile:
     """File-like object that calculates the checksum of everything written to it."""
@@ -160,52 +158,6 @@ class VerbatimNameS3Storage(TimeoutS3Storage):
                 return etag[1:-1]
             return etag
 
-    def generate_presigned_put_object_url(
-        self, blob_name: str, base64md5: str, tagging: str = ''
-    ) -> str:
-        params = {
-            'Bucket': self.bucket_name,
-            'Key': blob_name,
-            'ACL': 'bucket-owner-full-control',
-            'ContentMD5': base64md5,
-        }
-        # Conditionally include tagging so it is not needlessly included in the url signature
-        if tagging:
-            params['Tagging'] = tagging
-
-        return self.connection.meta.client.generate_presigned_url(
-            ClientMethod='put_object',
-            Params=params,
-            ExpiresIn=int(PRESIGNED_URL_TIMEOUT.total_seconds()),  # TODO: proper expiration
-        )
-
-    def generate_presigned_head_object_url(self, key: str) -> str:
-        return self.bucket.meta.client.generate_presigned_url(
-            'head_object',
-            Params={'Bucket': self.bucket.name, 'Key': key},
-        )
-
-    def generate_presigned_download_url(self, key: str, path: str) -> str:
-        return self.connection.meta.client.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': self.bucket_name,
-                'Key': key,
-                'ResponseContentDisposition': f'attachment; filename="{path}"',
-            },
-        )
-
-    def generate_presigned_inline_url(self, key: str, path: str, content_type: str) -> str:
-        return self.connection.meta.client.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': self.bucket_name,
-                'Key': key,
-                'ResponseContentDisposition': f'inline; filename="{path}"',
-                'ResponseContentType': content_type,
-            },
-        )
-
     def sha256_checksum(self, key: str) -> str:
         calculator = ChecksumCalculatorFile()
         obj = self.bucket.Object(key)
@@ -227,41 +179,6 @@ class VerbatimNameMinioStorage(DeconstructableMinioStorage):
             raise
         else:
             return response.etag
-
-    def generate_presigned_put_object_url(
-        self, blob_name: str, base64md5: str, tagging: str = ''
-    ) -> str:
-        # Note: minio-py doesn't support using tags or Content-MD5 headers, but we accept these two
-        # parameters to keep parity between the minio and s3 storage functions
-
-        # storage.client will generate URLs like `http://minio:9000/...` when running in
-        # docker. To avoid this, use the secondary base_url_client which is configured to
-        # generate URLs like `http://localhost:9000/...`.
-        return self.base_url_client.presigned_put_object(
-            bucket_name=self.bucket_name,
-            object_name=blob_name,
-            expires=PRESIGNED_URL_TIMEOUT,  # TODO: proper expiration
-        )
-
-    def generate_presigned_head_object_url(self, key: str) -> str:
-        return self.base_url_client.get_presigned_url('HEAD', self.bucket_name, key)
-
-    def generate_presigned_download_url(self, key: str, path: str) -> str:
-        return self.base_url_client.presigned_get_object(
-            self.bucket_name,
-            key,
-            response_headers={'response-content-disposition': f'attachment; filename="{path}"'},
-        )
-
-    def generate_presigned_inline_url(self, key: str, path: str, content_type: str) -> str:
-        return self.base_url_client.presigned_get_object(
-            self.bucket_name,
-            key,
-            response_headers={
-                'response-content-disposition': f'inline; filename="{path}"',
-                'response-content-type': content_type,
-            },
-        )
 
     def sha256_checksum(self, key: str) -> str:
         calculator = ChecksumCalculatorFile()

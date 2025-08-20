@@ -93,16 +93,6 @@ class ZarrArchive(TimeStampedModel):
         """Generate a full S3 object path from a path in this zarr_archive."""
         return zarr_s3_path(str(self.zarr_id), zarr_path)
 
-    def generate_upload_urls(self, path_md5s: list[dict]):
-        return [
-            self.storage.generate_presigned_put_object_url(
-                self.s3_path(o['path']),
-                o['base64md5'],
-                tagging='embargoed=true' if self.embargoed else '',
-            )
-            for o in path_md5s
-        ]
-
     def mark_pending(self):
         self.checksum = None
         self.status = ZarrArchiveStatus.PENDING
