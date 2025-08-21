@@ -18,19 +18,17 @@ def test_zarr_rest_upload_start(
     zarr_archive = zarr_archive_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
         if embargoed
-        else Dandiset.EmbargoStatus.OPEN
+        else Dandiset.EmbargoStatus.OPEN,
+        # Set as complete, to mimic past upload
+        status=ZarrArchiveStatus.COMPLETE,
+        checksum=EMPTY_CHECKSUM,
+        file_count=1,
+        size=100,
     )
     add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Pretend like our zarr was defined with the given storage
     monkeypatch.setattr(ZarrArchive, 'storage', storage)
-
-    # Set as complete, to mimic past upload
-    zarr_archive.status = ZarrArchiveStatus.COMPLETE
-    zarr_archive.checksum = EMPTY_CHECKSUM
-    zarr_archive.file_count = 1
-    zarr_archive.size = 100
-    zarr_archive.save()
 
     # Request upload files
     resp = authenticated_api_client.post(
