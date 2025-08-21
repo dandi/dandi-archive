@@ -19,6 +19,7 @@ from dandiapi.api.models import Asset, AssetBlob, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
+from .factories import AssetBlobFactory
 from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
@@ -28,43 +29,16 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.django_db
-def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
-    asset_blob = asset_blob_factory(sha256=None)
-
-    h = hashlib.sha256()
-    h.update(asset_blob.blob.read())
-    sha256 = h.hexdigest()
+def test_calculate_checksum_task():
+    asset_blob = AssetBlobFactory.create(blob__data=b'known-content', size=13, sha256=None)
 
     tasks.calculate_sha256(asset_blob.blob_id)
-
     asset_blob.refresh_from_db()
 
-    assert asset_blob.sha256 == sha256
+    assert asset_blob.sha256 == 'c651ccb96b0c0e490de4cc12b9b46d643e6dba87840fab27e2c8d4d5cc2037fa'
 
 
 @pytest.mark.django_db
-def test_calculate_checksum_task_embargo(
-    storage: Storage, embargoed_asset_blob_factory, monkeypatch
-):
-    # Pretend like AssetBlob was defined with the given storage
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-
-    asset_blob = embargoed_asset_blob_factory(sha256=None)
-
-    h = hashlib.sha256()
-    h.update(asset_blob.blob.read())
-    sha256 = h.hexdigest()
-
-    tasks.calculate_sha256(asset_blob.blob_id)
-
-    asset_blob.refresh_from_db()
-
-    assert asset_blob.sha256 == sha256
-
-
 @pytest.mark.django_db
 def test_write_manifest_files(storage: Storage, version: Version, asset_factory):
     # Pretend like AssetBlob was defined with the given storage

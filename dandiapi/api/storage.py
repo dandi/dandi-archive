@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-import hashlib
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
@@ -22,20 +21,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from botocore.config import Config
-
-
-class ChecksumCalculatorFile:
-    """File-like object that calculates the checksum of everything written to it."""
-
-    def __init__(self):
-        self.h = hashlib.sha256()
-
-    def write(self, data: bytes) -> None:
-        self.h.update(data)
-
-    @property
-    def checksum(self):
-        return self.h.hexdigest()
 
 
 class DandiMultipartMixin:
@@ -158,12 +143,6 @@ class VerbatimNameS3Storage(TimeoutS3Storage):
                 return etag[1:-1]
             return etag
 
-    def sha256_checksum(self, key: str) -> str:
-        calculator = ChecksumCalculatorFile()
-        obj = self.bucket.Object(key)
-        obj.download_fileobj(calculator)
-        return calculator.checksum
-
 
 class VerbatimNameMinioStorage(DeconstructableMinioStorage):
     @property
@@ -179,13 +158,6 @@ class VerbatimNameMinioStorage(DeconstructableMinioStorage):
             raise
         else:
             return response.etag
-
-    def sha256_checksum(self, key: str) -> str:
-        calculator = ChecksumCalculatorFile()
-        obj = self.client.get_object(self.bucket_name, key)
-        for chunk in obj.stream(amt=1024 * 1024 * 16):
-            calculator.write(chunk)
-        return calculator.checksum
 
 
 def create_s3_storage(bucket_name: str) -> Storage:

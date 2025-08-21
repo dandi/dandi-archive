@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
@@ -14,6 +16,23 @@ if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
 
 
+class _WritableSha256(io.RawIOBase):
+    """File-like object that calculates the SHA256 of everything written to it."""
+
+    def __init__(self):
+        self._hasher = hashlib.sha256()
+
+    def write(self, data: bytes) -> int:
+        self._hasher.update(data)
+        return len(data)
+
+    def hexdigest(self) -> str:
+        return self._hasher.hexdigest()
+
+    def writable(self) -> bool:
+        return True
+
+
 class DandiS3Storage(S3Storage):
     """
     An enhanced S3Storage.
@@ -23,6 +42,7 @@ class DandiS3Storage(S3Storage):
     * Allows unsigned URLs to be generated
     * Provides an API to generate presigned PUT URLs
     * Provides an API to tag objects
+    * Provides an API to efficiently calculate the SHA256 checksums of an object
     """
 
     # S3Storage provides this, but doesn't properly annotate it
@@ -127,6 +147,13 @@ class DandiS3Storage(S3Storage):
 
     def delete_tags(self, name: str) -> None:
         self.s3_client.delete_object_tagging(Bucket=self.bucket_name, Key=name)
+
+    def sha256_checksum(self, name: str) -> str:
+        """Efficiently compute the SHA256 checksum of an object."""
+        hasher = _WritableSha256()
+        s3_object = self.bucket.Object(name)
+        s3_object.download_fileobj(hasher)
+        return hasher.hexdigest()
 
 
 class MinioDandiS3Storage(DandiS3Storage):
