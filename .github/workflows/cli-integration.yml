@@ -70,19 +70,19 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Install released dandi
+      - name: Run dandi-api tests in dandi-cli
         if: matrix.dandi-version == 'release'
-        run: uv tool install --python ${{ matrix.python }} pytest "dandi[test]"
-
-      - name: Install dev dandi
-        if: matrix.dandi-version == 'master'
-        run: uv tool install --python ${{ matrix.python }} pytest "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+        run: >
+          uvx --with dandi[test]
+          pytest --pyargs -v --dandi-api dandi
+        env:
+          DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
       - name: Run dandi-api tests in dandi-cli
+        if: matrix.dandi-version == 'master'
         run: >
-          "$(uv tool dir --bin)/pytest"
-          --dandi-api -v
-          "$(uv tool dir)/dandi/lib/python${{ matrix.python }}/site-packages/dandi"
+          uvx --with "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+          pytest --pyargs -v --dandi-api dandi
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
