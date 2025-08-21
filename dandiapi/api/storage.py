@@ -1,103 +1,17 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
-from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
 from django.core.files.storage import Storage, default_storage, get_storage_class
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
-from s3_file_field._multipart import PresignedPartTransfer, PresignedTransfer, UploadTooLargeError
-from s3_file_field._multipart_minio import MinioMultipartManager
-from s3_file_field._multipart_s3 import S3MultipartManager
 from storages.backends.s3 import S3Storage
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from botocore.config import Config
-
-
-class DandiMultipartMixin:
-    @staticmethod
-    def _iter_part_sizes(file_size: int) -> Iterator[tuple[int, int]]:
-        generator = PartGenerator.for_file_size(file_size)
-        for part in generator:
-            yield part.number, part.size
-
-    _url_expiration = timedelta(days=7)
-
-
-class DandiS3MultipartManager(DandiMultipartMixin, S3MultipartManager):
-    """
-    A custom multipart manager.
-
-    This custom multipart manager does the following:
-        1. Passes ACL information to multipart upload creation
-        2. Allows for passing tags to multipart uploads
-    """
-
-    def initialize_upload(
-        self,
-        object_key: str,
-        file_size: int,
-        content_type: str,
-        tagging: str | None = None,
-    ) -> PresignedTransfer:
-        if file_size > self.max_object_size:
-            raise UploadTooLargeError('File is larger than the S3 maximum object size.')
-
-        upload_id = self._create_upload_id(object_key, content_type, tagging)
-        parts = [
-            PresignedPartTransfer(
-                part_number=part_number,
-                size=part_size,
-                upload_url=self._generate_presigned_part_url(
-                    object_key, upload_id, part_number, part_size
-                ),
-            )
-            for part_number, part_size in self._iter_part_sizes(file_size)
-        ]
-        return PresignedTransfer(object_key=object_key, upload_id=upload_id, parts=parts)
-
-    def _create_upload_id(self, object_key: str, content_type: str, tagging: str | None) -> str:
-        resp = self._client.create_multipart_upload(
-            Bucket=self._bucket_name,
-            Key=object_key,
-            ContentType=content_type,
-            ACL='bucket-owner-full-control',
-            # The param to create_multipart_upload must be a string
-            Tagging=tagging or '',
-        )
-        return resp['UploadId']
-
-
-class DandiMinioMultipartManager(DandiMultipartMixin, MinioMultipartManager):
-    """A custom multipart manager for passing ACL information."""
-
-    # Override this method for interoperability with DandiS3MultipartManager
-    def initialize_upload(
-        self,
-        object_key: str,
-        file_size: int,
-        content_type: str,
-        *args,
-        **kwargs,
-    ) -> PresignedTransfer:
-        return super().initialize_upload(object_key, file_size, content_type)
-
-    def _create_upload_id(self, object_key: str, content_type: str) -> str:
-        return self._client._create_multipart_upload(  # noqa: SLF001
-            bucket_name=self._bucket_name,
-            object_name=object_key,
-            headers={
-                'Content-Type': content_type,
-                'x-amz-acl': 'bucket-owner-full-control',
-            },
-        )
 
 
 class DeconstructableMinioStorage(MinioStorage):
@@ -120,15 +34,11 @@ class TimeoutS3Storage(S3Storage):
 
 
 class VerbatimNameS3Storage(TimeoutS3Storage):
-    @property
-    def multipart_manager(self):
-        return DandiS3MultipartManager(self)
+    pass
 
 
 class VerbatimNameMinioStorage(DeconstructableMinioStorage):
-    @property
-    def multipart_manager(self):
-        return DandiMinioMultipartManager(self)
+    pass
 
 
 def create_s3_storage(bucket_name: str) -> Storage:

@@ -7,12 +7,12 @@ from django.db import transaction
 from django.utils import timezone
 
 from dandiapi.api.models import GarbageCollectionEvent
+from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.api.services.garbage_collection import asset_blob, upload
-from dandiapi.api.storage import DandiMultipartMixin
 
 logger = get_task_logger(__name__)
 
-UPLOAD_EXPIRATION_TIME = DandiMultipartMixin._url_expiration  # noqa: SLF001
+UPLOAD_EXPIRATION_TIME = DandiS3MultipartManager._url_expiration  # noqa: SLF001
 ASSET_BLOB_EXPIRATION_TIME = timedelta(days=7)
 
 GARBAGE_COLLECTION_EVENT_CHUNK_SIZE = 1000
