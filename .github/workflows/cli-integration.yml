@@ -54,7 +54,9 @@ jobs:
         python:
           - "3.13"
         dandi-version:
-          - release
+          # TODO: re-enable when https://github.com/dandi/dandi-cli/pull/1698
+          # is merged and released
+          # - release
           - master
     env:
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
@@ -70,33 +72,35 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      - name: Install released dandi
+      - name: Run dandi-api tests in dandi-cli
         if: matrix.dandi-version == 'release'
-        run: uv tool install "dandi[test]"
-
-      - name: Install dev dandi
-        if: matrix.dandi-version == 'master'
-        run: uv tool install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+        run: >
+          uvx --with dandi[test]
+          pytest --pyargs -v --dandi-api dandi
+        env:
+          DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
       - name: Run dandi-api tests in dandi-cli
+        if: matrix.dandi-version == 'master'
+        # TODO: change git reference back to `master` when we merge
+        # https://github.com/dandi/dandi-cli/pull/1698
         run: >
-          uv tool run
-          --python ${{ matrix.python }}
-          pytest
-          --dandi-api -v
-          "$(uv tool dir)/dandi/lib/python${{ matrix.python }}/site-packages/dandi"
+          uvx --with "dandi[test] @ git+https://github.com/dandi/dandi-cli@update-dandiarchive-docker-compose"
+          pytest --pyargs -v --dandi-api dandi
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
       - name: Dump Docker Compose logs
         if: failure()
         run: |
+          DANDI_PATH=$(uv run --with dandi python -c "import dandi; import os; print(os.path.dirname(dandi.__file__))")
           docker compose \
-            -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
+            -f "$DANDI_PATH/tests/data/dandiarchive-docker/docker-compose.yml" \
             logs --timestamps
 
       - name: Shut down Docker Compose
         run: |
+          DANDI_PATH=$(uv run --with dandi python -c "import dandi; import os; print(os.path.dirname(dandi.__file__))")
           docker compose \
-            -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
+            -f "$DANDI_PATH/tests/data/dandiarchive-docker/docker-compose.yml" \
             down -v
