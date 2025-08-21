@@ -8,7 +8,7 @@ Now that the [design for asset blob and upload garbage collection](./garbage-col
 
 It’s important to precisely define what it means for an asset to be eligible for garbage collection (an “orphaned asset”).
 An orphaned asset has the following properties:
-- The asset is not currently associated with any Versions
+- The asset is not currently associated with any Version
 - The asset is older than 30 days
 
 ## Integration with existing garbage collection routines
