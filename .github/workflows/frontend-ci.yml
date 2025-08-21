@@ -88,24 +88,12 @@ jobs:
       with:
         node-version: 20
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
 
     - name: Install web app
       run: yarn install --frozen-lockfile
       working-directory: web
-
-    - name: Install latest version of pip
-      run: pip install --upgrade pip
-
-    - uses: actions/cache@v4
-      id: pip-cache
-      with:
-        path: ${{ env.pythonLocation}}/lib/python3.13/site-packages/*
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
-
-    - name: Install dandi-api dependencies
-      run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
     - name: Apply migrations to API server
       run: ./manage.py migrate

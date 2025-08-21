@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S uv run  # noqa: EXE003
 from __future__ import annotations
 
 import sys
