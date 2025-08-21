@@ -13,7 +13,7 @@ dependencies = [
   "celery",
   "dandi",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema",  # schema version 0.6.10
+  "dandischema @ git+https://github.com/dandi/dandi-schema.git@devendorize",
   "django[argon2]",
   # Pin to version where this bug is fixed
   # https://codeberg.org/allauth/django-allauth/issues/4072
@@ -119,6 +119,9 @@ only-include = [
   "/Procfile",
   "/gunicorn.conf.py",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 source = "vcs"
