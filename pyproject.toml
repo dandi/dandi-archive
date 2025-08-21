@@ -60,7 +60,6 @@ development = [
   # Runtime dependencies, only needed with "development" settings
   "django-browser-reload",
   "django-debug-toolbar",
-  "django-s3-file-field[minio]",
   "ipython",
   "watchdog",
   "werkzeug",

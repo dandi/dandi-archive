@@ -7,6 +7,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import CreationDateTimeField
 
+from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.api.storage import get_storage_prefix
 
 from .asset import AssetBlob
@@ -54,13 +55,15 @@ class Upload(models.Model):  # noqa: DJ008
         upload_id = uuid4()
         object_key = cls.object_key(upload_id)
         embargoed = dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
-        multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
+        multipart_initialization = DandiS3MultipartManager(
+            cls._meta.get_field('blob').storage
+        ).initialize_upload(
             object_key,
             size,
             # The upload HTTP API does not pass the file name or content type, and it would be a
             # breaking change to start requiring this.
             'application/octet-stream',
-            tagging='embargoed=true' if embargoed else None,
+            tags={'embargoed': 'true'} if embargoed else None,
         )
 
         upload = cls(

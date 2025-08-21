@@ -688,7 +688,6 @@ dependencies = [
 development = [
     { name = "django-browser-reload" },
     { name = "django-debug-toolbar" },
-    { name = "django-s3-file-field", extra = ["minio"] },
     { name = "ipython" },
     { name = "watchdog" },
     { name = "werkzeug" },
@@ -750,7 +749,6 @@ requires-dist = [
     { name = "django-oauth-toolkit", specifier = ">2" },
     { name = "django-resonant-settings", extras = ["allauth", "celery"] },
     { name = "django-resonant-utils" },
-    { name = "django-s3-file-field", extras = ["minio"], marker = "extra == 'development'" },
     { name = "django-s3-file-field", extras = ["s3"], specifier = ">=1.0.0" },
     { name = "django-storages", extras = ["s3"], specifier = "==1.14.3" },
     { name = "django-stubs-ext" },
@@ -1058,10 +1056,6 @@ wheels = [
 ]
 
 [package.optional-dependencies]
-minio = [
-    { name = "django-minio-storage" },
-    { name = "minio" },
-]
 s3 = [
     { name = "boto3" },
     { name = "django-storages", extra = ["s3"] },
