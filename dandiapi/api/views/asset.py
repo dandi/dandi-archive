@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 import typing
 
-from django.contrib.auth.models import User
+if typing.TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 from dandiapi.api.asset_paths import search_asset_paths
 from dandiapi.api.services.asset import (
@@ -99,7 +100,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         # Clients must be authenticated to access it
         if not self.request.user.is_authenticated:
             raise NotAuthenticated
-        self.request.user = typing.cast(User, self.request.user)
+        self.request.user = typing.cast('User', self.request.user)
 
         # Admins are allowed to access any embargoed asset blob
         if self.request.user.is_superuser:

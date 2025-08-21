@@ -183,6 +183,7 @@ ignore = [
   # Fix in DANDI codebase. PR that will fix this:
   # https://github.com/dandi/dandi-archive/pull/1782
   "PTH119", # TODO: re-enable this when it's fixed
+  "PLC0415", # `import` should be at the top-level of a file
 ]
 
 [tool.ruff.lint.per-file-ignores]

@@ -113,8 +113,7 @@ def test_published_version_metadata_computed(published_version: Version):
         'version': published_version.version,
         'id': f'DANDI:{published_version.dandiset.identifier}/{published_version.version}',
         'doi': (
-            f'10.80507/dandi.'
-            f'{published_version.dandiset.identifier}/{published_version.version}'
+            f'10.80507/dandi.{published_version.dandiset.identifier}/{published_version.version}'
         ),
         'url': (
             f'{settings.DANDI_WEB_APP_URL}/dandiset/'
@@ -155,8 +154,7 @@ def test_version_metadata_citation_published(published_version):
     year = datetime.datetime.now(datetime.UTC).year
     url = f'https://doi.org/{published_version.doi}'
     assert published_version.metadata['citation'] == (
-        f'{name} ({year}). (Version {published_version.version}) [Data set]. '
-        f'DANDI Archive. {url}'
+        f'{name} ({year}). (Version {published_version.version}) [Data set]. DANDI Archive. {url}'
     )
 
 

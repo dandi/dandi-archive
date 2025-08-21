@@ -159,7 +159,7 @@ def compute_application_stats() -> None:
 def register_scheduled_tasks(sender: Celery, **kwargs):
     """Register tasks with a celery beat schedule."""
     logger.info(
-        'Registering scheduled tasks for %s. ' 'DANDI_VALIDATION_JOB_INTERVAL is %s seconds.',
+        'Registering scheduled tasks for %s. DANDI_VALIDATION_JOB_INTERVAL is %s seconds.',
         sender,
         settings.DANDI_VALIDATION_JOB_INTERVAL,
     )
