@@ -41,6 +41,7 @@ class DandiS3Storage(S3Storage):
     * Does not transform original filenames
     * Allows unsigned URLs to be generated
     * Provides an API to generate presigned PUT URLs
+    * Provides an API to get the ETag of an object
     * Provides an API to tag objects
     * Provides an API to efficiently calculate the SHA256 checksums of an object
     """
@@ -129,6 +130,17 @@ class DandiS3Storage(S3Storage):
             },
             ExpiresIn=expire,
         )
+
+    def e_tag(self, name: str) -> str | None:
+        """Return the ETag (entity tag) for an uploaded object, or `None` if it's unavailable."""
+        try:
+            e_tag = self.bucket.Object(name).e_tag
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                return None
+            raise
+        # S3 wraps the ETag in double quotes
+        return e_tag.strip('"')
 
     def get_tags(self, name: str) -> dict[str, str]:
         return {

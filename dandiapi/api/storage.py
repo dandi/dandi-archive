@@ -5,11 +5,9 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
-from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
 from django.core.files.storage import Storage, default_storage, get_storage_class
-from minio import S3Error
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
 from s3_file_field._multipart import PresignedPartTransfer, PresignedTransfer, UploadTooLargeError
@@ -126,38 +124,11 @@ class VerbatimNameS3Storage(TimeoutS3Storage):
     def multipart_manager(self):
         return DandiS3MultipartManager(self)
 
-    def etag_from_blob_name(self, blob_name) -> str | None:
-        client = self.connection.meta.client
-
-        try:
-            response = client.head_object(
-                Bucket=self.bucket_name,
-                Key=blob_name,
-            )
-        except ClientError:
-            return None
-        else:
-            etag = response['ETag']
-            # S3 wraps the ETag in double quotes, so we need to strip them
-            if etag[0] == '"' and etag[-1] == '"':
-                return etag[1:-1]
-            return etag
-
 
 class VerbatimNameMinioStorage(DeconstructableMinioStorage):
     @property
     def multipart_manager(self):
         return DandiMinioMultipartManager(self)
-
-    def etag_from_blob_name(self, blob_name) -> str | None:
-        try:
-            response = self.client.stat_object(self.bucket_name, blob_name)
-        except S3Error as e:
-            if e.code == 'NoSuchKey':
-                return None
-            raise
-        else:
-            return response.etag
 
 
 def create_s3_storage(bucket_name: str) -> Storage:

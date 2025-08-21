@@ -94,5 +94,5 @@ class Upload(models.Model):  # noqa: DJ008
     def actual_size(self):
         return self.blob.field.storage.size(self.blob.name)
 
-    def actual_etag(self):
-        return self.blob.storage.etag_from_blob_name(self.blob.name)
+    def actual_etag(self) -> str | None:
+        return self.blob.storage.e_tag(self.blob.name)
