@@ -4,15 +4,22 @@ import pytest
 from storages.backends.s3 import S3Storage
 from zarr_checksum.checksum import EMPTY_CHECKSUM
 
+from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tests.fuzzy import HTTP_URL_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('embargoed', [False, True])
 def test_zarr_rest_upload_start(
-    authenticated_api_client, user, zarr_archive: ZarrArchive, storage, monkeypatch
+    authenticated_api_client, user, zarr_archive_factory, storage, monkeypatch, embargoed
 ):
+    zarr_archive = zarr_archive_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+        if embargoed
+        else Dandiset.EmbargoStatus.OPEN
+    )
     add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Pretend like our zarr was defined with the given storage
@@ -33,8 +40,11 @@ def test_zarr_rest_upload_start(
     )
     assert resp.status_code == 200
     assert resp.json() == [HTTP_URL_RE]
-    if isinstance(storage, S3Storage):
+
+    if embargoed and isinstance(storage, S3Storage):
         assert 'x-amz-tagging' in resp.json()[0]
+    else:
+        assert 'x-amz-tagging' not in resp.json()[0]
 
     # Assert fields updated
     zarr_archive.refresh_from_db()
