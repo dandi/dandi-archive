@@ -72,17 +72,15 @@ jobs:
 
       - name: Install released dandi
         if: matrix.dandi-version == 'release'
-        run: uv tool install "dandi[test]"
+        run: uv tool install --python ${{ matrix.python }} pytest "dandi[test]"
 
       - name: Install dev dandi
         if: matrix.dandi-version == 'master'
-        run: uv tool install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+        run: uv tool install --python ${{ matrix.python }} pytest "dandi[test] @ git+https://github.com/dandi/dandi-cli"
 
       - name: Run dandi-api tests in dandi-cli
         run: >
-          uv tool run
-          --python ${{ matrix.python }}
-          pytest
+          "$(uv tool dir --bin)/pytest"
           --dandi-api -v
           "$(uv tool dir)/dandi/lib/python${{ matrix.python }}/site-packages/dandi"
         env:
