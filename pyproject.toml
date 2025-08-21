@@ -9,6 +9,7 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
+  "boto3",
   "celery",
   "dandi>=0.60.0",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
@@ -35,9 +36,9 @@ dependencies = [
   "drf-yasg",
   "fsspec[http]",
   "jsonschema",
-  "boto3[s3]",
   "more_itertools",
   "psycopg[binary]",
+  "pyyaml",
   "requests",
   "rich",
   "whitenoise[brotli]",
@@ -55,31 +56,55 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-dev = [
+development = [
+  # Runtime dependencies, only needed with "development" settings
   "django-browser-reload",
   "django-debug-toolbar",
   "django-s3-file-field[minio]",
-  "Faker>=36.0.0",
   "ipython",
   "watchdog",
   "werkzeug",
-  "tox",
-  "memray",
-  "boto3-stubs[s3]",
-  "django-stubs",
-  "djangorestframework-stubs",
+]
+
+[dependency-groups]
+dev = [
+  # Additional developer tools
+  # The "dev" dependency group is installed by default,
+  # so use this to install "development" extras by default too
+  "dandiapi[development]",
   "pre-commit",
+  "tox",
+  "tox-uv",
+]
+lint = [
+  "ruff",
+]
+format = [
+  "ruff",
+]
+type = [
+  "mypy",
+  "boto3-stubs[s3]",
+  "celery-types",
+  "django-stubs[compatible-mypy]",
+  "djangorestframework-stubs",
 ]
 test = [
   "djangorestframework-yaml",
+  "Faker",
   "factory-boy",
   "freezegun",
-  "pytest<8.4.0",  # current incompatibility with factoryboy
+  "pytest",
   "pytest-cov",
   "pytest-django",
   "pytest-factoryboy",
+  # Enable with "pytest --memray ..."
   "pytest-memray",
   "pytest-mock",
+  # Enable with "pytest --random-order ..."
+  "pytest-random-order",
+  # Enable with "pytest --count=... ..."
+  "pytest-repeat",
 ]
 
 [tool.hatch.build]
@@ -92,7 +117,7 @@ only-include = [
   "dandiapi",
   # Also include files needed by Heroku:
   "/manage.py",
-  "/requirements.txt",
+  "/uv.lock",
   "/.python-version",
   "/Procfile",
 ]
@@ -198,3 +223,23 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
+
+[tool.pytest.ini_options]
+addopts = [
+  # Test utilities should be imported absolutely from the pythonpath,
+  # so use the Pytest-recommended "importlib" mode
+  "--import-mode=importlib",
+  "--strict-config",
+  "--strict-markers",
+  "--showlocals",
+  "--verbose",
+  # Specifying as "--ds" will override any value in the environment
+  "--ds=dandiapi.settings.testing",
+]
+filterwarnings = [
+  # "error",
+  # pytest often causes unclosed socket warnings
+  "ignore:unclosed <socket\\.socket:ResourceWarning",
+  # https://github.com/celery/kombu/issues/1339
+  "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning:kombu",
+]
