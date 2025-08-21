@@ -236,7 +236,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             raise NotAuthenticated
 
         # Raise 403 if unauthorized
-        self.request.user = typing.cast(User, self.request.user)
+        self.request.user = typing.cast('User', self.request.user)
         if not is_dandiset_owner(dandiset, self.request.user):
             raise PermissionDenied
 
@@ -278,7 +278,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         user = self.request.user
         if user.is_anonymous:
             return dandisets_to_stars
-        user = typing.cast(User, user)
+        user = typing.cast('User', user)
 
         # Filter previous query to current user stars
         user_starred_dandisets = dandiset_stars.filter(user=user)
@@ -424,8 +424,7 @@ class DandisetViewSet(ReadOnlyModelViewSet):
         identifier = None
         if 'identifier' in serializer.validated_data['metadata']:
             identifier = serializer.validated_data['metadata']['identifier']
-            if identifier.startswith('DANDI:'):
-                identifier = identifier[6:]
+            identifier = identifier.removeprefix('DANDI:')
 
             try:
                 identifier = int(identifier)

@@ -339,7 +339,7 @@ const vjsfListener = () => {
   if (transactionTracker.getTransactions().length === oldTransactionLength) {
     return;
   }
-  
+
   // A transaction was recorded, which means the form will be re-rendered.
   // However, we only care about this behavior on normal strings.
   const { newValue } = transactionTracker.getTransactions()[transactionTracker.getTransactionPointer()];

@@ -222,8 +222,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             'id': f'DANDI:{self.dandiset.identifier}/{self.version}',
             'repository': settings.DANDI_WEB_APP_URL,
             'url': (
-                f'{settings.DANDI_WEB_APP_URL}/dandiset/'
-                f'{self.dandiset.identifier}/{self.version}'
+                f'{settings.DANDI_WEB_APP_URL}/dandiset/{self.dandiset.identifier}/{self.version}'
             ),
             'dateCreated': self.dandiset.created.isoformat(),
             'access': self._populate_access_metadata(),

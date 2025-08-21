@@ -27,7 +27,7 @@ Note: Celery workers are not required for e2e tests.
 Prior to executing the tests, you will need to login at `localhost:8085` to provide the superuser with a name.
 
 ```bash
-cd e2e 
+cd e2e
 
 # Install testdata
 ./manage.py loaddata playwright
