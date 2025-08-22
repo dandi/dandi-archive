@@ -92,10 +92,10 @@ class Upload(models.Model):  # noqa: DJ008
         )
 
     def object_key_exists(self):
-        return self.blob.field.storage.exists(self.blob.name)
+        return self.blob.storage.exists(self.blob.name)
 
     def actual_size(self):
-        return self.blob.field.storage.size(self.blob.name)
+        return self.blob.storage.size(self.blob.name)
 
     def actual_etag(self) -> str | None:
         return self.blob.storage.e_tag(self.blob.name)

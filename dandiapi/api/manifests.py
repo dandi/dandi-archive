@@ -11,7 +11,7 @@ from django.core.files.storage import default_storage
 from rest_framework.renderers import JSONRenderer
 import yaml
 
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, Version
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
@@ -19,8 +19,7 @@ if TYPE_CHECKING:
 
 def _s3_url(path: str) -> str:
     """Turn an object path into a fully qualified S3 URL."""
-    storage = default_storage
-    signed_url = storage.url(path)
+    signed_url = default_storage.url(path)
     # Strip off the query parameters from the presigning, as they are different every time
     parsed = urlparse(signed_url)
     return urlunparse((parsed[0], parsed[1], parsed[2], '', '', ''))
@@ -71,9 +70,7 @@ def _streaming_file_upload(path: str) -> Generator[IO[bytes]]:
         yield outfile
         outfile.seek(0)
 
-        # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
-        storage = AssetBlob.blob.field.storage
-        storage._save(path, File(outfile))  # noqa: SLF001
+        default_storage._save(path, File(outfile))  # noqa: SLF001
 
 
 def _yaml_dump_sequence_from_generator(stream: IO[bytes], generator: Iterable[Any]) -> None:
