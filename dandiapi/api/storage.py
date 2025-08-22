@@ -5,18 +5,9 @@ from typing import TYPE_CHECKING, Any
 import boto3
 from django.conf import settings
 from django.core.files.storage import Storage, default_storage
-from storages.backends.s3 import S3Storage
 
 if TYPE_CHECKING:
     from botocore.config import Config
-
-
-class TimeoutS3Storage(S3Storage):
-    pass
-
-
-class VerbatimNameS3Storage(TimeoutS3Storage):
-    pass
 
 
 def get_boto_client(storage: Storage | None = None, config: Config | None = None):
