@@ -18,6 +18,7 @@ class DandiS3Storage(S3Storage):
     An enhanced S3Storage.
 
     This class additionally:
+    * Does not transform original filenames
     * Allows unsigned URLs to be generated
     * Provides an API to tag objects
     """
@@ -43,6 +44,20 @@ class DandiS3Storage(S3Storage):
     @property
     def s3_client(self) -> S3Client:
         return self.connection.meta.client
+
+    # The basic S3Storage does not implement generate_filename or get_valid_name,
+    # so upon FileField save, the following call stack normally occurs:
+    #   FieldFile.save
+    #   FileField.generate_filename
+    #   Storage.generate_filename
+    #   Storage.get_valid_name
+    # Storage.generate_filename attempts to normalize the filename as a path.
+    # Storage.get_valid_name uses django.utils.text.get_valid_filename,
+    # which cleans spaces and other characters.
+    # Since these are designed around filesystem safety, not S3 key safety, it's
+    # simpler to do sanitization before saving.
+    def generate_filename(self, filename: str) -> str:
+        return filename
 
     def _url_unsigned(self, name: str) -> str:
         if self.endpoint_url:
