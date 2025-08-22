@@ -50,33 +50,34 @@
       />
     </router-link>
     <v-toolbar-items v-if="!isMobile">
-      <template v-for="navItem in navItems">
-        <v-btn
-          v-if="!navItem.external && (!navItem.if || navItem.if())"
-          :key="navItem.text"
-          :to="{name: navItem.to}"
-          exact
-          variant="text"
-        >
-          {{ navItem.text }}
-        </v-btn>
-        <v-btn
-          v-if="navItem.external && (!navItem.if || navItem.if())"
-          :key="navItem.text"
-          :href="navItem.to"
-          target="_blank"
-          rel="noopener"
-          variant="text"
-        >
-          {{ navItem.text }}
-          <v-icon
-            class="ml-1"
-            size="small"
+      <v-tabs color="primary">
+        <template v-for="navItem in navItems">
+          <v-tab
+            v-if="!navItem.external && (!navItem.if || navItem.if())"
+            :key="navItem.text"
+            :to="{name: navItem.to}"
+            class="text-xs"
           >
-            mdi-open-in-new
-          </v-icon>
-        </v-btn>
-      </template>
+            {{ navItem.text }}
+          </v-tab>
+          <v-tab
+            v-if="navItem.external && (!navItem.if || navItem.if())"
+            :key="navItem.text"
+            :href="navItem.to"
+            target="_blank"
+            rel="noopener"
+            class="text-xs"
+          >
+            {{ navItem.text }}
+            <v-icon
+              class="ml-1"
+              size="small"
+            >
+              mdi-open-in-new
+            </v-icon>
+          </v-tab>
+        </template>
+      </v-tabs>
     </v-toolbar-items>
 
     <v-spacer />
