@@ -9,9 +9,7 @@ from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 
 
 @pytest.mark.django_db
-def test_zarr_rest_upload_start(
-    authenticated_api_client, user, embargoed_zarr_archive_factory, storage, monkeypatch
-):
+def test_zarr_rest_upload_start(authenticated_api_client, user, embargoed_zarr_archive_factory):
     zarr_archive: ZarrArchive = embargoed_zarr_archive_factory.create(
         # Set as complete, to mimic past upload
         status=ZarrArchiveStatus.COMPLETE,
@@ -20,9 +18,6 @@ def test_zarr_rest_upload_start(
         size=100,
     )
     add_dandiset_owner(zarr_archive.dandiset, user)
-
-    # Pretend like our zarr was defined with the given storage
-    monkeypatch.setattr(ZarrArchive, 'storage', storage)
 
     # Request upload files
     resp = authenticated_api_client.post(
@@ -65,15 +60,10 @@ def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_arch
 def test_zarr_rest_finalize(
     authenticated_api_client,
     user,
-    storage,
     zarr_archive: ZarrArchive,
     zarr_file_factory,
-    monkeypatch,
 ):
     add_dandiset_owner(zarr_archive.dandiset, user)
-
-    # Pretend like our zarr was defined with the given storage
-    monkeypatch.setattr(ZarrArchive, 'storage', storage)
 
     # Upload zarr file
     zarr_file_factory(zarr_archive)

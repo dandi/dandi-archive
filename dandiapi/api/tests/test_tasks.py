@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
 from django.utils import timezone
 import pytest
@@ -15,7 +16,7 @@ from zarr_checksum.checksum import EMPTY_CHECKSUM
 from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
@@ -24,7 +25,6 @@ from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
-    from django.core.files.storage import Storage
     from rest_framework.test import APIClient
 
 
@@ -39,12 +39,7 @@ def test_calculate_checksum_task():
 
 
 @pytest.mark.django_db
-@pytest.mark.django_db
-def test_write_manifest_files(storage: Storage, version: Version, asset_factory):
-    # Pretend like AssetBlob was defined with the given storage
-    # The task piggybacks off of the AssetBlob storage to write the yamls
-    AssetBlob.blob.field.storage = storage
-
+def test_write_manifest_files(version: Version, asset_factory):
     # Create a new asset in the version so there is information to write
     version.assets.add(asset_factory())
 
@@ -72,11 +67,11 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
 
     tasks.write_manifest_files(version.id)
 
-    assert storage.exists(assets_yaml_path)
-    assert storage.exists(dandiset_yaml_path)
-    assert storage.exists(assets_jsonld_path)
-    assert storage.exists(dandiset_jsonld_path)
-    assert storage.exists(collection_jsonld_path)
+    assert default_storage.exists(assets_yaml_path)
+    assert default_storage.exists(dandiset_yaml_path)
+    assert default_storage.exists(assets_jsonld_path)
+    assert default_storage.exists(dandiset_jsonld_path)
+    assert default_storage.exists(collection_jsonld_path)
 
 
 @pytest.mark.django_db
