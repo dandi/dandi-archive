@@ -1,3 +1,20 @@
+# v0.12.14 (Fri Aug 22 2025)
+
+#### 🐛 Bug Fix
+
+- Only include tagging header in zarr upload URL if zarr is embargoed [#2503](https://github.com/dandi/dandi-archive/pull/2503) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove references to `DANDI_ALLOW_LOCALHOST_URLS` env var [#2499](https://github.com/dandi/dandi-archive/pull/2499) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.13 (Mon Aug 18 2025)
 
 #### 🐛 Bug Fix
