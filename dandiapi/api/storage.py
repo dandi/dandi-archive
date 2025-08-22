@@ -187,15 +187,19 @@ class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):
     def generate_presigned_put_object_url(
         self, blob_name: str, base64md5: str, tagging: str = ''
     ) -> str:
+        params = {
+            'Bucket': self.bucket_name,
+            'Key': blob_name,
+            'ACL': 'bucket-owner-full-control',
+            'ContentMD5': base64md5,
+        }
+        # Conditionally include tagging so it is not needlessly included in the url signature
+        if tagging:
+            params['Tagging'] = tagging
+
         return self.connection.meta.client.generate_presigned_url(
             ClientMethod='put_object',
-            Params={
-                'Bucket': self.bucket_name,
-                'Key': blob_name,
-                'ACL': 'bucket-owner-full-control',
-                'ContentMD5': base64md5,
-                'Tagging': tagging,
-            },
+            Params=params,
             ExpiresIn=int(PRESIGNED_URL_TIMEOUT.total_seconds()),  # TODO: proper expiration
         )
 
