@@ -479,7 +479,8 @@ def test_upload_validate_embargo(api_client, user, dandiset_factory, embargoed_u
 def test_upload_validate_upload_missing(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    upload.blob.delete(upload.blob.name)
+    # Delete the blob directly from storage, without updating the model
+    upload.blob.storage.delete(upload.blob.name)
 
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400
