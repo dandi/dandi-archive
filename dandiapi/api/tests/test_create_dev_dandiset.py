@@ -27,4 +27,5 @@ def test_create_dev_dandiset(user):
 
     assert AssetBlob.objects.count() == 1
     asset_blob = AssetBlob.objects.get()
-    assert AssetBlob.blob.field.storage.exists(asset_blob.blob.name)
+    with asset_blob.blob.open() as asset_blob_stream:
+        assert asset_blob_stream.read() == b'A' * 20
