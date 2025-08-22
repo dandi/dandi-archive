@@ -1,3 +1,15 @@
+# v0.12.15 (Fri Aug 22 2025)
+
+#### 🏠 Internal
+
+- Add HTTP redirect for staging server [#2449](https://github.com/dandi/dandi-archive/pull/2449) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.14 (Fri Aug 22 2025)
 
 #### 🐛 Bug Fix
