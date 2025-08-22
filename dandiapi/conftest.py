@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from django.conf import settings
-from django.core.files.storage import Storage, default_storage
-from minio_storage.storage import MinioStorage
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
-from dandiapi.api.storage import create_s3_storage
 from dandiapi.api.tests.factories import (
     AssetBlobFactory,
     DandisetFactory,
@@ -25,11 +19,6 @@ from dandiapi.api.tests.factories import (
 )
 from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
 from dandiapi.zarr.tests.utils import upload_zarr_file
-
-if TYPE_CHECKING:
-    from django.core.files.storage import Storage
-    from minio_storage.storage import MinioStorage
-    from storages.backends.s3 import S3Storage
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
@@ -87,37 +76,3 @@ def authenticated_api_client(user) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
     return client
-
-
-# storage fixtures are copied from django-s3-file-field test fixtures
-
-
-def base_s3_storage_factory(bucket_name: str) -> S3Storage:
-    return create_s3_storage(bucket_name)
-
-
-def s3_storage_factory():
-    return base_s3_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
-
-
-def base_minio_storage_factory(bucket_name: str) -> MinioStorage:
-    return create_s3_storage(bucket_name)
-
-
-def minio_storage_factory() -> MinioStorage:
-    return base_minio_storage_factory(settings.DANDI_DANDISETS_BUCKET_NAME)
-
-
-@pytest.fixture
-def s3_storage() -> S3Storage:
-    return s3_storage_factory()
-
-
-@pytest.fixture
-def minio_storage() -> MinioStorage:
-    return minio_storage_factory()
-
-
-@pytest.fixture
-def storage() -> Storage:
-    return default_storage

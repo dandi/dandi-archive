@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 from django.conf import settings
-from django.core.files.storage import Storage, default_storage, get_storage_class
-from minio_storage.policy import Policy
+from django.core.files.storage import Storage, default_storage
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings
 from storages.backends.s3 import S3Storage
 
@@ -39,61 +37,6 @@ class VerbatimNameS3Storage(TimeoutS3Storage):
 
 class VerbatimNameMinioStorage(DeconstructableMinioStorage):
     pass
-
-
-def create_s3_storage(bucket_name: str) -> Storage:
-    """
-    Return a new Storage instance, compatible with the default Storage class.
-
-    This abstracts over differences between S3Storage and MinioStorage,
-    allowing either to be used as an additional non-default Storage.
-    """
-    # For production, calling django.core.files.storage.get_storage_class is fine
-    # to return the storage class of S3Storage.
-    default_storage_class = get_storage_class()
-
-    if issubclass(default_storage_class, S3Storage):
-        storage = VerbatimNameS3Storage(bucket_name=bucket_name)
-        # Required to upload to the sponsored bucket
-        storage.default_acl = 'bucket-owner-full-control'
-    elif issubclass(default_storage_class, MinioStorage):
-        base_url = None
-        if getattr(settings, 'MINIO_STORAGE_MEDIA_URL', None):
-            # If a new base_url is set for the media storage, it's safe to assume one should be
-            # set for this storage too.
-            base_url_parts = urlsplit(settings.MINIO_STORAGE_MEDIA_URL)
-            # Reconstruct the URL with an updated path
-            base_url = urlunsplit(
-                (
-                    base_url_parts.scheme,
-                    base_url_parts.netloc,
-                    f'/{bucket_name}',
-                    base_url_parts.query,
-                    base_url_parts.fragment,
-                )
-            )
-
-        # The MinioMediaStorage used as the default storage is cannot be used
-        # as an ad-hoc non-default storage, as it does not allow bucket_name to be
-        # explicitly set.
-        storage = VerbatimNameMinioStorage(
-            bucket_name=bucket_name,
-            base_url=base_url,
-            # All S3Storage URLs are presigned, and the bucket typically is not public
-            presign_urls=True,
-            auto_create_bucket=True,
-            auto_create_policy=True,
-            policy_type=Policy.read,
-            # Required to upload to the sponsored bucket
-            object_metadata={'x-amz-acl': 'bucket-owner-full-control'},
-        )
-        # TODO: generalize policy_type?
-        # TODO: filename transforming?
-        # TODO: content_type
-    else:
-        raise TypeError(f'Unknown storage: {default_storage_class}')
-
-    return storage
 
 
 def get_boto_client(storage: Storage | None = None, config: Config | None = None):

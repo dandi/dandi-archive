@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from dandiapi.api.asset_paths import add_asset_paths, extract_paths
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, Version
 from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
@@ -19,7 +19,7 @@ from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
+from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, UUID_RE
@@ -619,11 +619,7 @@ def test_asset_rest_retrieve_embargoed_admin(
     draft_version_factory,
     draft_asset_factory,
     admin_user,
-    storage,
-    monkeypatch,
 ):
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-
     api_client.force_authenticate(user=admin_user)
     version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds = version.dandiset
@@ -649,11 +645,7 @@ def test_asset_rest_download_embargoed_admin(
     draft_version_factory,
     draft_asset_factory,
     admin_user,
-    storage,
-    monkeypatch,
 ):
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-
     api_client.force_authenticate(user=admin_user)
     version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds = version.dandiset
@@ -1665,13 +1657,8 @@ def test_asset_rest_delete_zarr_modified(
     draft_version,
     zarr_archive_factory,
     zarr_file_factory,
-    storage,
-    monkeypatch,
 ):
     """Ensure that a zarr can be associated to an asset, modified, then the asset deleted."""
-    # Pretend like our zarr was defined with the given storage
-    monkeypatch.setattr(ZarrArchive, 'storage', storage)
-
     # Assign perms and authenticate user
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -1747,10 +1734,7 @@ def test_asset_rest_delete_published_version(api_client, user, published_version
 
 
 @pytest.mark.django_db
-def test_asset_download(api_client, storage, version, asset):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
+def test_asset_download(api_client, version, asset):
     version.assets.add(asset)
 
     response = api_client.get(
@@ -1776,16 +1760,11 @@ def test_asset_download(api_client, storage, version, asset):
 def test_asset_download_embargo(
     authenticated_api_client,
     user,
-    storage,
     draft_version_factory,
     dandiset_factory,
     asset_factory,
     embargoed_asset_blob,
-    monkeypatch,
 ):
-    # Pretend like AssetBlob was defined with the given storage
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-
     # Set draft version as embargoed
     version = draft_version_factory(
         dandiset=dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
@@ -1831,10 +1810,7 @@ def test_asset_download_zarr(api_client, version, asset_factory, zarr_archive):
 
 
 @pytest.mark.django_db
-def test_asset_direct_download(api_client, storage, version, asset):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
+def test_asset_direct_download(api_client, version, asset):
     version.assets.add(asset)
 
     response = api_client.get(f'/api/assets/{asset.asset_id}/download/')
@@ -1863,10 +1839,7 @@ def test_asset_direct_download_zarr(api_client, version, asset_factory, zarr_arc
 
 
 @pytest.mark.django_db
-def test_asset_direct_download_head(api_client, storage, version, asset):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
+def test_asset_direct_download_head(api_client, version, asset):
     version.assets.add(asset)
 
     response = api_client.head(f'/api/assets/{asset.asset_id}/download/')

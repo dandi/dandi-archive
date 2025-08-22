@@ -330,9 +330,7 @@ def test_audit_zarr_create(api_client, user, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_factory, storage):
-    ZarrArchive.storage = storage
-
+def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_factory):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -356,11 +354,7 @@ def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_
 
 
 @pytest.mark.django_db
-def test_audit_finalize_zarr(
-    api_client, user, draft_version, zarr_archive_factory, storage, settings
-):
-    ZarrArchive.storage = storage
-
+def test_audit_finalize_zarr(api_client, user, draft_version, zarr_archive_factory, settings):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -397,11 +391,7 @@ def test_audit_finalize_zarr(
 
 
 @pytest.mark.django_db
-def test_audit_delete_zarr_chunks(
-    api_client, user, draft_version, zarr_archive_factory, storage, settings
-):
-    ZarrArchive.storage = storage
-
+def test_audit_delete_zarr_chunks(api_client, user, draft_version, zarr_archive_factory, settings):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
