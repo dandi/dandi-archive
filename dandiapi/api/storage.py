@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
-from botocore.config import Config
 from botocore.exceptions import ClientError
 from dandischema.digests.dandietag import PartGenerator
 from django.conf import settings
@@ -21,6 +20,8 @@ from storages.backends.s3 import S3Storage
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    from botocore.config import Config
 
 PRESIGNED_URL_TIMEOUT = timedelta(minutes=30)
 
@@ -152,14 +153,7 @@ class VerbatimNameStorageMixin:
 
 
 class TimeoutS3Storage(S3Storage):
-    """Override boto3 default timeout values."""
-
-    def __init__(self, **settings):
-        super().__init__(**settings)
-
-        self.client_config = self.client_config.merge(
-            Config(connect_timeout=5, read_timeout=5, retries={'max_attempts': 2})
-        )
+    pass
 
 
 class VerbatimNameS3Storage(VerbatimNameStorageMixin, TimeoutS3Storage):

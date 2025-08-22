@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from storages.backends.s3 import S3Storage
 
@@ -23,6 +24,21 @@ class DandiS3Storage(S3Storage):
 
     # S3Storage provides this, but doesn't properly annotate it
     bucket_name: str
+
+    def __init__(self, **settings):
+        super().__init__(
+            client_config=Config(
+                signature_version='s3v4',
+                # These settings are not available in upstream S3Storage
+                connect_timeout=5,
+                read_timeout=5,
+                retries={
+                    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/retries.html#standard-retry-mode
+                    'mode': 'standard',
+                },
+            ),
+            **settings,
+        )
 
     @property
     def s3_client(self) -> S3Client:
