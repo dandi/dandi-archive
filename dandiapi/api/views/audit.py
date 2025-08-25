@@ -40,7 +40,7 @@ class AssetAuditEventResponseSerializer(serializers.ModelSerializer):
         return obj.details
 
 
-class AssetuditEventPagination(CursorPagination):
+class AssetAuditEventPagination(CursorPagination):
     ordering = 'timestamp'
     page_size = 100
     page_size_query_param = 'page_size'
@@ -67,7 +67,7 @@ def asset_audit_events(request: Request) -> Response:
     if after:
         queryset = queryset.filter(timestamp__gte=after)
 
-    paginator = AssetuditEventPagination()
+    paginator = AssetAuditEventPagination()
     if query_serializer.validated_data['reverse_order']:
         paginator.ordering = '-timestamp'
     results_page = paginator.paginate_queryset(queryset=queryset, request=request)
