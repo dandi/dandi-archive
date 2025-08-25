@@ -24,13 +24,11 @@ RUN getent passwd ${USERID} || adduser --allow-bad-names --uid ${USERID} --gid $
 RUN mkdir -p /opt/django-project
 RUN chown ${USERID}:${GROUPID} /opt/django-project
 
-# Only copy the pyproject.toml, setup.py, and setup.cfg.  It will still force all install_requires to be installed,
+# Only copy the pyproject.toml.  It will still force all install_requires to be installed,
 # but find_packages() will find nothing (which is fine). When Docker Compose mounts the real source
 # over top of this directory, the .egg-link in site-packages resolves to the mounted directory
 # and all package modules are importable.
 COPY ./pyproject.toml /opt/django-project/pyproject.toml
-COPY ./setup.cfg /opt/django-project/setup.cfg
-COPY ./setup.py /opt/django-project/setup.py
 
 # Copy the pre-commit config so that the pre-commit environments can be
 # constructed later.
