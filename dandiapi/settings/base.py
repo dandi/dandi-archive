@@ -160,6 +160,13 @@ _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 # Configure the logging level on all DANDI loggers.
 logging.getLogger('dandiapi').setLevel(_dandi_log_level)
 
+# Configure custom logging to log username if request is associated
+# with a user
+LOGGING['handlers']['console']['class'] = 'dandiapi.api.logging.DandiHandler'
+MIDDLEWARE += [
+    'dandiapi.api.logging.RequestUserMiddleware',
+]
+
 # This is where the schema version should be set.
 # It can optionally be overwritten with the environment variable, but that should only be
 # considered a temporary fix.
