@@ -35,6 +35,9 @@ class RequestUserMiddleware:
 class DandiHandler(RichHandler):
     def render_message(self, record: logging.LogRecord, message: str) -> ConsoleRenderable:
         username = current_user.get()
+
+        # All user requests should set username, to either an actual username, or AnonymousUser.
+        # However, sometimes things are logged outside of a request. This condition handles that.
         if username:
             message = f'{username} {message}'
 
