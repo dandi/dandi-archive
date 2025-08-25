@@ -66,7 +66,7 @@ def _collection_jsonld_path(version: Version) -> str:
 
 
 @contextmanager
-def _streaming_file_upload(path: str) -> Generator[IO[bytes], None, None]:
+def _streaming_file_upload(path: str) -> Generator[IO[bytes]]:
     with tempfile.NamedTemporaryFile(mode='r+b') as outfile:
         yield outfile
         outfile.seek(0)

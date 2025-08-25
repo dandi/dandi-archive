@@ -12,8 +12,7 @@ You would need a local clone of the `dandi-archive` repository to develop on it.
 This is the simplest configuration for developers to start with.
 
 ### Initial Setup
-1. Run `docker compose pull` to ensure you have the latest versions of the service container images.
-1. Run `docker compose build --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` to build the development container image. This builds the image to work with your (non-root) development user so that the linting and formatting commands work inside and outside of the container. If you prefer to build the container image so that it runs as `root`, you can omit the `--build-arg` arguments (but you will likely run into trouble running those commands).
+1. Install [Docker Compose](https://docs.docker.com/compose/install/)
 1. Run `docker compose run --rm django ./manage.py migrate`
 1. Run `docker compose run --rm django ./manage.py createsuperuser --email $(git config user.email)`
    and follow the prompts to create your own user.
@@ -23,27 +22,27 @@ This is the simplest configuration for developers to start with.
 
 ### Run Application
 1. Run `docker compose up`
-1. Access the site, starting at http://localhost:8000/admin/
+1. Access the site, starting at <http://localhost:8000/admin/>
 1. When finished, use `Ctrl+C`
 
-### Application Maintenance
-Occasionally, new package dependencies or schema changes will necessitate
-maintenance. To non-destructively update your development stack at any time:
+### Maintenance
+To non-destructively update your development stack at any time:
+1. Run `docker compose down`
 1. Run `docker compose pull`
-1. Run `docker compose build --pull --no-cache --build-arg USERID=$(id -u) --build-arg GROUPID=$(id -g) --build-arg LOGIN=$(id -n -u) --build-arg GROUPNAME=$(id -n -g)` (omitting the `--build-arg` arguments if you did so in Step 1 of *Initial Setup* above).
+1. Run `docker compose build --pull`
 1. Run `docker compose run --rm django ./manage.py migrate`
+
+### Destruction
+1. Run `docker compose down -v`
 
 ## Develop Natively (advanced)
 This configuration still uses Docker to run attached services in the background,
 but allows developers to run Python code on their native system.
 
 ### Initial Setup
-1. Install [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
 1. Run `docker compose -f ./docker-compose.yml up -d`
-1. Install Python 3.13
-1. Create and activate a new Python virtualenv
-1. Run `pip install -e ".[dev]"`
-1. Run `source ./dev/export-env.sh`
+1. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/)
+1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
 1. Run `./manage.py migrate`
 1. Run `./manage.py createsuperuser --email $(git config user.email)` and follow the prompts.
 1. Run `./manage.py create_dev_dandiset --owner $(git config user.email)`
@@ -51,47 +50,42 @@ but allows developers to run Python code on their native system.
 
 ### Run Application
 1. Ensure `docker compose -f ./docker-compose.yml up -d` is still active
-1. Run:
-   1. `source ./dev/export-env.sh`
-   1. `./manage.py runserver`
-1. Run in a separate terminal:
-   1. `source ./dev/export-env.sh`
-   1. `celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
+1. Run: `./manage.py runserver_plus`
+1. Run in a separate terminal: `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 1. When finished, run `docker compose stop`
 
 ## Testing
-
 ### Initial Setup
-tox is used to execute all tests.
-tox is installed automatically with the `dev` package extra.
-To install the tox pytest dependencies into your environment, run `pip install -e ".[test]"`.
-These are useful for IDE autocompletion or if you want to run `pytest` directly (not recommended).
+tox is used to manage the execution of all tests.
+[Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) and run tox with
+`uv run tox ...`.
 
 When running the "Develop with Docker" configuration, all tox commands must be run as
-`docker compose run --rm django tox`; extra arguments may also be appended to this form.
+`docker compose run --rm django uv run tox`; extra arguments may also be appended to this form.
 
 ### Running Tests
-Run `tox` to launch the full test suite.
+Run `uv run tox` to launch the full test suite.
 
 Individual test environments may be selectively run.
 This also allows additional options to be be added.
 Useful sub-commands include:
-* `tox -e lint`: Run only the style checks
-* `tox -e type`: Run only the type checks
-* `tox -e test`: Run only the pytest-driven tests
-* `tox -e test -- -k test_file`: Run the pytest-driven tests that match the regular expression `test_file`
-* `tox -e test -- --cov=dandiapi`: Generate a test coverage report
-* `tox -e test -- --cov=dandiapi --cov-report=html`: Generate an HTML test coverage report in the `htmlcov` directory
+* `uv run tox -e lint`: Run only the style checks
+* `uv run tox -e type`: Run only the type checks
+* `uv run tox -e test`: Run only the pytest-driven tests
+* `uv run tox -e test -- -k test_file`: Run the pytest-driven tests that match the regular expression `test_file`
+* `uv run tox -e test -- --cov=dandiapi`: Generate a test coverage report
+* `uv run tox -e test -- --cov=dandiapi --cov-report=html`: Generate an HTML test coverage report in the `htmlcov` directory
 
 To automatically reformat all code to comply with
-some (but not all) of the style checks, run `tox -e format`.
+some (but not all) of the style checks, run `uv run tox -e format`.
 
 ### E2E Tests
 
 See the [e2e README](e2e/README.md).
 
 ### Profiling with Memray
-To include a memory profile with your tests, add `--memray` at the end of your test command invocation. For example, to run a memory profile with all tests, you would run `tox -e test -- --memray`. This can be used in conjunction with other pytest CLI flags (like `-k`) as well. See the `pytest-memray` [docs](https://github.com/bloomberg/pytest-memray) for more invocation details.
+To include a memory profile with your tests, add `--memray` at the end of your test command invocation. For example, to run a memory profile with all tests, you would run `uv run tox -e test -- --memray`. This can be used in conjunction with other pytest CLI flags (like `-k`) as well. See the `pytest-memray` [docs](https://github.com/bloomberg/pytest-memray) for more invocation details.
 
 #### NOTE: If you have an existing dandi-archive installation in which you have previously run tox, you may need to recreate the tox environment (by adding `-r` to your tox invocation) the first time you attempt to use memray. If your attempt to use the `--memray` flag fails with `pytest: error: unrecognized arguments: --memray`, this is likely why.
 

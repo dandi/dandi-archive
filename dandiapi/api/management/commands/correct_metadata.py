@@ -44,7 +44,7 @@ def correct_metadata(  # noqa: C901
     # Get version queryset
     vers = Version.objects.all()
     if not apply_to_all:
-        dandiset = typing.cast(str, dandiset)
+        dandiset = typing.cast('str', dandiset)
         vers = vers.filter(dandiset=int(dandiset), version='draft')
 
     if not vers.exists():

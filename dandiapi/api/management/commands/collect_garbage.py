@@ -21,7 +21,7 @@ def echo_report():
     click.echo(f'Assets: {assets_count}')
     click.echo(
         f'AssetBlobs: {asset_blobs_count} ({asset_blobs_size_in_bytes} bytes / '
-        f'{asset_blobs_size_in_bytes / (1024 ** 3):.2f} GB)'
+        f'{asset_blobs_size_in_bytes / (1024**3):.2f} GB)'
     )
     click.echo(f'Uploads: {uploads_count}')
     click.echo('S3 Blobs: Coming soon')
