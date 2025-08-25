@@ -25,7 +25,7 @@ As is the case with asset blobs and uploads, an orphaned asset will remain recov
 
 ## Data
 
-The current amount of orphaned data in the system as of 6/30/25 is as follows:
+The current amount of orphaned data in the system as of 6/30/25 is as follows (bear in mind, deleting the Assets will likely expose more AssetBlobs to garbage collect; those AssetBlobs are _not_ reflected in this report):
 
 - Assets: 278,186 (335,356.39 GB)
 - AssetBlobs: 103 (385.52 GB)
