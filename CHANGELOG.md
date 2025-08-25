@@ -1,3 +1,20 @@
+# v0.12.16 (Mon Aug 25 2025)
+
+#### 🏠 Internal
+
+- Add middleware/logger to log username on every request [#2451](https://github.com/dandi/dandi-archive/pull/2451) ([@mvandenburgh](https://github.com/mvandenburgh) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🧪 Tests
+
+- Revert "Temporarily point CLI tests at PR branch" [#2496](https://github.com/dandi/dandi-archive/pull/2496) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.15 (Fri Aug 22 2025)
 
 #### 🏠 Internal
