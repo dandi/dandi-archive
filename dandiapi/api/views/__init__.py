@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from .asset import AssetViewSet, NestedAssetViewSet
+from .audit import asset_audit_events
 from .auth import auth_token_view, authorize_view, user_questionnaire_form_view
 from .dandiset import DandisetViewSet
 from .dashboard import DashboardView, mailchimp_csv_view, user_approval_view
@@ -38,4 +39,5 @@ __all__ = [
     'info_view',
     'root_content_view',
     'robots_txt_view',
+    'asset_audit_events',
 ]
