@@ -46,7 +46,7 @@ test.describe("dandisets page", async () => {
         const name = `name ${id}`;
         const description = `description ${id}`;
         const identifier = await registerDandiset(page, name, description);
-        await page.getByRole("link", { name: "My Dandisets" }).click();
+        await page.getByRole("tab", { name: "My Dandisets" }).click();
         await expect(page.getByText(name)).toHaveCount(1);
         await expect(page.getByText(`DANDI:${identifier}`)).toHaveCount(1);
         await expect(page.getByText(`Contact ${lastname}, ${firstname}`)).toHaveCount(1);
