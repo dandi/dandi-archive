@@ -174,19 +174,16 @@ def test_remove_dandiset_embargo_tags_fails_remove_tags(
 
 
 @pytest.mark.django_db
-def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
-    with pytest.raises(AssetBlobEmbargoedError):
-        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
-
-    # Test that error not raised on non-embargoed asset blob
+def test_remove_asset_blob_embargoed_tag_success(asset_blob):
     remove_asset_blob_embargoed_tag(asset_blob)
+
+    assert asset_blob.blob.storage.get_tags(asset_blob.blob.name) == {}
 
 
 @pytest.mark.django_db
-def test_remove_asset_blob_embargoed_tag(asset_blob, mocker):
-    mocked_func = mocker.patch('dandiapi.api.services.embargo._delete_object_tags')
-    remove_asset_blob_embargoed_tag(asset_blob)
-    mocked_func.assert_called_once()
+def test_remove_asset_blob_embargoed_tag_fails_on_embargoed(embargoed_asset_blob):
+    with pytest.raises(AssetBlobEmbargoedError):
+        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
 
 
 @pytest.mark.django_db
