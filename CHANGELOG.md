@@ -1,3 +1,15 @@
+# v0.13.1 (Tue Aug 26 2025)
+
+#### 🏠 Internal
+
+- Switch to `uv`, upgrade `ruff` [#2502](https://github.com/dandi/dandi-archive/pull/2502) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.13.0 (Tue Aug 26 2025)
 
 #### 🚀 Enhancement
