@@ -8,14 +8,14 @@
           <a
             target="_blank"
             rel="noopener"
-            :href="`${dandiDocumentationUrl}/about/terms/`"
+            :href="`${dandiDocumentationUrl}/terms-policies/terms/`"
           >Terms</a>
           <v-icon size="x-small">
             mdi-open-in-new
           </v-icon> / <a
             target="_blank"
             rel="noopener"
-            :href="`${dandiDocumentationUrl}/about/policies/`"
+            :href="`${dandiDocumentationUrl}/terms-policies/policies/`"
           >Policies</a>
           <v-icon size="x-small">
             mdi-open-in-new
