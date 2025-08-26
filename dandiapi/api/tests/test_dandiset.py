@@ -202,7 +202,7 @@ def test_dandiset_versions(
                 'name': published_version.name,
                 'asset_count': published_version.asset_count,
                 'size': published_version.size,
-                'status': 'Pending',
+                'status': 'Published',
                 'created': TIMESTAMP_RE,
                 'modified': TIMESTAMP_RE,
             }
