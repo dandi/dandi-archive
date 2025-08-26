@@ -321,8 +321,7 @@ async function registerDandiset() {
       hasAward: hasAward.value,
       funding_source: hasAward.value ? fundingSource.value : undefined,
       award_number: hasAward.value ? awardNumber.value : undefined,
-      grant_end_date: hasAward.value ? grantEndDate.value : undefined,
-      embargo_end_date: hasAward.value ? undefined : embargoEndDate.value,
+      embargo_end_date: hasAward.value ? grantEndDate.value : embargoEndDate.value,
     };
 
     const { data } = await dandiRest.createEmbargoedDandiset(name.value, metadata, embargoData);

@@ -28,7 +28,8 @@ from dandiapi.api.models.asset_paths import AssetPath
 from dandiapi.api.models.dandiset import DandisetStar
 from dandiapi.api.services import audit
 from dandiapi.api.services.dandiset import (
-    create_dandiset,
+    create_embargoed_dandiset,
+    create_open_dandiset,
     delete_dandiset,
     star_dandiset,
     unstar_dandiset,
@@ -431,21 +432,23 @@ class DandisetViewSet(ReadOnlyModelViewSet):
             except ValueError:
                 return Response(f'Invalid Identifier {identifier}', status=400)
 
-        embargo_config = {
-            'embargo': query_serializer.validated_data['embargo'],
-            'funding_source': query_serializer.validated_data.get('funding_source'),
-            'award_number': query_serializer.validated_data.get('award_number'),
-            'grant_end_date': query_serializer.validated_data.get('grant_end_date'),
-            'embargo_end_date': query_serializer.validated_data.get('embargo_end_date'),
-        }
-
-        dandiset, _ = create_dandiset(
-            user=request.user,
-            identifier=identifier,
-            embargo_config=embargo_config,
-            version_name=serializer.validated_data['name'],
-            version_metadata=serializer.validated_data['metadata'],
-        )
+        if query_serializer.validated_data['embargo']:
+            dandiset, _ = create_embargoed_dandiset(
+                user=request.user,
+                identifier=identifier,
+                version_name=serializer.validated_data['name'],
+                version_metadata=serializer.validated_data['metadata'],
+                funding_source=query_serializer.validated_data.get('funding_source'),
+                award_number=query_serializer.validated_data.get('award_number'),
+                embargo_end_date=query_serializer.validated_data['embargo_end_date'],
+            )
+        else:
+            dandiset, _ = create_open_dandiset(
+                user=request.user,
+                identifier=identifier,
+                version_name=serializer.validated_data['name'],
+                version_metadata=serializer.validated_data['metadata'],
+            )
 
         serializer = DandisetDetailSerializer(instance=dandiset)
         return Response(serializer.data, status=status.HTTP_200_OK)

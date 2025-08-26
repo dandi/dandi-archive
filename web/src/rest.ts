@@ -230,7 +230,6 @@ const dandiRest = {
       hasAward: boolean;
       fundingSource?: string;
       awardNumber?: string;
-      grantEndDate?: string;
       embargoEndDate?: string;
     }
   ) {
@@ -243,9 +242,6 @@ const dandiRest = {
       }
       if (embargoData.awardNumber) {
         params.awardNumber = embargoData.awardNumber;
-      }
-      if (embargoData.grantEndDate) {
-        params.grantEndDate = embargoData.grantEndDate;
       }
     } else if (embargoData.embargoEndDate) {
       params.embargoEndDate = embargoData.embargoEndDate;
