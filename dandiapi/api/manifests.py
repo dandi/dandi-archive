@@ -11,7 +11,7 @@ from rest_framework.renderers import JSONRenderer
 import yaml
 
 from dandiapi.api.models import Asset, AssetBlob, Version
-from dandiapi.api.storage import create_s3_storage
+from dandiapi.api.storage import create_s3_storage, get_boto_client
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
@@ -66,7 +66,7 @@ def _collection_jsonld_path(version: Version) -> str:
 
 
 @contextmanager
-def _streaming_file_upload(path: str) -> Generator[IO[bytes]]:
+def _streaming_file_upload(path: str, *, embargoed: bool) -> Generator[IO[bytes]]:
     with tempfile.NamedTemporaryFile(mode='r+b') as outfile:
         yield outfile
         outfile.seek(0)
@@ -74,6 +74,21 @@ def _streaming_file_upload(path: str) -> Generator[IO[bytes]]:
         # Piggyback on the AssetBlob storage since we want to store manifests in the same bucket
         storage = AssetBlob.blob.field.storage
         storage._save(path, File(outfile))  # noqa: SLF001
+
+    if embargoed:
+        client = get_boto_client(storage=storage)
+        client.put_object_tagging(
+            Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
+            Key=path,
+            Tagging={
+                'TagSet': [
+                    {
+                        'Key': 'embargoed',
+                        'Value': 'true',
+                    },
+                ]
+            },
+        )
 
 
 def _yaml_dump_sequence_from_generator(stream: IO[bytes], generator: Iterable[Any]) -> None:
@@ -89,7 +104,8 @@ def _yaml_dump_sequence_from_generator(stream: IO[bytes], generator: Iterable[An
 
 
 def write_dandiset_jsonld(version: Version) -> None:
-    with _streaming_file_upload(_dandiset_jsonld_path(version)) as stream:
+    embargoed = version.dandiset.embargoed
+    with _streaming_file_upload(_dandiset_jsonld_path(version), embargoed=embargoed) as stream:
         stream.write(JSONRenderer().render(version.metadata))
 
 
@@ -99,7 +115,8 @@ def write_assets_jsonld(version: Version) -> None:
         asset.full_metadata
         for asset in version.assets.select_related('blob', 'zarr', 'zarr__dandiset').iterator()
     )
-    with _streaming_file_upload(_assets_jsonld_path(version)) as stream:
+    embargoed = version.dandiset.embargoed
+    with _streaming_file_upload(_assets_jsonld_path(version), embargoed=embargoed) as stream:
         stream.write(b'[')
         for i, obj in enumerate(assets_metadata):
             if i > 0:
@@ -110,14 +127,16 @@ def write_assets_jsonld(version: Version) -> None:
 
 
 def write_dandiset_yaml(version: Version) -> None:
-    with _streaming_file_upload(_dandiset_yaml_path(version)) as stream:
+    embargoed = version.dandiset.embargoed
+    with _streaming_file_upload(_dandiset_yaml_path(version), embargoed=embargoed) as stream:
         yaml.dump(
             version.metadata, stream, encoding='utf-8', Dumper=yaml.CSafeDumper, allow_unicode=True
         )
 
 
 def write_assets_yaml(version: Version) -> None:
-    with _streaming_file_upload(_assets_yaml_path(version)) as stream:
+    embargoed = version.dandiset.embargoed
+    with _streaming_file_upload(_assets_yaml_path(version), embargoed=embargoed) as stream:
         _yaml_dump_sequence_from_generator(
             stream,
             # Use full metadata when writing externally
@@ -135,7 +154,8 @@ def write_collection_jsonld(version: Version) -> None:
         Asset.dandi_asset_id(asset_id)
         for asset_id in version.assets.values_list('asset_id', flat=True)
     ]
-    with _streaming_file_upload(_collection_jsonld_path(version)) as stream:
+    embargoed = version.dandiset.embargoed
+    with _streaming_file_upload(_collection_jsonld_path(version), embargoed=embargoed) as stream:
         stream.write(
             JSONRenderer().render(
                 {
