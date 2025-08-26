@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-  schedule:
-    - cron: "0 0 * * *"
+permissions:
+  contents: read
 jobs:
   lint-type-check:
     defaults:
@@ -13,7 +13,7 @@ jobs:
           working-directory: web
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -32,28 +32,26 @@ jobs:
         run: yarn run build
 
   test-e2e:
-    name: E2E tests (${{ matrix.mode.name }})
+    name: E2E tests
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        mode:
-          - name: Development
-            backend_server_command: python manage.py runserver
-            frontend_server_command: yarn --cwd web/ run dev 2> /dev/null
-          - name: Production
-            backend_server_command: python -m gunicorn --bind 0.0.0.0:8000 dandiapi.wsgi --timeout 25  # from /Procfile
-            frontend_server_command: yarn --cwd web/ run build 2> /dev/null && npx serve --single web/dist --listen 8085
     services:
       postgres:
         image: postgres:latest
         env:
           POSTGRES_DB: django
           POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 5432:5432
       rabbitmq:
-        image: rabbitmq:management
+        image: rabbitmq:management-alpine
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 5672:5672
       minio:
@@ -62,32 +60,29 @@ jobs:
         env:
           MINIO_ROOT_USER: minioAccessKey
           MINIO_ROOT_PASSWORD: minioSecretKey
+        options: >-
+          --health-cmd "mc ready local"
+          --health-timeout 1s
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 9000:9000
     env:
       # API server env vars
-      DJANGO_CONFIGURATION: DevelopmentConfiguration
+      DJANGO_SETTINGS_MODULE: dandiapi.settings.development
       DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
-      DJANGO_STORAGE_BUCKET_NAME: dandi-bucket
-      DJANGO_DANDI_DANDISETS_BUCKET_NAME: dandi-bucket
-      DJANGO_DANDI_DANDISETS_LOG_BUCKET_NAME: dandiapi-dandisets-logs
-      DJANGO_DANDI_DANDISETS_EMBARGO_LOG_BUCKET_NAME: dandiapi-embargo-dandisets-logs
+      DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
       DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
       DJANGO_DANDI_API_URL: http://localhost:8000
       DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
-      DJANGO_DANDI_DEV_EMAIL: test@example.com
-      DJANGO_DANDI_ADMIN_EMAIL: admin@kitware.com
-      DANDI_ALLOW_LOCALHOST_URLS: 1
 
       # Web client env vars
       VITE_APP_DANDI_API_ROOT: http://localhost:8000/api/
       VITE_APP_OAUTH_API_ROOT: http://localhost:8000/oauth/
       VITE_APP_OAUTH_CLIENT_ID: Dk0zosgt1GAAKfN8LT4STJmLJXwMDPbYWYzfNtAl
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - uses: actions/setup-node@v4
       with:
@@ -95,8 +90,6 @@ jobs:
 
     - name: Set up Python
       uses: actions/setup-python@v5
-      with:
-        python-version-file: .python-version
 
     - name: Install web app
       run: yarn install --frozen-lockfile
@@ -115,10 +108,10 @@ jobs:
       run: pip install --upgrade --upgrade-strategy eager -e .[dev]
 
     - name: Apply migrations to API server
-      run: python manage.py migrate
+      run: ./manage.py migrate
 
     - name: Install test data
-      run: python manage.py loaddata playwright
+      run: ./manage.py loaddata playwright
 
     - name: Install dependencies
       run: yarn install --frozen-lockfile
@@ -131,13 +124,13 @@ jobs:
     - name: Run Playwright tests
       run: |
           # start vue dev server
-          ${{ matrix.mode.frontend_server_command }} &
+          yarn --cwd web/ run build 2> /dev/null && npx serve --single web/dist --listen 8085 &
           while ! nc -z localhost 8085; do
             sleep 3
           done
 
           # start the dandi-api server
-          ${{ matrix.mode.backend_server_command }} &
+          ./manage.py runserver &
 
           # run the tests
           cd e2e && npx playwright test
@@ -145,6 +138,6 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-${{ matrix.mode.name }}
+        name: playwright-report
         path: e2e/playwright-report/
         retention-days: 30

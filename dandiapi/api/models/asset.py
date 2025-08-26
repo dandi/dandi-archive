@@ -70,17 +70,13 @@ class AssetBlob(TimeStampedModel):
         max_length=64,
         validators=[RegexValidator(f'^{SHA256_REGEX}$')],
     )
-    etag = models.CharField(max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')])
+    etag = models.CharField(
+        unique=True, max_length=40, validators=[RegexValidator(f'^{ETAG_REGEX}$')]
+    )
     size = models.PositiveBigIntegerField()
 
     class Meta:
         indexes = [HashIndex(fields=['etag'])]
-        constraints = [
-            models.UniqueConstraint(
-                name='unique-etag-size',
-                fields=['etag', 'size'],
-            )
-        ]
 
     @property
     def references(self) -> int:
@@ -167,44 +163,42 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         ]
 
     @property
-    def is_blob(self):
-        return self.blob is not None
-
-    @property
-    def is_zarr(self):
-        return self.zarr is not None
-
-    @property
     def is_embargoed(self) -> bool:
         if self.blob is not None:
             return self.blob.embargoed
-
-        return self.zarr.embargoed  # type: ignore  # noqa: PGH003
+        if self.zarr is not None:
+            return self.zarr.embargoed
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     @property
     def size(self):
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.size
-
-        return self.zarr.size
+        if self.zarr is not None:
+            return self.zarr.size
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     @property
     def sha256(self):
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.sha256
         raise RuntimeError('Zarr does not support SHA256')
 
     @property
     def digest(self) -> dict[str, str]:
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.digest
-        return self.zarr.digest
+        if self.zarr is not None:
+            return self.zarr.digest
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     @property
     def s3_url(self) -> str:
-        if self.is_blob:
+        if self.blob is not None:
             return self.blob.s3_url
-        return self.zarr.s3_url
+        if self.zarr is not None:
+            return self.zarr.s3_url
+        raise RuntimeError('Asset must have a blob or zarr archive')
 
     def is_different_from(
         self,
@@ -266,7 +260,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
             'https://raw.githubusercontent.com/dandi/schema/master/releases/'
             f'{schema_version}/context.json'
         )
-        if self.is_zarr:
+        if self.zarr is not None:
             metadata['encodingFormat'] = 'application/x-zarr'
         return metadata
 

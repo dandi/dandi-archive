@@ -139,7 +139,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         asset = self.get_object()
 
         # Raise error if zarr
-        if asset.is_zarr:
+        if asset.zarr is not None:
             return Response(
                 'Unable to provide download link for zarr assets.'
                 ' Please browse the zarr files directly to do so.',

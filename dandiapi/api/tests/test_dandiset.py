@@ -62,9 +62,12 @@ def test_dandiset_get_visible_dandisets(
     dandiset_factory, user_factory, embargo_status, user_status, visible
 ):
     dandiset = dandiset_factory(embargo_status=embargo_status)
-    user = AnonymousUser() if user_status == 'anonymous' else user_factory()
-    if user_status == 'owner':
-        add_dandiset_owner(dandiset, user)
+    if user_status == 'anonymous':
+        user = AnonymousUser()
+    else:
+        user = user_factory()
+        if user_status == 'owner':
+            add_dandiset_owner(dandiset, user)
 
     assert list(get_visible_dandisets(user)) == ([dandiset] if visible else [])
 
@@ -1323,6 +1326,33 @@ def test_dandiset_list_starred(api_client, user, dandiset_factory):
         dandisets[0].identifier,
         dandisets[1].identifier,
     }
+
+
+@pytest.mark.django_db
+def test_dandiset_list_order_size(api_client, user, draft_version_factory, asset_factory):
+    api_client.force_authenticate(user=user)
+    dandisets: list[Dandiset] = [draft_version_factory().dandiset for _ in range(3)]
+
+    # Create root asset path for each dandiset in varying size
+    for i, ds in enumerate(dandisets):
+        asset = asset_factory(blob__size=100 * i)
+        add_asset_paths(asset=asset, version=ds.draft_version)
+
+    # List dandisets by size
+    response = api_client.get('/api/dandisets/', {'ordering': 'size'})
+    assert response.status_code == 200
+    assert response.data['count'] == len(dandisets)
+    assert [d['identifier'] for d in response.data['results']] == [
+        ds.identifier for ds in dandisets
+    ]
+
+    # List dandisets by reverse size
+    response = api_client.get('/api/dandisets/', {'ordering': '-size'})
+    assert response.status_code == 200
+    assert response.data['count'] == len(dandisets)
+    assert [d['identifier'] for d in response.data['results']] == [
+        ds.identifier for ds in reversed(dandisets)
+    ]
 
 
 @pytest.mark.django_db

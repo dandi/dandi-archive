@@ -8,25 +8,29 @@ on:
       - master
     paths-ignore:
       - "web/**"
-  schedule:
-    - cron: "0 0 * * *"
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        tox-env: [lint, type, test, check-migrations]
     services:
       postgres:
         image: postgres:latest
         env:
           POSTGRES_DB: django
           POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 5432:5432
       rabbitmq:
-        image: rabbitmq:management
+        image: rabbitmq:management-alpine
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 5672:5672
       minio:
@@ -35,29 +39,28 @@ jobs:
         env:
           MINIO_ROOT_USER: minioAccessKey
           MINIO_ROOT_PASSWORD: minioSecretKey
+        options: >-
+          --health-cmd "mc ready local"
+          --health-timeout 1s
+          --health-start-period 30s
+          --health-start-interval 2s
         ports:
           - 9000:9000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
         uses: actions/setup-python@v5
-        with:
-          python-version-file: .python-version
       - name: Install tox
         run: |
           pip install --upgrade pip
           pip install tox
       - name: Run tests
         run: |
-          tox -e ${{ matrix.tox-env }}
+          tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
           DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
           DJANGO_DANDI_API_URL: http://localhost:8000
           DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
-          DJANGO_DANDI_DEV_EMAIL: test@example.com
-          DJANGO_DANDI_ADMIN_EMAIL: test-admin@example.com
-          DANDI_ALLOW_LOCALHOST_URLS: 1

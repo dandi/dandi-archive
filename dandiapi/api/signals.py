@@ -26,7 +26,7 @@ def create_auth_token(*, sender, instance=None, created=False, **kwargs):
 @receiver(user_signed_up)
 def user_signed_up_listener(*, sender, user, **kwargs):
     """Create UserMetadata whenever a user signs up."""
-    if settings.AUTO_APPROVE_USERS:
+    if settings.DANDI_AUTO_APPROVE_USERS:
         status = UserMetadata.Status.APPROVED
     else:
         status = UserMetadata.Status.INCOMPLETE
