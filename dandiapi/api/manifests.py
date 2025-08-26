@@ -65,6 +65,16 @@ def _collection_jsonld_path(version: Version) -> str:
     return f'{_manifests_path(version)}/collection.jsonld'
 
 
+def all_manifest_filepaths(version: Version) -> list[str]:
+    return [
+        _dandiset_jsonld_path(version),
+        _assets_jsonld_path(version),
+        _dandiset_yaml_path(version),
+        _assets_yaml_path(version),
+        _collection_jsonld_path(version),
+    ]
+
+
 @contextmanager
 def _streaming_file_upload(path: str, *, embargoed: bool) -> Generator[IO[bytes]]:
     with tempfile.NamedTemporaryFile(mode='r+b') as outfile:
