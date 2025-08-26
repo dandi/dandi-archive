@@ -54,7 +54,7 @@ def create_dandiset(
             # Default to 2 years from now if no date specified
             from datetime import datetime, timedelta, timezone
 
-            embargo_until = (datetime.now(tz=timezone.UTC) + timedelta(days=730)).strftime(
+            embargo_until = (datetime.now(tz=timezone.UTC) + timedelta(days=720)).strftime(
                 '%Y-%m-%d'
             )
 
