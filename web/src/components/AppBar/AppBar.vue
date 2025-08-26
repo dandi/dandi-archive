@@ -50,33 +50,49 @@
       />
     </router-link>
     <v-toolbar-items v-if="!isMobile">
-      <v-tabs color="primary">
+      <v-tabs selected-class="text-primary">
         <template v-for="navItem in navItems">
           <v-tab
             v-if="!navItem.external && (!navItem.if || navItem.if())"
             :key="navItem.text"
             :to="{name: navItem.to}"
-            class="text-xs"
           >
             {{ navItem.text }}
-          </v-tab>
-          <v-tab
-            v-if="navItem.external && (!navItem.if || navItem.if())"
-            :key="navItem.text"
-            :href="navItem.to"
-            target="_blank"
-            rel="noopener"
-            class="text-xs"
-          >
-            {{ navItem.text }}
-            <v-icon
-              class="ml-1"
-              size="small"
-            >
-              mdi-open-in-new
-            </v-icon>
           </v-tab>
         </template>
+        <v-menu>
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+            >
+              External Resources
+              <v-icon class="ml-1">
+                mdi-chevron-down
+              </v-icon>
+            </v-btn>
+          </template>
+
+          <v-list>
+            <template v-for="navItem in navItems">
+              <v-list-item
+                v-if="navItem.external && (!navItem.if || navItem.if())"
+                :key="navItem.text"
+                :href="navItem.to"
+                target="_blank"
+                rel="noopener"
+              >
+                <v-list-item-title>
+                  {{ navItem.text }}
+                </v-list-item-title>
+                <template #append>
+                  <v-icon size="small">
+                    mdi-open-in-new
+                  </v-icon>
+                </template>
+              </v-list-item>
+            </template>
+          </v-list>
+        </v-menu>
       </v-tabs>
     </v-toolbar-items>
 
