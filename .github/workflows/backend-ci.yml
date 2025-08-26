@@ -48,15 +48,14 @@ jobs:
           - 9000:9000
     steps:
       - uses: actions/checkout@v5
-      - name: Set up Python
-        uses: actions/setup-python@v5
-      - name: Install tox
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Run pre-commit
         run: |
-          pip install --upgrade pip
-          pip install tox
-      - name: Run tests
+          uv run pre-commit run --all-files
+      - name: Run Python tests
         run: |
-          tox
+          uv run tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/

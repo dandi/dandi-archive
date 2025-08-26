@@ -54,7 +54,9 @@ jobs:
         python:
           - "3.13"
         dandi-version:
-          - release
+          # TODO: re-enable when https://github.com/dandi/dandi-cli/pull/1698
+          # is merged and released
+          # - release
           - master
     env:
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
@@ -67,39 +69,38 @@ jobs:
       - name: Import Docker image
         run: docker image load -i dandiarchive-api.tgz
 
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip wheel
-
-      - name: Install released dandi
-        if: matrix.dandi-version == 'release'
-        run: pip install "dandi[test]"
-
-      - name: Install dev dandi
-        if: matrix.dandi-version == 'master'
-        run: pip install "dandi[test] @ git+https://github.com/dandi/dandi-cli"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
       - name: Run dandi-api tests in dandi-cli
-        run: |
-          python -m pytest --dandi-api -v \
-            "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi"
+        if: matrix.dandi-version == 'release'
+        run: >
+          uvx --with dandi[test]
+          pytest --pyargs -v --dandi-api dandi
+        env:
+          DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
+
+      - name: Run dandi-api tests in dandi-cli
+        if: matrix.dandi-version == 'master'
+        # TODO: change git reference back to `master` when we merge
+        # https://github.com/dandi/dandi-cli/pull/1698
+        run: >
+          uvx --with "dandi[test] @ git+https://github.com/dandi/dandi-cli@update-dandiarchive-docker-compose"
+          pytest --pyargs -v --dandi-api dandi
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"
 
       - name: Dump Docker Compose logs
         if: failure()
         run: |
+          DANDI_PATH=$(uv run --with dandi python -c "import dandi; import os; print(os.path.dirname(dandi.__file__))")
           docker compose \
-            -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
+            -f "$DANDI_PATH/tests/data/dandiarchive-docker/docker-compose.yml" \
             logs --timestamps
 
       - name: Shut down Docker Compose
         run: |
+          DANDI_PATH=$(uv run --with dandi python -c "import dandi; import os; print(os.path.dirname(dandi.__file__))")
           docker compose \
-            -f "$pythonLocation/lib/python${{ matrix.python }}/site-packages/dandi/tests/data/dandiarchive-docker/docker-compose.yml" \
+            -f "$DANDI_PATH/tests/data/dandiarchive-docker/docker-compose.yml" \
             down -v

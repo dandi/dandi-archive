@@ -61,8 +61,7 @@ def test_asset_rest_path(api_client, draft_version_factory, asset_factory):
 
     # Retrieve root paths
     resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/paths/',
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/paths/',
         {'path_prefix': ''},
     ).data
     assert resp['count'] == 1
@@ -82,8 +81,7 @@ def test_asset_rest_path_not_found(api_client, draft_version_factory, asset_fact
 
     # Retrieve root paths
     resp = api_client.get(
-        f'/api/dandisets/{version.dandiset.identifier}/'
-        f'versions/{version.version}/assets/paths/',
+        f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/paths/',
         {'path_prefix': 'bar'},
     )
     assert resp.status_code == 404
@@ -753,8 +751,8 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
     }
 
     # Assert all provided metadata exists
-    for key in metadata:
-        assert resp['metadata'][key] == metadata[key]
+    for key, val in metadata.items():
+        assert resp['metadata'][key] == val
 
     # Assert paths are properly ingested
     for subpath in extract_paths(path):
@@ -1002,8 +1000,8 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.full_metadata,
     }
-    for key in metadata:
-        assert resp['metadata'][key] == metadata[key]
+    for key, val in metadata.items():
+        assert resp['metadata'][key] == val
 
     # The version modified date should be updated
     start_time = draft_version.modified
@@ -1336,8 +1334,8 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.full_metadata,
     }
-    for key in new_metadata:
-        assert resp['metadata'][key] == new_metadata[key]
+    for key, val in new_metadata.items():
+        assert resp['metadata'][key] == val
 
     # Updating an asset should leave it in the DB, but disconnect it from the version
     assert asset not in draft_version.assets.all()
@@ -1393,8 +1391,8 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.full_metadata,
     }
-    for key in new_metadata:
-        assert resp['metadata'][key] == new_metadata[key]
+    for key, val in new_metadata.items():
+        assert resp['metadata'][key] == val
 
     # Updating an asset should leave it in the DB, but disconnect it from the version
     assert asset not in draft_version.assets.all()
@@ -1488,8 +1486,8 @@ def test_asset_rest_update_zarr(
         'modified': TIMESTAMP_RE,
         'metadata': new_asset.full_metadata,
     }
-    for key in new_metadata:
-        assert resp['metadata'][key] == new_metadata[key]
+    for key, val in new_metadata.items():
+        assert resp['metadata'][key] == val
 
     # Updating an asset should leave it in the DB, but disconnect it from the version
     assert asset not in draft_version.assets.all()
@@ -1687,7 +1685,7 @@ def test_asset_rest_delete_zarr_modified(
 
     # Create first asset, pointing to zarr
     resp = api_client.post(
-        f'/api/dandisets/{dandiset.identifier}' f'/versions/{draft_version.version}/assets/',
+        f'/api/dandisets/{dandiset.identifier}/versions/{draft_version.version}/assets/',
         {
             'metadata': {
                 'path': 'sample.zarr',
