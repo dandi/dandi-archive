@@ -49,9 +49,6 @@ register(UploadFactory)
 register(ZarrArchiveFactory)
 register(EmbargoedZarrArchiveFactory, _name='embargoed_zarr_archive')
 
-# Should have TLD since otherwise would invalidate the URL
-TEST_SERVER_NAME = 'testserver.dandiarchive.org'
-
 
 # Register zarr file/directory factories
 @pytest.fixture
@@ -80,21 +77,14 @@ def version(request):
     return request.param()
 
 
-def _api_client() -> APIClient:
-    """Get a new client for a fixture."""
-    if TEST_SERVER_NAME not in settings.ALLOWED_HOSTS:
-        settings.ALLOWED_HOSTS.append(TEST_SERVER_NAME)
-    return APIClient(SERVER_NAME=TEST_SERVER_NAME)
-
-
 @pytest.fixture
 def api_client() -> APIClient:
-    return _api_client()
+    return APIClient()
 
 
 @pytest.fixture
 def authenticated_api_client(user) -> APIClient:
-    client = _api_client()
+    client = APIClient()
     client.force_authenticate(user=user)
     return client
 

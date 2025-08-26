@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import urljoin
+
 from django.conf import settings
 from django.urls import reverse
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -12,8 +14,7 @@ from dandiapi import __version__
 
 def get_schema_url(request):
     """Get the URL for the schema based on current server deployment."""
-    # Use the local schema endpoint instead of GitHub
-    return request.build_absolute_uri(reverse('schema-dandiset-latest'))
+    return urljoin(settings.DANDI_API_URL, reverse('schema-dandiset-latest'))
 
 
 class ApiServiceSerializer(serializers.Serializer):
