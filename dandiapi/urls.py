@@ -127,6 +127,7 @@ urlpatterns = [
     *api_urlpatterns,
     *webdav_urlpatterns,
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
     path('dashboard/', DashboardView.as_view(), name='dashboard-index'),
     path('dashboard/user/<str:username>/', user_approval_view, name='user-approval'),
     path('dashboard/mailchimp/', mailchimp_csv_view, name='mailchimp-csv'),
@@ -155,17 +156,6 @@ urlpatterns = [
         name='webdav-schema-swagger-ui',
     ),
 ]
-
-if 'allauth.socialaccount.providers.github' in settings.INSTALLED_APPS:
-    # Include github oauth endpoints only
-    urlpatterns.append(
-        path('accounts/', include('allauth.socialaccount.providers.github.urls')),
-    )
-else:
-    # Include "account" endpoints only (i.e. endpoints needed for username/password login flow)
-    urlpatterns.append(
-        path('accounts/', include('allauth.account.urls')),
-    )
 
 if settings.DEBUG:
     import debug_toolbar.toolbar
