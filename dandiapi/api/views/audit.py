@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import CursorPagination
 
 from dandiapi.api.models import AuditRecord
-from dandiapi.api.permissions import IsApproved
+from dandiapi.api.permissions import IsAdminUser
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
@@ -52,7 +52,7 @@ class AssetAuditEventPagination(CursorPagination):
     responses={200: 'The asset audit events'},
 )
 @api_view(['GET'])
-@permission_classes([IsApproved])
+@permission_classes([IsAdminUser])
 def asset_audit_events(request: Request) -> Response:
     queryset = AuditRecord.objects.filter(
         record_type__in=['add_asset', 'update_asset', 'remove_asset']
