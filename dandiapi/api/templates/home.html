@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <!-- Main Content Section -->
+  <div class="py-12 lg:py-16">
+    <!-- Hero Section -->
+    <div class="flex flex-col lg:flex-row items-start gap-12 lg:gap-16">
+      <!-- Left side - DANDI logo/image -->
+      <div class="flex-shrink-0">
+        <img src="https://raw.githubusercontent.com/dandi/dandi.github.io/master/assets/dandi_logo.svg" 
+             alt="DANDI Archive" 
+             class="w-28 h-28 lg:w-32 lg:h-32">
+      </div>
+      
+      <!-- Right side - Content -->
+      <div class="flex-1 min-w-0 space-y-8">
+        <!-- Title and Description -->
+        <div class="space-y-6">
+          <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">The DANDI Archive</h1>
+          <p class="text-lg text-gray-700 leading-relaxed max-w-4xl">
+            The BRAIN Initiative archive for publishing and sharing neurophysiology data including 
+            electrophysiology, optophysiology, and behavioral time-series, and images from immunostaining experiments.
+          </p>
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="max-w-3xl">
+          <div class="flex items-center bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+            <button class="p-4 text-gray-500 hover:text-gray-700 transition-colors duration-200">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+              </svg>
+            </button>
+            <input type="text" 
+                   placeholder="Search Dandisets by name, description, identifier, or contributor name" 
+                   class="flex-1 px-4 py-4 text-gray-900 placeholder-gray-500 bg-transparent focus:outline-none focus:ring-0 text-base">
+          </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="pt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 lg:gap-12">
+            <div class="text-center sm:text-left">
+              <div class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{{ dandiset_count|floatformat:0 }}</div>
+              <div class="text-gray-600 flex items-center justify-center sm:justify-start gap-1">
+                <a href="/dandiset" class="hover:text-blue-600 hover:underline transition-colors duration-200">dandisets</a>
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                  <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="text-center sm:text-left">
+              <div class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{{ user_count|floatformat:0 }}</div>
+              <div class="text-gray-600">users</div>
+            </div>
+            <div class="text-center sm:text-left">
+              <div class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{% load custom_filters %}{{ total_size_bytes|filesizeformat_tib }}</div>
+              <div class="text-gray-600">total data size</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Handle search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[type="text"]');
+    const searchButton = document.querySelector('button');
+    
+    function performSearch() {
+        const query = searchInput.value.trim();
+        if (query) {
+            // Redirect to dandiset list with search parameter
+            window.location.href = `/dandiset?search=${encodeURIComponent(query)}`;
+        }
+    }
+    
+    searchButton.addEventListener('click', performSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+});
+</script>
+{% endblock %}

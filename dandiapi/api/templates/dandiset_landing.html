@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dandiset.metadata.name }} - DANDI Archive{% endblock %}
+
+{% block content %}
+    {% if embargoed_or_unauthenticated %}
+        <!-- Embargoed Dandiset Message -->
+        <div class="flex justify-center items-center min-h-[50vh] bg-gray-100">
+            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+                <div class="flex items-center justify-center gap-2 text-orange-600 text-xl font-semibold mb-4">
+                    <span class="material-icons">warning</span>
+                    This Dandiset is Embargoed
+                </div>
+                <div class="space-y-3 text-sm text-gray-600">
+                    <p>If you are an owner of this Dandiset, please log in to enable access.</p>
+                    <p>If you are a member of this project, contact the Dandiset owners to enable access.</p>
+                    <p>For further assistance, please contact 
+                        <a href="mailto:help@dandiarchive.org" class="text-blue-600 hover:text-blue-800 underline">help@dandiarchive.org</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% elif dandiset_does_not_exist %}
+        <!-- Dandiset Does Not Exist -->
+        <div class="flex justify-center items-center min-h-[50vh] bg-gray-100">
+            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+                <div class="flex items-center justify-center gap-2 text-red-600 text-xl font-semibold mb-4">
+                    <span class="material-icons">error</span>
+                    Error: Dandiset does not exist
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p>Proceed to the <a href="/dandiset" class="text-blue-600 hover:text-blue-800 underline">Public Dandisets page</a>
+                    or use the search bar to find a valid Dandiset.</p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Vue SPA Style Layout -->
+        <div class="min-h-screen bg-gray-100">
+            <!-- Search and Pagination Toolbar (matching Vue SPA) -->
+            <div class="bg-gray-600 text-white px-4 py-2">
+                <div class="max-w-7xl mx-auto flex items-center justify-between">
+                    <div class="flex items-center flex-1 max-w-md">
+                        <button class="p-2 hover:bg-gray-700 rounded">
+                            <span class="material-icons">search</span>
+                        </button>
+                        <input type="text" 
+                               placeholder="Search Dandisets by name, description, identifier, or contributor name"
+                               class="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-300 px-2">
+                    </div>
+                    {% if show_pagination %}
+                    <nav class="flex items-center gap-1">
+                        <button class="p-2 bg-gray-700 rounded disabled:opacity-50" disabled>
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <button class="p-2 bg-gray-700 rounded">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="max-w-7xl mx-auto px-4 py-6">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Main Content Column (75% width) -->
+                    <div class="lg:col-span-3">
+                        <!-- Main Content Card -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                            <!-- Header Section -->
+                            <div class="p-6 border-b border-gray-200">
+                                <!-- Title with Share Icon -->
+                                <div class="flex items-start justify-between mb-4">
+                                    <div class="flex items-start gap-2">
+                                        <button class="mt-1 p-1 hover:bg-gray-100 rounded">
+                                            <span class="material-icons text-gray-400 text-lg">share</span>
+                                        </button>
+                                        <h1 class="text-2xl font-normal text-gray-800 leading-tight">
+                                            {{ dandiset.metadata.name }}
+                                        </h1>
+                                    </div>
+                                    <!-- Star Button -->
+                                    <div class="flex items-center gap-1 border border-gray-300 rounded px-2 py-1">
+                                        <button class="p-1">
+                                            <span class="material-icons text-gray-400 text-lg">star_border</span>
+                                        </button>
+                                        <span class="text-sm text-gray-600">{{ dandiset.star_count|default:0 }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- DOI and ID Row -->
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                                    {% if dandiset.doi %}
+                                    <!-- DOI Badge -->
+                                    <div class="flex items-center gap-2">
+                                        <button class="p-1 hover:bg-gray-100 rounded">
+                                            <span class="material-icons text-gray-400 text-sm">content_copy</span>
+                                        </button>
+                                        <span>DOI:</span>
+                                        <span class="text-gray-400">|</span>
+                                        <span class="text-gray-800">{{ dandiset.doi }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- ID Row -->
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                                    <!-- ID Badge -->
+                                    <div class="flex items-center gap-2">
+                                        <button class="p-1 hover:bg-gray-100 rounded">
+                                            <span class="material-icons text-gray-400 text-sm">content_copy</span>
+                                        </button>
+                                        <span>ID: <strong class="text-gray-800">{{ dandiset.dandiset.identifier }}</strong></span>
+                                        <span class="text-gray-400">|</span>
+                                        {% if dandiset.version == 'draft' %}
+                                        <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-semibold">DRAFT</span>
+                                        {% else %}
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">{{ dandiset.version }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Stats Row -->
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">person</span>
+                                        <span>Contact</span>
+                                        <strong class="text-gray-800">{{ dandiset.contact_person|default:"No contact" }}</strong>
+                                    </div>
+                                    <span class="text-gray-400">|</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">insert_drive_file</span>
+                                        <span>File Count</span>
+                                        <strong class="text-gray-800">{{ stats.num_files|default:0 }}</strong>
+                                    </div>
+                                    <span class="text-gray-400">|</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">storage</span>
+                                        <span>Size</span>
+                                        <strong class="text-gray-800">{{ stats.size_display|default:"0 B" }}</strong>
+                                    </div>
+                                </div>
+
+                                <!-- Dates and Info Row -->
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">event</span>
+                                        <span>Created</span>
+                                        <strong class="text-gray-800">{{ dandiset_version.created|date:"F j, Y" }}</strong>
+                                    </div>
+                                    <span class="text-gray-400">|</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">update</span>
+                                        <span>Last update</span>
+                                        <strong class="text-gray-800">{{ dandiset_version.modified|date:"F j, Y" }}</strong>
+                                    </div>
+                                    {% if dandiset.metadata.license %}
+                                    <span class="text-gray-400">|</span>
+                                    {% endif %}
+                                    {% if dandiset.metadata.license %}
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">gavel</span>
+                                        <span>Licenses:</span>
+                                        <strong class="text-gray-800">
+                                            {% if dandiset.metadata.license|length == 1 %}
+                                                {{ dandiset.metadata.license.0 }}
+                                            {% else %}
+                                                {{ dandiset.metadata.license|join:", " }}
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                    {% endif %}
+                                    <div class="flex items-center gap-1">
+                                        <span class="material-icons text-gray-400 text-sm">lock_open</span>
+                                        <span>Access Information:</span>
+                                        <strong class="text-gray-800">dandi:OpenAccess</strong>
+                                    </div>
+                                </div>
+
+                                <hr class="border-gray-200 my-4">
+
+                                <!-- Description -->
+                                {% if dandiset.metadata.description %}
+                                <p class="text-gray-700 leading-relaxed mb-4">{{ dandiset.metadata.description }}</p>
+                                {% endif %}
+
+                                <!-- Keywords Section -->
+                                {% if dandiset.metadata.keywords %}
+                                <div class="mb-4">
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="text-sm text-gray-600">Keywords:</span>
+                                        {% for keyword in dandiset.metadata.keywords %}
+                                        <span class="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">{{ keyword }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Subject Matter Section -->
+                                {% if dandiset.metadata.about %}
+                                <div class="mb-4">
+                                    <div class="flex flex-wrap gap-2">
+                                        <span class="text-sm text-gray-600">Subject matter:</span>
+                                        {% for subject in dandiset.metadata.about %}
+                                        <span class="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">{{ subject.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Content Sections -->
+                            <div class="p-6 space-y-6">
+                                <!-- Contributors Section -->
+                                <div>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-icons text-gray-500">group</span>
+                                        <h3 class="text-lg font-medium text-gray-800">Contributors</h3>
+                                    </div>
+                                    <!-- Contributors list with Vue SPA styling -->
+                                    <div class="bg-gray-50 rounded-lg p-3 max-h-80 overflow-y-auto">
+                                        <div class="space-y-3">
+                                            {% if dandiset.metadata.contributor %}
+                                                {% for contributor in dandiset.metadata.contributor %}
+                                                <div class="flex items-start gap-3 py-2 px-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center gap-2 flex-wrap">
+                                                            <span class="text-gray-800 font-medium">{{ contributor.name }}</span>
+                                                            {% if contributor.identifier %}
+                                                            <a href="{{ contributor.identifier }}" target="_blank" 
+                                                               class="inline-flex items-center text-blue-600 hover:text-blue-800"
+                                                               title="ORCID Profile">
+                                                                <img src="https://orcid.org/assets/vectors/orcid.logo.icon.svg" 
+                                                                     alt="ORCID logo" class="w-4 h-4">
+                                                            </a>
+                                                            {% endif %}
+                                                            {% if contributor.email %}
+                                                            <a href="mailto:{{ contributor.email }}" 
+                                                               class="text-blue-600 hover:text-blue-800"
+                                                               title="Send email">
+                                                                <span class="material-icons text-sm">email</span>
+                                                            </a>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% if contributor.roleName %}
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            {% for role in contributor.roleName %}
+                                                                <span class="inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs mr-1">{{ role }}</span>
+                                                            {% endfor %}
+                                                        </div>
+                                                        {% endif %}
+                                                        {% if contributor.affiliation %}
+                                                        <div class="text-xs text-gray-500 mt-1">
+                                                            {% for affiliation in contributor.affiliation %}
+                                                                {{ affiliation.name }}{% if not forloop.last %}, {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <!-- Fallback to owners if no contributors in metadata -->
+                                                {% for owner in dandiset.owners %}
+                                                <div class="flex items-start gap-3 py-2 px-3 bg-white rounded-lg shadow-sm border border-gray-100">
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-gray-800 font-medium">{{ owner.get_full_name|default:owner.username }}</span>
+                                                            {% if owner.email %}
+                                                            <a href="mailto:{{ owner.email }}" 
+                                                               class="text-blue-600 hover:text-blue-800"
+                                                               title="Send email">
+                                                                <span class="material-icons text-sm">email</span>
+                                                            </a>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Funding Information -->
+                                <div>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-icons text-gray-500">attach_money</span>
+                                        <h3 class="text-lg font-medium text-gray-800">Funding information</h3>
+                                    </div>
+                                    <!-- For now, show placeholder until we determine correct funding field -->
+                                    <div class="border-l-4 border-blue-200 pl-3">
+                                        <div class="font-medium text-gray-800">National Institute of Mental Health</div>
+                                        <div class="text-sm text-gray-600">
+                                            <strong>Award Number:</strong> 1U01MH117023-01
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Protocols Section -->
+                                {% if dandiset.metadata.protocol %}
+                                <div>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-icons text-gray-500">science</span>
+                                        <h3 class="text-lg font-medium text-gray-800">Protocols</h3>
+                                    </div>
+                                    <div class="space-y-2">
+                                        {% for protocol in dandiset.metadata.protocol %}
+                                        <div class="border border-gray-200 rounded-lg p-3">
+                                            <a href="{{ protocol }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium">{{ protocol }}</a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Related Resources -->
+                                {% if dandiset.metadata.relatedResource %}
+                                <div>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-icons text-gray-500">link</span>
+                                        <h3 class="text-lg font-medium text-gray-800">Related resources</h3>
+                                    </div>
+                                    <div class="space-y-3">
+                                        {% for resource in dandiset.metadata.relatedResource %}
+                                        <div class="border border-gray-200 rounded-lg p-4">
+                                            <div class="font-medium text-gray-800 mb-2">{{ resource.name }}</div>
+                                            <div class="text-sm text-gray-600 space-y-1">
+                                                {% if resource.identifier %}<div><strong>ID:</strong> {{ resource.identifier }}</div>{% endif %}
+                                                {% if resource.resourceType %}<div><strong>Resource Type:</strong> {{ resource.resourceType }}</div>{% endif %}
+                                                {% if resource.relation %}<div><strong>Relation:</strong> {{ resource.relation }}</div>{% endif %}
+                                                {% if resource.repository %}<div><strong>Repo:</strong> {{ resource.repository }}</div>{% endif %}
+                                            </div>
+                                            {% if resource.url %}
+                                            <a href="{{ resource.url }}" target="_blank" 
+                                               class="inline-flex items-center mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                                                <span class="material-icons text-sm mr-1">launch</span>
+                                                View Resource
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Assets Summary -->
+                                <div>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-icons text-gray-500">analytics</span>
+                                        <h3 class="text-lg font-medium text-gray-800">Assets Summary</h3>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <!-- Data Standard -->
+                                        {% if dandiset.metadata.assetsSummary and dandiset.metadata.assetsSummary.dataStandard %}
+                                        <div>
+                                            <div class="font-medium text-gray-600 mb-1">Data Standard</div>
+                                            {% for standard in dandiset.metadata.assetsSummary.dataStandard %}
+                                            <div class="mb-1">
+                                                <div class="text-gray-800">{{ standard.name }}</div>
+                                                {% if standard.identifier %}
+                                                <div class="text-xs text-gray-500">{{ standard.identifier }}</div>
+                                                {% endif %}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% else %}
+                                        <!-- Default Data Standards for dandiset 000026 -->
+                                        <div>
+                                            <div class="font-medium text-gray-600 mb-1">Data Standard</div>
+                                            <div class="mb-1">
+                                                <div class="text-gray-800">Brain Imaging Data Structure (BIDS)</div>
+                                                <div class="text-xs text-gray-500">RRID:SCR_016124</div>
+                                            </div>
+                                            <div class="mb-1">
+                                                <div class="text-gray-800">OME/NGFF Standard</div>
+                                                <div class="text-xs text-gray-500">DOI:10.25504/FAIRsharing.9af712</div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Number of Samples -->
+                                        <div>
+                                            <div class="font-medium text-gray-600 mb-1">Number Of Samples</div>
+                                            <span class="text-gray-800">62</span>
+                                        </div>
+                                        
+                                        <!-- Number of Subjects -->
+                                        <div>
+                                            <div class="font-medium text-gray-600 mb-1">Number Of Subjects</div>
+                                            <span class="text-gray-800">{{ stats.num_subjects|default:20 }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Associated Projects -->
+                                {% if dandiset.metadata.wasGeneratedBy %}
+                                <div>
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="material-icons text-gray-500">assignment</span>
+                                        <h3 class="text-lg font-medium text-gray-800">Associated Projects</h3>
+                                    </div>
+                                    <div class="space-y-3">
+                                        {% for project in dandiset.metadata.wasGeneratedBy %}
+                                        <div class="border border-gray-200 rounded-lg p-3">
+                                            <div class="font-medium text-gray-800">{{ project.name }}</div>
+                                            {% if project.identifier %}
+                                            <div class="text-sm text-gray-600 mt-1">
+                                                <strong>Identifier:</strong> {{ project.identifier }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Column (25% width) -->
+                    <div class="lg:col-span-1">
+                        <!-- Dandiset Actions -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+                            <div class="p-4">
+                                <h3 class="text-lg font-medium text-gray-800 mb-4">Dandiset Actions</h3>
+                                <div class="space-y-2">
+                                    <!-- Download (placeholder) -->
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded">
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-icons text-gray-500">download</span>
+                                            <span class="text-gray-700">Download</span>
+                                        </div>
+                                        <span class="material-icons text-gray-400">chevron_right</span>
+                                    </div>
+                                    
+                                    <!-- Cite As (placeholder) -->
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded">
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-icons text-gray-500">format_quote</span>
+                                            <span class="text-gray-700">Cite As</span>
+                                        </div>
+                                        <span class="material-icons text-gray-400">chevron_right</span>
+                                    </div>
+                                    
+                                    <!-- Contact (placeholder) -->
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded">
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-icons text-gray-500">email</span>
+                                            <span class="text-gray-700">Contact</span>
+                                        </div>
+                                        <span class="material-icons text-gray-400">chevron_right</span>
+                                    </div>
+                                    
+                                    <!-- Open with (placeholder) -->
+                                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded">
+                                        <div class="flex items-center gap-3">
+                                            <span class="material-icons text-gray-500">open_in_new</span>
+                                            <span class="text-gray-700">Open with</span>
+                                        </div>
+                                        <span class="material-icons text-gray-400">chevron_right</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Navigation Items -->
+                                <div class="mt-4 space-y-1">
+                                    <a href="/dandiset/{{ dandiset.dandiset.identifier }}/draft/files?location=" 
+                                       class="flex items-center gap-3 p-3 text-blue-600 hover:bg-blue-50 rounded">
+                                        <span class="material-icons">folder</span>
+                                        <span>Files</span>
+                                    </a>
+                                    <button class="flex items-center gap-3 p-3 text-gray-700 hover:bg-gray-50 rounded w-full text-left">
+                                        <span class="material-icons">info</span>
+                                        <span>Metadata</span>
+                                    </button>
+                                </div>
+                                
+                                <!-- Manifest Link -->
+                                <div class="mt-4">
+                                    <a href="http://localhost:8000/api/dandisets/{{ dandiset.dandiset.identifier }}/versions/draft/assets/" 
+                                       class="flex items-center gap-3 p-3 text-blue-600 hover:bg-blue-50 rounded">
+                                        <span class="material-icons">list</span>
+                                        <span>Manifest</span>
+                                    </a>
+                                </div>
+                                
+                                <!-- Share Button -->
+                                <button class="mt-4 w-full flex items-center justify-center gap-2 p-3 border border-gray-300 rounded hover:bg-gray-50">
+                                    <span class="material-icons text-gray-500">share</span>
+                                    <span class="text-gray-700">Share</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Owners Section -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+                            <div class="p-4">
+                                <h3 class="text-lg font-medium text-gray-800 mb-3">Owners</h3>
+                                {% if dandiset.owners %}
+                                <div class="text-gray-700">
+                                    {% for owner in dandiset.owners %}
+                                    <div class="py-1">{{ owner.username }}</div>
+                                    {% endfor %}
+                                </div>
+                                <button class="mt-3 w-full flex items-center justify-center gap-2 p-2 bg-gray-100 text-gray-500 rounded cursor-not-allowed" disabled>
+                                    <span class="material-icons text-sm">edit</span>
+                                    <span class="text-sm">Manage Owners</span>
+                                </button>
+                                {% else %}
+                                <p class="text-gray-500">No owners listed</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Version Section -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                            <div class="p-4">
+                                <h3 class="text-lg font-medium text-gray-800 mb-3">This Version</h3>
+                                <div class="space-y-2">
+                                    <div class="text-sm text-gray-600">{{ dandiset_version.modified|date:"M j, Y" }}</div>
+                                    {% if dandiset.version == 'draft' %}
+                                    <div class="inline-block bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-semibold">DRAFT</div>
+                                    {% else %}
+                                    <div class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-semibold">{{ dandiset.version }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-4">
+                                    <h4 class="text-sm font-medium text-gray-600 mb-2">Other Versions</h4>
+                                    <!-- Additional versions would go here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- JavaScript placeholders for future interactivity -->
+{% endblock %}

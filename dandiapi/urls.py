@@ -33,6 +33,8 @@ from dandiapi.api.views import (
     users_search_view,
     webdav,
 )
+from dandiapi.api.views.dandiset_pages import dandiset_landing_view
+from dandiapi.api.views.pages import dandiset_list_view, home_view
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
 
@@ -96,6 +98,17 @@ schema_view = get_schema_view(
     patterns=api_urlpatterns,
 )
 
+gui_urlpatterns = [
+    # Server-rendered dandiset pages
+    path('dandiset/', dandiset_list_view, name='dandiset-list'),
+    path('dandiset/<str:identifier>/', dandiset_landing_view, name='dandiset-landing'),
+    path(
+        'dandiset/<str:identifier>/<str:version>/',
+        dandiset_landing_view,
+        name='dandiset-landing-version',
+    ),
+]
+
 # Webdav only endpoints
 webdav_urlpatterns = [
     path('api/webdav/assets/atpath/', webdav.atpath),
@@ -123,10 +136,12 @@ class DandisetIDConverter:
 
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
-    path('', root_content_view),
+    path('', home_view, name='home'),
+    path('api/', root_content_view),
     path('robots.txt', robots_txt_view, name='robots_txt'),
     path('api/audit/events/asset', asset_audit_events, name='asset_audit_events'),
     *api_urlpatterns,
+    *gui_urlpatterns,
     *webdav_urlpatterns,
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),

@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Public Dandisets - DANDI Archive{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+  <!-- Header Section -->
+  <div class="flex items-center justify-between mb-6">
+    <!-- Filters Section -->
+    <div class="flex items-center gap-4">
+      <button id="filter-btn" class="p-2 text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md">
+        <span class="material-icons">filter_list</span>
+      </button>
+      
+      <!-- Search Bar -->
+      <div class="flex items-center bg-white border border-gray-300 rounded-lg shadow-sm min-w-96">
+        <button class="p-3 text-gray-400 hover:text-gray-600">
+          <span class="material-icons">search</span>
+        </button>
+        <input type="text" 
+               id="search-input"
+               value="{{ search_query }}"
+               placeholder="Search Dandisets by name, description, identifier, or contributor name" 
+               class="flex-1 px-4 py-3 text-gray-900 placeholder-gray-500 bg-transparent focus:outline-none">
+      </div>
+      
+      <!-- Sort Button -->
+      <button id="sort-btn" class="flex items-center gap-2 px-4 py-3 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+        <div class="flex items-center gap-1">
+          <span class="material-icons text-sm">expand_less</span>
+          <span class="material-icons text-sm">expand_more</span>
+        </div>
+        <span>Modified</span>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Dandiset List -->
+  <div class="space-y-4 mb-8">
+    {% for dandiset in dandisets %}
+      <a href="/dandiset/{{ dandiset.identifier }}/" 
+         class="block bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="text-lg font-semibold text-gray-900">
+                {{ dandiset.version_name|default:"Dandiset "|add:dandiset.identifier }}
+              </h3>
+              <div class="flex items-center gap-1">
+                <button class="p-1 text-gray-400 hover:text-gray-600">
+                  <span class="material-icons text-sm">star_border</span>
+                </button>
+                <span class="text-sm text-gray-500">0</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+              {% if dandiset.most_recent_published_version %}
+                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                  {{ dandiset.most_recent_published_version.version }}
+                </span>
+              {% else %}
+                <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">DRAFT</span>
+              {% endif %}
+              <span>DANDI:{{ dandiset.identifier }}</span>
+              <span>·</span>
+              <span>Updated on {{ dandiset.version_modified|date:"F j, Y" }}</span>
+              <span>·</span>
+              <span class="material-icons text-sm">description</span>
+              <span>{{ dandiset.draft_version.asset_count|default:0 }}</span>
+              <span>·</span>
+              <span class="material-icons text-sm">storage</span>
+              <span>{% load custom_filters %}{{ dandiset.draft_version.size|default:0|filesizeformat_tib }}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    {% empty %}
+      <div class="text-center py-8 text-gray-500">
+        {% if search_query %}
+          No dandisets found matching "{{ search_query }}"
+        {% else %}
+          No dandisets available
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+    <nav class="flex justify-center">
+      <div class="flex items-center space-x-1">
+        {% if page_obj.has_previous %}
+          <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}" 
+             class="px-3 py-2 text-gray-500 hover:text-gray-700">
+            <span class="material-icons">chevron_left</span>
+          </a>
+        {% else %}
+          <span class="px-3 py-2 text-gray-300 cursor-not-allowed">
+            <span class="material-icons">chevron_left</span>
+          </span>
+        {% endif %}
+        
+        <div class="flex space-x-1">
+          {% for page_num in page_obj.paginator.page_range %}
+            {% if page_num == page_obj.number %}
+              <span class="px-3 py-2 bg-blue-600 text-white rounded">{{ page_num }}</span>
+            {% elif page_num > page_obj.number|add:-3 and page_num < page_obj.number|add:3 %}
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_num }}" 
+                 class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded">{{ page_num }}</a>
+            {% elif page_num == 1 or page_num == page_obj.paginator.num_pages %}
+              <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_num }}" 
+                 class="px-3 py-2 text-gray-700 hover:bg-gray-100 rounded">{{ page_num }}</a>
+            {% elif page_num == page_obj.number|add:-4 or page_num == page_obj.number|add:4 %}
+              <span class="px-3 py-2 text-gray-500">...</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+        
+        {% if page_obj.has_next %}
+          <a href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}" 
+             class="px-3 py-2 text-gray-500 hover:text-gray-700">
+            <span class="material-icons">chevron_right</span>
+          </a>
+        {% else %}
+          <span class="px-3 py-2 text-gray-300 cursor-not-allowed">
+            <span class="material-icons">chevron_right</span>
+          </span>
+        {% endif %}
+      </div>
+    </nav>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Handle search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    
+    // Handle search on Enter key
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const query = this.value.trim();
+            const currentUrl = new URL(window.location);
+            if (query) {
+                currentUrl.searchParams.set('search', query);
+            } else {
+                currentUrl.searchParams.delete('search');
+            }
+            currentUrl.searchParams.delete('page'); // Reset to page 1 on new search
+            window.location.href = currentUrl.toString();
+        }
+    });
+});
+</script>
+{% endblock %}
