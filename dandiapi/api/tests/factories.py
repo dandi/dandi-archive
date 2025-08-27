@@ -8,7 +8,6 @@ from dandischema.digests.dandietag import DandiETag
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core import files as django_files
 import factory
 import faker
 
@@ -148,30 +147,26 @@ class PublishedVersionFactory(BaseVersionFactory):
 class AssetBlobFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = AssetBlob
+        skip_postgeneration_save = True
 
     blob_id = factory.Faker('uuid4')
+    blob = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='dat'),
+        data=factory.Faker('binary', length=factory.SelfAttribute('...size')),
+    )
     size = 100
 
     @factory.lazy_attribute
-    def blob(self):
-        return django_files.File(
-            file=django_files.base.ContentFile(faker.Faker().binary(self.size)).file,
-            name=Upload.object_key(self.blob_id),
-        )
-
-    @factory.lazy_attribute
     def sha256(self):
-        h = hashlib.sha256()
-        h.update(self.blob.read())
+        sha256 = hashlib.sha256(self.blob.read()).hexdigest()
         self.blob.seek(0)
-        return h.hexdigest()
+        return sha256
 
     @factory.lazy_attribute
     def etag(self):
         etagger = DandiETag(self.size)
         for part in etagger._part_gen:
             etagger.update(self.blob.read(part.size))
-
         self.blob.seek(0)
         return etagger.as_str()
 
@@ -230,10 +225,9 @@ class UploadFactory(factory.django.DjangoModelFactory):
 
     @factory.lazy_attribute
     def etag(self):
-        h = hashlib.md5()
-        h.update(self.blob.read())
+        etag = hashlib.md5(self.blob.read()).hexdigest()
         self.blob.seek(0)
-        return h.hexdigest()
+        return etag
 
 
 class EmbargoedUploadFactory(UploadFactory):

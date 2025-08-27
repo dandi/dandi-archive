@@ -370,18 +370,12 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
 
     # Verify object was uploaded
     upload = Upload.objects.get(upload_id=upload_id)
-    assert AssetBlob.blob.field.storage.exists(upload.blob.name)
+    assert upload.blob.storage.exists(upload.blob.name)
 
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_upload_initialize_and_complete_embargo(
-    storage, api_client, user, dandiset_factory, content_size, monkeypatch
-):
-    # Pretend like the blobs were defined with the given storage
-    monkeypatch.setattr(Upload.blob.field, 'storage', storage)
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-
+def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_factory, content_size):
     api_client.force_authenticate(user=user)
     dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     add_dandiset_owner(dandiset, user)
@@ -426,7 +420,7 @@ def test_upload_initialize_and_complete_embargo(
 
     # Verify object was uploaded
     upload = Upload.objects.get(upload_id=upload_id)
-    assert AssetBlob.blob.field.storage.exists(upload.blob.name)
+    assert upload.blob.storage.exists(upload.blob.name)
     assert upload.blob.name.startswith('test-prefix/blobs/')
 
 
@@ -479,7 +473,8 @@ def test_upload_validate_embargo(api_client, user, dandiset_factory, embargoed_u
 def test_upload_validate_upload_missing(api_client, user, upload):
     api_client.force_authenticate(user=user)
 
-    upload.blob.delete(upload.blob.name)
+    # Delete the blob directly from storage, without updating the model
+    upload.blob.storage.delete(upload.blob.name)
 
     resp = api_client.post(f'/api/uploads/{upload.upload_id}/validate/')
     assert resp.status_code == 400

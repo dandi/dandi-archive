@@ -10,11 +10,10 @@ from dandiapi.api.models import AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.services import audit
 from dandiapi.api.services.asset.exceptions import DandisetOwnerRequiredError
-from dandiapi.api.services.embargo.utils import _delete_object_tags, remove_dandiset_embargo_tags
+from dandiapi.api.services.embargo.utils import remove_dandiset_embargo_tags
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.metadata import validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import is_dandiset_owner
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task
 
 from .exceptions import (
@@ -88,7 +87,7 @@ def remove_asset_blob_embargoed_tag(asset_blob: AssetBlob) -> None:
     if asset_blob.embargoed:
         raise AssetBlobEmbargoedError
 
-    _delete_object_tags(client=get_boto_client(), blob=asset_blob.blob.name)
+    asset_blob.blob.storage.delete_tags(asset_blob.blob.name)
 
 
 def kickoff_dandiset_unembargo(*, user: User, dandiset: Dandiset):

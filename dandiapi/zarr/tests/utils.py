@@ -25,6 +25,5 @@ def upload_zarr_file(zarr_archive: ZarrArchive, path: str | None = None, size: i
     )
 
     # Create ZarrArchiveFile
-    h = hashlib.md5()
-    h.update(data)
-    return ZarrArchiveFile(path=Path(path), size=size, digest=h.hexdigest())
+    digest = hashlib.md5(data).hexdigest()
+    return ZarrArchiveFile(path=Path(path), size=size, digest=digest)
