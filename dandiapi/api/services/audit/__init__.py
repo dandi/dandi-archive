@@ -119,6 +119,7 @@ def _asset_details(asset: Asset) -> dict:
 
     return {
         'path': asset.path,
+        'size': asset.size,
         'asset_blob_id': asset.blob and str(asset.blob.blob_id),
         'zarr_archive_id': asset.zarr and str(asset.zarr.zarr_id),
         'asset_id': str(asset.asset_id),

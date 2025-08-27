@@ -13,24 +13,3 @@ repos:
   rev: v2.3.0
   hooks:
   - id: codespell
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  # Ruff version.
-  rev: v0.6.9
-  hooks:
-  # Run the linter.
-  - id: ruff
-
-  # Run the formatter.
-  - id: ruff-format
-
-  # Run the linter in fix-only mode.
-  - id: ruff
-    alias: ruff-fix-only
-    stages: [manual]
-    args: [--fix-only]
-
-  # Run the formatter in check mode.
-  - id: ruff-format
-    alias: ruff-format-check
-    stages: [manual]
-    args: [--check]

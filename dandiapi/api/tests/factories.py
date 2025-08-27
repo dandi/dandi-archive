@@ -116,8 +116,7 @@ class BaseVersionFactory(factory.django.DjangoModelFactory):
         }
         # Remove faked data that might conflict with the schema types
         for key in ['about']:
-            if key in metadata:
-                del metadata[key]
+            metadata.pop(key, None)
         return metadata
 
 
@@ -201,8 +200,7 @@ class DraftAssetFactory(factory.django.DjangoModelFactory):
         }
         # Remove faked data that might conflict with the schema types
         for key in ['approach', 'about', 'name']:
-            if key in metadata:
-                del metadata[key]
+            metadata.pop(key, None)
         return metadata
 
 

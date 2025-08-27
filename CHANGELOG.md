@@ -1,3 +1,82 @@
+# v0.13.1 (Tue Aug 26 2025)
+
+#### 🏠 Internal
+
+- Switch to `uv`, upgrade `ruff` [#2502](https://github.com/dandi/dandi-archive/pull/2502) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.13.0 (Tue Aug 26 2025)
+
+#### 🚀 Enhancement
+
+- Fix avatar and new dandiset button line break issue in header [#2504](https://github.com/dandi/dandi-archive/pull/2504) ([@jtomeck](https://github.com/jtomeck) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Include asset size in audit record [#2511](https://github.com/dandi/dandi-archive/pull/2511) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Fix Bug in collect_garbage.py with printing [#2509](https://github.com/dandi/dandi-archive/pull/2509) ([@NEStock](https://github.com/NEStock))
+- Fix Dockerfile for dev django [#2505](https://github.com/dandi/dandi-archive/pull/2505) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 4
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Jared Tomeck ([@jtomeck](https://github.com/jtomeck))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Nicole Stock Tregoning ([@NEStock](https://github.com/NEStock))
+
+---
+
+# v0.12.16 (Mon Aug 25 2025)
+
+#### 🏠 Internal
+
+- Add middleware/logger to log username on every request [#2451](https://github.com/dandi/dandi-archive/pull/2451) ([@mvandenburgh](https://github.com/mvandenburgh) [@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🧪 Tests
+
+- Revert "Temporarily point CLI tests at PR branch" [#2496](https://github.com/dandi/dandi-archive/pull/2496) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.15 (Fri Aug 22 2025)
+
+#### 🏠 Internal
+
+- Add HTTP redirect for staging server [#2449](https://github.com/dandi/dandi-archive/pull/2449) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.12.14 (Fri Aug 22 2025)
+
+#### 🐛 Bug Fix
+
+- Only include tagging header in zarr upload URL if zarr is embargoed [#2503](https://github.com/dandi/dandi-archive/pull/2503) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🏠 Internal
+
+- Remove references to `DANDI_ALLOW_LOCALHOST_URLS` env var [#2499](https://github.com/dandi/dandi-archive/pull/2499) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.12.13 (Mon Aug 18 2025)
 
 #### 🐛 Bug Fix
