@@ -1,0 +1,31 @@
+{
+  "name": "dandi-archive",
+  "version": "1.0.0",
+  "description": "![](https://about.dandiarchive.org/assets/dandi_logo.svg)",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "build-css": "npx tailwindcss -i ./static/src/input.css -o ./static/css/output.css --watch",
+    "build-css-prod": "npx tailwindcss -i ./static/src/input.css -o ./static/css/output.css --minify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dandi/dandi-archive.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dandi/dandi-archive/issues"
+  },
+  "homepage": "https://github.com/dandi/dandi-archive#readme",
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "daisyui": "^5.0.51",
+    "tailwindcss": "^4.1.12"
+  }
+}

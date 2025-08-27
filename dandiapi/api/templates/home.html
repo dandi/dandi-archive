@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="hero min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      <h1 class="text-5xl font-bold text-white mb-8">Welcome to DANDI Archive</h1>
+      <p class="py-6 text-white text-lg">
+        The BRAIN Initiative archive for publishing and sharing cellular neurophysiology data
+      </p>
+      <div class="space-y-4">
+        <a href="/api/dandisets/" class="btn btn-primary btn-lg gap-2">
+          <span class="material-icons">folder_open</span>
+          Browse Dandisets
+        </a>
+        <div class="grid grid-cols-2 gap-4 mt-8">
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body items-center text-center p-4">
+              <h2 class="card-title">Public Dandisets</h2>
+              <p class="text-3xl font-bold text-primary" id="dandiset-count">Loading...</p>
+            </div>
+          </div>
+          <div class="card bg-base-100 shadow-xl">
+            <div class="card-body items-center text-center p-4">
+              <h2 class="card-title">Total Files</h2>
+              <p class="text-3xl font-bold text-secondary" id="file-count">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mx-auto px-4 py-16">
+  <div class="text-center mb-16">
+    <h2 class="text-4xl font-bold mb-4">Features</h2>
+    <p class="text-lg text-base-content/70">Explore the powerful features of DANDI Archive</p>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body items-center text-center">
+        <span class="material-icons text-4xl text-primary mb-4">cloud_upload</span>
+        <h3 class="card-title">Upload Data</h3>
+        <p>Easily upload and organize your neurophysiology datasets with our intuitive interface.</p>
+      </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body items-center text-center">
+        <span class="material-icons text-4xl text-secondary mb-4">search</span>
+        <h3 class="card-title">Discover Research</h3>
+        <p>Find and explore published datasets from researchers around the world.</p>
+      </div>
+    </div>
+    
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body items-center text-center">
+        <span class="material-icons text-4xl text-accent mb-4">share</span>
+        <h3 class="card-title">Share & Collaborate</h3>
+        <p>Share your data with the scientific community and collaborate on research projects.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load basic stats from API
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/stats/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('dandiset-count').textContent = data.dandiset_count || '0';
+            document.getElementById('file-count').textContent = data.published_file_count || '0';
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+            document.getElementById('dandiset-count').textContent = 'N/A';
+            document.getElementById('file-count').textContent = 'N/A';
+        });
+});
+</script>
+{% endblock %}

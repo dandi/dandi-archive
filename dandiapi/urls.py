@@ -32,6 +32,8 @@ from dandiapi.api.views import (
     users_search_view,
     webdav,
 )
+from dandiapi.api.views.dandiset_pages import dandiset_landing_view
+from dandiapi.api.views.pages import home_view
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
 
@@ -123,7 +125,16 @@ class DandisetIDConverter:
 register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
+    path('home/', home_view, name='home'),
     path('robots.txt', robots_txt_view, name='robots_txt'),
+
+    # Server-rendered dandiset pages
+    path('dandiset/<dandiset_id:identifier>/', dandiset_landing_view, name='dandiset-landing'),
+    path(
+        'dandiset/<dandiset_id:identifier>/<str:version>/',
+        dandiset_landing_view,
+        name='dandiset-landing-version',
+    ),
     *api_urlpatterns,
     *webdav_urlpatterns,
     path('admin/', admin.site.urls),

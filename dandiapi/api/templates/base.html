@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DANDI Archive{% endblock %}</title>
+    
+    <!-- TailwindCSS and DaisyUI via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {}
+            },
+            plugins: []
+        }
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Material Design Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-base-100">
+    <!-- Vue SPA Style Navigation Bar -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-8">
+                    <!-- DANDI Logo -->
+                    <a href="/" class="flex items-center gap-2">
+                        <img src="https://raw.githubusercontent.com/dandi/dandi.github.io/master/assets/dandi_logo.svg" 
+                             alt="DANDI Logo" 
+                             class="h-8">
+                        <span class="text-xl font-bold text-gray-800">DANDI</span>
+                    </a>
+                    
+                    <!-- Navigation Tabs -->
+                    <div class="flex items-center">
+                        <button class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-blue-50">
+                            PUBLIC DANDISETS
+                        </button>
+                        <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 flex items-center gap-1">
+                            EXTERNAL RESOURCES
+                            <span class="material-icons text-sm">expand_more</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Login Button -->
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    LOG IN WITH GITHUB
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Vue SPA Style Footer -->
+    <footer class="bg-gray-700 text-white py-8 mt-8">
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Cookie Banner (placeholder) -->
+            <div class="bg-gray-600 rounded-lg p-4 mb-6 flex items-center justify-between">
+                <span class="text-sm">We use cookies to ensure you get the best experience on DANDI.</span>
+                <button class="bg-green-600 hover:bg-green-700 px-4 py-1 rounded text-sm">
+                    Got it!
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
+                <!-- Column 1 -->
+                <div>
+                    <p>© 2019 - 2025 The DANDI Team</p>
+                    <div class="mt-2 space-x-1">
+                        <a href="https://docs.dandiarchive.org/terms-policies/terms/" class="text-blue-300 hover:text-blue-200">Terms</a>
+                        <span>/</span>
+                        <a href="https://docs.dandiarchive.org/terms-policies/policies/" class="text-blue-300 hover:text-blue-200">Policies</a>
+                        <span>/</span>
+                        <a href="https://github.com/dandi/dandi-archive/blob/master/CODE_OF_CONDUCT.md" class="text-blue-300 hover:text-blue-200">Code of Conduct</a>
+                        <span class="block mt-1">
+                            version <a href="#" class="text-blue-300 hover:text-blue-200">v0.13.1-2-gf1d6deb7</a>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Column 2 -->
+                <div>
+                    <p class="font-medium mb-2">Funding / In-Kind Support:</p>
+                    <div class="space-x-1">
+                        <span>-</span>
+                        <a href="https://braininitiative.nih.gov/" class="text-blue-300 hover:text-blue-200">BRAIN Initiative</a>
+                        <span>/</span>
+                        <a href="https://www.nimh.nih.gov/index.shtml" class="text-blue-300 hover:text-blue-200">NIMH</a>
+                        <span class="block mt-1">
+                            - <a href="https://registry.opendata.aws/dandiarchive/" class="text-blue-300 hover:text-blue-200">AWS Open Dataset</a>
+                        </span>
+                        <span class="block mt-1">
+                            - <a href="https://netlify.com" class="text-blue-300 hover:text-blue-200">This site is powered by Netlify</a>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Column 3 -->
+                <div>
+                    <p class="font-medium mb-2">Support:</p>
+                    <div class="space-x-1">
+                        <span>-</span>
+                        <a href="mailto:help@dandiarchive.org" class="text-blue-300 hover:text-blue-200">Send an email</a>
+                        <span class="block mt-1">
+                            - <a href="https://github.com/dandi/helpdesk/issues/new/choose" class="text-blue-300 hover:text-blue-200">File an issue</a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
