@@ -10,11 +10,18 @@ services:
     # Log printing via Rich is enhanced by a TTY
     tty: true
     environment:
+      PYTHONDONTWRITEBYTECODE: 1
+      PYTHONUNBUFFERED: 1
       UV_ENV_FILE: ./dev/.env.docker-compose
-    working_dir: /opt/django-project
+      UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
+      UV_CACHE_DIR: /home/vscode/uv/cache
+      UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
+      UV_LINK_MODE: symlink
+    working_dir: /home/vscode/dandi
+    env_file: ./dev/.env.docker-compose
     volumes:
-      - .:/opt/django-project
-      - uv_cache:/var/cache/uv
+      - .:/home/vscode/dandi
+      - uv_cache:/home/vscode/uv
     ports:
       - 8000:8000
     depends_on:
@@ -42,11 +49,19 @@ services:
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
     environment:
+      PYTHONDONTWRITEBYTECODE: 1
+      PYTHONUNBUFFERED: 1
       UV_ENV_FILE: ./dev/.env.docker-compose
-    working_dir: /opt/django-project
+      UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
+      UV_CACHE_DIR: /home/vscode/uv/cache
+      UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
+      UV_LINK_MODE: symlink
+    working_dir: /home/vscode/dandi
+    env_file: ./dev/.env.docker-compose
+
     volumes:
-      - .:/opt/django-project
-      - uv_cache:/var/cache/uv
+      - .:/home/vscode/dandi
+      - uv_cache:/home/vscode/uv
     depends_on:
       postgres:
         condition: service_healthy
