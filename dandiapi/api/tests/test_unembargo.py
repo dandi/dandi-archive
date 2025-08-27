@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dandischema
+from django.conf import settings
 import pytest
 
+from dandiapi.api.manifests import all_manifest_filepaths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
@@ -19,12 +21,13 @@ from dandiapi.api.services.embargo.exceptions import (
 )
 from dandiapi.api.services.embargo.utils import (
     _delete_zarr_object_tags,
+    _remove_dandiset_manifest_tags,
     remove_dandiset_embargo_tags,
 )
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.storage import get_boto_client
-from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, zarr_s3_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -231,6 +234,28 @@ def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
 
 
 @pytest.mark.django_db
+def test_remove_dandiset_manifest_tags(draft_version_factory, storage):
+    draft_version: Version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+    )
+
+    write_manifest_files(draft_version.id)
+
+    client = get_boto_client(storage=storage)
+
+    manifest_paths = all_manifest_filepaths(draft_version)
+    for path in manifest_paths:
+        resp = client.get_object_tagging(Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=path)
+        assert {'Key': 'embargoed', 'Value': 'true'} in resp['TagSet']
+
+    _remove_dandiset_manifest_tags(client=client, dandiset=draft_version.dandiset)
+
+    for path in manifest_paths:
+        resp = client.get_object_tagging(Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=path)
+        assert resp['TagSet'] == []
+
+
+@pytest.mark.django_db
 def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
@@ -263,15 +288,22 @@ def test_unembargo_dandiset(
     zarr_asset = asset_factory(zarr=zarr_archive, blob=None, status=Asset.Status.VALID)
     draft_version.assets.add(zarr_asset)
 
+    write_manifest_files(draft_version.id)
+
     assert all(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.VALID for asset in draft_version.assets.all())
 
     # Patch this function to check if it's been called, since we can't test the tagging directly
-    patched = mocker.patch('dandiapi.api.services.embargo.utils._delete_object_tags')
+    patched_delete_object_tags = mocker.patch(
+        'dandiapi.api.services.embargo.utils._delete_object_tags'
+    )
+    patched_remove_dandiset_manifest_tags = mocker.patch(
+        'dandiapi.api.services.embargo.utils._remove_dandiset_manifest_tags'
+    )
 
     unembargo_dandiset(ds, owners[0])
 
-    assert patched.call_count == 1 + zarr_archive.file_count
+    assert patched_delete_object_tags.call_count == 1 + zarr_archive.file_count
     assert not any(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.PENDING for asset in draft_version.assets.all())
 
@@ -294,6 +326,11 @@ def test_unembargo_dandiset(
     owner_email_set = {user.email for user in owners}
     mailoutbox_to_email_set = set(mailoutbox[0].to)
     assert owner_email_set == mailoutbox_to_email_set
+
+    # Check that manifest files were properly untagged. Since we already have tests for
+    # _remove_dandiset_manifest_tags, so just test that this function is called as a part
+    # of unembargo_dandiset
+    assert patched_remove_dandiset_manifest_tags.call_count == 1
 
 
 @pytest.mark.django_db
