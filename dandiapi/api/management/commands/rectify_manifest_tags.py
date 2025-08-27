@@ -43,17 +43,15 @@ def tag_embargoed_manifests(dandisets, include_all):
         paths = all_manifest_filepaths(version)
         for path in paths:
             try:
+                existing_tags = client.get_object_tagging(
+                    Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=path
+                )['TagSet']
+                filtered_tags = [tag for tag in existing_tags if tag['Key'] != 'embargoed']
+                new_tags = [*filtered_tags, {'Key': 'embargoed', 'Value': 'true'}]
                 client.put_object_tagging(
                     Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
                     Key=path,
-                    Tagging={
-                        'TagSet': [
-                            {
-                                'Key': 'embargoed',
-                                'Value': 'true',
-                            },
-                        ]
-                    },
+                    Tagging={'TagSet': new_tags},
                 )
             except client.exceptions.NoSuchKey:
                 logger.info('\tManifest file not found at %s. Continuing...', path)
