@@ -1,68 +1,44 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from dandischema.models import Asset, Dandiset, PublishedAsset, PublishedDandiset
 from dandischema.utils import TransitionalGenerateJsonSchema
 from django.conf import settings
-from django.http import HttpRequest, JsonResponse
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view
-from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+
+from dandiapi.api.services.exceptions import DandiError
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
+    from rest_framework.request import Request
 
 
-def generate_model_schema(model_class: type[BaseModel]) -> dict[str, Any]:
-    """
-    Generate JSON schema for a Pydantic model using the same approach as dandischema.
-
-    This function mirrors the schema generation logic used in
-    dandischema.metadata.publish_model_schemata to ensure consistency
-    with the static schemas that were previously generated.
-
-    Args:
-        model_class: Pydantic model class to generate schema for
-
-    Returns:
-        dict: JSON schema for the model
-    """
-    return model_class.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
+_model_name_mapping = {
+    m.__name__: m
+    for m in [
+        Dandiset,
+        Asset,
+        PublishedDandiset,
+        PublishedAsset,
+    ]
+}
 
 
-def _schema_view_impl(
-    request: HttpRequest,
-    model_class: type[BaseModel],
-    version: str | None = None,
-) -> JsonResponse:
-    """
-    Implement generic schema endpoint logic.
-
-    Args:
-        request: HTTP request object
-        model_class: Pydantic model class to generate schema for
-        version: Schema version (optional)
-
-    Returns:
-        JsonResponse containing the JSON schema
-    """
-    if version and version not in {settings.DANDI_SCHEMA_VERSION, 'latest'}:
-        raise NotFound(f'Schema version {version} not found')
-
-    # Generate the schema JSON using the same approach as dandischema
-    schema = generate_model_schema(model_class)
-
-    return JsonResponse(schema)
+class SchemaQuerySerializer(serializers.Serializer):
+    version = serializers.CharField(default='latest')
+    model = serializers.ChoiceField(choices=list(_model_name_mapping))
 
 
 @swagger_auto_schema(
     method='GET',
-    operation_summary='Get schema for Dandiset',
-    operation_description='Returns the JSONSchema for Dandiset metadata',
+    operation_summary='Get model schemas',
+    operation_description='Returns the JSONSchema for supplied model metadata',
 )
 @api_view(['GET'])
-def dandiset_schema_view(request: HttpRequest, version: str | None = None) -> JsonResponse:
+def schema_view(request: Request, version: str | None = None) -> Response:
     """
     Return the JSONSchema for Dandiset metadata.
 
@@ -73,66 +49,19 @@ def dandiset_schema_view(request: HttpRequest, version: str | None = None) -> Js
     If a version is provided and does not match the current version, a 404 is returned.
     In the future, multiple versions could be supported.
     """
-    return _schema_view_impl(request, Dandiset, version)
+    serializer = SchemaQuerySerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
 
+    version = serializer.validated_data['version']
+    if version and version not in {settings.DANDI_SCHEMA_VERSION, 'latest'}:
+        raise DandiError(
+            message=f'Invalid schema version {version}.'
+            f' Server schema version is {settings.DANDI_SCHEMA_VERSION}',
+            http_status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Get schema for Asset',
-    operation_description='Returns the JSONSchema for Asset metadata',
-)
-@api_view(['GET'])
-def asset_schema_view(request: HttpRequest, version: str | None = None) -> JsonResponse:
-    """
-    Return the JSONSchema for Asset metadata.
+    # Generate the schema JSON using the same approach as dandischema
+    model_class = _model_name_mapping[serializer.validated_data['model']]
+    schema = model_class.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
 
-    This endpoint provides the currently configured schema based on the application's
-    DANDI_SCHEMA_VERSION setting. It can be used as a replacement for the static
-    schema files hosted on GitHub.
-
-    If a version is provided and does not match the current version, a 404 is returned.
-    In the future, multiple versions could be supported.
-    """
-    return _schema_view_impl(request, Asset, version)
-
-
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Get schema for Published Dandiset',
-    operation_description='Returns the JSONSchema for Published Dandiset metadata',
-)
-@api_view(['GET'])
-def published_dandiset_schema_view(
-    request: HttpRequest, version: str | None = None
-) -> JsonResponse:
-    """
-    Return the JSONSchema for Published Dandiset metadata.
-
-    This endpoint provides the currently configured schema based on the application's
-    DANDI_SCHEMA_VERSION setting. Published Dandisets have additional required fields
-    and constraints compared to draft Dandisets.
-
-    If a version is provided and does not match the current version, a 404 is returned.
-    In the future, multiple versions could be supported.
-    """
-    return _schema_view_impl(request, PublishedDandiset, version)
-
-
-@swagger_auto_schema(
-    method='GET',
-    operation_summary='Get schema for Published Asset',
-    operation_description='Returns the JSONSchema for Published Asset metadata',
-)
-@api_view(['GET'])
-def published_asset_schema_view(request: HttpRequest, version: str | None = None) -> JsonResponse:
-    """
-    Return the JSONSchema for Published Asset metadata.
-
-    This endpoint provides the currently configured schema based on the application's
-    DANDI_SCHEMA_VERSION setting. Published Assets have additional required fields
-    and constraints compared to draft Assets.
-
-    If a version is provided and does not match the current version, a 404 is returned.
-    In the future, multiple versions could be supported.
-    """
-    return _schema_view_impl(request, PublishedAsset, version)
+    return Response(schema)
