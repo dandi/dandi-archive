@@ -117,7 +117,7 @@ def send_pending_users_email() -> None:
         send_pending_users_message(pending_users)
 
 
-REFRESH_MATERIALIZED_VIEW_TIMEOUT = timedelta(minutes=3).total_seconds()
+REFRESH_MATERIALIZED_VIEW_TIMEOUT = int(timedelta(minutes=3).total_seconds())
 
 
 @shared_task(soft_time_limit=REFRESH_MATERIALIZED_VIEW_TIMEOUT)
@@ -165,12 +165,12 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     )
     # Check for any draft versions that need validation every minute
     sender.add_periodic_task(
-        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
+        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
         validate_draft_version_metadata.s(),
     )
     # Check for any assets that need validation every minute
     sender.add_periodic_task(
-        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL),
+        timedelta(seconds=settings.DANDI_VALIDATION_JOB_INTERVAL).total_seconds(),
         validate_pending_asset_metadata.s(),
     )
 
@@ -178,10 +178,12 @@ def register_scheduled_tasks(sender: Celery, **kwargs):
     sender.add_periodic_task(crontab(hour=0, minute=0), send_pending_users_email.s())
 
     # Refresh the materialized view used by asset search every 10 mins.
-    sender.add_periodic_task(timedelta(minutes=10), refresh_materialized_view_search.s())
+    sender.add_periodic_task(
+        timedelta(minutes=10).total_seconds(), refresh_materialized_view_search.s()
+    )
 
     # Refresh the application stats every 6 hours
-    sender.add_periodic_task(timedelta(hours=6), compute_application_stats.s())
+    sender.add_periodic_task(timedelta(hours=6).total_seconds(), compute_application_stats.s())
 
     # Run garbage collection once a day
     # TODO: enable this once we're ready to run garbage collection automatically
