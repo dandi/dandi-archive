@@ -41,3 +41,10 @@ class IsApprovedOrReadOnly(BasePermission):
                 or request.user.metadata.status == UserMetadata.Status.APPROVED
             )
         )
+
+
+class IsAdminUser(BasePermission):
+    """Allows access only to staff and superuser users."""
+
+    def has_permission(self, request, view):
+        return bool(request.user and (request.user.is_staff or request.user.is_superuser))

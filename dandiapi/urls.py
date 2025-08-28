@@ -15,6 +15,7 @@ from dandiapi.api.views import (
     DashboardView,
     NestedAssetViewSet,
     VersionViewSet,
+    asset_audit_events,
     auth_token_view,
     authorize_view,
     blob_read_view,
@@ -124,6 +125,7 @@ register_converter(DandisetIDConverter, 'dandiset_id')
 urlpatterns = [
     path('', root_content_view),
     path('robots.txt', robots_txt_view, name='robots_txt'),
+    path('api/audit/events/asset', asset_audit_events, name='asset_audit_events'),
     *api_urlpatterns,
     *webdav_urlpatterns,
     path('admin/', admin.site.urls),
