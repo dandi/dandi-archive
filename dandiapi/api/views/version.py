@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import no_body, swagger_auto_schema
@@ -19,7 +21,7 @@ from dandiapi.api.services.permissions.dandiset import (
     require_dandiset_owner_or_403,
 )
 from dandiapi.api.services.publish import publish_dandiset
-from dandiapi.api.tasks import delete_doi_task
+from dandiapi.api.tasks import delete_doi_task, update_draft_version_doi_task
 from dandiapi.api.views.common import DANDISET_PK_PARAM, VERSION_PARAM
 from dandiapi.api.views.pagination import DandiPagination
 from dandiapi.api.views.serializers import (
@@ -27,6 +29,8 @@ from dandiapi.api.views.serializers import (
     VersionMetadataSerializer,
     VersionSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class VersionFilter(filters.FilterSet):
@@ -130,6 +134,18 @@ class VersionViewSet(NestedViewSetMixin, DetailSerializerMixin, ReadOnlyModelVie
                     user=request.user,
                     metadata=locked_version.metadata,
                 )
+
+                # For unpublished dandisets, update or create the draft DOI
+                # to keep it in sync with the latest metadata
+                if not locked_version.dandiset.embargoed:
+                    transaction.on_commit(
+                        lambda: update_draft_version_doi_task.delay(locked_version.id)
+                    )
+                else:
+                    logger.debug(
+                        'Skipping DOI update for embargoed Dandiset %s.',
+                        locked_version.dandiset.identifier,
+                    )
 
         serializer = VersionDetailSerializer(instance=locked_version)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -275,7 +275,7 @@ def test_audit_remove_asset(
 
 @pytest.mark.django_db(transaction=True)
 def test_audit_publish_dandiset(
-    api_client, user, dandiset_factory, draft_version_factory, draft_asset_factory
+    api_client, user, dandiset_factory, draft_version_factory, draft_asset_factory, mocker
 ):
     # Create a Dandiset whose draft version has one asset.
     dandiset = dandiset_factory()
@@ -289,6 +289,7 @@ def test_audit_publish_dandiset(
     # through the API).
     validate_asset_metadata(asset=draft_asset)
     validate_version_metadata(version=draft_version)
+    mock_handle_dois = mocker.patch('dandiapi.api.services.publish.handle_publication_dois_task')
 
     # Publish the Dandiset.
     api_client.force_authenticate(user=user)
@@ -301,6 +302,7 @@ def test_audit_publish_dandiset(
     rec = get_latest_audit_record(dandiset=dandiset, record_type='publish_dandiset')
     verify_model_properties(rec, user)
     assert rec.details['version'] == dandiset.most_recent_published_version.version
+    mock_handle_dois.delay.assert_called_once()
 
 
 @pytest.mark.django_db
