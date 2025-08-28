@@ -54,9 +54,14 @@ def retry(times: int, exceptions: tuple[type[Exception]]):
 
 @retry(times=3, exceptions=(Exception,))
 def _delete_object_tags(client: S3Client, blob: str):
-    client.delete_object_tagging(
+    existing_tags = client.get_object_tagging(
+        Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=blob
+    )['TagSet']
+    filtered_tags = [tag for tag in existing_tags if tag['Key'] != 'embargoed']
+    client.put_object_tagging(
         Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
         Key=blob,
+        Tagging={'TagSet': filtered_tags},
     )
 
 
@@ -85,9 +90,14 @@ def _remove_dandiset_manifest_tags(client: S3Client, dandiset: Dandiset):
     logger.info('Removing tags from dandiset %s', dandiset.identifier)
     for path in paths:
         try:
-            client.delete_object_tagging(
+            existing_tags = client.get_object_tagging(
+                Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=path
+            )['TagSet']
+            filtered_tags = [tag for tag in existing_tags if tag['Key'] != 'embargoed']
+            client.put_object_tagging(
                 Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
                 Key=path,
+                Tagging={'TagSet': filtered_tags},
             )
         except client.exceptions.NoSuchKey:
             logger.info('\tManifest file not found at %s. Continuing...', path)
