@@ -1,3 +1,15 @@
+# v0.13.4 (Thu Aug 28 2025)
+
+#### 🐛 Bug Fix
+
+- Add endpoint for retrieving custom audit info [#2467](https://github.com/dandi/dandi-archive/pull/2467) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.13.3 (Thu Aug 28 2025)
 
 #### 🧪 Tests
