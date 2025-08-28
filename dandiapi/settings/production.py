@@ -25,6 +25,8 @@ INSTALLED_APPS += [
 ]
 # All login attempts in production should go straight to GitHub
 LOGIN_URL = '/accounts/github/login/'
+# Only allow GitHub auth on production, no username/password
+SOCIALACCOUNT_ONLY = True
 
 # This only needs to be defined in production. Testing will add 'testserver'. In development
 # (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.

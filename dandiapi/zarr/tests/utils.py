@@ -14,7 +14,9 @@ if TYPE_CHECKING:
     from dandiapi.zarr.models import ZarrArchive
 
 
-def upload_zarr_file(zarr_archive: ZarrArchive, path: str | None = None, size: int = 100):
+def upload_zarr_file(
+    zarr_archive: ZarrArchive, path: str | None = None, size: int = 100
+) -> ZarrArchiveFile:
     if path is None:
         path = faker.Faker().file_path(absolute=False, extension='nwb')
 

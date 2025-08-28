@@ -1,3 +1,22 @@
+# v0.13.2 (Wed Aug 27 2025)
+
+#### 🐛 Bug Fix
+
+- Apply embargo functionality to dandiset manifest files [#2516](https://github.com/dandi/dandi-archive/pull/2516) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix broken links: Terms and Policies [#2512](https://github.com/dandi/dandi-archive/pull/2512) ([@NEStock](https://github.com/NEStock))
+
+#### 🏠 Internal
+
+- Use allauth setting to restrict prod to github auth [#2514](https://github.com/dandi/dandi-archive/pull/2514) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+- Nicole Stock Tregoning ([@NEStock](https://github.com/NEStock))
+
+---
+
 # v0.13.1 (Tue Aug 26 2025)
 
 #### 🏠 Internal
