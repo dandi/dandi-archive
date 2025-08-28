@@ -650,7 +650,7 @@ dependencies = [
     { name = "celery" },
     { name = "dandi" },
     { name = "dandischema" },
-    { name = "django" },
+    { name = "django", extra = ["argon2"] },
     { name = "django-allauth" },
     { name = "django-auth-style" },
     { name = "django-click" },
@@ -735,7 +735,7 @@ requires-dist = [
     { name = "celery" },
     { name = "dandi", specifier = ">=0.60.0" },
     { name = "dandischema", specifier = "==0.11.1" },
-    { name = "django", specifier = "~=4.2.0" },
+    { name = "django", extras = ["argon2"], specifier = "~=4.2.0" },
     { name = "django-allauth", specifier = ">=65.3.0" },
     { name = "django-auth-style" },
     { name = "django-browser-reload", marker = "extra == 'development'" },
@@ -864,6 +864,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b5/20/02242739714eb4e53933d6c0fe2c57f41feb449955b0aa39fc2da82b8f3c/django-4.2.23.tar.gz", hash = "sha256:42fdeaba6e6449d88d4f66de47871015097dc6f1b87910db00a91946295cfae4", size = 10448384, upload-time = "2025-06-10T10:06:34.574Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/44/314e8e4612bd122dd0424c88b44730af68eafbee88cc887a86586b7a1f2a/django-4.2.23-py3-none-any.whl", hash = "sha256:dafbfaf52c2f289bd65f4ab935791cb4fb9a198f2a5ba9faf35d7338a77e9803", size = 7993904, upload-time = "2025-06-10T10:06:28.092Z" },
+]
+
+[package.optional-dependencies]
+argon2 = [
+    { name = "argon2-cffi" },
 ]
 
 [[package]]
