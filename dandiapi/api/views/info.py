@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from dandiapi import __version__
 
 
-def get_schema_url(request):
+def get_schema_url():
     """Get the URL for the schema based on current server deployment."""
     return urljoin(settings.DANDI_API_URL, reverse('schema-dandiset-latest'))
 
@@ -63,7 +63,7 @@ def info_view(request):
     serializer = ApiInfoSerializer(
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
-            'schema_url': get_schema_url(request),
+            'schema_url': get_schema_url(),
             'version': __version__,
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
