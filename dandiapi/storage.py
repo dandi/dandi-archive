@@ -4,16 +4,18 @@ import hashlib
 import io
 import json
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urlencode
+from urllib.parse import ParseResult, urlencode
 
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from storages.backends.s3 import S3Storage
+from storages.utils import clean_name
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import S3ServiceResource
 
 
 class _WritableSha256(io.RawIOBase):
@@ -61,6 +63,8 @@ class DandiS3Storage(S3Storage):
                     'mode': 'standard',
                 },
             ),
+            # Also set by AWS_S3_SIGNATURE_VERSION, but it's critical, so ensure it's set here
+            signature_version='s3v4',
             **settings,
         )
 
@@ -83,8 +87,10 @@ class DandiS3Storage(S3Storage):
         return filename
 
     def _url_unsigned(self, name: str) -> str:
+        # This could call "self._strip_signing_parameters" instead, which would preserve any
+        # non-signing querystring args, but might result in broken URLs. For now, recreate URLs
+        # from scratch, which is safer but less powerful.
         if self.endpoint_url:
-            # TODO: correct URL when inside Docker
             # Assume only path-style requests are supported, as this is probably MinIO
             return f'{self.endpoint_url}/{self.bucket_name}/{name}'
         # https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html#virtual-hosted-style-access
@@ -171,8 +177,15 @@ class DandiS3Storage(S3Storage):
 class MinioDandiS3Storage(DandiS3Storage):
     """Storage to be used for local development with MinIO."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, media_url: ParseResult | None = None, **settings):
+        super().__init__(
+            # This is MinIO's default region
+            region_name='us-east-1',
+            **settings,
+        )
+
+        self.media_url = media_url
+
         if not self._bucket_exists():
             self._create_bucket()
 
@@ -213,4 +226,95 @@ class MinioDandiS3Storage(DandiS3Storage):
                     ],
                 }
             )
+        )
+
+    @property
+    def media_connection(self) -> S3ServiceResource:
+        """
+        Represents the direct network connection from an end user to S3/MinIO.
+
+        Particularly due to Docker, this may use a different hostname.
+        """
+        if not self.media_url:
+            raise ValueError('media_url must be set')
+        media_connection = getattr(self._connections, 'media_connection', None)
+        if media_connection is None:
+            session = self._create_session()
+            self._connections.media_connection = session.resource(
+                's3',
+                region_name=self.region_name,
+                use_ssl=self.media_url.scheme == 'https',
+                endpoint_url=f'{self.media_url.scheme}://{self.media_url.hostname}:{self.media_url.port}',
+                config=self.client_config,
+                verify=False,
+            )
+        return self._connections.media_connection
+
+    def _url_unsigned(self, name: str) -> str:
+        if self.media_url:
+            name = self._normalize_name(clean_name(name))
+            return f'{self.media_url.scheme}://{self.media_url.hostname}:{self.media_url.port}/{self.bucket_name}/{name}'
+        return super()._url_unsigned(name)
+
+    def url(
+        self,
+        name: str,
+        *,
+        parameters: Mapping[str, Any] | None = None,
+        expire: int | None = None,
+        http_method: str | None = None,
+        signed: bool = True,
+    ) -> str:
+        if self.media_url:
+            if signed:
+                name = self._normalize_name(clean_name(name))
+                if parameters is None:
+                    parameters = {}
+                if expire is None:
+                    expire = self.querystring_expire
+
+                return self.media_connection.meta.client.generate_presigned_url(
+                    'get_object',
+                    Params={
+                        'Bucket': self.bucket.name,
+                        'Key': name,
+                        **parameters,
+                    },
+                    ExpiresIn=expire,
+                    HttpMethod=http_method,
+                )
+            return self._url_unsigned(name)
+        return super().url(
+            name, parameters=parameters, expire=expire, http_method=http_method, signed=signed
+        )
+
+    def generate_presigned_put_object_url(
+        self,
+        name: str,
+        *,
+        expire: int | None = None,
+        content_md5: str | None = None,
+        tags: Mapping[str, str] | None = None,
+    ) -> str:
+        if self.media_url:
+            name = self._normalize_name(clean_name(name))
+            if expire is None:
+                expire = self.querystring_expire
+            optional_params = {}
+            if content_md5 is not None:
+                optional_params['ContentMD5'] = content_md5
+            if tags is not None:
+                optional_params['Tagging'] = urlencode(tags)
+
+            return self.media_connection.meta.client.generate_presigned_url(
+                ClientMethod='put_object',
+                Params={
+                    'Bucket': self.bucket_name,
+                    'Key': name,
+                    **optional_params,
+                },
+                ExpiresIn=expire,
+            )
+        return super().generate_presigned_put_object_url(
+            name, expire=expire, content_md5=content_md5, tags=tags
         )
