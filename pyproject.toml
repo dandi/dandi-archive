@@ -11,13 +11,13 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   "boto3",
   "celery",
-  "dandi>=0.60.0",  # minimal version is also provided in API /info
+  "dandi",  # minimal version is also provided in API /info
   # Pin dandischema to exact version to make explicit which schema version is being used
-  "dandischema==0.11.1",  # schema version 0.6.10
-  "django[argon2]~=4.2.0",
+  "dandischema",  # schema version 0.6.10
+  "django[argon2]",
   # Pin to version where this bug is fixed
   # https://codeberg.org/allauth/django-allauth/issues/4072
-  "django-allauth>=65.3.0",
+  "django-allauth",
   "django-auth-style",
   "django-click",
   "django-cors-headers",
@@ -25,13 +25,13 @@ dependencies = [
   "django-extensions",
   "django-filter",
   "django-guardian",
-  "django-oauth-toolkit>2",
+  "django-oauth-toolkit",
   "django-resonant-settings[allauth,celery]",
   "django-resonant-utils",
   "django-stubs-ext",
-  # TODO: pin this until we figure out what the cause of
-  # https://github.com/dandi/dandi-archive/issues/1894 is.
-  "djangorestframework==3.14.0",
+  # TODO: pin djangorestframework until we figure out what the cause of
+  # https://github.com/dandi/dandi-archive/issues/1896 is.
+  "djangorestframework",
   "drf-extensions",
   "drf-yasg",
   "fsspec[http]",
@@ -42,15 +42,15 @@ dependencies = [
   "requests",
   "rich",
   "whitenoise[brotli]",
-  "zarr-checksum>=0.2.8",
+  "zarr-checksum",
   # Production-only
-  "django-s3-file-field[s3]>=1.0.0",
-  "django-storages[s3]==1.14.3",
+  "django-s3-file-field[s3]",
+  "django-storages[s3]",
   "gunicorn",
   "sentry-sdk[celery,django,pure_eval]",
   # Development-only, but required
   "django-minio-storage",
-  "minio>7",
+  "minio",
   "tqdm",
 ]
 dynamic = ["version"]
