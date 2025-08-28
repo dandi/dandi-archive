@@ -90,6 +90,7 @@ class DandiS3Storage(S3Storage):
         # This could call "self._strip_signing_parameters" instead, which would preserve any
         # non-signing querystring args, but might result in broken URLs. For now, recreate URLs
         # from scratch, which is safer but less powerful.
+        name = self._normalize_name(clean_name(name))
         if self.endpoint_url:
             # Assume only path-style requests are supported, as this is probably MinIO
             return f'{self.endpoint_url}/{self.bucket_name}/{name}'
@@ -107,6 +108,7 @@ class DandiS3Storage(S3Storage):
     ) -> str:
         if signed:
             return super().url(name, parameters=parameters, expire=expire, http_method=http_method)
+        name = self._normalize_name(clean_name(name))
         return self._url_unsigned(name)
 
     def generate_presigned_put_object_url(
@@ -119,6 +121,7 @@ class DandiS3Storage(S3Storage):
     ) -> str:
         # Just calling "S3Storage.url(..., http_method=='PUT')" doesn't work, as "get_object" can't
         # accept "Tagging" options, even if its method is overridden.
+        name = self._normalize_name(clean_name(name))
         if expire is None:
             expire = self.querystring_expire
         optional_params = {}
@@ -138,6 +141,7 @@ class DandiS3Storage(S3Storage):
         )
 
     def e_tag(self, name: str) -> str | None:
+        name = self._normalize_name(clean_name(name))
         """Return the ETag (entity tag) for an uploaded object, or `None` if it's unavailable."""
         try:
             e_tag = self.bucket.Object(name).e_tag
@@ -149,6 +153,7 @@ class DandiS3Storage(S3Storage):
         return e_tag.strip('"')
 
     def get_tags(self, name: str) -> dict[str, str]:
+        name = self._normalize_name(clean_name(name))
         return {
             tag['Key']: tag['Value']
             for tag in self.s3_client.get_object_tagging(Bucket=self.bucket_name, Key=name)[
@@ -157,6 +162,7 @@ class DandiS3Storage(S3Storage):
         }
 
     def put_tags(self, name: str, tags: Mapping[str, str]) -> None:
+        name = self._normalize_name(clean_name(name))
         self.s3_client.put_object_tagging(
             Bucket=self.bucket_name,
             Key=name,
@@ -164,10 +170,12 @@ class DandiS3Storage(S3Storage):
         )
 
     def delete_tags(self, name: str) -> None:
+        name = self._normalize_name(clean_name(name))
         self.s3_client.delete_object_tagging(Bucket=self.bucket_name, Key=name)
 
     def sha256_checksum(self, name: str) -> str:
         """Efficiently compute the SHA256 checksum of an object."""
+        name = self._normalize_name(clean_name(name))
         hasher = _WritableSha256()
         s3_object = self.bucket.Object(name)
         s3_object.download_fileobj(hasher)
