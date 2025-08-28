@@ -1,3 +1,20 @@
+# v0.13.3 (Thu Aug 28 2025)
+
+#### 🧪 Tests
+
+- Repoint CLI tests at master/published release [#2513](https://github.com/dandi/dandi-archive/pull/2513) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🔩 Dependency Updates
+
+- Fix minor issues with `pyproject.toml` `dependencies` [#2519](https://github.com/dandi/dandi-archive/pull/2519) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.13.2 (Wed Aug 27 2025)
 
 #### 🐛 Bug Fix
