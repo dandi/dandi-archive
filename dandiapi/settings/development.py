@@ -44,16 +44,16 @@ CORS_ALLOWED_ORIGIN_REGEXES = env.list(
 )
 
 _minio_url: ParseResult = env.url('DJANGO_MINIO_STORAGE_URL')
+_storage_media_url: ParseResult | None = env.url('DJANGO_MINIO_STORAGE_MEDIA_URL', None)
 STORAGES['default'] = {
     'BACKEND': 'dandiapi.storage.MinioDandiS3Storage',
     'OPTIONS': {
         'endpoint_url': f'{_minio_url.scheme}://{_minio_url.hostname}:{_minio_url.port}',
-        'region_name': 'us-east-1',  # This is MinIO's default region
         'access_key': _minio_url.username,
         'secret_key': _minio_url.password,
         'bucket_name': _minio_url.path.lstrip('/'),
-        'signature_version': 's3v4',
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
+        'media_url': _storage_media_url,
     },
 }
 DANDI_DANDISETS_BUCKET_NAME = STORAGES['default']['OPTIONS']['bucket_name']  # TODO: remove

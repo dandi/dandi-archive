@@ -12,11 +12,9 @@ STORAGES['default'] = {
     'BACKEND': 'dandiapi.storage.MinioDandiS3Storage',
     'OPTIONS': {
         'endpoint_url': f'{_minio_url.scheme}://{_minio_url.hostname}:{_minio_url.port}',
-        'region_name': 'us-east-1',  # This is MinIO's default region
         'access_key': _minio_url.username,
         'secret_key': _minio_url.password,
         'bucket_name': 'test-django-storage',
-        'signature_version': 's3v4',
         'querystring_expire': int(timedelta(hours=6).total_seconds()),
     },
 }
