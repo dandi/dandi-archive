@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from urllib.parse import urljoin
+
 from django.conf import settings
+from django.urls import reverse
 
 from dandiapi import __version__
-from dandiapi.api.views.info import schema_url
 
 
 def test_rest_info(api_client):
     resp = api_client.get('/api/info/')
     assert resp.status_code == 200
+
+    # Get the expected schema URL
+    schema_url = urljoin(settings.DANDI_API_URL, reverse('schema-dandiset-latest'))
+
     assert resp.json() == {
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,

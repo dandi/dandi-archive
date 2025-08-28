@@ -7,6 +7,12 @@ from .dashboard import DashboardView, mailchimp_csv_view, user_approval_view
 from .info import info_view
 from .robots import robots_txt_view
 from .root import root_content_view
+from .schema import (
+    asset_schema_view,
+    dandiset_schema_view,
+    published_asset_schema_view,
+    published_dandiset_schema_view,
+)
 from .stats import stats_view
 from .upload import (
     blob_read_view,
@@ -23,11 +29,15 @@ __all__ = [
     'DashboardView',
     'NestedAssetViewSet',
     'VersionViewSet',
+    'asset_schema_view',
     'auth_token_view',
     'authorize_view',
     'blob_read_view',
+    'dandiset_schema_view',
     'info_view',
     'mailchimp_csv_view',
+    'published_asset_schema_view',
+    'published_dandiset_schema_view',
     'robots_txt_view',
     'root_content_view',
     'stats_view',
