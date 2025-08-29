@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from django.db import transaction
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from django.contrib.auth.models import User
 
 from dandischema.models import AccessRequirements, AccessType, Organization, RoleType
