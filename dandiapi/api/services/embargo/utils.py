@@ -9,6 +9,7 @@ from django.conf import settings
 from django.db.models import Q
 from more_itertools import chunked
 
+from dandiapi.api.manifests import all_manifest_filepaths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.storage import get_boto_client
 from dandiapi.zarr.models import zarr_s3_path
@@ -77,8 +78,27 @@ def _delete_zarr_object_tags(client: S3Client, zarr: str):
                 raise AssetTagRemovalError('Some zarr files failed to remove tags', blobs=failed)
 
 
+def _remove_dandiset_manifest_tags(client: S3Client, dandiset: Dandiset):
+    version = dandiset.draft_version
+
+    paths = all_manifest_filepaths(version)
+    logger.info('Removing tags from dandiset %s', dandiset.identifier)
+    for path in paths:
+        try:
+            client.delete_object_tagging(
+                Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
+                Key=path,
+            )
+        except client.exceptions.NoSuchKey:
+            logger.info('\tManifest file not found at %s. Continuing...', path)
+            continue
+
+
 def remove_dandiset_embargo_tags(dandiset: Dandiset):
     client = get_boto_client(config=Config(max_pool_connections=100))
+
+    _remove_dandiset_manifest_tags(client=client, dandiset=dandiset)
+
     embargoed_assets = (
         Asset.objects.filter(versions__dandiset=dandiset)
         # zarrs have no embargoed flag themselves and so are all included

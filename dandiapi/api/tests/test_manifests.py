@@ -9,6 +9,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_yaml.renderers import YAMLRenderer
 
 from dandiapi.api.manifests import (
+    _streaming_file_upload,
     write_assets_jsonld,
     write_assets_yaml,
     write_collection_jsonld,
@@ -16,9 +17,30 @@ from dandiapi.api.manifests import (
     write_dandiset_yaml,
 )
 from dandiapi.api.models import AssetBlob, Version
+from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.storage import get_boto_client
 
 if TYPE_CHECKING:
     from django.core.files.storage import Storage
+
+
+@pytest.mark.parametrize(
+    'embargo_status', [Dandiset.EmbargoStatus.OPEN, Dandiset.EmbargoStatus.EMBARGOED]
+)
+@pytest.mark.django_db
+def test_streaming_file_upload(storage: Storage, draft_version_factory, embargo_status):
+    version: Version = draft_version_factory(dandiset__embargo_status=embargo_status)
+    embargoed = version.dandiset.embargoed
+    path = 'foo/bar.txt'
+
+    with _streaming_file_upload(path, embargoed=embargoed) as stream:
+        stream.write(b'asdasdasd')
+
+    client = get_boto_client(storage=storage)
+    tags = client.get_object_tagging(Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=path)[
+        'TagSet'
+    ]
+    assert tags == ([{'Key': 'embargoed', 'Value': 'true'}] if embargoed else [])
 
 
 @pytest.mark.django_db

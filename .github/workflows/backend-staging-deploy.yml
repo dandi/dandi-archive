@@ -27,8 +27,8 @@ jobs:
         with:
           fetch-depth: 0 # fetch history for all branches and tags
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
@@ -38,8 +38,7 @@ jobs:
 
       - name: Build app into tarball
         run: |
-          pip install build
-          python -m build --sdist
+          uv build --sdist
 
       - name: Create Heroku Build
         run: heroku builds:create -a dandi-api-staging --source-tar dist/*.tar.gz
