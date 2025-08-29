@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
@@ -9,6 +9,7 @@ from django.db.models.query_utils import Q
 from django.utils import timezone
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
+from rest_framework.validators import ValidationError
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Upload, Version
 from dandiapi.search.models import AssetSearch
@@ -83,8 +84,55 @@ class CreateDandisetQueryParameterSerializer(serializers.Serializer):
     funding_source = serializers.CharField(required=False, allow_blank=True)
     award_number = serializers.CharField(required=False, allow_blank=True)
     embargo_end_date = serializers.DateField(
-        default=lambda: timezone.now().date() + timedelta(days=730)
+        default=lambda: timezone.now().date() + timedelta(days=365 * 2)
     )
+
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        """
+        Validate the embargo end date.
+
+        The semantics for this are as follows:
+
+        - User supplies no funding source and no award number
+            => Successful, embargo end date set to two years in the future
+               (automatic/not changeable by user)
+
+        - User supplies a funding source but no award number
+            => Result: Failure, supplying a funding source with no award number is not valid
+
+        - User supplies an award number but no funding source
+            => Result: Failure, supplying a funding source with no award number is not valid
+
+        - User supplies both a funding source and an award number
+            => Result: Successful, embargo end date is set to whatever the user specified in
+               form (defaults to two years, but user can specify up to a maximum of 5 years)
+        """
+        embargo: bool = data['embargo']
+        funding_source: str | None = data.get('funding_source')
+        award_number: str | None = data.get('award_number')
+        embargo_end_date: date = data['embargo_end_date']
+
+        # If embargo is not set, we don't need to validate the embargo end date
+        if not embargo:
+            return data
+
+        # Supplying one of funding source or award number mandates supplying the other
+        if funding_source is not None and award_number is None:
+            raise ValidationError('Award number is required when funding source is set')
+        if funding_source is None and award_number is not None:
+            raise ValidationError('Funding source is required when award number is set')
+
+        # If the dandiset has no funding source, the embargo end date must be within 2 years.
+        # Otherwise, it must be within 5 years.
+        if funding_source is None:
+            max_end_date = timezone.now().date() + timedelta(days=365 * 2)
+        else:
+            max_end_date = timezone.now().date() + timedelta(days=365 * 5)
+
+        if embargo_end_date > max_end_date:
+            raise ValidationError('Invalid embargo end date')
+
+        return data
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
