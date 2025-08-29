@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dandiapi.api.models.audit import AuditRecord
+from dandiapi.api.models import AuditRecord, Dandiset
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
 
     from dandiapi.api.models.asset import Asset
     from dandiapi.api.models.audit import AuditRecordType
-    from dandiapi.api.models.dandiset import Dandiset
     from dandiapi.zarr.models import ZarrArchive
 
 
@@ -47,13 +46,12 @@ def create_dandiset(
     dandiset: Dandiset,
     user: User | None,
     metadata: dict,
-    embargoed: bool,
     admin: bool = False,
     description: str = '',
 ):
     details = {
         'metadata': metadata,
-        'embargoed': embargoed,
+        'embargoed': dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED,
     }
     return _make_audit_record(
         dandiset=dandiset,
