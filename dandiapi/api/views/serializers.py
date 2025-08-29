@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models.query_utils import Q
+from django.utils import timezone
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
@@ -80,8 +82,9 @@ class CreateDandisetQueryParameterSerializer(serializers.Serializer):
     embargo = serializers.BooleanField(required=False, default=False)
     funding_source = serializers.CharField(required=False, allow_blank=True)
     award_number = serializers.CharField(required=False, allow_blank=True)
-    grant_end_date = serializers.DateField(required=False)
-    embargo_end_date = serializers.DateField(required=False)
+    embargo_end_date = serializers.DateField(
+        default=lambda: timezone.now().date() + timedelta(days=730)
+    )
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):
