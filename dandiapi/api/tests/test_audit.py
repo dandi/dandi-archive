@@ -434,3 +434,24 @@ def test_audit_delete_zarr_chunks(api_client, user, draft_version, zarr_archive_
     verify_model_properties(rec, user)
     assert rec.details['zarr_id'] == zarr.zarr_id
     assert rec.details['paths'] == deleted
+
+
+@pytest.mark.django_db
+def test_asset_audit_events_requires_admin(api_client, user_factory):
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 401
+
+    normal_user = user_factory()
+    api_client.force_authenticate(user=normal_user)
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 403
+
+    staff_user = user_factory(is_staff=True)
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 200
+
+    superuser = user_factory(is_superuser=True)
+    api_client.force_authenticate(user=superuser)
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 200
