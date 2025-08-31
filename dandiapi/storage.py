@@ -87,9 +87,8 @@ class DandiS3Storage(S3Storage):
         return filename
 
     def _url_unsigned(self, name: str) -> str:
-        # This could call "self._strip_signing_parameters" instead, which would preserve any
-        # non-signing querystring args, but might result in broken URLs. For now, recreate URLs
-        # from scratch, which is safer but less powerful.
+        # TODO: Remove this method once https://github.com/jschneier/django-storages/pull/1536
+        #  is released.
         name = self._normalize_name(clean_name(name))
         if self.endpoint_url:
             # Assume only path-style requests are supported, as this is probably MinIO
@@ -121,6 +120,8 @@ class DandiS3Storage(S3Storage):
     ) -> str:
         # Just calling "S3Storage.url(..., http_method=='PUT')" doesn't work, as "get_object" can't
         # accept "Tagging" options, even if its method is overridden.
+        # TODO: Remove this method once https://github.com/jschneier/django-storages/pull/1533
+        #  is released.
         name = self._normalize_name(clean_name(name))
         if expire is None:
             expire = self.querystring_expire
