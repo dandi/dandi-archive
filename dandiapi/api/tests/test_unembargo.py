@@ -32,8 +32,9 @@ from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, zarr_s3_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
-    from dandiapi.api.models.asset import AssetBlob
     from zarr_checksum.generators import ZarrArchiveFile
+
+    from dandiapi.api.models.asset import AssetBlob
 
 
 @pytest.mark.django_db
