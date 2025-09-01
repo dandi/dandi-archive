@@ -49,8 +49,6 @@ dependencies = [
   "gunicorn",
   "sentry-sdk[celery,django,pure_eval]",
   # Development-only, but required
-  "django-minio-storage",
-  "minio",
   "tqdm",
 ]
 dynamic = ["version"]
@@ -60,7 +58,6 @@ development = [
   # Runtime dependencies, only needed with "development" settings
   "django-browser-reload",
   "django-debug-toolbar",
-  "django-s3-file-field[minio]",
   "ipython",
   "watchdog",
   "werkzeug",

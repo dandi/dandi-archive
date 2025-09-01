@@ -127,10 +127,7 @@ def test_zarr_rest_create_unembargoing(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get(authenticated_api_client, storage, zarr_archive_factory, zarr_file_factory):
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
-
+def test_zarr_rest_get(authenticated_api_client, zarr_archive_factory, zarr_file_factory):
     zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
@@ -275,13 +272,9 @@ def test_zarr_rest_get_empty(authenticated_api_client, zarr_archive: ZarrArchive
 def test_zarr_rest_delete_file(
     authenticated_api_client,
     user,
-    storage,
     zarr_archive_factory,
     zarr_file_factory,
 ):
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
-
     # Create zarr and assign user perms
     zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
     add_dandiset_owner(zarr_archive.dandiset, user)
@@ -324,14 +317,10 @@ def test_zarr_rest_delete_file(
 def test_zarr_rest_delete_file_asset_metadata(
     authenticated_api_client,
     user,
-    storage,
     zarr_archive_factory,
     zarr_file_factory,
     asset_factory,
 ):
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
-
     zarr_archive = zarr_archive_factory(status=ZarrArchiveStatus.UPLOADED)
     add_dandiset_owner(zarr_archive.dandiset, user)
 
@@ -364,10 +353,8 @@ def test_zarr_rest_delete_file_asset_metadata(
 
 @pytest.mark.django_db
 def test_zarr_rest_delete_file_not_an_owner(
-    authenticated_api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory
+    authenticated_api_client, zarr_archive: ZarrArchive, zarr_file_factory
 ):
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
 
     resp = authenticated_api_client.delete(
@@ -380,13 +367,10 @@ def test_zarr_rest_delete_file_not_an_owner(
 def test_zarr_rest_delete_multiple_files(
     authenticated_api_client,
     user,
-    storage,
     zarr_archive: ZarrArchive,
     zarr_file_factory,
 ):
     add_dandiset_owner(zarr_archive.dandiset, user)
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
 
     # Create 10 files
     zarr_files = [zarr_file_factory(zarr_archive=zarr_archive) for _ in range(10)]
@@ -411,14 +395,10 @@ def test_zarr_rest_delete_multiple_files(
 def test_zarr_rest_delete_missing_file(
     authenticated_api_client,
     user,
-    storage,
     zarr_archive: ZarrArchive,
     zarr_file_factory,
 ):
     add_dandiset_owner(zarr_archive.dandiset, user)
-
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
 
     zarr_file = zarr_file_factory(zarr_archive=zarr_archive)
     resp = authenticated_api_client.delete(
@@ -446,10 +426,7 @@ def test_zarr_rest_delete_missing_file(
 
 
 @pytest.mark.django_db
-def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_file_factory):
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
-
+def test_zarr_file_list(api_client, zarr_archive: ZarrArchive, zarr_file_factory):
     files = [
         'foo/bar/a.txt',
         'foo/bar/b.txt',
@@ -502,10 +479,7 @@ def test_zarr_file_list(api_client, storage, zarr_archive: ZarrArchive, zarr_fil
 
 
 @pytest.mark.django_db
-def test_zarr_explore_head(api_client, storage, zarr_archive: ZarrArchive):
-    # Pretend like ZarrArchive was defined with the given storage
-    ZarrArchive.storage = storage
-
+def test_zarr_explore_head(api_client, zarr_archive: ZarrArchive):
     filepath = 'foo/bar.txt'
     resp = api_client.head(f'/api/zarr/{zarr_archive.zarr_id}/files/', {'prefix': filepath})
     assert resp.status_code == 302

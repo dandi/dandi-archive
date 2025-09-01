@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.forms.models import model_to_dict
 from django.utils import timezone
 import pytest
@@ -15,7 +16,7 @@ from zarr_checksum.checksum import EMPTY_CHECKSUM
 from zarr_checksum.generators import ZarrArchiveFile
 
 from dandiapi.api import tasks
-from dandiapi.api.models import Asset, AssetBlob, Version
+from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
@@ -23,54 +24,21 @@ from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
-    from django.core.files.storage import Storage
     from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db
-def test_calculate_checksum_task(storage: Storage, asset_blob_factory):
-    # Pretend like AssetBlob was defined with the given storage
-    AssetBlob.blob.field.storage = storage
-
-    asset_blob = asset_blob_factory(sha256=None)
-
-    h = hashlib.sha256()
-    h.update(asset_blob.blob.read())
-    sha256 = h.hexdigest()
+def test_calculate_checksum_task(asset_blob_factory):
+    asset_blob = asset_blob_factory(blob__data=b'known-content', size=13, sha256=None)
 
     tasks.calculate_sha256(asset_blob.blob_id)
-
     asset_blob.refresh_from_db()
 
-    assert asset_blob.sha256 == sha256
+    assert asset_blob.sha256 == 'c651ccb96b0c0e490de4cc12b9b46d643e6dba87840fab27e2c8d4d5cc2037fa'
 
 
 @pytest.mark.django_db
-def test_calculate_checksum_task_embargo(
-    storage: Storage, embargoed_asset_blob_factory, monkeypatch
-):
-    # Pretend like AssetBlob was defined with the given storage
-    monkeypatch.setattr(AssetBlob.blob.field, 'storage', storage)
-
-    asset_blob = embargoed_asset_blob_factory(sha256=None)
-
-    h = hashlib.sha256()
-    h.update(asset_blob.blob.read())
-    sha256 = h.hexdigest()
-
-    tasks.calculate_sha256(asset_blob.blob_id)
-
-    asset_blob.refresh_from_db()
-
-    assert asset_blob.sha256 == sha256
-
-
-@pytest.mark.django_db
-def test_write_manifest_files(storage: Storage, version: Version, asset_factory):
-    # Pretend like AssetBlob was defined with the given storage
-    # The task piggybacks off of the AssetBlob storage to write the yamls
-    AssetBlob.blob.field.storage = storage
-
+def test_write_manifest_files(version: Version, asset_factory):
     # Create a new asset in the version so there is information to write
     version.assets.add(asset_factory())
 
@@ -98,11 +66,11 @@ def test_write_manifest_files(storage: Storage, version: Version, asset_factory)
 
     tasks.write_manifest_files(version.id)
 
-    assert storage.exists(assets_yaml_path)
-    assert storage.exists(dandiset_yaml_path)
-    assert storage.exists(assets_jsonld_path)
-    assert storage.exists(dandiset_jsonld_path)
-    assert storage.exists(collection_jsonld_path)
+    assert default_storage.exists(assets_yaml_path)
+    assert default_storage.exists(dandiset_yaml_path)
+    assert default_storage.exists(assets_jsonld_path)
+    assert default_storage.exists(dandiset_jsonld_path)
+    assert default_storage.exists(collection_jsonld_path)
 
 
 @pytest.mark.django_db

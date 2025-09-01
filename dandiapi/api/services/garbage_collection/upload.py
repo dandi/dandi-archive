@@ -15,14 +15,14 @@ from dandiapi.api.models import (
     GarbageCollectionEventRecord,
     Upload,
 )
-from dandiapi.api.storage import DandiMultipartMixin
+from dandiapi.api.multipart import DandiS3MultipartManager
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 logger = get_task_logger(__name__)
 
-UPLOAD_EXPIRATION_TIME = DandiMultipartMixin._url_expiration  # noqa: SLF001
+UPLOAD_EXPIRATION_TIME = DandiS3MultipartManager._url_expiration  # noqa: SLF001
 
 
 def get_queryset() -> QuerySet[Upload]:
