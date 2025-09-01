@@ -5,11 +5,20 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlencode
 
 from dandischema.digests.dandietag import PartGenerator
-from s3_file_field._multipart import PresignedPartTransfer, PresignedTransfer, UploadTooLargeError
+from s3_file_field._multipart import (
+    PresignedPartTransfer,
+    PresignedTransfer,
+    TransferredParts,
+    UploadTooLargeError,
+)
 from s3_file_field._multipart_s3 import S3MultipartManager
+
+from dandiapi.storage import MinioDandiS3Storage
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
+
+    from dandiapi.storage import DandiS3Storage
 
 
 class DandiS3MultipartManager(S3MultipartManager):
@@ -24,6 +33,19 @@ class DandiS3MultipartManager(S3MultipartManager):
 
     # Overridden with a longer time
     _url_expiration = timedelta(days=7)
+
+    def __init__(self, storage: DandiS3Storage) -> None:
+        super().__init__(storage)
+
+        # Make URL generation work when MinioDandiS3Storage and "media_url" are in use;
+        # otherwise, this does nothing different. Upstream S3FF supports a "media_url" for
+        # MinioMultipartManager, but not S3MultipartManager (as this is specific to
+        # MinioDandiS3Storage).
+        self._signing_client = (
+            storage.media_connection.meta.client
+            if isinstance(storage, MinioDandiS3Storage) and storage.media_url
+            else self._client
+        )
 
     # Overridden to let dandischema define part sizes:
     # https://github.com/dandi/dandi-archive/issues/160
@@ -49,6 +71,34 @@ class DandiS3MultipartManager(S3MultipartManager):
             Bucket=self._bucket_name, Key=object_key, ContentType=content_type, **optional_params
         )
         return resp['UploadId']
+
+    # Forked to use "self._signing_client"
+    def _generate_presigned_part_url(
+        self, object_key: str, upload_id: str, part_number: int, part_size: int
+    ) -> str:
+        return self._signing_client.generate_presigned_url(
+            ClientMethod='upload_part',
+            Params={
+                'Bucket': self._bucket_name,
+                'Key': object_key,
+                'UploadId': upload_id,
+                'PartNumber': part_number,
+                'ContentLength': part_size,
+            },
+            ExpiresIn=int(self._url_expiration.total_seconds()),
+        )
+
+    # Forked to use "self._signing_client"
+    def _generate_presigned_complete_url(self, transferred_parts: TransferredParts) -> str:
+        return self._signing_client.generate_presigned_url(
+            ClientMethod='complete_multipart_upload',
+            Params={
+                'Bucket': self._bucket_name,
+                'Key': transferred_parts.object_key,
+                'UploadId': transferred_parts.upload_id,
+            },
+            ExpiresIn=int(self._url_expiration.total_seconds()),
+        )
 
     # Forked to accept a "tags" parameter
     def initialize_upload(
