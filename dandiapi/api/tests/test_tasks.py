@@ -20,7 +20,6 @@ from dandiapi.api.models import Asset, Version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.zarr.models import ZarrArchiveStatus
 
-from .factories import AssetBlobFactory
 from .fuzzy import HTTP_URL_RE, URN_RE, UTC_ISO_TIMESTAMP_RE
 
 if TYPE_CHECKING:
@@ -29,8 +28,8 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.django_db
-def test_calculate_checksum_task():
-    asset_blob = AssetBlobFactory.create(blob__data=b'known-content', size=13, sha256=None)
+def test_calculate_checksum_task(asset_blob_factory):
+    asset_blob = asset_blob_factory(blob__data=b'known-content', size=13, sha256=None)
 
     tasks.calculate_sha256(asset_blob.blob_id)
     asset_blob.refresh_from_db()
