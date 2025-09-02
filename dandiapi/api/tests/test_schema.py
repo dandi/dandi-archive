@@ -28,3 +28,9 @@ def test_schema_latest(api_client, model: CommonModel):
     # Compare with expected schema from pydantic using same generator as dandischema
     expected_schema = model.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
     assert schema == expected_schema
+
+
+def test_schema_unsupported_model(api_client):
+    """Test that the schema endpoint returns an error when passed invalid choice."""
+    resp = api_client.get('/api/schema/', {'model': 'NotAValidModel'})
+    assert resp.status_code == 400
