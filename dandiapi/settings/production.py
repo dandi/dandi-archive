@@ -36,9 +36,6 @@ STORAGES['default'] = {
     'BACKEND': 'dandiapi.storage.DandiS3Storage',
 }
 DANDI_DANDISETS_BUCKET_NAME = AWS_STORAGE_BUCKET_NAME
-# TODO: remove this when http://github.com/kitware-resonant/cookiecutter-resonant/pull/369/
-# is merged/released.
-AWS_QUERYSTRING_EXPIRE = int(timedelta(hours=6).total_seconds())
 
 DANDI_DEV_EMAIL: str = env.str('DJANGO_DANDI_DEV_EMAIL')
 DANDI_ADMIN_EMAIL: str = env.str('DJANGO_DANDI_ADMIN_EMAIL')
