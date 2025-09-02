@@ -30,22 +30,22 @@ class SchemaQuerySerializer(serializers.Serializer):
 
 @swagger_auto_schema(
     method='GET',
-    operation_summary='Get model schemas',
-    operation_description='Returns the JSONSchema for supplied model metadata',
+    operation_summary='Get model schema',
+    operation_description='Returns the JSON Schema of the requested metadata model',
 )
 @api_view(['GET'])
 def schema_view(request: Request) -> Response:
     """
-    Return the JSONSchema for Dandiset metadata.
+    Return the JSON Schema of the requested metadata model.
 
-    This endpoint provides the currently configured schema based on the application's
-    DANDI_SCHEMA_VERSION setting. It can be used as a replacement for the static
-    schema files hosted on GitHub.
+    This endpoint returns the JSON Schema of the requested metadata model
+    as it is defined in this DANDI archive instance, with instance specific
+    parameters such as instance name and DOI prefix.
     """
     serializer = SchemaQuerySerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
 
-    # Generate the schema JSON using the same approach as dandischema
+    # Generate the JSON schema using the same approach as dandischema
     model_class = _model_name_mapping[serializer.validated_data['model']]
     schema = model_class.model_json_schema(schema_generator=TransitionalGenerateJsonSchema)
 
