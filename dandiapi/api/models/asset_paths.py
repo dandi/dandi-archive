@@ -24,14 +24,14 @@ class AssetPath(models.Model):
         constraints = [
             # Disallow slashes at the beginning or end of path
             models.CheckConstraint(
-                check=~(models.Q(path__endswith='/') | models.Q(path__startswith='/')),
+                condition=~(models.Q(path__endswith='/') | models.Q(path__startswith='/')),
                 name='consistent-slash',
             ),
             models.UniqueConstraint(fields=['asset', 'version'], name='unique-asset-version'),
             models.UniqueConstraint(fields=['version', 'path'], name='unique-version-path'),
             # Ensure all leaf paths have at most 1 associated file
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(asset__isnull=True)
                     | models.Q(asset__isnull=False, aggregate_files__lte=1)
                 ),

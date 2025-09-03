@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(('blob__isnull', True), ('zarr__isnull', False)),
                     models.Q(('blob__isnull', False), ('zarr__isnull', True)),
                     _connector='OR',

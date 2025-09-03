@@ -78,9 +78,7 @@ api_urlpatterns = [
     ),
     path('api/users/me/', users_me_view),
     path('api/users/search/', users_search_view),
-    re_path(
-        r'^api/users/questionnaire-form/$', user_questionnaire_form_view, name='user-questionnaire'
-    ),
+    path('api/users/questionnaire-form/', user_questionnaire_form_view, name='user-questionnaire'),
     path('api/search/genotypes/', search_genotypes),
     path('api/search/species/', search_species),
 ]
@@ -135,7 +133,7 @@ urlpatterns = [
     path('dashboard/mailchimp/', mailchimp_csv_view, name='mailchimp-csv'),
     # this url overrides the authorize url in oauth2_provider.urls to
     # support our user signup workflow
-    re_path(r'^oauth/authorize/$', authorize_view, name='authorize'),
+    path('oauth/authorize/', authorize_view, name='authorize'),
     path('oauth/', include('oauth2_provider.urls')),
     # Doc page views
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
