@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import logging
 
-from django.conf import settings
+from django.core.files.storage import default_storage
 import djclick as click
 
 from dandiapi.api.manifests import all_manifest_filepaths
 from dandiapi.api.models import Version
 from dandiapi.api.models.dandiset import Dandiset
-from dandiapi.api.storage import get_boto_client
 
 logger = logging.getLogger(__name__)
 
@@ -37,24 +36,12 @@ def tag_embargoed_manifests(dandisets, include_all):
     if dandisets:
         embargoed_versions = embargoed_versions.filter(dandiset_id__in=dandisets)
 
-    client = get_boto_client()
     for version in embargoed_versions:
         logger.info('Adding tags from dandiset %s', version.dandiset.identifier)
         paths = all_manifest_filepaths(version)
         for path in paths:
             try:
-                client.put_object_tagging(
-                    Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-                    Key=path,
-                    Tagging={
-                        'TagSet': [
-                            {
-                                'Key': 'embargoed',
-                                'Value': 'true',
-                            },
-                        ]
-                    },
-                )
-            except client.exceptions.NoSuchKey:
+                default_storage.put_tags(path, {'embargoed': 'true'})
+            except default_storage.s3_client.exceptions.NoSuchKey:
                 logger.info('\tManifest file not found at %s. Continuing...', path)
                 continue

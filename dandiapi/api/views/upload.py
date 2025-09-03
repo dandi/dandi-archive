@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from s3_file_field._multipart import TransferredPart, TransferredParts
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
+from dandiapi.api.multipart import DandiS3MultipartManager
 from dandiapi.api.permissions import AuthenticatedRequest, IsApproved
 from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
 from dandiapi.api.services.exceptions import NotAllowedError
@@ -199,7 +200,7 @@ def upload_complete_view(request: AuthenticatedRequest, upload_id: str) -> HttpR
         parts=parts,
     )
 
-    completed_upload = upload.blob.field.storage.multipart_manager.complete_upload(completion)
+    completed_upload = DandiS3MultipartManager(upload.blob.storage).complete_upload(completion)
 
     response_serializer = UploadCompletionResponseSerializer(
         {

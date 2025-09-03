@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from botocore.config import Config
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db.models import Q
 from more_itertools import chunked
 
@@ -78,18 +79,15 @@ def _delete_zarr_object_tags(client: S3Client, zarr: str):
                 raise AssetTagRemovalError('Some zarr files failed to remove tags', blobs=failed)
 
 
-def _remove_dandiset_manifest_tags(client: S3Client, dandiset: Dandiset):
+def _remove_dandiset_manifest_tags(dandiset: Dandiset):
     version = dandiset.draft_version
 
     paths = all_manifest_filepaths(version)
     logger.info('Removing tags from dandiset %s', dandiset.identifier)
     for path in paths:
         try:
-            client.delete_object_tagging(
-                Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-                Key=path,
-            )
-        except client.exceptions.NoSuchKey:
+            default_storage.delete_tags(path)
+        except default_storage.s3_client.exceptions.NoSuchKey:
             logger.info('\tManifest file not found at %s. Continuing...', path)
             continue
 
@@ -97,7 +95,7 @@ def _remove_dandiset_manifest_tags(client: S3Client, dandiset: Dandiset):
 def remove_dandiset_embargo_tags(dandiset: Dandiset):
     client = get_boto_client(config=Config(max_pool_connections=100))
 
-    _remove_dandiset_manifest_tags(client=client, dandiset=dandiset)
+    _remove_dandiset_manifest_tags(dandiset=dandiset)
 
     embargoed_assets = (
         Asset.objects.filter(versions__dandiset=dandiset)
