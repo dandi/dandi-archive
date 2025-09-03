@@ -138,24 +138,26 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 name='blob-xor-zarr',
-                check=(
+                condition=(
                     Q(blob__isnull=True, zarr__isnull=False)
                     | Q(blob__isnull=False, zarr__isnull=True)
                 ),
             ),
             models.CheckConstraint(
                 name='asset_metadata_has_schema_version',
-                check=Q(metadata__schemaVersion__isnull=False),
+                condition=Q(metadata__schemaVersion__isnull=False),
             ),
-            models.CheckConstraint(name='asset_path_regex', check=Q(path__regex=ASSET_PATH_REGEX)),
             models.CheckConstraint(
-                name='asset_path_no_leading_slash', check=~Q(path__startswith='/')
+                name='asset_path_regex', condition=Q(path__regex=ASSET_PATH_REGEX)
+            ),
+            models.CheckConstraint(
+                name='asset_path_no_leading_slash', condition=~Q(path__startswith='/')
             ),
             # Ensure that if the asset is published, its metadata must contain the computed fields
             # Otherwise, ensure its metadata contains none of the computed fields
             models.CheckConstraint(
                 name='asset_metadata_no_computed_keys_or_published',
-                check=(
+                condition=(
                     (Q(published=False) & ~Q(metadata__has_any_keys=ASSET_COMPUTED_FIELDS))
                     | (Q(published=True) & Q(metadata__has_keys=ASSET_COMPUTED_FIELDS))
                 ),
