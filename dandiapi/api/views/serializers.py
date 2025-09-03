@@ -88,9 +88,10 @@ class CreateDandisetQueryParameterSerializer(serializers.Serializer):
     )
 
     def validate_embargo_end_date(self, value: date) -> date:
-        max_end_date = timezone.now().date() + timedelta(days=730)
+        # The embargo end date can't be more than 5 years in the future
+        max_end_date = timezone.now().date() + timedelta(days=365 * 5)
         if value > max_end_date:
-            raise ValidationError('Embargo end date cannot be more than 730 days in the future')
+            raise ValidationError('Embargo end date cannot be more than 5 years in the future')
         return value
 
 
