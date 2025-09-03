@@ -156,6 +156,7 @@
               variant="outlined"
               density="compact"
               class="mb-4"
+              :rules="awardNumberRules"
             />
 
             <div class="text-h5 mb-2">
