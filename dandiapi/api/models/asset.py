@@ -116,7 +116,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     status = models.CharField(
         max_length=10,
         default=AssetStatus.PENDING,
-        choices=AssetStatus.choices,
+        choices=AssetStatus,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
     published = models.BooleanField(default=False)
