@@ -41,7 +41,12 @@ def tag_embargoed_manifests(dandisets, include_all):
         paths = all_manifest_filepaths(version)
         for path in paths:
             try:
-                default_storage.put_tags(path, {'embargoed': 'true'})
+                existing_tags: dict[str, str] = default_storage.get_tags(path)
+                filtered_tags = {
+                    key: val for key, val in existing_tags.items() if key != 'embargoed'
+                }
+                new_tags = {**filtered_tags, 'embargoed': 'true'}
+                default_storage.put_tags(path, new_tags)
             except default_storage.s3_client.exceptions.NoSuchKey:
                 logger.info('\tManifest file not found at %s. Continuing...', path)
                 continue
