@@ -4,6 +4,7 @@ from .asset import Asset, AssetBlob, AssetStatus
 from .asset_paths import AssetPath, AssetPathRelation
 from .audit import AuditRecord
 from .dandiset import Dandiset, DandisetStar
+from .datacite import DataciteEvent
 from .garbage_collection import GarbageCollectionEvent, GarbageCollectionEventRecord
 from .oauth import StagingApplication
 from .stats import ApplicationStats
@@ -21,6 +22,7 @@ __all__ = [
     'AuditRecord',
     'Dandiset',
     'DandisetStar',
+    'DataciteEvent',
     'GarbageCollectionEvent',
     'GarbageCollectionEventRecord',
     'StagingApplication',
