@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.conf import settings
 from django.core.checks import Error, register
 
-from dandiapi.api.doi import DANDI_DOI_SETTINGS
+from dandiapi.api.datacite import DANDI_DOI_SETTINGS
 
 
 @register()

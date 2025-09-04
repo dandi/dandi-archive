@@ -118,11 +118,12 @@ def test_audit_change_owners(api_client, user_factory, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_update_metadata(api_client, draft_version, user):
+def test_audit_update_metadata(api_client, draft_version, user, mocker):
     # Create a Dandiset.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
 
+    mock_update_doi = mocker.patch('dandiapi.api.views.version.update_draft_version_doi')
     # Edit its metadata.
     metadata = draft_version.metadata
     metadata['foo'] = 'bar'
@@ -144,6 +145,7 @@ def test_audit_update_metadata(api_client, draft_version, user):
     metadata = rec.details['metadata']
     assert metadata['name'] == 'baz'
     assert metadata['foo'] == 'bar'
+    mock_update_doi.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -275,7 +277,7 @@ def test_audit_remove_asset(
 
 @pytest.mark.django_db(transaction=True)
 def test_audit_publish_dandiset(
-    api_client, user, dandiset_factory, draft_version_factory, draft_asset_factory
+    api_client, user, dandiset_factory, draft_version_factory, draft_asset_factory, mocker
 ):
     # Create a Dandiset whose draft version has one asset.
     dandiset = dandiset_factory()
@@ -289,6 +291,7 @@ def test_audit_publish_dandiset(
     # through the API).
     validate_asset_metadata(asset=draft_asset)
     validate_version_metadata(version=draft_version)
+    mock_handle_dois = mocker.patch('dandiapi.api.services.publish._handle_publication_dois')
 
     # Publish the Dandiset.
     api_client.force_authenticate(user=user)
@@ -301,6 +304,7 @@ def test_audit_publish_dandiset(
     rec = get_latest_audit_record(dandiset=dandiset, record_type='publish_dandiset')
     verify_model_properties(rec, user)
     assert rec.details['version'] == dandiset.most_recent_published_version.version
+    mock_handle_dois.delay.assert_called_once()
 
 
 @pytest.mark.django_db

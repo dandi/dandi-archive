@@ -335,6 +335,7 @@ def test_unembargo_dandiset_validate_version_metadata(
     draft_version.save()
     draft_version.assets.add(asset_factory())
 
+    mock_create_doi = mocker.patch('dandiapi.api.services.embargo._create_dandiset_draft_doi')
     # Spy on the imported function in the embargo service
     validate_version_spy = mocker.spy(embargo_service, 'validate_version_metadata')
 
@@ -343,6 +344,7 @@ def test_unembargo_dandiset_validate_version_metadata(
     assert validate_version_spy.call_count == 1
     draft_version.refresh_from_db()
     assert not draft_version.validation_errors
+    mock_create_doi.assert_called_once()
 
 
 @pytest.mark.django_db
