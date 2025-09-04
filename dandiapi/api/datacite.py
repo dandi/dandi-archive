@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 def block_during_test(fn):
     """
-    Datacite API should not be called 
+    Datacite API should not be called
     """
     @wraps(fn)
     def wrapper(*args, **kwargs):
