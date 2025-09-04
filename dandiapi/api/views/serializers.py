@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db.models.query_utils import Q
+from django.utils import timezone
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
+from rest_framework.validators import ValidationError
 
 from dandiapi.api.models import Asset, AssetBlob, AssetPath, Dandiset, Upload, Version
 from dandiapi.search.models import AssetSearch
@@ -78,6 +81,18 @@ class DandisetSerializer(serializers.ModelSerializer):
 
 class CreateDandisetQueryParameterSerializer(serializers.Serializer):
     embargo = serializers.BooleanField(required=False, default=False)
+    funding_source = serializers.CharField(required=False, allow_blank=True)
+    award_number = serializers.CharField(required=False, allow_blank=True)
+    embargo_end_date = serializers.DateField(
+        default=lambda: timezone.now().date() + timedelta(days=730)
+    )
+
+    def validate_embargo_end_date(self, value: date) -> date:
+        # The embargo end date can't be more than 5 years in the future
+        max_end_date = timezone.now().date() + timedelta(days=365 * 5)
+        if value > max_end_date:
+            raise ValidationError('Embargo end date cannot be more than 5 years in the future')
+        return value
 
 
 class VersionMetadataSerializer(serializers.ModelSerializer):

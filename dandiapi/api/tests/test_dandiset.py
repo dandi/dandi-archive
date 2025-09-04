@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import datetime
+from typing import TYPE_CHECKING
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.utils import timezone
 import pytest
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 from dandiapi.api.asset_paths import add_asset_paths, add_version_asset_paths
 from dandiapi.api.models import Dandiset, Version
@@ -15,7 +21,13 @@ from dandiapi.api.services.permissions.dandiset import (
     replace_dandiset_owners,
 )
 
-from .fuzzy import DANDISET_ID_RE, DANDISET_SCHEMA_ID_RE, TIMESTAMP_RE, UTC_ISO_TIMESTAMP_RE
+from .fuzzy import (
+    DANDISET_ID_RE,
+    DANDISET_SCHEMA_ID_RE,
+    DATE_RE,
+    TIMESTAMP_RE,
+    UTC_ISO_TIMESTAMP_RE,
+)
 
 
 @pytest.mark.django_db
@@ -697,7 +709,13 @@ def test_dandiset_rest_create_embargoed(api_client, user):
         '@context': f'https://raw.githubusercontent.com/dandi/schema/master/releases/{settings.DANDI_SCHEMA_VERSION}/context.json',
         'schemaVersion': settings.DANDI_SCHEMA_VERSION,
         'schemaKey': 'Dandiset',
-        'access': [{'schemaKey': 'AccessRequirements', 'status': 'dandi:EmbargoedAccess'}],
+        'access': [
+            {
+                'schemaKey': 'AccessRequirements',
+                'status': 'dandi:EmbargoedAccess',
+                'embargoedUntil': DATE_RE,
+            }
+        ],
         'repository': settings.DANDI_WEB_APP_URL,
         'contributor': [
             {
@@ -715,6 +733,352 @@ def test_dandiset_rest_create_embargoed(api_client, user):
             'numberOfFiles': 0,
         },
     }
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client: APIClient):
+    name = 'Test Embargoed Dandiset'
+    metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
+
+    # Create embargoed dandiset with funding and award info
+    embargo_end_date = (timezone.now().date() + datetime.timedelta(days=365)).isoformat()
+    query_params = {
+        'embargo': 'true',
+        'funding_source': 'National Institutes of Health (NIH)',
+        'award_number': 'R01MH123456',
+        'embargo_end_date': embargo_end_date,
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 200
+    assert response.data['embargo_status'] == 'EMBARGOED'
+    assert response.data['identifier'] == DANDISET_ID_RE
+
+    # Verify the created dandiset in database
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    assert dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
+
+    # Check draft version metadata has access requirements
+    draft_version = dandiset.draft_version
+    assert 'access' in draft_version.metadata
+    access_requirements = draft_version.metadata['access']
+    assert len(access_requirements) == 1
+    assert access_requirements[0]['status'] == 'dandi:EmbargoedAccess'
+
+    # Check funding organization is added as contributor
+    contributors = draft_version.metadata.get('contributor', [])
+    funding_contributors = [
+        c for c in contributors if c.get('name') == 'National Institutes of Health (NIH)'
+    ]
+    assert len(funding_contributors) == 1
+    funding_contributor = funding_contributors[0]
+    assert funding_contributor['schemaKey'] == 'Organization'
+    assert funding_contributor['awardNumber'] == 'R01MH123456'
+    assert funding_contributor['roleName'] == ['dcite:Funder']
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_without_award_info(authenticated_api_client: APIClient):
+    name = 'Test Embargoed Dandiset No Award'
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset without award',
+        'license': ['spdx:CC0-1.0'],
+    }
+
+    # Create embargoed dandiset without award info (2-year default embargo)
+    embargo_end_date = (timezone.now().date() + datetime.timedelta(days=730)).isoformat()
+    query_params = {'embargo': 'true'}
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 200
+    assert response.data['embargo_status'] == 'EMBARGOED'
+
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    assert dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
+
+    draft_version = dandiset.draft_version
+    assert draft_version.metadata['access'] == [
+        {
+            'schemaKey': 'AccessRequirements',
+            'status': 'dandi:EmbargoedAccess',
+            'embargoedUntil': embargo_end_date,
+        }
+    ]
+
+    # Check no funding organization was added
+    contributors = draft_version.metadata.get('contributor', [])
+    funding_contributors = [c for c in contributors if c.get('roleName') == ['dcite:Funder']]
+    assert len(funding_contributors) == 0
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_funding_source_only(authenticated_api_client: APIClient):
+    name = 'Test Embargoed Dandiset Funding Only'
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset with funding only',
+        'license': ['spdx:CC0-1.0'],
+    }
+
+    embargo_end_date = (timezone.now().date() + datetime.timedelta(days=500)).isoformat()
+    query_params = {
+        'embargo': 'true',
+        'funding_source': 'National Science Foundation',
+        'embargo_end_date': embargo_end_date,
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 200
+    assert response.data['embargo_status'] == 'EMBARGOED'
+
+    # Verify funding organization is added without award number
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    draft_version = dandiset.draft_version
+    contributors = draft_version.metadata.get('contributor', [])
+    funding_contributors = [
+        c for c in contributors if c.get('name') == 'National Science Foundation'
+    ]
+    assert len(funding_contributors) == 1
+    funding_contributor = funding_contributors[0]
+    assert funding_contributor['schemaKey'] == 'Organization'
+    assert 'awardNumber' not in funding_contributor
+    assert funding_contributor['roleName'] == ['dcite:Funder']
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_with_existing_contributors(
+    authenticated_api_client: APIClient,
+):
+    name = 'Test Embargoed Dandiset With Contributors'
+    existing_contributor = {
+        'name': 'Dr. Existing Contributor',
+        'schemaKey': 'Person',
+        'roleName': ['dcite:Author'],
+    }
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset with existing contributors',
+        'license': ['spdx:CC0-1.0'],
+        'contributor': [existing_contributor],
+    }
+
+    embargo_end_date = (timezone.now().date() + datetime.timedelta(days=400)).isoformat()
+    query_params = {
+        'embargo': 'true',
+        'funding_source': 'European Research Council',
+        'award_number': 'ERC-123456',
+        'embargo_end_date': embargo_end_date,
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 200
+
+    # Verify both existing and new contributors are present
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    draft_version = dandiset.draft_version
+    contributors = draft_version.metadata.get('contributor', [])
+    assert len(contributors) == 2
+
+    # Check existing contributor is preserved
+    existing_found = any(c.get('name') == 'Dr. Existing Contributor' for c in contributors)
+    assert existing_found
+
+    # Check funding contributor was added
+    funding_found = any(c.get('name') == 'European Research Council' for c in contributors)
+    assert funding_found
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_end_date_validation(authenticated_api_client: APIClient):
+    name = 'Test Validation Dandiset'
+    metadata = {'name': name, 'description': 'Test validation', 'license': ['spdx:CC0-1.0']}
+
+    # Test valid date (within 5 years)
+    valid_date = (timezone.now().date() + datetime.timedelta(days=365 * 3)).isoformat()
+    query_params = {
+        'embargo': 'true',
+        'embargo_end_date': valid_date,
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+    assert response.status_code == 200
+
+    # Test invalid date (more than 5 years in future)
+    invalid_date = (timezone.now().date() + datetime.timedelta(days=365 * 6)).isoformat()
+    query_params_invalid = {
+        'embargo': 'true',
+        'embargo_end_date': invalid_date,
+    }
+    url_invalid = f'/api/dandisets/?{urlencode(query_params_invalid)}'
+    response_invalid = authenticated_api_client.post(
+        url_invalid, {'name': name + ' Invalid', 'metadata': metadata}, format='json'
+    )
+    assert response_invalid.status_code == 400
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_empty_funding_fields(authenticated_api_client: APIClient):
+    name = 'Test Empty Funding Fields'
+    metadata = {
+        'name': name,
+        'description': 'Test with empty funding fields',
+        'license': ['spdx:CC0-1.0'],
+    }
+
+    embargo_end_date = (timezone.now().date() + datetime.timedelta(days=600)).isoformat()
+    query_params = {
+        'embargo': 'true',
+        'funding_source': '',
+        'award_number': '',
+        'embargo_end_date': embargo_end_date,
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 200
+    assert response.data['embargo_status'] == 'EMBARGOED'
+
+    # Verify no funding contributor was added for empty fields
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    draft_version = dandiset.draft_version
+    contributors = draft_version.metadata.get('contributor', [])
+    funding_contributors = [c for c in contributors if c.get('roleName') == ['dcite:Funder']]
+    assert len(funding_contributors) == 0
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_invalid_date_format(authenticated_api_client: APIClient):
+    name = 'Test Invalid Date Format'
+    metadata = {
+        'name': name,
+        'description': 'Test invalid date format',
+        'license': ['spdx:CC0-1.0'],
+    }
+
+    # Test with invalid date format
+    query_params = {
+        'embargo': 'true',
+        'embargo_end_date': 'invalid-date-format',
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_boundary_date_validation(
+    authenticated_api_client: APIClient,
+):
+    name = 'Test Boundary Validation'
+    metadata = {
+        'name': name,
+        'description': 'Test boundary validation',
+        'license': ['spdx:CC0-1.0'],
+    }
+
+    # Test exactly 5 years in future (should be valid)
+    exactly_5_years = (timezone.now().date() + datetime.timedelta(days=365 * 5)).isoformat()
+    query_params_valid = {
+        'embargo': 'true',
+        'embargo_end_date': exactly_5_years,
+    }
+    url_valid = f'/api/dandisets/?{urlencode(query_params_valid)}'
+    response_valid = authenticated_api_client.post(
+        url_valid, {'name': name, 'metadata': metadata}, format='json'
+    )
+    assert response_valid.status_code == 200
+
+    # Test 5 years + 1 day in future (should be invalid)
+    over_5_years = (timezone.now().date() + datetime.timedelta(days=(365 * 5) + 1)).isoformat()
+    query_params_invalid = {
+        'embargo': 'true',
+        'embargo_end_date': over_5_years,
+    }
+    url_invalid = f'/api/dandisets/?{urlencode(query_params_invalid)}'
+    response_invalid = authenticated_api_client.post(
+        url_invalid, {'name': name + ' Invalid', 'metadata': metadata}, format='json'
+    )
+    assert response_invalid.status_code == 400
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_without_end_date(authenticated_api_client: APIClient):
+    name = 'Test No End Date'
+    metadata = {
+        'name': name,
+        'description': 'Test embargoed dandiset without end date',
+        'license': ['spdx:CC0-1.0'],
+    }
+
+    query_params = {
+        'embargo': 'true',
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = authenticated_api_client.post(
+        url, {'name': name, 'metadata': metadata}, format='json'
+    )
+
+    assert response.status_code == 200
+    assert response.data['embargo_status'] == 'EMBARGOED'
+
+    # Verify the created dandiset in database
+    dandiset = Dandiset.objects.get(id=response.data['identifier'])
+    assert dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
+
+    draft_version = dandiset.draft_version
+    expected_embargo_end_date = (timezone.now().date() + datetime.timedelta(days=365 * 2)).strftime(
+        '%Y-%m-%d'
+    )
+    assert draft_version.metadata['access'] == [
+        {
+            'status': 'dandi:EmbargoedAccess',
+            'embargoedUntil': expected_embargo_end_date,
+            'schemaKey': 'AccessRequirements',
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_dandiset_rest_create_embargoed_unauthenticated(api_client: APIClient):
+    name = 'Test Unauthenticated'
+    metadata = {'name': name, 'description': 'Test unauthenticated', 'license': ['spdx:CC0-1.0']}
+
+    embargo_end_date = (timezone.now().date() + datetime.timedelta(days=365)).isoformat()
+    query_params = {
+        'embargo': 'true',
+        'embargo_end_date': embargo_end_date,
+    }
+    url = f'/api/dandisets/?{urlencode(query_params)}'
+
+    response = api_client.post(url, {'name': name, 'metadata': metadata}, format='json')
+
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

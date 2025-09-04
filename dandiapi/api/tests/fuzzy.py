@@ -25,6 +25,7 @@ class Re:
 
 TIMESTAMP_RE = Re(r'\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}\.\d{6}Z')
 UTC_ISO_TIMESTAMP_RE = Re(r'\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}\.\d{6}\+[0-9]{2}:[0-9]{2}')
+DATE_RE = Re(r'\d{4}-\d{2}-\d{2}')
 DANDISET_ID_RE = Re(r'\d{6}')
 DANDISET_SCHEMA_ID_RE = Re(r'DANDI:\d{6}')
 VERSION_ID_RE = Re(r'0\.\d{6}\.\d{4}')
