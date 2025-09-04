@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from dandiapi.api import doi
 from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
 from dandiapi.api.services import audit
@@ -14,6 +15,7 @@ from dandiapi.api.services.exceptions import (
 )
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_dandiset_owner
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
+from dandiapi.api.tasks import create_dandiset_draft_doi_task
 
 
 def create_dandiset(
@@ -56,6 +58,9 @@ def create_dandiset(
             dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
         )
 
+        if not embargo:
+            transaction.on_commit(lambda: create_dandiset_draft_doi_task.delay(draft_version.id))
+
     return dandiset, draft_version
 
 
@@ -76,6 +81,12 @@ def delete_dandiset(*, user, dandiset: Dandiset) -> None:
         # chance to grab the Dandiset information before it is destroyed.
         audit.delete_dandiset(dandiset=dandiset, user=user)
 
+        # Dandisets with published versions cannot be deleted
+        # so only the Dandiset DOI needs to be deleted.
+        draft_version = dandiset.versions.filter(version='draft').first()
+        if draft_version and draft_version.doi is not None:
+            # Call DOI deletion prior to delete so if this raises, we do not proceed
+            doi.delete_or_hide_doi(draft_version.doi)
         dandiset.versions.all().delete()
         dandiset.delete()
 
