@@ -106,8 +106,6 @@ def _build_publishable_version_from_draft(draft_version: Version) -> Version:
     return publishable_version
 
 
-
-
 def _publish_dandiset(dandiset_id: int, user_id: int) -> None:
     """
     Publish a dandiset.
