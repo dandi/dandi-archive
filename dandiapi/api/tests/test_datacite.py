@@ -23,9 +23,25 @@ def mock_requests(mocker):
     # Return the mock object with all methods
     return mock_obj
 
+
 @pytest.fixture
 def datacite_client():
     return DataCiteClient()
+
+
+@pytest.fixture
+def datacite_client_unsafe():
+    """
+    Bypass safety feature that prevents API calls to datacite during tests.
+    """
+    client = DataCiteClient()
+    if hasattr(client.create_or_update_doi, '__wrapped__'):
+        client.create_or_update_doi = client.create_or_update_doi.__wrapped__.__get__(client)
+    if hasattr(client.delete_or_hide_doi, '__wrapped__'):
+        client.delete_or_hide_doi = client.delete_or_hide_doi.__wrapped__.__get__(client)
+
+    return client
+
 
 def test_is_configured(datacite_client, mocker):
     """Test the is_configured method."""
@@ -88,13 +104,13 @@ def test_generate_doi_data(datacite_client, published_version, mocker):
     assert doi_string == expected_doi
 
 
-def test_create_or_update_doi_not_configured(datacite_client, mock_requests, mocker):
+def test_create_or_update_doi_not_configured(datacite_client_unsafe, mock_requests, mocker):
     """Test create_or_update_doi when API is not configured."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=False)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=False)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     payload = {'data': {'attributes': {'doi': '10.12345/test'}}}
-    result = datacite_client.create_or_update_doi(payload)
+    result = datacite_client_unsafe.create_or_update_doi(payload)
 
     assert result is None
 
@@ -107,9 +123,9 @@ def test_create_or_update_doi_not_configured(datacite_client, mock_requests, moc
     mock_logger.warning.assert_called_once()
 
 
-def test_create_or_update_doi_publish_disabled_event_publish(datacite_client, mock_requests, mocker):
+def test_create_or_update_doi_publish_disabled_event_publish(datacite_client_unsafe, mock_requests, mocker):
     """Test create_or_update_doi when DANDI_DOI_PUBLISH is False."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', False)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
@@ -127,7 +143,7 @@ def test_create_or_update_doi_publish_disabled_event_publish(datacite_client, mo
             }
         }
     }
-    datacite_client.create_or_update_doi(payload)
+    datacite_client_unsafe.create_or_update_doi(payload)
 
     expected_payload = {
         'data': {
@@ -146,9 +162,9 @@ def test_create_or_update_doi_publish_disabled_event_publish(datacite_client, mo
     assert not mock_requests.delete.called
 
 
-def test_create_or_update_doi_new_doi(datacite_client, mock_requests, mocker):
+def test_create_or_update_doi_new_doi(datacite_client_unsafe, mock_requests, mocker):
     """Test creating a new DOI successfully."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', True)
 
     # Configure mock response
@@ -157,14 +173,14 @@ def test_create_or_update_doi_new_doi(datacite_client, mock_requests, mocker):
     mock_requests.post.return_value = mock_response
 
     payload = {'data': {'attributes': {'doi': '10.12345/test', 'event': 'publish'}}}
-    result = datacite_client.create_or_update_doi(payload)
+    result = datacite_client_unsafe.create_or_update_doi(payload)
 
     # Verify POST was called with correct params
     assert mock_requests.post.called
     assert mock_requests.post.call_args[1]['json'] == payload
-    assert mock_requests.post.call_args[1]['auth'] == datacite_client.auth
-    assert mock_requests.post.call_args[1]['headers'] == datacite_client.headers
-    assert mock_requests.post.call_args[1]['timeout'] == datacite_client.timeout
+    assert mock_requests.post.call_args[1]['auth'] == datacite_client_unsafe.auth
+    assert mock_requests.post.call_args[1]['headers'] == datacite_client_unsafe.headers
+    assert mock_requests.post.call_args[1]['timeout'] == datacite_client_unsafe.timeout
     # Verify no other requests methods were called
     assert not mock_requests.get.called
     assert not mock_requests.put.called
@@ -172,9 +188,9 @@ def test_create_or_update_doi_new_doi(datacite_client, mock_requests, mocker):
     assert result == '10.12345/test'
 
 
-def test_create_or_update_doi_existing_doi(datacite_client, mock_requests, mocker):
+def test_create_or_update_doi_existing_doi(datacite_client_unsafe, mock_requests, mocker):
     """Test updating an existing DOI."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', True)
 
     # Mock POST to fail with 422 (already exists)
@@ -191,7 +207,7 @@ def test_create_or_update_doi_existing_doi(datacite_client, mock_requests, mocke
     mock_requests.put.return_value = mock_put_response
 
     payload = {'data': {'attributes': {'doi': '10.12345/test'}}}
-    result = datacite_client.create_or_update_doi(payload)
+    result = datacite_client_unsafe.create_or_update_doi(payload)
 
     assert mock_requests.post.called
     # Verify PUT was called with correct params
@@ -203,9 +219,9 @@ def test_create_or_update_doi_existing_doi(datacite_client, mock_requests, mocke
     assert result == '10.12345/test'
 
 
-def test_create_or_update_doi_post_error(datacite_client, mock_requests, mocker):
+def test_create_or_update_doi_post_error(datacite_client_unsafe, mock_requests, mocker):
     """Test error handling when POST fails with non-422 error."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock POST to fail with 400
@@ -217,7 +233,7 @@ def test_create_or_update_doi_post_error(datacite_client, mock_requests, mocker)
 
     payload = {'data': {'attributes': {'doi': '10.12345/test'}}}
     with pytest.raises(HTTPError):
-        datacite_client.create_or_update_doi(payload)
+        datacite_client_unsafe.create_or_update_doi(payload)
 
     # Verify logger was called
     mock_logger.exception.assert_called_once()
@@ -227,9 +243,9 @@ def test_create_or_update_doi_post_error(datacite_client, mock_requests, mocker)
     assert not mock_requests.delete.called
 
 
-def test_create_or_update_doi_put_error(datacite_client, mock_requests, mocker):
+def test_create_or_update_doi_put_error(datacite_client_unsafe, mock_requests, mocker):
     """Test error handling when PUT fails."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock POST to fail with 422 (already exists)
@@ -248,7 +264,7 @@ def test_create_or_update_doi_put_error(datacite_client, mock_requests, mocker):
 
     payload = {'data': {'attributes': {'doi': '10.12345/test'}}}
     with pytest.raises(HTTPError):
-        datacite_client.create_or_update_doi(payload)
+        datacite_client_unsafe.create_or_update_doi(payload)
 
     # Verify both methods were called in the right order
     assert mock_requests.post.called
@@ -260,12 +276,12 @@ def test_create_or_update_doi_put_error(datacite_client, mock_requests, mocker):
     mock_logger.exception.assert_called_once()
 
 
-def test_delete_or_hide_doi_not_configured(datacite_client, mock_requests, mocker):
+def test_delete_or_hide_doi_not_configured(datacite_client_unsafe, mock_requests, mocker):
     """Test delete_or_hide_doi when API is not configured."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=False)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=False)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
-    datacite_client.delete_or_hide_doi('10.12345/test')
+    datacite_client_unsafe.delete_or_hide_doi('10.12345/test')
 
     # Verify no HTTP methods were called
     assert not mock_requests.get.called
@@ -275,9 +291,9 @@ def test_delete_or_hide_doi_not_configured(datacite_client, mock_requests, mocke
     mock_logger.warning.assert_called_once()
 
 
-def test_delete_or_hide_doi_draft(datacite_client, mock_requests, mocker):
+def test_delete_or_hide_doi_draft(datacite_client_unsafe, mock_requests, mocker):
     """Test deleting a draft DOI."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to return a draft DOI
@@ -293,7 +309,7 @@ def test_delete_or_hide_doi_draft(datacite_client, mock_requests, mocker):
     mock_delete_response.raise_for_status = mocker.Mock()
     mock_requests.delete.return_value = mock_delete_response
 
-    datacite_client.delete_or_hide_doi('10.12345/test')
+    datacite_client_unsafe.delete_or_hide_doi('10.12345/test')
 
     # Verify GET and DELETE were called
     assert mock_requests.get.called
@@ -305,9 +321,9 @@ def test_delete_or_hide_doi_draft(datacite_client, mock_requests, mocker):
     mock_logger.info.assert_called_once()
 
 
-def test_delete_or_hide_doi_findable_publish_enabled(datacite_client, mock_requests, mocker):
+def test_delete_or_hide_doi_findable_publish_enabled(datacite_client_unsafe, mock_requests, mocker):
     """Test hiding a findable DOI when DANDI_DOI_PUBLISH is True."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
@@ -324,7 +340,7 @@ def test_delete_or_hide_doi_findable_publish_enabled(datacite_client, mock_reque
     mock_put_response.raise_for_status = mocker.Mock()
     mock_requests.put.return_value = mock_put_response
 
-    datacite_client.delete_or_hide_doi('10.12345/test')
+    datacite_client_unsafe.delete_or_hide_doi('10.12345/test')
 
     # Verify GET and PUT were called, but not other methods
     assert mock_requests.get.called
@@ -338,9 +354,9 @@ def test_delete_or_hide_doi_findable_publish_enabled(datacite_client, mock_reque
     mock_logger.info.assert_called_once()
 
 
-def test_delete_or_hide_doi_findable_publish_disabled(datacite_client, mock_requests, mocker):
+def test_delete_or_hide_doi_findable_publish_disabled(datacite_client_unsafe, mock_requests, mocker):
     """Test not hiding a findable DOI when DANDI_DOI_PUBLISH is False."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', False)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
@@ -352,7 +368,7 @@ def test_delete_or_hide_doi_findable_publish_disabled(datacite_client, mock_requ
     mock_get_response.raise_for_status = mocker.Mock()
     mock_requests.get.return_value = mock_get_response
 
-    datacite_client.delete_or_hide_doi('10.12345/test')
+    datacite_client_unsafe.delete_or_hide_doi('10.12345/test')
 
     # Verify only GET was called, but no other methods
     assert mock_requests.get.called
@@ -362,9 +378,9 @@ def test_delete_or_hide_doi_findable_publish_disabled(datacite_client, mock_requ
     mock_logger.warning.assert_called_once()
 
 
-def test_delete_or_hide_doi_nonexistent(datacite_client, mock_requests, mocker):
+def test_delete_or_hide_doi_nonexistent(datacite_client_unsafe, mock_requests, mocker):
     """Test handling a nonexistent DOI."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to fail with 404
@@ -373,7 +389,7 @@ def test_delete_or_hide_doi_nonexistent(datacite_client, mock_requests, mocker):
     get_error.response.status_code = 404
     mock_requests.get.side_effect = get_error
 
-    datacite_client.delete_or_hide_doi('10.12345/test')
+    datacite_client_unsafe.delete_or_hide_doi('10.12345/test')
 
     # Verify only GET was attempted, but no other methods
     assert mock_requests.get.called
@@ -383,9 +399,9 @@ def test_delete_or_hide_doi_nonexistent(datacite_client, mock_requests, mocker):
     mock_logger.warning.assert_called_once()
 
 
-def test_delete_or_hide_doi_get_error(datacite_client, mock_requests, mocker):
+def test_delete_or_hide_doi_get_error(datacite_client_unsafe, mock_requests, mocker):
     """Test error handling when GET fails with non-404 error."""
-    mocker.patch.object(datacite_client, 'is_configured', return_value=True)
+    mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to fail with 500
@@ -395,7 +411,7 @@ def test_delete_or_hide_doi_get_error(datacite_client, mock_requests, mocker):
     mock_requests.get.side_effect = get_error
 
     with pytest.raises(HTTPError):
-        datacite_client.delete_or_hide_doi('10.12345/test')
+        datacite_client_unsafe.delete_or_hide_doi('10.12345/test')
 
     # Verify only GET was attempted, but no other methods
     assert mock_requests.get.called
