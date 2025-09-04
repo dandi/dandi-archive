@@ -31,16 +31,15 @@ DANDI_DOI_SETTINGS = [
 logger = logging.getLogger(__name__)
 
 
-
 def block_during_test(fn):
-    """
-    Datacite API should not be called
-    """
+    """Datacite API should not be called."""
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        if "pytest" in sys.modules:
-            raise RuntimeError(f"DOI calls to {fn.__name__} blocked during test.")
+        if 'pytest' in sys.modules:
+            raise RuntimeError(f'DOI calls to {fn.__name__} blocked during test.')
         return fn(*args, **kwargs)
+
     return wrapper
 
 
@@ -73,13 +72,13 @@ class DataCiteClient:
             Formatted DOI string.
         """
         if version_id:
-            # TODO(asmaco) replace "dandi" with non-hardcoded ID_PATTERN
+            # TODO(asmaco): replace "dandi" with non-hardcoded ID_PATTERN
             # https://github.com/dandi/dandi-schema/pull/294/files#diff-43c9cc813638d87fd33e527a7baccb2fd7dff85595a7e686bfaf61f0409bd403R47
             return f'{self.api_prefix}/dandi.{dandiset_id}/{version_id}'
         return f'{self.api_prefix}/dandi.{dandiset_id}'
 
     def generate_doi_data(
-        self, version: Version, version_doi: bool = True, event: str | None = None
+        self, version: Version, *, version_doi: bool = True, event: str | None = None
     ) -> tuple[str, dict]:
         """
         Generate DOI data for a version or dandiset.
@@ -95,8 +94,9 @@ class DataCiteClient:
         Returns:
             Tuple of (doi_string, datacite_payload)
         """
-        # TODO(asmacdo) if not datacite configured make sure we dont save any dois to model
+        # TODO(asmacdo): if not datacite configured make sure we dont save any dois to model
         from dandischema.datacite import to_datacite
+
         dandiset_id = version.dandiset.identifier
         version_id = version.version
         metadata = copy.deepcopy(version.metadata)
@@ -158,7 +158,7 @@ class DataCiteClient:
             )
             response.raise_for_status()
             # Return early on success
-            return doi
+            return doi  # noqa: TRY300
         except requests.exceptions.HTTPError as e:
             # HTTP 422 status code means DOI already exists
             already_exists_code = 422
@@ -174,8 +174,7 @@ class DataCiteClient:
                         timeout=self.timeout,
                     )
                     update_response.raise_for_status()
-                    # Success with update
-                    return doi
+                    return doi  # noqa: TRY300
                 except Exception:
                     error_details = f'Failed to update existing DOI {doi}'
                     if e.response and hasattr(e.response, 'text'):
@@ -259,5 +258,3 @@ class DataCiteClient:
                 return
             logger.exception('Failed to delete or hide DOI %s', doi)
             raise
-
-

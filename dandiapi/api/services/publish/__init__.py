@@ -8,7 +8,6 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from more_itertools import ichunked
 
-from dandiapi.api import doi
 from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import Asset, Dandiset, Version
 from dandiapi.api.services import audit

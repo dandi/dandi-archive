@@ -759,7 +759,9 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
         (Dandiset.EmbargoStatus.UNEMBARGOING, False, '10.48324/dandi.000123'),
     ],
 )
-def test_dandiset_rest_delete(api_client, draft_version_factory, user, embargo_status, success, doi, mocker):
+def test_dandiset_rest_delete(
+    api_client, draft_version_factory, user, embargo_status, success, doi, mocker
+):
     api_client.force_authenticate(user=user)
 
     mock_delete_doi = mocker.patch('dandiapi.api.doi.delete_or_hide_doi')

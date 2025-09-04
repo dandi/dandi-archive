@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import pytest
-import requests
 from django.conf import settings
+import pytest
 from requests.exceptions import HTTPError
 
-from dandiapi.api.datacite import DataCiteClient, DANDI_DOI_SETTINGS
+from dandiapi.api.datacite import DataCiteClient
 
-# Mock individual HTTP methods for safety
+
 @pytest.fixture(autouse=True)
 def mock_requests(mocker):
     """Mock individual request methods for all tests to prevent actual HTTP calls."""
@@ -31,9 +30,7 @@ def datacite_client():
 
 @pytest.fixture
 def datacite_client_unsafe():
-    """
-    Bypass safety feature that prevents API calls to datacite during tests.
-    """
+    """Bypass safety feature that prevents API calls to datacite during tests."""
     client = DataCiteClient()
     if hasattr(client.create_or_update_doi, '__wrapped__'):
         client.create_or_update_doi = client.create_or_update_doi.__wrapped__.__get__(client)
@@ -96,7 +93,9 @@ def test_generate_doi_data(datacite_client, published_version, mocker):
     assert doi_string == expected_doi
     assert 'doi' in published_version.metadata
     # Make sure metadata is copied, not modified
-    assert id(published_version.metadata) != id(datacite_client.generate_doi_data(published_version)[1])
+    assert id(published_version.metadata) != id(
+        datacite_client.generate_doi_data(published_version)[1]
+    )
 
     # Test Dandiset DOI
     doi_string, payload = datacite_client.generate_doi_data(published_version, version_doi=False)
@@ -123,10 +122,12 @@ def test_create_or_update_doi_not_configured(datacite_client_unsafe, mock_reques
     mock_logger.warning.assert_called_once()
 
 
-def test_create_or_update_doi_publish_disabled_event_publish(datacite_client_unsafe, mock_requests, mocker):
+def test_create_or_update_doi_publish_disabled_event_publish(
+    datacite_client_unsafe, mock_requests, mocker
+):
     """Test create_or_update_doi when DANDI_DOI_PUBLISH is False."""
     mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
-    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', False)
+    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', new=False)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Configure mock response
@@ -165,7 +166,7 @@ def test_create_or_update_doi_publish_disabled_event_publish(datacite_client_uns
 def test_create_or_update_doi_new_doi(datacite_client_unsafe, mock_requests, mocker):
     """Test creating a new DOI successfully."""
     mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
-    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', True)
+    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', new=True)
 
     # Configure mock response
     mock_response = mocker.Mock()
@@ -191,11 +192,11 @@ def test_create_or_update_doi_new_doi(datacite_client_unsafe, mock_requests, moc
 def test_create_or_update_doi_existing_doi(datacite_client_unsafe, mock_requests, mocker):
     """Test updating an existing DOI."""
     mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
-    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', True)
+    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', new=True)
 
     # Mock POST to fail with 422 (already exists)
     mock_post_response = mocker.Mock()
-    http_error = HTTPError("DOI already exists")
+    http_error = HTTPError('DOI already exists')
     http_error.response = mocker.Mock()
     http_error.response.status_code = 422
     mock_post_response.raise_for_status.side_effect = http_error
@@ -225,10 +226,10 @@ def test_create_or_update_doi_post_error(datacite_client_unsafe, mock_requests, 
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock POST to fail with 400
-    http_error = HTTPError("Bad request")
+    http_error = HTTPError('Bad request')
     http_error.response = mocker.Mock()
     http_error.response.status_code = 400
-    http_error.response.text = "Bad request"
+    http_error.response.text = 'Bad request'
     mock_requests.post.side_effect = http_error
 
     payload = {'data': {'attributes': {'doi': '10.12345/test'}}}
@@ -250,16 +251,16 @@ def test_create_or_update_doi_put_error(datacite_client_unsafe, mock_requests, m
 
     # Mock POST to fail with 422 (already exists)
     mock_post_response = mocker.Mock()
-    http_error = HTTPError("DOI already exists")
+    http_error = HTTPError('DOI already exists')
     http_error.response = mocker.Mock()
     http_error.response.status_code = 422
     mock_post_response.raise_for_status.side_effect = http_error
     mock_requests.post.return_value = mock_post_response
 
     # Mock PUT to fail
-    put_error = HTTPError("Update failed")
+    put_error = HTTPError('Update failed')
     put_error.response = mocker.Mock()
-    put_error.response.text = "Update failed"
+    put_error.response.text = 'Update failed'
     mock_requests.put.side_effect = put_error
 
     payload = {'data': {'attributes': {'doi': '10.12345/test'}}}
@@ -298,9 +299,7 @@ def test_delete_or_hide_doi_draft(datacite_client_unsafe, mock_requests, mocker)
 
     # Mock GET to return a draft DOI
     mock_get_response = mocker.Mock()
-    mock_get_response.json.return_value = {
-        'data': {'attributes': {'state': 'draft'}}
-    }
+    mock_get_response.json.return_value = {'data': {'attributes': {'state': 'draft'}}}
     mock_get_response.raise_for_status = mocker.Mock()
     mock_requests.get.return_value = mock_get_response
 
@@ -324,14 +323,12 @@ def test_delete_or_hide_doi_draft(datacite_client_unsafe, mock_requests, mocker)
 def test_delete_or_hide_doi_findable_publish_enabled(datacite_client_unsafe, mock_requests, mocker):
     """Test hiding a findable DOI when DANDI_DOI_PUBLISH is True."""
     mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
-    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', True)
+    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', new=True)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to return a findable DOI
     mock_get_response = mocker.Mock()
-    mock_get_response.json.return_value = {
-        'data': {'attributes': {'state': 'findable'}}
-    }
+    mock_get_response.json.return_value = {'data': {'attributes': {'state': 'findable'}}}
     mock_get_response.raise_for_status = mocker.Mock()
     mock_requests.get.return_value = mock_get_response
 
@@ -354,17 +351,17 @@ def test_delete_or_hide_doi_findable_publish_enabled(datacite_client_unsafe, moc
     mock_logger.info.assert_called_once()
 
 
-def test_delete_or_hide_doi_findable_publish_disabled(datacite_client_unsafe, mock_requests, mocker):
+def test_delete_or_hide_doi_findable_publish_disabled(
+    datacite_client_unsafe, mock_requests, mocker
+):
     """Test not hiding a findable DOI when DANDI_DOI_PUBLISH is False."""
     mocker.patch.object(datacite_client_unsafe, 'is_configured', return_value=True)
-    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', False)
+    mocker.patch.object(settings, 'DANDI_DOI_PUBLISH', new=False)
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to return a findable DOI
     mock_get_response = mocker.Mock()
-    mock_get_response.json.return_value = {
-        'data': {'attributes': {'state': 'findable'}}
-    }
+    mock_get_response.json.return_value = {'data': {'attributes': {'state': 'findable'}}}
     mock_get_response.raise_for_status = mocker.Mock()
     mock_requests.get.return_value = mock_get_response
 
@@ -384,7 +381,7 @@ def test_delete_or_hide_doi_nonexistent(datacite_client_unsafe, mock_requests, m
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to fail with 404
-    get_error = HTTPError("Not found")
+    get_error = HTTPError('Not found')
     get_error.response = mocker.Mock()
     get_error.response.status_code = 404
     mock_requests.get.side_effect = get_error
@@ -405,7 +402,7 @@ def test_delete_or_hide_doi_get_error(datacite_client_unsafe, mock_requests, moc
     mock_logger = mocker.patch('dandiapi.api.datacite.logger')
 
     # Mock GET to fail with 500
-    get_error = HTTPError("Server error")
+    get_error = HTTPError('Server error')
     get_error.response = mocker.Mock()
     get_error.response.status_code = 500
     mock_requests.get.side_effect = get_error
