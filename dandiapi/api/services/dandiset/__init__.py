@@ -102,7 +102,7 @@ def create_embargoed_dandiset(  # noqa: PLR0913
 
         dandiset.embargo_status = Dandiset.EmbargoStatus.EMBARGOED
 
-        version_metadata['access'] = [
+        draft_version.metadata['access'] = [
             AccessRequirements(
                 schemaKey='AccessRequirements',
                 status=AccessType.EmbargoedAccess,
@@ -118,10 +118,10 @@ def create_embargoed_dandiset(  # noqa: PLR0913
             kwargs = {
                 'name': funding_source,
                 'schemaKey': 'Organization',
-                'roleName': RoleType.Funder.value,
+                'roleName': [RoleType.Funder.value],
             }
             if award_number:
-                kwargs['award_number'] = award_number
+                kwargs['awardNumber'] = award_number
 
             contributors.append(Organization(**kwargs).json_dict())
             draft_version.metadata['contributor'] = contributors
