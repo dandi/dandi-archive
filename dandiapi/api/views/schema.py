@@ -28,6 +28,13 @@ class SchemaQuerySerializer(serializers.Serializer):
     model = serializers.ChoiceField(choices=list(_model_name_mapping))
 
 
+@swagger_auto_schema(method='GET', operation_summary='List schema models')
+@api_view(['GET'])
+def schema_list_view(request: Request) -> Response:
+    """Return the list of models which can be requested via the schema endpoint."""
+    return Response(_model_name_mapping.keys())
+
+
 @swagger_auto_schema(
     method='GET',
     operation_summary='Get model schema',

@@ -33,6 +33,7 @@ from dandiapi.api.views import (
     users_search_view,
     webdav,
 )
+from dandiapi.api.views.schema import schema_list_view
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
 
@@ -65,6 +66,7 @@ api_urlpatterns = [
     path('api/stats/', stats_view),
     path('api/info/', info_view),
     path('api/blobs/digest/', blob_read_view, name='blob-read'),
+    path('api/schema/available', schema_list_view, name='schema-list-view'),
     path('api/schema/', schema_view, name='schema-view'),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     re_path(
