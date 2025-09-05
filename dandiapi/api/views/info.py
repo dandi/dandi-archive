@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from urllib.parse import urljoin
+from urllib.parse import ParseResult, urlencode, urlparse, urlunparse
 
 from django.conf import settings
 from django.urls import reverse
@@ -12,9 +12,19 @@ from rest_framework.response import Response
 from dandiapi import __version__
 
 
-def get_schema_url(request):
+def get_schema_url():
     """Get the URL for the schema based on current server deployment."""
-    return urljoin(settings.DANDI_API_URL, reverse('schema-dandiset-latest'))
+    scheme, netloc = urlparse(settings.DANDI_API_URL)[:2]
+    return urlunparse(
+        ParseResult(
+            scheme=scheme,
+            netloc=netloc,
+            path=reverse('schema-view'),
+            query=urlencode({'model': 'Dandiset'}),
+            params='',
+            fragment='',
+        )
+    )
 
 
 class ApiServiceSerializer(serializers.Serializer):
@@ -63,7 +73,7 @@ def info_view(request):
     serializer = ApiInfoSerializer(
         data={
             'schema_version': settings.DANDI_SCHEMA_VERSION,
-            'schema_url': get_schema_url(request),
+            'schema_url': get_schema_url(),
             'version': __version__,
             'cli-minimal-version': '0.60.0',
             'cli-bad-versions': [],
