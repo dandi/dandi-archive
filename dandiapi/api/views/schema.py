@@ -32,6 +32,7 @@ class SchemaQuerySerializer(serializers.Serializer):
     method='GET',
     operation_summary='Get model schema',
     operation_description='Returns the JSON Schema of the requested metadata model',
+    query_serializer=SchemaQuerySerializer,
 )
 @api_view(['GET'])
 def schema_view(request: Request) -> Response:
