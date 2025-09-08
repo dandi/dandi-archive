@@ -1,37 +1,7 @@
 from __future__ import annotations
 
 import re
-import typing
-
-if typing.TYPE_CHECKING:
-    from django.contrib.auth.models import User
-
-from dandiapi.api.asset_paths import search_asset_paths
-from dandiapi.api.services.asset import (
-    add_asset_to_version,
-    change_asset,
-    remove_asset_from_version,
-)
-from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
-from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
-from dandiapi.api.services.permissions.dandiset import (
-    is_dandiset_owner,
-    is_owned_asset,
-    require_dandiset_owner_or_403,
-)
-from dandiapi.zarr.models import ZarrArchive
-
-try:
-    from storages.backends.s3 import S3Storage
-except ImportError:
-    # This should only be used for type interrogation, never instantiation
-    S3Storage = type('FakeS3Storage', (), {})
-try:
-    from minio_storage.storage import MinioStorage
-except ImportError:
-    # This should only be used for type interrogation, never instantiation
-    MinioStorage = type('FakeMinioStorage', (), {})
-
+from typing import TYPE_CHECKING, cast
 
 from django.conf import settings
 from django.db import transaction
@@ -46,8 +16,21 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_extensions.mixins import DetailSerializerMixin, NestedViewSetMixin
 
+from dandiapi.api.asset_paths import search_asset_paths
 from dandiapi.api.models import Asset, AssetBlob, Dandiset, Version
 from dandiapi.api.models.asset import validate_asset_path
+from dandiapi.api.services.asset import (
+    add_asset_to_version,
+    change_asset,
+    remove_asset_from_version,
+)
+from dandiapi.api.services.asset.exceptions import DraftDandisetNotModifiableError
+from dandiapi.api.services.embargo.exceptions import DandisetUnembargoInProgressError
+from dandiapi.api.services.permissions.dandiset import (
+    is_dandiset_owner,
+    is_owned_asset,
+    require_dandiset_owner_or_403,
+)
 from dandiapi.api.views.common import (
     ASSET_ID_PARAM,
     VERSIONS_DANDISET_PK_PARAM,
@@ -63,6 +46,10 @@ from dandiapi.api.views.serializers import (
     AssetSerializer,
     AssetValidationSerializer,
 )
+from dandiapi.zarr.models import ZarrArchive
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import User
 
 
 class AssetFilter(filters.FilterSet):
@@ -100,7 +87,7 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         # Clients must be authenticated to access it
         if not self.request.user.is_authenticated:
             raise NotAuthenticated
-        self.request.user = typing.cast('User', self.request.user)
+        self.request.user = cast('User', self.request.user)
 
         # Admins are allowed to access any embargoed asset blob
         if self.request.user.is_superuser:
@@ -151,8 +138,6 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
         asset_blob = asset.blob
 
         # Redirect to correct presigned URL
-        storage = asset_blob.blob.storage
-
         serializer = AssetDownloadQueryParameterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         content_disposition = serializer.validated_data['content_disposition']
@@ -161,13 +146,20 @@ class AssetViewSet(DetailSerializerMixin, GenericViewSet):
 
         if content_disposition == 'attachment':
             return HttpResponseRedirect(
-                storage.generate_presigned_download_url(asset_blob.blob.name, asset_basename)
+                asset_blob.blob.storage.url(
+                    asset_blob.blob.name,
+                    parameters={
+                        'ResponseContentDisposition': f'attachment; filename="{asset_basename}"',
+                    },
+                )
             )
         if content_disposition == 'inline':
-            url = storage.generate_presigned_inline_url(
+            url = asset_blob.blob.storage.url(
                 asset_blob.blob.name,
-                asset_basename,
-                content_type,
+                parameters={
+                    'ResponseContentDisposition': f'inline; filename="{asset_basename}"',
+                    'ResponseContentType': content_type,
+                },
             )
 
             if content_type.startswith('video/'):

@@ -330,9 +330,7 @@ def test_audit_zarr_create(api_client, user, draft_version):
 
 
 @pytest.mark.django_db
-def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_factory, storage):
-    ZarrArchive.storage = storage
-
+def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_factory):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -356,11 +354,7 @@ def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_
 
 
 @pytest.mark.django_db
-def test_audit_finalize_zarr(
-    api_client, user, draft_version, zarr_archive_factory, storage, settings
-):
-    ZarrArchive.storage = storage
-
+def test_audit_finalize_zarr(api_client, user, draft_version, zarr_archive_factory, settings):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -397,11 +391,7 @@ def test_audit_finalize_zarr(
 
 
 @pytest.mark.django_db
-def test_audit_delete_zarr_chunks(
-    api_client, user, draft_version, zarr_archive_factory, storage, settings
-):
-    ZarrArchive.storage = storage
-
+def test_audit_delete_zarr_chunks(api_client, user, draft_version, zarr_archive_factory, settings):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
@@ -444,3 +434,24 @@ def test_audit_delete_zarr_chunks(
     verify_model_properties(rec, user)
     assert rec.details['zarr_id'] == zarr.zarr_id
     assert rec.details['paths'] == deleted
+
+
+@pytest.mark.django_db
+def test_asset_audit_events_requires_admin(api_client, user_factory):
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 401
+
+    normal_user = user_factory()
+    api_client.force_authenticate(user=normal_user)
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 403
+
+    staff_user = user_factory(is_staff=True)
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 200
+
+    superuser = user_factory(is_superuser=True)
+    api_client.force_authenticate(user=superuser)
+    resp = api_client.get('/api/audit/events/asset')
+    assert resp.status_code == 200

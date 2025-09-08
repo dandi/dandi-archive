@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import dandischema
+from django.core.files.storage import default_storage
 import pytest
 
+from dandiapi.api.manifests import all_manifest_filepaths
 from dandiapi.api.models.asset import Asset
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.models.version import Version
@@ -19,16 +21,19 @@ from dandiapi.api.services.embargo.exceptions import (
 )
 from dandiapi.api.services.embargo.utils import (
     _delete_zarr_object_tags,
+    _remove_dandiset_manifest_tags,
     remove_dandiset_embargo_tags,
 )
 from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.storage import get_boto_client
-from dandiapi.api.tasks import unembargo_dandiset_task
+from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, zarr_s3_path
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
+    from zarr_checksum.generators import ZarrArchiveFile
+
     from dandiapi.api.models.asset import AssetBlob
 
 
@@ -174,19 +179,16 @@ def test_remove_dandiset_embargo_tags_fails_remove_tags(
 
 
 @pytest.mark.django_db
-def test_remove_asset_blob_embargoed_tag_fails_on_embargod(embargoed_asset_blob, asset_blob):
-    with pytest.raises(AssetBlobEmbargoedError):
-        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
-
-    # Test that error not raised on non-embargoed asset blob
+def test_remove_asset_blob_embargoed_tag_success(asset_blob):
     remove_asset_blob_embargoed_tag(asset_blob)
+
+    assert asset_blob.blob.storage.get_tags(asset_blob.blob.name) == {}
 
 
 @pytest.mark.django_db
-def test_remove_asset_blob_embargoed_tag(asset_blob, mocker):
-    mocked_func = mocker.patch('dandiapi.api.services.embargo._delete_object_tags')
-    remove_asset_blob_embargoed_tag(asset_blob)
-    mocked_func.assert_called_once()
+def test_remove_asset_blob_embargoed_tag_fails_on_embargoed(embargoed_asset_blob):
+    with pytest.raises(AssetBlobEmbargoedError):
+        remove_asset_blob_embargoed_tag(embargoed_asset_blob)
 
 
 @pytest.mark.django_db
@@ -231,13 +233,30 @@ def test_delete_zarr_object_tags(zarr_archive, zarr_file_factory, mocker):
 
 
 @pytest.mark.django_db
+def test_remove_dandiset_manifest_tags(draft_version_factory):
+    draft_version: Version = draft_version_factory(
+        dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED
+    )
+
+    write_manifest_files(draft_version.id)
+
+    manifest_paths = all_manifest_filepaths(draft_version)
+    for path in manifest_paths:
+        assert default_storage.get_tags(path) == {'embargoed': 'true'}
+
+    _remove_dandiset_manifest_tags(dandiset=draft_version.dandiset)
+
+    for path in manifest_paths:
+        assert default_storage.get_tags(path) == {}
+
+
+@pytest.mark.django_db
 def test_unembargo_dandiset(
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob_factory,
     embargoed_zarr_archive_factory,
     zarr_file_factory,
-    mocker,
     mailoutbox,
     user_factory,
 ):
@@ -256,24 +275,27 @@ def test_unembargo_dandiset(
     zarr_archive: ZarrArchive = embargoed_zarr_archive_factory(
         dandiset=ds, status=ZarrArchiveStatus.UPLOADED
     )
-    for _ in range(5):
-        zarr_file_factory(zarr_archive)
+    zarr_files: list[ZarrArchiveFile] = [zarr_file_factory(zarr_archive) for _ in range(5)]
     ingest_zarr_archive(zarr_id=zarr_archive.zarr_id)
     zarr_archive.refresh_from_db()
     zarr_asset = asset_factory(zarr=zarr_archive, blob=None, status=Asset.Status.VALID)
     draft_version.assets.add(zarr_asset)
 
+    write_manifest_files(draft_version.id)
+
     assert all(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.VALID for asset in draft_version.assets.all())
 
-    # Patch this function to check if it's been called, since we can't test the tagging directly
-    patched = mocker.patch('dandiapi.api.services.embargo.utils._delete_object_tags')
-
     unembargo_dandiset(ds, owners[0])
 
-    assert patched.call_count == 1 + zarr_archive.file_count
+    for zarr_file in zarr_files:
+        zarr_file_s3_path = zarr_archive.s3_path(str(zarr_file.path))
+        assert zarr_archive.storage.get_tags(zarr_file_s3_path) == {}
+
     assert not any(asset.is_embargoed for asset in draft_version.assets.all())
     assert all(asset.status == Asset.Status.PENDING for asset in draft_version.assets.all())
+    for manifest_path in all_manifest_filepaths(draft_version):
+        assert default_storage.get_tags(manifest_path) == {}
 
     ds.refresh_from_db()
     draft_version.refresh_from_db()

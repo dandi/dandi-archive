@@ -54,9 +54,7 @@ jobs:
         python:
           - "3.13"
         dandi-version:
-          # TODO: re-enable when https://github.com/dandi/dandi-cli/pull/1698
-          # is merged and released
-          # - release
+          - release
           - master
     env:
       DANDI_TESTS_PULL_DOCKER_COMPOSE: 0
@@ -82,10 +80,8 @@ jobs:
 
       - name: Run dandi-api tests in dandi-cli
         if: matrix.dandi-version == 'master'
-        # TODO: change git reference back to `master` when we merge
-        # https://github.com/dandi/dandi-cli/pull/1698
         run: >
-          uvx --with "dandi[test] @ git+https://github.com/dandi/dandi-cli@update-dandiarchive-docker-compose"
+          uvx --with "dandi[test] @ git+https://github.com/dandi/dandi-cli"
           pytest --pyargs -v --dandi-api dandi
         env:
           DANDI_TESTS_PERSIST_DOCKER_COMPOSE: "1"

@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from rest_framework.exceptions import ValidationError
 
 from dandiapi.api.models import Dandiset
-from dandiapi.api.storage import get_storage
+
+if TYPE_CHECKING:
+    from dandiapi.api.storage import DandiS3Storage
 
 logger = logging.getLogger(name=__name__)
 
@@ -34,7 +38,7 @@ class ZarrArchiveStatus(models.TextChoices):
 class ZarrArchive(TimeStampedModel):
     UUID_REGEX = r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
     INGEST_ERROR_MSG = 'Zarr archive is currently ingesting or has already ingested'
-    storage = get_storage()
+    storage: DandiS3Storage = default_storage
 
     class Meta:
         ordering = ['created']
@@ -46,7 +50,7 @@ class ZarrArchive(TimeStampedModel):
             ),
             models.CheckConstraint(
                 name='%(app_label)s-%(class)s-consistent-checksum-status',
-                check=models.Q(
+                condition=models.Q(
                     checksum__isnull=True,
                     status__in=[
                         ZarrArchiveStatus.PENDING,
@@ -66,7 +70,7 @@ class ZarrArchive(TimeStampedModel):
     checksum = models.CharField(max_length=512, null=True, default=None, blank=True)  # noqa: DJ001
     status = models.CharField(
         max_length=max(len(choice[0]) for choice in ZarrArchiveStatus.choices),
-        choices=ZarrArchiveStatus.choices,
+        choices=ZarrArchiveStatus,
         default=ZarrArchiveStatus.PENDING,
     )
 
@@ -88,16 +92,6 @@ class ZarrArchive(TimeStampedModel):
     def s3_path(self, zarr_path: str) -> str:
         """Generate a full S3 object path from a path in this zarr_archive."""
         return zarr_s3_path(str(self.zarr_id), zarr_path)
-
-    def generate_upload_urls(self, path_md5s: list[dict]):
-        return [
-            self.storage.generate_presigned_put_object_url(
-                self.s3_path(o['path']),
-                o['base64md5'],
-                tagging='embargoed=true' if self.embargoed else '',
-            )
-            for o in path_md5s
-        ]
 
     def mark_pending(self):
         self.checksum = None

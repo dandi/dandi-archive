@@ -17,7 +17,7 @@ from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from dandiapi.api.models.metadata import PublishableMetadataMixin
-from dandiapi.api.storage import get_storage, get_storage_prefix
+from dandiapi.api.storage import get_storage_prefix
 
 from .version import Version
 
@@ -61,7 +61,7 @@ class AssetBlob(TimeStampedModel):
     ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
 
     embargoed = models.BooleanField(default=False)
-    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True, upload_to=get_storage_prefix)
     blob_id = models.UUIDField(unique=True)
     sha256 = models.CharField(  # noqa: DJ001
         null=True,
@@ -116,7 +116,7 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
     status = models.CharField(
         max_length=10,
         default=AssetStatus.PENDING,
-        choices=AssetStatus.choices,
+        choices=AssetStatus,
     )
     validation_errors = models.JSONField(default=list, blank=True, null=True)
     published = models.BooleanField(default=False)
@@ -138,24 +138,26 @@ class Asset(PublishableMetadataMixin, TimeStampedModel):
         constraints = [
             models.CheckConstraint(
                 name='blob-xor-zarr',
-                check=(
+                condition=(
                     Q(blob__isnull=True, zarr__isnull=False)
                     | Q(blob__isnull=False, zarr__isnull=True)
                 ),
             ),
             models.CheckConstraint(
                 name='asset_metadata_has_schema_version',
-                check=Q(metadata__schemaVersion__isnull=False),
+                condition=Q(metadata__schemaVersion__isnull=False),
             ),
-            models.CheckConstraint(name='asset_path_regex', check=Q(path__regex=ASSET_PATH_REGEX)),
             models.CheckConstraint(
-                name='asset_path_no_leading_slash', check=~Q(path__startswith='/')
+                name='asset_path_regex', condition=Q(path__regex=ASSET_PATH_REGEX)
+            ),
+            models.CheckConstraint(
+                name='asset_path_no_leading_slash', condition=~Q(path__startswith='/')
             ),
             # Ensure that if the asset is published, its metadata must contain the computed fields
             # Otherwise, ensure its metadata contains none of the computed fields
             models.CheckConstraint(
                 name='asset_metadata_no_computed_keys_or_published',
-                check=(
+                condition=(
                     (Q(published=False) & ~Q(metadata__has_any_keys=ASSET_COMPUTED_FIELDS))
                     | (Q(published=True) & Q(metadata__has_keys=ASSET_COMPUTED_FIELDS))
                 ),

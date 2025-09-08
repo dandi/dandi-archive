@@ -130,7 +130,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='zarrarchive',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ('checksum__isnull', True),
                         ('status__in', ['Pending', 'Uploaded', 'Ingesting']),
@@ -150,7 +150,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='embargoedzarrarchive',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ('checksum__isnull', True),
                         ('status__in', ['Pending', 'Uploaded', 'Ingesting']),

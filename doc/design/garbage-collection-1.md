@@ -12,7 +12,7 @@ The preferred way to deal with partial uploads in S3 is to set up a [bucket life
 If the object is already uploaded, we can simply delete it from S3.
 In all cases, we need to delete the database record.
 
-`Upload`s should be deleted whenever the presigned URLs expire, which is currently set in `multipart.py#DandiMultipartMixin` to 7 days.
+`Upload`s should be deleted whenever the presigned URLs expire, which is currently set in `multipart.py#DandiS3MultipartManager` to 7 days.
 
 ## AssetBlobs
 After an upload is complete, it is converted into an `AssetBlob`, which is then registered with an `Asset`.

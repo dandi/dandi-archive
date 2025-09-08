@@ -23,7 +23,7 @@ AUDIT_RECORD_CHOICES = [(t, t) for t in get_args(AuditRecordType)]
 
 
 class AuditRecord(models.Model):
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     dandiset_id = models.IntegerField()
 
     # GitHub enforces a 39 character limit on usernames (see, e.g.,
@@ -52,7 +52,7 @@ class AuditRecord(models.Model):
             # Require a description for admin-executed actions.
             models.CheckConstraint(
                 name='admin-description-pairing',
-                check=(
+                condition=(
                     models.Q(admin=False, description='')
                     | (models.Q(admin=True) & ~models.Q(description=''))
                 ),

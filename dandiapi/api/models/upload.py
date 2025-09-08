@@ -7,7 +7,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import CreationDateTimeField
 
-from dandiapi.api.storage import get_storage, get_storage_prefix
+from dandiapi.api.multipart import DandiS3MultipartManager
+from dandiapi.api.storage import get_storage_prefix
 
 from .asset import AssetBlob
 from .dandiset import Dandiset
@@ -20,7 +21,7 @@ class Upload(models.Model):  # noqa: DJ008
 
     dandiset = models.ForeignKey(Dandiset, related_name='uploads', on_delete=models.CASCADE)
 
-    blob = models.FileField(blank=True, storage=get_storage, upload_to=get_storage_prefix)
+    blob = models.FileField(blank=True, upload_to=get_storage_prefix)
     embargoed = models.BooleanField(default=False)
 
     # This is the key used to generate the object key, and the primary identifier for the upload.
@@ -54,13 +55,15 @@ class Upload(models.Model):  # noqa: DJ008
         upload_id = uuid4()
         object_key = cls.object_key(upload_id)
         embargoed = dandiset.embargo_status == Dandiset.EmbargoStatus.EMBARGOED
-        multipart_initialization = cls.blob.field.storage.multipart_manager.initialize_upload(
+        multipart_initialization = DandiS3MultipartManager(
+            cls._meta.get_field('blob').storage
+        ).initialize_upload(
             object_key,
             size,
             # The upload HTTP API does not pass the file name or content type, and it would be a
             # breaking change to start requiring this.
             'application/octet-stream',
-            tagging='embargoed=true' if embargoed else None,
+            tags={'embargoed': 'true'} if embargoed else None,
         )
 
         upload = cls(
@@ -89,10 +92,10 @@ class Upload(models.Model):  # noqa: DJ008
         )
 
     def object_key_exists(self):
-        return self.blob.field.storage.exists(self.blob.name)
+        return self.blob.storage.exists(self.blob.name)
 
     def actual_size(self):
-        return self.blob.field.storage.size(self.blob.name)
+        return self.blob.storage.size(self.blob.name)
 
-    def actual_etag(self):
-        return self.blob.storage.etag_from_blob_name(self.blob.name)
+    def actual_etag(self) -> str | None:
+        return self.blob.storage.e_tag(self.blob.name)

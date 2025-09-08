@@ -116,7 +116,6 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.storage.get_storage,
                         upload_to=dandiapi.api.storage.get_storage_prefix,
                     ),
                 ),
@@ -330,7 +329,6 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.storage.get_storage,
                         upload_to=dandiapi.api.storage.get_storage_prefix,
                     ),
                 ),
@@ -379,7 +377,6 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.storage.get_storage,
                         upload_to=dandiapi.api.storage.get_storage_prefix,
                     ),
                 ),
@@ -442,7 +439,6 @@ class Migration(migrations.Migration):
                     'blob',
                     models.FileField(
                         blank=True,
-                        storage=dandiapi.api.storage.get_storage,
                         upload_to=dandiapi.api.storage.get_storage_prefix,
                     ),
                 ),
@@ -621,7 +617,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='version',
             constraint=models.CheckConstraint(
-                check=models.Q(('metadata__schemaVersion__isnull', False)),
+                condition=models.Q(('metadata__schemaVersion__isnull', False)),
                 name='version_metadata_has_schema_version',
             ),
         ),
@@ -666,7 +662,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='assetpath',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(('path__endswith', '/'), ('path__startswith', '/'), _connector='OR'),
                     _negated=True,
                 ),
@@ -688,7 +684,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='assetpath',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ('asset__isnull', True),
                     models.Q(('aggregate_files__lte', 1), ('asset__isnull', False)),
                     _connector='OR',
@@ -699,7 +695,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(('blob__isnull', True), ('embargoed_blob__isnull', True)),
                     models.Q(('blob__isnull', True), ('embargoed_blob__isnull', False)),
                     models.Q(('blob__isnull', False), ('embargoed_blob__isnull', True)),
@@ -711,14 +707,14 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(('metadata__schemaVersion__isnull', False)),
+                condition=models.Q(('metadata__schemaVersion__isnull', False)),
                 name='asset_metadata_has_schema_version',
             ),
         ),
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ('path__regex', '^([A-z0-9(),&\\s#+~_=-]?\\/?\\.?[A-z0-9(),&\\s#+~_=-])+$')
                 ),
                 name='asset_path_regex',
@@ -727,14 +723,14 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(('path__startswith', '/'), _negated=True),
+                condition=models.Q(('path__startswith', '/'), _negated=True),
                 name='asset_path_no_leading_slash',
             ),
         ),
         migrations.AddConstraint(
             model_name='asset',
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ('published', False),
                         models.Q(
