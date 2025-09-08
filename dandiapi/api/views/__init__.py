@@ -7,7 +7,7 @@ from .dashboard import DashboardView, mailchimp_csv_view, user_approval_view
 from .info import info_view
 from .robots import robots_txt_view
 from .root import root_content_view
-from .schema import schema_view
+from .schema import schema_list_view, schema_view
 from .stats import stats_view
 from .upload import (
     blob_read_view,
@@ -31,6 +31,7 @@ __all__ = [
     'mailchimp_csv_view',
     'robots_txt_view',
     'root_content_view',
+    'schema_list_view',
     'schema_view',
     'stats_view',
     'upload_complete_view',

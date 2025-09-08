@@ -22,6 +22,7 @@ from dandiapi.api.views import (
     mailchimp_csv_view,
     robots_txt_view,
     root_content_view,
+    schema_list_view,
     schema_view,
     stats_view,
     upload_complete_view,
@@ -33,7 +34,6 @@ from dandiapi.api.views import (
     users_search_view,
     webdav,
 )
-from dandiapi.api.views.schema import schema_list_view
 from dandiapi.search.views import search_genotypes, search_species
 from dandiapi.zarr.views import ZarrViewSet
 
