@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextvars import ContextVar
+import json
 from typing import TYPE_CHECKING
 
 from rich.logging import RichHandler
@@ -36,6 +37,5 @@ class DandiHandler(RichHandler):
     def render_message(self, record: logging.LogRecord, message: str) -> ConsoleRenderable:
         username = current_user.get()
         if username:
-            message = f'{username} {message}'
-
+            message = f'{message} {json.dumps({'username': username})}'
         return super().render_message(record, message)
