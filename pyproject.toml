@@ -117,6 +117,7 @@ only-include = [
   "/uv.lock",
   "/.python-version",
   "/Procfile",
+  "/gunicorn.conf.py",
 ]
 
 [tool.hatch.version]
