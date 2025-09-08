@@ -24,11 +24,10 @@ class RequestUserMiddleware:
         response = self.get_response(request)
 
         # If user was authenticated, store the request.user object for later use by the logger
-        current_user.set(
-            request.user.username
-            if hasattr(request, 'user') and request.user.is_authenticated
-            else 'AnonymousUser'
-        )
+        username = None
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            username = request.user.username
+        current_user.set(username)
 
         return response
 
