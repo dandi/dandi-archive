@@ -1,3 +1,31 @@
+# v0.13.5 (Tue Sep 09 2025)
+
+#### 🐛 Bug Fix
+
+- Upgrade django-resonant-settings, back out temporary fix [#2524](https://github.com/dandi/dandi-archive/pull/2524) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporarily override broken upstream setting [#2522](https://github.com/dandi/dandi-archive/pull/2522) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Fix typo in gunicorn conf file [#2528](https://github.com/dandi/dandi-archive/pull/2528) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Include `gunicorn.conf.py` in heroku sdist [#2526](https://github.com/dandi/dandi-archive/pull/2526) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Configure `gunicorn` to include username in access logs [#2525](https://github.com/dandi/dandi-archive/pull/2525) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update to Django 5 [#2419](https://github.com/dandi/dandi-archive/pull/2419) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Switch the default storage to always use `S3Storage` [#2500](https://github.com/dandi/dandi-archive/pull/2500) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/setup-node from 4 to 5 [#2529](https://github.com/dandi/dandi-archive/pull/2529) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.13.4 (Thu Aug 28 2025)
 
 #### 🐛 Bug Fix
