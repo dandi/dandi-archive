@@ -65,6 +65,13 @@ const EXTERNAL_SERVICES: ExternalService[] = [
     endpoint:
       "https://v1.neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$",
   },
+
+   {
+    name: 'Neuroglancer',
+    regex: /\.nii(\.gz)?$|\.zarr$/,
+    maxsize: Infinity,
+    endpoint: redirectNeuroglancerUrl,
+  }
 ];
 
 interface ServiceUrlData {
@@ -143,4 +150,36 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
       }),
     }))
     .filter((service) => service.url);
+}
+
+/**
+ * Custom function used to generate the endpoint
+ * for the "Neuroglancer" service
+ */
+function redirectNeuroglancerUrl(item: ServiceUrlData): string | null {
+  const store = useDandisetStore();
+  const embargoed = computed(() => store.dandiset?.dandiset.embargo_status === 'EMBARGOED');
+  if (embargoed.value) {
+    return null;
+  }
+
+  const assetS3Url = trimEnd(item.assetS3Url, '/');
+  const baseUrl = `https://neuroglancer-demo.appspot.com/#!`; // Public neuroglancer instance
+  const jsonObject = {
+    layers: [
+      {
+        type: "new",
+        source: assetS3Url,
+        tab: "source",
+        name: item.assetId,
+      },
+    ],
+    selectedLayer: {
+      visible: true,
+      layer: item.assetId,
+    },
+    layout: "4panel",
+  };
+
+  return baseUrl + encodeURIComponent(JSON.stringify(jsonObject));
 }
