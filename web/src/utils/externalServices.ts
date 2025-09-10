@@ -4,7 +4,7 @@ import { computed } from "vue";
 import type { AssetFile, AssetPath } from "@/types";
 import { useDandisetStore } from "@/stores/dandiset";
 
-type ExternalServiceEndpoint = string;
+type ExternalServiceEndpoint = string | ((item: any) => string);
 
 interface ExternalService {
   name: string;
@@ -74,7 +74,16 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: {
   assetDandiUrl: string,
   assetS3Url: string,
 }) {
-  return endpoint
+  let resolvedEndpoint;
+  if (typeof endpoint == 'string') {
+    resolvedEndpoint = endpoint;
+  } else if (typeof endpoint == 'function') {
+    resolvedEndpoint = endpoint(data);
+  } else {
+    throw new Error('Invalid endpoint type');
+  }
+
+  return resolvedEndpoint
     .replaceAll('$dandiset_id$', data.dandisetId)
     .replaceAll('$dandiset_version$', data.dandisetVersion)
     .replaceAll('$asset_url$', data.assetUrl)
