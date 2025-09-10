@@ -4,7 +4,7 @@ import { computed } from "vue";
 import type { AssetFile, AssetPath } from "@/types";
 import { useDandisetStore } from "@/stores/dandiset";
 
-type ExternalServiceEndpoint = string | ((item: any) => string);
+type ExternalServiceEndpoint = string | ((item: any) => string | null);
 
 interface ExternalService {
   name: string;
@@ -67,13 +67,16 @@ const EXTERNAL_SERVICES: ExternalService[] = [
   },
 ];
 
-function serviceURL(endpoint: ExternalServiceEndpoint, data: {
+interface ServiceUrlData {
   dandisetId: string,
   dandisetVersion: string,
+  assetId: string,
   assetUrl: string,
   assetDandiUrl: string,
   assetS3Url: string,
-}) {
+}
+
+function serviceURL(endpoint: ExternalServiceEndpoint, data: ServiceUrlData): string | null {
   let resolvedEndpoint;
   if (typeof endpoint == 'string') {
     resolvedEndpoint = endpoint;
@@ -81,6 +84,10 @@ function serviceURL(endpoint: ExternalServiceEndpoint, data: {
     resolvedEndpoint = endpoint(data);
   } else {
     throw new Error('Invalid endpoint type');
+  }
+
+  if (!resolvedEndpoint) {
+    return null;
   }
 
   return resolvedEndpoint
@@ -110,6 +117,12 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
   const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
   const assetDandiUrl = `${baseApiUrl}assets/${path.asset?.asset_id}/download/`;
   const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
+  const assetId = path.asset?.asset_id;
+
+  if (!assetId) {
+    // This should never happen
+    throw new Error('Asset ID is not defined');
+  }
 
   // Select the best "default" URL: the direct S3 link is better when it can be
   // used, but we're forced to supply the internal DANDI URL for embargoed
@@ -123,9 +136,11 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
       url: serviceURL(service.endpoint, {
         dandisetId: info.dandisetId,
         dandisetVersion: info.dandisetVersion,
+        assetId,
         assetUrl,
         assetDandiUrl,
         assetS3Url,
       }),
-    }));
+    }))
+    .filter((service) => service.url);
 }
