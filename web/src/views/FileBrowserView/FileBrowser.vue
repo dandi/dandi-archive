@@ -280,12 +280,12 @@ import {
 import type { RouteLocationRaw } from 'vue-router';
 import { useRouter, useRoute } from 'vue-router';
 import { filesize } from 'filesize';
-import { trimEnd } from 'lodash';
 import axios from 'axios';
 
 import { dandiRest, user } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
-import type { AssetFile, AssetPath } from '@/types';
+import type { AssetPath } from '@/types';
+import { getExternalServices } from '@/utils/externalServices';
 import FileBrowserPagination from '@/components/FileBrowser/FileBrowserPagination.vue';
 import FileUploadInstructions from '@/components/FileBrowser/FileUploadInstructions.vue';
 
@@ -324,58 +324,6 @@ const sortByFolderThenName = (a: ExtendedAssetPath, b: ExtendedAssetPath) => {
   return 0;
 };
 
-const EXTERNAL_SERVICES = [
-  {
-    name: 'Bioimagesuite/Viewer',
-    regex: /\.nii(\.gz)?$/,
-    maxsize: 1e9,
-    endpoint: 'https://bioimagesuiteweb.github.io/unstableapp/viewer.html?image=$asset_url$',
-  },
-
-  {
-    name: 'MetaCell/NWBExplorer',
-    regex: /\.nwb$/,
-    maxsize: 1e9,
-    endpoint: 'http://nwbexplorer.opensourcebrain.org/nwbfile=$asset_url$',
-  },
-
-  {
-    name: 'VTK/ITK Viewer',
-    regex: /\.ome\.zarr$/,
-    maxsize: Infinity,
-    endpoint: 'https://kitware.github.io/itk-vtk-viewer/app/?gradientOpacity=0.3&image=$asset_url$',
-  },
-
-  {
-    name: 'OME Zarr validator',
-    regex: /\.(ome|nii)\.zarr$/,
-    maxsize: Infinity,
-    endpoint: 'https://ome.github.io/ome-ngff-validator/?source=$asset_url$',
-  },
-
-  {
-    name: 'Neurosift',
-    regex: /\.nwb$/,
-    maxsize: Infinity,
-    endpoint: 'https://neurosift.app/nwb?url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
-  },
-
-  {
-    name: 'Neurosift',
-    regex: /\.nwb\.lindi\.(json|tar)$/,
-    maxsize: Infinity,
-    endpoint: 'https://neurosift.app/nwb?url=$asset_dandi_url$&st=lindi&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
-  },
-
-  {
-    name: 'Neurosift',
-    regex: /\.avi$/,
-    maxsize: Infinity,
-    endpoint: 'https://v1.neurosift.app?p=/avi&url=$asset_dandi_url$&dandisetId=$dandiset_id$&dandisetVersion=$dandiset_version$',
-  }
-];
-type Service = typeof EXTERNAL_SERVICES[0];
-
 const props = defineProps({
   identifier: {
     type: String,
@@ -406,7 +354,6 @@ const updating = ref(false);
 // Computed
 const owners = computed(() => store.owners?.map((u) => u.username) || null);
 const currentDandiset = computed(() => store.dandiset);
-const embargoed = computed(() => currentDandiset.value?.dandiset.embargo_status === 'EMBARGOED');
 const unembargo_in_progress = computed(() => currentDandiset.value?.dandiset.embargo_status === 'UNEMBARGOING')
 const splitLocation = computed(() => location.value.split('/'));
 const isAdmin = computed(() => user.value?.admin || false);
@@ -415,56 +362,7 @@ const isOwner = computed(() => !!(
 ));
 const itemsNotFound = computed(() => items.value && !items.value.length);
 
-function serviceURL(endpoint: string, data: {
-  dandisetId: string,
-  dandisetVersion: string,
-  assetUrl: string,
-  assetDandiUrl: string,
-  assetS3Url: string,
-}) {
-  return endpoint
-    .replaceAll('$dandiset_id$', data.dandisetId)
-    .replaceAll('$dandiset_version$', data.dandisetVersion)
-    .replaceAll('$asset_url$', data.assetUrl)
-    .replaceAll('$asset_dandi_url$', data.assetDandiUrl)
-    .replaceAll('$asset_s3_url$', data.assetS3Url);
-}
 
-function getExternalServices(path: AssetPath, info: {dandisetId: string, dandisetVersion: string}) {
-  if (path.asset === null) {
-    return [];
-  }
-
-  const servicePredicate = (service: Service, _path: AssetPath) => (
-    new RegExp(service.regex).test(path.path)
-          && _path.asset !== null
-          && _path.aggregate_size <= service.maxsize
-  );
-
-  // Formulate the two possible asset URLs -- the direct S3 link to the relevant
-  // object, and the DANDI URL that redirects to the S3 one.
-  const baseApiUrl = import.meta.env.VITE_APP_DANDI_API_ROOT;
-  const assetDandiUrl = `${baseApiUrl}assets/${path.asset?.asset_id}/download/`;
-  const assetS3Url = trimEnd((path.asset as AssetFile).url, '/');
-
-  // Select the best "default" URL: the direct S3 link is better when it can be
-  // used, but we're forced to supply the internal DANDI URL for embargoed
-  // dandisets (since the ready-made S3 URL will prevent access in that case).
-  const assetUrl = embargoed.value ? assetDandiUrl : assetS3Url;
-
-  return EXTERNAL_SERVICES
-    .filter((service) => servicePredicate(service, path))
-    .map((service) => ({
-      name: service.name,
-      url: serviceURL(service.endpoint, {
-        dandisetId: info.dandisetId,
-        dandisetVersion: info.dandisetVersion,
-        assetUrl,
-        assetDandiUrl,
-        assetS3Url,
-      }),
-    }));
-}
 
 function locationSlice(index: number) {
   return `${splitLocation.value.slice(0, index + 1).join('/')}/`;
