@@ -147,7 +147,8 @@
               Grant/Award Number
             </div>
             <div class="mb-3">
-              Provide the grant or award number. This field is optional but recommended.
+              Provide the grant or award number. For awards without a grant number, please
+              provide the project name.
             </div>
             <v-text-field
               v-model="awardNumber"
