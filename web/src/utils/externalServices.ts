@@ -138,18 +138,17 @@ export function getExternalServices(path: AssetPath, info: {dandisetId: string, 
 
   return EXTERNAL_SERVICES
     .filter((service) => servicePredicate(service, path))
-    .map((service) => ({
-      name: service.name,
-      url: serviceURL(service.endpoint, {
+    .flatMap((service) => {
+      const url = serviceURL(service.endpoint, {
         dandisetId: info.dandisetId,
         dandisetVersion: info.dandisetVersion,
         assetId,
         assetUrl,
         assetDandiUrl,
         assetS3Url,
-      }),
-    }))
-    .filter((service) => service.url);
+      });
+      return url ? [{ name: service.name, url }] : [];
+    });
 }
 
 /**
