@@ -4,7 +4,7 @@ import { computed } from "vue";
 import type { AssetFile, AssetPath } from "@/types";
 import { useDandisetStore } from "@/stores/dandiset";
 
-type ExternalServiceEndpoint = string | ((item: any) => string | null);
+type ExternalServiceEndpoint = string | ((item: ServiceUrlData) => string | null);
 
 interface ExternalService {
   name: string;
