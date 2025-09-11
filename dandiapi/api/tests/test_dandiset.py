@@ -751,27 +751,42 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ('embargo_status', 'success'),
+    ('embargo_status', 'success', 'doi'),
     [
-        (Dandiset.EmbargoStatus.OPEN, True),
-        (Dandiset.EmbargoStatus.EMBARGOED, True),
-        (Dandiset.EmbargoStatus.UNEMBARGOING, False),
+        (Dandiset.EmbargoStatus.OPEN, True, '10.48324/dandi.000123'),
+        (Dandiset.EmbargoStatus.OPEN, True, None),
+        (Dandiset.EmbargoStatus.EMBARGOED, True, '10.48324/dandi.000123'),
+        (Dandiset.EmbargoStatus.UNEMBARGOING, False, '10.48324/dandi.000123'),
     ],
 )
-def test_dandiset_rest_delete(api_client, draft_version_factory, user, embargo_status, success):
+def test_dandiset_rest_delete(
+    api_client, draft_version_factory, user, embargo_status, success, doi, mocker
+):
     api_client.force_authenticate(user=user)
+
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.delete_or_hide_doi')
 
     # Ensure that open or embargoed dandisets can be deleted
     draft_version = draft_version_factory(dandiset__embargo_status=embargo_status)
+    # Set a DOI on the draft version
+    if doi is not None:
+        draft_version.doi = doi
+        draft_version.save()
+
     add_dandiset_owner(draft_version.dandiset, user)
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
 
     if success:
         assert response.status_code == 204
         assert not Dandiset.objects.all()
+        if doi is not None:
+            mock_delete_doi.assert_called_once_with(draft_version.doi)
+        else:
+            mock_delete_doi.assert_not_called()
     else:
         assert response.status_code >= 400
         assert Dandiset.objects.count() == 1
+        mock_delete_doi.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -781,11 +796,15 @@ def test_dandiset_rest_delete_with_zarrs(
     user,
     zarr_archive_factory,
     draft_asset_factory,
+    mocker,
 ):
     api_client.force_authenticate(user=user)
     add_dandiset_owner(draft_version.dandiset, user)
     zarr = zarr_archive_factory(dandiset=draft_version.dandiset)
     asset = draft_asset_factory(blob=None, zarr=zarr)
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.delete_or_hide_doi')
+    draft_version.doi = '10.48324/dandi.000123'
+    draft_version.save()
 
     # Add paths
     add_asset_paths(asset=asset, version=draft_version)
@@ -794,39 +813,46 @@ def test_dandiset_rest_delete_with_zarrs(
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert response.status_code == 204
     assert not Dandiset.objects.all()
+    mock_delete_doi.assert_called_once()
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_not_an_owner(api_client, draft_version, user):
+def test_dandiset_rest_delete_not_an_owner(api_client, draft_version, user, mocker):
     api_client.force_authenticate(user=user)
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.delete_or_hide_doi')
 
     response = api_client.delete(f'/api/dandisets/{draft_version.dandiset.identifier}/')
     assert response.status_code == 403
 
     assert draft_version.dandiset in Dandiset.objects.all()
+    mock_delete_doi.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_published(api_client, published_version, user):
+def test_dandiset_rest_delete_published(api_client, published_version, user, mocker):
     api_client.force_authenticate(user=user)
     add_dandiset_owner(published_version.dandiset, user)
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.delete_or_hide_doi')
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
     assert response.status_code == 403
     assert response.data == 'Cannot delete dandisets with published versions.'
 
     assert published_version.dandiset in Dandiset.objects.all()
+    mock_delete_doi.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_delete_published_admin(api_client, published_version, admin_user):
+def test_dandiset_rest_delete_published_admin(api_client, published_version, admin_user, mocker):
     api_client.force_authenticate(user=admin_user)
+    mock_delete_doi = mocker.patch('dandiapi.api.doi.delete_or_hide_doi')
 
     response = api_client.delete(f'/api/dandisets/{published_version.dandiset.identifier}/')
     assert response.status_code == 403
     assert response.data == 'Cannot delete dandisets with published versions.'
 
     assert published_version.dandiset in Dandiset.objects.all()
+    mock_delete_doi.assert_not_called()
 
 
 @pytest.mark.django_db
