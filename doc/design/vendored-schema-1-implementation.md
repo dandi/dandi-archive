@@ -16,7 +16,7 @@ As described in the design document, the current approach has the following issu
 
 The implemented solution addresses these issues by:
 
-1. Creating API endpoints to dynamically generate JSONSchema from the Pydantic models at runtime
+1. Creating an API endpoint to dynamically generate JSONSchema from the Pydantic models at runtime
 2. Updating the info endpoint to point to our local schema endpoint instead of GitHub
 3. Implementing proper serialization using Pydantic's TypeAdapter to generate the JSONSchema
 
@@ -24,10 +24,8 @@ The implemented solution addresses these issues by:
 
 We've added the following API endpoints:
 
-- `/api/schema/latest/dandiset/` - Returns the JSONSchema for the PublishedDandiset model
-- `/api/schema/latest/asset/` - Returns the JSONSchema for the PublishedAsset model
-- `/api/schema/{version}/dandiset/` - Returns the JSONSchema for a specific version (currently only supports the current version)
-- `/api/schema/{version}/asset/` - Returns the JSONSchema for a specific version (currently only supports the current version)
+- `/api/schemas/available/` - Returns the list of available schema models that can be used as a query parameter value for the `/api/schemas/` endpoint
+- `/api/schemas/` - Returns the JSONSchema for a queried model specified with the `model` query parameter (e.g., `?model=Dandiset`)
 
 These endpoints use Pydantic's TypeAdapter to generate the JSONSchema directly from the models, ensuring that any runtime vendorization or customization is reflected in the schema.
 
