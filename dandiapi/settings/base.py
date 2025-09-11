@@ -147,6 +147,16 @@ REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += ['dandiapi.api.permissions.IsApp
 REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.DandiPagination'
 REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exceptions'
 
+# Throttling configuration
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
+    'rest_framework.throttling.AnonRateThrottle',
+    'rest_framework.throttling.UserRateThrottle',
+]
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
+    'anon': '100/hour',
+    'user': '1000/hour',
+}
+
 REST_FRAMEWORK_EXTENSIONS = {'DEFAULT_PARENT_LOOKUP_KWARG_NAME_PREFIX': ''}
 
 # Clearing out the stock `SWAGGER_SETTINGS` variable causes a Django login
