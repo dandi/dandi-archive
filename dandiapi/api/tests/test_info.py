@@ -3,12 +3,16 @@ from __future__ import annotations
 from django.conf import settings
 
 from dandiapi import __version__
-from dandiapi.api.views.info import schema_url
+from dandiapi.api.views.info import get_schema_url
 
 
 def test_rest_info(api_client):
     resp = api_client.get('/api/info/')
     assert resp.status_code == 200
+
+    # Get the expected schema URL
+    schema_url = get_schema_url()
+
     assert resp.json() == {
         'schema_version': settings.DANDI_SCHEMA_VERSION,
         'schema_url': schema_url,
