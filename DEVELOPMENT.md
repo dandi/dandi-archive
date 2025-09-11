@@ -50,16 +50,21 @@ but allows developers to run Python code on their native system.
 
 ### Run Application
 1. Ensure `docker compose -f ./docker-compose.yml up -d` is still active
-1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
-1. Run: `./manage.py runserver_plus`
-1. Run in a separate terminal: `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
+1. Run the Django app
+    1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
+    1. Run: `./manage.py runserver_plus`
+1. Run the Celery app
+    1. Start a new terminal
+    1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
+    1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 1. When finished, run `docker compose stop`
 
 ## Testing
 ### Initial Setup
-tox is used to manage the execution of all tests.
-[Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) and run tox with
-`uv run tox ...`.
+tox is used to manage the execution of all tests. To set up to run the tests:
+
+1. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/)
+2. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native` to populate the shell with needed environment variables
 
 When running the "Develop with Docker" configuration, all tox commands must be run as
 `docker compose run --rm django uv run tox`; extra arguments may also be appended to this form.
