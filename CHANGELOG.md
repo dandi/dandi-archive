@@ -1,3 +1,17 @@
+# v0.13.6 (Fri Sep 12 2025)
+
+#### 🐛 Bug Fix
+
+- Don't modify existing object tags when adding/removing embargoed tags [#2517](https://github.com/dandi/dandi-archive/pull/2517) ([@jjnesbitt](https://github.com/jjnesbitt))
+- DOC: remove "Are you lost?" [#2530](https://github.com/dandi/dandi-archive/pull/2530) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
 # v0.13.5 (Tue Sep 09 2025)
 
 #### 🐛 Bug Fix
