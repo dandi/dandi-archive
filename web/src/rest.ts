@@ -226,20 +226,41 @@ const dandiRest = {
   async createEmbargoedDandiset(
     name: string,
     metadata: Partial<DandisetMetadata>,
-    awardNumber: Organization['awardNumber']
+    embargoData: {
+      hasAward: boolean;
+      fundingSource?: string;
+      awardNumber?: string;
+      embargoEndDate?: string;
+    }
   ) {
-    // add NIH award number as a contributor in the new dandiset's metadata
-    const award: Organization = {
-      name: 'National Institutes of Health (NIH)',
-      schemaKey: 'Organization',
-      awardNumber,
-      roleName: ['dcite:Funder'],
-    };
-    const contributor: DandisetContributors = [...(metadata.contributor || []), award];
+    const params: { embargo: boolean; [key: string]: any } = { embargo: true };
 
-    const params = { embargo: true };
+    // Add embargo-specific parameters
+    if (embargoData.hasAward) {
+      if (embargoData.fundingSource) {
+        params.fundingSource = embargoData.fundingSource;
+      }
+      if (embargoData.awardNumber) {
+        params.awardNumber = embargoData.awardNumber;
+      }
+    } else if (embargoData.embargoEndDate) {
+      params.embargoEndDate = embargoData.embargoEndDate;
+    }
 
-    return this.createDandiset(name, { ...metadata, contributor }, { params });
+    // If we have award information, add it as a contributor in the metadata
+    let updatedMetadata = metadata;
+    if (embargoData.hasAward && embargoData.fundingSource) {
+      const award: Organization = {
+        name: embargoData.fundingSource,
+        schemaKey: 'Organization',
+        awardNumber: embargoData.awardNumber,
+        roleName: ['dcite:Funder'],
+      };
+      const contributor: DandisetContributors = [...(metadata.contributor || []), award];
+      updatedMetadata = { ...metadata, contributor };
+    }
+
+    return this.createDandiset(name, updatedMetadata, { params });
   },
   async saveDandiset(
     identifier: string,
