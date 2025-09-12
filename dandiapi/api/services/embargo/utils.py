@@ -54,11 +54,10 @@ def retry(times: int, exceptions: tuple[type[Exception]]):
 
 
 @retry(times=3, exceptions=(Exception,))
-def _delete_object_tags(client: S3Client, blob: str):
-    client.delete_object_tagging(
-        Bucket=settings.DANDI_DANDISETS_BUCKET_NAME,
-        Key=blob,
-    )
+def _delete_object_tags(blob: str):
+    existing_tags: dict[str, str] = default_storage.get_tags(blob)
+    filtered_tags = {key: val for key, val in existing_tags.items() if key != 'embargoed'}
+    default_storage.put_tags(blob, filtered_tags)
 
 
 @retry(times=3, exceptions=(Exception,))
@@ -71,7 +70,7 @@ def _delete_zarr_object_tags(client: S3Client, zarr: str):
     with ThreadPoolExecutor(max_workers=100) as e:
         for page in pages:
             keys = [obj['Key'] for obj in page.get('Contents', [])]
-            futures = [e.submit(_delete_object_tags, client=client, blob=key) for key in keys]
+            futures = [e.submit(_delete_object_tags, blob=key) for key in keys]
 
             # Check if any failed and raise exception if so
             failed = [key for i, key in enumerate(keys) if futures[i].exception() is not None]
@@ -86,7 +85,9 @@ def _remove_dandiset_manifest_tags(dandiset: Dandiset):
     logger.info('Removing tags from dandiset %s', dandiset.identifier)
     for path in paths:
         try:
-            default_storage.delete_tags(path)
+            existing_tags: dict[str, str] = default_storage.get_tags(path)
+            filtered_tags = {key: val for key, val in existing_tags.items() if key != 'embargoed'}
+            default_storage.put_tags(path, filtered_tags)
         except default_storage.s3_client.exceptions.NoSuchKey:
             logger.info('\tManifest file not found at %s. Continuing...', path)
             continue
@@ -112,7 +113,7 @@ def remove_dandiset_embargo_tags(dandiset: Dandiset):
         with ThreadPoolExecutor(max_workers=100) as e:
             for blob, zarr in chunk:
                 if blob is not None:
-                    futures.append(e.submit(_delete_object_tags, client=client, blob=blob))
+                    futures.append(e.submit(_delete_object_tags, blob=blob))
                 if zarr is not None:
                     futures.append(e.submit(_delete_zarr_object_tags, client=client, zarr=zarr))
 
