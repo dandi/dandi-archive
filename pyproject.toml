@@ -39,6 +39,7 @@ dependencies = [
   "more_itertools",
   "psycopg[binary]",
   "pyyaml",
+  "redis",
   "requests",
   "rich",
   "whitenoise[brotli]",
