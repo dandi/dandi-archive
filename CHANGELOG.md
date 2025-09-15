@@ -1,3 +1,18 @@
+# v0.14.0 (Mon Sep 15 2025)
+
+#### 🚀 Enhancement
+
+- Add admin user list endpoint [#2537](https://github.com/dandi/dandi-archive/pull/2537) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix embargoed dandiset creation form [#2462](https://github.com/dandi/dandi-archive/pull/2462) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.13.6 (Fri Sep 12 2025)
 
 #### 🐛 Bug Fix
