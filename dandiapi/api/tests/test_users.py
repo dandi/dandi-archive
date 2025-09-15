@@ -354,3 +354,54 @@ def test_user_edu_auto_approve(user: User, api_client: APIClient, email: str, ex
     assert resp.status_code == 302
 
     assert user_metadata.status == expected_status
+
+
+@pytest.mark.django_db
+def test_user_list_requires_admin(user_factory, api_client: APIClient):
+    resp = api_client.get('/api/users/')
+    assert resp.status_code == 401
+
+    normal_user = user_factory()
+    api_client.force_authenticate(user=normal_user)
+    resp = api_client.get('/api/users/')
+    assert resp.status_code == 403
+
+    staff_user = user_factory(is_staff=True)
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get('/api/users/')
+    assert resp.status_code == 200
+
+    superuser = user_factory(is_superuser=True)
+    api_client.force_authenticate(user=superuser)
+    resp = api_client.get('/api/users/')
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_user_list_user_without_socialaccount(user_factory, api_client: APIClient):
+    # Intentionally create an approved superuser without a social account, so that we
+    # can both query the endpoint, as well as see an empty result
+    approved_user = user_factory(is_superuser=True)
+
+    # Test without filtering
+    api_client.force_authenticate(user=approved_user)
+    resp = api_client.get('/api/users/')
+    assert resp.json() == []
+
+
+@pytest.mark.django_db
+def test_user_list_approved_toggle(social_account_factory, api_client: APIClient):
+    # Must use social_account_factory instead of user_factory, as otherwise
+    # the social account won't be created on its own.
+    approved_user = social_account_factory(user__is_superuser=True).user
+    social_account_factory(user__metadata__status=UserMetadata.Status.PENDING)
+    social_account_factory(user__metadata__status=UserMetadata.Status.INCOMPLETE)
+    social_account_factory(user__metadata__status=UserMetadata.Status.REJECTED)
+
+    # Test without filtering
+    api_client.force_authenticate(user=approved_user)
+    resp = api_client.get('/api/users/')
+    assert len(resp.json()) == 4
+
+    resp = api_client.get('/api/users/', {'approved_only': True})
+    assert resp.json() == [approved_user.socialaccount_set.first().extra_data['login']]
