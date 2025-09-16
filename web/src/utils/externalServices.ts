@@ -167,9 +167,9 @@ function redirectNeuroglancerUrl(item: ServiceUrlData): string | null {
   const jsonObject = {
     layers: [
       {
-        type: "new",
+        type: "image",
         source: assetS3Url,
-        tab: "source",
+        tab: "rendering",
         name: item.assetId,
       },
     ],
