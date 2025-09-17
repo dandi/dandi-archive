@@ -1,3 +1,17 @@
+# v0.15.0 (Wed Sep 17 2025)
+
+#### 🚀 Enhancement
+
+- Add Neuroglancer external service for umembargoed Zarr and NIfTI assets [#2063](https://github.com/dandi/dandi-archive/pull/2063) (aaronkanzer@Aarons-MacBook-Pro.local [@mvandenburgh](https://github.com/mvandenburgh) [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 3
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.14.0 (Mon Sep 15 2025)
 
 #### 🚀 Enhancement
