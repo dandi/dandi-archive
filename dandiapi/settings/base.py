@@ -150,7 +150,7 @@ REST_FRAMEWORK['EXCEPTION_HANDLER'] = 'dandiapi.drf_utils.rewrap_django_core_exc
 # Throttling configuration
 REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = [
     'rest_framework.throttling.AnonRateThrottle',
-    'rest_framework.throttling.UserRateThrottle',
+    'dandiapi.api.throttling.DandiUserRateThrottle',
 ]
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'anon': '60/min',
