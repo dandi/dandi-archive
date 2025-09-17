@@ -2,6 +2,7 @@ import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 import { ref } from 'vue';
 import OAuthClient from '@resonant/oauth-client';
+import { AppAuthError } from '@openid/appauth';
 import type {
   Asset,
   Dandiset,
@@ -53,7 +54,19 @@ const dandiRest = {
     if (!oauthClient) {
       return;
     }
-    await oauthClient.maybeRestoreLogin();
+    try {
+      await oauthClient.maybeRestoreLogin();
+    } catch (e) {
+      // TODO: is this the right way to handle this, or is an upstream
+      // change needed in resonant-oauth-client?
+      if (e instanceof AppAuthError) {
+        // If there is any kind of authentication error,
+        // bail out and force the user to login again.
+        oauthClient.logout();
+        return;
+      }
+      throw e;
+    }
     if (!oauthClient.isLoggedIn) {
       return;
     }
