@@ -192,9 +192,12 @@ Key changes:
 
 ### Details
 
-- create API endpoint `/api/schema/({version}|latest)/dandiset/`, with currently no `{version}` support for non-matching version(but later could expose)
-  - ideally should in the future allow for alternative content type requests, defaulting e.g. to [application/schema+json](https://json-schema.org/draft/2020-12/json-schema-core#section-14) providing JSONSchema serialization
-- `schema_url` in `/info` should point to that instance's `/api/schema/{version}/dandiset/` URL , thus web frontend would load that schema from the backend/API instead of relying on the static JSONSchema serialization in a separate `dandi/schema` repository.
+- add the following endpoints API endpoints:
+    - `/api/schemas/available/` - Returns the list of available schema models that can be used as a query parameter value for the `/api/schemas/` endpoint
+    - `/api/schemas/` - Returns the JSONSchema for a queried model specified with the `model` query parameter (e.g., `?model=Dandiset`)
+        - Currently, this endpoint only returns the schema of the queried model at the latest version. In the future, it could be extended to support different versions with a `version` query parameter.
+        - In the future, this can be extended to support request of different content type. Currently, [application/schema+json](https://json-schema.org/draft/2020-12/json-schema-core#section-14) is supported, providing JSONSchema serialization
+- `schema_url` in `/info` should point to that instance's `/api/schemas/?model=Dandiset` URL , thus web frontend would load that schema from the backend/API instead of relying on the static JSONSchema serialization in a separate `dandi/schema` repository.
 
 ## Additional considerations
 

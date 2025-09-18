@@ -16,7 +16,7 @@ import pytest
 )
 def test_schema_latest(api_client, model: CommonModel):
     """Test that the schema endpoints return valid schemas."""
-    resp = api_client.get('/api/schema/', {'model': model.__name__})
+    resp = api_client.get('/api/schemas/', {'model': model.__name__})
     assert resp.status_code == 200
 
     # Verify that the schema is json and has core properties
@@ -32,5 +32,5 @@ def test_schema_latest(api_client, model: CommonModel):
 
 def test_schema_unsupported_model(api_client):
     """Test that the schema endpoint returns an error when passed invalid choice."""
-    resp = api_client.get('/api/schema/', {'model': 'NotAValidModel'})
+    resp = api_client.get('/api/schemas/', {'model': 'NotAValidModel'})
     assert resp.status_code == 400

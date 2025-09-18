@@ -68,8 +68,8 @@ api_urlpatterns = [
     path('api/stats/', stats_view),
     path('api/info/', info_view),
     path('api/blobs/digest/', blob_read_view, name='blob-read'),
-    path('api/schema/available', schema_list_view, name='schema-list-view'),
-    path('api/schema/', schema_view, name='schema-view'),
+    path('api/schemas/available/', schema_list_view, name='schema-list-view'),
+    path('api/schemas/', schema_view, name='schema-view'),
     path('api/uploads/initialize/', upload_initialize_view, name='upload-initialize'),
     re_path(
         r'api/uploads/(?P<upload_id>[0-9a-f\-]{36})/complete/',
