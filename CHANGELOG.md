@@ -1,3 +1,25 @@
+# v0.15.1 (Thu Sep 18 2025)
+
+#### 🐛 Bug Fix
+
+- Fix intermittent login error [#2542](https://github.com/dandi/dandi-archive/pull/2542) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 📝 Documentation
+
+- Improve documentation for development setup [#2535](https://github.com/dandi/dandi-archive/pull/2535) ([@candleindark](https://github.com/candleindark))
+
+#### 🧪 Tests
+
+- Switch minio docker image used by CI [#2541](https://github.com/dandi/dandi-archive/pull/2541) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.15.0 (Wed Sep 17 2025)
 
 #### 🚀 Enhancement
