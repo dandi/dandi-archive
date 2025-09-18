@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from django.db import transaction
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from django.contrib.auth.models import User
+
+from dandischema.models import AccessRequirements, AccessType, Organization, RoleType
 
 from dandiapi.api.models.dandiset import Dandiset, DandisetStar
 from dandiapi.api.models.version import Version
@@ -16,11 +25,10 @@ from dandiapi.api.services.permissions.dandiset import add_dandiset_owner, is_da
 from dandiapi.api.services.version.metadata import _normalize_version_metadata
 
 
-def create_dandiset(
+def _create_dandiset(
     *,
-    user,
+    user: User,
     identifier: int | None = None,
-    embargo: bool,
     version_name: str,
     version_metadata: dict,
 ) -> tuple[Dandiset, Version]:
@@ -33,13 +41,12 @@ def create_dandiset(
     if existing_dandiset:
         raise DandisetAlreadyExistsError(f'Dandiset {existing_dandiset.identifier} already exists')
 
-    embargo_status = Dandiset.EmbargoStatus.EMBARGOED if embargo else Dandiset.EmbargoStatus.OPEN
     version_metadata = _normalize_version_metadata(
-        version_metadata, f'{user.last_name}, {user.first_name}', user.email, embargo=embargo
+        version_metadata, f'{user.last_name}, {user.first_name}', user.email
     )
 
     with transaction.atomic():
-        dandiset = Dandiset(id=identifier, embargo_status=embargo_status)
+        dandiset = Dandiset(id=identifier)
         dandiset.full_clean()
         dandiset.save()
         add_dandiset_owner(dandiset, user)
@@ -52,9 +59,79 @@ def create_dandiset(
         draft_version.full_clean(validate_constraints=False)
         draft_version.save()
 
-        audit.create_dandiset(
-            dandiset=dandiset, user=user, metadata=draft_version.metadata, embargoed=embargo
+    return dandiset, draft_version
+
+
+def create_open_dandiset(
+    *,
+    user: User,
+    identifier: int | None = None,
+    version_name: str,
+    version_metadata: dict,
+) -> tuple[Dandiset, Version]:
+    with transaction.atomic():
+        dandiset, draft_version = _create_dandiset(
+            user=user,
+            identifier=identifier,
+            version_name=version_name,
+            version_metadata=version_metadata,
         )
+
+        audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
+
+    return dandiset, draft_version
+
+
+def create_embargoed_dandiset(  # noqa: PLR0913
+    *,
+    user: User,
+    identifier: int | None = None,
+    version_name: str,
+    version_metadata: dict,
+    funding_source: str | None,
+    award_number: str | None,
+    embargo_end_date: datetime,
+) -> tuple[Dandiset, Version]:
+    with transaction.atomic():
+        dandiset, draft_version = _create_dandiset(
+            user=user,
+            identifier=identifier,
+            version_name=version_name,
+            version_metadata=version_metadata,
+        )
+
+        dandiset.embargo_status = Dandiset.EmbargoStatus.EMBARGOED
+        dandiset.full_clean()
+        dandiset.save()
+
+        draft_version.metadata['access'] = [
+            AccessRequirements(
+                schemaKey='AccessRequirements',
+                status=AccessType.EmbargoedAccess,
+                embargoedUntil=embargo_end_date,
+            ).json_dict()
+        ]
+
+        if funding_source:
+            contributors = version_metadata.get('contributor')
+            if contributors is None or not isinstance(contributors, list):
+                contributors = []
+
+            kwargs = {
+                'name': funding_source,
+                'schemaKey': 'Organization',
+                'roleName': [RoleType.Funder.value],
+            }
+            if award_number:
+                kwargs['awardNumber'] = award_number
+
+            contributors.append(Organization(**kwargs).json_dict())
+            draft_version.metadata['contributor'] = contributors
+
+        draft_version.full_clean(validate_constraints=False)
+        draft_version.save()
+
+        audit.create_dandiset(dandiset=dandiset, user=user, metadata=draft_version.metadata)
 
     return dandiset, draft_version
 

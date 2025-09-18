@@ -35,7 +35,7 @@ jobs:
           - 5672:5672
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnami/minio:latest
+        image: bitnamilegacy/minio:latest
         env:
           MINIO_ROOT_USER: minioAccessKey
           MINIO_ROOT_PASSWORD: minioSecretKey
@@ -46,6 +46,13 @@ jobs:
           --health-start-interval 2s
         ports:
           - 9000:9000
+    env:
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
+      DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
+      DJANGO_DANDI_API_URL: http://localhost:8000
+      DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
     steps:
       - uses: actions/checkout@v5
       - name: Install uv
@@ -56,10 +63,8 @@ jobs:
       - name: Run Python tests
         run: |
           uv run tox
+      - name: Verify gunicorn config
+        run: |
+          uv run gunicorn --config gunicorn.conf.py --check-config dandiapi.wsgi
         env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
-          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
-          DJANGO_DANDI_WEB_APP_URL: http://localhost:8085
-          DJANGO_DANDI_API_URL: http://localhost:8000
-          DJANGO_DANDI_JUPYTERHUB_URL: https://hub.dandiarchive.org/
+          DJANGO_SETTINGS_MODULE: dandiapi.settings.development

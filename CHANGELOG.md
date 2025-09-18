@@ -1,3 +1,96 @@
+# v0.15.1 (Thu Sep 18 2025)
+
+#### 🐛 Bug Fix
+
+- Fix intermittent login error [#2542](https://github.com/dandi/dandi-archive/pull/2542) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 📝 Documentation
+
+- Improve documentation for development setup [#2535](https://github.com/dandi/dandi-archive/pull/2535) ([@candleindark](https://github.com/candleindark))
+
+#### 🧪 Tests
+
+- Switch minio docker image used by CI [#2541](https://github.com/dandi/dandi-archive/pull/2541) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Isaac To ([@candleindark](https://github.com/candleindark))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.15.0 (Wed Sep 17 2025)
+
+#### 🚀 Enhancement
+
+- Add Neuroglancer external service for umembargoed Zarr and NIfTI assets [#2063](https://github.com/dandi/dandi-archive/pull/2063) (aaronkanzer@Aarons-MacBook-Pro.local [@mvandenburgh](https://github.com/mvandenburgh) [@aaronkanzer](https://github.com/aaronkanzer))
+
+#### Authors: 3
+
+- [@aaronkanzer](https://github.com/aaronkanzer)
+- Aaron Kanzer (aaronkanzer@Aarons-MacBook-Pro.local)
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.14.0 (Mon Sep 15 2025)
+
+#### 🚀 Enhancement
+
+- Add admin user list endpoint [#2537](https://github.com/dandi/dandi-archive/pull/2537) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Fix embargoed dandiset creation form [#2462](https://github.com/dandi/dandi-archive/pull/2462) ([@bendichter](https://github.com/bendichter) [@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 3
+
+- Ben Dichter ([@bendichter](https://github.com/bendichter))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
+# v0.13.6 (Fri Sep 12 2025)
+
+#### 🐛 Bug Fix
+
+- Don't modify existing object tags when adding/removing embargoed tags [#2517](https://github.com/dandi/dandi-archive/pull/2517) ([@jjnesbitt](https://github.com/jjnesbitt))
+- DOC: remove "Are you lost?" [#2530](https://github.com/dandi/dandi-archive/pull/2530) ([@yarikoptic](https://github.com/yarikoptic))
+
+#### Authors: 2
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Yaroslav Halchenko ([@yarikoptic](https://github.com/yarikoptic))
+
+---
+
+# v0.13.5 (Tue Sep 09 2025)
+
+#### 🐛 Bug Fix
+
+- Upgrade django-resonant-settings, back out temporary fix [#2524](https://github.com/dandi/dandi-archive/pull/2524) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Temporarily override broken upstream setting [#2522](https://github.com/dandi/dandi-archive/pull/2522) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### 🏠 Internal
+
+- Fix typo in gunicorn conf file [#2528](https://github.com/dandi/dandi-archive/pull/2528) ([@jjnesbitt](https://github.com/jjnesbitt))
+- Include `gunicorn.conf.py` in heroku sdist [#2526](https://github.com/dandi/dandi-archive/pull/2526) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Configure `gunicorn` to include username in access logs [#2525](https://github.com/dandi/dandi-archive/pull/2525) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Update to Django 5 [#2419](https://github.com/dandi/dandi-archive/pull/2419) ([@mvandenburgh](https://github.com/mvandenburgh))
+- Switch the default storage to always use `S3Storage` [#2500](https://github.com/dandi/dandi-archive/pull/2500) ([@brianhelba](https://github.com/brianhelba))
+
+#### 🔩 Dependency Updates
+
+- [gh-actions](deps): Bump actions/setup-node from 4 to 5 [#2529](https://github.com/dandi/dandi-archive/pull/2529) ([@dependabot[bot]](https://github.com/dependabot[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.13.4 (Thu Aug 28 2025)
 
 #### 🐛 Bug Fix

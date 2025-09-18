@@ -75,6 +75,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Add username middleware after authentication to capture username for gunicorn access logs
+    'dandiapi.api.middleware.GunicornUsernameMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
@@ -133,8 +135,12 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 
 AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
 
-REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
-    'rest_framework.authentication.TokenAuthentication'
+# Override the three authentication classes we use in order to
+# include the username in the access logs
+REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
+    'dandiapi.api.middleware.LoggingOAuth2Authentication',
+    'dandiapi.api.middleware.LoggingSessionAuthentication',
+    'dandiapi.api.middleware.LoggingTokenAuthentication',
 ]
 REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] += ['dandiapi.api.permissions.IsApprovedOrReadOnly']
 REST_FRAMEWORK['DEFAULT_PAGINATION_CLASS'] = 'dandiapi.api.views.pagination.DandiPagination'
@@ -159,13 +165,6 @@ CELERY_WORKER_CONCURRENCY: int | None = env.int('DJANGO_CELERY_WORKER_CONCURRENC
 _dandi_log_level: str = env.str('DJANGO_DANDI_LOG_LEVEL', default='INFO')
 # Configure the logging level on all DANDI loggers.
 logging.getLogger('dandiapi').setLevel(_dandi_log_level)
-
-# Configure custom logging to log username if request is associated
-# with a user
-LOGGING['handlers']['console']['class'] = 'dandiapi.api.logging.DandiHandler'
-MIDDLEWARE += [
-    'dandiapi.api.logging.RequestUserMiddleware',
-]
 
 # This is where the schema version should be set.
 # It can optionally be overwritten with the environment variable, but that should only be

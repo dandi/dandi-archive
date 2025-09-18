@@ -30,8 +30,8 @@
                 </template>
                 <span>
                   Embargoed Dandisets are hidden from public access until a specific time period has
-                  elapsed. Uploading data to the DANDI Archive under embargo requires a relevant
-                  NIH award number, and the data will be automatically published when the embargo
+                  elapsed. You can associate the dandiset with a research award/grant or set a
+                  2-year embargo period. The data will be automatically published when the embargo
                   period expires.
                 </span>
               </v-tooltip>
@@ -113,23 +113,86 @@
         </div>
         <div v-else>
           <div class="text-h4">
-            NIH Award Number
+            Award Information
           </div>
           <div>
-            Provide an NIH award number for this embargoed Dandiset. Note: this
-            can be changed at any time and additional award numbers can be added
-            later.
+            <v-switch
+              v-model="hasAward"
+              class="mb-4"
+            >
+              <template #label>
+                This Dandiset is associated with a research award/grant
+              </template>
+            </v-switch>
           </div>
-          <v-text-field
-            v-model="awardNumber"
-            label="Award number"
-            :counter="120"
-            :required="embargoed"
-            variant="outlined"
-            density="compact"
-            class="my-4"
-            :rules="awardNumberRules"
-          />
+
+          <div v-if="hasAward">
+            <div class="text-h5 mb-2">
+              Funding Source
+            </div>
+            <div class="mb-3">
+              Specify the funding organization for this research.
+            </div>
+            <v-text-field
+              v-model="fundingSource"
+              label="Funding source (e.g., National Institutes of Health)"
+              required
+              variant="outlined"
+              density="compact"
+              class="mb-4"
+              :rules="fundingSourceRules"
+            />
+
+            <div class="text-h5 mb-2">
+              Grant/Award Number
+            </div>
+            <div class="mb-3">
+              Provide the grant or award number. For awards without a grant number, please
+              provide the project name.
+            </div>
+            <v-text-field
+              v-model="awardNumber"
+              label="Grant/Award number"
+              :counter="120"
+              variant="outlined"
+              density="compact"
+              class="mb-4"
+            />
+
+            <div class="text-h5 mb-2">
+              Grant End Date
+            </div>
+            <div class="mb-3">
+              When does this grant/award period end? This will be used to determine the embargo end date.
+            </div>
+            <v-text-field
+              v-model="grantEndDate"
+              label="Grant end date"
+              type="date"
+              required
+              variant="outlined"
+              density="compact"
+              class="mb-4"
+              :rules="grantEndDateRules"
+            />
+          </div>
+
+          <div v-else>
+            <div class="text-h5 mb-2">
+              Embargo End Date
+            </div>
+            <div class="mb-3">
+              Since this Dandiset is not associated with a research award, the embargo will automatically end 2 years from today.
+            </div>
+            <v-text-field
+              v-model="embargoEndDate"
+              label="Embargo end date"
+              readonly
+              variant="outlined"
+              density="compact"
+              class="mb-4"
+            />
+          </div>
         </div>
         <small class="float-right font-weight-bold">All fields are required</small>
       </v-form>
@@ -160,18 +223,7 @@ import { dandiRest, loggedIn } from '@/rest';
 import { useDandisetStore } from '@/stores/dandiset';
 import { dandiDocumentationUrl, sandboxDocsUrl } from '@/utils/constants';
 
-import type { IdentifierForAnAward, LicenseType, License } from '@/types';
-
-// Regular expression to validate an NIH award number.
-// Based on https://era.nih.gov/files/Deciphering_NIH_Application.pdf
-// and https://era.nih.gov/erahelp/commons/Commons/understandGrantNums.htm
-const NIH_AWARD_REGEX = /^\d \w+ \w{2} \d{6}-\d{2}([A|S|X|P]\d)?$/;
-
-function awardNumberValidator(awardNumber: IdentifierForAnAward): boolean {
-  return NIH_AWARD_REGEX.test(awardNumber);
-}
-
-const VALIDATION_FAIL_MESSAGE = 'Award number must be properly space-delimited.\n\nExample (exclude quotes):\n"1 R01 CA 123456-01A1"';
+import type { LicenseType, License } from '@/types';
 
 const router = useRouter();
 const store = useDandisetStore();
@@ -180,17 +232,64 @@ const name = ref('');
 const description = ref('');
 const license = ref<LicenseType>();
 const embargoed = ref(false);
+const hasAward = ref(true);
+const fundingSource = ref('');
 const awardNumber = ref('');
+const grantEndDate = ref('');
+
+// Calculate embargo end date as 2 years from today
+const embargoEndDate = computed(() => {
+  const today = new Date();
+  const twoYearsFromNow = new Date(today.getFullYear() + 2, today.getMonth(), today.getDate());
+  return twoYearsFromNow.toISOString().split('T')[0];
+});
+
+// Helper function to validate grant end date bounds
+const isGrantEndDateValid = computed(() => {
+  if (!grantEndDate.value) return false; // Required field
+
+  const selectedDate = new Date(grantEndDate.value);
+  const today = new Date();
+  const fiveYearsFromNow = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate());
+
+  // Check if date is in the past or more than 5 years in the future
+  return selectedDate >= today && selectedDate <= fiveYearsFromNow;
+});
+
 const saveDisabled = computed(
   () => !name.value
       || !description.value
-      || (embargoed.value && !awardNumberValidator(awardNumber.value))
-      || (!embargoed.value && !license.value),
+      || (!embargoed.value && !license.value)
+      || (embargoed.value && hasAward.value && (!fundingSource.value || !grantEndDate.value || !isGrantEndDateValid.value))
+      || (embargoed.value && !hasAward.value && !embargoEndDate.value),
 );
 
-const awardNumberRules = computed(
-  () => [(v: string) => awardNumberValidator(v) || VALIDATION_FAIL_MESSAGE],
+const fundingSourceRules = computed(
+  () => [(v: string) => !!v || 'Funding source is required'],
 );
+
+const grantEndDateRules = computed(() => [
+  (v: string) => !!v || 'Grant end date is required',
+  (v: string) => {
+    if (!v) return true; // Skip validation if empty (handled by required rule)
+
+    const selectedDate = new Date(v);
+    const today = new Date();
+    const fiveYearsFromNow = new Date(today.getFullYear() + 5, today.getMonth(), today.getDate());
+
+    // Check if date is in the past
+    if (selectedDate < today) {
+      return 'Grant end date cannot be in the past';
+    }
+
+    // Check if date is more than 5 years in the future
+    if (selectedDate > fiveYearsFromNow) {
+      return 'DANDI only supports 5 years of embargo';
+    }
+
+    return true;
+  },
+]);
 
 const nameMaxLength: ComputedRef<number> = computed(() => store.schema.properties.name.maxLength);
 const descriptionMaxLength: ComputedRef<number> = computed(
@@ -217,11 +316,23 @@ async function registerDandiset() {
     metadata.license = [license.value];
   }
 
-  const { data } = embargoed.value
-    ? await dandiRest.createEmbargoedDandiset(name.value, metadata, awardNumber.value)
-    : await dandiRest.createDandiset(name.value, metadata);
-  const { identifier } = data;
-  router.push({ name: 'dandisetLanding', params: { identifier } });
+  if (embargoed.value) {
+    // Handle embargoed dandiset creation with new structure
+    const embargoData = {
+      hasAward: hasAward.value,
+      funding_source: hasAward.value ? fundingSource.value : undefined,
+      award_number: hasAward.value ? awardNumber.value : undefined,
+      embargo_end_date: hasAward.value ? grantEndDate.value : embargoEndDate.value,
+    };
+
+    const { data } = await dandiRest.createEmbargoedDandiset(name.value, metadata, embargoData);
+    const { identifier } = data;
+    router.push({ name: 'dandisetLanding', params: { identifier } });
+  } else {
+    const { data } = await dandiRest.createDandiset(name.value, metadata);
+    const { identifier } = data;
+    router.push({ name: 'dandisetLanding', params: { identifier } });
+  }
 }
 
 </script>

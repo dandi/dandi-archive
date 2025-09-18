@@ -558,10 +558,10 @@
     "@parcel/watcher-win32-ia32" "2.5.1"
     "@parcel/watcher-win32-x64" "2.5.1"
 
-"@resonant/oauth-client@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@resonant/oauth-client/-/oauth-client-1.0.2.tgz#496ac75a547d23fcf877f1df6168862f96fb2fbc"
-  integrity sha512-P7mPkqtaUFGxK8Gb8oQXZHhvUGKgsxDzdnBgODUSoACwZj2uDmYrUIKEjnKoIYTlLLpeaxZE3yULl3RtJu0teg==
+"@resonant/oauth-client@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@resonant/oauth-client/-/oauth-client-1.0.3.tgz#318e9a8a785c8aadc30b0d568bc0ee7feb719fa4"
+  integrity sha512-WK5taVy2VN4se3tRVJosSajHEqMxHcemSWv9+Ysgp+Tylz/6NNyF4iUAOGFuLSF9K7cqIgp/ZJ3CWy05seEQJw==
   dependencies:
     "@openid/appauth" "^1.3.2"
 

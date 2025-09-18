@@ -9,7 +9,7 @@ import djclick as click
 
 from dandiapi.api.models import AssetBlob
 from dandiapi.api.services.asset import add_asset_to_version
-from dandiapi.api.services.dandiset import create_dandiset
+from dandiapi.api.services.dandiset import create_open_dandiset
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.tasks import calculate_sha256
@@ -34,8 +34,8 @@ def create_dev_dandiset(*, name: str, email: str, num_extra_owners: int):
         'description': 'An informative description',
         'license': ['spdx:CC0-1.0'],
     }
-    dandiset, draft_version = create_dandiset(
-        user=owner, embargo=False, version_name=name, version_metadata=version_metadata
+    dandiset, draft_version = create_open_dandiset(
+        user=owner, version_name=name, version_metadata=version_metadata
     )
 
     if num_extra_owners:
