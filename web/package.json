@@ -18,7 +18,7 @@
     "@apidevtools/json-schema-ref-parser": "^11.9.3",
     "@koumoul/vjsf": "^3.12.0",
     "@mdi/font": "7.4.47",
-    "@resonant/oauth-client": "^1.0.2",
+    "@resonant/oauth-client": "^1.0.3",
     "@sentry/vue": "^9.10.0",
     "axios": "^1.8.1",
     "core-js": "^3.41.0",
