@@ -1,226 +1,242 @@
 <template>
-  <v-card
-    v-if="currentDandiset && otherVersions"
-    class="px-3 border-b rounded-0 elevation-0"
-  >
-    <v-dialog
-      v-if="showPublishWarningDialog"
-      v-model="showPublishWarningDialog"
-      persistent
-      max-width="60vh"
+  <div>
+    <v-card
+      v-if="currentDandiset && otherVersions"
+      class="rounded-0 elevation-0"
     >
-      <v-card class="pb-3">
-        <v-card-title class="text-h5 font-weight-light">
-          WARNING
-        </v-card-title>
-        <v-divider class="my-3" />
-        <v-card-text>
-          This action will force publish this Dandiset, potentially
-          before the owners are prepared to do so.
-        </v-card-text>
-        <v-card-text>
-          Would you like to proceed?
-        </v-card-text>
-
-        <v-card-actions>
-          <v-btn
-            color="error"
-            variant="flat"
-            @click="publish()"
-          >
-            Yes
-          </v-btn>
-          <v-btn
-            variant="flat"
-            @click="showPublishWarningDialog = false"
-          >
-            No, take me back
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-row
-      v-if="!publishButtonHidden"
-      no-gutters
-    >
-      <v-tooltip
-        :disabled="!publishDisabledMessage"
-        location="left"
+      <v-dialog
+        v-if="showPublishWarningDialog"
+        v-model="showPublishWarningDialog"
+        persistent
+        max-width="60vh"
       >
-        <template #activator="{ props: tooltipProps }">
-          <div
-            class="px-1 pt-3"
-            style="width: 100%"
-            v-bind="tooltipProps"
-          >
-            <v-row
-              v-if="showPublishWarning"
-              class="text-caption text-error align-center mb-3"
-              no-gutters
+        <v-card class="pb-3">
+          <v-card-title class="text-h5 font-weight-light">
+            WARNING
+          </v-card-title>
+          <v-divider class="my-3" />
+          <v-card-text>
+            This action will force publish this Dandiset, potentially
+            before the owners are prepared to do so.
+          </v-card-text>
+          <v-card-text>
+            Would you like to proceed?
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn
+              color="error"
+              variant="flat"
+              @click="publish()"
             >
-              <v-col
-                cols="1"
-                class="mr-2"
-              >
-                <v-icon color="error">
-                  mdi-alert-circle
-                </v-icon>
-              </v-col>
-              <v-col>
-                <span>
-                  As an <span class="font-weight-bold">admin</span>,
-                  you may publish Dandisets without being an owner.
-                </span>
-              </v-col>
-            </v-row>
-            <div
-              class="text-center"
+              Yes
+            </v-btn>
+            <v-btn
+              variant="flat"
+              @click="showPublishWarningDialog = false"
             >
-              <v-dialog
-                v-model="showPublishChecklistDialog"
-                width="900"
+              No, take me back
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <v-card-text
+        v-if="!publishButtonHidden"
+        class="pb-2"
+      >
+        <v-tooltip
+          :disabled="!publishDisabledMessage"
+          location="left"
+        >
+          <template #activator="{ props: tooltipProps }">
+            <div v-bind="tooltipProps">
+              <v-row
+                v-if="showPublishWarning"
+                class="text-caption text-error align-center mb-3"
+                no-gutters
               >
-                <template #activator="{ props: dialogProps }">
-                  <v-btn
-                    block
-                    :color="showPublishWarning ? 'error' : 'success'"
-                    variant="flat"
-                    :disabled="publishButtonDisabled"
-                    v-bind="dialogProps"
-                  >
-                    Publish
-                    <v-spacer />
-                    <v-icon>mdi-upload</v-icon>
-                  </v-btn>
-                </template>
-
-                <v-card>
-                  <v-card-title class="text-h5 bg-grey-lighten-2">
-                    Publish Checklist
-                  </v-card-title>
-
-                  <v-card-text>
-                    <v-list>
-                      <span class="text-body-1 font-weight-bold">
-                        For best results, please check the following
-                        items before you publish:
-                      </span>
-                      <!-- Note: this is safe as we aren't rendering any user-generated input -->
-                      <!-- eslint-disable vue/no-v-html vue/no-v-text-v-html-on-component -->
-                      <v-list-item
-                        v-for="(item, i) in PUBLISH_CHECKLIST"
-                        :key="`checklist_item_${i}`"
-                        class="text-body-2 my-1"
-                        v-html="`<span>${i+1}. ${item}</span>`"
-                      />
-                      <!-- eslint-enable vue/no-v-html vue/no-v-text-v-html-on-component -->
-                    </v-list>
-                  </v-card-text>
-
-                  <v-divider />
-
-                  <v-card-actions class="justify-end">
+                <v-col
+                  cols="1"
+                  class="mr-2"
+                >
+                  <v-icon color="error">
+                    mdi-alert-circle
+                  </v-icon>
+                </v-col>
+                <v-col>
+                  <span>
+                    As an <span class="font-weight-bold">admin</span>,
+                    you may publish Dandisets without being an owner.
+                  </span>
+                </v-col>
+              </v-row>
+              <div class="text-center">
+                <v-dialog
+                  v-model="showPublishChecklistDialog"
+                  width="900"
+                >
+                  <template #activator="{ props: dialogProps }">
                     <v-btn
-                      color="dropzone"
-                      variant="flat"
-                      @click="showPublishChecklistDialog = false"
-                    >
-                      Cancel
-                    </v-btn>
-                    <v-btn
+                      block
                       :color="showPublishWarning ? 'error' : 'success'"
                       variant="flat"
-                      @click="publish"
+                      :disabled="publishButtonDisabled"
+                      append-icon="mdi-upload"
+                      v-bind="dialogProps"
                     >
                       Publish
-                      <v-spacer />
-                      <v-progress-circular
-                        v-if="publishing"
-                        indeterminate
-                      />
-                      <v-icon v-else>
-                        mdi-upload
-                      </v-icon>
                     </v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-dialog>
+                  </template>
+
+                  <v-card>
+                    <v-card-title class="text-h5 bg-grey-lighten-2">
+                      Publish Checklist
+                    </v-card-title>
+
+                    <v-card-text>
+                      <v-list>
+                        <span class="text-body-1 font-weight-bold">
+                          For best results, please check the following
+                          items before you publish:
+                        </span>
+                        <!-- Note: this is safe as we aren't rendering any user-generated input -->
+                        <!-- eslint-disable vue/no-v-html vue/no-v-text-v-html-on-component -->
+                        <v-list-item
+                          v-for="(item, i) in PUBLISH_CHECKLIST"
+                          :key="`checklist_item_${i}`"
+                          class="text-body-2 my-1"
+                          v-html="`<span>${i+1}. ${item}</span>`"
+                        />
+                        <!-- eslint-enable vue/no-v-html vue/no-v-text-v-html-on-component -->
+                      </v-list>
+                    </v-card-text>
+
+                    <v-divider />
+
+                    <v-card-actions class="justify-end">
+                      <v-btn
+                        color="dropzone"
+                        variant="flat"
+                        @click="showPublishChecklistDialog = false"
+                      >
+                        Cancel
+                      </v-btn>
+                      <v-btn
+                        :color="showPublishWarning ? 'error' : 'success'"
+                        variant="flat"
+                        @click="publish"
+                      >
+                        Publish
+                        <v-spacer />
+                        <v-progress-circular
+                          v-if="publishing"
+                          indeterminate
+                        />
+                        <v-icon v-else>
+                          mdi-upload
+                        </v-icon>
+                      </v-btn>
+                    </v-card-actions>
+                  </v-card>
+                </v-dialog>
+              </div>
             </div>
-          </div>
-        </template>
-        <span>{{ publishDisabledMessage }}</span>
-      </v-tooltip>
-    </v-row>
+          </template>
+          <span>{{ publishDisabledMessage }}</span>
+        </v-tooltip>
+      </v-card-text>
 
-    <DandisetValidationErrors
-      :dandiset="currentDandiset"
-      :is-owner="isOwner"
-    />
+      <DandisetValidationErrors
+        :dandiset="currentDandiset"
+        :is-owner="isOwner"
+      />
 
-    <v-row no-gutters>
-      <v-list-subheader class="mb-2 text-black text-h5">
+    </v-card>
+    <v-divider />
+    <v-card class="rounded-0 elevation-0">
+      <v-card-title>
         This Version
-      </v-list-subheader>
-    </v-row>
-    <v-row
-      class="pa-2 mb-5 text-body-2 align-center"
-      style="border-top: thin solid rgba(0, 0, 0, 0.12);
-             border-bottom: thin solid rgba(0, 0, 0, 0.12);
-             text-align: center;"
-    >
-      <v-col
-        :cols="isMdDisplay ? 12 : 4"
-        style=""
-      >
-        {{ formatDate(currentDandiset.modified) }}
-      </v-col>
-      <v-col>
-        <h3>{{ currentVersion?.toUpperCase() }}</h3>
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-list-subheader class="mb-2 text-black text-h5">
+      </v-card-title>
+      <v-card-text>
+        <v-list class="pa-0">
+          <v-list-item class="border rounded">
+            <template v-slot:prepend>
+              <v-icon color="green">mdi-check-bold</v-icon>
+            </template>
+            <div class="d-flex align-center justify-space-between">
+              <v-list-item-title>
+                <strong>{{ currentVersion?.toUpperCase() }}</strong>
+              </v-list-item-title>
+              <v-list-item-subtitle class="text-caption">{{ formatDate(currentDandiset.modified) }}</v-list-item-subtitle>
+            </div>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
+    <v-divider />
+    <v-card class="rounded-0 elevation-0">
+      <v-card-title>
         Other Versions
-      </v-list-subheader>
-    </v-row>
-    <v-row
-      v-for="(version, i) in otherVersions"
-      :key="i"
-      class="pa-2 text-body-2 align-center justify-center"
-      style="border-top: thin solid rgba(0, 0, 0, 0.12);
-             border-bottom: thin solid rgba(0, 0, 0, 0.12);
-             text-align: center;"
-    >
-      <v-col
-        :cols="isMdDisplay ? 12 : 4"
-      >
-        {{ formatDate(version.modified) }}
-      </v-col>
-      <v-col>
-        <v-btn
-          variant="outlined"
-          @click="setVersion(version)"
+      </v-card-title>
+      <v-card-text>
+        <v-empty-state
+          v-if="!otherVersions.length"
+          text="When other versions get published, they'll appear here."
+          title="This is the only version"
+        ></v-empty-state>
+        <v-list
+          v-else
+          class="border border-b-0 rounded pa-0"
         >
-          {{ version.version.toUpperCase() }}
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-snackbar :model-value="!!alreadyBeingPublishedError">
-      This dandiset is already being published. Please wait for publishing to complete.
-    </v-snackbar>
-    <v-snackbar :model-value="!!publishedVersion">
-      Publish complete.
-      <template #actions>
-        <v-btn
-          color="info"
-          variant="text"
-          @click="navigateToPublishedVersion"
-        >
-          Go to published dandiset
-        </v-btn>
-      </template>
-    </v-snackbar>
-  </v-card>
+          <v-list-item
+            v-for="(version, i) in otherVersions"
+            :key="i"
+            class="border-b pl-2"
+          >
+            <template v-slot:prepend>
+              <v-list-item-action>
+                <v-tooltip
+                  location="start"
+                  text="Check out this version"
+                >
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      size="x-small"
+                      variant="outlined"
+                      icon="mdi-source-branch"
+                      class="rounded"
+                      @click="setVersion(version)"
+                    ></v-btn>
+                  </template>
+                </v-tooltip>
+              </v-list-item-action>
+            </template>
+            <div class="d-flex align-center justify-space-between pl-4">
+              <v-list-item-title>{{ version.version.toUpperCase() }}</v-list-item-title>
+              <v-list-item-subtitle class="text-caption">{{ formatDate(version.modified) }}</v-list-item-subtitle>
+            </div>
+          </v-list-item>
+        </v-list>
+      </v-card-text>
+    </v-card>
+
+      <v-snackbar :model-value="!!alreadyBeingPublishedError">
+        This dandiset is already being published. Please wait for publishing to complete.
+      </v-snackbar>
+      <v-snackbar :model-value="!!publishedVersion">
+        Publish complete.
+        <template #actions>
+          <v-btn
+            color="info"
+            variant="text"
+            @click="navigateToPublishedVersion"
+          >
+            Go to published dandiset
+          </v-btn>
+        </template>
+      </v-snackbar>
+  </div>
 </template>
 
 <script setup lang="ts">
