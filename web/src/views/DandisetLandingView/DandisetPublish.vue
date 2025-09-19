@@ -202,7 +202,7 @@
                   location="start"
                   text="Check out this version"
                 >
-                  <template #activator="{ versionTooltip }">
+                  <template #activator="{ props: versionTooltip }">
                     <v-btn
                       v-bind="versionTooltip"
                       size="x-small"
