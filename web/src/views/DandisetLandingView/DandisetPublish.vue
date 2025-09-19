@@ -296,7 +296,6 @@ const route = useRoute();
 const store = useDandisetStore();
 const display = useDisplay();
 
-const isMdDisplay = computed(() => display.md.value);
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.dandiset?.version);
 
