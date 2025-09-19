@@ -294,7 +294,6 @@ const props = defineProps({
 });
 const route = useRoute();
 const store = useDandisetStore();
-const display = useDisplay();
 
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.dandiset?.version);
