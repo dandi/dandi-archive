@@ -151,7 +151,6 @@
         :dandiset="currentDandiset"
         :is-owner="isOwner"
       />
-
     </v-card>
     <v-divider />
     <v-card class="rounded-0 elevation-0">
@@ -161,14 +160,18 @@
       <v-card-text>
         <v-list class="pa-0">
           <v-list-item class="border rounded">
-            <template v-slot:prepend>
-              <v-icon color="green">mdi-check-bold</v-icon>
+            <template #prepend>
+              <v-icon color="green">
+                mdi-check-bold
+              </v-icon>
             </template>
             <div class="d-flex align-center justify-space-between">
               <v-list-item-title>
                 <strong>{{ currentVersion?.toUpperCase() }}</strong>
               </v-list-item-title>
-              <v-list-item-subtitle class="text-caption">{{ formatDate(currentDandiset.modified) }}</v-list-item-subtitle>
+              <v-list-item-subtitle class="text-caption">
+                {{ currentDandiset ? formatDate(currentDandiset.modified) : '' }}
+              </v-list-item-subtitle>
             </div>
           </v-list-item>
         </v-list>
@@ -181,9 +184,9 @@
       </v-card-title>
       <v-card-text>
         <v-empty-state
-          v-if="!otherVersions.length"
+          v-if="!otherVersions?.length"
           text="This is the only version. When other versions get published, they'll appear here."
-        ></v-empty-state>
+        />
         <v-list
           v-else
           class="border border-b-0 rounded pa-0"
@@ -193,49 +196,51 @@
             :key="i"
             class="border-b pl-2"
           >
-            <template v-slot:prepend>
+            <template #prepend>
               <v-list-item-action>
                 <v-tooltip
                   location="start"
                   text="Check out this version"
                 >
-                  <template v-slot:activator="{ props }">
+                  <template #activator="{ props: versionTooltip }">
                     <v-btn
-                      v-bind="props"
+                      v-bind="versionTooltip"
                       size="x-small"
                       variant="outlined"
                       icon="mdi-source-branch"
                       class="rounded"
                       @click="setVersion(version)"
-                    ></v-btn>
+                    />
                   </template>
                 </v-tooltip>
               </v-list-item-action>
             </template>
             <div class="d-flex align-center justify-space-between pl-4">
               <v-list-item-title>{{ version.version.toUpperCase() }}</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">{{ formatDate(version.modified) }}</v-list-item-subtitle>
+              <v-list-item-subtitle class="text-caption">
+                {{ formatDate(version.modified) }}
+              </v-list-item-subtitle>
             </div>
           </v-list-item>
         </v-list>
       </v-card-text>
     </v-card>
 
-      <v-snackbar :model-value="!!alreadyBeingPublishedError">
-        This dandiset is already being published. Please wait for publishing to complete.
-      </v-snackbar>
-      <v-snackbar :model-value="!!publishedVersion">
-        Publish complete.
-        <template #actions>
-          <v-btn
-            color="info"
-            variant="text"
-            @click="navigateToPublishedVersion"
-          >
-            Go to published dandiset
-          </v-btn>
-        </template>
-      </v-snackbar>
+    <v-snackbar :model-value="!!alreadyBeingPublishedError">
+      This dandiset is already being published. Please wait for publishing to complete.
+    </v-snackbar>
+    <v-snackbar :model-value="!!publishedVersion">
+      Publish complete.
+      <template #actions>
+        <v-btn
+          color="info"
+          variant="text"
+          @click="navigateToPublishedVersion"
+        >
+          Go to published dandiset
+        </v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
@@ -248,7 +253,6 @@ import {
   ref,
   watchEffect,
 } from 'vue';
-import { useDisplay } from 'vuetify';
 
 import axios from 'axios';
 import moment from 'moment';
@@ -294,9 +298,7 @@ const props = defineProps({
 });
 const route = useRoute();
 const store = useDandisetStore();
-const display = useDisplay();
 
-const isMdDisplay = computed(() => display.md.value);
 const currentDandiset = computed(() => store.dandiset);
 const currentVersion = computed(() => store.dandiset?.version);
 
