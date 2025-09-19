@@ -1,5 +1,5 @@
 <template>
-  <v-container class="pa-0 py-2">
+  <v-container class="pt-1">
     <v-menu v-if="dandiset.status === 'Pending'">
       <template #activator="{ props: menuProps }">
         <v-tooltip location="bottom">
