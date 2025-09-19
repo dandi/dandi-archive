@@ -79,9 +79,10 @@
                     <v-btn
                       block
                       :color="showPublishWarning ? 'error' : 'success'"
+                      class="justify-start"
                       variant="flat"
                       :disabled="publishButtonDisabled"
-                      append-icon="mdi-upload"
+                      prepend-icon="mdi-upload"
                       v-bind="dialogProps"
                     >
                       Publish
@@ -181,8 +182,7 @@
       <v-card-text>
         <v-empty-state
           v-if="!otherVersions.length"
-          text="When other versions get published, they'll appear here."
-          title="This is the only version"
+          text="This is the only version. When other versions get published, they'll appear here."
         ></v-empty-state>
         <v-list
           v-else

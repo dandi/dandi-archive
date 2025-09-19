@@ -93,7 +93,7 @@
 
     <!-- Manage Owners dialog -->
     <v-card-actions
-      class="justify-center px-3"
+      class="justify-center px-4"
       no-gutters
     >
       <v-dialog
@@ -113,10 +113,10 @@
               >
                 <v-btn
                   id="manage"
-                  variant="flat"
+                  variant="tonal"
                   :disabled="manageOwnersDisabled"
-                  color="light-blue-lighten-5"
-                  class="text-light-blue-lighten-1 justify-start"
+                  color="primary"
+                  class="justify-start"
                   block
                   prepend-icon="mdi-account-plus"
                   v-bind="dialogProps"
