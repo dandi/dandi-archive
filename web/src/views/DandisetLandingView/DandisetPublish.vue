@@ -170,7 +170,7 @@
                 <strong>{{ currentVersion?.toUpperCase() }}</strong>
               </v-list-item-title>
               <v-list-item-subtitle class="text-caption">
-                {{ formatDate(currentDandiset.modified) }}
+                {{ currentDandiset ? formatDate(currentDandiset.modified) : '' }}
               </v-list-item-subtitle>
             </div>
           </v-list-item>
@@ -184,7 +184,7 @@
       </v-card-title>
       <v-card-text>
         <v-empty-state
-          v-if="!otherVersions.length"
+          v-if="!otherVersions?.length"
           text="This is the only version. When other versions get published, they'll appear here."
         />
         <v-list
