@@ -202,9 +202,9 @@
                   location="start"
                   text="Check out this version"
                 >
-                  <template #activator="{ props }">
+                  <template #activator="{ versionTooltip }">
                     <v-btn
-                      v-bind="props"
+                      v-bind="versionTooltip"
                       size="x-small"
                       variant="outlined"
                       icon="mdi-source-branch"
