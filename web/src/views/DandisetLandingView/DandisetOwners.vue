@@ -1,21 +1,10 @@
 <template>
-  <v-card class="px-3 pb-5 rounded-0 elevation-0">
-    <v-row
-      no-gutters
-      class="my-1"
-    >
-      <v-row
-        no-gutters
-        class="my-1 ml-1"
-      >
-        <div class="text-black text-h5">
-          Owners
-        </div>
-      </v-row>
-    </v-row>
+  <v-card class="rounded-0 elevation-0 pb-2">
+    <v-card-title>
+      Owners
+    </v-card-title>
 
-    <v-row class="my-1">
-      <v-col cols="12">
+    <v-card-text class="pb-2">
         <v-chip
           v-for="(owner, i) in limitedOwners"
           :key="i"
@@ -100,12 +89,11 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
-      </v-col>
-    </v-row>
+    </v-card-text>
 
     <!-- Manage Owners dialog -->
-    <v-row
-      class="justify-center"
+    <v-card-actions
+      class="justify-center px-3"
       no-gutters
     >
       <v-dialog
@@ -130,13 +118,9 @@
                   color="light-blue-lighten-5"
                   class="text-light-blue-lighten-1 justify-start"
                   block
+                  prepend-icon="mdi-account-plus"
                   v-bind="dialogProps"
                 >
-                  <v-icon
-                    class="pr-2"
-                  >
-                    mdi-account-plus
-                  </v-icon>
                   Manage Owners
                 </v-btn>
               </div>
@@ -155,7 +139,7 @@
           @close="ownerDialog = false"
         />
       </v-dialog>
-    </v-row>
+    </v-card-actions>
   </v-card>
 </template>
 
