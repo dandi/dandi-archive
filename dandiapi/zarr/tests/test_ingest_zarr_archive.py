@@ -8,6 +8,7 @@ from dandiapi.api.models import AssetPath
 from dandiapi.api.models.version import Version
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_dandiset_zarrs, ingest_zarr_archive
 
@@ -170,8 +171,8 @@ def test_ingest_zarr_archive_sets_version_pending(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ingest_dandiset_zarrs(dandiset_factory, zarr_archive_factory, zarr_file_factory):
-    dandiset = dandiset_factory()
+def test_ingest_dandiset_zarrs(zarr_archive_factory, zarr_file_factory):
+    dandiset = DandisetFactory.create()
     for _ in range(10):
         zarr_file_factory(
             path='foo/a',

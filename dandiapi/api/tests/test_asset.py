@@ -19,6 +19,7 @@ from dandiapi.api.services.asset.exceptions import AssetPathConflictError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.services.publish import publish_asset
 from dandiapi.api.tasks.scheduled import validate_pending_asset_metadata
+from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.zarr.models import ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -845,10 +846,8 @@ def test_asset_create_conflicting_path(api_client, user, draft_version, asset_bl
 
 
 @pytest.mark.django_db
-def test_asset_create_embargo(
-    api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob
-):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+def test_asset_create_embargo(api_client, user, draft_version_factory, embargoed_asset_blob):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version = draft_version_factory(dandiset=dandiset)
 
     add_dandiset_owner(draft_version.dandiset, user)
@@ -888,9 +887,9 @@ def test_asset_create_embargo(
 
 @pytest.mark.django_db
 def test_asset_create_unembargo_in_progress(
-    api_client, user, draft_version_factory, dandiset_factory, embargoed_asset_blob
+    api_client, user, draft_version_factory, embargoed_asset_blob
 ):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
     draft_version = draft_version_factory(dandiset=dandiset)
 
     add_dandiset_owner(draft_version.dandiset, user)
@@ -1051,13 +1050,11 @@ def test_asset_create_zarr_validated(
 
 
 @pytest.mark.django_db
-def test_asset_create_zarr_wrong_dandiset(
-    api_client, user, draft_version, zarr_archive_factory, dandiset_factory
-):
+def test_asset_create_zarr_wrong_dandiset(api_client, user, draft_version, zarr_archive_factory):
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
-    zarr_dandiset = dandiset_factory()
+    zarr_dandiset = DandisetFactory.create()
     zarr_archive = zarr_archive_factory(dandiset=zarr_dandiset)
 
     path = 'test/create/asset.txt'
@@ -1729,14 +1726,11 @@ def test_asset_download_embargo(
     authenticated_api_client,
     user,
     draft_version_factory,
-    dandiset_factory,
     asset_factory,
     embargoed_asset_blob,
 ):
     # Set draft version as embargoed
-    version = draft_version_factory(
-        dandiset=dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    )
+    version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
 
     # Assign perms and set client
     add_dandiset_owner(version.dandiset, user)

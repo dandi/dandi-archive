@@ -6,6 +6,7 @@ import pytest
 from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.asset import add_asset_to_version
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import DandisetFactory
 
 
 @pytest.mark.django_db
@@ -280,10 +281,8 @@ def test_asset_atpath_path_incorrect_version_id(api_client, user, draft_version,
 
 
 @pytest.mark.django_db
-def test_asset_atpath_embargoed_access(
-    api_client, user_factory, dandiset_factory, draft_version_factory
-):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+def test_asset_atpath_embargoed_access(api_client, user_factory, draft_version_factory):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version = draft_version_factory(dandiset=dandiset)
 
     user = user_factory()
@@ -313,8 +312,8 @@ def test_asset_atpath_embargoed_access(
 
 
 @pytest.mark.django_db
-def test_asset_atpath_public_access(api_client, dandiset_factory, draft_version_factory):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
+def test_asset_atpath_public_access(api_client, draft_version_factory):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN)
     draft_version = draft_version_factory(dandiset=dandiset)
 
     resp = api_client.get(

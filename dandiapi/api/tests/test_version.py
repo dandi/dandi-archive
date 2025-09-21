@@ -30,8 +30,8 @@ from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERS
 
 @freeze_time()
 @pytest.mark.django_db
-def test_version_next_published_version_simultaneous(dandiset_factory):
-    dandiset = dandiset_factory()
+def test_version_next_published_version_simultaneous():
+    dandiset = DandisetFactory.create()
     # Versions created at the same time should have the same version string
     version_str_1 = Version.next_published_version(dandiset)
     version_str_2 = Version.next_published_version(dandiset)

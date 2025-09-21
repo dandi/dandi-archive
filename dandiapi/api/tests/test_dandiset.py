@@ -37,22 +37,20 @@ def test_dandiset_identifier():
     assert int(dandiset.identifier) == dandiset.id
 
 
-def test_dandiset_identifer_missing(dandiset_factory):
-    dandiset = dandiset_factory.build()
+def test_dandiset_identifer_missing():
+    dandiset = DandisetFactory.build()
     # This should have a sane fallback
     assert dandiset.identifier == ''
 
 
 @pytest.mark.django_db
-def test_dandiset_published_count(
-    dandiset_factory, draft_version_factory, published_version_factory
-):
+def test_dandiset_published_count(draft_version_factory, published_version_factory):
     # empty dandiset
-    dandiset_factory()
+    DandisetFactory.create()
     # dandiset with draft version
-    draft_version_factory(dandiset=dandiset_factory())
+    draft_version_factory(dandiset=DandisetFactory.create())
     # dandiset with published version
-    published_version_factory(dandiset=dandiset_factory())
+    published_version_factory(dandiset=DandisetFactory.create())
 
     assert Dandiset.published_count() == 1
 
@@ -72,10 +70,8 @@ def test_dandiset_published_count(
     ],
 )
 @pytest.mark.django_db
-def test_dandiset_get_visible_dandisets(
-    dandiset_factory, user_factory, embargo_status, user_status, visible
-):
-    dandiset = dandiset_factory(embargo_status=embargo_status)
+def test_dandiset_get_visible_dandisets(user_factory, embargo_status, user_status, visible):
+    dandiset = DandisetFactory.create(embargo_status=embargo_status)
     if user_status == 'anonymous':
         user = AnonymousUser()
     else:
@@ -141,7 +137,6 @@ def test_dandiset_rest_list(api_client, user):
 @pytest.mark.django_db
 def test_dandiset_versions(
     api_client,
-    dandiset_factory,
     draft_version_factory,
     published_version_factory,
     asset_factory,
@@ -151,17 +146,17 @@ def test_dandiset_versions(
     # Create some dandisets of different kinds.
     #
     # Dandiset with empty draft
-    empty_dandiset = dandiset_factory()
+    empty_dandiset = DandisetFactory.create()
     draft_version_factory(dandiset=empty_dandiset)
 
     # Dandiset with populated draft
-    draft_dandiset = dandiset_factory()
+    draft_dandiset = DandisetFactory.create()
     draft_version = draft_version_factory(dandiset=draft_dandiset)
     draft_version.assets.add(asset_factory())
     add_version_asset_paths(draft_version)
 
     # Dandiset with published version
-    published_dandiset = dandiset_factory()
+    published_dandiset = DandisetFactory.create()
     draft_version = draft_version_factory(dandiset=published_dandiset)
     draft_version.assets.add(asset_factory())
     add_version_asset_paths(draft_version)
@@ -171,7 +166,7 @@ def test_dandiset_versions(
     add_version_asset_paths(published_version)
 
     # Dandiset with published version and empty draft
-    erased_dandiset = dandiset_factory()
+    erased_dandiset = DandisetFactory.create()
     draft_version_factory(dandiset=erased_dandiset)
     published_version = published_version_factory(dandiset=erased_dandiset)
     published_version.assets.add(asset_factory())
@@ -231,10 +226,10 @@ def test_dandiset_versions(
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_list_for_user(api_client, user, dandiset_factory):
-    dandiset = dandiset_factory()
+def test_dandiset_rest_list_for_user(api_client, user):
+    dandiset = DandisetFactory.create()
     # Create an extra dandiset that should not be included in the response
-    dandiset_factory()
+    DandisetFactory.create()
     api_client.force_authenticate(user=user)
     add_dandiset_owner(dandiset, user)
     assert api_client.get('/api/dandisets/?user=me&draft=true&empty=true').data == {
@@ -274,8 +269,8 @@ def test_dandiset_rest_retrieve(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_retrieve_embargoed(api_client, dandiset_factory, user):
-    dandiset: Dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+def test_dandiset_rest_retrieve_embargoed(api_client, user):
+    dandiset: Dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/')
     assert resp.status_code == 401
 
@@ -294,12 +289,10 @@ def test_dandiset_rest_retrieve_embargoed(api_client, dandiset_factory, user):
     ids=[choice[1] for choice in Dandiset.EmbargoStatus.choices],
 )
 @pytest.mark.django_db
-def test_dandiset_rest_embargo_access(
-    api_client, user_factory, dandiset_factory, embargo_status: str
-):
+def test_dandiset_rest_embargo_access(api_client, user_factory, embargo_status: str):
     owner = user_factory()
     unauthorized_user = user_factory()
-    dandiset = dandiset_factory(embargo_status=embargo_status)
+    dandiset = DandisetFactory.create(embargo_status=embargo_status)
     add_dandiset_owner(dandiset, owner)
 
     # This is what authorized users should get from the retrieve endpoint
@@ -1284,8 +1277,8 @@ def test_dandiset_contact_person_malformed_contributors(api_client, draft_versio
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('embargoed', [False, True])
-def test_dandiset_rest_list_active_uploads_not_owner(api_client, user, dandiset_factory, embargoed):
-    ds = dandiset_factory(
+def test_dandiset_rest_list_active_uploads_not_owner(api_client, user, embargoed):
+    ds = DandisetFactory.create(
         embargo_status=Dandiset.EmbargoStatus.EMBARGOED
         if embargoed
         else Dandiset.EmbargoStatus.OPEN
@@ -1320,10 +1313,8 @@ def test_dandiset_rest_list_active_uploads(
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('embargoed', [False, True])
-def test_dandiset_rest_clear_active_uploads_not_owner(
-    api_client, user, dandiset_factory, upload_factory, embargoed
-):
-    ds = dandiset_factory(
+def test_dandiset_rest_clear_active_uploads_not_owner(api_client, user, upload_factory, embargoed):
+    ds = DandisetFactory.create(
         embargo_status=Dandiset.EmbargoStatus.EMBARGOED
         if embargoed
         else Dandiset.EmbargoStatus.OPEN
@@ -1429,9 +1420,9 @@ def test_dandiset_is_starred(api_client, user):
 
 
 @pytest.mark.django_db
-def test_dandiset_list_starred(api_client, user, dandiset_factory):
+def test_dandiset_list_starred(api_client, user):
     api_client.force_authenticate(user=user)
-    dandisets = [dandiset_factory() for _ in range(3)]
+    dandisets = [DandisetFactory.create() for _ in range(3)]
 
     # Star 2 out of 3 dandisets
     api_client.post(f'/api/dandisets/{dandisets[0].identifier}/star/')

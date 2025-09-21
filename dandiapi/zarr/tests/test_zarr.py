@@ -89,9 +89,8 @@ def test_zarr_rest_create_embargoed_dandiset(
     authenticated_api_client,
     user,
     zarr_archive,
-    dandiset_factory,
 ):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     add_dandiset_owner(dandiset, user)
     resp = authenticated_api_client.post(
         '/api/zarr/',
@@ -108,10 +107,8 @@ def test_zarr_rest_create_embargoed_dandiset(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create_unembargoing(
-    authenticated_api_client, user, zarr_archive, dandiset_factory
-):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
+def test_zarr_rest_create_unembargoing(authenticated_api_client, user, zarr_archive):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
     add_dandiset_owner(dandiset, user)
     resp = authenticated_api_client.post(
         '/api/zarr/',
@@ -146,10 +143,8 @@ def test_zarr_rest_get(authenticated_api_client, zarr_archive_factory, zarr_file
 
 
 @pytest.mark.django_db
-def test_zarr_rest_get_embargoed(
-    authenticated_api_client, user, embargoed_zarr_archive_factory, dandiset_factory
-):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+def test_zarr_rest_get_embargoed(authenticated_api_client, user, embargoed_zarr_archive_factory):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     embargoed_zarr_archive = embargoed_zarr_archive_factory(dandiset=dandiset)
     assert user not in get_dandiset_owners(embargoed_zarr_archive.dandiset)
 
@@ -162,11 +157,9 @@ def test_zarr_rest_get_embargoed(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_list_embargoed(
-    authenticated_api_client, user, dandiset_factory, zarr_archive_factory
-):
-    open_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
-    embargoed_dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+def test_zarr_rest_list_embargoed(authenticated_api_client, user, zarr_archive_factory):
+    open_dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    embargoed_dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
 
     # Create some embargoed and some open zarrs
     open_zarrs = [zarr_archive_factory(dandiset=open_dandiset) for _ in range(3)]
@@ -186,13 +179,13 @@ def test_zarr_rest_list_embargoed(
 
 
 @pytest.mark.django_db
-def test_zarr_rest_list_filter(authenticated_api_client, dandiset_factory, zarr_archive_factory):
+def test_zarr_rest_list_filter(authenticated_api_client, zarr_archive_factory):
     # Create dandisets and zarrs
-    dandiset_a: Dandiset = dandiset_factory()
+    dandiset_a: Dandiset = DandisetFactory.create()
     zarr_archive_a_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='test')
     zarr_archive_a_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_a, name='unique')
 
-    dandiset_b: Dandiset = dandiset_factory()
+    dandiset_b: Dandiset = DandisetFactory.create()
     zarr_archive_b_a: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='test')
     zarr_archive_b_b: ZarrArchive = zarr_archive_factory(dandiset=dandiset_b, name='unique2')
 
