@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import hashlib
 from typing import TYPE_CHECKING
 
 import pytest
@@ -10,9 +8,8 @@ from dandiapi.api.asset_paths import add_version_asset_paths
 from dandiapi.api.models import AuditRecord, Dandiset
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tests.factories import DandisetFactory
-from dandiapi.zarr.models import ZarrArchive
+from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -329,106 +326,65 @@ def test_audit_upload_zarr_chunks(api_client, user, draft_version, zarr_archive_
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
-    zarr = zarr_archive_factory(dandiset=dandiset)
+    zarr_archive = zarr_archive_factory(dandiset=dandiset)
 
     # Request some chunk uploads.
-    b64hash = base64.b64encode(hashlib.md5(b'a').hexdigest().encode())
     paths = ['a.txt', 'b.txt', 'c.txt']
     api_client.force_authenticate(user=user)
     resp = api_client.post(
-        f'/api/zarr/{zarr.zarr_id}/files/',
-        [{'path': path, 'base64md5': b64hash} for path in paths],
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': path, 'base64md5': 'DMF1ucDxtqgxw5niaXcmYQ=='} for path in paths],
     )
     assert resp.status_code == 200
 
     # Verify the upload_zarr_chunks audit record.
     rec = get_latest_audit_record(dandiset=dandiset, record_type='upload_zarr_chunks')
     verify_model_properties(rec, user)
-    assert rec.details['zarr_id'] == zarr.zarr_id
+    assert rec.details['zarr_id'] == zarr_archive.zarr_id
     assert rec.details['paths'] == paths
 
 
 @pytest.mark.django_db
-def test_audit_finalize_zarr(api_client, user, draft_version, zarr_archive_factory, settings):
-    # Create a Dandiset and a Zarr archive.
-    dandiset = draft_version.dandiset
-    add_dandiset_owner(dandiset, user)
-    zarr = zarr_archive_factory(dandiset=dandiset)
-
-    # Request some chunk uploads.
-    b64hash = base64.b64encode(hashlib.md5(b'a').hexdigest().encode())
-    paths = ['a.txt', 'b.txt', 'c.txt']
-    api_client.force_authenticate(user=user)
-    resp = api_client.post(
-        f'/api/zarr/{zarr.zarr_id}/files/',
-        [{'path': path, 'base64md5': b64hash} for path in paths],
-    )
-    assert resp.status_code == 200
-
-    # Upload to the presigned URLs.
-    boto = get_boto_client()
-    zarr_archive = ZarrArchive.objects.get(zarr_id=zarr.zarr_id)
-    for path in paths:
-        boto.put_object(
-            Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=zarr_archive.s3_path(path), Body=b'a'
-        )
+def test_audit_finalize_zarr(authenticated_api_client, user, zarr_archive, zarr_file_factory):
+    add_dandiset_owner(zarr_archive.dandiset, user)
+    zarr_file_factory(zarr_archive)
 
     # Finalize the zarr.
-    resp = api_client.post(
-        f'/api/zarr/{zarr.zarr_id}/finalize/',
+    resp = authenticated_api_client.post(
+        f'/api/zarr/{zarr_archive.zarr_id}/finalize/',
     )
     assert resp.status_code == 204
 
     # Verify the finalize_zarr audit record.
-    rec = get_latest_audit_record(dandiset=dandiset, record_type='finalize_zarr')
+    rec = get_latest_audit_record(dandiset=zarr_archive.dandiset, record_type='finalize_zarr')
     verify_model_properties(rec, user)
-    assert rec.details['zarr_id'] == zarr.zarr_id
+    assert rec.details['zarr_id'] == zarr_archive.zarr_id
 
 
 @pytest.mark.django_db
-def test_audit_delete_zarr_chunks(api_client, user, draft_version, zarr_archive_factory, settings):
+def test_audit_delete_zarr_chunks(
+    api_client, user, draft_version, zarr_archive_factory, zarr_file_factory
+):
     # Create a Dandiset and a Zarr archive.
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, user)
-    zarr = zarr_archive_factory(dandiset=dandiset)
-
-    # Request some chunk uploads.
-    b64hash = base64.b64encode(hashlib.md5(b'a').hexdigest().encode())
-    paths = ['a.txt', 'b.txt', 'c.txt']
-    api_client.force_authenticate(user=user)
-    resp = api_client.post(
-        f'/api/zarr/{zarr.zarr_id}/files/',
-        [{'path': path, 'base64md5': b64hash} for path in paths],
-    )
-    assert resp.status_code == 200
-
-    # Upload to the presigned URLs.
-    boto = get_boto_client()
-    zarr_archive = ZarrArchive.objects.get(zarr_id=zarr.zarr_id)
-    for path in paths:
-        boto.put_object(
-            Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Key=zarr_archive.s3_path(path), Body=b'a'
-        )
-
-    # Finalize the zarr.
-    resp = api_client.post(
-        f'/api/zarr/{zarr.zarr_id}/finalize/',
-    )
-    assert resp.status_code == 204
+    zarr_archive = zarr_archive_factory(dandiset=dandiset)
+    zarr_files = [zarr_file_factory(zarr_archive=zarr_archive) for i in range(2)]
+    ingest_zarr_archive(zarr_archive.zarr_id)
 
     # Delete some zarr chunks.
-    deleted = ['b.txt', 'c.txt']
+    api_client.force_authenticate(user=user)
     resp = api_client.delete(
-        f'/api/zarr/{zarr.zarr_id}/files/',
-        [{'path': path} for path in deleted],
+        f'/api/zarr/{zarr_archive.zarr_id}/files/',
+        [{'path': str(zarr_file.path)} for zarr_file in zarr_files],
     )
     assert resp.status_code == 204
 
     # Verify the delete_zarr_chunks audit record.
     rec = get_latest_audit_record(dandiset=dandiset, record_type='delete_zarr_chunks')
     verify_model_properties(rec, user)
-    assert rec.details['zarr_id'] == zarr.zarr_id
-    assert rec.details['paths'] == deleted
+    assert rec.details['zarr_id'] == zarr_archive.zarr_id
+    assert rec.details['paths'] == [str(zarr_file.path) for zarr_file in zarr_files]
 
 
 @pytest.mark.django_db
