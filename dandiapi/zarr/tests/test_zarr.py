@@ -17,8 +17,7 @@ from dandiapi.zarr.tasks import ingest_zarr_archive
 
 @pytest.mark.django_db
 def test_zarr_rest_create(authenticated_api_client, user):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
     name = 'My Zarr File!'
 
     resp = authenticated_api_client.post(
@@ -45,8 +44,7 @@ def test_zarr_rest_create(authenticated_api_client, user):
 
 @pytest.mark.django_db
 def test_zarr_rest_dandiset_malformed(authenticated_api_client, user):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
@@ -90,8 +88,9 @@ def test_zarr_rest_create_embargoed_dandiset(
     user,
     zarr_archive,
 ):
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {
@@ -108,8 +107,9 @@ def test_zarr_rest_create_embargoed_dandiset(
 
 @pytest.mark.django_db
 def test_zarr_rest_create_unembargoing(authenticated_api_client, user, zarr_archive):
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING)
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING, owners=[user]
+    )
     resp = authenticated_api_client.post(
         '/api/zarr/',
         {

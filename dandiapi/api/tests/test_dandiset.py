@@ -227,11 +227,10 @@ def test_dandiset_versions(
 
 @pytest.mark.django_db
 def test_dandiset_rest_list_for_user(api_client, user):
-    dandiset = DandisetFactory.create()
+    dandiset = DandisetFactory.create(owners=[user])
     # Create an extra dandiset that should not be included in the response
     DandisetFactory.create()
     api_client.force_authenticate(user=user)
-    add_dandiset_owner(dandiset, user)
     assert api_client.get('/api/dandisets/?user=me&draft=true&empty=true').data == {
         'count': 1,
         'next': None,
@@ -292,8 +291,7 @@ def test_dandiset_rest_retrieve_embargoed(api_client, user):
 def test_dandiset_rest_embargo_access(api_client, user_factory, embargo_status: str):
     owner = user_factory()
     unauthorized_user = user_factory()
-    dandiset = DandisetFactory.create(embargo_status=embargo_status)
-    add_dandiset_owner(dandiset, owner)
+    dandiset = DandisetFactory.create(embargo_status=embargo_status, owners=[owner])
 
     # This is what authorized users should get from the retrieve endpoint
     expected_dandiset_serialization = {
@@ -951,8 +949,7 @@ def test_dandiset_rest_delete_published_admin(api_client, published_version, adm
 
 @pytest.mark.django_db
 def test_dandiset_rest_get_owners(api_client, social_account):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, social_account.user)
+    dandiset = DandisetFactory.create(owners=[social_account.user])
 
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
@@ -968,8 +965,7 @@ def test_dandiset_rest_get_owners(api_client, social_account):
 
 @pytest.mark.django_db
 def test_dandiset_rest_get_owners_no_social_account(api_client, user):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
 
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
 
@@ -1170,8 +1166,7 @@ def test_dandiset_rest_not_an_owner(api_client, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_delete_all_owners_fails(api_client, user):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [])
@@ -1181,8 +1176,7 @@ def test_dandiset_rest_delete_all_owners_fails(api_client, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_add_owner_does_not_exist(api_client, user):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
     fake_name = user.username + 'butnotreally'
 
@@ -1193,8 +1187,7 @@ def test_dandiset_rest_add_owner_does_not_exist(api_client, user):
 
 @pytest.mark.django_db
 def test_dandiset_rest_add_malformed(api_client, user):
-    dandiset = DandisetFactory.create()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [{'email': user.email}])

@@ -40,9 +40,8 @@ if TYPE_CHECKING:
 
 @pytest.mark.django_db
 def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(api_client, user, draft_version_factory):
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN)
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN, owners=[user])
     draft_version_factory(dandiset=dandiset)
-    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
@@ -63,9 +62,10 @@ def test_kickoff_dandiset_unembargo_not_owner(api_client, user, draft_version_fa
 def test_kickoff_dandiset_unembargo_active_uploads(
     api_client, user, draft_version_factory, upload_factory
 ):
-    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     draft_version_factory(dandiset=dandiset)
-    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
     # Test that active uploads prevent unembargp
