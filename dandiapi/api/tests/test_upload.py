@@ -8,6 +8,7 @@ import requests
 
 from dandiapi.api.models import AssetBlob, Dandiset, Upload
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import DandisetFactory
 
 from .fuzzy import HTTP_URL_RE, UUID_RE, Re
 
@@ -119,7 +120,8 @@ def test_upload_initialize_unembargo_in_progress(api_client, user, dandiset_fact
 
 
 @pytest.mark.django_db
-def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset_blob):
+def test_upload_initialize_existing_asset_blob(api_client, user, asset_blob):
+    dandiset = DandisetFactory.create()
     api_client.force_authenticate(user=user)
     add_dandiset_owner(dandiset, user)
 
@@ -138,7 +140,8 @@ def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset
 
 
 @pytest.mark.django_db
-def test_upload_initialize_not_an_owner(api_client, user, dandiset):
+def test_upload_initialize_not_an_owner(api_client, user):
+    dandiset = DandisetFactory.create()
     api_client.force_authenticate(user=user)
 
     content_size = 123
@@ -294,7 +297,8 @@ def test_upload_complete_unauthorized(api_client, upload):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.parametrize('content_size', [10, mb(10), mb(12)], ids=['10B', '10MB', '12MB'])
-def test_upload_initialize_and_complete(api_client, user, dandiset, content_size):
+def test_upload_initialize_and_complete(api_client, user, content_size):
+    dandiset = DandisetFactory.create()
     api_client.force_authenticate(user=user)
     add_dandiset_owner(dandiset, user)
 

@@ -9,13 +9,15 @@ from dandiapi.api.services.permissions.dandiset import (
     get_dandiset_owners,
     replace_dandiset_owners,
 )
+from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.api.tests.fuzzy import UUID_RE
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 
 @pytest.mark.django_db
-def test_zarr_rest_create(authenticated_api_client, user, dandiset):
+def test_zarr_rest_create(authenticated_api_client, user):
+    dandiset = DandisetFactory.create()
     add_dandiset_owner(dandiset, user)
     name = 'My Zarr File!'
 
@@ -42,7 +44,8 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
 
 
 @pytest.mark.django_db
-def test_zarr_rest_dandiset_malformed(authenticated_api_client, user, dandiset):
+def test_zarr_rest_dandiset_malformed(authenticated_api_client, user):
+    dandiset = DandisetFactory.create()
     add_dandiset_owner(dandiset, user)
     resp = authenticated_api_client.post(
         '/api/zarr/',
