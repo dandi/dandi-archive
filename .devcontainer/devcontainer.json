@@ -27,6 +27,7 @@
             "extensions": [
                 // this removes the extension the AWS feature adds, see https://github.com/devcontainers/features/issues/1228
                 "-AmazonWebServices.aws-toolkit-vscode",
+                "tamasfe.even-better-toml",
                 "matangover.mypy",
                 "ms-python.debugpy",
                 "charliermarsh.ruff",
