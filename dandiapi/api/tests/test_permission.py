@@ -106,9 +106,7 @@ def test_approved_or_readonly(
     # denied after reading the request body
     if url == '/api/zarr/' and method == 'post':
         response = getattr(api_client, method)(
-            url,
-            data={'name': 'test', 'dandiset': dandiset.identifier},
-            format='json',
+            url, data={'name': 'test', 'dandiset': dandiset.identifier}
         )
     else:
         response = getattr(api_client, method)(url)

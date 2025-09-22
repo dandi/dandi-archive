@@ -26,9 +26,7 @@ def test_zarr_rest_upload_start(authenticated_api_client, user, zarr_archive_fac
 
     # Request upload files
     resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/',
-        [{'path': 'foo/bar.txt', 'base64md5': '12345'}],
-        format='json',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': 'foo/bar.txt', 'base64md5': '12345'}]
     )
     assert resp.status_code == 200
     assert resp.json() == [HTTP_URL_RE]
@@ -47,9 +45,7 @@ def test_zarr_rest_upload_start(authenticated_api_client, user, zarr_archive_fac
 
     # Request more
     resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/',
-        [{'path': 'foo/bar2.txt', 'base64md5': '12345'}],
-        format='json',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': 'foo/bar2.txt', 'base64md5': '12345'}]
     )
     assert resp.status_code == 200
     assert resp.json() == [HTTP_URL_RE]
@@ -58,9 +54,7 @@ def test_zarr_rest_upload_start(authenticated_api_client, user, zarr_archive_fac
 @pytest.mark.django_db
 def test_zarr_rest_upload_start_not_an_owner(authenticated_api_client, zarr_archive: ZarrArchive):
     resp = authenticated_api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/',
-        [{'path': 'foo/bar.txt', 'base64md5': '12345'}],
-        format='json',
+        f'/api/zarr/{zarr_archive.zarr_id}/files/', [{'path': 'foo/bar.txt', 'base64md5': '12345'}]
     )
     assert resp.status_code == 403
 

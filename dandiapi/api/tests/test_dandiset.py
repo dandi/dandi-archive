@@ -375,9 +375,7 @@ def test_dandiset_rest_create(api_client, user):
     name = 'Test Dandiset'
     metadata = {'foo': 'bar'}
 
-    response = api_client.post(
-        '/api/dandisets/', {'name': name, 'metadata': metadata}, format='json'
-    )
+    response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.data == {
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
@@ -463,11 +461,7 @@ def test_dandiset_rest_create_with_identifier(api_client, admin_user):
     identifier = '123456'
     metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
 
-    response = api_client.post(
-        '/api/dandisets/',
-        {'name': name, 'metadata': metadata},
-        format='json',
-    )
+    response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.data == {
         'identifier': identifier,
         'created': TIMESTAMP_RE,
@@ -566,11 +560,7 @@ def test_dandiset_rest_create_with_contributor(api_client, admin_user):
         ],
     }
 
-    response = api_client.post(
-        '/api/dandisets/',
-        {'name': name, 'metadata': metadata},
-        format='json',
-    )
+    response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.data == {
         'identifier': identifier,
         'created': TIMESTAMP_RE,
@@ -651,9 +641,7 @@ def test_dandiset_rest_create_embargoed(api_client, user):
     name = 'Test Dandiset'
     metadata = {'foo': 'bar'}
 
-    response = api_client.post(
-        '/api/dandisets/?embargo=true', {'name': name, 'metadata': metadata}, format='json'
-    )
+    response = api_client.post('/api/dandisets/?embargo=true', {'name': name, 'metadata': metadata})
     assert response.data == {
         'identifier': DANDISET_ID_RE,
         'created': TIMESTAMP_RE,
@@ -750,9 +738,7 @@ def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client
     }
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(
-        url, {'name': name, 'metadata': metadata}, format='json'
-    )
+    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 200
     assert response.data['embargo_status'] == 'EMBARGOED'
@@ -792,9 +778,7 @@ def test_dandiset_rest_create_embargoed_no_funding_info(authenticated_api_client
     query_params = {'embargo': 'true'}
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(
-        url, {'name': name, 'metadata': metadata}, format='json'
-    )
+    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 200
     assert response.data['embargo_status'] == 'EMBARGOED'
@@ -840,9 +824,7 @@ def test_dandiset_rest_create_embargoed_funding_no_award(authenticated_api_clien
     }
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(
-        url, {'name': name, 'metadata': metadata}, format='json'
-    )
+    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 400
 
@@ -860,9 +842,7 @@ def test_dandiset_rest_create_embargoed_award_no_funding(authenticated_api_clien
     }
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(
-        url, {'name': name, 'metadata': metadata}, format='json'
-    )
+    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 400
 
@@ -874,11 +854,7 @@ def test_dandiset_rest_create_with_duplicate_identifier(api_client, admin_user, 
     identifier = dandiset.identifier
     metadata = {'foo': 'bar', 'identifier': f'DANDI:{identifier}'}
 
-    response = api_client.post(
-        '/api/dandisets/',
-        {'name': name, 'metadata': metadata},
-        format='json',
-    )
+    response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.status_code == 400
     assert response.data == f'Dandiset {identifier} already exists'
 
@@ -890,11 +866,7 @@ def test_dandiset_rest_create_with_invalid_identifier(api_client, admin_user):
     identifier = 'abc123'
     metadata = {'foo': 'bar', 'identifier': identifier}
 
-    response = api_client.post(
-        '/api/dandisets/',
-        {'name': name, 'metadata': metadata},
-        format='json',
-    )
+    response = api_client.post('/api/dandisets/', {'name': name, 'metadata': metadata})
     assert response.status_code == 400
     assert response.data == f'Invalid Identifier {identifier}'
 
@@ -1035,7 +1007,6 @@ def test_dandiset_rest_change_owner(
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
         [{'username': social_account2.extra_data['login']}],
-        format='json',
     )
 
     assert resp.status_code == 200
@@ -1080,7 +1051,6 @@ def test_dandiset_rest_change_owners_unembargo_in_progress(
             {'username': social_account1.extra_data['login']},
             {'username': social_account2.extra_data['login']},
         ],
-        format='json',
     )
 
     assert resp.status_code == 400
@@ -1108,7 +1078,6 @@ def test_dandiset_rest_add_owner(
             {'username': social_account1.extra_data['login']},
             {'username': social_account2.extra_data['login']},
         ],
-        format='json',
     )
 
     assert resp.status_code == 200
@@ -1148,7 +1117,6 @@ def test_dandiset_rest_add_owner_not_allowed(
             {'username': social_account1.extra_data['login']},
             {'username': social_account2.extra_data['login']},
         ],
-        format='json',
     )
     assert resp.status_code == 403
 
@@ -1172,7 +1140,6 @@ def test_dandiset_rest_remove_owner(
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
         [{'username': social_account1.extra_data['login']}],
-        format='json',
     )
 
     assert resp.status_code == 200
@@ -1195,9 +1162,7 @@ def test_dandiset_rest_not_an_owner(api_client, dandiset, user):
     api_client.force_authenticate(user=user)
 
     resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': user.username}],
-        format='json',
+        f'/api/dandisets/{dandiset.identifier}/users/', [{'username': user.username}]
     )
     assert resp.status_code == 403
 
@@ -1207,11 +1172,7 @@ def test_dandiset_rest_delete_all_owners_fails(api_client, dandiset, user):
     add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
-    resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
-        [],
-        format='json',
-    )
+    resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [])
     assert resp.status_code == 400
     assert resp.data == ['Cannot remove all draft owners']
 
@@ -1222,11 +1183,7 @@ def test_dandiset_rest_add_owner_does_not_exist(api_client, dandiset, user):
     api_client.force_authenticate(user=user)
     fake_name = user.username + 'butnotreally'
 
-    resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'username': fake_name}],
-        format='json',
-    )
+    resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [{'username': fake_name}])
     assert resp.status_code == 400
     assert resp.data == [f'User {fake_name} not found']
 
@@ -1236,11 +1193,7 @@ def test_dandiset_rest_add_malformed(api_client, dandiset, user):
     add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
-    resp = api_client.put(
-        f'/api/dandisets/{dandiset.identifier}/users/',
-        [{'email': user.email}],
-        format='json',
-    )
+    resp = api_client.put(f'/api/dandisets/{dandiset.identifier}/users/', [{'email': user.email}])
     assert resp.status_code == 400
     assert resp.data == [{'username': ['This field is required.']}]
 

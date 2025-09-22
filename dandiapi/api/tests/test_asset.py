@@ -728,7 +728,6 @@ def test_asset_create(api_client, user, draft_version, asset_blob):
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
@@ -799,7 +798,6 @@ def test_asset_create_path_validation(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
-        format='json',
     )
 
     assert resp.status_code == expected_status_code, resp.data
@@ -876,7 +874,6 @@ def test_asset_create_embargo(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
 
@@ -912,7 +909,6 @@ def test_asset_create_unembargo_in_progress(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
-        format='json',
     )
 
     assert resp.status_code == 400
@@ -946,7 +942,6 @@ def test_asset_create_embargoed_asset_blob_open_dandiset(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
 
@@ -979,7 +974,6 @@ def test_asset_create_zarr(api_client, user, draft_version, zarr_archive):
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
@@ -1031,7 +1025,6 @@ def test_asset_create_zarr_validated(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
-        format='json',
     ).json()
     asset1 = Asset.objects.get(asset_id=resp['asset_id'])
 
@@ -1042,7 +1035,6 @@ def test_asset_create_zarr_validated(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
-        format='json',
     ).json()
     asset2 = Asset.objects.get(asset_id=resp['asset_id'])
 
@@ -1081,7 +1073,6 @@ def test_asset_create_zarr_wrong_dandiset(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'zarr_id': zarr_archive.zarr_id},
-        format='json',
     )
     assert resp.status_code == 400
     assert resp.json() == 'The zarr archive belongs to a different dandiset'
@@ -1105,7 +1096,6 @@ def test_asset_create_no_blob_or_zarr(api_client, user, draft_version):
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata},
-        format='json',
     )
     assert resp.status_code == 400
     assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
@@ -1129,7 +1119,6 @@ def test_asset_create_blob_and_zarr(api_client, user, draft_version, asset_blob,
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id, 'zarr_id': zarr_archive.zarr_id},
-        format='json',
     )
     assert resp.status_code == 400
     assert resp.json() == {'blob_id': ['Exactly one of blob_id or zarr_id must be specified.']}
@@ -1148,7 +1137,6 @@ def test_asset_create_no_valid_blob(api_client, user, draft_version):
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': uuid},
-        format='json',
     )
     assert resp.status_code == 404
 
@@ -1164,7 +1152,6 @@ def test_asset_create_no_path(api_client, user, draft_version, asset_blob):
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
-        format='json',
     )
     assert resp.status_code == 400
     assert resp.data == {'metadata': ['No path specified in metadata.']}, resp.data
@@ -1176,9 +1163,7 @@ def test_asset_create_not_an_owner(api_client, user, version):
 
     assert (
         api_client.post(
-            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/',
-            {},
-            format='json',
+            f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/assets/', {}
         ).status_code
         == 403
     )
@@ -1199,7 +1184,6 @@ def test_asset_create_published_version(api_client, user, published_version, ass
             'metadata': asset.metadata,
             'blob_id': asset.blob.blob_id,
         },
-        format='json',
     )
     assert resp.status_code == 405
     assert resp.data == 'Only draft versions can be modified.'
@@ -1226,7 +1210,6 @@ def test_asset_create_existing_path(api_client, user, draft_version, asset_blob,
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': asset_blob.blob_id},
-        format='json',
     )
     assert resp.status_code == 409
 
@@ -1253,7 +1236,6 @@ def test_asset_create_on_open_dandiset_embargoed_asset_blob(
         f'/api/dandisets/{draft_version.dandiset.identifier}'
         f'/versions/{draft_version.version}/assets/',
         {'metadata': metadata, 'blob_id': embargoed_asset_blob.blob_id},
-        format='json',
     )
     assert resp.status_code == 200
 
@@ -1283,7 +1265,6 @@ def test_asset_rest_rename(api_client, user, draft_version, asset_blob):
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
         f'assets/{asset.asset_id}/',
         {'metadata': metadata, 'blob_id': asset.blob.blob_id},
-        format='json',
     )
 
     # Ensure new asset with new path was created
@@ -1313,7 +1294,6 @@ def test_asset_rest_update(api_client, user, draft_version, asset, asset_blob):
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'blob_id': asset_blob.blob_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
@@ -1370,7 +1350,6 @@ def test_asset_rest_update_embargo(api_client, user, draft_version, asset, embar
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'blob_id': embargoed_asset_blob.blob_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
@@ -1427,7 +1406,6 @@ def test_asset_rest_update_unembargo_in_progress(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'blob_id': embargoed_asset_blob.blob_id},
-        format='json',
     )
     assert resp.status_code == 400
 
@@ -1465,7 +1443,6 @@ def test_asset_rest_update_zarr(
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata, 'zarr_id': zarr_archive.zarr_id},
-        format='json',
     ).json()
     new_asset = Asset.objects.get(asset_id=resp['asset_id'])
     assert resp == {
@@ -1508,7 +1485,6 @@ def test_asset_rest_update_unauthorized(api_client, draft_version, asset):
             f'/api/dandisets/{draft_version.dandiset.identifier}/'
             f'versions/{draft_version.version}/assets/{asset.asset_id}/',
             {'metadata': new_metadata},
-            format='json',
         ).status_code
         == 401
     )
@@ -1526,7 +1502,6 @@ def test_asset_rest_update_not_an_owner(api_client, user, draft_version, asset):
             f'/api/dandisets/{draft_version.dandiset.identifier}/'
             f'versions/{draft_version.version}/assets/{asset.asset_id}/',
             {'metadata': new_metadata},
-            format='json',
         ).status_code
         == 403
     )
@@ -1544,7 +1519,6 @@ def test_asset_rest_update_published_version(api_client, user, published_version
         f'/api/dandisets/{published_version.dandiset.identifier}/'
         f'versions/{published_version.version}/assets/{asset.asset_id}/',
         {'metadata': new_metadata},
-        format='json',
     )
     assert resp.status_code == 405
     assert resp.data == 'Only draft versions can be modified.'
@@ -1566,7 +1540,6 @@ def test_asset_rest_update_to_existing(api_client, user, draft_version, asset_fa
         f'/api/dandisets/{draft_version.dandiset.identifier}/'
         f'versions/{draft_version.version}/assets/{old_asset.asset_id}/',
         {'metadata': existing_asset.metadata, 'blob_id': existing_asset.blob.blob_id},
-        format='json',
     )
     assert resp.status_code == 409
 
@@ -1680,7 +1653,6 @@ def test_asset_rest_delete_zarr_modified(
             },
             'zarr_id': zarr_archive.zarr_id,
         },
-        format='json',
     ).json()
 
     asset = Asset.objects.get(asset_id=resp['asset_id'])
@@ -1691,11 +1663,7 @@ def test_asset_rest_delete_zarr_modified(
     assert ap.aggregate_size == 100
 
     # Pretend to upload more data to the zarr
-    resp = api_client.post(
-        f'/api/zarr/{zarr_archive.zarr_id}/files/',
-        ['foo/bar.txt'],
-        format='json',
-    )
+    resp = api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/files/', ['foo/bar.txt'])
 
     # Delete the asset
     resp = api_client.delete(

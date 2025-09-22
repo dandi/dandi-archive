@@ -25,7 +25,6 @@ def test_zarr_rest_create(authenticated_api_client, user, dandiset):
             'name': name,
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.json() == {
         'name': name,
@@ -51,7 +50,6 @@ def test_zarr_rest_dandiset_malformed(authenticated_api_client, user, dandiset):
             'name': 'My Zarr File!',
             'dandiset': f'{dandiset.identifier}asd',
         },
-        format='json',
     )
     assert resp.status_code == 400
     assert resp.json() == {'dandiset': ['This value does not match the required pattern.']}
@@ -65,7 +63,6 @@ def test_zarr_rest_create_not_an_owner(authenticated_api_client, zarr_archive):
             'name': zarr_archive.name,
             'dandiset': zarr_archive.dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 403
 
@@ -79,7 +76,6 @@ def test_zarr_rest_create_duplicate(authenticated_api_client, user, zarr_archive
             'name': zarr_archive.name,
             'dandiset': zarr_archive.dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 400
     assert resp.json() == ['Zarr already exists']
@@ -100,7 +96,6 @@ def test_zarr_rest_create_embargoed_dandiset(
             'name': zarr_archive.name,
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 200
 
@@ -121,7 +116,6 @@ def test_zarr_rest_create_unembargoing(
             'name': zarr_archive.name,
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 400
 
