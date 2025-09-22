@@ -586,7 +586,6 @@ def test_version_rest_update(api_client, user, draft_version):
     assert api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
-        format='json',
     ).data == {
         'dandiset': {
             'identifier': draft_version.dandiset.identifier,
@@ -643,7 +642,6 @@ def test_version_rest_update_unembargo_in_progress(api_client, user, draft_versi
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
-        format='json',
     )
     assert resp.status_code == 400
 
@@ -660,7 +658,6 @@ def test_version_rest_update_published_version(api_client, user, published_versi
         f'/api/dandisets/{published_version.dandiset.identifier}'
         f'/versions/{published_version.version}/',
         {'metadata': new_metadata, 'name': new_name},
-        format='json',
     )
     assert resp.status_code == 405
     assert resp.data == 'Only draft versions can be modified.'
@@ -677,7 +674,6 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
         api_client.put(
             f'/api/dandisets/{version.dandiset.identifier}/versions/{version.version}/',
             {'metadata': new_metadata, 'name': new_name},
-            format='json',
         ).status_code
         == 403
     )
@@ -704,7 +700,6 @@ def test_version_rest_update_access_values(api_client, user, draft_version, acce
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': draft_version.name},
-        format='json',
     )
     assert resp.status_code == 200
     draft_version.refresh_from_db()
@@ -731,7 +726,6 @@ def test_version_rest_update_access_missing(api_client, user, draft_version):
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': draft_version.name},
-        format='json',
     )
     assert resp.status_code == 200
     draft_version.refresh_from_db()
@@ -755,7 +749,6 @@ def test_version_rest_update_access_valid(api_client, user, draft_version):
     resp = api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': new_metadata, 'name': draft_version.name},
-        format='json',
     )
     assert resp.status_code == 200
     draft_version.refresh_from_db()
@@ -954,7 +947,6 @@ def test_version_rest_update_no_changed_metadata(
     api_client.put(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/',
         {'metadata': draft_version.metadata, 'name': draft_version.name},
-        format='json',
     )
 
     draft_version.refresh_from_db()

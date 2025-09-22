@@ -54,7 +54,6 @@ def create_dandiset(
     resp = api_client.post(
         f'/api/dandisets/{"?embargo=true" if embargoed else ""}',
         {'name': name, 'metadata': metadata},
-        format='json',
     )
     assert resp.status_code == 200
 
@@ -96,7 +95,6 @@ def test_audit_change_owners(api_client, user_factory, draft_version):
     resp = api_client.put(
         f'/api/dandisets/{dandiset.identifier}/users/',
         [{'username': u.username} for u in new_owners],
-        format='json',
     )
     assert resp.status_code == 200
 
@@ -134,7 +132,6 @@ def test_audit_update_metadata(api_client, draft_version, user):
             'name': 'baz',
             'metadata': metadata,
         },
-        format='json',
     )
     assert resp.status_code == 200
 

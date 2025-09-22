@@ -19,9 +19,7 @@ def mb(bytes_size: int) -> int:
 @pytest.mark.django_db
 def test_blob_read(api_client, asset_blob):
     assert api_client.post(
-        '/api/blobs/digest/',
-        {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
-        format='json',
+        '/api/blobs/digest/', {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag}
     ).data == {
         'blob_id': str(asset_blob.blob_id),
         'etag': asset_blob.etag,
@@ -33,9 +31,7 @@ def test_blob_read(api_client, asset_blob):
 @pytest.mark.django_db
 def test_blob_read_sha256(api_client, asset_blob):
     assert api_client.post(
-        '/api/blobs/digest/',
-        {'algorithm': 'dandi:sha2-256', 'value': asset_blob.sha256},
-        format='json',
+        '/api/blobs/digest/', {'algorithm': 'dandi:sha2-256', 'value': asset_blob.sha256}
     ).data == {
         'blob_id': str(asset_blob.blob_id),
         'etag': asset_blob.etag,
@@ -47,9 +43,7 @@ def test_blob_read_sha256(api_client, asset_blob):
 @pytest.mark.django_db
 def test_blob_read_bad_algorithm(api_client, asset_blob):
     resp = api_client.post(
-        '/api/blobs/digest/',
-        {'algorithm': 'sha256', 'value': asset_blob.sha256},
-        format='json',
+        '/api/blobs/digest/', {'algorithm': 'sha256', 'value': asset_blob.sha256}
     )
     assert resp.status_code == 400
     assert resp.data == 'Unsupported Digest Algorithm. Supported: dandi:dandi-etag, dandi:sha2-256'
@@ -58,9 +52,7 @@ def test_blob_read_bad_algorithm(api_client, asset_blob):
 @pytest.mark.django_db
 def test_blob_read_does_not_exist(api_client):
     resp = api_client.post(
-        '/api/blobs/digest/',
-        {'algorithm': 'dandi:dandi-etag', 'value': 'not etag'},
-        format='json',
+        '/api/blobs/digest/', {'algorithm': 'dandi:dandi-etag', 'value': 'not etag'}
     )
     assert resp.status_code == 404
 
@@ -85,7 +77,6 @@ def test_upload_initialize(api_client, user, dandiset_factory, embargoed):
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.data == {
         'upload_id': UUID_RE,
@@ -123,7 +114,6 @@ def test_upload_initialize_unembargo_in_progress(api_client, user, dandiset_fact
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 400
 
@@ -140,7 +130,6 @@ def test_upload_initialize_existing_asset_blob(api_client, user, dandiset, asset
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 409
     assert resp.data == 'Blob already exists.'
@@ -161,7 +150,6 @@ def test_upload_initialize_not_an_owner(api_client, user, dandiset):
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 403
     assert not Upload.objects.all().exists()
@@ -182,7 +170,6 @@ def test_upload_initialize_embargo_not_an_owner(api_client, user, dandiset_facto
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 404
     assert resp.json() == {'detail': 'Not found.'}
@@ -205,7 +192,6 @@ def test_upload_initialize_embargo_existing_asset_blob(
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': asset_blob.etag},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 409
     assert resp.data == 'Blob already exists.'
@@ -230,7 +216,6 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': embargoed_asset_blob.etag},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     )
     assert resp.status_code == 409
     assert resp.data == 'Blob already exists.'
@@ -240,14 +225,7 @@ def test_upload_initialize_embargo_existing_embargoed_asset_blob(
 
 @pytest.mark.django_db
 def test_upload_initialize_unauthorized(api_client):
-    assert (
-        api_client.post(
-            '/api/uploads/initialize/',
-            {},
-            format='json',
-        ).status_code
-        == 401
-    )
+    assert api_client.post('/api/uploads/initialize/', {}).status_code == 401
 
 
 @pytest.mark.django_db(transaction=True)
@@ -261,7 +239,6 @@ def test_upload_complete(api_client, user, upload):
         {
             'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
         },
-        format='json',
     ).data == {
         'complete_url': HTTP_URL_RE,
         'body': Re(r'.*'),
@@ -282,7 +259,6 @@ def test_upload_complete_embargo(api_client, user, dandiset_factory, embargoed_u
         {
             'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
         },
-        format='json',
     ).data == {
         'complete_url': HTTP_URL_RE,
         'body': Re(r'.*'),
@@ -306,7 +282,6 @@ def test_upload_complete_embargo_not_an_owner(
             {
                 'parts': [{'part_number': 1, 'size': content_size, 'etag': 'test-etag'}],
             },
-            format='json',
         ).status_code
         == 404
     )
@@ -314,14 +289,7 @@ def test_upload_complete_embargo_not_an_owner(
 
 @pytest.mark.django_db(transaction=True)
 def test_upload_complete_unauthorized(api_client, upload):
-    assert (
-        api_client.post(
-            f'/api/uploads/{upload.upload_id}/complete/',
-            {},
-            format='json',
-        ).status_code
-        == 401
-    )
+    assert api_client.post(f'/api/uploads/{upload.upload_id}/complete/', {}).status_code == 401
 
 
 @pytest.mark.django_db(transaction=True)
@@ -338,7 +306,6 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     ).data
 
     upload_id = initialization['upload_id']
@@ -359,7 +326,6 @@ def test_upload_initialize_and_complete(api_client, user, dandiset, content_size
         {
             'parts': transferred_parts,
         },
-        format='json',
     ).data
 
     # Complete the upload to the object store
@@ -388,7 +354,6 @@ def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_facto
             'digest': {'algorithm': 'dandi:dandi-etag', 'value': 'f' * 32 + '-1'},
             'dandiset': dandiset.identifier,
         },
-        format='json',
     ).data
 
     upload_id = initialization['upload_id']
@@ -409,7 +374,6 @@ def test_upload_initialize_and_complete_embargo(api_client, user, dandiset_facto
         {
             'parts': transferred_parts,
         },
-        format='json',
     ).data
 
     # Complete the upload to the object store
