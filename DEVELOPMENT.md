@@ -59,6 +59,21 @@ but allows developers to run Python code on their native system.
     1. `uv run celery --app dandiapi.celery worker --loglevel INFO --without-heartbeat -Q celery,calculate_sha256,ingest_zarr_archive,manifest-worker -B`
 1. When finished, run `docker compose stop`
 
+
+## Develop with VSCode Dev Containers
+
+### Initial Setup
+1. Follow the steps for [setting up Dev Containers](https://code.visualstudio.com/docs/devcontainers/containers#_installation) if necessary.
+1. From VSCode, use `Ctrl-Shift-p` and run the command `Dev Containers: Reopen in Container`.
+1. From the VSCode built-in terminal, run `./manage.py migrate`.
+1. From the VSCode built-in terminal, run `./manage.py createsuperuser`.
+
+### Run Application
+1. Run `./manage.py runserver_plus 0.0.0.0:8000` from the VSCode built-in-terminal.
+1. Access the site, starting at http://localhost:8000/admin/
+1. When finished, use `Ctrl+C`
+
+
 ## Testing
 ### Initial Setup
 tox is used to manage the execution of all tests. To set up to run the tests:
