@@ -16,6 +16,9 @@ from resonant_settings.production.email import *  # isort: skip
 from resonant_settings.production.https import *  # isort: skip
 from resonant_settings.production.s3_storage import *  # isort: skip
 
+# Re-import this after resonant_settings to override the value in s3_storage
+from .base import AWS_S3_FILE_OVERWRITE  # noqa: F401
+
 WSGI_APPLICATION = 'dandiapi.wsgi.application'
 
 SECRET_KEY: str = env.str('DJANGO_SECRET_KEY')
