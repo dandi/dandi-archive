@@ -1,3 +1,15 @@
+# v0.15.3 (Tue Sep 23 2025)
+
+#### 🏎 Performance
+
+- Truncate asset validation errors/fix memory usage [#2548](https://github.com/dandi/dandi-archive/pull/2548) ([@mvandenburgh](https://github.com/mvandenburgh))
+
+#### Authors: 1
+
+- Mike VanDenburgh ([@mvandenburgh](https://github.com/mvandenburgh))
+
+---
+
 # v0.15.2 (Tue Sep 23 2025)
 
 #### 🐛 Bug Fix
