@@ -100,7 +100,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
 
         # We want to display "Pending" assets in the validation errors list,
         # despite them not being stored explicitly as errors in the database.
-        # Grab a random sample of 10 pending or currently validating assets
+        # Grab a random sample of 50 pending or currently validating assets
         # and place them first in the list.
         pending_assets: models.QuerySet[Asset] = (
             self.assets.filter(status__in=[Asset.Status.PENDING, Asset.Status.VALIDATING])
@@ -108,13 +108,13 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
                 field=models.Value(''),
                 message=models.Value('asset is currently being validated, please wait.'),
             )
-            .values('field', 'message', 'path')[:10]
+            .values('field', 'message', 'path')[:50]
         )
 
         # Next, get all INVALID assets. Each of these should have one or more
         # validation errors stored in the database.
         # For performance reasons, we truncate the list of INVALID assets such
-        # that we only display errors for the 10 assets with the most errors.
+        # that we only display errors for the 50 assets with the most errors.
         invalid_assets: models.QuerySet[Asset] = (
             self.assets.filter(status=Asset.Status.INVALID)
             .alias(
@@ -126,7 +126,7 @@ class Version(PublishableMetadataMixin, TimeStampedModel):
             )
             .order_by('-validation_error_count')
             .values('path', 'validation_errors')
-        )[:10]
+        )[:50]
 
         return list(pending_assets) + [
             {
