@@ -1,3 +1,20 @@
+# v0.15.2 (Tue Sep 23 2025)
+
+#### 🐛 Bug Fix
+
+- Explicitly allow file overwrite [#2544](https://github.com/dandi/dandi-archive/pull/2544) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### 🧪 Tests
+
+- Remove unnecessary `format` argument from `APIRequestFactory` instances [#2546](https://github.com/dandi/dandi-archive/pull/2546) ([@brianhelba](https://github.com/brianhelba))
+
+#### Authors: 2
+
+- Brian Helba ([@brianhelba](https://github.com/brianhelba))
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.15.1 (Thu Sep 18 2025)
 
 #### 🐛 Bug Fix
