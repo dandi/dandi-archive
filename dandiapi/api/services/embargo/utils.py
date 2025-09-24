@@ -67,7 +67,9 @@ def _delete_zarr_object_tags(client: S3Client, zarr: str):
         Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Prefix=zarr_s3_path(zarr_id=zarr)
     )
 
-    with ThreadPoolExecutor(max_workers=100) as e:
+    # Constant low thread number to limit memory usage, as each thread
+    # creates its own boto client, consuming memory in the process
+    with ThreadPoolExecutor(max_workers=4) as e:
         for page in pages:
             keys = [obj['Key'] for obj in page.get('Contents', [])]
             futures = [e.submit(_delete_object_tags, blob=key) for key in keys]
@@ -110,7 +112,10 @@ def remove_dandiset_embargo_tags(dandiset: Dandiset):
     chunks = chunked(embargoed_assets, TAG_REMOVAL_CHUNK_SIZE)
     for chunk in chunks:
         futures = []
-        with ThreadPoolExecutor(max_workers=100) as e:
+
+        # Constant low thread number to limit memory usage, as each thread
+        # creates its own boto client, consuming memory in the process
+        with ThreadPoolExecutor(max_workers=4) as e:
             for blob, zarr in chunk:
                 if blob is not None:
                     futures.append(e.submit(_delete_object_tags, blob=blob))
