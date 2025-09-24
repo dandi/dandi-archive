@@ -1,3 +1,15 @@
+# v0.15.4 (Wed Sep 24 2025)
+
+#### 🐛 Bug Fix
+
+- Limit number of threads in remove_dandiset_embargo_tags [#2549](https://github.com/dandi/dandi-archive/pull/2549) ([@jjnesbitt](https://github.com/jjnesbitt))
+
+#### Authors: 1
+
+- Jacob Nesbitt ([@jjnesbitt](https://github.com/jjnesbitt))
+
+---
+
 # v0.15.3 (Tue Sep 23 2025)
 
 #### 🏎 Performance
