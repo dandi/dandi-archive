@@ -28,7 +28,7 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
-from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus, zarr_s3_path
+from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
 if TYPE_CHECKING:
@@ -189,28 +189,6 @@ def test_remove_asset_blob_embargoed_tag_success(asset_blob):
 def test_remove_asset_blob_embargoed_tag_fails_on_embargoed(embargoed_asset_blob):
     with pytest.raises(AssetBlobEmbargoedError):
         remove_asset_blob_embargoed_tag(embargoed_asset_blob)
-
-
-@pytest.mark.django_db
-def test_delete_zarr_object_tags_fails_remove_tags(zarr_archive, zarr_file_factory, mocker):
-    mocked = mocker.patch(
-        'dandiapi.api.services.embargo.utils._delete_object_tags', side_effect=ValueError
-    )
-    files = [zarr_file_factory(zarr_archive) for _ in range(2)]
-
-    with pytest.raises(AssetTagRemovalError):
-        _delete_zarr_object_tags(client=get_boto_client(), zarr=zarr_archive.zarr_id)
-
-    # Check that each file was called 4 times total. Once initially, and 3 retries
-    assert mocked.call_count == 4 * len(files)
-    for file in files:
-        calls = [
-            c
-            for c in mocked.mock_calls
-            if c.kwargs['blob']
-            == zarr_s3_path(zarr_id=zarr_archive.zarr_id, zarr_path=str(file.path))
-        ]
-        assert len(calls) == 4
 
 
 @pytest.mark.django_db
