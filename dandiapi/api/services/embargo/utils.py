@@ -53,7 +53,6 @@ def retry(times: int, exceptions: tuple[type[Exception]]):
     return decorator
 
 
-@retry(times=3, exceptions=(Exception,))
 def _delete_object_tags(blob: str):
     existing_tags: dict[str, str] = default_storage.get_tags(blob)
     filtered_tags = {key: val for key, val in existing_tags.items() if key != 'embargoed'}
