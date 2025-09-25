@@ -14,10 +14,6 @@ from .base import *
 # Import these afterwards, to override
 from resonant_settings.production.email import *  # isort: skip
 from resonant_settings.production.https import *  # isort: skip
-from resonant_settings.production.s3_storage import *  # isort: skip
-
-# Re-import this after resonant_settings to override the value in s3_storage
-from .base import AWS_S3_FILE_OVERWRITE  # noqa: F401
 
 WSGI_APPLICATION = 'dandiapi.wsgi.application'
 
@@ -35,14 +31,21 @@ SOCIALACCOUNT_ONLY = True
 # (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.
 ALLOWED_HOSTS: list[str] = env.list('DJANGO_ALLOWED_HOSTS', cast=str)
 
+DANDI_DANDISETS_BUCKET_NAME: str = env.str('DJANGO_STORAGE_BUCKET_NAME')
 STORAGES['default'] = {
     'BACKEND': 'dandiapi.storage.DandiS3Storage',
+    'OPTIONS': {
+        'region_name': env.str('AWS_DEFAULT_REGION'),
+        'access_key': env.str('AWS_ACCESS_KEY_ID'),
+        'secret_key': env.str('AWS_SECRET_ACCESS_KEY'),
+        'bucket_name': DANDI_DANDISETS_BUCKET_NAME,
+        'querystring_expire': int(timedelta(hours=6).total_seconds()),
+        'max_memory_size': 5 * 1024 * 1024,
+    },
 }
-DANDI_DANDISETS_BUCKET_NAME = AWS_STORAGE_BUCKET_NAME
 
 DANDI_DEV_EMAIL: str = env.str('DJANGO_DANDI_DEV_EMAIL')
 DANDI_ADMIN_EMAIL: str = env.str('DJANGO_DANDI_ADMIN_EMAIL')
-
 
 # sentry_sdk is able to directly use environment variables like 'SENTRY_DSN', but prefix them
 # with 'DJANGO_' to avoid avoiding conflicts with other Sentry-using services.
