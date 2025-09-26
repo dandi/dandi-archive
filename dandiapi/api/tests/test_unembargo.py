@@ -28,6 +28,7 @@ from dandiapi.api.services.exceptions import DandiError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.storage import get_boto_client
 from dandiapi.api.tasks import unembargo_dandiset_task, write_manifest_files
+from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.zarr.models import ZarrArchive, ZarrArchiveStatus
 from dandiapi.zarr.tasks import ingest_zarr_archive
 
@@ -38,12 +39,9 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.django_db
-def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(
-    api_client, user, dandiset_factory, draft_version_factory
-):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.OPEN)
+def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(api_client, user, draft_version_factory):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.OPEN, owners=[user])
     draft_version_factory(dandiset=dandiset)
-    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
     resp = api_client.post(f'/api/dandisets/{dandiset.identifier}/unembargo/')
@@ -51,10 +49,8 @@ def test_kickoff_dandiset_unembargo_dandiset_not_embargoed(
 
 
 @pytest.mark.django_db
-def test_kickoff_dandiset_unembargo_not_owner(
-    api_client, user, dandiset_factory, draft_version_factory
-):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+def test_kickoff_dandiset_unembargo_not_owner(api_client, user, draft_version_factory):
+    dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version_factory(dandiset=dandiset)
     api_client.force_authenticate(user=user)
 
@@ -64,11 +60,12 @@ def test_kickoff_dandiset_unembargo_not_owner(
 
 @pytest.mark.django_db
 def test_kickoff_dandiset_unembargo_active_uploads(
-    api_client, user, dandiset_factory, draft_version_factory, upload_factory
+    api_client, user, draft_version_factory, upload_factory
 ):
-    dandiset = dandiset_factory(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
+    dandiset = DandisetFactory.create(
+        embargo_status=Dandiset.EmbargoStatus.EMBARGOED, owners=[user]
+    )
     draft_version_factory(dandiset=dandiset)
-    add_dandiset_owner(dandiset, user)
     api_client.force_authenticate(user=user)
 
     # Test that active uploads prevent unembargp

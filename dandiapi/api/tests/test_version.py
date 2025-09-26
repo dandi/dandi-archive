@@ -13,6 +13,7 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
+from dandiapi.api.tests.factories import DandisetFactory
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
@@ -29,8 +30,8 @@ from .fuzzy import HTTP_URL_RE, TIMESTAMP_RE, URN_RE, UTC_ISO_TIMESTAMP_RE, VERS
 
 @freeze_time()
 @pytest.mark.django_db
-def test_version_next_published_version_simultaneous(dandiset_factory):
-    dandiset = dandiset_factory()
+def test_version_next_published_version_simultaneous():
+    dandiset = DandisetFactory.create()
     # Versions created at the same time should have the same version string
     version_str_1 = Version.next_published_version(dandiset)
     version_str_2 = Version.next_published_version(dandiset)
@@ -41,7 +42,8 @@ def test_version_next_published_version_simultaneous(dandiset_factory):
 
 @freeze_time()
 @pytest.mark.django_db
-def test_version_next_published_version_preexisting(dandiset, published_version_factory):
+def test_version_next_published_version_preexisting(published_version_factory):
+    dandiset = DandisetFactory.create()
     # Given a saved Version at the current time, a different one should be allocated
     version_str_1 = Version.next_published_version(dandiset)
     published_version_factory(dandiset=dandiset, version=version_str_1)

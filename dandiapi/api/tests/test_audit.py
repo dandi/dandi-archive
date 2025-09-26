@@ -11,6 +11,7 @@ from dandiapi.api.models import AuditRecord, Dandiset
 from dandiapi.api.services.metadata import validate_asset_metadata, validate_version_metadata
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 from dandiapi.api.storage import get_boto_client
+from dandiapi.api.tests.factories import DandisetFactory
 from dandiapi.zarr.models import ZarrArchive
 
 if TYPE_CHECKING:
@@ -271,12 +272,9 @@ def test_audit_remove_asset(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_audit_publish_dandiset(
-    api_client, user, dandiset_factory, draft_version_factory, draft_asset_factory
-):
+def test_audit_publish_dandiset(api_client, user, draft_version_factory, draft_asset_factory):
     # Create a Dandiset whose draft version has one asset.
-    dandiset = dandiset_factory()
-    add_dandiset_owner(dandiset, user)
+    dandiset = DandisetFactory.create(owners=[user])
     draft_version = draft_version_factory(dandiset=dandiset)
     draft_asset = draft_asset_factory()
     draft_version.assets.add(draft_asset)

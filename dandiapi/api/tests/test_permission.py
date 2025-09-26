@@ -3,6 +3,8 @@ from __future__ import annotations
 import pytest
 from rest_framework.permissions import SAFE_METHODS
 
+from dandiapi.api.tests.factories import DandisetFactory
+
 
 @pytest.mark.parametrize(
     ('method', 'url_format', 'owner_required'),
@@ -71,7 +73,6 @@ from rest_framework.permissions import SAFE_METHODS
 def test_approved_or_readonly(
     api_client,
     user,
-    dandiset_factory,
     draft_version_factory,
     draft_asset_factory,
     zarr_archive_factory,
@@ -79,7 +80,7 @@ def test_approved_or_readonly(
     url_format,
     owner_required,
 ):
-    dandiset = dandiset_factory()
+    dandiset = DandisetFactory.create()
     version = draft_version_factory(dandiset=dandiset)
     zarr = zarr_archive_factory(dandiset=dandiset)
     asset = draft_asset_factory()

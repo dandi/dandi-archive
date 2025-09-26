@@ -4,6 +4,7 @@ import pytest
 
 from dandiapi.api.models import UserMetadata
 from dandiapi.api.tasks.scheduled import compute_application_stats
+from dandiapi.api.tests.factories import DandisetFactory
 
 
 @pytest.mark.django_db
@@ -17,9 +18,9 @@ def test_stats_baseline(api_client):
 
 
 @pytest.mark.django_db
-def test_stats_delay(api_client, dandiset_factory):
+def test_stats_delay(api_client):
     """Test that the stats won't be updated until re-computed."""
-    dandiset_factory()
+    DandisetFactory.create()
     stats = api_client.get('/api/stats/').data
     assert stats['dandiset_count'] == 0
 
@@ -29,7 +30,8 @@ def test_stats_delay(api_client, dandiset_factory):
 
 
 @pytest.mark.django_db
-def test_stats_draft(api_client, dandiset):
+def test_stats_draft(api_client):
+    DandisetFactory.create()
     compute_application_stats()
 
     stats = api_client.get('/api/stats/').data
