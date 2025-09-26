@@ -3,26 +3,31 @@ from __future__ import annotations
 import pytest
 from rest_framework.authtoken.models import Token
 
+from dandiapi.api.tests.factories import UserFactory
+
 
 @pytest.fixture
-def token(user) -> Token:
+def token() -> Token:
+    user = UserFactory.create()
     return Token.objects.get(user=user)
 
 
 @pytest.mark.django_db
-def test_auth_token_retrieve(api_client, user, token):
+def test_auth_token_retrieve(api_client, token):
+    user = token.user
     api_client.force_authenticate(user=user)
 
     assert api_client.get('/api/auth/token/').data == token.key
 
 
 @pytest.mark.django_db
-def test_auth_token_retrieve_unauthorized(api_client, user, token):
+def test_auth_token_retrieve_unauthorized(api_client, token):
     assert api_client.get('/api/auth/token/').status_code == 401
 
 
 @pytest.mark.django_db
-def test_auth_token_refresh(api_client, user, token):
+def test_auth_token_refresh(api_client, token):
+    user = token.user
     api_client.force_authenticate(user=user)
 
     new_token_key = api_client.post('/api/auth/token/').data
@@ -33,5 +38,5 @@ def test_auth_token_refresh(api_client, user, token):
 
 
 @pytest.mark.django_db
-def test_auth_token_reset_unauthorized(api_client, user, token):
+def test_auth_token_reset_unauthorized(api_client, token):
     assert api_client.post('/api/auth/token/').status_code == 401

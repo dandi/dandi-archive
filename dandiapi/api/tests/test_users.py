@@ -10,12 +10,11 @@ from pytest_django.asserts import assertContains
 from rest_framework.exceptions import ErrorDetail
 
 from dandiapi.api.models import UserMetadata
-from dandiapi.api.tests.factories import SocialAccountFactory
+from dandiapi.api.tests.factories import SocialAccountFactory, UserFactory
 from dandiapi.api.views.auth import COLLECT_USER_NAME_QUESTIONS, NEW_USER_QUESTIONS, QUESTIONS
 from dandiapi.api.views.users import user_to_dict
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import User
     from django.core.mail.message import EmailMessage
     from django.test.client import Client
     from rest_framework.response import Response
@@ -96,23 +95,23 @@ def test_user_me(api_client):
 
 
 @pytest.mark.django_db
-def test_user_me_admin(api_client, admin_user, social_account_factory):
+def test_user_me_admin(api_client, admin_user):
     api_client.force_authenticate(user=admin_user)
-    social_account = social_account_factory(user=admin_user)
+    social_account = SocialAccountFactory.create(user=admin_user)
     UserMetadata.objects.create(user=admin_user)
 
     assert api_client.get('/api/users/me/').data == serialize_social_account(social_account)
 
 
 @pytest.mark.django_db
-def test_user_search(api_client, social_account_factory):
+def test_user_search(api_client):
     social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=social_account.user)
 
     # Create more users to be filtered out
-    social_account_factory()
-    social_account_factory()
-    social_account_factory()
+    SocialAccountFactory.create()
+    SocialAccountFactory.create()
+    SocialAccountFactory.create()
 
     assert api_client.get(
         '/api/users/search/?', {'username': social_account.user.username}
@@ -138,21 +137,24 @@ def test_user_search_prefer_social(api_client, user_factory):
 
 
 @pytest.mark.django_db
-def test_user_search_blank_username(api_client, user):
+def test_user_search_blank_username(api_client):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     assert api_client.get('/api/users/search/?', {'username': ''}).data == []
 
 
 @pytest.mark.django_db
-def test_user_search_no_matches(api_client, user):
+def test_user_search_no_matches(api_client):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     assert api_client.get('/api/users/search/?', {'username': '_'}).data == []
 
 
 @pytest.mark.django_db
-def test_user_search_multiple_matches(api_client, user, user_factory, social_account_factory):
+def test_user_search_multiple_matches(api_client, user_factory):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     usernames = [
@@ -165,7 +167,7 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
         'john_foo',
     ]
     users = [user_factory(username=username) for username in usernames]
-    social_accounts = [social_account_factory(user=user) for user in users]
+    social_accounts = [SocialAccountFactory.create(user=user) for user in users]
 
     assert api_client.get('/api/users/search/?', {'username': 'odysseus'}).data == [
         serialize_social_account(social_account) for social_account in social_accounts[:3]
@@ -173,12 +175,13 @@ def test_user_search_multiple_matches(api_client, user, user_factory, social_acc
 
 
 @pytest.mark.django_db
-def test_user_search_limit_enforced(api_client, user, user_factory, social_account_factory):
+def test_user_search_limit_enforced(api_client, user_factory):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     usernames = [f'odysseus_{i:02}' for i in range(20)]
     users = [user_factory(username=username) for username in usernames]
-    social_accounts = [social_account_factory(user=user) for user in users]
+    social_accounts = [SocialAccountFactory.create(user=user) for user in users]
 
     assert api_client.get('/api/users/search/?', {'username': 'odysseus'}).json() == [
         serialize_social_account(social_account) for social_account in social_accounts[:10]
@@ -186,12 +189,13 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
 
 
 @pytest.mark.django_db
-def test_user_search_extra_data(api_client, user, social_account_factory):
+def test_user_search_extra_data(api_client):
     """Test that searched keyword isn't caught by a different field in `extra_data`."""
+    user = UserFactory.create()
     social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=user)
 
-    social_accounts = [social_account_factory() for _ in range(3)]
+    social_accounts = [SocialAccountFactory.create() for _ in range(3)]
     social_accounts[-1].extra_data['test'] = social_account.extra_data['login']
 
     assert api_client.get(
@@ -249,11 +253,11 @@ def test_user_search_extra_data(api_client, user, social_account_factory):
 @pytest.mark.django_db
 def test_user_status(
     api_client: APIClient,
-    user: User,
     status: str,
     expected_status_code: int,
     expected_search_results_value: dict,
 ):
+    user = UserFactory.create()
     user_metadata: UserMetadata = user.metadata
     user_metadata.status = status
     user_metadata.save()
@@ -305,7 +309,8 @@ def test_user_questionnaire_view(
         ('test@test.edu', UserMetadata.Status.APPROVED),
     ],
 )
-def test_user_edu_auto_approve(user: User, api_client: APIClient, email: str, expected_status: str):
+def test_user_edu_auto_approve(api_client: APIClient, email: str, expected_status: str):
+    user = UserFactory.create()
     user.email = email
     user.save(update_fields=['email'])
     user_metadata: UserMetadata = user.metadata
@@ -353,13 +358,13 @@ def test_user_list_user_without_socialaccount(user_factory, api_client: APIClien
 
 
 @pytest.mark.django_db
-def test_user_list_approved_toggle(social_account_factory, api_client: APIClient):
+def test_user_list_approved_toggle(api_client: APIClient):
     # Must use social_account_factory instead of user_factory, as otherwise
     # the social account won't be created on its own.
-    approved_user = social_account_factory(user__is_superuser=True).user
-    social_account_factory(user__metadata__status=UserMetadata.Status.PENDING)
-    social_account_factory(user__metadata__status=UserMetadata.Status.INCOMPLETE)
-    social_account_factory(user__metadata__status=UserMetadata.Status.REJECTED)
+    approved_user = SocialAccountFactory.create(user__is_superuser=True).user
+    SocialAccountFactory.create(user__metadata__status=UserMetadata.Status.PENDING)
+    SocialAccountFactory.create(user__metadata__status=UserMetadata.Status.INCOMPLETE)
+    SocialAccountFactory.create(user__metadata__status=UserMetadata.Status.REJECTED)
 
     # Test without filtering
     api_client.force_authenticate(user=approved_user)
