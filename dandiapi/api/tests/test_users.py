@@ -10,11 +10,11 @@ from pytest_django.asserts import assertContains
 from rest_framework.exceptions import ErrorDetail
 
 from dandiapi.api.models import UserMetadata
+from dandiapi.api.tests.factories import SocialAccountFactory
 from dandiapi.api.views.auth import COLLECT_USER_NAME_QUESTIONS, NEW_USER_QUESTIONS, QUESTIONS
 from dandiapi.api.views.users import user_to_dict
 
 if TYPE_CHECKING:
-    from allauth.socialaccount.models import SocialAccount
     from django.contrib.auth.models import User
     from django.core.mail.message import EmailMessage
     from django.test.client import Client
@@ -32,9 +32,8 @@ def serialize_social_account(social_account):
 
 
 @pytest.mark.django_db
-def test_user_registration_email_content(
-    social_account: SocialAccount, mailoutbox: list[EmailMessage], api_client: APIClient
-):
+def test_user_registration_email_content(mailoutbox: list[EmailMessage], api_client: APIClient):
+    social_account = SocialAccountFactory.create()
     user = social_account.user
     social_account.user.metadata.status = UserMetadata.Status.INCOMPLETE  # simulates new user
 
@@ -72,12 +71,12 @@ def test_user_registration_email_content(
 )
 @pytest.mark.django_db
 def test_user_registration_email_count(
-    social_account: SocialAccount,
     mailoutbox: list[EmailMessage],
     api_client: APIClient,
     status: str,
     email_count: int,
 ):
+    social_account = SocialAccountFactory.create()
     user = social_account.user
     user.metadata.status = status
     api_client.force_authenticate(user=user)
@@ -89,7 +88,8 @@ def test_user_registration_email_count(
 
 
 @pytest.mark.django_db
-def test_user_me(api_client, social_account):
+def test_user_me(api_client):
+    social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=social_account.user)
 
     assert api_client.get('/api/users/me/').data == serialize_social_account(social_account)
@@ -105,7 +105,8 @@ def test_user_me_admin(api_client, admin_user, social_account_factory):
 
 
 @pytest.mark.django_db
-def test_user_search(api_client, social_account, social_account_factory):
+def test_user_search(api_client, social_account_factory):
+    social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=social_account.user)
 
     # Create more users to be filtered out
@@ -119,7 +120,8 @@ def test_user_search(api_client, social_account, social_account_factory):
 
 
 @pytest.mark.django_db
-def test_user_search_prefer_social(api_client, user_factory, social_account):
+def test_user_search_prefer_social(api_client, user_factory):
+    social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=social_account.user)
 
     # Check that when social account is present, it is used
@@ -184,8 +186,9 @@ def test_user_search_limit_enforced(api_client, user, user_factory, social_accou
 
 
 @pytest.mark.django_db
-def test_user_search_extra_data(api_client, user, social_account, social_account_factory):
+def test_user_search_extra_data(api_client, user, social_account_factory):
     """Test that searched keyword isn't caught by a different field in `extra_data`."""
+    social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=user)
 
     social_accounts = [social_account_factory() for _ in range(3)]

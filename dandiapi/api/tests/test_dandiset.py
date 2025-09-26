@@ -20,7 +20,7 @@ from dandiapi.api.services.permissions.dandiset import (
     get_visible_dandisets,
     replace_dandiset_owners,
 )
-from dandiapi.api.tests.factories import DandisetFactory
+from dandiapi.api.tests.factories import DandisetFactory, SocialAccountFactory
 
 from .fuzzy import (
     DANDISET_ID_RE,
@@ -948,7 +948,8 @@ def test_dandiset_rest_delete_published_admin(api_client, published_version, adm
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_get_owners(api_client, social_account):
+def test_dandiset_rest_get_owners(api_client):
+    social_account = SocialAccountFactory.create()
     dandiset = DandisetFactory.create(owners=[social_account.user])
 
     resp = api_client.get(f'/api/dandisets/{dandiset.identifier}/users/')
