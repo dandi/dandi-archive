@@ -1,31 +1,29 @@
 from __future__ import annotations
 
-import hashlib
-import os
-from pathlib import Path
-from typing import TYPE_CHECKING
-
-import faker
-from zarr_checksum.generators import ZarrArchiveFile
-
-from dandiapi.api.storage import get_boto_client
-
-if TYPE_CHECKING:
-    from dandiapi.zarr.models import ZarrArchive
+import factory
 
 
-def upload_zarr_file(
-    zarr_archive: ZarrArchive, path: str | None = None, size: int = 100
-) -> ZarrArchiveFile:
-    if path is None:
-        path = faker.Faker().file_path(absolute=False, extension='nwb')
+class _PostgenerationAttributesFactoryOptions(factory.base.FactoryOptions):
+    def use_postgeneration_results(self, step, instance, results):
+        self.factory._after_postgeneration(
+            instance,
+            create=step.builder.strategy == factory.CREATE_STRATEGY,
+            results=results,
+            attributes=step.attributes,
+        )
 
-    client = get_boto_client(zarr_archive.storage)
-    data = os.urandom(size)
-    client.put_object(
-        Bucket=zarr_archive.storage.bucket_name, Key=zarr_archive.s3_path(path), Body=data
-    )
 
-    # Create ZarrArchiveFile
-    digest = hashlib.md5(data).hexdigest()
-    return ZarrArchiveFile(path=Path(path), size=size, digest=digest)
+class PostgenerationAttributesFactory(factory.Factory):
+    """
+    A Factory that supplies `_after_postgeneration` with access to all input attributes.
+
+    In particular, this allows `_after_postgeneration` to access `Params`, which it otherwise
+    wouldn't have access to.
+
+    See:
+    https://github.com/FactoryBoy/factory_boy/issues/544
+    https://github.com/FactoryBoy/factory_boy/issues/936
+    """
+
+    # This must be set on an intermediate class, it won't work on a final subclass
+    _options_class = _PostgenerationAttributesFactoryOptions

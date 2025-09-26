@@ -19,8 +19,11 @@ from dandiapi.api.tests.factories import (
     UploadFactory,
     UserFactory,
 )
-from dandiapi.zarr.tests.factories import EmbargoedZarrArchiveFactory, ZarrArchiveFactory
-from dandiapi.zarr.tests.utils import upload_zarr_file
+from dandiapi.zarr.tests.factories import (
+    EmbargoedZarrArchiveFactory,
+    ZarrArchiveFactory,
+    ZarrFileFactory,
+)
 
 register(PublishedAssetFactory, _name='published_asset')
 register(DraftAssetFactory, _name='draft_asset')
@@ -39,6 +42,7 @@ register(UploadFactory)
 # zarr app
 register(ZarrArchiveFactory)
 register(EmbargoedZarrArchiveFactory, _name='embargoed_zarr_archive')
+register(ZarrFileFactory, name='zarr_file')
 
 
 @pytest.fixture(autouse=True)
@@ -48,12 +52,6 @@ def _mock_etag_regex(mocker):
     mocker.patch.object(dandiapi.api.models.Upload, 'ETAG_REGEX', md5_pattern)
     mocker.patch.object(dandiapi.api.models.AssetBlob, 'ETAG_REGEX', md5_pattern)
     mocker.patch.object(dandischema.digests.dandietag.DandiETag, 'REGEX', md5_pattern)
-
-
-# Register zarr file/directory factories
-@pytest.fixture
-def zarr_file_factory():
-    return upload_zarr_file
 
 
 @pytest.fixture
