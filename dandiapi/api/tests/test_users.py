@@ -95,10 +95,11 @@ def test_user_me(api_client):
 
 
 @pytest.mark.django_db
-def test_user_me_admin(api_client, admin_user):
-    api_client.force_authenticate(user=admin_user)
-    social_account = SocialAccountFactory.create(user=admin_user)
-    UserMetadata.objects.create(user=admin_user)
+def test_user_me_admin(api_client):
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
+    social_account = SocialAccountFactory.create(user=user)
+    UserMetadata.objects.create(user=user)
 
     assert api_client.get('/api/users/me/').data == serialize_social_account(social_account)
 

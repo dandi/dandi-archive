@@ -932,11 +932,10 @@ def test_version_rest_publish_invalid(
 
 
 @pytest.mark.django_db
-def test_version_rest_update_no_changed_metadata(
-    api_client: APIClient, admin_user, draft_version: Version
-):
+def test_version_rest_update_no_changed_metadata(api_client: APIClient, draft_version: Version):
     """Test that PUT'ing unchanged metadata doesn't trigger revalidation or DB modifications."""
-    api_client.force_authenticate(user=admin_user)
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
 
     old_modified_time = draft_version.modified
 
@@ -967,8 +966,9 @@ def test_version_rest_delete_published_not_admin(api_client, published_version):
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_admin(api_client, admin_user, published_version):
-    api_client.force_authenticate(user=admin_user)
+def test_version_rest_delete_published_admin(api_client, published_version):
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
     response = api_client.delete(
         f'/api/dandisets/{published_version.dandiset.identifier}'
         f'/versions/{published_version.version}/'
@@ -991,8 +991,9 @@ def test_version_rest_delete_draft_not_admin(api_client, draft_version):
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_draft_admin(api_client, admin_user, draft_version):
-    api_client.force_authenticate(user=admin_user)
+def test_version_rest_delete_draft_admin(api_client, draft_version):
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
     response = api_client.delete(
         f'/api/dandisets/{draft_version.dandiset.identifier}/versions/{draft_version.version}/'
     )
