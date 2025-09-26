@@ -109,7 +109,7 @@ def create_embargoed_dandiset(  # noqa: PLR0913
                 schemaKey='AccessRequirements',
                 status=AccessType.EmbargoedAccess,
                 embargoedUntil=embargo_end_date,
-            ).json_dict()
+            ).model_dump(mode='json', exclude_none=True)
         ]
 
         if funding_source:
@@ -125,7 +125,7 @@ def create_embargoed_dandiset(  # noqa: PLR0913
             if award_number:
                 kwargs['awardNumber'] = award_number
 
-            contributors.append(Organization(**kwargs).json_dict())
+            contributors.append(Organization(**kwargs).model_dump(mode='json', exclude_none=True))
             draft_version.metadata['contributor'] = contributors
 
         draft_version.full_clean(validate_constraints=False)
