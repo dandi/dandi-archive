@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 import uuid
 
+from dandischema.digests.dandietag import DandiETag
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.postgres.indexes import HashIndex
@@ -58,7 +59,7 @@ if TYPE_CHECKING:
 
 class AssetBlob(TimeStampedModel):
     SHA256_REGEX = r'[0-9a-f]{64}'
-    ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
+    ETAG_REGEX = DandiETag.REGEX
 
     embargoed = models.BooleanField(default=False)
     blob = models.FileField(blank=True, upload_to=get_storage_prefix)

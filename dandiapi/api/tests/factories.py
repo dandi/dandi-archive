@@ -5,7 +5,6 @@ import hashlib
 from typing import Any
 
 from allauth.socialaccount.models import SocialAccount
-from dandischema.digests.dandietag import DandiETag
 from dandischema.models import AccessType
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -187,12 +186,17 @@ class AssetBlobFactory(factory.django.DjangoModelFactory):
         return sha256
 
     @factory.lazy_attribute
-    def etag(self):
-        etagger = DandiETag(self.size)
-        for part in etagger._part_gen:
-            etagger.update(self.blob.read(part.size))
+    def etag(self) -> str:
+        # In production, files would be uploaded with a multipart ETag:
+        # etagger = DandiETag(self.size)
+        # etagger.partial_update(self.blob.read())
+        # self.blob.seek(0)
+        # return etagger.as_str()
+        # In tests, the factories use "Storage.save", which uses S3 put_object,
+        # resulting in an MD5 ETag:
+        etag = hashlib.md5(self.blob.read()).hexdigest()
         self.blob.seek(0)
-        return etagger.as_str()
+        return etag
 
     @classmethod
     def _after_postgeneration(cls, obj: AssetBlob, create: bool, results=None) -> None:  # noqa: FBT001
@@ -259,7 +263,14 @@ class UploadFactory(factory.django.DjangoModelFactory):
     dandiset = factory.SubFactory(DandisetFactory)
 
     @factory.lazy_attribute
-    def etag(self):
+    def etag(self) -> str:
+        # In production, files would be uploaded with a multipart ETag:
+        # etagger = DandiETag(self.size)
+        # etagger.partial_update(self.blob.read())
+        # self.blob.seek(0)
+        # return etagger.as_str()
+        # In tests, the factories use "Storage.save", which uses S3 put_object,
+        # resulting in an MD5 ETag:
         etag = hashlib.md5(self.blob.read()).hexdigest()
         self.blob.seek(0)
         return etag
