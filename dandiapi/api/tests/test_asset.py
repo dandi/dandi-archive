@@ -1749,24 +1749,24 @@ def test_asset_download(api_client, version, asset):
 
 @pytest.mark.django_db
 def test_asset_download_embargo(
-    authenticated_api_client,
+    api_client,
     draft_version_factory,
     asset_factory,
     embargoed_asset_blob,
 ):
     user = UserFactory.create()
+    api_client.force_authenticate(user=user)
     # Set draft version as embargoed
     version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
 
     # Assign perms and set client
     add_dandiset_owner(version.dandiset, user)
-    client = authenticated_api_client
 
     # Generate assets and blobs
     asset = asset_factory(blob=embargoed_asset_blob)
     version.assets.add(asset)
 
-    response = client.get(
+    response = api_client.get(
         f'/api/dandisets/{version.dandiset.identifier}/'
         f'versions/{version.version}/assets/{asset.asset_id}/download/'
     )
