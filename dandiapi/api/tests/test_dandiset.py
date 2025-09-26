@@ -724,7 +724,9 @@ def test_dandiset_rest_create_embargoed(api_client):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client: APIClient):
+def test_dandiset_rest_create_embargoed_with_award_info(api_client: APIClient):
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset'
     metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
 
@@ -738,7 +740,7 @@ def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client
     }
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
+    response = api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 200
     assert response.data['embargo_status'] == 'EMBARGOED'
@@ -769,8 +771,10 @@ def test_dandiset_rest_create_embargoed_with_award_info(authenticated_api_client
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_embargoed_no_funding_info(authenticated_api_client: APIClient):
+def test_dandiset_rest_create_embargoed_no_funding_info(api_client: APIClient):
     """Test creating embargoed dandiset with no funding source or award number (should succeed)."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset - No Funding'
     metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
 
@@ -778,7 +782,7 @@ def test_dandiset_rest_create_embargoed_no_funding_info(authenticated_api_client
     query_params = {'embargo': 'true'}
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
+    response = api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 200
     assert response.data['embargo_status'] == 'EMBARGOED'
@@ -812,8 +816,10 @@ def test_dandiset_rest_create_embargoed_no_funding_info(authenticated_api_client
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_embargoed_funding_no_award(authenticated_api_client: APIClient):
+def test_dandiset_rest_create_embargoed_funding_no_award(api_client: APIClient):
     """Test creating embargoed dandiset with funding source but no award number (should fail)."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset - Funding Only'
     metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
 
@@ -824,14 +830,16 @@ def test_dandiset_rest_create_embargoed_funding_no_award(authenticated_api_clien
     }
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
+    response = api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 400
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_create_embargoed_award_no_funding(authenticated_api_client: APIClient):
+def test_dandiset_rest_create_embargoed_award_no_funding(api_client: APIClient):
     """Test creating embargoed dandiset with award number but no funding source (should fail)."""
+    user = UserFactory.create()
+    api_client.force_authenticate(user=user)
     name = 'Test Embargoed Dandiset - Award Only'
     metadata = {'name': name, 'description': 'Test embargoed dandiset', 'license': ['spdx:CC0-1.0']}
 
@@ -842,7 +850,7 @@ def test_dandiset_rest_create_embargoed_award_no_funding(authenticated_api_clien
     }
     url = f'/api/dandisets/?{urlencode(query_params)}'
 
-    response = authenticated_api_client.post(url, {'name': name, 'metadata': metadata})
+    response = api_client.post(url, {'name': name, 'metadata': metadata})
 
     assert response.status_code == 400
 
@@ -1293,14 +1301,15 @@ def test_dandiset_rest_list_active_uploads_not_owner(api_client, embargoed):
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_list_active_uploads(authenticated_api_client, draft_version, upload_factory):
+def test_dandiset_rest_list_active_uploads(api_client, draft_version, upload_factory):
     user = UserFactory.create()
-    ds = draft_version.dandiset
+    api_client.force_authenticate(user=user)
+    dandiset = draft_version.dandiset
 
-    add_dandiset_owner(ds, user)
-    upload = upload_factory(dandiset=ds)
+    add_dandiset_owner(dandiset, user)
+    upload = upload_factory(dandiset=dandiset)
 
-    response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/')
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/')
     assert response.status_code == 200
     data = response.json()
     assert data['count'] == 1
@@ -1333,24 +1342,23 @@ def test_dandiset_rest_clear_active_uploads_not_owner(api_client, upload_factory
 
 
 @pytest.mark.django_db
-def test_dandiset_rest_clear_active_uploads(
-    authenticated_api_client, draft_version, upload_factory
-):
+def test_dandiset_rest_clear_active_uploads(api_client, draft_version, upload_factory):
     user = UserFactory.create()
-    ds = draft_version.dandiset
+    api_client.force_authenticate(user=user)
+    dandiset = draft_version.dandiset
 
-    add_dandiset_owner(ds, user)
-    upload_factory(dandiset=ds)
+    add_dandiset_owner(dandiset, user)
+    upload_factory(dandiset=dandiset)
 
-    response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/').json()
     assert response['count'] == 1
     assert len(response['results']) == 1
 
-    response = authenticated_api_client.delete(f'/api/dandisets/{ds.identifier}/uploads/')
+    response = api_client.delete(f'/api/dandisets/{dandiset.identifier}/uploads/')
     assert response.status_code == 204
 
-    assert ds.uploads.count() == 0
-    response = authenticated_api_client.get(f'/api/dandisets/{ds.identifier}/uploads/').json()
+    assert dandiset.uploads.count() == 0
+    response = api_client.get(f'/api/dandisets/{dandiset.identifier}/uploads/').json()
     assert response['count'] == 0
     assert len(response['results']) == 0
 
