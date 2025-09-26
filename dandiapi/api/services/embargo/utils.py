@@ -27,39 +27,12 @@ logger = logging.getLogger(__name__)
 TAG_REMOVAL_CHUNK_SIZE = 5000
 
 
-def retry(times: int, exceptions: tuple[type[Exception]]):
-    """
-    Retry Decorator.
-
-    Retries the wrapped function/method `times` times if the exceptions listed
-    in ``exceptions`` are thrown
-
-    :param times: The number of times to repeat the wrapped function/method
-    :param exceptions: Lists of exceptions that trigger a retry attempt
-    """
-
-    def decorator(func):
-        def newfn(*args, **kwargs):
-            attempt = 0
-            while attempt < times:
-                try:
-                    return func(*args, **kwargs)
-                except exceptions:
-                    attempt += 1
-            return func(*args, **kwargs)
-
-        return newfn
-
-    return decorator
-
-
 def _delete_object_tags(blob: str):
     existing_tags: dict[str, str] = default_storage.get_tags(blob)
     filtered_tags = {key: val for key, val in existing_tags.items() if key != 'embargoed'}
     default_storage.put_tags(blob, filtered_tags)
 
 
-@retry(times=3, exceptions=(Exception,))
 def _delete_zarr_object_tags(client: S3Client, zarr: str):
     paginator = client.get_paginator('list_objects_v2')
     pages = paginator.paginate(
