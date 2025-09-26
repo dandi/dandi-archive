@@ -119,7 +119,7 @@ def test_user_search(api_client):
 
 
 @pytest.mark.django_db
-def test_user_search_prefer_social(api_client, user_factory):
+def test_user_search_prefer_social(api_client):
     social_account = SocialAccountFactory.create()
     api_client.force_authenticate(user=social_account.user)
 
@@ -129,7 +129,7 @@ def test_user_search_prefer_social(api_client, user_factory):
     ).data == [serialize_social_account(social_account)]
 
     # Create user without a social account
-    user = user_factory()
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
     assert api_client.get('/api/users/search/?', {'username': user.username}).data == [
         user_to_dict(user)
@@ -153,7 +153,7 @@ def test_user_search_no_matches(api_client):
 
 
 @pytest.mark.django_db
-def test_user_search_multiple_matches(api_client, user_factory):
+def test_user_search_multiple_matches(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
@@ -166,7 +166,7 @@ def test_user_search_multiple_matches(api_client, user_factory):
         'john_doe',
         'john_foo',
     ]
-    users = [user_factory(username=username) for username in usernames]
+    users = [UserFactory.create(username=username) for username in usernames]
     social_accounts = [SocialAccountFactory.create(user=user) for user in users]
 
     assert api_client.get('/api/users/search/?', {'username': 'odysseus'}).data == [
@@ -175,12 +175,12 @@ def test_user_search_multiple_matches(api_client, user_factory):
 
 
 @pytest.mark.django_db
-def test_user_search_limit_enforced(api_client, user_factory):
+def test_user_search_limit_enforced(api_client):
     user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     usernames = [f'odysseus_{i:02}' for i in range(20)]
-    users = [user_factory(username=username) for username in usernames]
+    users = [UserFactory.create(username=username) for username in usernames]
     social_accounts = [SocialAccountFactory.create(user=user) for user in users]
 
     assert api_client.get('/api/users/search/?', {'username': 'odysseus'}).json() == [
@@ -325,31 +325,31 @@ def test_user_edu_auto_approve(api_client: APIClient, email: str, expected_statu
 
 
 @pytest.mark.django_db
-def test_user_list_requires_admin(user_factory, api_client: APIClient):
+def test_user_list_requires_admin(api_client: APIClient):
     resp = api_client.get('/api/users/')
     assert resp.status_code == 401
 
-    normal_user = user_factory()
+    normal_user = UserFactory.create()
     api_client.force_authenticate(user=normal_user)
     resp = api_client.get('/api/users/')
     assert resp.status_code == 403
 
-    staff_user = user_factory(is_staff=True)
+    staff_user = UserFactory.create(is_staff=True)
     api_client.force_authenticate(user=staff_user)
     resp = api_client.get('/api/users/')
     assert resp.status_code == 200
 
-    superuser = user_factory(is_superuser=True)
+    superuser = UserFactory.create(is_superuser=True)
     api_client.force_authenticate(user=superuser)
     resp = api_client.get('/api/users/')
     assert resp.status_code == 200
 
 
 @pytest.mark.django_db
-def test_user_list_user_without_socialaccount(user_factory, api_client: APIClient):
+def test_user_list_user_without_socialaccount(api_client: APIClient):
     # Intentionally create an approved superuser without a social account, so that we
     # can both query the endpoint, as well as see an empty result
-    approved_user = user_factory(is_superuser=True)
+    approved_user = UserFactory.create(is_superuser=True)
 
     # Test without filtering
     api_client.force_authenticate(user=approved_user)

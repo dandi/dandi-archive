@@ -4,11 +4,12 @@ from django.db import connection
 import pytest
 
 from dandiapi.api.models.dandiset import Dandiset
+from dandiapi.api.tests.factories import UserFactory
 from dandiapi.search.models import AssetSearch
 
 
 @pytest.mark.django_db
-def test_assetsearch_visible_to_permissions(draft_asset_factory, draft_version, user_factory):
+def test_assetsearch_visible_to_permissions(draft_asset_factory, draft_version):
     asset = draft_asset_factory()
     draft_version.dandiset.embargo_status = Dandiset.EmbargoStatus.EMBARGOED
     draft_version.dandiset.save()
@@ -18,5 +19,5 @@ def test_assetsearch_visible_to_permissions(draft_asset_factory, draft_version, 
         cursor.execute('REFRESH MATERIALIZED VIEW asset_search;')
 
     assert AssetSearch.objects.count() == 1
-    other_user = user_factory()
+    other_user = UserFactory.create()
     assert AssetSearch.objects.visible_to(other_user).count() == 0

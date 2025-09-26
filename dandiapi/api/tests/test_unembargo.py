@@ -238,13 +238,12 @@ def test_unembargo_dandiset(
     embargoed_zarr_archive_factory,
     zarr_file_factory,
     mailoutbox,
-    user_factory,
 ):
     draft_version: Version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
     ds: Dandiset = draft_version.dandiset
-    owners = [user_factory() for _ in range(5)]
+    owners = [UserFactory.create() for _ in range(5)]
     for user in owners:
         add_dandiset_owner(ds, user)
 
