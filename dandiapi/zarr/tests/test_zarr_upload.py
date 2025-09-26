@@ -83,7 +83,7 @@ def test_zarr_rest_finalize(
     add_dandiset_owner(zarr_archive.dandiset, user)
 
     # Upload zarr file
-    zarr_file_factory(zarr_archive)
+    zarr_file_factory(zarr_archive=zarr_archive)
 
     resp = authenticated_api_client.post(f'/api/zarr/{zarr_archive.zarr_id}/finalize/')
     assert resp.status_code == 204
