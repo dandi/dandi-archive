@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 import djclick as click
 from tqdm import tqdm
@@ -23,7 +22,7 @@ def list_files_in_manifest_directory(version: Version) -> list[str]:
     # List objects with the manifest directory prefix
     paginator = client.get_paginator('list_objects_v2')
     pages = paginator.paginate(
-        Bucket=settings.DANDI_DANDISETS_BUCKET_NAME, Prefix=manifest_dir + '/', Delimiter='/'
+        Bucket=default_storage.bucket_name, Prefix=manifest_dir + '/', Delimiter='/'
     )
 
     return [obj.get('Key', '') for page in pages for obj in page.get('Contents', [])]
