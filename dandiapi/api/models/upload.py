@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from dandischema.digests.dandietag import DandiETag
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
@@ -15,7 +16,7 @@ from .dandiset import Dandiset
 
 
 class Upload(models.Model):  # noqa: DJ008
-    ETAG_REGEX = r'[0-9a-f]{32}(-[1-9][0-9]*)?'
+    ETAG_REGEX = DandiETag.REGEX
 
     created = CreationDateTimeField()
 
