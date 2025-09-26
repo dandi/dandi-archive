@@ -18,6 +18,7 @@ from dandiapi.api.models import (
     UserMetadata,
     Version,
 )
+from dandiapi.api.services.dandiset import star_dandiset
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
 
 
@@ -26,8 +27,8 @@ class UserFactory(factory.django.DjangoModelFactory):
         model = User
         skip_postgeneration_save = True
 
-    username = factory.SelfAttribute('email')
-    email = factory.Faker('free_email')
+    username = factory.Faker('user_name')
+    email = factory.Faker('email', safe=False)
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
 
@@ -61,9 +62,8 @@ class SocialAccountFactory(factory.django.DjangoModelFactory):
                     f'{self.factory_parent.user.first_name} {self.factory_parent.user.last_name}'
                 )
             ),
-            # Supply a different value from User object, as social account values may be different
-            'login': factory.Faker('user_name'),
-            'email': factory.Faker('ascii_email'),
+            'login': factory.SelfAttribute('..user.username'),
+            'email': factory.SelfAttribute('..user.email'),
             'created_at': factory.Faker('iso8601', end_datetime=datetime.timedelta(days=-365)),
         }
     )
@@ -82,6 +82,15 @@ class DandisetFactory(factory.django.DjangoModelFactory):
             extracted = []
         for user in extracted:
             add_dandiset_owner(dandiset=self, user=user)
+
+    @factory.post_generation
+    def stars(self, create: bool, extracted: list[User] | None) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            extracted = []
+        for user in extracted:
+            star_dandiset(user=user, dandiset=self)
 
 
 class BaseVersionFactory(factory.django.DjangoModelFactory):
