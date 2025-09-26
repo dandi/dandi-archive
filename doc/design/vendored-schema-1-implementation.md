@@ -18,7 +18,6 @@ The implemented solution addresses these issues by:
 
 1. Creating an API endpoint to dynamically generate JSONSchema from the Pydantic models at runtime
 2. Updating the info endpoint to point to our local schema endpoint instead of GitHub
-3. Implementing proper serialization using Pydantic's TypeAdapter to generate the JSONSchema
 
 ### New Endpoints
 
@@ -26,8 +25,6 @@ We've added the following API endpoints:
 
 - `/api/schemas/available/` - Returns the list of available schema models that can be used as a query parameter value for the `/api/schemas/` endpoint
 - `/api/schemas/` - Returns the JSONSchema for a queried model specified with the `model` query parameter (e.g., `?model=Dandiset`)
-
-These endpoints use Pydantic's TypeAdapter to generate the JSONSchema directly from the models, ensuring that any runtime vendorization or customization is reflected in the schema.
 
 ### Updated Info Endpoint
 
