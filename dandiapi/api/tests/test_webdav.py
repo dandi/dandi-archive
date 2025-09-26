@@ -288,11 +288,11 @@ def test_asset_atpath_path_incorrect_version_id(api_client, draft_version, asset
 
 
 @pytest.mark.django_db
-def test_asset_atpath_embargoed_access(api_client, user_factory, draft_version_factory):
+def test_asset_atpath_embargoed_access(api_client, draft_version_factory):
     dandiset = DandisetFactory.create(embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     draft_version = draft_version_factory(dandiset=dandiset)
 
-    user = user_factory()
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
     resp = api_client.get(
         '/api/webdav/assets/atpath/',

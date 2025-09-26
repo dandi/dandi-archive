@@ -78,12 +78,12 @@ def test_audit_create_dandiset(api_client):
 
 
 @pytest.mark.django_db
-def test_audit_change_owners(api_client, user_factory, draft_version):
+def test_audit_change_owners(api_client, draft_version):
     """Test the change_owners audit record."""
     # Create some users.
-    alice = user_factory()
-    bob = user_factory()
-    charlie = user_factory()
+    alice = UserFactory.create()
+    bob = UserFactory.create()
+    charlie = UserFactory.create()
 
     dandiset = draft_version.dandiset
     add_dandiset_owner(dandiset, alice)
@@ -396,21 +396,21 @@ def test_audit_delete_zarr_chunks(
 
 
 @pytest.mark.django_db
-def test_asset_audit_events_requires_admin(api_client, user_factory):
+def test_asset_audit_events_requires_admin(api_client):
     resp = api_client.get('/api/audit/events/asset')
     assert resp.status_code == 401
 
-    normal_user = user_factory()
+    normal_user = UserFactory.create()
     api_client.force_authenticate(user=normal_user)
     resp = api_client.get('/api/audit/events/asset')
     assert resp.status_code == 403
 
-    staff_user = user_factory(is_staff=True)
+    staff_user = UserFactory.create(is_staff=True)
     api_client.force_authenticate(user=staff_user)
     resp = api_client.get('/api/audit/events/asset')
     assert resp.status_code == 200
 
-    superuser = user_factory(is_superuser=True)
+    superuser = UserFactory.create(is_superuser=True)
     api_client.force_authenticate(user=superuser)
     resp = api_client.get('/api/audit/events/asset')
     assert resp.status_code == 200
