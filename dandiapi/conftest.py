@@ -56,12 +56,6 @@ def zarr_file_factory():
     return upload_zarr_file
 
 
-@pytest.fixture
-def user(user_factory):
-    """Override the default `user` fixture to use our `UserFactory` so `UserMetadata` works."""
-    return user_factory()
-
-
 @pytest.fixture(params=[DraftAssetFactory, PublishedAssetFactory], ids=['draft', 'published'])
 def asset_factory(request):
     return request.param
@@ -80,10 +74,3 @@ def version(request):
 @pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
-
-
-@pytest.fixture
-def authenticated_api_client(user) -> APIClient:
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
