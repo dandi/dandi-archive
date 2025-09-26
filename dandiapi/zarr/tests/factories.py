@@ -10,6 +10,7 @@ from dandiapi.zarr.models import ZarrArchive
 class ZarrArchiveFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ZarrArchive
+        skip_postgeneration_save = True
 
     zarr_id = factory.Faker('uuid4')
     name = factory.Faker('catch_phrase')

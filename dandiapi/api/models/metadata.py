@@ -8,7 +8,8 @@ if TYPE_CHECKING:
 
 
 class PublishableMetadataMixin:
-    def published_by(self, now: datetime.datetime):
+    @classmethod
+    def published_by(cls, now: datetime.datetime):
         return {
             'id': uuid4().urn,
             'name': 'DANDI publish',
