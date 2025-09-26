@@ -619,9 +619,9 @@ def test_asset_rest_retrieve_embargoed_admin(
     api_client,
     draft_version_factory,
     draft_asset_factory,
-    admin_user,
 ):
-    api_client.force_authenticate(user=admin_user)
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
     version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds = version.dandiset
 
@@ -645,9 +645,9 @@ def test_asset_rest_download_embargoed_admin(
     api_client,
     draft_version_factory,
     draft_asset_factory,
-    admin_user,
 ):
-    api_client.force_authenticate(user=admin_user)
+    user = UserFactory.create(is_superuser=True)
+    api_client.force_authenticate(user=user)
     version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     ds = version.dandiset
 
