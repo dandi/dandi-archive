@@ -13,10 +13,9 @@ from dandiapi.api.models.dandiset import Dandiset
 from dandiapi.api.services.metadata import version_aggregate_assets_summary
 from dandiapi.api.services.metadata.exceptions import VersionMetadataConcurrentlyModifiedError
 from dandiapi.api.services.permissions.dandiset import add_dandiset_owner
-from dandiapi.api.tests.factories import DandisetFactory
+from dandiapi.api.tests.factories import DandisetFactory, UserFactory
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import User
     from rest_framework.test import APIClient
 
 from dandiapi.api import tasks
@@ -349,8 +348,9 @@ def test_version_aggregate_assets_summary(draft_version_factory, draft_asset_fac
 
 @pytest.mark.django_db
 def test_version_publish_updates_draft_version_assets_summary(
-    draft_version_factory, draft_asset_factory, user
+    draft_version_factory, draft_asset_factory
 ):
+    user = UserFactory.create()
     version = draft_version_factory(status=Version.Status.PUBLISHING)
     asset = draft_asset_factory(status=Asset.Status.VALID)
     version.assets.add(asset)
@@ -523,7 +523,8 @@ def test_version_rest_info_with_asset(
 
 
 @pytest.mark.django_db
-def test_version_rest_update(api_client, user, draft_version):
+def test_version_rest_update(api_client, draft_version):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -611,7 +612,8 @@ def test_version_rest_update(api_client, user, draft_version):
 
 
 @pytest.mark.django_db
-def test_version_rest_update_unembargo_in_progress(api_client, user, draft_version_factory):
+def test_version_rest_update_unembargo_in_progress(api_client, draft_version_factory):
+    user = UserFactory.create()
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
@@ -636,7 +638,8 @@ def test_version_rest_update_unembargo_in_progress(api_client, user, draft_versi
 
 
 @pytest.mark.django_db
-def test_version_rest_update_published_version(api_client, user, published_version):
+def test_version_rest_update_published_version(api_client, published_version):
+    user = UserFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -653,7 +656,8 @@ def test_version_rest_update_published_version(api_client, user, published_versi
 
 
 @pytest.mark.django_db
-def test_version_rest_update_not_an_owner(api_client, user, version):
+def test_version_rest_update_not_an_owner(api_client, version):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
 
     new_name = 'A unique and special name!'
@@ -681,7 +685,8 @@ def test_version_rest_update_not_an_owner(api_client, user, version):
     ],
 )
 @pytest.mark.django_db
-def test_version_rest_update_access_values(api_client, user, draft_version, access):
+def test_version_rest_update_access_values(api_client, draft_version, access):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -704,7 +709,8 @@ def test_version_rest_update_access_values(api_client, user, draft_version, acce
 
 
 @pytest.mark.django_db
-def test_version_rest_update_access_missing(api_client, user, draft_version):
+def test_version_rest_update_access_missing(api_client, draft_version):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -729,7 +735,8 @@ def test_version_rest_update_access_missing(api_client, user, draft_version):
 
 
 @pytest.mark.django_db
-def test_version_rest_update_access_valid(api_client, user, draft_version):
+def test_version_rest_update_access_valid(api_client, draft_version):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -756,11 +763,11 @@ def test_version_rest_update_access_valid(api_client, user, draft_version):
 @pytest.mark.django_db
 def test_version_rest_publish(
     api_client: APIClient,
-    user: User,
     draft_version: Version,
     draft_asset_factory,
     published_asset_factory,
 ):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -788,7 +795,8 @@ def test_version_rest_publish(
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_embargo(api_client: APIClient, user: User, draft_version_factory):
+def test_version_rest_publish_embargo(api_client: APIClient, draft_version_factory):
+    user = UserFactory.create()
     draft_version = draft_version_factory(dandiset__embargo_status=Dandiset.EmbargoStatus.EMBARGOED)
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
@@ -801,9 +809,8 @@ def test_version_rest_publish_embargo(api_client: APIClient, user: User, draft_v
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_unembargo_in_progress(
-    api_client: APIClient, user: User, draft_version_factory
-):
+def test_version_rest_publish_unembargo_in_progress(api_client: APIClient, draft_version_factory):
+    user = UserFactory.create()
     draft_version = draft_version_factory(
         dandiset__embargo_status=Dandiset.EmbargoStatus.UNEMBARGOING
     )
@@ -820,12 +827,12 @@ def test_version_rest_publish_unembargo_in_progress(
 @pytest.mark.django_db
 def test_version_rest_publish_zarr(
     api_client,
-    user: User,
     draft_version: Version,
     draft_asset_factory,
     zarr_archive_factory,
     zarr_file_factory,
 ):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
 
@@ -856,7 +863,8 @@ def test_version_rest_publish_zarr(
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
+def test_version_rest_publish_not_an_owner(api_client, version, asset):
+    user = UserFactory.create()
     api_client.force_authenticate(user=user)
     version.assets.add(asset)
 
@@ -867,7 +875,8 @@ def test_version_rest_publish_not_an_owner(api_client, user, version, asset):
 
 
 @pytest.mark.django_db
-def test_version_rest_publish_not_a_draft(api_client, user, published_version, asset):
+def test_version_rest_publish_not_a_draft(api_client, published_version, asset):
+    user = UserFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     published_version.assets.add(asset)
@@ -900,13 +909,13 @@ def test_version_rest_publish_not_a_draft(api_client, user, published_version, a
 )
 def test_version_rest_publish_invalid(
     api_client: APIClient,
-    user: User,
     draft_version: Version,
     asset: Asset,
     status: str,
     expected_data: str,
     expected_status_code: int,
 ):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
     draft_version.assets.add(asset)
@@ -944,7 +953,8 @@ def test_version_rest_update_no_changed_metadata(
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_published_not_admin(api_client, user, published_version):
+def test_version_rest_delete_published_not_admin(api_client, published_version):
+    user = UserFactory.create()
     add_dandiset_owner(published_version.dandiset, user)
     api_client.force_authenticate(user=user)
     response = api_client.delete(
@@ -968,7 +978,8 @@ def test_version_rest_delete_published_admin(api_client, admin_user, published_v
 
 
 @pytest.mark.django_db
-def test_version_rest_delete_draft_not_admin(api_client, user, draft_version):
+def test_version_rest_delete_draft_not_admin(api_client, draft_version):
+    user = UserFactory.create()
     add_dandiset_owner(draft_version.dandiset, user)
     api_client.force_authenticate(user=user)
     response = api_client.delete(
